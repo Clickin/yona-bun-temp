@@ -443,7 +443,7 @@ tests/legacy-rendered-page-audit.e2e.ts -g "logged-in /|/notifications|/notifica
 - Backend compatibility verification: these focused contracts passed outside the
   sandbox:
   `auth_workspace_contract::direct_legacy_usermenu_tab_content_list_returns_workspace_api_payload`,
-  `auth_workspace_contract::direct_legacy_user_sidebar_returns_framed_sidebar_shell`,
+  `auth_workspace_contract::direct_legacy_user_sidebar_returns_api_payload`,
   `notification_contract::notification_contract_lists_current_user_notifications_with_paging`,
   and
   `notification_contract::notification_contract_direct_notification_route_returns_api_payload`.

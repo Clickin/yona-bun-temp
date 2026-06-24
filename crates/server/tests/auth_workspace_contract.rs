@@ -3268,9 +3268,9 @@ async fn direct_legacy_usermenu_tab_content_list_returns_workspace_api_payload()
 }
 
 #[tokio::test]
-async fn direct_legacy_user_sidebar_returns_framed_sidebar_shell() {
-    // Guards the legacy sidebar/usermenu HTML boundary now owned by
-    // routes/workspace/sidebar.rs through the app-scoped service snapshot.
+async fn direct_legacy_user_sidebar_returns_api_payload() {
+    // Guards the legacy sidebar/usermenu direct route as React-owned API data,
+    // while preserving the old framed target path/hash metadata.
     let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
         true,
         AppRuntimeConfig {
@@ -3336,31 +3336,21 @@ async fn direct_legacy_user_sidebar_returns_framed_sidebar_shell() {
             .headers()
             .get(http::header::CONTENT_TYPE)
             .and_then(|value| value.to_str().ok()),
-        Some("text/html; charset=utf-8")
+        Some("application/json")
     );
-    let html = response_text(response).await;
-    assert!(html.contains("<title>Legacy Yona</title>"));
-    assert!(html.contains(r#"<body class="framed-body" id="html-body">"#));
-    assert!(html.contains(r#"<div id="sidebar" class="sidebar hide-in-mobile">"#));
-    assert!(html.contains(r#"<div class="row-fluid user-menu-wrap">"#));
-    assert!(html.contains(r#"<a href="/yona/door" target="mainFrame">"#));
-    assert!(html.contains(r#"<span class="caret-text hide-in-mobile">Door</span>"#));
-    assert!(html.contains(
-        r#"<a href="/yona/user/editform" target="mainFrame">userinfo.accountSetting</a>"#
-    ));
-    assert!(html.contains(r#"<div class="pin-in-sidebar" data-toggle="tooltip" data-placement="bottom" title="Sidebar">"#));
-    assert!(html.contains(r##"<a href="#myOrganizationList" data-toggle="tab">"##));
-    assert!(html.contains("title.favorite"));
-    assert!(html.contains("title.project"));
-    assert!(html.contains("title.recently.visited.issue"));
-    assert!(html.contains(r#"<div id="usermenu-tab-content-list" class="tab-content">"#));
-    assert!(html.contains(r#"class="search-input org-search""#));
-    assert!(html.contains(r#"href="/yona/door/projectYobi""#));
-    assert!(html.contains(r#"<div id="mainFrame" class="show-in-mobile-100vh">"#));
-    assert!(html.contains(r#"iframe name="mainFrame" id="mainFrameId""#));
-    assert!(html.contains(r#"src="/yona/door/projectYobi/issue/1#comment-7""#));
-    assert!(html.contains(r#"var UsermenuUrl = "/yona/user/usermenuTabContentList";"#));
-    assert!(html.contains(r#"/assets/javascripts/common/yona.Usermenu.js"#));
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(payload["siteName"], "Legacy Yona");
+    assert_eq!(
+        payload["iframePath"],
+        "/yona/door/projectYobi/issue/1#comment-7"
+    );
+    assert_eq!(payload["workspace"]["profile"]["loginId"], "door");
+    assert!(payload["workspace"]["recentProjects"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|project| project["ownerName"] == "door" && project["projectName"] == "projectYobi"));
 
     let anonymous_response = app
         .oneshot(
@@ -3373,10 +3363,23 @@ async fn direct_legacy_user_sidebar_returns_framed_sidebar_shell() {
         .await
         .unwrap();
     assert_eq!(anonymous_response.status(), StatusCode::OK);
-    let anonymous_html = response_text(anonymous_response).await;
-    assert!(anonymous_html.contains(r#"<div id="sidebar" class="sidebar hide-in-mobile">"#));
-    assert!(!anonymous_html.contains(r#"<div class="row-fluid user-menu-wrap">"#));
-    assert!(anonymous_html.contains(r#"src="/yona/notifications""#));
+    assert_eq!(
+        anonymous_response
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("application/json")
+    );
+    let anonymous_body = anonymous_response
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    let anonymous_payload: serde_json::Value = serde_json::from_slice(&anonymous_body).unwrap();
+    assert_eq!(anonymous_payload["siteName"], "Legacy Yona");
+    assert_eq!(anonymous_payload["iframePath"], "/yona/notifications");
+    assert!(anonymous_payload.get("workspace").is_none());
 }
 
 #[tokio::test]

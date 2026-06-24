@@ -1141,13 +1141,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   with project and organization favorite routes remaining on the same moved
   legacy favorites boundary.
 - 2026-06-24 fragment conversion note: legacy direct
-  `/user/usermenuTabContentList` now returns the workspace overview API payload
-  used by the React root sidebar instead of a server-rendered HTML fragment.
-  The framed `/user/sidebar` compatibility shell still carries its legacy HTML
-  response until that route is converted separately. Coverage:
+  `/user/usermenuTabContentList` and `/user/sidebar` now return API payloads
+  used by the React root sidebar instead of server-rendered HTML fragments.
+  `/user/sidebar` preserves the legacy `path`/`hash` target as `iframePath`
+  metadata for React-owned rendering. Coverage:
   `auth_workspace_contract::direct_legacy_usermenu_tab_content_list_returns_workspace_api_payload`
   and
-  `auth_workspace_contract::direct_legacy_user_sidebar_returns_framed_sidebar_shell`.
+  `auth_workspace_contract::direct_legacy_user_sidebar_returns_api_payload`.
 - 2026-06-20 scalar parity note: browser runtime config now injects the
   configured legacy site name as `siteName`, and the notification welcome guide
   renders the legacy `app.welcome = Tada! Welcome to {0}!` plus
