@@ -3,8 +3,8 @@ use sea_orm_migration::{prelude::SchemaManager, seaql_migrations};
 use serde::Deserialize;
 use yona_rust_persistence_entities::play_evolutions;
 use yona_rust_pilot_migration::{
-    entity_schema, optional_legacy_table_names, required_runtime_table_names, Migrator,
-    RuntimeSchemaPolicy,
+    entity_schema, optional_legacy_table_names, required_runtime_table_names, seed_pilot_data,
+    Migrator, RuntimeSchemaPolicy,
 };
 
 const MANIFEST_JSON: &str = include_str!("../legacy-final-schema-manifest.json");
@@ -77,6 +77,24 @@ async fn ensure_runtime_schema_is_a_noop_when_the_current_baseline_is_already_ap
         applied[0].version,
         "m20260409_000001_create_legacy_start_schema"
     );
+}
+
+#[tokio::test]
+async fn seed_pilot_data_is_idempotent_for_existing_sqlite_database() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+
+    Migrator::ensure_runtime_schema(&db)
+        .await
+        .expect("runtime schema applied");
+    seed_pilot_data(&db).await.expect("first seed");
+    seed_pilot_data(&db).await.expect("second seed");
+
+    let project_count = scalar_count(&db, "project").await;
+    let issue_count = scalar_count(&db, "issue").await;
+    assert_eq!(project_count, 1);
+    assert_eq!(issue_count, 1);
 }
 
 #[tokio::test]
