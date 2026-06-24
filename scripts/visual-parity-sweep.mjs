@@ -213,9 +213,11 @@ async function login(page, baseUrl) {
   }
   await loginField.fill(loginId);
   await passwordField.fill(password);
+  const loginForm = page.locator('form[action$="/users/login"]').first();
+  const submitButton = loginForm.locator('button[type="submit"], input[type="submit"]').first();
   await Promise.all([
     page.waitForLoadState("networkidle").catch(() => {}),
-    page.locator('button[type="submit"], input[type="submit"], .btn-orange').first().click(),
+    submitButton.click(),
   ]);
   return true;
 }
@@ -241,7 +243,17 @@ async function apiLogin(page, baseUrl) {
   if (adminRegisterResponse.ok()) {
     return true;
   }
-  if (await login(page, baseUrl)) {
+  const adminSignInResponse = await page.request.post(`${baseUrl}/api/v1/auth/sign-in`, {
+    data: {
+      identifier: "admin",
+      password: "admin",
+      rememberMe: true,
+    },
+    headers: {
+      "x-csrf-token": csrfToken,
+    },
+  });
+  if (adminSignInResponse.ok()) {
     return true;
   }
   const suffix = Date.now().toString(36);
@@ -407,6 +419,9 @@ async function inspectPage(page, baseUrl, path, label) {
   }
   if (hasRawI18n(`${metrics.title}\n${metrics.text}`)) {
     errors.push(`raw i18n key visible: ${rawI18nKeys(`${metrics.title}\n${metrics.text}`).join(", ")}`);
+  }
+  if (/browser-safe route tree|localhost:3001\/(?!yona(?:\/|$))yo/u.test(metrics.text)) {
+    errors.push("implementation fixture copy visible");
   }
   if (metrics.title === "Yona Rust Frontend") {
     errors.push("non-legacy default document title visible");

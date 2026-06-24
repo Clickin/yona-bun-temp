@@ -380,7 +380,7 @@ pub(crate) async fn project_list(
             items: vec![ProjectListItem {
                 owner_name: "pilot".to_string(),
                 project_name: "yona".to_string(),
-                overview: "Pilot projects list is using the browser-safe route tree.".to_string(),
+                overview: "Yona project".to_string(),
                 project_scope: "public".to_string(),
                 ..Default::default()
             }],

@@ -17,6 +17,7 @@ async fn sqlite_smoke_covers_migrate_seed_read_and_update() {
     assert_eq!(projects.len(), 1);
     assert_eq!(projects[0].owner_name, "pilot");
     assert_eq!(projects[0].project_name, "yona");
+    assert_eq!(projects[0].overview.as_deref(), Some("Yona project"));
 
     let issue = repo
         .read_issue_detail("pilot", "yona", 1)
