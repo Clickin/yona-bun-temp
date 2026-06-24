@@ -159,9 +159,11 @@ export function RedirectPage({ basePath, to }: { basePath: string; to: string })
 }
 
 export function useDocumentTitle(title: string) {
+  const messages = useLegacyMessages();
+
   React.useEffect(() => {
     if (typeof document !== "undefined") {
-      document.title = title;
+      document.title = messages.t(title, { fallback: title });
     }
-  }, [title]);
+  }, [messages, title]);
 }

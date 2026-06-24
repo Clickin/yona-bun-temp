@@ -34,7 +34,11 @@ describe("legacy i18n runtime", () => {
 
     expect(runtime.language).toBe("ko-KR");
     expect(runtime.t("button.login")).toBe("로그인");
+    expect(runtime.t("button.add.checklist")).toBe("체크리스트 추가");
+    expect(runtime.t("button.draft.save")).toBe("초안으로 저장");
     expect(runtime.t("error.badrequest")).toBe("잘못된 요청입니다");
+    expect(runtime.t("issue.option")).toBe("이슈 옵션");
+    expect(runtime.t("project.new.vcsType.subversion")).toBe("Subversion");
     expect(runtime.t("menu.home")).toBe("홈");
     expect(runtime.t("user.login.failed.network")).toBe(
       "네트워크 문제로 인해 로그인에 실패하였습니다.\\n관리자에게 문의해주세요.",

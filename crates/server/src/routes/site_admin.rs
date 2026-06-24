@@ -1253,6 +1253,7 @@ pub(crate) fn routes(
     let site_delete_project_service = service.clone();
     let site_reset_user_password_service = service.clone();
     let site_diagnostic_shell_service = service.clone();
+    let site_admin_alias_base_path = service.base_path.clone();
     let site_no_avatar_service = service.clone();
     let site_set_avatar_service = service.clone();
     let site_mail_send_service = service.clone();
@@ -1261,6 +1262,13 @@ pub(crate) fn routes(
     let site_import_service = service;
 
     Router::new()
+        .route(
+            "/admin",
+            get(move || {
+                let base_path = site_admin_alias_base_path.clone();
+                async move { redirect_to(&base_path, "/sites/userList") }
+            }),
+        )
         .route(
             "/sites/export",
             get(move |headers: HeaderMap| {

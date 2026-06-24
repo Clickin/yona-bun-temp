@@ -234,6 +234,7 @@ export function IssueLabelsFormPage(props: {
           <ProjectSettingsSubMenu
             active="labels"
             detail={detail}
+            messages={props.messages}
             runtimeConfig={props.runtimeConfig}
           />
           <IssueLabelCopyForm {...props} />

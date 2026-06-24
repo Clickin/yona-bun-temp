@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 
@@ -82,6 +82,35 @@ const projectSuffixes = [
   "/changeVCS",
 ];
 
+const routeSampleValues = {
+  "$branch": "main",
+  "$commitId": "HEAD",
+  "$issueNumber": "1",
+  "$loginId": "admin",
+  "$milestoneId": "1",
+  "$organizationName": "pilot",
+  "$owner": "pilot",
+  "$pageName": "userList",
+  "$postNumber": "1",
+  "$projectName": "yona",
+  "$pullRequestNumber": "1",
+  "$revisionRange": "main...main",
+  "$user": "admin",
+  "$verificationCode": "invalid",
+};
+
+const routeTreeSampleAliases = {
+  "/(legacy-auth)/reset-password": "/reset-password",
+  "/$owner/$projectName/code/$branch/$": "/pilot/yona/code/main/README.md",
+  "/$owner/$projectName/code/$branch/": "/pilot/yona/code/main/",
+  "/$owner/$projectName/code/": "/pilot/yona/code/",
+  "/$owner/$projectName/commits/$branch/$": "/pilot/yona/commits/main/",
+  "/$owner/$projectName/commits/$branch/": "/pilot/yona/commits/main/",
+  "/$owner/$projectName/commits/": "/pilot/yona/commits/",
+  "/$owner/$projectName/": "/pilot/yona/",
+  "/sites/$pageName": null,
+};
+
 const blockedLinkPrefixes = [
   "/-_-api/",
   "/api/",
@@ -98,20 +127,50 @@ const rootNames = new Set([
   "_assets",
   "_help",
   "_import",
+  "forgot-password",
   "admin",
   "assets",
+  "login",
   "lostPassword",
+  "me",
+  "migration",
   "notifications",
   "notification",
   "organizations",
   "orgs",
   "projectform",
   "projects",
+  "register",
+  "reset-password",
   "search",
   "sites",
+  "restricted",
   "user",
   "users",
+  "verify",
 ]);
+
+function samplePathFromRoutePath(routePath) {
+  if (Object.hasOwn(routeTreeSampleAliases, routePath)) {
+    return routeTreeSampleAliases[routePath];
+  }
+  if (routePath.includes("/(") || routePath.includes(")/")) {
+    return null;
+  }
+  return routePath.replace(/\$[A-Za-z0-9_]+/gu, (token) => routeSampleValues[token] ?? "sample");
+}
+
+function routeTreeSamplePaths() {
+  const source = readFileSync(resolve(repoRoot, "frontend/src/routeTree.gen.ts"), "utf8");
+  const paths = [
+    ...new Set(
+      [...source.matchAll(/fullPath:\s*'([^']+)'/gu)]
+        .map((match) => samplePathFromRoutePath(match[1]))
+        .filter(Boolean),
+    ),
+  ];
+  return paths.sort();
+}
 
 function urlFor(baseUrl, path) {
   return `${baseUrl}${path === "/" ? "/" : path}`;
@@ -207,6 +266,15 @@ function hasRawI18n(text) {
   );
 }
 
+function rawI18nKeys(text) {
+  return [
+    ...new Set(
+      text.match(/\b(?:title|button|error|label|message|project|issue|user|notification)\.[a-z0-9_.-]+\b/gu) ??
+        [],
+    ),
+  ].sort();
+}
+
 async function inspectPage(page, baseUrl, path, label) {
   const consoleErrors = [];
   const requestFailures = [];
@@ -222,8 +290,13 @@ async function inspectPage(page, baseUrl, path, label) {
   };
   const onRequestFailed = (request) => {
     const url = request.url();
-    if (!url.includes("www.google-analytics.com")) {
-      requestFailures.push(`${request.failure()?.errorText ?? "failed"} ${url}`);
+    const failureText = request.failure()?.errorText ?? "failed";
+    if (
+      !url.includes("www.google-analytics.com") &&
+      !url.includes("doubleclick.net") &&
+      !(failureText === "net::ERR_ABORTED" && url.includes("/api/v1/session"))
+    ) {
+      requestFailures.push(`${failureText} ${url}`);
     }
   };
   page.on("console", onConsole);
@@ -295,7 +368,7 @@ async function inspectPage(page, baseUrl, path, label) {
     errors.push(`horizontal overflow ${metrics.scrollWidth}/${metrics.viewportWidth}`);
   }
   if (hasRawI18n(`${metrics.title}\n${metrics.text}`)) {
-    errors.push("raw i18n key visible");
+    errors.push(`raw i18n key visible: ${rawI18nKeys(`${metrics.title}\n${metrics.text}`).join(", ")}`);
   }
   if (path === "/" && metrics.loginDialog && metrics.loginDialog.width > metrics.viewportWidth * 0.8) {
     errors.push("login dialog width looks unstyled");
@@ -349,11 +422,17 @@ async function runTarget(label, baseUrl) {
   const page = await context.newPage();
   const loggedIn = label === "local" ? await apiLogin(page, baseUrl) : await login(page, baseUrl);
   const discoveredProjectPages = loggedIn ? await discoverProjectPaths(page, baseUrl) : [];
-  const paths = [...new Set([...basePages, ...discoveredProjectPages])];
+  const paths = [...new Set([...basePages, ...routeTreeSamplePaths(), ...discoveredProjectPages])];
   const results = [];
   for (const path of paths) {
-    results.push(await inspectPage(page, baseUrl, path, label));
+    const routePage = await context.newPage();
+    try {
+      results.push(await inspectPage(routePage, baseUrl, path, label));
+    } finally {
+      await routePage.close().catch(() => {});
+    }
   }
+  await page.close().catch(() => {});
   await browser.close();
   return {
     label,
