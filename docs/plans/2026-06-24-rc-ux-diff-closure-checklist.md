@@ -78,7 +78,7 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-user-workspace`       | `/admin`, `/user/issues`, `/user/issues/new/mine`, `/user/files`, `/user/editform/**`                                                                                                                                                | Profile/workspace, assigned issue shortcuts, files, settings, email/token/avatar forms, validation, and redirects.                                           | `pass`      |
 | `rc-ux-search-notification`  | `/search`, `/notifications`, `/notification`                                                                                                                                                                                         | Search filter/result/pagination/copy parity, hostile result rendering safety, full notification page, and partial notification UX rendered in React.         | `pass`      |
 | `rc-ux-site-admin`           | `/sites/userList`, `/sites/projectList`, `/sites/postList`, `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`, `/sites/diagnostic`, `/sites/data`                                                                | Site-admin sidebar, tables, pagination, modals, mail/test-mail flows, update/download state, diagnostic/data import-export UX, and admin-only access.        | `pass`      |
-| `rc-ux-project-home-code`    | `/admin/sample`, `/admin/sample/code`, `/admin/sample/commits`, `/admin/sample/branches`                                                                                                                                             | Project header/menu, home/code browser, legacy non-2xx observations, VCS empty/error states, and clone/deep-link affordances.                                | `unchecked` |
+| `rc-ux-project-home-code`    | `/admin/sample`, `/admin/sample/code`, `/admin/sample/commits`, `/admin/sample/branches`                                                                                                                                             | Project header/menu, home/code browser, legacy non-2xx observations, VCS empty/error states, and clone/deep-link affordances.                                | `pass`      |
 | `rc-ux-issues`               | `/admin/sample/issues`, `/admin/sample/issue/1`, `/admin/sample/issues/new`, label issue filters/settings                                                                                                                            | Issue list/detail/create/edit/comment, labels, state tabs, assignee/milestone/filter/sort, watch/vote/share, timeline, attachments, and XSS/Markdown safety. | `unchecked` |
 | `rc-ux-board`                | `/admin/sample/posts`, board post create/detail/comment routes                                                                                                                                                                       | Board list/detail/create/edit/delete/comment, project selector, labels, watch, empty states, and route-level permissions.                                    | `unchecked` |
 | `rc-ux-milestones`           | `/admin/sample/milestones`, `/admin/sample/milestones/new`                                                                                                                                                                           | Milestone list/detail/create/edit/state/delete, progress/state copy, issue association links, and validation.                                                | `unchecked` |
@@ -234,6 +234,31 @@ tests/site-admin-diagnostic-parity.e2e.ts` passed outside the sandbox with 10
   `site_admin_mail_send_and_recipient_lookup_follow_legacy_surface`,
   `site_admin_export_download_follows_legacy_site_data_route`, and
   `site_admin_import_dry_run_reports_counts_and_never_writes`.
+
+### `rc-ux-project-home-code`
+
+- Legacy curl audit: `.agent/legacy-html-page-audit/latest.json` has HTTP 200
+  with no missing anchors or structural tokens for `/admin/sample` and
+  `/admin/sample/code`. The same audit records `/admin/sample/commits` as
+  expected legacy 404 and `/admin/sample/branches` as expected legacy 500.
+- Route/render coverage: `.agent/legacy-html-page-audit/route-coverage.json`,
+  `parity-spec-coverage.json`, `e2e-render-coverage.json`, and
+  `anchor-coverage.json` map `/admin/sample`, `/admin/sample/code`,
+  `/admin/sample/commits`, and `/admin/sample/branches` to Rust routes, parity
+  specs, and rendered legacy signal evidence.
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/project-home-tabs.spec.tsx src/project-code-browser-routing.spec.ts
+src/code-views.spec.tsx src/route-parity.spec.tsx` passed with 4 files and
+  130 tests.
+- Rendered e2e verification: `pnpm --dir frontend test:e2e --
+tests/legacy-rendered-page-audit.e2e.ts -g "project (home|code)"` executed
+  the audit file outside the sandbox and passed all 43 tests, including project
+  home and project code anchors.
+- Backend verification: these focused `code_browser_contract` tests passed
+  outside the sandbox:
+  `rest_code_browser_reads_root_folder_and_text_file_from_git_repo`,
+  `rest_commit_history_lists_branch_and_path_commits_from_git_repo`, and
+  `rest_branch_list_renders_default_branch_first_with_legacy_actions`.
 
 ## Goal Packet Template
 
