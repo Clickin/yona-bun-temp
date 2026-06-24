@@ -1829,11 +1829,9 @@ test("project watchers route renders the legacy watcher directory shell", async 
 test("project milestone routes render list detail and form shells", async ({ page }) => {
   await page.goto("/yona/admin/projectYobi/milestones?state=open");
   await expect(page.locator(".project-page-wrap .tab-wrap")).toBeVisible();
-  await expect(page.locator(".nav.nav-tabs a", { hasText: "milestone.state.open" })).toBeVisible();
-  await expect(
-    page.locator(".nav.nav-tabs a", { hasText: "milestone.state.closed" }),
-  ).toBeVisible();
-  await expect(page.locator(".nav.nav-tabs a", { hasText: "milestone.state.all" })).toBeVisible();
+  await expect(page.locator(".nav.nav-tabs a", { hasText: "Open" })).toBeVisible();
+  await expect(page.locator(".nav.nav-tabs a", { hasText: "Closed" })).toBeVisible();
+  await expect(page.locator(".nav.nav-tabs a", { hasText: "All" })).toBeVisible();
   await expect(page.locator(".milestones .milestone")).toHaveCount(1);
   await expect(page.locator(".milestone-name")).toHaveText("v1.0");
   await expect(page.locator(".issue-link", { hasText: "Open milestone issue" })).toBeVisible();
@@ -1846,21 +1844,15 @@ test("project milestone routes render list detail and form shells", async ({ pag
   await page.goto("/yona/admin/projectYobi/milestone/7?state=all");
   await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
   await expect(page.locator(".milestone-desc .markdown-wrap")).toContainText("Ship parity");
-  await expect(page.locator(".badge.badge-issue-open")).toContainText("milestone.state.open");
-  await expect(
-    page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.open" }),
-  ).toBeVisible();
-  await expect(
-    page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.closed" }),
-  ).toBeVisible();
-  await expect(
-    page.locator("#issues .nav.nav-tabs a", { hasText: "issue.state.all" }),
-  ).toBeVisible();
-  await expect(page.getByPlaceholder("milestone.searchPlaceholder")).toBeVisible();
+  await expect(page.locator(".badge.badge-issue-open")).toContainText("Open");
+  await expect(page.locator("#issues .nav.nav-tabs a", { hasText: "Open" })).toBeVisible();
+  await expect(page.locator("#issues .nav.nav-tabs a", { hasText: "Closed" })).toBeVisible();
+  await expect(page.locator("#issues .nav.nav-tabs a", { hasText: "All" })).toBeVisible();
+  await expect(page.getByPlaceholder("search at current milestone")).toBeVisible();
   await expect(page.locator(".issue-link", { hasText: "Closed milestone issue" })).toBeVisible();
-  await expect(page.locator(".actrow .ybtn", { hasText: "button.list" })).toBeVisible();
-  await expect(page.locator(".actrow .ybtn", { hasText: "button.edit" })).toBeVisible();
-  await expect(page.locator(".actrow .ybtn", { hasText: "milestone.close" })).toBeVisible();
+  await expect(page.locator(".actrow .ybtn", { hasText: "List" })).toBeVisible();
+  await expect(page.locator(".actrow .ybtn", { hasText: "Edit" })).toBeVisible();
+  await expect(page.locator(".actrow .ybtn", { hasText: "Close milestone" })).toBeVisible();
 
   await page.goto("/yona/admin/projectYobi/newMilestoneForm");
   await expect(page.locator(".milestone-form-page #milestone-form")).toBeVisible();
@@ -1870,11 +1862,11 @@ test("project milestone routes render list detail and form shells", async ({ pag
   );
   await expect(page.locator('#milestone-form textarea[name="contents"]')).toBeVisible();
   await expect(page.locator("#milestone-open")).toBeChecked();
-  await expect(page.locator('label[for="milestone-open"]')).toHaveText("milestone.state.open");
-  await expect(page.locator('label[for="milestone-close"]')).toHaveText("milestone.state.closed");
+  await expect(page.locator('label[for="milestone-open"]')).toHaveText("Open");
+  await expect(page.locator('label[for="milestone-close"]')).toHaveText("Closed");
   await expect(page.locator("#dueDate")).toBeVisible();
   await expect(page.locator("#datepicker.date-picker")).toBeAttached();
-  await expect(page.locator('#milestone-form button[type="submit"]')).toHaveText("button.save");
+  await expect(page.locator('#milestone-form button[type="submit"]')).toHaveText("Save");
 
   await page.goto("/yona/admin/projectYobi/milestone/7/editform");
   await expect(page.locator(".milestone-form-page #milestone-form")).toBeVisible();

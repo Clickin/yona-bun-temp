@@ -81,7 +81,7 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-project-home-code`    | `/admin/sample`, `/admin/sample/code`, `/admin/sample/commits`, `/admin/sample/branches`                                                                                                                                             | Project header/menu, home/code browser, legacy non-2xx observations, VCS empty/error states, and clone/deep-link affordances.                                | `pass`      |
 | `rc-ux-issues`               | `/admin/sample/issues`, `/admin/sample/issue/1`, `/admin/sample/issues/new`, label issue filters/settings                                                                                                                            | Issue list/detail/create/edit/comment, labels, state tabs, assignee/milestone/filter/sort, watch/vote/share, timeline, attachments, and XSS/Markdown safety. | `unchecked` |
 | `rc-ux-board`                | `/admin/sample/posts`, board post create/detail/comment routes                                                                                                                                                                       | Board list/detail/create/edit/delete/comment, project selector, labels, watch, empty states, and route-level permissions.                                    | `unchecked` |
-| `rc-ux-milestones`           | `/admin/sample/milestones`, `/admin/sample/milestones/new`                                                                                                                                                                           | Milestone list/detail/create/edit/state/delete, progress/state copy, issue association links, and validation.                                                | `unchecked` |
+| `rc-ux-milestones`           | `/admin/sample/milestones`, `/admin/sample/milestones/new`                                                                                                                                                                           | Milestone list/detail/create/edit/state/delete, progress/state copy, issue association links, and validation.                                                | `pass`      |
 | `rc-ux-pull-requests`        | `/admin/sample/pullRequests`, `/admin/sample/newPullRequest`, `/admin/sample/newPullRequestForm`, `/admin/sample/pullRequest/**`                                                                                                     | PR list/create/review/merge/comment, manual conflict guidance, branch selector states, and documented legacy non-2xx behavior.                               | `unchecked` |
 | `rc-ux-project-admin`        | `/admin/sample/members`, `/admin/sample/watchers`, `/admin/sample/settings`, `/admin/sample/webhooks`, `/admin/sample/delete`, `/admin/sample/transfer`, `/admin/sample/fork`, `/admin/sample/statistics`, `/admin/sample/changeVCS` | Member/watch/settings/webhook/delete/transfer/fork/statistics/change-VCS shells, modals, permissions, mutations, and legacy warning copy.                    | `unchecked` |
 | `rc-ux-fragment-conversions` | Legacy server-returned fragments such as notification/sidebar/user-menu surfaces                                                                                                                                                     | Each legacy fragment endpoint has equivalent API-return plus React-rendered UX evidence on the containing route.                                             | `unchecked` |
@@ -259,6 +259,30 @@ tests/legacy-rendered-page-audit.e2e.ts -g "project (home|code)"` executed
   `rest_code_browser_reads_root_folder_and_text_file_from_git_repo`,
   `rest_commit_history_lists_branch_and_path_commits_from_git_repo`, and
   `rest_branch_list_renders_default_branch_first_with_legacy_actions`.
+
+### `rc-ux-milestones`
+
+- Legacy curl audit: `.agent/legacy-html-page-audit/latest.json` has HTTP 200
+  with no missing anchors or structural tokens for `/admin/sample/milestones`
+  and `/admin/sample/newMilestoneForm`.
+- Route/render coverage: `.agent/legacy-html-page-audit/route-coverage.json`,
+  `parity-spec-coverage.json`, `e2e-render-coverage.json`, and
+  `anchor-coverage.json` map the milestone list and create-form routes to Rust
+  routes, parity specs, and rendered legacy signal evidence.
+- Test expectation fixes closed in this packet: milestone e2e now expects the
+  runtime English legacy copy (`Open`, `Closed`, `All`, `List`, `Edit`,
+  `Close milestone`, `Save`) where the runtime message provider is active, while
+  preserving key fallback checks for controls that still render legacy keys such
+  as `title.text`. The backend milestone contract now verifies the current REST
+  summary shape (`id` as a number, state via filtered list results).
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/issue-board-pr-milestone-i18n.spec.tsx src/route-parity.spec.tsx` passed
+  with 2 files and 68 tests.
+- Rendered e2e verification: these focused `shell-routing-smoke.e2e.ts` line
+  targets passed outside the sandbox: `:1829` milestone list/detail/form shell,
+  `:1878` create editor image upload, and `:1970` edit editor image upload.
+- Backend verification: `pnpm agent:cargo-test -- --outside-sandbox -p
+yona-rust-pilot-server --test milestone_contract -- --nocapture` passed.
 
 ## Goal Packet Template
 
