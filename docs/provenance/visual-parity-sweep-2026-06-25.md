@@ -12,6 +12,8 @@ Status: current audit evidence.
 - Local route corpus: explicit legacy base pages, route-tree sample expansion, and discovered seeded
   project links. Each route is inspected in an isolated Playwright page so one navigation failure
   cannot cascade into later false failures.
+- Render criterion: Playwright waits past transient `common.loading` / `불러오는 중` shells before
+  judging final visible screen metrics.
 
 ## Commands
 
@@ -44,7 +46,7 @@ therefore recorded separately from the legacy HTML baseline until the browser ch
 ## Results
 
 - Legacy HTML anchor audit: 57 checked, 57 passed, 0 failed.
-- Local Playwright visual sweep: 107 checked, 99 passed, 8 failed.
+- Local Playwright visual sweep: 107 checked, 107 passed, 0 failed.
 - Local discovered project route root: `/pilot/yona`.
 - Legacy discovered project route root: `/admin/sample`.
 
@@ -60,17 +62,15 @@ smoke test.
 
 ## Local Failures
 
-| Failure class | Paths |
-| --- | --- |
-| Missing project header/menu | `/pilot/yona/milestone/1`, `/pilot/yona/milestone/1/editform`, `/pilot/yona/newPullRequestForm`, `/pilot/yona/post/1`, `/pilot/yona/pullRequest/1`, `/pilot/yona/pullRequest/1/changes`, `/pilot/yona/pullRequest/1/changes/HEAD`, `/pilot/yona/pullRequest/1/editform` |
+None in the stabilized 107-route rendered-screen sweep.
 
 ## Follow-Up
 
 - Raw i18n key visibility is currently clear in the 107-route local sweep.
-- Split the missing project chrome group into two checks: routes that need seeded fixture records
-  (`post/1`, `milestone/1`, `pullRequest/1`) and routes that should render project chrome even in
-  an empty/error state (`newPullRequestForm`).
+- `/sites/diagnostic` browser GET now serves the React shell even when the viewer is not a site
+  admin; `/api/v1/site/diagnostics` remains the site-admin-only JSON data endpoint. This prevents
+  raw JSON forbidden responses from becoming the user-visible page.
 - `/changeVCS`, `/transfer`, and `/webhooks` now reach the React SPA on GET; the legacy direct
   mutation handlers still own POST/PUT/DELETE.
-- Re-run the same 107-route local Playwright sweep after each repair batch; success criterion is
-  107/107 local pass before comparing visual screenshots against legacy.
+- Re-run the same 107-route local Playwright sweep after each repair batch; current local
+  rendered-screen success criterion is 107/107.

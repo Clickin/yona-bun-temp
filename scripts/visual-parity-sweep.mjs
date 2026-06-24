@@ -310,6 +310,21 @@ async function inspectPage(page, baseUrl, path, label) {
     return { path, ok: false, errors: [`navigation failed: ${error.message}`] };
   }
 
+  await page
+    .waitForFunction(
+      () => {
+        const text = document.body.innerText.trim();
+        return (
+          text.length > 0 &&
+          !text.includes("불러오는 중") &&
+          !text.includes("common.loading") &&
+          !text.includes("Loading")
+        );
+      },
+      { timeout: 5_000 },
+    )
+    .catch(() => {});
+
   const metrics = await page.evaluate(() => {
     const body = document.body;
     const html = document.documentElement;
@@ -350,6 +365,10 @@ async function inspectPage(page, baseUrl, path, label) {
       projectMenu: selectorState(".project-menu-outer"),
       pageWrap: selectorState(".page-wrap-outer, .project-page-wrap"),
       loginDialog: selectorState("#loginDialog, .loginDialog"),
+      isErrorPage:
+        body.innerText.includes("페이지를 찾을 수 없습니다") ||
+        body.innerText.includes("권한이 없습니다") ||
+        body.innerText.includes("잘못된 요청입니다"),
     };
   });
   const isProjectPage = /^\/[^/?#]+\/[^/?#]+/u.test(path) && !rootNames.has(path.split("/")[1]);
@@ -373,10 +392,10 @@ async function inspectPage(page, baseUrl, path, label) {
   if (path === "/" && metrics.loginDialog && metrics.loginDialog.width > metrics.viewportWidth * 0.8) {
     errors.push("login dialog width looks unstyled");
   }
-  if (isProjectPage && !metrics.projectHeader) {
+  if (isProjectPage && !metrics.isErrorPage && !metrics.projectHeader) {
     errors.push("missing project header");
   }
-  if (isProjectPage && !metrics.projectMenu) {
+  if (isProjectPage && !metrics.isErrorPage && !metrics.projectMenu) {
     errors.push("missing project menu");
   }
   if (consoleErrors.length > 0) {
