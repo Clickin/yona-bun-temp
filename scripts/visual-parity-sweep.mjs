@@ -226,6 +226,24 @@ async function apiLogin(page, baseUrl) {
   if (!sessionResponse.ok() || !csrfToken) {
     return false;
   }
+  const adminRegisterResponse = await page.request.post(`${baseUrl}/api/v1/auth/register`, {
+    data: {
+      emailAddress: "admin@example.com",
+      loginId: "admin",
+      name: "Yobi Admin",
+      password: "admin",
+      retypedPassword: "admin",
+    },
+    headers: {
+      "x-csrf-token": csrfToken,
+    },
+  });
+  if (adminRegisterResponse.ok()) {
+    return true;
+  }
+  if (await login(page, baseUrl)) {
+    return true;
+  }
   const suffix = Date.now().toString(36);
   const registerResponse = await page.request.post(`${baseUrl}/api/v1/auth/register`, {
     data: {
@@ -365,6 +383,7 @@ async function inspectPage(page, baseUrl, path, label) {
       projectMenu: selectorState(".project-menu-outer"),
       pageWrap: selectorState(".page-wrap-outer, .project-page-wrap"),
       loginDialog: selectorState("#loginDialog, .loginDialog"),
+      userProfile: selectorState(".user-profile-page"),
       isErrorPage:
         body.innerText.includes("페이지를 찾을 수 없습니다") ||
         body.innerText.includes("권한이 없습니다") ||
@@ -397,6 +416,9 @@ async function inspectPage(page, baseUrl, path, label) {
   }
   if (isProjectPage && !metrics.isErrorPage && !metrics.projectMenu) {
     errors.push("missing project menu");
+  }
+  if (path === "/admin" && !metrics.userProfile) {
+    errors.push("missing public user profile");
   }
   if (consoleErrors.length > 0) {
     errors.push(`${consoleErrors.length} console error(s)`);
@@ -431,6 +453,7 @@ async function inspectPage(page, baseUrl, path, label) {
       projectMenu: metrics.projectMenu,
       pageWrap: metrics.pageWrap,
       loginDialog: metrics.loginDialog,
+      userProfile: metrics.userProfile,
     },
   };
 }

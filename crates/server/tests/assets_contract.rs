@@ -219,6 +219,44 @@ async fn assert_attachment_container_acl(
 }
 
 #[tokio::test]
+// Guards legacy `/admin` public profile deep-link parity; site-admin lives under `/sites/*`.
+async fn single_segment_admin_falls_back_to_application_index() {
+    let temp = tempdir().expect("tempdir");
+    fs::write(
+        temp.path().join("index.html"),
+        "<!doctype html><html><head></head><body><main id=\"root\">legacy index</main></body></html>",
+    )
+    .expect("write index");
+
+    let app = create_router_with_filesystem_assets(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        temp.path().to_path_buf(),
+    );
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/admin")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    assert!(response.headers().get(http::header::LOCATION).is_none());
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let html = String::from_utf8(body.to_vec()).unwrap();
+    assert!(html.contains("legacy index"), "{html}");
+    assert!(html.contains(r#""basePath":"/yona""#), "{html}");
+}
+
+#[tokio::test]
 // Guards asset-owned filesystem fallback, runtime injection, and base-path SPA routing.
 async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
     let temp = tempdir().expect("tempdir");
