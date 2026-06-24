@@ -7,7 +7,13 @@ export const Route = createFileRoute("/migration")({
   component: MigrationRouteComponent,
 });
 
-export function MigrationDisabledPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+export function MigrationDisabledPage({
+  messages,
+  runtimeConfig,
+}: {
+  messages: ReturnType<typeof useAppRuntime>["messages"];
+  runtimeConfig: RuntimeConfig;
+}) {
   const guideHref = prefixBasePath(runtimeConfig.basePath, "/sites/data");
 
   return (
@@ -18,7 +24,11 @@ export function MigrationDisabledPage({ runtimeConfig }: { runtimeConfig: Runtim
         </div>
         <div className="row title-text-bg">
           <div id="system-msg" className="well board">
-            <div className="messages">error.forbidden.or.not.allowed</div>
+            <div className="messages">
+              {messages("error.forbidden.or.not.allowed", {
+                fallback: "error.forbidden.or.not.allowed",
+              })}
+            </div>
           </div>
         </div>
         <div className="status">
@@ -149,5 +159,5 @@ function MigrationRouteComponent() {
     );
   }
 
-  return <MigrationDisabledPage runtimeConfig={runtimeConfig} />;
+  return <MigrationDisabledPage messages={messages} runtimeConfig={runtimeConfig} />;
 }

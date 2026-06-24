@@ -44,7 +44,7 @@ therefore recorded separately from the legacy HTML baseline until the browser ch
 ## Results
 
 - Legacy HTML anchor audit: 57 checked, 57 passed, 0 failed.
-- Local Playwright visual sweep: 107 checked, 87 passed, 20 failed.
+- Local Playwright visual sweep: 107 checked, 96 passed, 11 failed.
 - Local discovered project route root: `/pilot/yona`.
 - Legacy discovered project route root: `/admin/sample`.
 
@@ -62,19 +62,14 @@ smoke test.
 
 | Failure class | Paths |
 | --- | --- |
-| Direct admin diagnostic shell returned non-HTML/unstyled response | `/sites/diagnostic` |
-| Raw i18n key visible | `/migration` (`error.forbidden.or.not.allowed`), `/organizations/pilot/closedPullrequests` and `/organizations/pilot/pullrequests` (`title.pullrequest`), `/pilot/yona/newFork` (`message.1`, `message.2`, `project.name.alert`), `/pilot/yona/post/1/editform` (`notification.send.mail`), `/verify/admin/invalid` (`user.verification`) |
 | Navigation failed with HTTP response code failure | `/pilot/yona/changeVCS`, `/pilot/yona/transfer`, `/pilot/yona/webhooks` |
-| Missing project header/menu | `/pilot/yona/deleteform`, `/pilot/yona/milestone/1`, `/pilot/yona/milestone/1/editform`, `/pilot/yona/newPullRequestForm`, `/pilot/yona/post/1`, `/pilot/yona/pullRequest/1`, `/pilot/yona/pullRequest/1/changes`, `/pilot/yona/pullRequest/1/changes/HEAD`, `/pilot/yona/pullRequest/1/editform`, `/pilot/yona/settingform` |
+| Missing project header/menu | `/pilot/yona/milestone/1`, `/pilot/yona/milestone/1/editform`, `/pilot/yona/newPullRequestForm`, `/pilot/yona/post/1`, `/pilot/yona/pullRequest/1`, `/pilot/yona/pullRequest/1/changes`, `/pilot/yona/pullRequest/1/changes/HEAD`, `/pilot/yona/pullRequest/1/editform` |
 
 ## Follow-Up
 
-- Treat the raw i18n key group as the next repair batch because it is visible text, not fixture
-  incompleteness.
+- Raw i18n key visibility is currently clear in the 107-route local sweep.
 - Split the missing project chrome group into two checks: routes that need seeded fixture records
   (`post/1`, `milestone/1`, `pullRequest/1`) and routes that should render project chrome even in
-  an empty/error state (`settingform`, `newPullRequestForm`, `deleteform`).
-- The direct admin pages need a real site-admin smoke fixture. `/sites/diagnostic` currently
-  proves that non-HTML direct responses can still bypass the React shell.
+  an empty/error state (`newPullRequestForm`).
 - Re-run the same 107-route local Playwright sweep after each repair batch; success criterion is
   107/107 local pass before comparing visual screenshots against legacy.

@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { createLegacyI18nRuntime } from "./i18n";
 import { MigrationDisabledPage } from "./routes/migration/route";
 
 describe("legacy migration disabled route parity", () => {
   it("renders the legacy disabled migration shell from React", () => {
     const html = renderToStaticMarkup(
-      <MigrationDisabledPage runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }} />,
+      <MigrationDisabledPage
+        messages={createLegacyI18nRuntime(["ko-KR", "en-US"]).t}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
     );
 
     expect(html).toContain("yobi-migration");
@@ -17,6 +21,6 @@ describe("legacy migration disabled route parity", () => {
     expect(html).toContain("이슈 옮기기");
     expect(html).toContain("게시글 옮기기");
     expect(html).toContain('href="/yona/sites/data"');
-    expect(html).toContain("error.forbidden.or.not.allowed");
+    expect(html).toContain("권한이 없거나 허용하지 않는 요청입니다.");
   });
 });

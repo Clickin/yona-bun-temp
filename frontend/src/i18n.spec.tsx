@@ -37,8 +37,19 @@ describe("legacy i18n runtime", () => {
     expect(runtime.t("button.add.checklist")).toBe("체크리스트 추가");
     expect(runtime.t("button.draft.save")).toBe("초안으로 저장");
     expect(runtime.t("error.badrequest")).toBe("잘못된 요청입니다");
+    expect(runtime.t("error.forbidden.or.not.allowed")).toBe(
+      "권한이 없거나 허용하지 않는 요청입니다.",
+    );
     expect(runtime.t("issue.option")).toBe("이슈 옵션");
+    expect(runtime.t("issue.sharer")).toBe("이슈 공유");
+    expect(runtime.t("issue.sharer.select")).toBe("이슈 공유 대상 선택");
+    expect(runtime.t("notification.send.mail")).toBe("수정 알림 메일 발송");
+    expect(runtime.t("project.name.alert")).toBe(
+      "영문, 한글, 숫자 및 일부 기호(_-.)만 사용할 수 있습니다",
+    );
     expect(runtime.t("project.new.vcsType.subversion")).toBe("Subversion");
+    expect(runtime.t("title.pullrequest")).toBe("코드 보내기");
+    expect(runtime.t("user.verification")).toBe("사용자 정보 확인");
     expect(runtime.t("menu.home")).toBe("홈");
     expect(runtime.t("user.login.failed.network")).toBe(
       "네트워크 문제로 인해 로그인에 실패하였습니다.\\n관리자에게 문의해주세요.",
