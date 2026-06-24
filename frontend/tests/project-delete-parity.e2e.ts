@@ -152,11 +152,11 @@ test("project deleteform preserves the legacy confirmation shell and deletes by 
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator("#subMenuProjectDelete")).toHaveClass(/active/);
   await expect(page.locator("#accept")).toBeVisible();
-  await expect(page.locator("#btnDelete")).toBeDisabled();
+  await page.locator("#btnDelete").click();
+  await expect(page.getByRole("alert")).toContainText("You should agree to delete this project.");
   await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
 
   await page.locator("#accept").check();
-  await expect(page.locator("#btnDelete")).toBeEnabled();
   await page.locator("#btnDelete").click();
   await expect(page.locator("#alertDeletion")).not.toHaveClass(/hide/);
   await page.locator("#btnDeleteExec").click();
@@ -175,6 +175,6 @@ test("project deleteform shows the forbidden shell for non-updaters", async ({ p
   });
 
   await page.goto("/yona/owner/projectYobi/deleteform");
-  await expect(page.locator("text=Forbidden")).toBeVisible();
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
   await expect(page.locator("#btnDelete")).toHaveCount(0);
 });

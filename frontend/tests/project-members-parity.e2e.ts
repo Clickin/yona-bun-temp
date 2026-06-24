@@ -191,10 +191,7 @@ test("project members route renders and mutates the legacy member management sur
 
   await page.goto("/yona/owner/projectYobi/members");
   await expect(page.locator("#addNewMember")).toBeVisible();
-  await expect(page.locator("#loginId")).toHaveAttribute(
-    "placeholder",
-    "project.members.addMember",
-  );
+  await expect(page.locator("#loginId")).toHaveAttribute("placeholder", "Add new member ID.");
   await expect(page.locator("ul.members.project.row-fluid")).toBeVisible();
   await expect(page.locator(".label.owner")).toContainText("user.role.owner");
   await expect(page.locator('[data-name="roleof-member"]')).toBeVisible();
@@ -206,10 +203,10 @@ test("project members route renders and mutates the legacy member management sur
   await expect(
     page.locator('[data-action="delete"][data-href="/owner/projectYobi/member/2/delete"]'),
   ).toBeVisible();
-  await expect(page.getByText("project.member.enrollment.request (1)")).toBeVisible();
+  await expect(page.getByText("Sign-up request (1)")).toBeVisible();
 
   await page.locator("#loginId").fill("newbie");
-  await page.locator("#addNewMember").getByRole("button", { name: "button.add" }).click();
+  await page.locator("#addNewMember").getByRole("button", { name: "Add" }).click();
   await expect(page.locator(".member-id", { hasText: "@newbie" })).toBeVisible();
 
   await page
@@ -222,7 +219,7 @@ test("project members route renders and mutates the legacy member management sur
   );
 
   await page.locator(".enrollAcceptBtn").click();
-  await expect(page.getByText("project.member.enrollment.request")).toHaveCount(0);
+  await expect(page.getByText("Sign-up request")).toHaveCount(0);
   await expect(page.locator(".member-id", { hasText: "@guest" })).toBeVisible();
 
   await page

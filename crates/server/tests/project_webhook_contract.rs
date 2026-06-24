@@ -546,7 +546,7 @@ async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
         .await,
     )
     .await;
-    assert_eq!(issue["issueNumber"], "1");
+    assert_eq!(issue["issueNumber"], 1);
 
     let deliveries = snapshot_test_webhook_outbox();
     assert_eq!(deliveries.len(), 1);

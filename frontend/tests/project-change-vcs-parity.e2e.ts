@@ -167,11 +167,13 @@ test("project change VCS route preserves the legacy confirmation shell", async (
   await expect(page.locator(".bubble-wrap h3")).toContainText("GIT");
   await expect(page.locator(".bubble-wrap h3")).toContainText("Subversion");
   await expect(page.locator("#acceptChangeVCS")).toBeVisible();
-  await expect(page.locator("#btnChangeVCS")).toBeDisabled();
+  await page.locator("#btnChangeVCS").click();
+  await expect(page.getByRole("alert")).toContainText(
+    "You should agree with changing the repository type.",
+  );
   await expect(page.locator("#alertChangeVCS")).toHaveClass(/hide/);
 
   await page.locator("#acceptChangeVCS").check();
-  await expect(page.locator("#btnChangeVCS")).toBeEnabled();
   await page.locator("#btnChangeVCS").click();
   await expect(page.locator("#alertChangeVCS")).not.toHaveClass(/hide/);
   await page.locator("#btnChangeVCSExec").click();

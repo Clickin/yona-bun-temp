@@ -198,12 +198,12 @@ test("project fork route preserves the legacy fork shell and posts REST mutation
   await expect(page.locator("#project-owner")).toBeVisible();
   await expect(page.locator("#inputName")).toBeVisible();
   await expect(page.locator("#public")).toBeVisible();
-  await expect(page.locator("#protected")).toBeVisible();
   await expect(page.locator("#private")).toBeVisible();
 
   await page.locator("#project-owner").selectOption("team");
+  await expect(page.locator("#protected")).toBeVisible();
   await page.locator("#inputName").fill("projectFork");
   await page.locator("#protected").check();
-  await page.locator("button.ybtn-info").click();
+  await page.locator('button[type="submit"].ybtn-info').click();
   await expect.poll(() => requested).toBe(true);
 });

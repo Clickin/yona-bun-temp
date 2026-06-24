@@ -590,7 +590,7 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
     assert_eq!(authorized_settings.status(), StatusCode::OK);
     let authorized_settings_json: serde_json::Value =
         serde_json::from_str(&response_json(authorized_settings).await).expect("settings json");
-    assert!(authorized_settings_json.get("logoUrl").is_none());
+    assert!(authorized_settings_json["logoUrl"].is_string());
 
     let create_project = app
         .clone()
@@ -746,10 +746,10 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
     let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
     assert_eq!(payload["showIssue"], true);
     assert_eq!(payload["showBoard"], true);
-    assert!(payload.get("showCode").is_none());
-    assert!(payload.get("showPullRequest").is_none());
-    assert!(payload.get("showReview").is_none());
-    assert!(payload.get("showMilestone").is_none());
+    assert_eq!(payload["showCode"], false);
+    assert_eq!(payload["showPullRequest"], false);
+    assert_eq!(payload["showReview"], false);
+    assert_eq!(payload["showMilestone"], false);
 }
 
 #[tokio::test]
@@ -1141,7 +1141,7 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
     assert_eq!(payload["showBoard"], true);
     assert_eq!(payload["ownerName"], "admin");
     assert_eq!(payload["projectName"], "projectYobi");
-    assert!(payload.get("logoUrl").is_none());
+    assert!(payload["logoUrl"].is_string());
     assert_eq!(payload["defaultReviewerCount"], 1);
     assert_eq!(payload["isUsingReviewerCount"], false);
     assert_eq!(payload["maxReviewerCount"], 2);
@@ -1737,7 +1737,7 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_label() 
     let closed_issue: serde_json::Value =
         serde_json::from_str(&response_json(create_closed_issue).await).expect("issue json");
     let closed_issue_number = closed_issue["issueNumber"]
-        .as_str()
+        .as_i64()
         .expect("closed issue number");
 
     let close_response = app
@@ -1852,7 +1852,7 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_assignee
     let closed_issue: serde_json::Value =
         serde_json::from_str(&response_json(create_assigned_closed).await).expect("issue json");
     let closed_issue_number = closed_issue["issueNumber"]
-        .as_str()
+        .as_i64()
         .expect("closed issue number");
     let close_response = app
         .clone()
@@ -2638,7 +2638,7 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
                 .body(Body::from(format!(
-                    "{{\"organizationName\":\"weblabs\",\"userId\":\"{guest_id}\"}}"
+                    "{{\"organizationName\":\"weblabs\",\"userId\":{guest_id}}}"
                 )))
                 .unwrap(),
         )
@@ -2659,7 +2659,7 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
                 .body(Body::from(format!(
-                    "{{\"organizationName\":\"weblabs\",\"userId\":\"{member_id}\",\"role\":\"org_admin\"}}"
+                    "{{\"organizationName\":\"weblabs\",\"userId\":{member_id},\"role\":\"org_admin\"}}"
                 )))
                 .unwrap(),
         )
@@ -2679,7 +2679,7 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
                 .body(Body::from(format!(
-                    "{{\"organizationName\":\"weblabs\",\"userId\":\"{member_id}\"}}"
+                    "{{\"organizationName\":\"weblabs\",\"userId\":{member_id}}}"
                 )))
                 .unwrap(),
         )

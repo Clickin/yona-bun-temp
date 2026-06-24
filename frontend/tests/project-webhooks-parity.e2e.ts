@@ -53,6 +53,7 @@ const projectContainerPayload = () => ({
 });
 
 const webhookResponse = (webhooks: unknown[]) => ({
+  deliveries: [],
   ownerName: "owner",
   projectName: "projectYobi",
   viewerCanUpdate: true,
