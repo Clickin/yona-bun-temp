@@ -8,10 +8,13 @@ use crate::api_types::WorkspaceIssueItem;
 use crate::persistence::{self, PilotRepository};
 use crate::{
     base_path_href, escape_html_attr, escape_html_text, normalize_identifier,
-    require_authenticated_user, ConnectError, PilotBackend, PilotServiceImpl, RestRouteError,
+    require_authenticated_user, rest_json_response, Context, PilotBackend, PilotServiceImpl,
+    RestRouteError,
 };
 
-use super::{filter_workspace_issue_items_by_read_acl, WORKSPACE_DAYS_AGO};
+use super::{
+    filter_workspace_issue_items_by_read_acl, workspace_overview_read, WORKSPACE_DAYS_AGO,
+};
 
 #[derive(Deserialize)]
 pub(super) struct DirectUserSidebarQuery {
@@ -62,38 +65,10 @@ pub(super) async fn direct_user_menu_tab_content_list(
     headers: HeaderMap,
     service: PilotServiceImpl,
 ) -> Response {
-    let repository = match &service.backend {
-        PilotBackend::Repository(repository) => repository,
-        PilotBackend::Static => {
-            return RestRouteError::not_implemented("usermenu requires repository backend")
-                .into_response();
-        }
-    };
-    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
-        return RestRouteError::from_connect_error(ConnectError::unauthenticated(
-            "missing authenticated session",
-        ))
-        .into_response();
-    };
-    let actor = match require_authenticated_user(repository, session.user_id).await {
-        Ok(actor) => actor,
-        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
-    };
-    let menu =
-        match render_legacy_usermenu_tab_content_for_actor(repository, &actor, &service.base_path)
-            .await
-        {
-            Ok(menu) => menu,
-            Err(error) => {
-                return error.into_response();
-            }
-        };
-
-    (
-        [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
-        menu,
-    )
-        .into_response()
+    match workspace_overview_read(&service, Context::new(headers)).await {
+        Ok((payload, ctx)) => rest_json_response(payload, ctx),
+        Err(error) => RestRouteError::from_connect_error(error).into_response(),
+    }
 }
 
 async fn render_legacy_authenticated_sidebar(

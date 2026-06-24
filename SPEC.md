@@ -374,7 +374,7 @@ POST  /user/resetPassword       → 비밀번호 변경
 POST  /user/resetVisitedList    → 방문 기록 초기화
 POST  /user/defultLoginPage     → 기본 랜딩 페이지 설정
 GET   /user/sidebar             → legacy framed sidebar shell
-GET   /user/usermenuTabContentList → global user menu tab fragment
+GET   /user/usermenuTabContentList → workspace overview JSON for React user menu
 GET   /notifications            → 알림 목록 full page
 GET   /notification             → 알림 목록 incremental partial fragment
 POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
@@ -1758,7 +1758,7 @@ Environment variable equivalents use the names exercised by `crates/server/tests
 | `/user/files`                      | GET      | `GET /api/v1/workspace/files`         | `user/files`                                  | implemented        |
 | `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |
 | `/user/sidebar`                    | GET      | direct legacy HTML frame              | `layout_framed.scala.html` + `sidebar.scala.html` | implemented        |
-| `/user/usermenuTabContentList`     | GET      | direct legacy HTML fragment           | global user menu tab content                  | implemented        |
+| `/user/usermenuTabContentList`     | GET      | `GET /api/v1/workspace`-equivalent JSON for React-rendered root sidebar | global user menu tab content                  | implemented        |
 | `/user/editform/token_reset`       | POST     | direct workspace API token reset      | `user/editform/token`                         | implemented        |
 | `/user/edit`                       | POST     | direct workspace profile mutation     | `user/editform`                               | implemented        |
 | `/user/resetVisitedList`           | POST     | direct workspace visited reset        | `user/editform`                               | implemented        |

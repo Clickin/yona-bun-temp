@@ -3174,7 +3174,7 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
 }
 
 #[tokio::test]
-async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
+async fn direct_legacy_usermenu_tab_content_list_returns_workspace_api_payload() {
     // Guards workspace sidebar/usermenu service-snapshot threading for the
     // authenticated legacy fragment route.
     let (app, repository, _) = build_auth_router_with_anonymous_access_and_app_config(
@@ -3224,7 +3224,7 @@ async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
         .await
         .unwrap();
 
-    let fragment = app
+    let response = app
         .clone()
         .oneshot(
             Request::builder()
@@ -3236,32 +3236,25 @@ async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
         )
         .await
         .unwrap();
-    assert_eq!(fragment.status(), StatusCode::OK);
-    assert!(fragment.headers().get(http::header::LOCATION).is_none());
-    assert_eq!(
-        fragment
-            .headers()
-            .get(http::header::CONTENT_TYPE)
-            .and_then(|value| value.to_str().ok()),
-        Some("text/html; charset=utf-8")
-    );
-    let html = response_text(fragment).await;
-    assert!(
-        html.contains(r#"<div class="tab-pane user-project-list active" id="myOrganizationList">"#)
-    );
-    assert!(html.contains(r#"<div class="tab-pane user-project-list" id="myProjectList">"#));
-    assert!(html.contains(r#"<div class="tab-pane user-project-list" id="myRecentIssueList">"#));
-    assert!(html.contains(r#"class="search-input org-search""#));
-    assert!(html.contains(r#"class="search-input project-search""#));
-    assert!(html.contains(r##"href="#recentlyVisited""##));
-    assert!(html.contains(r##"href="#createdByMe""##));
-    assert!(html.contains(r##"href="#watching""##));
-    assert!(html.contains(r##"href="#joinmember""##));
-    assert!(html.contains(r#"id="recentlyVisitedIssues""#));
-    assert!(html.contains(r#"href="/yona/door/projectYobi""#));
-    assert!(html.contains("projectYobi"));
+    assert_eq!(response.status(), StatusCode::OK);
+    assert!(response.headers().get(http::header::LOCATION).is_none());
+    let content_type = response
+        .headers()
+        .get(http::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
+    assert!(content_type.starts_with("application/json"));
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(payload["profile"]["loginId"], "door");
+    assert!(payload["recentProjects"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|project| project["ownerName"] == "door" && project["projectName"] == "projectYobi"));
 
-    let anonymous_fragment = app
+    let anonymous_response = app
         .oneshot(
             Request::builder()
                 .method(Method::GET)
@@ -3271,7 +3264,7 @@ async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
         )
         .await
         .unwrap();
-    assert_eq!(anonymous_fragment.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(anonymous_response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
