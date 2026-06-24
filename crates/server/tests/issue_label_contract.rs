@@ -84,6 +84,14 @@ async fn response_json(response: Response<Body>) -> serde_json::Value {
     serde_json::from_str(&text).expect("json response")
 }
 
+fn json_id_string(value: &serde_json::Value) -> String {
+    value
+        .as_i64()
+        .map(|id| id.to_string())
+        .or_else(|| value.as_str().map(str::to_string))
+        .expect("json id")
+}
+
 async fn rpc(
     app: axum::Router,
     method_name: &str,
@@ -193,7 +201,7 @@ async fn issue_label_rpc_manages_labels_categories_and_cleanup() {
     assert!(!duplicate["created"].as_bool().unwrap_or(false));
     assert_eq!(duplicate["label"]["id"], created["label"]["id"]);
 
-    let category_id = created["label"]["categoryId"].as_str().unwrap();
+    let category_id = json_id_string(&created["label"]["categoryId"]);
     let updated_category = response_json(
         rpc(
             app.clone(),
@@ -242,7 +250,7 @@ async fn issue_label_rpc_manages_labels_categories_and_cleanup() {
             json!({
                 "ownerName": "owner",
                 "projectName": "projectYobi",
-                "labelId": created["label"]["id"].as_str().unwrap()
+                "labelId": json_id_string(&created["label"]["id"])
             }),
         )
         .await,
@@ -397,9 +405,8 @@ async fn issue_label_legacy_routes_preserve_json_form_css_and_method_override() 
         .unwrap()
         .iter()
         .find(|category| category["name"] == "Area")
-        .and_then(|category| category["id"].as_str())
-        .expect("area category id")
-        .to_string();
+        .map(|category| json_id_string(&category["id"]))
+        .expect("area category id");
     let category_response = app
         .clone()
         .oneshot(
@@ -510,7 +517,7 @@ async fn issue_label_legacy_routes_preserve_json_form_css_and_method_override() 
         .unwrap();
     assert_eq!(duplicate_response.status(), StatusCode::NO_CONTENT);
 
-    let label_id = created["id"].as_str().unwrap();
+    let label_id = json_id_string(&created["id"]);
     let delete_response = app
         .oneshot(
             Request::builder()

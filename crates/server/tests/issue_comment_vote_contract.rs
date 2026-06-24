@@ -542,7 +542,11 @@ async fn issue_comment_vote_legacy_post_routes_redirect_and_preserve_unvote_poli
     let commented =
         create_comment(app.clone(), &owner_cookie, &owner_csrf, 1, "direct route").await;
     let comment_id = commented["comments"][0]["id"].clone();
-    let comment_id_string = comment_id.as_str().unwrap().to_string();
+    let comment_id_string = comment_id
+        .as_i64()
+        .map(|value| value.to_string())
+        .or_else(|| comment_id.as_str().map(str::to_string))
+        .expect("comment id");
 
     let vote = direct_comment_vote(
         app.clone(),

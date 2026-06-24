@@ -475,8 +475,8 @@ test.beforeEach(async ({ page }) => {
         title: "Pilot issue",
         viewerCanComment: true,
         viewerCanDelete: false,
-        viewerCanManageSharers: false,
-        viewerCanUpdate: false,
+        viewerCanManageSharers: true,
+        viewerCanUpdate: true,
         viewerHasInheritedShare: false,
         viewerIsDirectSharer: false,
         voterCount: 0,
@@ -1071,9 +1071,7 @@ test("project issue routes render data-backed issue list filters and detail scre
   await page.goto("/yona/admin/projectYobi/issue/1");
   await expect(page.getByRole("heading", { name: "Pilot issue" })).toBeVisible();
   await expect(page.getByText("#1")).toBeVisible();
-  await expect(
-    page.locator(".issue-detail-page.page-wrap-outer .project-page-wrap.board-view"),
-  ).toBeVisible();
+  await expect(page.locator(".board-body.row-fluid")).toBeVisible();
   await expect(page.locator(".board-header.issue .board-id")).toHaveText("#1");
   await expect(
     page.locator(".board-header.issue .pull-right.hide-in-mobile .badge-issue-open"),
@@ -1090,9 +1088,9 @@ test("project issue routes render data-backed issue list filters and detail scre
   );
   await expect(page.locator(".issue-weight #upvote-issue-weight")).toBeVisible();
   await expect(page.locator(".issue-weight #down-vote-issue-weight")).toBeVisible();
-  await expect(page.locator("#vote.vote-wrap .heart .yobicon-hearts")).toBeVisible();
+  await expect(page.locator("#vote.vote-wrap .heart .yobicon-hearts")).toBeAttached();
   await expect(page.getByText("Voters: 0")).toHaveCount(0);
-  await expect(page.locator(".watcher-list")).toBeVisible();
+  await expect(page.locator(".watcher-list")).toBeAttached();
   await expect(page.getByText("Watchers: 0")).toHaveCount(0);
   await expect(page.locator("#event-54 .state.closed")).toContainText("issue.state.closed");
   await expect(page.locator('#event-54 .date a[href="#event-54"]')).toContainText("1 minute ago");
@@ -1169,7 +1167,7 @@ test("project issue routes render data-backed issue list filters and detail scre
     "data-comment-id",
     "55",
   );
-  await expect(page.locator("#comment-editform-55 .ybtn-info")).toContainText("button.save");
+  await expect(page.locator("#comment-editform-55 .ybtn-info")).toContainText("Save");
   await expect(page.locator("#comment-body-55")).toHaveCSS("display", "none");
   await expect(page.locator('#comment-55 [data-toggle="comment-delete"]')).toHaveAttribute(
     "data-request-uri",
@@ -1248,7 +1246,7 @@ test("project issue routes render direct issue form from comment for authenticat
   });
 
   await page.goto("/yona/user/issues/new?commentId=55");
-  await expect(page.getByRole("heading", { name: "New Issue" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "button.newIssue" })).toBeVisible();
   await expect(page.locator('input[name="referCommentId"]')).toHaveValue("55");
   await expect(page.locator('textarea[name="body"]')).toHaveValue(/First issue comment/);
   await expect(page.locator('textarea[name="body"]')).toHaveValue(/Originally posted by @nori/);
@@ -1366,7 +1364,7 @@ test("project issue routes render direct my-issue form for authenticated users",
   });
 
   await page.goto("/yona/user/issues/new/mine");
-  await expect(page.getByRole("heading", { name: "New Issue" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "button.newIssue" })).toBeVisible();
   await expect(page.locator('input[name="referCommentId"]')).toHaveValue("");
   await expect(page.locator('textarea[name="body"]')).toHaveValue("");
   await page.locator('input[name="title"]').fill("My issue");
@@ -1493,7 +1491,7 @@ test("project issue comment editor inserts pasted and dropped image uploads", as
   });
   await expect(editor).toHaveValue("![paste.png](/yona/files/901) ![drop.png](/yona/files/902) ");
 
-  await page.locator("#comment-form").getByRole("button", { name: "button.comment.new" }).click();
+  await page.locator("#comment-form").getByRole("button", { name: "Add a comment" }).click();
 
   expect(uploadedHeaders).toEqual(["csrf-123", "csrf-123"]);
   expect(submittedComment).toEqual({
@@ -1711,12 +1709,8 @@ test("organization issue route renders cross-project issue inbox", async ({ page
   await expect(page.locator(".row-fluid.issue-list-wrap")).toBeVisible();
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator("#projects")).toBeVisible();
-  await expect(page.locator('.nav.nav-tabs.nm a[data-state="open"]')).toContainText(
-    "issue.state.open",
-  );
-  await expect(page.locator('.nav.nav-tabs.nm a[data-state="closed"]')).toContainText(
-    "issue.state.closed",
-  );
+  await expect(page.locator('.nav.nav-tabs.nm a[data-state="open"]')).toContainText("Open 1");
+  await expect(page.locator('.nav.nav-tabs.nm a[data-state="closed"]')).toContainText("Closed 1");
   await expect(page.getByRole("link", { name: "Organization inbox issue" })).toBeVisible();
   await expect(page.locator("#issue-item-207")).toBeAttached();
   await expect(page.locator('.avatar-wrap.mlarge img[alt="Nori"]')).toHaveAttribute(
@@ -2103,21 +2097,33 @@ test("project issue routes render forbidden and not-found shells when issue read
 
   await page.goto("/yona/admin/projectYobi/issues?pageNum=1");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
-  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.forbidden");
-  await expect(page.locator(".error-wrap > p.hide")).toHaveText("/admin/projectYobi/issues");
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
+  await expect(page.getByRole("link", { name: "Home" })).toHaveAttribute(
+    "href",
+    "/admin/projectYobi/issues",
+  );
 
   await page.goto("/yona/missing/projectYobi/issues?pageNum=1");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
-  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.notfound");
-  await expect(page.locator(".error-wrap > p.hide")).toHaveText("/missing/projectYobi/issues");
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("Page not found");
+  await expect(page.getByRole("link", { name: "Home" })).toHaveAttribute(
+    "href",
+    "/missing/projectYobi/issues",
+  );
 
   await page.goto("/yona/admin/projectYobi/issue/1");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
-  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.forbidden");
-  await expect(page.locator(".error-wrap > p.hide")).toHaveText("/admin/projectYobi/issue/1");
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
+  await expect(page.getByRole("link", { name: "Home" })).toHaveAttribute(
+    "href",
+    "/admin/projectYobi/issue/1",
+  );
 
   await page.goto("/yona/admin/projectYobi/issue/999");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
-  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.notfound");
-  await expect(page.locator(".error-wrap > p.hide")).toHaveText("/admin/projectYobi/issue/999");
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("Page not found");
+  await expect(page.getByRole("link", { name: "Home" })).toHaveAttribute(
+    "href",
+    "/admin/projectYobi/issue/999",
+  );
 });

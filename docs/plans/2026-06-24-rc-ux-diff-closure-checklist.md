@@ -79,7 +79,7 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-search-notification`  | `/search`, `/notifications`, `/notification`                                                                                                                                                                                         | Search filter/result/pagination/copy parity, hostile result rendering safety, full notification page, and partial notification UX rendered in React.         | `pass`      |
 | `rc-ux-site-admin`           | `/sites/userList`, `/sites/projectList`, `/sites/postList`, `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`, `/sites/diagnostic`, `/sites/data`                                                                | Site-admin sidebar, tables, pagination, modals, mail/test-mail flows, update/download state, diagnostic/data import-export UX, and admin-only access.        | `pass`      |
 | `rc-ux-project-home-code`    | `/admin/sample`, `/admin/sample/code`, `/admin/sample/commits`, `/admin/sample/branches`                                                                                                                                             | Project header/menu, home/code browser, legacy non-2xx observations, VCS empty/error states, and clone/deep-link affordances.                                | `pass`      |
-| `rc-ux-issues`               | `/admin/sample/issues`, `/admin/sample/issue/1`, `/admin/sample/issues/new`, label issue filters/settings                                                                                                                            | Issue list/detail/create/edit/comment, labels, state tabs, assignee/milestone/filter/sort, watch/vote/share, timeline, attachments, and XSS/Markdown safety. | `unchecked` |
+| `rc-ux-issues`               | `/admin/sample/issues`, `/admin/sample/issue/1`, `/admin/sample/issueform`, `/admin/sample/issue/labelsform`                                                                                                                         | Issue list/detail/create/edit/comment, labels, state tabs, assignee/milestone/filter/sort, watch/vote/share, timeline, attachments, and XSS/Markdown safety. | `pass`      |
 | `rc-ux-board`                | `/admin/sample/posts`, board post create/detail/comment routes                                                                                                                                                                       | Board list/detail/create/edit/delete/comment, project selector, labels, watch, empty states, and route-level permissions.                                    | `pass`      |
 | `rc-ux-milestones`           | `/admin/sample/milestones`, `/admin/sample/milestones/new`                                                                                                                                                                           | Milestone list/detail/create/edit/state/delete, progress/state copy, issue association links, and validation.                                                | `pass`      |
 | `rc-ux-pull-requests`        | `/admin/sample/pullRequests`, `/admin/sample/newPullRequest`, `/admin/sample/newPullRequestForm`, `/admin/sample/pullRequest/**`                                                                                                     | PR list/create/review/merge/comment, manual conflict guidance, branch selector states, and documented legacy non-2xx behavior.                               | `unchecked` |
@@ -259,6 +259,41 @@ tests/legacy-rendered-page-audit.e2e.ts -g "project (home|code)"` executed
   `rest_code_browser_reads_root_folder_and_text_file_from_git_repo`,
   `rest_commit_history_lists_branch_and_path_commits_from_git_repo`, and
   `rest_branch_list_renders_default_branch_first_with_legacy_actions`.
+
+### `rc-ux-issues`
+
+- Legacy curl audit: `.agent/legacy-html-page-audit/latest.json` has HTTP 200
+  with no missing anchors or structural tokens for `/admin/sample/issues`,
+  `/admin/sample/issue/1`, `/admin/sample/issueform`, and
+  `/admin/sample/issue/labelsform`.
+- Route/render coverage: `.agent/legacy-html-page-audit/route-coverage.json`,
+  `parity-spec-coverage.json`, `e2e-render-coverage.json`, and
+  `anchor-coverage.json` map issue list/detail/form/label routes to Rust
+  routes, parity specs, rendered e2e coverage, and project header/menu anchor
+  evidence.
+- Test expectation fixes closed in this packet: issue shell e2e now follows the
+  runtime legacy copy and current DOM visibility for issue form headings,
+  comment submit, organization issue tabs, empty vote/watcher shells, and
+  translated forbidden/not-found route status pages. Backend issue contracts now
+  verify the current numeric REST id shape.
+- Frontend verification: `pnpm --dir frontend exec vitest run
+src/issue-board-pr-milestone-i18n.spec.tsx src/issue-detail-shell.spec.tsx
+src/issue-list-filter.spec.tsx src/issue-label-settings-i18n.spec.tsx
+src/issue-attachment-upload.spec.ts src/route-parity.spec.tsx` passed with 6
+  files and 85 tests.
+- Rendered e2e verification: `pnpm --dir frontend test:e2e --
+tests/legacy-rendered-page-audit.e2e.ts -g "project issue|XSS payloads"`
+  executed the audit file outside the sandbox and passed all 43 tests,
+  including project issue form/list/detail/labels anchors and issue detail XSS
+  inertness. Focused `shell-routing-smoke.e2e.ts` line targets passed for issue
+  list/detail filters, direct issue-from-comment form, my-issue form, issue
+  comment image upload, organization issue inbox, issue label management, and
+  issue forbidden/not-found shells.
+- Backend verification: these focused contracts passed outside the sandbox:
+  `issue_core_contract`, `issue_comment_vote_contract`, `issue_label_contract`,
+  `issue_sharer_contract`, `issue_assignable_contract`,
+  `issue_mention_contract`, `issue_reference_autocomplete_contract`, and
+  `organization_issue_contract`.
 
 ### `rc-ux-milestones`
 

@@ -525,8 +525,8 @@ async fn issue_core_contract_mass_update_updates_due_dates() {
     .await;
     let items = mass_updated["items"].as_array().expect("mass-update items");
     assert_eq!(items.len(), 2);
-    assert!(items.iter().any(|item| item["issueNumber"] == "1"));
-    assert!(items.iter().any(|item| item["issueNumber"] == "2"));
+    assert!(items.iter().any(|item| item["issueNumber"] == 1));
+    assert!(items.iter().any(|item| item["issueNumber"] == 2));
 
     let first_detail = response_json(
         rest(
@@ -1129,7 +1129,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         .await,
     )
     .await;
-    assert_eq!(created["issueNumber"], "1");
+    assert_eq!(created["issueNumber"], 1);
     assert_eq!(created["ownerName"], "owner");
     assert_eq!(created["projectName"], "projectYobi");
     assert_eq!(created["title"], "Markdown issue");
@@ -1154,7 +1154,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     )
     .await;
     assert_eq!(detail["title"], "Markdown issue");
-    assert_eq!(detail["issueNumber"], "1");
+    assert_eq!(detail["issueNumber"], 1);
     assert_eq!(detail["ownerName"], "owner");
     assert_eq!(detail["projectName"], "projectYobi");
     let issue_author_avatar_url = detail["authorAvatarUrl"]
@@ -1460,7 +1460,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         .await,
     )
     .await;
-    assert_eq!(deleted_issue["issueNumber"], "1");
+    assert_eq!(deleted_issue["issueNumber"], 1);
 
     let missing = rest(
         app,
@@ -1694,7 +1694,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         .await,
     )
     .await;
-    assert_eq!(created["issueNumber"], "1");
+    assert_eq!(created["issueNumber"], 1);
 
     let forbidden = rest(
         app.clone(),
@@ -2010,7 +2010,11 @@ async fn issue_core_contract_restores_direct_issue_from_comment_flow() {
         .await,
     )
     .await;
-    let comment_id = commented["comments"][0]["id"].as_str().unwrap().to_string();
+    let comment_id = commented["comments"][0]["id"]
+        .as_i64()
+        .map(|value| value.to_string())
+        .or_else(|| commented["comments"][0]["id"].as_str().map(str::to_string))
+        .expect("comment id");
 
     let options = response_json(
         rest(
@@ -2055,7 +2059,7 @@ async fn issue_core_contract_restores_direct_issue_from_comment_flow() {
         .await,
     )
     .await;
-    assert_eq!(created["issueNumber"], "2");
+    assert_eq!(created["issueNumber"], 2);
 
     let source = response_json(
         rest(
