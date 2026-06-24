@@ -1,0 +1,15 @@
+Yoram
+
+This product is an independent Rust + React port of legacy Yona:
+https://github.com/yona-projects/yona
+
+Yona is licensed under the Apache License, Version 2.0. Upstream attribution
+belongs to the Yona authors and contributors, including NAVER Corp. and NAVER
+LABS as identified by the upstream project.
+
+Yoram is not affiliated with NAVER, NAVER LABS, or the Yona project. The Yona
+name is used only to describe the upstream project, preserve migration
+compatibility, and document legacy parity behavior.
+
+Do not reuse upstream Yona logos, icons, screenshots, or CI imagery as Yoram
+release assets unless their license and attribution are reviewed separately.

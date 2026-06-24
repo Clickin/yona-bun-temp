@@ -51,6 +51,7 @@ const NON_IMPLEMENTATION_FILES = new Set([
   "CLAUDE.md",
   "DESIGN.md",
   "Dockerfile",
+  "NOTICE",
   "README.md",
   "SPEC.md",
   "buf.yaml",

@@ -1,5 +1,5 @@
 {
-  "name": "@yona/workspace",
+  "name": "@yoram/workspace",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,8 +10,8 @@
     "dev:backend": "node scripts/dev-backend.mjs",
     "dev:frontend": "pnpm --dir frontend dev",
     "dev:mounted": "node scripts/dev-mounted.mjs",
-    "doctor:react": "react-doctor --project @yona/rust-frontend --offline --full --fail-on warning",
-    "doctor:react:precommit": "react-doctor --project @yona/rust-frontend --offline --full --fail-on warning",
+    "doctor:react": "react-doctor --project @yoram/rust-frontend --offline --full --fail-on warning",
+    "doctor:react:precommit": "react-doctor --project @yoram/rust-frontend --offline --full --fail-on warning",
     "smoke:docker": "node scripts/smoke-docker.mjs",
     "smoke:embedded-assets": "node scripts/smoke-embedded-assets.mjs",
     "smoke:legacy-anchor-coverage": "node scripts/audit-legacy-anchor-coverage.mjs",

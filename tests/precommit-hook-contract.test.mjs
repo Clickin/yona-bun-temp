@@ -86,7 +86,7 @@ test("pre-commit oxlint enables React component lint plugins", () => {
 test("pre-commit runs React Doctor when frontend source files are staged", () => {
   const verifySource = readFileSync(verifyToolPath, "utf8");
 
-  assert.match(verifySource, /REACT_DOCTOR_PROJECT = "@yona\/rust-frontend"/u);
+  assert.match(verifySource, /REACT_DOCTOR_PROJECT = "@yoram\/rust-frontend"/u);
   assert.deepEqual(readStringArray(verifySource, "REACT_DOCTOR_PRECOMMIT_ARGS"), [
     "--project",
     "--offline",
@@ -104,7 +104,10 @@ test("external REST harness requires inventory provenance for issue and mileston
   const provenanceSource = readFileSync(yonaExportProvenancePath, "utf8");
   const legacyExternalApiSource = readFileSync(legacyExternalApiProvenancePath, "utf8");
 
-  assert.match(serverSource, /\/-_-api\/v1\/owners\/\{owner\}\/projects\/\{project_name\}\/issues/u);
+  assert.match(
+    serverSource,
+    /\/-_-api\/v1\/owners\/\{owner\}\/projects\/\{project_name\}\/issues/u,
+  );
   assert.match(
     serverSource,
     /\/-_-api\/v1\/owners\/\{owner\}\/projects\/\{project_name\}\/milestones/u,

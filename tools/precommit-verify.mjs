@@ -26,7 +26,7 @@ const GENERATED_FILE_SUFFIXES = ["routeTree.gen.ts"];
 const OXLINT_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx"]);
 const OXLINT_PLUGIN_ARGS = ["--react-plugin", "--react-perf-plugin", "--jsx-a11y-plugin"];
 const OXFMT_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx"]);
-const REACT_DOCTOR_PROJECT = "@yona/rust-frontend";
+const REACT_DOCTOR_PROJECT = "@yoram/rust-frontend";
 const REACT_DOCTOR_PRECOMMIT_ARGS = [
   "--project",
   REACT_DOCTOR_PROJECT,

@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 
-const imageTag = process.env.YONA_DOCKER_SMOKE_IMAGE ?? "yona-rust-pilot:smoke";
+const imageTag = process.env.YONA_DOCKER_SMOKE_IMAGE ?? "yoram:smoke";
 
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
