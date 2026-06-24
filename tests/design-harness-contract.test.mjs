@@ -48,6 +48,8 @@ test("current shared app CSS keeps the legacy Yona baseline active", () => {
   assert.match(appCss, /background(?:-color)?: #fff/u);
   assert.match(appCss, /#f36c22/u);
   assert.match(appCss, /#ff7332/u);
+  assert.match(appCss, /\.modal\.hide/u);
+  assert.match(appCss, /#mySidenav\s*\{[^}]*width: 0/su);
   assert.match(appCss, /\.ybtn/u);
   assert.match(appCss, /\.nav-tabs/u);
 });

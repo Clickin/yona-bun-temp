@@ -15,6 +15,10 @@ body {
   text-rendering: auto;
 }
 
+.hide {
+  display: none;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -131,6 +135,179 @@ button[type="submit"]:focus {
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px 0 60px;
+}
+
+.modal.hide,
+.loginDialog.hide {
+  display: none;
+}
+
+#mySidenav {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  z-index: 999;
+  width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  color: #000;
+  background-color: #fff;
+  box-shadow: 2px 2px 10px #888;
+}
+
+.sidenav .user-menu-wrap {
+  box-sizing: border-box;
+  padding: 10px;
+  color: gray;
+  text-align: right;
+}
+
+.sidenav span.user-menu {
+  padding: 3px;
+  margin-right: 5px;
+  margin-left: 5px;
+  font-size: 12px;
+  color: #000;
+}
+
+.gnb-usermenu {
+  float: right;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.gnb-usermenu > li {
+  position: relative;
+  float: left;
+  margin: 5px 0;
+}
+
+.gnb-usermenu-item {
+  font-size: 14px;
+  color: #a2a2a2;
+}
+
+.gnb-usermenu-item a {
+  padding: 5px 10px;
+  line-height: 30px;
+  text-decoration: none;
+}
+
+.siteintro {
+  border-bottom: 1px solid #333;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)),
+    #333;
+  background-position: center center;
+  background-size: cover;
+}
+
+.siteintro .siteintro-cover {
+  width: min(750px, 100%);
+  padding: 55px 0 65px;
+  margin: 0 auto;
+  overflow: auto;
+  text-align: center;
+}
+
+.siteintro .site-heading {
+  padding: 0;
+  margin: 0;
+  font-family: sans-serif;
+  font-size: 34px;
+  font-weight: normal;
+  color: #fafafa;
+  opacity: 0.9;
+}
+
+.siteintro .site-features {
+  display: block;
+  padding: 0;
+  margin: 5px 0 0;
+  list-style: none;
+}
+
+.siteintro .site-features li {
+  display: inline-block;
+  margin-left: 5px;
+  font-size: 16px;
+  font-weight: normal;
+  color: #fff;
+  letter-spacing: 0;
+  opacity: 0.5;
+}
+
+.siteintro .signup-btn {
+  margin-top: 35px;
+  text-align: center;
+}
+
+.feature {
+  position: relative;
+  max-width: 1200px;
+  padding: 0 20px;
+  margin: 0 auto;
+  text-align: center;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.feature h2 {
+  display: block;
+  padding: 10px 20px;
+  margin-top: 30px;
+  font-size: 26px;
+  font-weight: normal;
+  line-height: 20px;
+}
+
+.feature h2 span {
+  padding: 0 20px;
+  background-color: #fff;
+}
+
+.feature .feature-wrap {
+  padding: 0;
+  margin: 10px auto 40px;
+  overflow: hidden;
+  list-style: none;
+}
+
+.feature .feature-wrap li {
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  width: 330px;
+  margin-left: 40px;
+}
+
+.feature .feature-image {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  font-size: 40px;
+  color: #f36c22;
+  text-align: center;
+}
+
+.feature .feature-info {
+  display: block;
+  height: 100px;
+  margin-left: 55px;
+}
+
+.feature .feature-title {
+  padding: 0;
+  margin: 0;
+  font-size: 16px;
+  text-align: left;
+}
+
+.feature .feature-desc {
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+  text-align: left;
 }
 
 .site-guide-outer {

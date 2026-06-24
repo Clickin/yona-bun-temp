@@ -226,7 +226,11 @@ function RootUserMenu() {
 }
 
 function RootLoginDialog() {
-  const { authUiCapabilities, csrfToken, runtimeConfig } = useAppRuntime();
+  const { authUiCapabilities, csrfToken, currentSession, runtimeConfig } = useAppRuntime();
+
+  if (currentSession && !currentSession.isAnonymous) {
+    return null;
+  }
 
   return (
     <LegacyLoginDialog
