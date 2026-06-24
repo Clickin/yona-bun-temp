@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, Query},
-    http::{header, HeaderMap, StatusCode},
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::{delete, get, post},
     Json, Router,
@@ -103,28 +103,6 @@ async fn direct_update_pull_request_source_branch(
     }
 }
 
-fn direct_pull_request_state_html(
-    record: &persistence::PullRequestDetailRecord,
-    source_branch_state: &RestPullRequestSourceBranchState,
-) -> String {
-    format!(
-        r#"<div id="pullRequestState" data-state="{}" data-conflict="{}" data-can-delete-branch="{}" data-can-restore-branch="{}"></div>"#,
-        record.state,
-        record.conflict,
-        source_branch_state.can_delete,
-        source_branch_state.can_restore
-    )
-}
-
-fn is_legacy_xhr(headers: &HeaderMap) -> bool {
-    let requested_with = headers
-        .get("x-requested-with")
-        .and_then(|value| value.to_str().ok())
-        .is_some_and(|value| value.eq_ignore_ascii_case("XMLHttpRequest"));
-    let is_pjax = headers.contains_key("x-pjax");
-    requested_with && !is_pjax
-}
-
 async fn direct_pull_request_state(
     headers: HeaderMap,
     owner_name: String,
@@ -162,24 +140,18 @@ async fn direct_pull_request_state(
         Ok(state) => state,
         Err(error) => return RestRouteError::from_connect_error(error).into_response(),
     };
-    let html = direct_pull_request_state_html(&record, &source_branch_state);
-    if is_legacy_xhr(&headers) {
-        let state = normalize_identifier(&record.state);
-        return Json(DirectPullRequestStateResponse {
-            id: pull_request_number,
-            is_open: state == "open",
-            is_closed: state == "closed",
-            is_merged: state == "merged",
-            is_merging: record.is_merging,
-            is_conflict: record.conflict,
-            can_delete_branch: source_branch_state.can_delete,
-            can_restore_branch: source_branch_state.can_restore,
-            html,
-        })
-        .into_response();
-    }
-
-    ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], html).into_response()
+    let state = normalize_identifier(&record.state);
+    Json(DirectPullRequestStateResponse {
+        id: pull_request_number,
+        is_open: state == "open",
+        is_closed: state == "closed",
+        is_merged: state == "merged",
+        is_merging: record.is_merging,
+        is_conflict: record.conflict,
+        can_delete_branch: source_branch_state.can_delete,
+        can_restore_branch: source_branch_state.can_restore,
+    })
+    .into_response()
 }
 
 #[derive(Default, Deserialize)]
@@ -527,7 +499,6 @@ struct DirectPullRequestStateResponse {
     is_conflict: bool,
     can_delete_branch: bool,
     can_restore_branch: bool,
-    html: String,
 }
 
 #[derive(Serialize)]

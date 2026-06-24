@@ -609,8 +609,8 @@ async fn seed_pull_request_detail_rows(
 }
 
 #[tokio::test]
-async fn pull_request_read_contract_serves_legacy_direct_state_helper() {
-    // Guards direct pull-request state routes using the app-scoped service snapshot.
+async fn pull_request_read_contract_serves_direct_state_api_helper() {
+    // Guards direct pull-request state API route using the app-scoped service snapshot.
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, outsider_cookie, outsider_id) = register_user(app.clone(), "outsider").await;
@@ -664,28 +664,18 @@ async fn pull_request_read_contract_serves_legacy_direct_state_helper() {
     assert_eq!(state_json["isConflict"], false);
     assert_eq!(state_json["canDeleteBranch"], false);
     assert_eq!(state_json["canRestoreBranch"], true);
-    assert!(state_json["html"]
-        .as_str()
-        .unwrap()
-        .contains(r#"id="pullRequestState""#));
+    assert!(state_json.get("html").is_none());
 
-    let state_html = rest_get(
-        app.clone(),
-        "/yona/owner/projectYobi/pullRequest/1/state",
-        Some(&owner_cookie),
+    let direct_state_json = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/owner/projectYobi/pullRequest/1/state",
+            Some(&owner_cookie),
+        )
+        .await,
     )
     .await;
-    assert_eq!(state_html.status(), StatusCode::OK);
-    let content_type = state_html
-        .headers()
-        .get(http::header::CONTENT_TYPE)
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_string();
-    let body = response_text(state_html).await;
-    assert!(content_type.starts_with("text/html"));
-    assert!(body.contains(r#"data-state="merged""#));
+    assert_eq!(direct_state_json, state_json);
 
     let project = repo
         .read_project_by_owner_and_name("owner", "projectYobi")
