@@ -10,6 +10,12 @@ type AllowedFormPost = {
   reason: string;
 };
 
+type AllowedDefaultGetActionForm = {
+  file: string;
+  marker: string;
+  reason: string;
+};
+
 const allowedFormPosts: AllowedFormPost[] = [
   {
     file: "routes/-project-views.tsx",
@@ -23,6 +29,19 @@ const allowedFormPosts: AllowedFormPost[] = [
     marker: 'action={appHref(runtimeConfig, "/sites/import")}',
     primaryRestMarker: "onImportSiteData",
     reason: "site data import keeps the legacy direct multipart action as a fallback",
+  },
+];
+
+const allowedDefaultGetActionForms: AllowedDefaultGetActionForm[] = [
+  {
+    file: "routes/__root.tsx",
+    marker: 'name="gnb-search-form"',
+    reason: "legacy common/navbar.scala.html omits method for the global search GET form",
+  },
+  {
+    file: "routes/user/files/route.tsx",
+    marker: 'action={appHref(props.basePath, "/user/files")}',
+    reason: "legacy user/userFiles.scala.html omits method for the user-file filter GET form",
   },
 ];
 
@@ -222,6 +241,26 @@ function legacyApiActionForms() {
   });
 }
 
+function defaultActionFormsWithoutSubmit() {
+  return listRouteFiles().flatMap((file) => {
+    const source = readRouteSource(file);
+    return Array.from(source.matchAll(/<form\b/g)).flatMap((formMatch) => {
+      const formStart = formMatch.index ?? 0;
+      const tag = source.slice(formStart, openingTagEnd(source, formStart));
+      if (!tag.includes("action=") || tag.includes("method=") || tag.includes("onSubmit=")) {
+        return [];
+      }
+      return [
+        {
+          file,
+          line: lineNumberForIndex(source, formStart),
+          tag,
+        },
+      ];
+    });
+  });
+}
+
 function indirectSubmitForms() {
   return listRouteFiles().flatMap((file) => {
     const source = readRouteSource(file);
@@ -315,6 +354,26 @@ describe("React form submit boundary", () => {
         expect(window, allowed.reason).toContain("event.preventDefault()");
       }
       expect(source, allowed.reason).toContain(allowed.primaryRestMarker);
+    }
+  });
+
+  it("keeps default-method action forms limited to legacy GET search filters", () => {
+    const actual = defaultActionFormsWithoutSubmit();
+
+    expect(
+      actual.map((item) => `${item.file}:${item.line}`),
+      "A form with action but no method/onSubmit defaults to GET; keep only legacy GET search/filter forms here.",
+    ).toHaveLength(allowedDefaultGetActionForms.length);
+
+    for (const allowed of allowedDefaultGetActionForms) {
+      const source = readRouteSource(allowed.file);
+      const [beforeMarker, ...afterMarker] = source.split(allowed.marker);
+      expect(afterMarker, allowed.reason).not.toHaveLength(0);
+      const formStart = source.lastIndexOf("<form", beforeMarker.length);
+      const tag = source.slice(formStart, openingTagEnd(source, formStart));
+      expect(tag, allowed.reason).toContain("action=");
+      expect(tag, allowed.reason).not.toContain("method=");
+      expect(tag, allowed.reason).not.toContain("onSubmit=");
     }
   });
 

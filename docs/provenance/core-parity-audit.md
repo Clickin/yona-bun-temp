@@ -453,6 +453,13 @@
   primary path. Focused evidence: `frontend/src/form-submit-boundary.spec.tsx`,
   `tests/server-spa-rest-boundary-contract.test.mjs`, and
   `auth_workspace_contract::direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate`.
+- 2026-06-25 default-method form boundary continuation: React-rendered forms
+  with `action` but no `method`/`onSubmit` are now limited to the two
+  legacy-default GET filters that also omit `method` in `yona-original`
+  (`common/navbar.scala.html` global search and `user/userFiles.scala.html`
+  file filter). New action forms must either be explicit GET search/filter
+  forms or intercept submit through the React boundary. Focused evidence:
+  `frontend/src/form-submit-boundary.spec.tsx`.
 - 2026-06-25 pushed-branch dismissal REST boundary note: the pull-request list
   recent pushed-branch close control keeps the legacy `data-request-method` /
   `data-request-uri` attributes for markup parity, but React now intercepts the
