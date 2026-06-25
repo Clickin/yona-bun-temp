@@ -166,6 +166,7 @@ fn build_router_with_app_config(
         site_name: runtime.site_name.clone(),
         site_update: runtime.site_update.clone(),
         slack_webhook_colors: runtime.slack_webhook_colors.clone(),
+        show_user_email: runtime.show_user_email,
         smtp: runtime.smtp.clone(),
         supported_languages: app_config.supported_languages.clone(),
         translation_proxy: runtime.translation_proxy.clone(),

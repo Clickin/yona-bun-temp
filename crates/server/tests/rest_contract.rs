@@ -5397,7 +5397,7 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
         profile["profile"]["primaryEmailAddress"]
             .as_str()
             .unwrap_or_default(),
-        ""
+        "owner@example.com"
     );
     assert_eq!(profile["viewerCanEditProfile"], false);
     assert_eq!(profile["issueItems"].as_array().unwrap().len(), 0);
@@ -5405,6 +5405,37 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
     let projects = profile["memberProjects"].as_array().unwrap();
     assert_eq!(projects.len(), 1);
     assert_eq!(projects[0]["projectName"], "publicYobi");
+
+    let hidden_email_app = create_router_with_repository_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        repository.clone(),
+        AppRuntimeConfig {
+            show_user_email: false,
+            ..AppRuntimeConfig::default()
+        },
+    );
+    let hidden_email_profile = ok_json(
+        rest(
+            hidden_email_app,
+            Method::GET,
+            "/yona/api/v1/users/owner/profile",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        hidden_email_profile["profile"]["primaryEmailAddress"]
+            .as_str()
+            .unwrap_or_default(),
+        ""
+    );
 
     let missing = rest(
         app.clone(),

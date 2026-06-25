@@ -204,7 +204,7 @@ async fn rest_read_public_user_profile(
             .await
             .map_err(RestRouteError::from_connect_error)?;
             let mut profile = workspace_profile_from_record(&record, avatar_url);
-            if !viewer_can_edit_profile {
+            if !viewer_can_edit_profile && !service.show_user_email {
                 profile.primary_email_address.clear();
             }
             Some(profile)

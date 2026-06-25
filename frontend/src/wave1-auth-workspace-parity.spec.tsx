@@ -392,6 +392,47 @@ describe("wave 1 auth and workspace parity", () => {
     );
   });
 
+  it("shows public profile email addresses when legacy application.show.user.email is enabled", () => {
+    const profileOverview = {
+      daysAgo: 14,
+      defaultLandingPath: "/me",
+      favoriteProjects: [],
+      issueItems: [],
+      memberProjects: [],
+      profile: {
+        avatarUrl: "",
+        connectedSocialProviders: [],
+        displayName: "Door",
+        englishName: "Door English",
+        isBlocked: false,
+        isSiteAdmin: false,
+        loginId: "door",
+        primaryEmailAddress: "door@example.com",
+        sinceLabel: "Apr 11, 2026",
+      },
+      pullRequestItems: [],
+      recentProjects: [],
+      session: {
+        defaultLandingPath: "/me",
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
+      },
+    };
+    const runtimeConfig = {
+      apiBaseUrl: "/yona/api",
+      basePath: "/yona",
+      showUserEmail: true,
+    };
+
+    const html = renderPublicUserProfile(profileOverview, "/door", runtimeConfig);
+
+    expect(html).toContain('<span class="email">door@example.com</span>');
+  });
+
   it("renders legacy empty states for the /me dashboard streams", () => {
     const html = renderWorkspace({
       daysAgo: 14,
