@@ -390,12 +390,31 @@ describe("React form submit boundary", () => {
 
   it("keeps auth and user settings forms inside the React REST JSON boundary", () => {
     const formComponentFiles = ["routes/-auth-views.tsx", "routes/-workspace-settings-view.tsx"];
+    const authRouteWrappers = [
+      {
+        file: "routes/users/loginform/route.tsx",
+        legacyAction: "/users/login",
+        wrapper: "signInWithPassword",
+      },
+      {
+        file: "routes/users/signupform/route.tsx",
+        legacyAction: "/users/signup",
+        wrapper: "registerWithPassword",
+      },
+      {
+        file: "routes/lostPassword/route.tsx",
+        legacyAction: "/lostPassword",
+        wrapper: "requestPasswordReset",
+      },
+      {
+        file: "routes/resetPassword/route.tsx",
+        legacyAction: "/resetPassword",
+        wrapper: "completePasswordReset",
+      },
+    ] as const;
     const sourceByFile = [
       ...formComponentFiles,
-      "routes/users/loginform/route.tsx",
-      "routes/users/signupform/route.tsx",
-      "routes/lostPassword/route.tsx",
-      "routes/resetPassword/route.tsx",
+      ...authRouteWrappers.map(({ file }) => file),
       "routes/user/editform/index.tsx",
       "routes/user/editform/password/route.tsx",
       "routes/user/editform/emails/route.tsx",
@@ -405,6 +424,16 @@ describe("React form submit boundary", () => {
 
     for (const file of formComponentFiles) {
       expect(readRouteSource(file), file).toContain("event.preventDefault()");
+    }
+
+    for (const { file, legacyAction, wrapper } of authRouteWrappers) {
+      const source = readRouteSource(file);
+      expect(source, file).toContain(`import { ${wrapper} }`);
+      expect(source, file).toContain(`await ${wrapper}(runtimeConfig, csrfToken, input)`);
+      expect(source, file).not.toContain(`appHref(runtimeConfig, "${legacyAction}")`);
+      expect(source, file).not.toContain(`action="${legacyAction}"`);
+      expect(source, file).not.toContain(`action={${legacyAction}`);
+      expect(source, file).not.toContain("fetch(");
     }
 
     expect(

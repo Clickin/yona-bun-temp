@@ -276,6 +276,12 @@ GitHub-to-Yona import route/controller/test was found. See
 
 **Legacy 라우트**:
 
+The route list below is legacy evidence and compatibility inventory. For
+React-rendered auth screens, the primary mutation boundary is REST JSON under
+`/api/v1/auth/**`; direct legacy POST routes are retained only as no-JS,
+deep-link, and legacy-client compatibility adapters over the same service
+behavior.
+
 ```
 GET   /users/loginform          → 로그인 폼
 POST  /users/login              → 로그인 처리
@@ -326,7 +332,7 @@ GET   /messages.js              → legacy JavaScript message lookup
 - [x] 공통 bad-request/forbidden/not-found shell은 legacy `error/badrequest_default.scala.html`, `error/forbidden_default.scala.html`, `error/notfound_default.scala.html`의 `.error-wrap`, icon class, message-key body(`error.badrequest`, `error.forbidden`, `error.notfound`), and `menu.home` button을 보존하고 임시 explanatory English lede를 렌더링하지 않는다
 - [x] `/users/signupform`, `/lostPassword`, `/resetPassword` GET 화면은 legacy `.page.full`, `.center-wrap.tag-line-wrap.*`, `.signup-form-wrap.frm-wrap` / `.login-form-wrap.frm-wrap`, field id/name/class including signup `name="email"`, auth title/action keys(`title.loginFor`, `title.signupFor`, `title.resetPasswordFor`, `button.login`, `user.signupBtn`, `button.confirm`, `title.login`, `title.forgotpassword`), login fallback placeholders(`user.login.key`, `user.password`), reset-password `user.password` / `validation.retypePassword` placeholders, lost-password `site.mail.sended` / `site.mail.fail` / `site.resetPasswordEmail.invalidRequest` feedback, reset invalid `site.resetPasswordEmail.wrongUrl` copy, post-reset login `user.loginWithNewPassword`, signup-confirm `user.signup.requested`, email-verification `user.verification.mail.sent` feedback, `btns-row`, `act-row`, and social-login-only / signup-confirm / email-verification message-key anchors를 보존한다
 - [x] 로그인 성공 후 `redirectUrl` 파라미터가 있으면 해당 URL로 이동한다 (legacy 동작 동일)
-- [x] React auth 화면과 공통 login dialog의 primary submit 경로는 `/api/v1/auth/*` REST JSON mutation이다. `/users/signupform`의 가입 화면은 React submit에서 `/api/v1/auth/register` REST JSON만 호출하며 `action="/users/signup"` form target을 노출하지 않는다. legacy direct `POST /users/login`, `POST /users/signup`, `POST /lostPassword`, and `POST /resetPassword` form submit은 legacy field name과 hidden `csrfToken`을 받아 기존 redirect를 반환하는 no-JS/deep-link compatibility adapter로만 유지한다.
+- [x] React auth 화면과 공통 login dialog의 primary submit 경로는 `/api/v1/auth/*` REST JSON mutation이다. `/users/loginform`과 `/users/signupform`은 route component에서 각각 `signInWithPassword` / `registerWithPassword` REST wrapper를 호출하며, rendered form에 `action="/users/login"` 또는 `action="/users/signup"` target을 노출하지 않는다. legacy direct `POST /users/login`, `POST /users/signup`, `POST /lostPassword`, and `POST /resetPassword` form submit은 legacy field name과 hidden `csrfToken`을 받아 기존 redirect를 반환하는 no-JS/deep-link compatibility adapter로만 유지한다.
 - [x] `/secret` 초기 site-admin bootstrap 화면은 legacy `welcome/secret.scala.html` / `welcome/restart.scala.html`의 `.secret-wrap`, `.secret-box`, readonly `loginId=admin`, `user.signupId`, `user.name`, `user.email`, `user.password`, `validation.retypePassword`, `app.welcome.*`, `app.restart.*` key를 React SPA로 렌더링하고, 화면 submit은 REST JSON `/api/v1/auth/secret`으로 기본 `admin` 계정을 생성/갱신한 뒤 `/restart`로 이동한다. React SPA form은 `action="/secret"`을 노출하지 않으며, legacy direct `POST /secret`는 `/restart` redirect compatibility adapter로만 유지한다.
 - [x] 로그인 실패 시 REST/Connect error payload가 legacy Ajax 메시지 키(`user.login.invalid`, `user.login.required`)를 반환한다
 - [x] `rememberMe=true` 로그인은 legacy 30일 유지 세션을 만들고, `rememberMe=false` 로그인은 브라우저 세션으로 남는다
