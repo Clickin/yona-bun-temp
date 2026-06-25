@@ -1,4 +1,5 @@
 import * as React from "react";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { createLegacyI18nRuntime } from "./i18n";
@@ -46,6 +47,19 @@ function renderIssueLabelSettings(messages?: LegacyMessageLookup) {
 }
 
 describe("project issue label settings legacy i18n opt-in", () => {
+  it("keeps label form validation fallbacks in structured legacy keys", () => {
+    const source = readFileSync(
+      new URL("./routes/$owner/$projectName/issue/labelsform/route.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toContain('key: "label.failedTo"');
+    expect(source).toContain('key: "label.error.empty"');
+    expect(source).toContain('key: "label.error.color"');
+    expect(source).not.toContain("label.failedTo label.add");
+    expect(source).not.toContain("error.failedTo");
+  });
+
   it("keeps legacy key fallbacks when rendered without AppRuntimeContext messages", () => {
     const html = renderIssueLabelSettings();
 

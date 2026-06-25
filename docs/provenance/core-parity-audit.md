@@ -165,6 +165,16 @@
   arguments. Focused evidence: `search-i18n.spec.tsx`,
   `site-admin-route-parity.spec.tsx`, `route-parity.spec.tsx`, and
   `i18n.spec.tsx`.
+- 2026-06-25 issue-label validation fallback continuation: issue label settings
+  form validation no longer stores visible strings such as
+  `label.failedTo label.add` or the incorrectly arity-mismatched
+  `error.failedTo label.add`. Validation state is structured as legacy message
+  keys plus legacy arguments, so missing-provider output keeps only keys while
+  provider-backed rendering still formats `label.failedTo`,
+  `label.error.empty`, `label.error.color`, and related label errors through
+  `yona-original/conf/messages*`. Focused evidence:
+  `issue-label-settings-i18n.spec.tsx`, `route-parity.spec.tsx`, and
+  `i18n.spec.tsx`.
 - 2026-06-25 legacy mention highlight continuation: board, issue, and pull
   request review comment rendering now reproduces the legacy
   `board/view.scala.html`, `issue/view.scala.html`, and `git/view.scala.html`

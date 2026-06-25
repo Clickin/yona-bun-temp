@@ -50,6 +50,12 @@ type CategoryView = {
 };
 
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
+type LegacyMessageArgument = number | string | { key: string };
+type LegacyLabelFormMessage = {
+  args?: LegacyMessageArgument[];
+  detail?: LegacyLabelFormMessage;
+  key: string;
+};
 
 function legacyMessage(
   messages: LegacyMessageLookup | undefined,
@@ -58,6 +64,26 @@ function legacyMessage(
 ) {
   const fallback = options.fallback ?? key;
   return messages ? messages(key, { ...options, fallback }) : fallback;
+}
+
+function legacyLabelFormMessage(
+  messages: LegacyMessageLookup | undefined,
+  message: LegacyLabelFormMessage,
+): React.ReactNode {
+  const args = message.args?.map((arg) =>
+    typeof arg === "object" ? legacyMessage(messages, arg.key) : arg,
+  );
+  const primary = legacyMessage(messages, message.key, args ? { args } : undefined);
+  if (!message.detail) {
+    return primary;
+  }
+  return (
+    <>
+      {primary}
+      <br />
+      {legacyLabelFormMessage(messages, message.detail)}
+    </>
+  );
 }
 
 const NEW_LABEL_PRESET_COLORS = [
@@ -222,7 +248,9 @@ export function IssueLabelsFormPage(props: {
     viewerCanUpdate: false,
   };
   const grouped = groupLabels(props.labels);
-  const [deleteErrorMessage, setDeleteErrorMessage] = React.useState("");
+  const [deleteErrorMessage, setDeleteErrorMessage] = React.useState<LegacyLabelFormMessage | null>(
+    null,
+  );
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
@@ -239,7 +267,7 @@ export function IssueLabelsFormPage(props: {
           <IssueLabelCreateForm {...props} />
           {deleteErrorMessage ? (
             <div className="alert alert-error" role="alert">
-              {deleteErrorMessage}
+              {legacyLabelFormMessage(props.messages, deleteErrorMessage)}
             </div>
           ) : null}
 
@@ -322,7 +350,7 @@ export function IssueLabelsFormPage(props: {
                                     ) {
                                       return;
                                     }
-                                    setDeleteErrorMessage("");
+                                    setDeleteErrorMessage(null);
                                     void deleteProjectLabel(props.runtimeConfig, props.csrfToken, {
                                       labelId: BigInt(label.id),
                                       ownerName: props.owner,
@@ -380,7 +408,7 @@ function IssueLabelCopyForm(props: {
 }) {
   const [fromOwnerName, setFromOwnerName] = React.useState("");
   const [fromProjectName, setFromProjectName] = React.useState("");
-  const [errorMessage, setErrorMessage] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState<LegacyLabelFormMessage | null>(null);
   return (
     <form
       action={buildProjectHref(props.runtimeConfig, props.owner, props.projectName, "copyLabels")}
@@ -389,7 +417,7 @@ function IssueLabelCopyForm(props: {
       method="post"
       onSubmit={(event) => {
         event.preventDefault();
-        setErrorMessage("");
+        setErrorMessage(null);
         void copyProjectLabels(props.runtimeConfig, props.csrfToken, {
           fromOwnerName,
           fromProjectName,
@@ -405,7 +433,7 @@ function IssueLabelCopyForm(props: {
       <strong className="form-legend">{legacyMessage(props.messages, "label.copy.append")}</strong>
       {errorMessage ? (
         <div className="alert alert-error" role="alert">
-          {errorMessage}
+          {legacyLabelFormMessage(props.messages, errorMessage)}
         </div>
       ) : null}
       <div className="form-wrap">
@@ -447,7 +475,7 @@ function IssueLabelCreateForm(props: {
   const [categoryName, setCategoryName] = React.useState("");
   const [labelName, setLabelName] = React.useState("");
   const [labelColor, setLabelColor] = React.useState("#f44336");
-  const [errorMessage, setErrorMessage] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState<LegacyLabelFormMessage | null>(null);
   return (
     <form
       action={buildProjectHref(props.runtimeConfig, props.owner, props.projectName, "issue/labels")}
@@ -464,18 +492,26 @@ function IssueLabelCreateForm(props: {
           requestLabelName.length === 0 ||
           requestLabelColor.length === 0
         ) {
-          setErrorMessage("label.failedTo label.add\nlabel.error.empty");
+          setErrorMessage({
+            args: [{ key: "label.add" }],
+            detail: { key: "label.error.empty" },
+            key: "label.failedTo",
+          });
           return;
         }
         if (!isValidLegacyLabelColor(requestLabelColor)) {
-          setErrorMessage(`label.failedTo label.add\nlabel.error.color ${requestLabelColor}`);
+          setErrorMessage({
+            args: [{ key: "label.add" }],
+            detail: { args: [requestLabelColor], key: "label.error.color" },
+            key: "label.failedTo",
+          });
           return;
         }
         if (isLabelNameInCategory(props.labels, requestCategoryName, requestLabelName)) {
-          setErrorMessage("label.error.duplicated");
+          setErrorMessage({ key: "label.error.duplicated" });
           return;
         }
-        setErrorMessage("");
+        setErrorMessage(null);
         void createProjectLabel(props.runtimeConfig, props.csrfToken, {
           categoryName: requestCategoryName,
           labelColor: requestLabelColor,
@@ -492,7 +528,7 @@ function IssueLabelCreateForm(props: {
       <strong className="form-legend">{legacyMessage(props.messages, "label.new")}</strong>
       {errorMessage ? (
         <div className="alert alert-error" role="alert">
-          {errorMessage}
+          {legacyLabelFormMessage(props.messages, errorMessage)}
         </div>
       ) : null}
       <div className="form-wrap">
@@ -561,7 +597,7 @@ function IssueLabelEditForm(props: {
   const [categoryId, setCategoryId] = React.useState(props.label.categoryId);
   const [labelName, setLabelName] = React.useState(props.label.name);
   const [labelColor, setLabelColor] = React.useState(props.label.color);
-  const [errorMessage, setErrorMessage] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState<LegacyLabelFormMessage | null>(null);
   if (!editing) {
     return (
       <button
@@ -597,14 +633,17 @@ function IssueLabelEditForm(props: {
           isLabelNameChanged &&
           isLabelNameInCategory(props.labels, categoryName, requestLabelName)
         ) {
-          setErrorMessage(`label.error.duplicated.in.category ${categoryName}`);
+          setErrorMessage({
+            args: [categoryName],
+            key: "label.error.duplicated.in.category",
+          });
           return;
         }
         if (!isValidLegacyLabelColor(requestLabelColor)) {
-          setErrorMessage(`label.error.color ${requestLabelColor}`);
+          setErrorMessage({ args: [requestLabelColor], key: "label.error.color" });
           return;
         }
-        setErrorMessage("");
+        setErrorMessage(null);
         void updateProjectLabel(props.runtimeConfig, props.csrfToken, {
           categoryId: BigInt(categoryId),
           labelColor: requestLabelColor,
@@ -624,7 +663,7 @@ function IssueLabelEditForm(props: {
     >
       {errorMessage ? (
         <div className="alert alert-error" role="alert">
-          {errorMessage}
+          {legacyLabelFormMessage(props.messages, errorMessage)}
         </div>
       ) : null}
       <select
@@ -678,7 +717,7 @@ function IssueCategoryEditForm(props: {
   const [editing, setEditing] = React.useState(false);
   const [categoryName, setCategoryName] = React.useState(props.category.categoryName);
   const [isExclusive, setIsExclusive] = React.useState(props.category.categoryIsExclusive);
-  const [errorMessage, setErrorMessage] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState<LegacyLabelFormMessage | null>(null);
   if (!editing) {
     return (
       <button
@@ -704,7 +743,7 @@ function IssueCategoryEditForm(props: {
       className="inline-category-edit-form"
       onSubmit={(event) => {
         event.preventDefault();
-        setErrorMessage("");
+        setErrorMessage(null);
         void updateProjectLabelCategory(props.runtimeConfig, props.csrfToken, {
           categoryId: BigInt(props.category.categoryId),
           categoryIsExclusive: isExclusive,
@@ -723,7 +762,7 @@ function IssueCategoryEditForm(props: {
     >
       {errorMessage ? (
         <div className="alert alert-error" role="alert">
-          {errorMessage}
+          {legacyLabelFormMessage(props.messages, errorMessage)}
         </div>
       ) : null}
       <input
@@ -757,7 +796,7 @@ function IssueCategoryEditForm(props: {
       <button
         className="ybtn ybtn-danger"
         onClick={() => {
-          setErrorMessage("");
+          setErrorMessage(null);
           void deleteProjectLabelCategory(props.runtimeConfig, props.csrfToken, {
             categoryId: BigInt(props.category.categoryId),
             ownerName: props.owner,
@@ -932,9 +971,16 @@ function isValidLegacyLabelColor(color: string) {
   );
 }
 
-function formatLegacyLabelRequestFailure(error: unknown, messageKey: string) {
+function formatLegacyLabelRequestFailure(
+  error: unknown,
+  messageKey: string,
+): LegacyLabelFormMessage {
   if (error instanceof Error && error.message.length > 0) {
-    return `label.failedTo ${messageKey}\n${error.message}`;
+    return {
+      args: [{ key: messageKey }],
+      detail: { key: error.message },
+      key: "label.failedTo",
+    };
   }
-  return `error.failedTo ${messageKey}`;
+  return { args: [{ key: messageKey }], key: "label.failedTo" };
 }

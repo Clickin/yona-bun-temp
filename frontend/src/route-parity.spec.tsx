@@ -4883,7 +4883,8 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain("label.error.duplicated");
     expect(routeSource).toContain("label.error.duplicated.in.category");
     expect(routeSource).toContain("label.confirm.delete");
-    expect(routeSource).toContain("error.failedTo");
+    expect(routeSource).not.toContain("error.failedTo");
+    expect(routeSource).not.toContain("label.failedTo label.add");
     expect(routeSource).toContain('id="editCategory"');
     expect(routeSource).toContain('id="editLabel"');
   });
