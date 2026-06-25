@@ -19,6 +19,9 @@ describe("site-admin data management parity", () => {
     );
     expect(routeSource).toContain('href={appHref(runtimeConfig, "/sites/export")}');
     expect(routeSource).toContain('action={appHref(runtimeConfig, "/sites/import")}');
+    expect(routeSource).toContain("importSiteDataRest");
+    expect(routeSource).toContain("JSON.parse(await data.text())");
+    expect(routeSource).toContain("onImportSiteData");
     expect(routeSource).not.toContain('data-deferred="site.data.export"');
     expect(routeSource).not.toContain('data-deferred="site.data.import"');
     expect(routeSource).toContain('encType="multipart/form-data"');

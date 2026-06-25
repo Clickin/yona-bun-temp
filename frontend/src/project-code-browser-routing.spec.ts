@@ -590,7 +590,6 @@ describe("project code browser routing", () => {
               authorLabel: "Owner",
               authorLoginId: "owner",
               canDelete: true,
-              contentsHtml: "",
               contentsMarkdown:
                 "First **commit** note #1 @abcdef1234567890abcdef1234567890abcdef12",
               createdLabel: "2026-04-21",
@@ -625,7 +624,6 @@ describe("project code browser routing", () => {
               authorLabel: "Reviewer",
               authorLoginId: "reviewer",
               canDelete: false,
-              contentsHtml: "",
               contentsMarkdown: "Closed note",
               createdLabel: "2026-04-22",
               id: 12,

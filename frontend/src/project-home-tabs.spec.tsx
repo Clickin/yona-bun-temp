@@ -341,7 +341,6 @@ describe("project home tab parity", () => {
   it("uses metadata-backed mention links for Git README fallback files", () => {
     const html = renderProjectHome("/yona/yona/projectYobi", {
       readmeFile: {
-        bodyHtml: "",
         bodyMarkdown: "README @owner @yona/projectYobi @ghost @yona/missing",
         mentionReferences: [
           {

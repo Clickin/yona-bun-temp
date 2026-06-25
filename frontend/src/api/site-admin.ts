@@ -175,6 +175,34 @@ export interface SiteMailListResponse {
   recipients: string[];
 }
 
+export type SiteImportPayload = Record<string, unknown>;
+
+export interface SiteImportResponse {
+  checkpoint: unknown;
+  dryRun: boolean;
+  importedIssues: number;
+  importedMilestones: number;
+  importedPosts: number;
+  importedProjects: number;
+  importedUsers: number;
+  skippedIssues: number;
+  skippedMilestones: number;
+  skippedPosts: number;
+  skippedProjects: number;
+  skippedUsers: number;
+  validationErrors: unknown[];
+  wouldImportIssues: number;
+  wouldImportMilestones: number;
+  wouldImportPosts: number;
+  wouldImportProjects: number;
+  wouldImportUsers: number;
+  wouldSkipIssues: number;
+  wouldSkipMilestones: number;
+  wouldSkipPosts: number;
+  wouldSkipProjects: number;
+  wouldSkipUsers: number;
+}
+
 function siteUsersPath(input: SiteUserListInput): string {
   const params = new URLSearchParams();
   params.set("state", input.state);
@@ -306,6 +334,20 @@ export function readSiteMailListRest(
   fetchImpl: typeof fetch = fetch,
 ): Promise<SiteMailListResponse> {
   return restFetch<SiteMailListResponse>(runtimeConfig, "/site/mail-list", {
+    body: input,
+    csrfToken,
+    fetchImpl,
+    method: "POST",
+  });
+}
+
+export function importSiteDataRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: SiteImportPayload,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteImportResponse> {
+  return restFetch<SiteImportResponse>(runtimeConfig, "/site/import", {
     body: input,
     csrfToken,
     fetchImpl,

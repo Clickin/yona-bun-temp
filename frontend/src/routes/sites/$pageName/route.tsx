@@ -5,6 +5,7 @@ import { apiQueryKeys } from "../../../api/query-keys";
 import {
   deleteSiteProjectRest,
   deleteSiteUserRest,
+  importSiteDataRest,
   readSiteMailListRest,
   siteDiagnosticsQueryOptions,
   siteIssuesQueryOptions,
@@ -53,6 +54,7 @@ import {
   NotFoundPage,
   useCurrentHref,
   useDocumentTitle,
+  navigateToAppHref,
   useRequireAuthenticatedRoute,
 } from "../../-shared";
 
@@ -372,6 +374,7 @@ function SiteAdminRouteComponent() {
         href={href}
         messages={messages}
         runtimeConfig={runtimeConfig}
+        setErrorMessage={setErrorMessage}
         updateAvailable={updateAvailable}
       />
     );
@@ -413,6 +416,7 @@ function SiteDataRoute({
   href,
   messages,
   runtimeConfig,
+  setErrorMessage,
   updateAvailable = false,
 }: {
   bootstrapping: boolean;
@@ -421,9 +425,23 @@ function SiteDataRoute({
   href: string;
   messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
+  setErrorMessage: (message: string | null) => void;
   updateAvailable?: boolean;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
+  const queryClient = useQueryClient();
+  const importMutation = useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      importSiteDataRest(runtimeConfig, csrfToken, payload),
+    onError: (error) => {
+      setErrorMessage(error instanceof Error ? error.message : "site.import.failed");
+    },
+    onSuccess: async () => {
+      setErrorMessage(null);
+      await queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "site"] });
+      navigateToAppHref(runtimeConfig.basePath, "/");
+    },
+  });
 
   if (bootstrapping || !canRender) {
     return <SiteAdminLoadingShell messages={messages} />;
@@ -436,6 +454,10 @@ function SiteDataRoute({
     <SiteAdminDataPage
       csrfToken={csrfToken}
       messages={messages}
+      onImportSiteData={async (payload) => {
+        await importMutation.mutateAsync(payload);
+      }}
+      pending={importMutation.isPending}
       runtimeConfig={runtimeConfig}
       updateAvailable={updateAvailable}
     />
@@ -1639,15 +1661,33 @@ export function SiteAdminMassMailPage({
 export function SiteAdminDataPage({
   csrfToken,
   messages: i18nMessages,
+  onImportSiteData,
+  pending = false,
   runtimeConfig,
   updateAvailable = false,
 }: {
   csrfToken: string;
   messages?: LegacyMessageLookup;
+  onImportSiteData?: (payload: Record<string, unknown>) => Promise<void> | void;
+  pending?: boolean;
   runtimeConfig: RuntimeConfig;
   updateAvailable?: boolean;
 }) {
   const messages = useSiteAdminMessages(i18nMessages);
+  async function handleImportSubmit(event: React.FormEvent<HTMLFormElement>) {
+    if (!onImportSiteData) {
+      return;
+    }
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const data = formData.get("data");
+    if (!(data instanceof File) || data.size === 0) {
+      return;
+    }
+    const payload = JSON.parse(await data.text()) as Record<string, unknown>;
+    await onImportSiteData(payload);
+  }
+
   return (
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
@@ -1696,11 +1736,12 @@ export function SiteAdminDataPage({
                 action={appHref(runtimeConfig, "/sites/import")}
                 encType="multipart/form-data"
                 method="post"
+                onSubmit={(event) => void handleImportSubmit(event)}
               >
                 <input name="csrfToken" readOnly type="hidden" value={csrfToken} />
                 <input name="data" type="file" />
                 <p>
-                  <input type="submit" />
+                  <input disabled={pending} type="submit" />
                 </p>
               </form>
             </div>

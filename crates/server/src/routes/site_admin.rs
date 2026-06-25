@@ -1147,6 +1147,16 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/site/import",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestSiteImportPayload>| {
+                    let service = service.clone();
+                    async move { rest_import_site_data_json(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
             "/site/diagnostics",
             get({
                 let service = service.clone();
@@ -2230,9 +2240,26 @@ async fn rest_import_site_data(
     service: PilotServiceImpl,
     dry_run: bool,
 ) -> Result<(StatusCode, Json<RestSiteImportResponse>), RestRouteError> {
-    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
     let payload: RestSiteImportPayload = serde_json::from_str(payload)
         .map_err(|_| RestRouteError::bad_request("invalid site data import payload"))?;
+    rest_import_site_data_payload(headers, payload, service, dry_run).await
+}
+
+async fn rest_import_site_data_json(
+    headers: HeaderMap,
+    payload: RestSiteImportPayload,
+    service: PilotServiceImpl,
+) -> Result<(StatusCode, Json<RestSiteImportResponse>), RestRouteError> {
+    rest_import_site_data_payload(headers, payload, service, false).await
+}
+
+async fn rest_import_site_data_payload(
+    headers: HeaderMap,
+    payload: RestSiteImportPayload,
+    service: PilotServiceImpl,
+    dry_run: bool,
+) -> Result<(StatusCode, Json<RestSiteImportResponse>), RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
     if payload.format.trim() != "yobi-data" {
         return Err(RestRouteError::bad_request(
             "unsupported site data import format",

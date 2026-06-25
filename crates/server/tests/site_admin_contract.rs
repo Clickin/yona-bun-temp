@@ -12,6 +12,7 @@ use sea_orm::{
 use serde_json::{json, Value};
 use tower::ServiceExt;
 use yoram_integrations::{clear_test_outbox, snapshot_test_outbox};
+use yoram_migration::Migrator;
 use yoram_persistence::{
     attachment, issue, issue_comment, issue_label, issue_label_category, milestone, n4user,
     posting, posting_comment, project, project_user, role, site_admin, AppRepository,
@@ -19,7 +20,6 @@ use yoram_persistence::{
     CreateProjectLabelInput, IssueMutationInput, MilestoneListFilter, MilestoneMutationInput,
     PostingMutationInput,
 };
-use yoram_migration::Migrator;
 use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
     create_router_with_repository_and_filesystem_assets_and_app_config,
@@ -1240,6 +1240,75 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
             .is_some_and(|value| !value.is_empty()),
         "site export should carry legacy issue comment createdAt"
     );
+}
+
+#[tokio::test]
+async fn site_admin_import_has_rest_json_boundary_for_spa() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteimportboss").await;
+    let (member_csrf, member_cookie, _member_id) =
+        register_user(app.clone(), "siteimportmember").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [],
+        "projects": [],
+        "projectMembers": [],
+        "labels": [],
+        "milestones": [],
+        "posts": [],
+        "issues": []
+    });
+
+    let unauthenticated = rest_json(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/site/import",
+        None,
+        None,
+        payload.clone(),
+    )
+    .await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_json(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/site/import",
+        Some(&member_cookie),
+        Some(&member_csrf),
+        payload.clone(),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let missing_csrf = rest_json(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/site/import",
+        Some(&admin_cookie),
+        None,
+        payload.clone(),
+    )
+    .await;
+    assert_eq!(missing_csrf.status(), StatusCode::FORBIDDEN);
+
+    let imported = response_json(
+        rest_json(
+            app,
+            Method::POST,
+            "/yona/api/v1/site/import",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            payload,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(imported["dryRun"], false);
+    assert_eq!(imported["importedUsers"], 0);
+    assert_eq!(imported["importedProjects"], 0);
 }
 
 #[tokio::test]

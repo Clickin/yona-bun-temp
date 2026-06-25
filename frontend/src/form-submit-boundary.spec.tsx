@@ -17,7 +17,7 @@ const allowedFormPosts: AllowedFormPost[] = [
   {
     file: "routes/sites/$pageName/route.tsx",
     marker: 'action={appHref(runtimeConfig, "/sites/import")}',
-    reason: "site data import still uses the direct multipart import route",
+    reason: "site data import keeps the legacy direct multipart action as a fallback",
   },
 ];
 
@@ -55,6 +55,7 @@ const allowedIndirectSubmitHandlers = [
   { file: "routes/-pull-request-views.tsx", handler: "submitInlineComment" },
   { file: "routes/-pull-request-views.tsx", handler: "submitNonRangedComment" },
   { file: "routes/sites/$pageName/route.tsx", handler: "handleSubmit" },
+  { file: "routes/sites/$pageName/route.tsx", handler: "handleImportSubmit" },
 ];
 
 function readRouteSource(relativePath: string) {
@@ -444,6 +445,17 @@ describe("React form submit boundary", () => {
       expect(element.tag, `${element.file}:${element.line}`).toContain("onSubmit=");
       expect(element.body, `${element.file}:${element.line}`).toContain("event.preventDefault()");
     }
+  });
+
+  it("keeps site data import on the React REST JSON primary boundary", () => {
+    const source = readRouteSource("routes/sites/$pageName/route.tsx");
+    const apiSource = fs.readFileSync(path.resolve(__dirname, "api/site-admin.ts"), "utf8");
+
+    expect(source).toContain("importSiteDataRest");
+    expect(apiSource).toContain('restFetch<SiteImportResponse>(runtimeConfig, "/site/import"');
+    expect(source).toContain("JSON.parse(await data.text())");
+    expect(source).toContain("onImportSiteData");
+    expect(source).toContain("event.preventDefault()");
   });
 
   it("keeps indirect submit handlers from falling through to native form submit", () => {
