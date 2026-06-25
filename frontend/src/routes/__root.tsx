@@ -140,7 +140,7 @@ function RootHeader() {
   const showGlobalSearchScope = showProjectListing || !!currentSession?.isSiteAdmin;
 
   return (
-    <header className="gnb-outer">
+    <header className={`gnb-outer${searchScope.type !== "global" ? " project-header" : ""}`}>
       <div className="gnb-inner">
         <div className="pin" title="Sidebar">
           <i className="yobicon-arrow-left"></i>

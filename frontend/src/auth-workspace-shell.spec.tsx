@@ -56,7 +56,9 @@ describe("auth and workspace views", () => {
   it("keeps the legacy global navigation shell in the root route", () => {
     const source = fs.readFileSync(path.resolve(__dirname, "routes/__root.tsx"), "utf8");
 
-    expect(source).toContain('<header className="gnb-outer">');
+    expect(source).toContain(
+      'className={`gnb-outer${searchScope.type !== "global" ? " project-header" : ""}`}',
+    );
     expect(source).toContain('className="gnb-inner"');
     expect(source).toContain('className="gnb-nav"');
     expect(source).toContain('className="admin-logged-in-affix"');
