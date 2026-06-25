@@ -9,12 +9,12 @@ import {
 import { apiQueryKeys } from "../../../../api/query-keys";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
-import { prefixBasePath } from "../../../../runtime-config";
 import { ProjectForkPage } from "../../../-project-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
+  navigateToAppHref,
   NotFoundPage,
   useRequireAuthenticatedRoute,
 } from "../../../-shared";
@@ -88,7 +88,7 @@ function ProjectForkRouteComponent() {
           detail.project.projectName,
         ),
       });
-      window.location.assign(prefixBasePath(runtimeConfig.basePath, detail.redirectPath));
+      navigateToAppHref(runtimeConfig.basePath, detail.redirectPath);
     },
   });
 

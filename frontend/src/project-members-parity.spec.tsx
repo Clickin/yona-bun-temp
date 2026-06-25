@@ -92,5 +92,9 @@ describe("project members parity", () => {
     expect(routeSource).toContain(
       'messages("project.member.ownerMustBeAManager", {\n              fallback: "project.member.ownerMustBeAManager",',
     );
+    expect(routeSource).toContain("navigateToAppHref(");
+    expect(routeSource).toContain("runtimeConfig.basePath");
+    expect(routeSource).not.toContain("window.location.assign(");
+    expect(routeSource).not.toContain("`${runtimeConfig.basePath}${detail.redirectPath}`");
   });
 });

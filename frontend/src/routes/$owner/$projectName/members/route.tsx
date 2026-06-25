@@ -14,6 +14,7 @@ import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
+  navigateToAppHref,
   NotFoundPage,
   useRequireAuthenticatedRoute,
 } from "../../../-shared";
@@ -121,7 +122,7 @@ function ProjectMembersRouteComponent() {
         queryKey: apiQueryKeys.project.container(owner, projectName),
       });
       if (detail.redirectPath && detail.redirectPath !== routeHref) {
-        window.location.assign(`${runtimeConfig.basePath}${detail.redirectPath}`);
+        navigateToAppHref(runtimeConfig.basePath, detail.redirectPath);
       }
     },
   });

@@ -5533,6 +5533,9 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain("forkProjectRest");
     expect(routeSource).toContain("fork.failed");
     expect(routeSource).not.toContain("Fork project failed.");
+    expect(routeSource).toContain("navigateToAppHref(");
+    expect(routeSource).toContain("runtimeConfig.basePath");
+    expect(routeSource).not.toContain("window.location.assign(");
 
     const apiSource = fs.readFileSync(path.resolve(__dirname, "api/org-project.ts"), "utf8");
     expect(apiSource).toContain("ProjectForkOptionsResponse");
