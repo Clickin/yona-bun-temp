@@ -1621,6 +1621,17 @@ h1 {
   margin-top: 18px;
 }
 
+.review-list-wrap .post-item .title-wrap {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-list-wrap .post-item .title-wrap .title {
+  overflow-wrap: normal;
+}
+
 .review-card {
   padding: 12px 0;
   border-bottom: 1px solid #e5e5e5;

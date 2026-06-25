@@ -60,8 +60,8 @@ Current evidence checked:
 
 | status | count |
 | --- | ---: |
-| covered | 19 |
-| gap | 1 |
+| covered | 20 |
+| gap | 0 |
 | deviation | 0 |
 | deferred | 0 |
 | not-applicable | 2 |
@@ -93,7 +93,7 @@ Current evidence checked:
 | Browser proof for legacy-vs-current interaction parity | Legacy visual artifacts exist for route entry pages; current Playwright e2e uses mocked REST APIs and selectors | Wave 3 adds current mocked-browser proof for contributor special option, selector semantics, stale copy, event interpolation, and PR/commit href variants. The concrete `/reviews` row differences are tracked as the row-fidelity gap below rather than broad weak evidence. | covered | none |
 | Direct legacy form/fragment routes | Legacy create/edit/comment/review routes are form/fragment-compatible server endpoints | Current app runtime is React SPA with REST JSON/API-return plus React render; direct legacy HTML fragments are compatibility evidence, not a new frontend data source | not-applicable | none |
 | E2E expectation copy drift | Legacy English keys are `pullRequest.is.safe = This pull request can be merged safely.`, `pullRequest.review = Approve`, `pullRequest.merge = Merge`; Korean differs as expected by message files | Wave 3 classifies this as stale test drift and updates the interaction e2e to legacy copy/selectors: safe merge text, `Approve`, `Merge`, reviewer shortage tooltip, and no `.reviewer-status` dependency. | covered | none |
-| Review-thread list row visual fidelity | `reviewthread/partial_list.scala.html` renders `.post-list-wrap > .post-item`, `.avatar-wrap.mlarge.hide-in-mobile`, `.title-wrap`, `.post-id`, `a.title`, `.infos`, `.infos-item.item-count-groups`; `_page.less` applies nowrap ellipsis to `.post-item .title-wrap`; `ReviewSearchCondition` includes project comment threads without restricting to pull requests | Current `ProjectReviewListRows` covers base selectors and mocked PR/commit href variants, but `.title-wrap` wraps via current CSS and real REST `/reviews` filters `PullRequestId.is_not_null()`, excluding legacy non-PR commit review threads. | gap | `frontend/src/app.css`, `crates/persistence/src/repo/pull_request_review.rs`, `frontend/src/route-parity.spec.tsx`, `frontend/src/project-reviews-export.spec.tsx`, `frontend/tests/pull-request-review-read-parity.e2e.ts`, `crates/server/tests/pull_request_read_contract.rs` |
+| Review-thread list row visual fidelity | `reviewthread/partial_list.scala.html` renders `.post-list-wrap > .post-item`, `.avatar-wrap.mlarge.hide-in-mobile`, `.title-wrap`, `.post-id`, `a.title`, `.infos`, `.infos-item.item-count-groups`; `_page.less` applies nowrap ellipsis to `.post-item .title-wrap`; `ReviewSearchCondition` includes project comment threads without restricting to pull requests | `/reviews` rows now keep legacy nowrap ellipsis through `.review-list-wrap .post-item .title-wrap`, and REST `/reviews` includes non-PR commit review threads by querying project comment threads without `PullRequestId.is_not_null()`. Focused backend contract asserts a non-PR commit review item with null `pullRequestNumber`; route/export specs remain green. | covered in current follow-up | none |
 
 ## Playwright Scenario Table
 
@@ -120,9 +120,8 @@ Current evidence checked:
 | `/:owner/:project/pullRequest/:n/changes` | thread reply/edit/delete/open/close | legacy comment thread controls, `commentThread.close/open`, `data-toggle=comment-delete` | same controls; e2e covers reply, edit, delete, close/open | click controls and submit forms | REST comments PATCH/DELETE and thread open/close + React render | covered |
 | `/:owner/:project/pullRequest/:n/changes` | review cards | `.review-wrap`, `#reviewcards-open`, `#reviewcards-closed`, `.review-card`, `review.outdated` | same selectors and copy | show/hide side cards, tab selection | REST changes + React render | covered |
 | `/:owner/:project/reviews?state=open` | filters/search/export | `.lst-stacked`, `review.allReview`, `review.involvingYou`, `review.createdByYou`, hidden form fields, state tabs, `issue.downloadAsExcel` | same selectors/copy, Excel href includes `format=xls` | click filters, sort, state, export | REST reviews list/export compatibility + React render | covered |
-| `/:owner/:project/reviews?state=open` | row variants | `reviewthread/partial_list.scala.html` row target via `DiffRenderer.urlToCommentThread`, including non-PR commit threads, with nowrap title truncation | `ProjectReviewListRows` can create PR changes and commit anchors in mocked proof, but real REST excludes non-PR commit rows and CSS wraps title text | initial render with PR and commit threads | REST reviews + React render | gap |
+| `/:owner/:project/reviews?state=open` | row variants | `reviewthread/partial_list.scala.html` row target via `DiffRenderer.urlToCommentThread`, including non-PR commit threads, with nowrap title truncation | `ProjectReviewListRows` creates PR changes and commit anchors, CSS preserves nowrap truncation, and REST includes non-PR commit rows with `pullRequestNumber: null` | initial render with PR and commit threads | REST reviews + React render | covered in current follow-up |
 
 ## Follow-Up Queue Proposal
 
-1. Implement the confirmed `/reviews` row gap: legacy nowrap ellipsis plus non-PR commit review-thread rows from real REST data.
-2. If exact legacy timeline author labels are required beyond login id text, add a focused sender display-name/avatar projection to the PR event DTO.
+1. If exact legacy timeline author labels are required beyond login id text, add a focused sender display-name/avatar projection to the PR event DTO.

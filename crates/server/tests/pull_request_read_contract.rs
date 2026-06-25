@@ -562,7 +562,7 @@ async fn seed_pull_request_detail_rows(
         author_name: Set(Some("owner".to_string())),
         state: Set(Some("open".to_string())),
         created_date: Set(Some(days_ago_datetime(1))),
-        pull_request_id: Set(Some(pull_request.id)),
+        pull_request_id: Set(None),
         project_id: Set(pull_request.to_project_id),
         prev_commit_id: Set(None),
         commit_id: Set(Some("abcdef123456".to_string())),
@@ -1288,6 +1288,25 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         "{}",
         reviews["items"]
     );
+
+    let all_open_reviews = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/reviews?state=open",
+            Some(&reviewer_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(all_open_reviews["totalCount"], 4);
+    let commit_only_review = all_open_reviews["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["path"] == "src/commit-only.rs")
+        .expect("legacy /reviews includes non-PR commit review threads");
+    assert!(commit_only_review["pullRequestNumber"].is_null());
+    assert_eq!(commit_only_review["commitId"], "abcdef123456");
 
     comment_thread::ActiveModel {
         dtype: Set("ReviewThread".to_string()),

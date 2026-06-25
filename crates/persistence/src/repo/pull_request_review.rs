@@ -254,8 +254,7 @@ impl AppRepositoryImpl<'_> {
         let order_by_updated = normalize_identity(&filter.order_by) == "updateddate";
         if text_filter.is_none() && filter.participant_id.is_none() && !order_by_updated {
             let mut base = comment_thread::Entity::find()
-                .filter(comment_thread::Column::ProjectId.eq(Some(project.id)))
-                .filter(comment_thread::Column::PullRequestId.is_not_null());
+                .filter(comment_thread::Column::ProjectId.eq(Some(project.id)));
             if let Some(author_id) = filter.author_id {
                 base = base.filter(comment_thread::Column::AuthorId.eq(Some(author_id)));
             }
@@ -309,7 +308,6 @@ impl AppRepositoryImpl<'_> {
         }
         let rows = comment_thread::Entity::find()
             .filter(comment_thread::Column::ProjectId.eq(Some(project.id)))
-            .filter(comment_thread::Column::PullRequestId.is_not_null())
             .all(&self.db)
             .await?;
         let mut matched = Vec::new();
