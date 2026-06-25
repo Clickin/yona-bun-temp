@@ -17,10 +17,11 @@
     "smoke:legacy-anchor-coverage": "node scripts/audit-legacy-anchor-coverage.mjs",
     "smoke:legacy-e2e-render-coverage": "node scripts/audit-legacy-e2e-render-coverage.mjs",
     "smoke:legacy-html-pages": "node scripts/audit-legacy-html-pages.mjs",
+    "smoke:legacy-curl-proxy": "node scripts/legacy-curl-proxy.mjs",
     "smoke:legacy-mariadb-dump": "node scripts/smoke-legacy-mariadb-dump.mjs",
     "smoke:legacy-parity-spec-coverage": "node scripts/audit-legacy-parity-spec-coverage.mjs",
     "smoke:legacy-route-coverage": "node scripts/audit-legacy-route-coverage.mjs",
-    "test:dev-scripts": "node --test scripts/dev-config.spec.mjs scripts/playwright-e2e-runtime.spec.mjs scripts/legacy-html-page-audit.spec.mjs scripts/legacy-i18n-key-detector.spec.mjs scripts/legacy-route-coverage.spec.mjs tests/precommit-hook-contract.test.mjs tests/design-harness-contract.test.mjs tests/kubernetes-guidance-contract.test.mjs tests/server-html-compat-fields-contract.test.mjs tests/server-spa-rest-boundary-contract.test.mjs tests/agent-turn-commit-hook-contract.test.mjs tests/agent-cargo-harness-contract.test.mjs tests/agent-cargo-test-harness-contract.test.mjs"
+    "test:dev-scripts": "node --test scripts/dev-config.spec.mjs scripts/playwright-e2e-runtime.spec.mjs scripts/legacy-curl-proxy.spec.mjs scripts/legacy-html-page-audit.spec.mjs scripts/legacy-i18n-key-detector.spec.mjs scripts/legacy-route-coverage.spec.mjs tests/precommit-hook-contract.test.mjs tests/design-harness-contract.test.mjs tests/kubernetes-guidance-contract.test.mjs tests/server-html-compat-fields-contract.test.mjs tests/server-spa-rest-boundary-contract.test.mjs tests/agent-turn-commit-hook-contract.test.mjs tests/agent-cargo-harness-contract.test.mjs tests/agent-cargo-test-harness-contract.test.mjs"
   },
   "devDependencies": {
     "oxfmt": "0.45.0",

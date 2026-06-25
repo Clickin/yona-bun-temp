@@ -71,6 +71,7 @@ YONA_USE_EMBEDDED_ASSETS=1 \
 ```sh
 pnpm --dir frontend build
 YONA_EMBED_ASSET_ROOT="$PWD/frontend/dist" pnpm agent:cargo -- --outside-sandbox build -p yoram-server --bin yoram
+YONA_LEGACY_PROXY_PORT=19100 pnpm smoke:legacy-curl-proxy
 YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_SWEEP_TARGET=both node scripts/visual-parity-sweep.mjs
 node scripts/audit-legacy-html-pages.mjs
 ```
@@ -80,10 +81,9 @@ node scripts/audit-legacy-html-pages.mjs
 `curl` from this host can reach the legacy instance and the existing HTML anchor audit passed.
 However, Playwright through both system Edge and Chrome channels failed to render the legacy
 private-network URL with `net::ERR_ADDRESS_UNREACHABLE`, even when launched outside the Codex
-sandbox and with direct proxy/private-network feature flags. A direct Node TCP proxy also failed
-with `EHOSTUNREACH`, while host `curl` continued to return HTTP 200. The current browser evidence
-therefore uses a temporary localhost proxy that shells out to `curl` for upstream fetches and lets
-Playwright render the legacy responses from `127.0.0.1`.
+sandbox and with direct proxy/private-network feature flags. The current browser evidence
+therefore uses `pnpm smoke:legacy-curl-proxy`, a localhost proxy that shells out to `curl` for
+upstream fetches and lets Playwright render the legacy responses from `127.0.0.1`.
 
 ## Results
 
@@ -100,6 +100,10 @@ Playwright render the legacy responses from `127.0.0.1`.
   `/admin/sample/issue/1` timed out waiting for `networkidle`, while
   `/admin/sample/post/1/editform`, `/admin/sample/compare/main...main`, and
   `/admin/sample/branches` returned HTTP 500 from the homelab sample.
+- 2026-06-25T12:59:24Z legacy-only rerun through `pnpm smoke:legacy-curl-proxy`
+  reconfirmed the same browser path: 77 checked, 73 passed, 4 failed,
+  authenticated session confirmed, 49/49 imported legacy-audit pages covered,
+  and no missing legacy audit coverage.
 - Local Playwright visual sweep: 154 checked, 154 passed, 0 failed, authenticated session confirmed.
 - Latest recorded local direct API fragment-conversion sweep: 13 checked, 13 passed, 0
   failed. The direct surfaces cover the workspace sidebar/menu, notification
