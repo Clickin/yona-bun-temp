@@ -420,6 +420,12 @@
   `frontend/src/route-parity.spec.tsx`,
   `tests/server-spa-rest-boundary-contract.test.mjs`, and
   `cargo check -p yoram-server`.
+- 2026-06-25 data-request guard continuation: the React submit boundary guard now
+  covers legacy `data-request-uri` markers even when `data-request-method` is
+  absent, requiring mutation anchors to intercept navigation and mutation buttons
+  to declare `type="button"`. This keeps board/issue child comment delete
+  controls and similar legacy-markup helpers inside the React event boundary.
+  Focused evidence: `frontend/src/form-submit-boundary.spec.tsx`.
 - 2026-06-20 runtime DI note: app route assembly now receives an explicit `RuntimeRegistry` built from the initialized `AppRuntimeConfig` snapshot, so route registration reads mail/update/auth/translation/site-name/default-scope/upload-size runtime config from one injected registry instead of threading those config fragments as separate function parameters. This is behavior-neutral plumbing toward per-test runtime config isolation without process-global env locks.
 - 2026-06-20 runtime DI note: project direct aliases for watch/unwatch, enroll/cancel-enroll, changeVCS, member CRUD, webhook CRUD, overview update, and clone now reuse the app-scoped `PilotServiceImpl` registered by `routes::projects` instead of rebuilding service/runtime config from process env in each handler. Existing project member, webhook, changeVCS, rest watch/enroll, and project overview/clone contract coverage remains the behavior evidence.
 - 2026-06-20 runtime DI note: legacy direct auth login/signup routes now receive the app-scoped `PilotServiceImpl` from auth route registration instead of rebuilding auth UI and SMTP runtime config from process env. The direct legacy login/signup contract now uses the explicit default `AppRuntimeConfig` helper without process-env mutation for the default auth UI path.

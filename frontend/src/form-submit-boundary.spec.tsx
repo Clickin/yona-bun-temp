@@ -66,7 +66,7 @@ function lineNumberForIndex(source: string, index: number) {
 function requestMethodElements() {
   return listRouteFiles().flatMap((file) => {
     const source = readRouteSource(file);
-    return Array.from(source.matchAll(/data-request-method=/g), (match) => {
+    return Array.from(source.matchAll(/data-request-(?:method|uri)=/g), (match) => {
       const index = match.index ?? 0;
       const anchorStart = source.lastIndexOf("<a", index);
       const buttonStart = source.lastIndexOf("<button", index);
@@ -75,7 +75,7 @@ function requestMethodElements() {
       return {
         file,
         line: lineNumberForIndex(source, index),
-        snippet: source.slice(start, index + 900),
+        snippet: source.slice(start, index + 1400),
         tag,
       };
     });
@@ -218,7 +218,7 @@ describe("React form submit boundary", () => {
     }
   });
 
-  it("keeps legacy data-request-method mutation markers inside React event handlers", () => {
+  it("keeps legacy data-request mutation markers inside React event handlers", () => {
     for (const element of requestMethodElements()) {
       if (element.tag === "button") {
         expect(element.snippet, `${element.file}:${element.line}`).toContain('type="button"');
