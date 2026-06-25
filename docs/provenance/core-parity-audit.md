@@ -157,6 +157,13 @@
 - 2026-06-25 help route direct-render i18n continuation: anonymous `/_help`
   direct rendering now expects the legacy default `title.help` value `Help`
   while preserving Korean runtime lookup coverage for the same title.
+- 2026-06-25 auxiliary direct-helper i18n continuation: the shared
+  directory, anonymous home, help, and Markdown editor/receiver helper
+  functions now resolve missing-provider labels through the legacy default
+  message file rather than returning raw keys. Focused evidence:
+  `directory-home-user-files-notification-i18n.spec.tsx`,
+  `help-route-parity.spec.tsx`, `markdown-renderer.spec.tsx`, and
+  `i18n.spec.tsx`.
 - 2026-06-25 project-watchers direct-render i18n continuation: the project
   watchers page direct-render parity check now expects legacy default message
   output for `project.watcher.title` and `project.watcher.description` instead

@@ -41,6 +41,11 @@ describe("MarkdownRenderer", () => {
   });
 
   it("opts shared markdown labels into legacy messages while preserving key fallbacks", () => {
+    const defaultHtml = renderToStaticMarkup(
+      <LegacyMarkdownEditorShell editId="edit-default" previewId="preview-default">
+        <textarea />
+      </LegacyMarkdownEditorShell>,
+    );
     const html = renderToStaticMarkup(
       <LegacyMarkdownEditorShell
         editId="edit-body"
@@ -66,6 +71,10 @@ describe("MarkdownRenderer", () => {
       </LegacyMarkdownEditorShell>,
     );
 
+    expect(defaultHtml).toContain("Markdown help");
+    expect(defaultHtml).toContain("Notification receivers");
+    expect(defaultHtml).not.toContain("title.markdown.help");
+    expect(defaultHtml).not.toContain("notification.receiver.list.title");
     expect(html).toContain("Translated Markdown Help");
     expect(html).not.toContain("title.markdown.help");
     expect(receiverHtml).toContain("Translated receivers");
