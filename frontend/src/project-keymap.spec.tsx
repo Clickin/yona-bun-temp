@@ -61,13 +61,13 @@ describe("project keymap help parity", () => {
 
     expect(html).toContain('href="#helpKeys"');
     expect(html).toContain('class="modal hide fade keymap-help"');
-    expect(html).toContain("<h5>title.issueList</h5>");
-    expect(html).toContain('<span class="help-inline">issue.menu.new</span>');
-    expect(html).toContain('<span class="help-inline">button.prevPage</span>');
-    expect(html).toContain('<span class="help-inline">button.nextPage</span>');
+    expect(html).toContain("<h5>Issue list</h5>");
+    expect(html).toContain('<span class="help-inline">New issue</span>');
+    expect(html).toContain('<span class="help-inline">Previous page</span>');
+    expect(html).toContain('<span class="help-inline">Next page</span>');
     expect(html).toContain('<span class="ybtn ybtn-small">CTRL</span> + <span');
     expect(html).toContain('<span class="ybtn ybtn-small">ALT</span> + <span');
-    expect(html).toContain('<span class="help-inline">button.selectAll</span>');
+    expect(html).toContain('<span class="help-inline">Select all</span>');
   });
 
   it("keeps project menu and keymap labels on legacy key fallbacks without a runtime provider", () => {
@@ -80,10 +80,10 @@ describe("project keymap help parity", () => {
       />,
     );
 
-    expect(html).toContain('<span class="menu-name">menu.code</span>');
-    expect(html).toContain(">title.keymap</a>");
-    expect(html).toContain("<h5>menu.code</h5>");
-    expect(html).toContain('<span class="help-inline">button.list</span>');
+    expect(html).toContain('<span class="menu-name">Code</span>');
+    expect(html).toContain(">Keyboard shortcuts</a>");
+    expect(html).toContain("<h5>Code</h5>");
+    expect(html).toContain('<span class="help-inline">List</span>');
   });
 
   it("switches project menu and keymap labels through legacy message dictionaries", () => {
@@ -152,12 +152,12 @@ describe("project keymap help parity", () => {
       />,
     );
 
-    expect(html).toContain("<h5>title.issueDetail</h5>");
-    expect(html).toContain('<span class="help-inline">issue.menu.new</span>');
-    expect(html).toContain('<span class="help-inline">button.list</span>');
-    expect(html).toContain('<span class="help-inline">button.edit</span>');
-    expect(html).toContain("<h5>search.menu.issue.comments</h5>");
-    expect(html).toContain('<span class="help-inline">button.commentAndNextState.closed</span>');
+    expect(html).toContain("<h5>Issue details</h5>");
+    expect(html).toContain('<span class="help-inline">New issue</span>');
+    expect(html).toContain('<span class="help-inline">List</span>');
+    expect(html).toContain('<span class="help-inline">Edit</span>');
+    expect(html).toContain("<h5>Issue Comments</h5>");
+    expect(html).toContain('<span class="help-inline">Comment &amp; Close issue</span>');
   });
 
   it("renders legacy board list and detail shortcuts", () => {
@@ -178,14 +178,14 @@ describe("project keymap help parity", () => {
       />,
     );
 
-    expect(listHtml).toContain("<h5>title.boardList</h5>");
-    expect(listHtml).toContain('<span class="help-inline">post.write</span>');
-    expect(listHtml).toContain('<span class="help-inline">button.prevPage</span>');
-    expect(listHtml).toContain('<span class="help-inline">button.nextPage</span>');
+    expect(listHtml).toContain("<h5>Posting List</h5>");
+    expect(listHtml).toContain('<span class="help-inline">New post</span>');
+    expect(listHtml).toContain('<span class="help-inline">Previous page</span>');
+    expect(listHtml).toContain('<span class="help-inline">Next page</span>');
     expect(detailHtml).toContain("<h5>title.boardDetail</h5>");
-    expect(detailHtml).toContain('<span class="help-inline">post.write</span>');
-    expect(detailHtml).toContain('<span class="help-inline">button.list</span>');
-    expect(detailHtml).toContain('<span class="help-inline">button.edit</span>');
+    expect(detailHtml).toContain('<span class="help-inline">New post</span>');
+    expect(detailHtml).toContain('<span class="help-inline">List</span>');
+    expect(detailHtml).toContain('<span class="help-inline">Edit</span>');
   });
 
   it("renders legacy Mac modifier keys from the Macintosh user agent", () => {

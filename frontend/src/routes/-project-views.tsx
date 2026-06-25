@@ -16,7 +16,12 @@ import type {
   ProjectWebhookType,
   ProjectWatchersResponse,
 } from "../api/org-project";
-import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
+import {
+  LEGACY_DEFAULT_LANGUAGE,
+  lookupLegacyMessage,
+  useLegacyMessages,
+  type LegacyI18nContextValue,
+} from "../i18n";
 import { MarkdownRenderer } from "./-markdown-renderer";
 import type { ProjectDetailViewModel } from "./-view-models";
 
@@ -39,7 +44,9 @@ function legacyMessage(
   options: { args?: Array<number | string>; fallback?: string } = {},
 ) {
   const fallback = options.fallback ?? key;
-  return messages ? messages(key, { ...options, fallback }) : fallback;
+  return messages
+    ? messages(key, { ...options, fallback })
+    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { ...options, fallback });
 }
 
 function normalizeProjectHomeTab(value: string | undefined): ProjectHomeTab | null {

@@ -1,6 +1,11 @@
 import * as React from "react";
 import { uploadTemporaryAttachment } from "../api/attachments";
-import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
+import {
+  LEGACY_DEFAULT_LANGUAGE,
+  lookupLegacyMessage,
+  useLegacyMessages,
+  type LegacyI18nContextValue,
+} from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type {
   OrganizationAdminViewModel,
@@ -15,7 +20,7 @@ function legacyMessage(messages: LegacyMessageLookup | undefined, key: string, a
   if (messages) {
     return messages(key, args ? { args } : undefined);
   }
-  return key;
+  return lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, args ? { args } : undefined);
 }
 
 export function buildOrganizationHref(

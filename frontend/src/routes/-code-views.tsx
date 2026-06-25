@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { LEGACY_DEFAULT_LANGUAGE, lookupLegacyMessage } from "../i18n";
 import { highlightCodeLine } from "./-syntax-highlighting";
 import type { IssueReferenceMetadata, MentionReferenceMetadata } from "../api/issue-meta";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -23,7 +24,7 @@ function legacyMessage(
   if (messages) {
     return messages(key, { args, fallback: fallbackText });
   }
-  return fallbackText;
+  return lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { args, fallback: fallbackText });
 }
 
 const LEGACY_ANONYMOUS_USER_NAME = "User.anonymous.name";
