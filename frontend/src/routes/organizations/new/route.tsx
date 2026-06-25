@@ -22,7 +22,6 @@ function OrganizationNewRouteComponent() {
 
   return (
     <OrganizationNewPage
-      basePath={runtimeConfig.basePath}
       onCreateOrganization={async (input) => {
         try {
           const detail = await createOrganization(runtimeConfig, csrfToken, input);

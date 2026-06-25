@@ -193,7 +193,7 @@ export function renderOrganizationSettings(detail: OrganizationDetailViewModel |
 }
 
 export function renderOrganizationNew(): string {
-  return renderToString(<OrganizationNewPage basePath={testRuntimeConfig.basePath} />);
+  return renderToString(<OrganizationNewPage />);
 }
 
 export function renderOrganizationMembersAdmin(detail: OrganizationAdminViewModel | null): string {

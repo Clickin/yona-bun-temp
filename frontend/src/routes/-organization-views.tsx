@@ -406,7 +406,6 @@ function OrganizationMembershipActions(props: {
 }
 
 export function OrganizationNewPage(props: {
-  basePath?: string;
   onCreateOrganization?: (input: { description: string; organizationName: string }) => void;
   pending?: boolean;
 }) {
@@ -423,15 +422,13 @@ export function OrganizationNewPage(props: {
         <div className="project-page-wrap">
           <div className="form-wrap new-project">
             <form
-              action={prefixBasePath(props.basePath ?? "", "/organizations/new")}
               className="frm-wrap"
-              method="post"
               name="new-org"
               onSubmit={(event) => {
+                event.preventDefault();
                 if (!props.onCreateOrganization) {
                   return;
                 }
-                event.preventDefault();
                 if (!isLegacyOrganizationName(formState.organizationName)) {
                   setValidationMessage("organization.name.alert");
                   return;
