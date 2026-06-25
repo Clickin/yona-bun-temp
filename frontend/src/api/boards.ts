@@ -186,6 +186,13 @@ export type BoardPostContentUpdateInput = {
   projectName: string;
 };
 
+export type BoardPostLabelsUpdateInput = {
+  labelIds: Array<number | string>;
+  ownerName: string;
+  postNumber: number | string;
+  projectName: string;
+};
+
 export type BoardCommentInput = {
   attachmentIds?: Array<number | string>;
   contentsMarkdown: string;
@@ -597,6 +604,26 @@ export function updateProjectPostRest(
     projectPostPath(input.ownerName, input.projectName, input.postNumber),
     {
       body: postMutationBody(input),
+      csrfToken,
+      fetchImpl,
+      method: "PATCH",
+    },
+  ).then(normalizePostDetail);
+}
+
+export function updateProjectPostLabelsRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: BoardPostLabelsUpdateInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<BoardPostDetail> {
+  return restFetch<Partial<BoardPostDetail>>(
+    runtimeConfig,
+    `${projectPostPath(input.ownerName, input.projectName, input.postNumber)}/labels`,
+    {
+      body: {
+        labelIds: input.labelIds,
+      },
       csrfToken,
       fetchImpl,
       method: "PATCH",

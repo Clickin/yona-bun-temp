@@ -197,6 +197,33 @@ function ProjectDashboardMetric(props: {
   );
 }
 
+function ProjectDashboardMilestoneMetric(props: {
+  count: number;
+  href: string;
+  label: string;
+  percent: number;
+}) {
+  return (
+    <div className="row-fluid">
+      <div className="span6">
+        <a href={props.href}>{props.label}</a>
+      </div>
+      <div className="span3 num">
+        <strong>{props.count}</strong>
+      </div>
+      <div className="span3 nm">
+        <div
+          className={`progress progress-success ${props.count === 0 ? "empty" : ""}`.trim()}
+          data-toggle="tooltip"
+          title={`${props.percent}%`}
+        >
+          <div className="bar bar-success" style={{ width: `${props.percent}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProjectDashboardLabelMetric(props: {
   count: number;
   href: string;
@@ -214,6 +241,36 @@ function ProjectDashboardLabelMetric(props: {
       </div>
       <div className="span2 num">
         <strong>{props.count}</strong>
+      </div>
+    </div>
+  );
+}
+
+function ProjectDashboardPullRequestMetric(props: {
+  contributorAvatarUrl: string;
+  contributorLoginId: string;
+  contributorUserLabel: string;
+  createdLabel: string;
+  href: string;
+  listHref: string;
+  title: string;
+}) {
+  return (
+    <div className="row-fluid">
+      <div className="span9 title">
+        <a className="usf-group" href={props.listHref}>
+          <span
+            className="avatar-wrap smaller"
+            data-toggle="tooltip"
+            title={`${props.contributorUserLabel} (@${props.contributorLoginId})`}
+          >
+            <img alt="" height="20" src={props.contributorAvatarUrl} width="20" />
+          </span>
+        </a>{" "}
+        <a href={props.href}>{props.title}</a>
+      </div>
+      <div className="span3 num right-txt" style={{ color: "#999" }}>
+        {props.createdLabel}
       </div>
     </div>
   );
@@ -298,6 +355,26 @@ function dashboardPercent(count: number, totalCount: number) {
   return totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
 }
 
+function legacyStrongCountMessage(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  count: number,
+) {
+  const countText = String(count);
+  const text = legacyMessage(messages, key, { args: [count] }).replace(/<\/?\s*strong\s*>/g, "");
+  const index = text.indexOf(countText);
+  if (index < 0) {
+    return text;
+  }
+  return (
+    <>
+      {text.slice(0, index)}
+      <strong>{count}</strong>
+      {text.slice(index + countText.length)}
+    </>
+  );
+}
+
 function ProjectHomeHistoryPane(props: {
   detail: ProjectDetailViewModel;
   messages?: LegacyMessageLookup;
@@ -354,12 +431,31 @@ function ProjectHomeDashboardPane(props: {
     buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, suffix);
   const openIssueCount = detail.openIssueCount ?? 0;
   const pullRequestCount = detail.openPullRequestCount ?? 0;
-  const milestonePercent = detail.currentMilestone?.completionPercent ?? 0;
   const dashboardAssignees = detail.dashboard?.assignees ?? [];
   const hasAssigneeDashboardData =
     detail.dashboard !== undefined &&
     (dashboardAssignees.length > 0 || detail.dashboard.unassignedOpenIssueCount !== undefined);
   const dashboardLabels = detail.dashboard?.labels ?? [];
+  const dashboardMilestones =
+    detail.dashboard?.milestones ??
+    (detail.currentMilestone
+      ? [
+          {
+            closedIssueCount: detail.currentMilestone.closedIssueCount,
+            completionPercent: detail.currentMilestone.completionPercent,
+            id: detail.currentMilestone.id,
+            openIssueCount: detail.currentMilestone.openIssueCount,
+            title: detail.currentMilestone.title,
+          },
+        ]
+      : []);
+  const noMilestoneOpenIssueCount =
+    detail.dashboard?.noMilestoneOpenIssueCount ??
+    (dashboardMilestones.length > 0
+      ? openIssueCount -
+        dashboardMilestones.reduce((total, milestone) => total + milestone.openIssueCount, 0)
+      : 0);
+  const dashboardPullRequests = detail.dashboard?.pullRequests ?? [];
   const dashboardLabelCategories = dashboardLabels.reduce<
     Array<{ categoryName: string; labels: typeof dashboardLabels }>
   >((categories, label) => {
@@ -426,22 +522,40 @@ function ProjectHomeDashboardPane(props: {
 
               <h5>{legacyMessage(props.messages, "project.dashboard.openIssuesByMilestone")}</h5>
               <div className="overview-milestone">
-                {detail.currentMilestone ? (
-                  <ProjectDashboardMetric
-                    count={detail.currentMilestone.openIssueCount}
-                    href={projectHref(
-                      `issues?state=open&milestoneId=${detail.currentMilestone.id}`,
-                    )}
-                    label={detail.currentMilestone.title}
-                    percent={milestonePercent}
-                  />
+                {dashboardMilestones.length > 0 ? (
+                  <>
+                    {dashboardMilestones.map((milestone) => (
+                      <ProjectDashboardMilestoneMetric
+                        count={milestone.openIssueCount}
+                        href={projectHref(`issues?state=open&milestoneId=${milestone.id}`)}
+                        key={milestone.id}
+                        label={milestone.title}
+                        percent={milestone.completionPercent}
+                      />
+                    ))}
+                    <div className="row-fluid">
+                      <div className="span6">
+                        <a href={projectHref("issues?state=open&milestoneId=0")}>
+                          {legacyMessage(props.messages, "issue.noMilestone")}
+                        </a>
+                      </div>
+                      <div className="span3 num">
+                        <strong>{Math.max(0, noMilestoneOpenIssueCount)}</strong>
+                      </div>
+                      <div className="span3 nm" />
+                    </div>
+                  </>
                 ) : (
-                  <ProjectDashboardMetric
-                    count={openIssueCount}
-                    href={projectHref("issues?state=open")}
-                    label={legacyMessage(props.messages, "issue.noMilestone")}
-                    percent={0}
-                  />
+                  <div className="empty">
+                    <p>{legacyMessage(props.messages, "milestone.is.empty")}</p>
+                    <a
+                      className="ybtn ybtn-small"
+                      href={projectHref("newMilestoneForm")}
+                      target="_blank"
+                    >
+                      {legacyMessage(props.messages, "milestone.menu.new")}
+                    </a>
+                  </div>
                 )}
               </div>
             </>
@@ -452,7 +566,33 @@ function ProjectHomeDashboardPane(props: {
               {detail.showIssue ? <hr /> : null}
               <h5>{legacyMessage(props.messages, "project.dashboard.pullRequests")}</h5>
               <div className="overview-pullrequest">
-                {pullRequestCount === 0 ? (
+                {dashboardPullRequests.length > 0 ? (
+                  <>
+                    {dashboardPullRequests.map((pullRequest) => (
+                      <ProjectDashboardPullRequestMetric
+                        contributorAvatarUrl={pullRequest.contributorAvatarUrl}
+                        contributorLoginId={pullRequest.contributorLoginId}
+                        contributorUserLabel={pullRequest.contributorUserLabel}
+                        createdLabel={pullRequest.createdLabel}
+                        href={projectHref(`pullRequest/${pullRequest.pullRequestNumber}`)}
+                        key={pullRequest.pullRequestNumber}
+                        listHref={projectHref(
+                          `pullRequests?contributorId=${pullRequest.contributorUserId}`,
+                        )}
+                        title={pullRequest.title}
+                      />
+                    ))}
+                    <div className="right-txt mt5" style={{ marginRight: 17 }}>
+                      <a href={projectHref("pullRequests")}>
+                        {legacyStrongCountMessage(
+                          props.messages,
+                          "project.dashboard.more",
+                          pullRequestCount,
+                        )}
+                      </a>
+                    </div>
+                  </>
+                ) : pullRequestCount === 0 ? (
                   <div className="empty">
                     <p>{legacyMessage(props.messages, "pullRequest.is.empty")}</p>
                     <a

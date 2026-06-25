@@ -7,7 +7,9 @@ import {
   createCommitDiscussionCommentRest,
   deleteCommitDiscussionCommentRest,
   openCommitDiscussionThreadRest,
+  unwatchCommitRest,
   updateCommitDiscussionCommentRest,
+  watchCommitRest,
   type CodeCommitDetailResponse,
 } from "../../../../../api/code-commits";
 import { apiQueryKeys } from "../../../../../api/query-keys";
@@ -39,6 +41,7 @@ function toCodeCommitDetailView(response: CodeCommitDetailResponse): CodeCommitD
       path: file.path,
       patch: file.patch,
     })),
+    isWatching: response.isWatching,
     noHead: response.noHead,
     ownerName: response.ownerName,
     parentCommit: response.parentCommit,
@@ -148,6 +151,22 @@ function CodeCommitDetailRouteComponent() {
       await queryClient.invalidateQueries({ queryKey: detailQueryKey });
     },
   });
+  const watchMutation = useMutation({
+    mutationFn: () => watchCommitRest(runtimeConfig, csrfToken, { ...scope, query }),
+    onError: mutationError,
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(detailQueryKey, updated);
+      await queryClient.invalidateQueries({ queryKey: detailQueryKey });
+    },
+  });
+  const unwatchMutation = useMutation({
+    mutationFn: () => unwatchCommitRest(runtimeConfig, csrfToken, { ...scope, query }),
+    onError: mutationError,
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(detailQueryKey, updated);
+      await queryClient.invalidateQueries({ queryKey: detailQueryKey });
+    },
+  });
   const error = containerQuery.error ?? commitDetailQuery.error;
   const failureKind = classifyConnectFailure(error);
 
@@ -195,6 +214,13 @@ function CodeCommitDetailRouteComponent() {
       }}
       onOpenThread={async (threadId) => {
         await openThreadMutation.mutateAsync(threadId);
+      }}
+      onToggleCommitWatch={async (watching) => {
+        if (watching) {
+          await watchMutation.mutateAsync();
+        } else {
+          await unwatchMutation.mutateAsync();
+        }
       }}
     />
   );

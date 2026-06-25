@@ -44,8 +44,17 @@ export const testRuntimeConfig: RuntimeConfig = {
 
 export const testLegacyMessages = createLegacyI18nRuntime(["en-US"]).t;
 
-export function renderHome(runtimeConfig: RuntimeConfig = testRuntimeConfig): string {
-  return renderToString(<HomePage messages={testLegacyMessages} runtimeConfig={runtimeConfig} />);
+export function renderHome(
+  runtimeConfig: RuntimeConfig = testRuntimeConfig,
+  flashMessageKey?: string | null,
+): string {
+  return renderToString(
+    <HomePage
+      flashMessageKey={flashMessageKey}
+      messages={testLegacyMessages}
+      runtimeConfig={runtimeConfig}
+    />,
+  );
 }
 
 export function renderLogin(

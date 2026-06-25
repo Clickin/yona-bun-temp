@@ -353,6 +353,19 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
+  await page.route(/\/api\/v1\/projects\/admin\/projectYobi\/posts\/1\/labels$/, async (route) => {
+    const body = route.request().postDataJSON() as { labelIds?: string[] };
+    boardPost = boardDetail({
+      ...boardPost,
+      labels: body.labelIds?.length ? [boardLabel] : [],
+    });
+    await route.fulfill({
+      body: JSON.stringify(boardPost),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
   await page.route(
     /\/api\/v1\/projects\/admin\/projectYobi\/posts\/(?!form-options(?:\?|$))[^/?]+(?:\?.*)?$/,
     async (route) => {
@@ -476,11 +489,8 @@ test("project board detail supports watch and comment create update delete", asy
   await expect(page.locator(".board-header .title")).toContainText("Board parity announcement");
   await expect(page.getByText("#1")).toBeVisible();
   await expect(page.locator("#post-body-1")).toContainText("Board body from markdown");
-  await expect(
-    page.locator(".issue-info.board-labels .label.issue-label.active.static", {
-      hasText: "guide",
-    }),
-  ).toBeVisible();
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-toggle", "select2");
+  await expect(page.locator('#labelIds option[value="5"]')).toHaveText("guide");
   await expect(page.locator(".posting-history a")).toHaveAttribute(
     "href",
     "#-yona-posting-history",
@@ -490,6 +500,20 @@ test("project board detail supports watch and comment create update delete", asy
   );
   await expect(page.locator("#-yona-posting-history strong")).toHaveText("title");
   await expect(page.locator(".board-comment-wrap")).toContainText("First board comment");
+
+  const labelRequest = page.waitForRequest(
+    (request) => request.url().endsWith("/posts/1/labels") && request.method() === "PATCH",
+  );
+  await page.locator("#labelIds").evaluate((select) => {
+    for (const option of Array.from((select as HTMLSelectElement).options)) {
+      option.selected = false;
+    }
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  const labelMutation = await labelRequest;
+  expect(labelMutation.headers()["x-csrf-token"]).toBe("csrf-123");
+  expect(labelMutation.postDataJSON()).toEqual({ labelIds: [] });
+  await expect(page.locator('#labelIds option[value="5"]')).toHaveCount(0);
 
   const watchRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts/1/watch") && request.method() === "POST",

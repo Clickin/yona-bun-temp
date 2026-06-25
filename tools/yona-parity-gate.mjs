@@ -245,7 +245,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "board-posting-core",
     label: "Board posting core",
-    status: "partial",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/boards\.ts$/i,
       /^frontend\/src\/routes\/-board-views\.tsx$/i,

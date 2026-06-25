@@ -17,6 +17,9 @@ struct RestProjectContainerResponse {
 struct RestProjectDashboard {
     assignees: Vec<RestProjectDashboardAssignee>,
     labels: Vec<RestProjectDashboardLabel>,
+    milestones: Vec<RestProjectDashboardMilestone>,
+    no_milestone_open_issue_count: u32,
+    pull_requests: Vec<RestProjectDashboardPullRequest>,
     unassigned_open_issue_count: u32,
 }
 
@@ -40,6 +43,28 @@ struct RestProjectDashboardLabel {
     id: i64,
     name: String,
     open_issue_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDashboardMilestone {
+    closed_issue_count: u32,
+    completion_percent: u32,
+    id: i64,
+    open_issue_count: u32,
+    title: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDashboardPullRequest {
+    contributor_avatar_url: String,
+    contributor_login_id: String,
+    contributor_user_id: i64,
+    contributor_user_label: String,
+    created_label: String,
+    pull_request_number: i64,
+    title: String,
 }
 
 #[derive(Default, Serialize)]
@@ -156,6 +181,42 @@ async fn rest_project_home_dashboard(
             open_issue_count: label.open_issue_count,
         })
         .collect();
+    let milestones = repository
+        .list_project_dashboard_open_milestones(authorization.project.id)
+        .await
+        .map_err(internal_error)?
+        .into_iter()
+        .map(|milestone| RestProjectDashboardMilestone {
+            closed_issue_count: milestone.closed_issue_count,
+            completion_percent: milestone.completion_percent,
+            id: milestone.id,
+            open_issue_count: milestone.open_issue_count,
+            title: milestone.title,
+        })
+        .collect();
+    let pull_requests = if container.show_pull_request {
+        repository
+            .list_project_dashboard_pull_requests(authorization.project.id, 10)
+            .await
+            .map_err(internal_error)?
+            .into_iter()
+            .map(|pull_request| RestProjectDashboardPullRequest {
+                contributor_avatar_url: gravatar_url(&pull_request.contributor_email_address),
+                contributor_login_id: pull_request.contributor_login_id,
+                contributor_user_id: pull_request.contributor_user_id,
+                contributor_user_label: pull_request.contributor_user_label,
+                created_label: pull_request.created_label,
+                pull_request_number: pull_request.pull_request_number,
+                title: pull_request.title,
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+    let no_milestone_open_issue_count = repository
+        .count_no_milestone_open_issues_for_project(authorization.project.id)
+        .await
+        .map_err(internal_error)?;
     let unassigned_open_issue_count = repository
         .count_unassigned_open_issues_for_project(authorization.project.id)
         .await
@@ -163,6 +224,9 @@ async fn rest_project_home_dashboard(
     Ok(RestProjectDashboard {
         assignees,
         labels,
+        milestones,
+        no_milestone_open_issue_count,
+        pull_requests,
         unassigned_open_issue_count,
     })
 }
@@ -204,8 +268,8 @@ async fn rest_project_home_history(
         .map_err(internal_error)?
     {
         let repo_path = yoram_vcs::repository_path(&service.data_root, project.id);
-        for commit in yoram_vcs::read_project_history_commits(&repo_path, 10)
-            .map_err(code_browser_error)?
+        for commit in
+            yoram_vcs::read_project_history_commits(&repo_path, 10).map_err(code_browser_error)?
         {
             items.push(rest_project_history_item_from_commit(
                 &service.base_path,

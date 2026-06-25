@@ -28,15 +28,15 @@ Date: 2026-06-26
 
 | Status | Count |
 | --- | ---: |
-| covered | 3 |
-| gap | 1 |
+| covered | 4 |
+| gap | 0 |
 | not-applicable | 1 |
 
 ## Rows
 
 | Route/state | Legacy source and behavior | Current source and evidence | Status | Owner |
 | --- | --- | --- | --- | --- |
-| `/users/signupform` valid submit with `signup.require.admin.confirm=true` or `application.use.email.verification=true` | `UserApp.newUser()` sets flash `user.signup.requested` or `user.verification.mail.sent`, then redirects to `Application.index()`; `common/scripts.scala.html` displays flash through `$yobi.notify(...)`. | `frontend/src/routes/users/signupform/route.tsx` keeps the React REST submit boundary through `registerWithPassword`, but still routes anonymous post-state to `/users/loginform?signup=requested` or `/users/loginform?verify=sent`, and `LoginPage` renders inline success alerts. | gap | Not closed in `ui-worker-auth-post-state` because exact legacy target requires root/home/global flash rendering outside assigned auth route scope. Next owner: `frontend/src/routes/index.tsx`, `frontend/src/routes/-home-view.tsx` or root global flash/notify shell, plus signup route/spec updates. |
+| `/users/signupform` valid submit with `signup.require.admin.confirm=true` or `application.use.email.verification=true` | `UserApp.newUser()` sets flash `user.signup.requested` or `user.verification.mail.sent`, then redirects to `Application.index()`; `common/scripts.scala.html` displays flash through `$yobi.notify(...)`. | `frontend/src/routes/users/signupform/route.tsx` keeps the React REST submit boundary through `registerWithPassword` and now routes anonymous post-state to `/?signup=requested` or `/?verify=sent`; `IndexRouteComponent` maps those query states to the legacy flash keys and `HomePage` renders a `data-toggle="yobi-notify"` success notification. | covered in Wave 4 | `frontend/src/routes/index.tsx`, `frontend/src/routes/-home-view.tsx`, `frontend/src/auth-workspace-shell.spec.tsx`, `frontend/src/route-parity.spec.tsx` |
 | `/lostPassword` invalid request | `PasswordResetApp.requestResetPasswordEmail()` returns `lostPassword.scala.html` with `site.mail.fail` and `site.resetPasswordEmail.invalidRequest`. | `LostPasswordPage` renders the same alert/error copy for `/lostPassword?error=invalid`; React submits through `/api/v1/auth/password-reset/request`. | covered | none |
 | `/resetPassword` valid submit | `PasswordResetApp.resetPassword()` updates the password, flashes `user.loginWithNewPassword`, and returns the legacy login template. | REST `/auth/password-reset/complete` returns `/users/loginform?password=reset`; `LoginPage` renders the legacy login shell and `user.loginWithNewPassword`. Redirect-after-REST is the app-runtime boundary replacement for a direct POST template response. | covered | none |
 | `/resetPassword` invalid submit | `PasswordResetApp.resetPassword()` returns `400` `ErrorViews.BadRequest.render("site.resetPasswordEmail.wrongUrl")`, which uses `badrequest_default.scala.html`. | `ResetPasswordPage` now renders the same bad-request wrapper and `site.resetPasswordEmail.wrongUrl` message for `/resetPassword?error=invalid` instead of keeping the reset form visible; focused render spec pins `.page-wrap-outer`, `.project-page-wrap`, `.error-wrap`, `.ico-404`, Home link, and absence of `name="passwordReset"`. | covered | none |

@@ -19,9 +19,11 @@ function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
 }
 
 export function HomePage({
+  flashMessageKey,
   messages: providedMessages,
   runtimeConfig,
 }: {
+  flashMessageKey?: string | null;
   messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -31,6 +33,11 @@ export function HomePage({
 
   return (
     <main className="app-shell">
+      {flashMessageKey ? (
+        <div className="yobi-notification alert alert-success" data-toggle="yobi-notify">
+          {legacyMessage(messages, flashMessageKey)}
+        </div>
+      ) : null}
       <div className="siteintro-bg row">
         <div className="siteintro">
           <div className="siteintro-cover">

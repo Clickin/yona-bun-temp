@@ -29,6 +29,7 @@ use crate::repo_types::{
     OrganizationPostingProjectOptionRecord, OrganizationRecord, OrganizationViewerRecord,
     PostingCommentOriginRecord, PostingCommentRecord, PostingListFilter, PostingRecord,
     ProjectAuthorizationRecord, ProjectDashboardAssigneeRecord, ProjectDashboardLabelRecord,
+    ProjectDashboardMilestoneRecord, ProjectDashboardPullRequestRecord,
     ProjectEnrollmentRequestRecord, ProjectHomeHistoryItemRecord, ProjectIssueListItemRecord,
     ProjectIssueListRecord, ProjectIssueParentOptionRecord, ProjectIssueReferenceRecord,
     ProjectIssueReferenceSearchRecord, ProjectListEntry, ProjectMemberDirectoryRecord,

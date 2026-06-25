@@ -407,6 +407,7 @@ function boardDetailLabels(props: {
   canUpdate: boolean;
   labels: BoardLabel[];
   messages?: LegacyMessageLookup;
+  onLabelUpdate?: (labelIds: string[]) => Promise<void>;
   ownerName: string;
   postNumber: string;
   projectName: string;
@@ -461,6 +462,12 @@ function boardDetailLabels(props: {
           id="labelIds"
           multiple
           name="labelIds"
+          onChange={(event) => {
+            const labelIds = Array.from(event.currentTarget.selectedOptions).map(
+              (option) => option.value,
+            );
+            void props.onLabelUpdate?.(labelIds);
+          }}
         >
           <option />
           {Array.from(categories.entries()).map(([categoryName, labels]) => (
@@ -949,6 +956,7 @@ export function ProjectBoardDetailPage(props: {
     attachmentIds?: number[],
   ) => Promise<void>;
   onDeletePost?: () => Promise<void>;
+  onLabelUpdate?: (labelIds: string[]) => Promise<void>;
   onPostContentUpdate?: (input: MarkdownTasklistToggleInput) => Promise<void>;
   onWatchToggle?: () => Promise<void>;
 }) {
@@ -1808,6 +1816,7 @@ export function ProjectBoardDetailPage(props: {
                   canUpdate: post.permissions.canUpdate,
                   labels: post.labels,
                   messages: props.messages,
+                  onLabelUpdate: props.onLabelUpdate,
                   ownerName: post.ownerName,
                   postNumber: post.postNumber,
                   projectName: post.projectName,

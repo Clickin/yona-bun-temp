@@ -172,6 +172,96 @@ impl AppRepositoryImpl<'_> {
         }))
     }
 
+    pub async fn list_project_dashboard_open_milestones(
+        &self,
+        project_id: i64,
+    ) -> Result<Vec<ProjectDashboardMilestoneRecord>, DbErr> {
+        let rows = milestone::Entity::find()
+            .filter(milestone::Column::ProjectId.eq(Some(project_id)))
+            .filter(
+                Condition::any()
+                    .add(milestone::Column::State.ne(Some(1)))
+                    .add(milestone::Column::State.is_null()),
+            )
+            .order_by_asc(milestone::Column::DueDate)
+            .order_by_asc(milestone::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut records = Vec::new();
+        for row in rows {
+            let open_issue_count = issue::Entity::find()
+                .filter(issue::Column::ProjectId.eq(Some(project_id)))
+                .filter(issue::Column::MilestoneId.eq(Some(row.id)))
+                .filter(issue::Column::State.eq(Some(0)))
+                .count(&self.db)
+                .await? as u32;
+            if open_issue_count == 0 {
+                continue;
+            }
+            let closed_issue_count = issue::Entity::find()
+                .filter(issue::Column::ProjectId.eq(Some(project_id)))
+                .filter(issue::Column::MilestoneId.eq(Some(row.id)))
+                .filter(issue::Column::State.ne(Some(0)))
+                .count(&self.db)
+                .await? as u32;
+            let total = open_issue_count + closed_issue_count;
+            let completion_percent = if total == 0 {
+                0
+            } else {
+                closed_issue_count.saturating_mul(100) / total
+            };
+            records.push(ProjectDashboardMilestoneRecord {
+                closed_issue_count,
+                completion_percent,
+                id: row.id,
+                open_issue_count,
+                title: row.title.unwrap_or_default(),
+            });
+        }
+        Ok(records)
+    }
+
+    pub async fn count_no_milestone_open_issues_for_project(
+        &self,
+        project_id: i64,
+    ) -> Result<u32, DbErr> {
+        Ok(issue::Entity::find()
+            .filter(issue::Column::ProjectId.eq(Some(project_id)))
+            .filter(issue::Column::State.eq(Some(0)))
+            .filter(issue::Column::MilestoneId.is_null())
+            .count(&self.db)
+            .await? as u32)
+    }
+
+    pub async fn list_project_dashboard_pull_requests(
+        &self,
+        project_id: i64,
+        limit: u64,
+    ) -> Result<Vec<ProjectDashboardPullRequestRecord>, DbErr> {
+        let rows = pull_request::Entity::find()
+            .filter(pull_request::Column::ToProjectId.eq(Some(project_id)))
+            .filter(pull_request_open_condition())
+            .order_by_desc(pull_request::Column::Created)
+            .order_by_desc(pull_request::Column::Id)
+            .limit(limit)
+            .all(&self.db)
+            .await?;
+        let mut records = Vec::new();
+        for row in rows {
+            let contributor = self.user_record_for_optional_id(row.contributor_id).await?;
+            records.push(ProjectDashboardPullRequestRecord {
+                contributor_email_address: contributor.email_address,
+                contributor_login_id: contributor.login_id,
+                contributor_user_id: contributor.user_id,
+                contributor_user_label: contributor.user_label,
+                created_label: format_workspace_date_label(row.created),
+                pull_request_number: row.number.unwrap_or_default(),
+                title: row.title.unwrap_or_default(),
+            });
+        }
+        Ok(records)
+    }
+
     pub async fn create_project_enrollment_request(
         &self,
         project_id: i64,

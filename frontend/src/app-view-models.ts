@@ -351,6 +351,23 @@ export function toProjectContainerView(
         name?: string;
         openIssueCount?: number;
       }>;
+      milestones?: Array<{
+        closedIssueCount?: number;
+        completionPercent?: number;
+        id?: number;
+        openIssueCount?: number;
+        title?: string;
+      }>;
+      noMilestoneOpenIssueCount?: number;
+      pullRequests?: Array<{
+        contributorAvatarUrl?: string;
+        contributorLoginId?: string;
+        contributorUserId?: number;
+        contributorUserLabel?: string;
+        createdLabel?: string;
+        pullRequestNumber?: number;
+        title?: string;
+      }>;
       unassignedOpenIssueCount?: number;
     };
     history?: {
@@ -405,6 +422,23 @@ export function toProjectContainerView(
         id: label.id ?? 0,
         name: label.name ?? "",
         openIssueCount: label.openIssueCount ?? 0,
+      })),
+      milestones: (detailWithReadme.dashboard?.milestones ?? []).map((milestone) => ({
+        closedIssueCount: milestone.closedIssueCount ?? 0,
+        completionPercent: milestone.completionPercent ?? 0,
+        id: milestone.id ?? 0,
+        openIssueCount: milestone.openIssueCount ?? 0,
+        title: milestone.title ?? "",
+      })),
+      noMilestoneOpenIssueCount: detailWithReadme.dashboard?.noMilestoneOpenIssueCount ?? undefined,
+      pullRequests: (detailWithReadme.dashboard?.pullRequests ?? []).map((pullRequest) => ({
+        contributorAvatarUrl: pullRequest.contributorAvatarUrl ?? "",
+        contributorLoginId: pullRequest.contributorLoginId ?? "",
+        contributorUserId: pullRequest.contributorUserId ?? 0,
+        contributorUserLabel: pullRequest.contributorUserLabel ?? "",
+        createdLabel: pullRequest.createdLabel ?? "",
+        pullRequestNumber: pullRequest.pullRequestNumber ?? 0,
+        title: pullRequest.title ?? "",
       })),
       unassignedOpenIssueCount: detailWithReadme.dashboard?.unassignedOpenIssueCount ?? undefined,
     },

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { unwatchCommitRest, watchCommitRest } from "./api/code-commits";
 import {
   createPostCommentRest,
   updatePostCommentRest,
   updateProjectPostContentRest,
+  updateProjectPostLabelsRest,
   updateProjectPostRest,
   listOrganizationBoardsQueryOptions,
   listProjectPostsQueryOptions,
@@ -129,7 +131,67 @@ describe("api query keys", () => {
     });
   });
 
-  it("updates issue and board tasklist content through canonical REST routes", async () => {
+  it("sends commit watch mutations to the commit detail REST resource", async () => {
+    const calls: Array<{
+      headers: Headers;
+      method: string | undefined;
+      url: string;
+    }> = [];
+    const fetchImpl = async (url: string | URL | Request, init?: RequestInit) => {
+      calls.push({
+        headers: init?.headers as Headers,
+        method: init?.method,
+        url: String(url),
+      });
+      return new Response(
+        JSON.stringify({
+          commit: null,
+          isWatching: init?.method === "POST",
+          permissions: {},
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        },
+      );
+    };
+
+    const input = {
+      commitId: "abc123",
+      ownerName: "owner space",
+      projectName: "project/name",
+      query: { branch: "main", path: "src/main.rs" },
+    };
+    const watched = await watchCommitRest(
+      { apiBaseUrl: "/yona/api", basePath: "/yona" },
+      "csrf-token",
+      input,
+      fetchImpl,
+    );
+    const unwatched = await unwatchCommitRest(
+      { apiBaseUrl: "/yona/api", basePath: "/yona" },
+      "csrf-token",
+      input,
+      fetchImpl,
+    );
+
+    expect(watched.isWatching).toBe(true);
+    expect(unwatched.isWatching).toBe(false);
+    expect(calls.map((call) => [call.method, call.url])).toEqual([
+      [
+        "POST",
+        "/yona/api/v1/projects/owner%20space/project%2Fname/commit/abc123/watch?branch=main&path=src%2Fmain.rs",
+      ],
+      [
+        "DELETE",
+        "/yona/api/v1/projects/owner%20space/project%2Fname/commit/abc123/watch?branch=main&path=src%2Fmain.rs",
+      ],
+    ]);
+    expect(calls[0].headers.get("x-csrf-token")).toBe("csrf-token");
+    expect(calls[1].headers.get("x-csrf-token")).toBe("csrf-token");
+  });
+
+  it("updates issue and board tasklist content plus board labels through canonical REST routes", async () => {
     const calls: Array<{
       body: string | null;
       headers: Headers;
@@ -173,11 +235,23 @@ describe("api query keys", () => {
       },
       fetchImpl,
     );
+    await updateProjectPostLabelsRest(
+      { apiBaseUrl: "/yona/api", basePath: "/yona" },
+      "csrf-token",
+      {
+        labelIds: ["5", 7],
+        ownerName: "owner",
+        postNumber: 16,
+        projectName: "projectYobi",
+      },
+      fetchImpl,
+    );
 
-    expect(calls).toHaveLength(2);
+    expect(calls).toHaveLength(3);
     expect(calls[0].url).toBe("/yona/api/v1/owners/owner/projects/projectYobi/issues/7/content");
     expect(calls[1].url).toBe("/yona/api/v1/projects/owner/projectYobi/posts/16/content");
-    for (const call of calls) {
+    expect(calls[2].url).toBe("/yona/api/v1/projects/owner/projectYobi/posts/16/labels");
+    for (const call of calls.slice(0, 2)) {
       expect(call.method).toBe("PATCH");
       expect(call.headers.get("x-csrf-token")).toBe("csrf-token");
       expect(call.headers.get("Accept")).toBe("application/json");
@@ -186,6 +260,12 @@ describe("api query keys", () => {
         original: "- [ ] done",
       });
     }
+    expect(calls[2].method).toBe("PATCH");
+    expect(calls[2].headers.get("x-csrf-token")).toBe("csrf-token");
+    expect(calls[2].headers.get("Accept")).toBe("application/json");
+    expect(JSON.parse(calls[2].body ?? "{}")).toEqual({
+      labelIds: ["5", 7],
+    });
   });
 
   it("includes owner, project, and query in project issue-reference keys", () => {

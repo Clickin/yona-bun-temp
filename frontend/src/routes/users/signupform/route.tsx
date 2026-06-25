@@ -72,11 +72,11 @@ function RegisterRouteComponent() {
             return;
           }
           if (authUiCapabilities?.signupRequireConfirm) {
-            navigateToAppHref(runtimeConfig.basePath, "/users/loginform?signup=requested");
+            navigateToAppHref(runtimeConfig.basePath, "/?signup=requested");
             return;
           }
           if (authUiCapabilities?.emailVerificationEnabled) {
-            navigateToAppHref(runtimeConfig.basePath, "/users/loginform?verify=sent");
+            navigateToAppHref(runtimeConfig.basePath, "/?verify=sent");
             return;
           }
         } catch (error) {

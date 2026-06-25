@@ -49,6 +49,7 @@ export type CodeCommitDetailResponse = {
     shortMessage: string;
   } | null;
   files: Array<{ path: string; patch: string }>;
+  isWatching: boolean;
   issueReferences?: IssueReferenceMetadata[];
   noHead: boolean;
   ownerName: string;
@@ -139,6 +140,7 @@ function normalizeCommitDetail(
     breadcrumbs: response.breadcrumbs ?? [],
     commit: response.commit ?? null,
     files: response.files ?? [],
+    isWatching: response.isWatching ?? false,
     issueReferences: normalizeIssueReferences(response.issueReferences),
     noHead: response.noHead ?? false,
     ownerName: response.ownerName ?? "",
@@ -222,6 +224,32 @@ export function deleteCommitDiscussionCommentRest(
   return restFetch<Partial<CodeCommitDetailResponse>>(
     runtimeConfig,
     commitPath(input, `/comments/${input.commentId}`),
+    { csrfToken, fetchImpl, method: "DELETE" },
+  ).then(normalizeCommitDetail);
+}
+
+export function watchCommitRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: CommitDiscussionScopeInput & { query?: CodeCommitDetailQuery },
+  fetchImpl: typeof fetch = fetch,
+): Promise<CodeCommitDetailResponse> {
+  return restFetch<Partial<CodeCommitDetailResponse>>(
+    runtimeConfig,
+    `${commitPath(input, "/watch")}${commitSearch(input.query)}`,
+    { csrfToken, fetchImpl, method: "POST" },
+  ).then(normalizeCommitDetail);
+}
+
+export function unwatchCommitRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: CommitDiscussionScopeInput & { query?: CodeCommitDetailQuery },
+  fetchImpl: typeof fetch = fetch,
+): Promise<CodeCommitDetailResponse> {
+  return restFetch<Partial<CodeCommitDetailResponse>>(
+    runtimeConfig,
+    `${commitPath(input, "/watch")}${commitSearch(input.query)}`,
     { csrfToken, fetchImpl, method: "DELETE" },
   ).then(normalizeCommitDetail);
 }

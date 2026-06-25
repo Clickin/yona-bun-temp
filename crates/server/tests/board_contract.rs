@@ -997,6 +997,24 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     )
     .await;
     assert_eq!(normal["postNumber"], "3");
+    assert!(normal["labels"].as_array().unwrap().is_empty());
+
+    let relabeled_normal = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/api/v1/projects/owner/projectYobi/posts/3/labels",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "labelIds": [label_id]
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(relabeled_normal["postNumber"], "3");
+    assert_eq!(relabeled_normal["labels"][0]["name"], "Guide");
 
     let list = ok_json(
         rest(

@@ -209,6 +209,23 @@ export interface ProjectDetailViewModel {
       name: string;
       openIssueCount: number;
     }>;
+    milestones?: Array<{
+      closedIssueCount: number;
+      completionPercent: number;
+      id: number;
+      openIssueCount: number;
+      title: string;
+    }>;
+    noMilestoneOpenIssueCount?: number;
+    pullRequests?: Array<{
+      contributorAvatarUrl: string;
+      contributorLoginId: string;
+      contributorUserId: number;
+      contributorUserLabel: string;
+      createdLabel: string;
+      pullRequestNumber: number;
+      title: string;
+    }>;
     unassignedOpenIssueCount?: number;
   };
   defaultTab?: string;

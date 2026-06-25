@@ -1,6 +1,8 @@
 /* eslint-disable jsx-a11y/no-access-key -- legacy common/navbar.scala.html keeps accesskey=S */
 import * as React from "react";
 import { Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { readProjectContainerQueryOptions } from "../api/org-project";
 import { RestApiError } from "../api/rest-client";
 import { signInWithPassword } from "../auth-workspace-client";
 import { AppRuntimeProvider, useAppRuntime } from "../app-runtime-context";
@@ -146,6 +148,16 @@ function RootHeader() {
     searchScope.type === "organization" &&
     (runtimeConfig.hideProjectListing || isGuest) &&
     isKnownOrganizationParticipant(searchScope.organizationName, workspaceOverview);
+  const projectContainerQuery = useQuery({
+    ...readProjectContainerQueryOptions(runtimeConfig, {
+      ownerName: searchScope.type === "project" ? searchScope.ownerName : "",
+      projectName: searchScope.type === "project" ? searchScope.projectName : "",
+    }),
+    enabled: searchScope.type === "project",
+    retry: false,
+  });
+  const showProjectGroupSearchScope =
+    searchScope.type === "project" && Boolean(projectContainerQuery.data?.organizationName?.trim());
 
   return (
     <header className={`gnb-outer${searchScope.type !== "global" ? " project-header" : ""}`}>
@@ -226,6 +238,23 @@ function RootHeader() {
                                   : "search.scope.group",
                             },
                           )}
+                        </a>
+                      </li>
+                    ) : null}
+                    {searchScope.type === "project" && showProjectGroupSearchScope ? (
+                      <li>
+                        <a
+                          data-action={prefixBasePath(
+                            runtimeConfig.basePath,
+                            `/organizations/${encodeURIComponent(searchScope.ownerName)}/search`,
+                          )}
+                          data-toggle="search-scope"
+                          href={prefixBasePath(
+                            runtimeConfig.basePath,
+                            `/organizations/${encodeURIComponent(searchScope.ownerName)}/search`,
+                          )}
+                        >
+                          {messages("search.scope.group", { fallback: "search.scope.group" })}
                         </a>
                       </li>
                     ) : null}

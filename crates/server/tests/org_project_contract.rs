@@ -14,7 +14,8 @@ use tower::ServiceExt;
 use yoram_migration::Migrator;
 use yoram_persistence::{
     AppRepository, CreatePostingInput, CreateProjectLabelInput, CreatePullRequestInput,
-    PostingMutationInput, ProjectMenuSettingsRecord, PullRequestMutationInput, RepositoryConfig,
+    MilestoneMutationInput, PostingMutationInput, ProjectMenuSettingsRecord,
+    PullRequestMutationInput, RepositoryConfig,
 };
 use yoram_server::{create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig};
 use yoram_vcs::{repository_path, svn_repository_path};
@@ -1988,6 +1989,148 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_assignee
     assert_eq!(assigned["userLabel"], "assigned");
     assert_eq!(assigned["openIssueCount"], 1);
     assert_eq!(payload["dashboard"]["unassignedOpenIssueCount"], 1);
+}
+
+#[tokio::test]
+async fn rest_project_container_includes_dashboard_milestone_and_pull_request_rows() {
+    let yona_data = temp_yona_data_root();
+    let (app, repo) = build_app_with_repository_in_data_root(yona_data.path()).await;
+
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    let admin_id = register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+
+    create_project(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "admin",
+        "projectYobi",
+        "Project dashboard rows",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("admin", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+    let milestone = repo
+        .create_project_milestone(MilestoneMutationInput {
+            actor_id: Some(admin_id),
+            attachment_ids: Vec::new(),
+            contents_markdown: "dashboard milestone".to_string(),
+            due_date: None,
+            owner_name: "admin".to_string(),
+            project_name: "projectYobi".to_string(),
+            state: "open".to_string(),
+            title: "Dashboard milestone".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("milestone");
+
+    let create_milestone_issue = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/projects/admin/projectYobi/issues")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(format!(
+                    "{{\"title\":\"Open milestone issue\",\"bodyMarkdown\":\"open\",\"milestoneId\":{}}}",
+                    milestone.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create_milestone_issue.status(), StatusCode::OK);
+
+    let create_no_milestone_issue = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/projects/admin/projectYobi/issues")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    "{\"title\":\"Open issue without milestone\",\"bodyMarkdown\":\"open\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create_no_milestone_issue.status(), StatusCode::OK);
+
+    repo.create_pull_request(CreatePullRequestInput {
+        actor_display_name: "admin".to_string(),
+        actor_id: admin_id,
+        actor_login_id: "admin".to_string(),
+        from_branch: "topic/dashboard".to_string(),
+        from_project_id: project.id,
+        to_branch: "main".to_string(),
+        to_project_id: project.id,
+        values: PullRequestMutationInput {
+            attachment_ids: Vec::new(),
+            body_markdown: "dashboard pull request".to_string(),
+            title: "Dashboard pull request".to_string(),
+        },
+    })
+    .await
+    .unwrap()
+    .expect("pull request");
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/container")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response).await;
+    let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
+    let milestones = payload["dashboard"]["milestones"]
+        .as_array()
+        .expect("dashboard milestones");
+    let dashboard_milestone = milestones
+        .iter()
+        .find(|item| item["id"].as_i64() == Some(milestone.id))
+        .expect("dashboard milestone row");
+    assert_eq!(dashboard_milestone["title"], "Dashboard milestone");
+    assert_eq!(dashboard_milestone["openIssueCount"], 1);
+    assert_eq!(payload["dashboard"]["noMilestoneOpenIssueCount"], 1);
+
+    let pull_requests = payload["dashboard"]["pullRequests"]
+        .as_array()
+        .expect("dashboard pull requests");
+    let pull_request = pull_requests
+        .iter()
+        .find(|item| item["pullRequestNumber"].as_i64() == Some(1))
+        .expect("dashboard pull request row");
+    assert_eq!(pull_request["title"], "Dashboard pull request");
+    assert_eq!(pull_request["contributorLoginId"], "admin");
+    assert_eq!(pull_request["contributorUserId"], admin_id);
+    assert_eq!(pull_request["contributorUserLabel"], "admin");
+    assert!(pull_request["contributorAvatarUrl"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("gravatar.com"));
+    assert_eq!(
+        pull_request["createdLabel"]
+            .as_str()
+            .expect("pull request created label")
+            .len(),
+        "YYYY-MM-DD".len()
+    );
 }
 
 #[tokio::test]

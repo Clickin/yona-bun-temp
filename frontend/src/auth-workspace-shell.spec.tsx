@@ -31,6 +31,7 @@ import {
   renderWorkspace,
   renderWorkspaceSettings,
   testLegacyMessages,
+  testRuntimeConfig,
 } from "./auth-workspace-shell.test-helpers";
 import {
   ISSUE_MENTION_SEARCH_DEBOUNCE_MS,
@@ -79,6 +80,9 @@ describe("auth and workspace views", () => {
     expect(source).not.toContain("https://github.com/yona-projects/yona/issues");
     expect(source).toContain("rootSearchScopeFromPathname");
     expect(source).toContain("rootSearchAction");
+    expect(source).toContain("readProjectContainerQueryOptions");
+    expect(source).toContain("showProjectGroupSearchScope");
+    expect(source).toContain("projectContainerQuery.data?.organizationName");
     expect(source).toContain('name="gnb-search-form"');
     expect(source).toContain('name="searchType"');
     expect(source).toContain('id="gnb-search-scope-title"');
@@ -461,7 +465,7 @@ describe("auth and workspace views", () => {
           boardCount: 0,
           enrollmentRequested: false,
           isFavorited: false,
-          organizationName: "",
+          organizationName: "admin",
           overview: "Overview",
           ownerName: "admin",
           projectName: "projectYobi",
@@ -690,6 +694,17 @@ describe("auth and workspace views", () => {
       "Sign-up request has been sent. Site admin will review and accept your request. Thanks.",
     );
     expect(requestedHtml).not.toContain("Sign up requires confirmation.");
+  });
+
+  it("renders signup and verification post-state on the legacy home notify target", () => {
+    const requestedHomeHtml = renderHome(testRuntimeConfig, "user.signup.requested");
+    expect(requestedHomeHtml).toContain('data-toggle="yobi-notify"');
+    expect(requestedHomeHtml).toContain(
+      "Sign-up request has been sent. Site admin will review and accept your request. Thanks.",
+    );
+
+    const verifiedHomeHtml = renderHome(testRuntimeConfig, "user.verification.mail.sent");
+    expect(verifiedHomeHtml).toContain("User verification mail was sent.");
   });
 
   it("renders unsupported social-login provider state from auth query parameters", () => {

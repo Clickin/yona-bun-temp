@@ -532,6 +532,26 @@ pub struct ProjectDashboardAssigneeRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectDashboardMilestoneRecord {
+    pub closed_issue_count: u32,
+    pub completion_percent: u32,
+    pub id: i64,
+    pub open_issue_count: u32,
+    pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectDashboardPullRequestRecord {
+    pub contributor_email_address: String,
+    pub contributor_login_id: String,
+    pub contributor_user_id: i64,
+    pub contributor_user_label: String,
+    pub created_label: String,
+    pub pull_request_number: i64,
+    pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectHomeHistoryItemRecord {
     pub actor_email_address: String,
     pub actor_login_id: String,

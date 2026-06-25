@@ -79,6 +79,16 @@ struct RestPostCommentBody {
     parent_comment_id: Option<i64>,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestPostLabelsBody {
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
+    label_ids: Vec<i64>,
+}
+
 impl RestProjectPostsQuery {
     fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
         let mut query = Self::default();
@@ -480,6 +490,28 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                     let service = service.clone();
                     async move {
                         legacy_external_update_board_posting_content(
+                            headers,
+                            owner_name,
+                            project_name,
+                            post_number,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/posts/{post_number}/labels",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, post_number)): Path<(String, String, i64)>,
+                      Json(body): Json<RestPostLabelsBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_posting_labels(
                             headers,
                             owner_name,
                             project_name,
@@ -1728,6 +1760,69 @@ async fn rest_delete_posting(
         return Err(RestRouteError::not_found("pilot posting not found"));
     }
     Ok(StatusCode::NO_CONTENT)
+}
+
+async fn rest_update_posting_labels(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    post_number: i64,
+    body: RestPostLabelsBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    if post_number <= 0 {
+        return Err(RestRouteError::bad_request(
+            "invalid posting label update request",
+        ));
+    }
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "posting requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let access = read_posting_access(
+        repository,
+        &owner_name,
+        &project_name,
+        post_number,
+        session.user_id,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    if !posting_can_update(&access.authorization, &access.posting, &actor) {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("posting label update is not allowed"),
+        ));
+    }
+    let posting = repository
+        .update_posting_labels(&owner_name, &project_name, post_number, &body.label_ids)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot posting not found"))?;
+    Ok(Json(
+        rest_post_detail_response_from_record_with_repository_issue_references(
+            repository,
+            &posting,
+            session.user_id,
+            &service.base_path,
+            posting_can_create(&access.authorization),
+            posting_can_update(&access.authorization, &posting, &actor),
+            posting_can_delete(&access.authorization, &posting, &actor),
+            posting_can_comment(&access.authorization, &posting, &actor),
+            posting_can_set_notice(&access.authorization),
+            posting_can_watch(&access.authorization),
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
 }
 
 async fn rest_create_posting_comment(

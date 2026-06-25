@@ -10,6 +10,7 @@ import {
   renderProjectDirectory,
   renderPublicUserProfile,
   renderWorkspaceSettings,
+  testRuntimeConfig,
 } from "./auth-workspace-shell.test-helpers";
 import {
   OrganizationBoardListPage,
@@ -491,6 +492,10 @@ describe("file-route parity harness", () => {
     expect(signupRouteSource).toContain("user.enroll.failed.network");
     expect(signupRouteSource).toContain("user.enroll.failed.client");
     expect(signupRouteSource).toContain("user.enroll.failed.server");
+    expect(signupRouteSource).toContain('"/?signup=requested"');
+    expect(signupRouteSource).toContain('"/?verify=sent"');
+    expect(signupRouteSource).not.toContain('"/users/loginform?signup=requested"');
+    expect(signupRouteSource).not.toContain('"/users/loginform?verify=sent"');
     expect(signupRouteSource).not.toContain("Register failed.");
 
     const milestoneRouteSources = [
@@ -921,6 +926,9 @@ describe("file-route parity harness", () => {
     expect(commitDetailRouteSource).not.toContain("Read commit detail failed.");
     expect(commitDetailRouteSource).toContain("BadRequestPage");
     expect(commitDetailRouteSource).toContain("codeCommitDetailQueryOptions");
+    expect(commitDetailRouteSource).toContain("watchCommitRest");
+    expect(commitDetailRouteSource).toContain("unwatchCommitRest");
+    expect(commitDetailRouteSource).toContain("onToggleCommitWatch");
     expect(commitDetailRouteSource).toContain("error.badrequest");
     expect(commitDetailRouteSource).not.toContain("Create commit comment failed.");
     expect(commitDetailRouteSource).not.toContain("Delete commit comment failed.");
@@ -6079,6 +6087,9 @@ describe("file-route parity harness", () => {
     expect(html).toContain('class="ybtn ybtn-success ybtn-padding"');
     expect(html).toContain(">Sign up for Yona</a>");
     expect(html).not.toContain(">button.signup</a>");
+    const signupRequestedHtml = renderHome(testRuntimeConfig, "user.signup.requested");
+    expect(signupRequestedHtml).toContain('data-toggle="yobi-notify"');
+    expect(signupRequestedHtml).toContain("Sign-up request has been sent.");
     expect(html).toContain('class="feature-wrap row"');
     expectOrderedText(html, [
       "Project / Organization",

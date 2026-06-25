@@ -16,10 +16,15 @@ Worker update, 2026-06-26:
   shell, fixed milestone inactive sort links, wired milestone list/detail
   client-side issue filtering, and moved milestone validation to field-adjacent
   `.error` / `.message` markup.
-- Remaining board label mutation parity is reclassified as a bounded REST/API
-  gap: legacy uses `BoardApi.updatePostLabel` from the detail Select2 change
-  handler, while current React has no REST JSON mutation prop/client for that
-  detail control.
+- Former board label mutation parity was tracked as a bounded REST/API gap:
+  legacy uses `BoardApi.updatePostLabel` from the detail Select2 change handler.
+- Worker update, Wave 4: board detail label mutation is now covered through
+  canonical REST JSON. The React detail route keeps the legacy Select2 shell and
+  `data-request-uri` evidence, but the change handler calls
+  `PATCH /api/v1/projects/:owner/:project/posts/:number/labels`, updates the
+  cached post detail from the returned DTO, and invalidates project API queries.
+  The legacy compatibility `/-_-api/v1/.../postlabel/:number` route remains
+  evidence/compatibility only for the React-visible flow.
 - Remaining milestone due-date relative/overdue and linked issue partial-list
   parity are reclassified as projection/shared-component gaps: current
   milestone REST reduces milestone reads/lists to `ProjectMilestoneSummary`, so
@@ -64,7 +69,7 @@ Current evidence:
 | board create/edit attachment picker shell | Legacy uses `common.fileUploader(ResourceType.BOARD_POST, ...)`. | `ProjectPostFormPage` renders `.upload-wrap.content-footer[data-resource-type="BOARD_POST"]` while preserving paste/drop REST upload insertion. | covered | `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/board-posting-parity.e2e.ts` |
 | board detail history/watch/comments/child comments | Legacy renders history modal, watch button, comments, child comments, parentCommentId. | `ProjectBoardDetailPage` renders these shells. | covered | none |
 | board detail delete confirmation | Legacy delete opens `#deleteConfirm`; only modal confirm deletes. | `ProjectBoardDetailPage` renders `#deleteConfirm` with `post.delete.confirm`; delete REST callback runs from the modal Yes button. | covered | `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/board-posting-parity.e2e.ts` |
-| board detail labels | Legacy updateable detail uses label Select2; readonly detail shows selected labels. | React now renders the updateable `#labelIds[data-toggle=select2][data-format=issuelabel]` shell and readonly selected-label shell. Mutation remains a REST/API gap because only legacy compatibility `/-_-api/v1/.../postlabel/:number` exists today. | gap, reclassified | next board API owner: `frontend/src/api/boards.ts`, `frontend/src/routes/$owner/$projectName/post/$postNumber/route.tsx`, `crates/server/src/routes/boards.rs`, focused board label mutation contract |
+| board detail labels | Legacy updateable detail uses label Select2 and posts the selected label id array to `BoardApi.updatePostLabel`; readonly detail shows selected labels. | React renders the updateable `#labelIds[data-toggle=select2][data-format=issuelabel]` shell and readonly selected-label shell, keeps the legacy direct `data-request-uri`, and now wires changes through canonical REST JSON `PATCH /api/v1/projects/:owner/:project/posts/:number/labels` with returned detail DTO/cache refresh. | covered | `frontend/src/api/boards.ts`, `frontend/src/routes/-board-views.tsx`, `frontend/src/routes/$owner/$projectName/post/$postNumber/route.tsx`, `crates/server/src/routes/boards.rs`, `crates/server/tests/board_contract.rs`, `frontend/src/api-query.spec.ts`, `frontend/tests/board-posting-parity.e2e.ts` |
 | board post/comment attachments | Legacy detail/comment containers include serialized attachment data. | `ProjectBoardDetailPage` serializes current DTO attachments into `.attachments[data-attachments]` and visible `.attached-file` rows for posts, comments, and child comments; backend already projects board post/comment attachments. | covered | `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 | milestone list tabs/empty/progress/counts | Legacy open/closed/all tabs, empty state, counts, completion, progress. | `ProjectMilestoneListPage` renders tabs, empty state, counts, completion and progress. | covered | none |
 | milestone list sort links | Legacy inactive sort links use `orderDir=asc`; active links toggle asc/desc. | `sortHref` now uses `orderDir=asc` for inactive fields and toggles only the active field. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
@@ -86,7 +91,7 @@ Current evidence:
 | `/:owner/:project/postform` | create form labels | Legacy create form has no label fieldset | no `.board-label-picker`; edit preserves existing labels without visible form control | inspect create form | REST create/update still accepts `labelIds` but React form does not expose non-legacy picker | covered |
 | `/:owner/:project/postform` | attachments | `common.fileUploader(ResourceType.BOARD_POST, null)` visible shell | same `.upload-wrap.content-footer[data-resource-type=BOARD_POST]` shell plus paste/drop upload | paste image, inspect uploader | `/files` upload then REST create | covered |
 | `/:owner/:project/post/:number` | delete action | trigger plus modal `#deleteConfirm` | trigger opens modal; modal Yes fires REST delete | click delete icon, then Yes | REST DELETE fires from modal confirm | covered |
-| `/:owner/:project/post/:number` | labels | updateable label selector | updateable Select2 shell rendered; REST mutation absent | inspect sidebar and change selector | label update API not reachable through React REST yet | gap, reclassified |
+| `/:owner/:project/post/:number` | labels | updateable label selector posts selected ids as JSON | updateable Select2 shell rendered; change handler calls canonical REST label mutation and refreshes returned detail | inspect sidebar and change selector | React route uses `/api/v1/projects/:owner/:project/posts/:number/labels`; legacy direct route remains evidence/compatibility | covered |
 | `/:owner/:project/post/:number` | attachments | `.attachments[data-attachments=...]` | current DTO attachments serialized and visible as `.attached-file` rows | inspect metadata/rows | REST detail has arrays | covered |
 | `/:owner/:project/milestones?state=open` | list/progress | `.nav.nav-tabs`, empty state, `.completion-rate`, `.progress .bar` | same selectors | switch states | milestones REST list | covered |
 | `/:owner/:project/milestones` | search | `.textbox` keyup filters rows | React keyup/change filters non-matching `.issue-link` rows | type title | client-only behavior | covered |

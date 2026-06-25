@@ -402,8 +402,85 @@ describe("project home tab parity", () => {
     expect(html).toContain('href="/yona/yona/projectYobi/issues?state=open&amp;milestoneId=7"');
     expect(html).not.toContain("Legacy placeholder panel");
     expect(html).not.toContain("No README post yet.");
-    expect(noMilestoneHtml).toContain("No milestone");
+    expect(noMilestoneHtml).toContain("No milestone entered.");
+    expect(noMilestoneHtml).toContain('href="/yona/yona/projectYobi/newMilestoneForm"');
     expect(noMilestoneHtml).not.toContain("milestone.none");
+  });
+
+  it("renders all legacy project dashboard milestone rows and no-milestone count", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi?tabId=dashboard", {
+      dashboard: {
+        labels: [],
+        milestones: [
+          {
+            closedIssueCount: 1,
+            completionPercent: 25,
+            id: 7,
+            openIssueCount: 3,
+            title: "Phase dashboard",
+          },
+          {
+            closedIssueCount: 2,
+            completionPercent: 67,
+            id: 9,
+            openIssueCount: 1,
+            title: "Next phase",
+          },
+        ],
+        noMilestoneOpenIssueCount: 2,
+      },
+      openIssueCount: 6,
+    });
+
+    expect(html).toContain('class="overview-milestone"');
+    expect(html).toContain('href="/yona/yona/projectYobi/issues?state=open&amp;milestoneId=7"');
+    expect(html).toContain('href="/yona/yona/projectYobi/issues?state=open&amp;milestoneId=9"');
+    expect(html).toContain("Phase dashboard");
+    expect(html).toContain("Next phase");
+    expect(html).toContain('class="progress progress-success"');
+    expect(html).toContain('class="bar bar-success" style="width:25%"');
+    expect(html).toContain('title="67%"');
+    expect(html).toContain('href="/yona/yona/projectYobi/issues?state=open&amp;milestoneId=0"');
+    expect(html).toContain("No milestone");
+    expect(html).toContain("<strong>2</strong>");
+    expect(html).not.toContain("No milestone entered.");
+  });
+
+  it("renders recent legacy project dashboard pull request rows and more link", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi?tabId=dashboard", {
+      dashboard: {
+        labels: [],
+        pullRequests: [
+          {
+            contributorAvatarUrl: "/yona/assets/contrib.png",
+            contributorLoginId: "contrib",
+            contributorUserId: 17,
+            contributorUserLabel: "Contributor User",
+            createdLabel: "2026-06-20",
+            pullRequestNumber: 3,
+            title: "Dashboard pull request",
+          },
+        ],
+      },
+      openPullRequestCount: 2,
+    });
+
+    expect(html).toContain('class="overview-pullrequest"');
+    expect(html).toContain('class="span9 title"');
+    expect(html).toContain(
+      'class="usf-group" href="/yona/yona/projectYobi/pullRequests?contributorId=17"',
+    );
+    expect(html).toContain('class="avatar-wrap smaller"');
+    expect(html).toContain('title="Contributor User (@contrib)"');
+    expect(html).toContain('src="/yona/assets/contrib.png"');
+    expect(html).toContain('href="/yona/yona/projectYobi/pullRequest/3"');
+    expect(html).toContain("Dashboard pull request");
+    expect(html).toContain('class="span3 num right-txt"');
+    expect(html).toContain("2026-06-20");
+    expect(html).toContain('class="right-txt mt5"');
+    expect(html).toContain('href="/yona/yona/projectYobi/pullRequests"');
+    expect(html).toContain("See <strong>2</strong> more");
+    expect(html).not.toContain("Open pull requests</span>");
   });
 
   it("renders project dashboard label rows from container data", () => {
