@@ -51,13 +51,13 @@ function RootHeader() {
               className="show-progress-bar"
               href={prefixBasePath(runtimeConfig.basePath, "/projects")}
             >
-              {messages("title.list", { fallback: "List All" })}
+              {messages("title.list", { fallback: "title.list" })}
             </a>
           </li>
           <li className="divider"></li>
           <li>
             <a href="https://github.com/yona-projects/yona/issues" rel="noreferrer" target="_blank">
-              {messages("title.yobi.feedback", { fallback: "Feedback" })}
+              {messages("title.yobi.feedback", { fallback: "title.yobi.feedback" })}
             </a>
           </li>
           <li>
@@ -294,7 +294,7 @@ function RootAnonymousMenu() {
           data-login="required"
           href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}
         >
-          {messages("button.login", { fallback: "Log in" })}
+          {messages("button.login", { fallback: "button.login" })}
         </a>
       </li>
       <li className="divider"></li>
@@ -303,7 +303,7 @@ function RootAnonymousMenu() {
           className="ybtn ybtn-success"
           href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}
         >
-          {messages("title.signup", { fallback: "Sign up" })}
+          {messages("title.signup", { fallback: "title.signup" })}
         </a>
       </li>
     </ul>

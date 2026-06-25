@@ -50,8 +50,15 @@ function EditNotificationsRouteComponent() {
           setErrorMessage(
             error instanceof Error
               ? error.message
-              : messages("error.failedTo userinfo.changeNotifications", {
-                  fallback: "error.failedTo userinfo.changeNotifications",
+              : messages("error.failedTo", {
+                  args: [
+                    messages("userinfo.changeNotifications", {
+                      fallback: "userinfo.changeNotifications",
+                    }),
+                    "",
+                    "",
+                  ],
+                  fallback: "error.failedTo",
                 }),
           );
         }

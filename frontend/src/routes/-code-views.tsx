@@ -2701,7 +2701,7 @@ function CodeFileHeader(props: {
         ) : null}
         {props.showRaw && editHref ? (
           <a className="ybtn" href={editHref}>
-            {legacyMessage(props.messages, "button.edit", { fallback: "Edit" })}
+            {legacyMessage(props.messages, "button.edit", { fallback: "button.edit" })}
           </a>
         ) : null}
         <a

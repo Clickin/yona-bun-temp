@@ -58,8 +58,10 @@ describe("auth and workspace views", () => {
     expect(source).toContain('<header className="gnb-outer">');
     expect(source).toContain('className="gnb-inner"');
     expect(source).toContain('className="gnb-nav"');
-    expect(source).toContain('messages("title.list", { fallback: "List All" })');
-    expect(source).toContain('messages("title.yobi.feedback", { fallback: "Feedback" })');
+    expect(source).toContain('messages("title.list", { fallback: "title.list" })');
+    expect(source).toContain(
+      'messages("title.yobi.feedback", { fallback: "title.yobi.feedback" })',
+    );
     expect(source).toContain("<RootAnonymousMenu />");
     expect(source).not.toContain('<ul className="gnb-outer gnb-usermenu">');
   });
@@ -1087,7 +1089,9 @@ describe("auth and workspace views", () => {
       .join("\n");
 
     expect(routeSources).toContain("error.badrequest");
-    expect(routeSources).toContain("error.failedTo userinfo.changeNotifications");
+    expect(routeSources).toContain("error.failedTo");
+    expect(routeSources).toContain("userinfo.changeNotifications");
+    expect(routeSources).not.toContain("error.failedTo userinfo.changeNotifications");
     expect(routeSources).not.toContain("Update profile failed.");
     expect(routeSources).not.toContain("Change password failed.");
     expect(routeSources).not.toContain("Reset token failed.");

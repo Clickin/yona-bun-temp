@@ -121,10 +121,8 @@ describe("workspace settings legacy i18n opt-in", () => {
       ["routes/user/editform/password/route.tsx", "error.badrequest"],
       ["routes/user/editform/emails/route.tsx", "error.badrequest"],
       ["routes/user/editform/token/route.tsx", "error.badrequest"],
-      [
-        "routes/user/editform/notifications/route.tsx",
-        "error.failedTo userinfo.changeNotifications",
-      ],
+      ["routes/user/editform/notifications/route.tsx", "error.failedTo"],
+      ["routes/user/editform/notifications/route.tsx", "userinfo.changeNotifications"],
     ];
 
     for (const [routeFile, key] of routeFiles) {

@@ -185,7 +185,7 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain(
       'href="/yona/owner/projectYobi/postform?path=src%2Fmain.rs&amp;branch=main&amp;edit=true"',
     );
-    expect(html).toContain(">Edit</a>");
+    expect(html).toContain(">button.edit</a>");
     expect(html).toContain("code.open</a>");
     expect(html).toContain(">code.history</a>");
     expect(html).toContain('class="syntax-token syntax-keyword">fn</span>');
