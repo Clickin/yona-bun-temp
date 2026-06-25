@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { normalizeLegacyAuditPath } from "./legacy-route-coverage.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const legacyAuditPath = resolve(repoRoot, ".agent/legacy-html-page-audit/latest.json");
@@ -15,40 +16,8 @@ const routeTree = readFileSync(routeTreePath, "utf8");
 const rustRoutes = new Set(
   [...routeTree.matchAll(/fullPath: '([^']+)'/g)].map((match) => match[1].replace(/\/$/, "") || "/"),
 );
-const reservedRootPaths = new Set([
-  "/_help",
-  "/_import",
-  "/lostPassword",
-  "/notification",
-  "/notifications",
-  "/orgs",
-  "/projectform",
-  "/projects",
-  "/search",
-]);
-
-function normalize(path) {
-  const cleanPath = path.split("?")[0].replace(/\/$/, "") || "/";
-  if (rustRoutes.has(cleanPath)) {
-    return cleanPath;
-  }
-  if (cleanPath.startsWith("/sites/")) {
-    return "/sites/$pageName";
-  }
-  if (/^\/[^/]+$/.test(cleanPath) && !reservedRootPaths.has(cleanPath)) {
-    return "/$user";
-  }
-  const projectMatch = cleanPath.match(/^\/[^/]+\/[^/]+(?<suffix>\/.*)?$/);
-  if (projectMatch && !cleanPath.startsWith("/user/") && !cleanPath.startsWith("/users/")) {
-    let suffix = projectMatch.groups.suffix ?? "";
-    suffix = suffix.replace(/^\/issue\/\d+$/, "/issue/$issueNumber");
-    return `/$owner/$projectName${suffix}`;
-  }
-  return cleanPath;
-}
-
 const covered = legacyAudit.results.map((result) => {
-  const rustRoute = normalize(result.path);
+  const rustRoute = normalizeLegacyAuditPath(result.path, rustRoutes);
   return {
     legacyPath: result.path,
     legacyStatus: result.status,
