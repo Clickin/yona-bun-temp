@@ -408,6 +408,11 @@ function sanitizedMarkdownTarget(value: string): string | undefined {
   return isSafeMarkdownTarget(value) ? value : undefined;
 }
 
+function sanitizedRawHtmlMediaUrl(value: string): string | undefined {
+  const target = sanitizedMarkdownTarget(value);
+  return target === "#" ? undefined : target;
+}
+
 function normalizeBasePath(basePath?: string) {
   if (!basePath || basePath === "/") {
     return "";
@@ -6159,13 +6164,13 @@ function parseRawHtmlAttributes(tag: string, rawAttributes: string) {
     }
     if (tag === "img" && (name === "src" || name === "alt")) {
       if (name === "src") {
-        props.src = isSafeRawHtmlUrl(value) ? value : undefined;
+        props.src = sanitizedRawHtmlMediaUrl(value);
       } else {
         props.alt = value;
       }
     }
     if (tag === "iframe" && name === "src") {
-      props.src = isSafeRawHtmlUrl(value) ? value : undefined;
+      props.src = sanitizedRawHtmlMediaUrl(value);
       continue;
     }
     if (
@@ -6190,7 +6195,7 @@ function parseRawHtmlAttributes(tag: string, rawAttributes: string) {
       continue;
     }
     if ((tag === "video" || tag === "source") && name === "src") {
-      props.src = isSafeRawHtmlUrl(value) ? value : undefined;
+      props.src = sanitizedRawHtmlMediaUrl(value);
       continue;
     }
     if (tag === "source" && (name === "type" || name === "target")) {

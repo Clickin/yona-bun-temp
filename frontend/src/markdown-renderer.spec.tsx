@@ -409,6 +409,25 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("alert(");
   });
 
+  it("drops control-character-obfuscated raw HTML media URLs", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '<img src="java\tscript:alert(0)" alt="bad">\n\n<iframe src="JaVa\tscript:alert(1)"></iframe>\n\n<video><source src="jav&#x61;&#x09;script:alert(2)" type="video/mp4"></video>'
+        }
+      />,
+    );
+
+    expect(html).toContain('<img alt="bad"/>');
+    expect(html).toContain("<iframe></iframe>");
+    expect(html).toContain('<video><source type="video/mp4"/></video>');
+    expect(html).not.toContain("javascript:");
+    expect(html).not.toContain("script:alert");
+    expect(html).not.toContain("alert(");
+    expect(html).not.toContain('src="java');
+    expect(html).not.toContain('src="JaVa');
+  });
+
   it("drops unsafe raw video source URLs through the ReactMarkdown path", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
