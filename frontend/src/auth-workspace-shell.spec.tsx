@@ -724,7 +724,7 @@ describe("auth and workspace views", () => {
     expect(loginHtml).not.toContain('name="password"');
   });
 
-  it("renders the /me shell with default landing and workspace lists", () => {
+  it("renders the /me shell without private dashboard-only sections", () => {
     const html = renderWorkspace({
       defaultLandingPath: "/me",
       favoriteProjects: [{ ownerName: "admin", projectName: "projectYobi" }],
@@ -741,8 +741,10 @@ describe("auth and workspace views", () => {
     });
 
     expect(html).toContain("door");
-    expect(html).toContain("admin");
-    expect(html).toContain("projectYobi");
+    expect(html).not.toContain(">Set to default page</h2>");
+    expect(html).not.toContain(">Favorite</h2>");
+    expect(html).not.toContain(">Recently visited</h2>");
+    expect(html).not.toContain("<button>Log out</button>");
   });
 
   it("renders the public landing and directory views", () => {

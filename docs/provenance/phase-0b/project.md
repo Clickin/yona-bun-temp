@@ -88,6 +88,13 @@
 - Workspace settings and default landing UX parity is app-runtime closed in
   `docs/provenance/phase-0b/user-workspace.md`; the remaining auth-provider and
   migrator hardening boundaries live in their dedicated deferred provenance.
+- 2026-06-25 workspace favorite/recent/default-landing UI correction: legacy
+  `user/view.scala.html` does not render favorite-project, recent-project,
+  default-login-page, or logout footer sections on `/me`. Favorite/recent
+  project data remains exposed through the React-rendered root user menu and
+  workspace overview API, while the legacy `#setDefaultLoginPage` control stays
+  on `common/mySeriesMenuTab.scala.html` pages such as `/user/issues` and
+  `/notifications`.
 - Optional webhook HMAC/signature compatibility is not applicable for legacy
   parity. `Webhook.java` `sendRequest` only sets `Content-Type:
   application/json`, `User-Agent: Yobi-Hookshot`, and optional

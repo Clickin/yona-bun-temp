@@ -124,11 +124,10 @@ describe("workspace/profile legacy i18n opt-in", () => {
     expect(profileHtml).toContain('title="Show subtask"');
     expect(profileHtml).toContain('data-content="Show subtask always"');
     expect(profileHtml).toContain('class="show-subtasks-text">Show subtask</span>');
-    expect(workspaceHtml).toContain(">Set to default page</h2>");
-    expect(workspaceHtml).toContain(">Make current page the index page when logged in</span>");
-    expect(workspaceHtml).toContain(">Favorite</h2>");
-    expect(workspaceHtml).toContain(">Recently visited</h2>");
-    expect(workspaceHtml).toContain(">No results</div>");
+    expect(workspaceHtml).not.toContain(">Set to default page</h2>");
+    expect(workspaceHtml).not.toContain(">Make current page the index page when logged in</span>");
+    expect(workspaceHtml).not.toContain(">Favorite</h2>");
+    expect(workspaceHtml).not.toContain(">Recently visited</h2>");
   });
 
   it("resolves empty stream and missing author labels without a runtime provider", () => {
@@ -199,11 +198,10 @@ describe("workspace/profile legacy i18n opt-in", () => {
     expect(profileHtml).toContain('title="Show subtask"');
     expect(profileHtml).toContain('data-content="Show subtask always"');
     expect(profileHtml).toContain('class="show-subtasks-text">Show subtask</span>');
-    expect(workspaceHtml).toContain(">Set to default page</h2>");
-    expect(workspaceHtml).toContain(">Make current page the index page when logged in</span>");
-    expect(workspaceHtml).toContain(">Favorite</h2>");
-    expect(workspaceHtml).toContain(">Recently visited</h2>");
-    expect(workspaceHtml).toContain(">No results</div>");
+    expect(workspaceHtml).not.toContain(">Set to default page</h2>");
+    expect(workspaceHtml).not.toContain(">Make current page the index page when logged in</span>");
+    expect(workspaceHtml).not.toContain(">Favorite</h2>");
+    expect(workspaceHtml).not.toContain(">Recently visited</h2>");
   });
 
   it("switches workspace and profile controls to a non-default legacy language", () => {
@@ -228,13 +226,12 @@ describe("workspace/profile legacy i18n opt-in", () => {
     expect(profileHtml).toContain('class="two-column-mode-text">2단 보기</span>');
     expect(profileHtml).toContain('title="자식이슈 펼쳐보기"');
     expect(profileHtml).toContain('class="show-subtasks-text">자식이슈 펼쳐보기</span>');
-    expect(workspaceHtml).toContain(">기본 페이지로 지정</h2>");
-    expect(workspaceHtml).toContain(
+    expect(workspaceHtml).not.toContain(">기본 페이지로 지정</h2>");
+    expect(workspaceHtml).not.toContain(
       ">현재 페이지를 로그인 후 표시되는 기본 인덱스 페이지로 지정합니다</span>",
     );
-    expect(workspaceHtml).toContain(">즐겨찾기</h2>");
-    expect(workspaceHtml).toContain(">최근 방문</h2>");
-    expect(workspaceHtml).toContain(">결과 없음</div>");
+    expect(workspaceHtml).not.toContain(">즐겨찾기</h2>");
+    expect(workspaceHtml).not.toContain(">최근 방문</h2>");
   });
 
   it("passes AppRuntimeContext message lookup into the route shells", () => {

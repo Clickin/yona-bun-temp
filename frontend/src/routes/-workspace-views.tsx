@@ -23,15 +23,6 @@ function pullRequestHref(
   return `/${ownerName}/${projectName}/pullRequest/${pullRequestNumber}`;
 }
 
-function Section({ title, children }: React.PropsWithChildren<{ title: string }>) {
-  return (
-    <section>
-      <h2>{title}</h2>
-      {children}
-    </section>
-  );
-}
-
 type LegacyMessageLookup = (key: string, options?: TranslateOptions) => string;
 
 function legacyMessage(
@@ -42,22 +33,6 @@ function legacyMessage(
   return messages
     ? messages(key, { fallback })
     : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { fallback });
-}
-
-function UserProjectListEmpty({
-  active,
-  id,
-  messages,
-}: {
-  active?: boolean;
-  id: string;
-  messages?: LegacyMessageLookup;
-}) {
-  return (
-    <div className={`no-result tab-pane user-ul ${active ? "active" : ""}`.trim()} id={id}>
-      {legacyMessage(messages, "title.no.results")}
-    </div>
-  );
 }
 
 export function workspaceAvatarDataUrl(label: string): string {
@@ -740,8 +715,6 @@ export function WorkspacePage(props: {
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
   workspaceOverview: WorkspaceOverviewViewModel | null;
-  onSetDefaultLandingPath?: (path: string) => void;
-  onSignOut?: () => void;
 }) {
   const session = props.workspaceOverview?.session ?? {
     defaultLandingPath: "/me",
@@ -753,8 +726,6 @@ export function WorkspacePage(props: {
     userLabel: "User.anonymous.name",
   };
   const daysAgo = props.workspaceOverview?.daysAgo ?? 14;
-  const defaultLandingPath = props.workspaceOverview?.defaultLandingPath ?? "/me";
-  const favoriteProjects = props.workspaceOverview?.favoriteProjects ?? [];
   const issueItems = props.workspaceOverview?.issueItems ?? [];
   const memberProjects = props.workspaceOverview?.memberProjects ?? [];
   const profile = props.workspaceOverview?.profile ?? {
@@ -770,7 +741,6 @@ export function WorkspacePage(props: {
     avatarUrl: "",
   };
   const pullRequestItems = props.workspaceOverview?.pullRequestItems ?? [];
-  const recentProjects = props.workspaceOverview?.recentProjects ?? [];
   const openIssues = issueItems.filter((item) => item.state === "open");
   const closedIssues = issueItems.filter((item) => item.state !== "open");
   const profileDisplayName = profile.displayName.trim();
@@ -796,7 +766,6 @@ export function WorkspacePage(props: {
   const projectCodeUpdateLabel = legacyMessage(props.messages, "project.codeUpdate");
   const openIssueStateLabel = legacyMessage(props.messages, "issue.state.open");
   const closedIssueStateLabel = legacyMessage(props.messages, "issue.state.closed");
-  const [nextDefaultLandingPath, setNextDefaultLandingPath] = React.useState(defaultLandingPath);
   const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(profile.avatarUrl, headlineName);
   const profileEmailAddress = profile.primaryEmailAddress || session.emailAddress;
   const showUserEmail = props.runtimeConfig.showUserEmail !== false;
@@ -1184,57 +1153,6 @@ export function WorkspacePage(props: {
           </section>
         </div>
       </div>
-      <Section title={legacyMessage(props.messages, "button.setDefaultLoginPage")}>
-        <form
-          className="runtime-grid"
-          onSubmit={(event) => {
-            event.preventDefault();
-            props.onSetDefaultLandingPath?.(nextDefaultLandingPath);
-          }}
-        >
-          <label>
-            <span>{legacyMessage(props.messages, "button.setDefaultLoginPage.desc")}</span>
-            <input
-              name="defaultLandingPath"
-              onChange={(event) => setNextDefaultLandingPath(event.target.value)}
-              type="text"
-              value={nextDefaultLandingPath}
-            />
-          </label>
-          <button type="submit">
-            {legacyMessage(props.messages, "button.setDefaultLoginPage")}
-          </button>
-        </form>
-      </Section>
-      <Section title={legacyMessage(props.messages, "title.favorite")}>
-        {favoriteProjects.length === 0 ? (
-          <UserProjectListEmpty id="watching" messages={props.messages} />
-        ) : (
-          <ul>
-            {favoriteProjects.map((project) => (
-              <li key={`${project.ownerName}/${project.projectName}`}>
-                {`${project.ownerName}/${project.projectName}`}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
-      <Section title={legacyMessage(props.messages, "title.recently.visited")}>
-        {recentProjects.length === 0 ? (
-          <UserProjectListEmpty active id="recentlyVisited" messages={props.messages} />
-        ) : (
-          <ul>
-            {recentProjects.map((project) => (
-              <li key={`${project.ownerName}/${project.projectName}`}>
-                {`${project.ownerName}/${project.projectName}`}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
-      <button onClick={() => props.onSignOut?.()} type="button">
-        {legacyMessage(props.messages, "title.logout")}
-      </button>
     </main>
   );
 }

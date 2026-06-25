@@ -1,23 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useAppRuntime } from "../../app-runtime-context";
-import { signOut } from "../../auth-workspace-client";
 import { WorkspacePage } from "../-workspace-views";
-import { navigateToAppHref, useRequireAuthenticatedRoute } from "../-shared";
+import { useRequireAuthenticatedRoute } from "../-shared";
 
 export const Route = createFileRoute("/me")({
   component: MeRouteComponent,
 });
 
 function MeRouteComponent() {
-  const {
-    bootstrapping,
-    csrfToken,
-    messages,
-    runtimeConfig,
-    workspaceOverview,
-    setCurrentSession,
-    setWorkspaceOverview,
-  } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/me");
 
   if (bootstrapping || !canRender) {
@@ -33,12 +24,6 @@ function MeRouteComponent() {
       messages={messages}
       runtimeConfig={runtimeConfig}
       workspaceOverview={workspaceOverview}
-      onSignOut={async () => {
-        await signOut(runtimeConfig, csrfToken);
-        setCurrentSession(null);
-        setWorkspaceOverview(null);
-        navigateToAppHref(runtimeConfig.basePath, "/users/loginform");
-      }}
     />
   );
 }
