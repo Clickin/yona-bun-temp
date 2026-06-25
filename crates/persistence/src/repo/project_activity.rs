@@ -547,8 +547,9 @@ impl AppRepositoryImpl<'_> {
             let Some(issue_number) = row.number else {
                 continue;
             };
+            let author_login_id = row.author_login_id.unwrap_or_default();
             let author_label = row.author_name.unwrap_or_default();
-            let assignee_label = match row.assignee_id {
+            let (assignee_login_id, assignee_label) = match row.assignee_id {
                 Some(assignee_id) => {
                     let assignee_user_id = assignee::Entity::find_by_id(assignee_id)
                         .one(&self.db)
@@ -558,17 +559,19 @@ impl AppRepositoryImpl<'_> {
                         Some(user_id) => self
                             .find_user_by_id(user_id)
                             .await?
-                            .map(|user| user.display_name)
+                            .map(|user| (user.login_id, user.display_name))
                             .unwrap_or_default(),
-                        None => String::new(),
+                        None => (String::new(), String::new()),
                     }
                 }
-                None => String::new(),
+                None => (String::new(), String::new()),
             };
 
             issues.push(WorkspaceIssueListItemRecord {
                 assignee_label,
+                assignee_login_id,
                 author_label,
+                author_login_id,
                 comment_count: row.num_of_comments.unwrap_or_default() as u32,
                 issue_number,
                 owner_name: project_record.owner_name,
@@ -608,21 +611,21 @@ impl AppRepositoryImpl<'_> {
             let Some(pull_request_number) = row.number else {
                 continue;
             };
-            let contributor_label = match row.contributor_id {
+            let (contributor_login_id, contributor_label) = match row.contributor_id {
                 Some(contributor_id) => self
                     .find_user_by_id(contributor_id)
                     .await?
-                    .map(|user| user.display_name)
+                    .map(|user| (user.login_id, user.display_name))
                     .unwrap_or_default(),
-                None => String::new(),
+                None => (String::new(), String::new()),
             };
-            let receiver_label = match row.receiver_id {
+            let (receiver_login_id, receiver_label) = match row.receiver_id {
                 Some(receiver_id) => self
                     .find_user_by_id(receiver_id)
                     .await?
-                    .map(|user| user.display_name)
+                    .map(|user| (user.login_id, user.display_name))
                     .unwrap_or_default(),
-                None => String::new(),
+                None => (String::new(), String::new()),
             };
             let comment_count = comment_thread::Entity::find()
                 .filter(comment_thread::Column::PullRequestId.eq(Some(row.id)))
@@ -632,10 +635,12 @@ impl AppRepositoryImpl<'_> {
             pull_requests.push(WorkspacePullRequestListItemRecord {
                 comment_count,
                 contributor_label,
+                contributor_login_id,
                 owner_name: project_record.owner_name,
                 project_name: project_record.project_name,
                 pull_request_number,
                 receiver_label,
+                receiver_login_id,
                 state: pull_request_state_from_raw(row.state, row.is_conflict),
                 title: row.title.unwrap_or_default(),
                 updated_label: format_workspace_date_label(row.updated.or(row.created)),

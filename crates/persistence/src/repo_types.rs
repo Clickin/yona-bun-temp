@@ -1440,7 +1440,9 @@ pub enum DeleteAttachmentResult {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WorkspaceIssueListItemRecord {
     pub assignee_label: String,
+    pub assignee_login_id: String,
     pub author_label: String,
+    pub author_login_id: String,
     pub comment_count: u32,
     pub issue_number: i64,
     pub owner_name: String,
@@ -1454,10 +1456,12 @@ pub struct WorkspaceIssueListItemRecord {
 pub struct WorkspacePullRequestListItemRecord {
     pub comment_count: u32,
     pub contributor_label: String,
+    pub contributor_login_id: String,
     pub owner_name: String,
     pub project_name: String,
     pub pull_request_number: i64,
     pub receiver_label: String,
+    pub receiver_login_id: String,
     pub state: String,
     pub title: String,
     pub updated_label: String,

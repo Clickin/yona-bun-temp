@@ -8,7 +8,9 @@ export interface WorkspaceOverviewViewModel {
   favoriteProjects: Array<{ ownerName: string; projectName: string }>;
   issueItems?: Array<{
     assigneeLabel: string;
+    assigneeLoginId?: string;
     authorLabel: string;
+    authorLoginId?: string;
     commentCount: number;
     issueNumber: number;
     ownerName: string;
@@ -48,10 +50,12 @@ export interface WorkspaceOverviewViewModel {
   pullRequestItems?: Array<{
     commentCount: number;
     contributorLabel: string;
+    contributorLoginId?: string;
     ownerName: string;
     projectName: string;
     pullRequestNumber: number;
     receiverLabel: string;
+    receiverLoginId?: string;
     state: string;
     title: string;
     updatedLabel: string;

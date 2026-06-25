@@ -5785,10 +5785,12 @@ describe("file-route parity harness", () => {
         {
           commentCount: 2,
           contributorLabel: "Door",
+          contributorLoginId: "door",
           ownerName: "owner",
           projectName: "publicYobi",
           pullRequestNumber: 12,
           receiverLabel: "Mona",
+          receiverLoginId: "mona",
           state: "open",
           title: "Public profile PR",
           updatedLabel: "May 18, 2026",
@@ -5840,10 +5842,11 @@ describe("file-route parity harness", () => {
     expect(html).toContain('class="avatar-wrap mlarge"');
     expect(html).toContain('alt="owner / publicYobi"');
     expect(html).toContain(
-      'class="infos-item infos-link-item" data-placement="top" data-toggle="tooltip" title="Door"',
+      'class="infos-item infos-link-item" data-placement="top" data-toggle="tooltip" title="Door" href="/yona/door"',
     );
     expect(html).toContain('<span class="infos-item" title="May 18, 2026">May 18, 2026</span>');
     expect(html).toContain('data-original-title="Mona"');
+    expect(html).toContain('href="/yona/mona"');
     expect(html).toContain("Public profile no author PR");
     expect(html).toContain(">No author</span>");
     expect(html).not.toContain('title="No author"');
@@ -5935,7 +5938,9 @@ describe("file-route parity harness", () => {
       issueItems: [
         {
           assigneeLabel: "Door",
+          assigneeLoginId: "door",
           authorLabel: "Door",
+          authorLoginId: "door",
           commentCount: 2,
           issueNumber: 5,
           ownerName: "owner",
@@ -5991,6 +5996,9 @@ describe("file-route parity harness", () => {
     expect(issueHtml).toContain("child-issue-list hide");
     expect(issueHtml).toContain('href="/yona/owner/publicYobi/issue/5"');
     expect(issueHtml).toContain('href="/yona/owner/publicYobi/issue/5#comments"');
+    expect(issueHtml).toContain(
+      'class="infos-item infos-link-item author-cell" data-placement="bottom" data-toggle="tooltip" href="/yona/door" title="Door"',
+    );
     expect(issueHtml).toContain(">Public no author<");
     expect(issueHtml).toContain(">No author</span>");
     expect(issueHtml).not.toContain('title="No author"');

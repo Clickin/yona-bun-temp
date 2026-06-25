@@ -51,7 +51,9 @@ function toPublicProfileOverview(
     favoriteProjects: [],
     issueItems: response.issueItems.map((item) => ({
       assigneeLabel: item.assigneeLabel,
+      assigneeLoginId: item.assigneeLoginId ?? "",
       authorLabel: item.authorLabel,
+      authorLoginId: item.authorLoginId ?? "",
       commentCount: item.commentCount,
       issueNumber: Number(item.issueNumber),
       ownerName: item.ownerName,
@@ -92,10 +94,12 @@ function toPublicProfileOverview(
     pullRequestItems: response.pullRequestItems.map((item) => ({
       commentCount: item.commentCount,
       contributorLabel: item.contributorLabel,
+      contributorLoginId: item.contributorLoginId ?? "",
       ownerName: item.ownerName,
       projectName: item.projectName,
       pullRequestNumber: Number(item.pullRequestNumber),
       receiverLabel: item.receiverLabel,
+      receiverLoginId: item.receiverLoginId ?? "",
       state: item.state,
       title: item.title,
       updatedLabel: item.updatedLabel,

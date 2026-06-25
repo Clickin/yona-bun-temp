@@ -702,7 +702,11 @@ pub struct WorkspaceIssueItem {
     #[serde(default)]
     pub author_label: String,
     #[serde(default)]
+    pub author_login_id: String,
+    #[serde(default)]
     pub assignee_label: String,
+    #[serde(default)]
+    pub assignee_login_id: String,
     #[serde(default)]
     pub updated_label: String,
     #[serde(default)]
@@ -798,7 +802,11 @@ pub struct WorkspacePullRequestItem {
     #[serde(default)]
     pub contributor_label: String,
     #[serde(default)]
+    pub contributor_login_id: String,
+    #[serde(default)]
     pub receiver_label: String,
+    #[serde(default)]
+    pub receiver_login_id: String,
     #[serde(default)]
     pub updated_label: String,
     #[serde(default)]

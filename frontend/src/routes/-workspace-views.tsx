@@ -23,6 +23,10 @@ function pullRequestHref(
   return `/${ownerName}/${projectName}/pullRequest/${pullRequestNumber}`;
 }
 
+function userInfoHref(loginId: string): string {
+  return `/${encodeURIComponent(loginId)}`;
+}
+
 type LegacyMessageLookup = (key: string, options?: TranslateOptions) => string;
 
 function legacyMessage(
@@ -447,14 +451,11 @@ export function PublicUserProfilePage(props: {
                           </div>
                           <div className="infos">
                             {pullRequest.contributorLabel ? (
-                              <span
-                                className="infos-item infos-link-item"
-                                data-placement="top"
-                                data-toggle="tooltip"
-                                title={pullRequest.contributorLabel}
-                              >
-                                {pullRequest.contributorLabel}
-                              </span>
+                              <PublicProfileUserTextLink
+                                label={pullRequest.contributorLabel}
+                                loginId={pullRequest.contributorLoginId}
+                                runtimeConfig={props.runtimeConfig}
+                              />
                             ) : (
                               <span className="infos-item">{noAuthorLabel}</span>
                             )}
@@ -482,13 +483,10 @@ export function PublicUserProfilePage(props: {
                         <div className="span2">
                           <div className="mt5 pull-right">
                             {pullRequest.receiverLabel ? (
-                              <a
-                                className="avatar-wrap assinee"
-                                data-placement="top"
-                                data-original-title={pullRequest.receiverLabel}
-                                data-toggle="tooltip"
-                                href={prefixBasePath(props.runtimeConfig.basePath, "/")}
-                                title=""
+                              <PublicProfileUserAvatarLink
+                                label={pullRequest.receiverLabel}
+                                loginId={pullRequest.receiverLoginId}
+                                runtimeConfig={props.runtimeConfig}
                               >
                                 <img
                                   alt={pullRequest.receiverLabel}
@@ -496,7 +494,7 @@ export function PublicUserProfilePage(props: {
                                   src={resolveWorkspaceAvatarUrl("", pullRequest.receiverLabel)}
                                   width={32}
                                 />
-                              </a>
+                              </PublicProfileUserAvatarLink>
                             ) : (
                               <div className="empty-avatar-wrap">&nbsp;</div>
                             )}
@@ -711,11 +709,17 @@ function PublicProfileIssueItems(props: {
                 <PublicProfileIssuePersonCell
                   emptyLabel="issue.noAuthor"
                   label={issue.authorLabel}
+                  loginId={issue.authorLoginId}
                   messages={props.messages}
+                  runtimeConfig={props.runtimeConfig}
                 />
               </div>
               <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
-                <PublicProfileIssuePersonCell label={issue.assigneeLabel} />
+                <PublicProfileIssuePersonCell
+                  label={issue.assigneeLabel}
+                  loginId={issue.assigneeLoginId}
+                  runtimeConfig={props.runtimeConfig}
+                />
               </div>
               <div className="infos span3 meta">
                 <span className="meta-cell">
@@ -743,15 +747,33 @@ function PublicProfileIssueItems(props: {
 function PublicProfileIssuePersonCell({
   emptyLabel = "",
   label,
+  loginId,
   messages,
+  runtimeConfig,
 }: {
   emptyLabel?: string;
   label: string;
+  loginId?: string;
   messages?: LegacyMessageLookup;
+  runtimeConfig: RuntimeConfig;
 }) {
   if (!label) {
     return (
       <span className="infos-item">{emptyLabel ? legacyMessage(messages, emptyLabel) : ""}</span>
+    );
+  }
+  const trimmedLoginId = loginId?.trim() ?? "";
+  if (trimmedLoginId !== "") {
+    return (
+      <a
+        className="infos-item infos-link-item author-cell"
+        data-placement="bottom"
+        data-toggle="tooltip"
+        href={appHref(runtimeConfig, userInfoHref(trimmedLoginId))}
+        title={label}
+      >
+        {label}
+      </a>
     );
   }
   return (
@@ -763,6 +785,61 @@ function PublicProfileIssuePersonCell({
     >
       {label}
     </span>
+  );
+}
+
+function PublicProfileUserTextLink({
+  label,
+  loginId,
+  runtimeConfig,
+}: {
+  label: string;
+  loginId?: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const trimmedLoginId = loginId?.trim() ?? "";
+  const commonProps = {
+    className: "infos-item infos-link-item",
+    "data-placement": "top",
+    "data-toggle": "tooltip",
+    title: label,
+  };
+  if (trimmedLoginId === "") {
+    return <span {...commonProps}>{label}</span>;
+  }
+  return (
+    <a {...commonProps} href={appHref(runtimeConfig, userInfoHref(trimmedLoginId))}>
+      {label}
+    </a>
+  );
+}
+
+function PublicProfileUserAvatarLink({
+  children,
+  label,
+  loginId,
+  runtimeConfig,
+}: {
+  children: React.ReactNode;
+  label: string;
+  loginId?: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const trimmedLoginId = loginId?.trim() ?? "";
+  const commonProps = {
+    className: "avatar-wrap assinee",
+    "data-original-title": label,
+    "data-placement": "top",
+    "data-toggle": "tooltip",
+    title: "",
+  };
+  if (trimmedLoginId === "") {
+    return <span {...commonProps}>{children}</span>;
+  }
+  return (
+    <a {...commonProps} href={appHref(runtimeConfig, userInfoHref(trimmedLoginId))}>
+      {children}
+    </a>
   );
 }
 
@@ -1109,14 +1186,11 @@ export function WorkspacePage(props: {
                           </div>
                           <div className="infos">
                             {pullRequest.contributorLabel ? (
-                              <span
-                                className="infos-item infos-link-item"
-                                data-placement="top"
-                                data-toggle="tooltip"
-                                title={pullRequest.contributorLabel}
-                              >
-                                {pullRequest.contributorLabel}
-                              </span>
+                              <PublicProfileUserTextLink
+                                label={pullRequest.contributorLabel}
+                                loginId={pullRequest.contributorLoginId}
+                                runtimeConfig={props.runtimeConfig}
+                              />
                             ) : (
                               <span className="infos-item">{noAuthorLabel}</span>
                             )}
@@ -1144,13 +1218,10 @@ export function WorkspacePage(props: {
                         <div className="span2">
                           <div className="mt5 pull-right">
                             {pullRequest.receiverLabel ? (
-                              <a
-                                className="avatar-wrap assinee"
-                                data-placement="top"
-                                data-original-title={pullRequest.receiverLabel}
-                                data-toggle="tooltip"
-                                href={prefixBasePath(props.runtimeConfig.basePath, "/")}
-                                title=""
+                              <PublicProfileUserAvatarLink
+                                label={pullRequest.receiverLabel}
+                                loginId={pullRequest.receiverLoginId}
+                                runtimeConfig={props.runtimeConfig}
                               >
                                 <img
                                   alt={pullRequest.receiverLabel}
@@ -1158,7 +1229,7 @@ export function WorkspacePage(props: {
                                   src={resolveWorkspaceAvatarUrl("", pullRequest.receiverLabel)}
                                   width={32}
                                 />
-                              </a>
+                              </PublicProfileUserAvatarLink>
                             ) : (
                               <div className="empty-avatar-wrap">&nbsp;</div>
                             )}

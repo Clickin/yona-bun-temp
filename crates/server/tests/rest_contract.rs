@@ -14,7 +14,8 @@ use tower::ServiceExt;
 use yoram_persistence::{
     email, issue, title_head, user_project_notification, watch, AppRepository,
     CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput, CreatePostingInput,
-    CreateProjectInput, IssueMutationInput, PostingMutationInput,
+    CreateProjectInput, CreatePullRequestInput, CreatePullRequestResult, IssueMutationInput,
+    PostingMutationInput, PullRequestMutationInput,
 };
 use yoram_migration::Migrator;
 use yoram_server::{
@@ -5375,6 +5376,51 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
         .add_project_membership(private_project.id, owner.id, "member")
         .await
         .unwrap();
+    repository
+        .create_issue(CreateIssueInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner.id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "publicYobi".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: Some("owner".to_string()),
+                attachment_ids: Vec::new(),
+                body_markdown: "public profile issue body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
+                label_ids: Vec::new(),
+                milestone_id: None,
+                parent_issue_id: None,
+                title: "public profile issue".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("public profile issue");
+    match repository
+        .create_pull_request(CreatePullRequestInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner.id,
+            actor_login_id: "owner".to_string(),
+            from_branch: "topic/profile-link".to_string(),
+            from_project_id: public_project.id,
+            to_branch: "main".to_string(),
+            to_project_id: public_project.id,
+            values: PullRequestMutationInput {
+                attachment_ids: Vec::new(),
+                body_markdown: "public profile pull request body".to_string(),
+                title: "public profile pull request".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("public profile pull request")
+    {
+        CreatePullRequestResult::Created(_) => {}
+        CreatePullRequestResult::Duplicate(_) => panic!("unexpected duplicate pull request"),
+    }
 
     let profile = ok_json(
         rest(
@@ -5400,8 +5446,14 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
         "owner@example.com"
     );
     assert_eq!(profile["viewerCanEditProfile"], false);
-    assert_eq!(profile["issueItems"].as_array().unwrap().len(), 0);
-    assert_eq!(profile["pullRequestItems"].as_array().unwrap().len(), 0);
+    let issues = profile["issueItems"].as_array().unwrap();
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0]["authorLoginId"], "owner");
+    assert_eq!(issues[0]["assigneeLoginId"], "owner");
+    let pull_requests = profile["pullRequestItems"].as_array().unwrap();
+    assert_eq!(pull_requests.len(), 1);
+    assert_eq!(pull_requests[0]["contributorLoginId"], "owner");
+    assert_eq!(pull_requests[0]["receiverLoginId"], "owner");
     let projects = profile["memberProjects"].as_array().unwrap();
     assert_eq!(projects.len(), 1);
     assert_eq!(projects[0]["projectName"], "publicYobi");

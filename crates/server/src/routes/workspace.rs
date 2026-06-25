@@ -189,7 +189,9 @@ fn workspace_issue_item_from_record(
 ) -> WorkspaceIssueItem {
     WorkspaceIssueItem {
         assignee_label: record.assignee_label.clone(),
+        assignee_login_id: record.assignee_login_id.clone(),
         author_label: record.author_label.clone(),
+        author_login_id: record.author_login_id.clone(),
         comment_count: record.comment_count,
         issue_number: record.issue_number,
         owner_name: record.owner_name.clone(),
@@ -207,10 +209,12 @@ fn workspace_pull_request_item_from_record(
     WorkspacePullRequestItem {
         comment_count: record.comment_count,
         contributor_label: record.contributor_label.clone(),
+        contributor_login_id: record.contributor_login_id.clone(),
         owner_name: record.owner_name.clone(),
         project_name: record.project_name.clone(),
         pull_request_number: record.pull_request_number,
         receiver_label: record.receiver_label.clone(),
+        receiver_login_id: record.receiver_login_id.clone(),
         state: record.state.clone(),
         title: record.title.clone(),
         updated_label: record.updated_label.clone(),
