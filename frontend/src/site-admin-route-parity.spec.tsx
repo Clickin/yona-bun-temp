@@ -778,8 +778,10 @@ describe("site-admin route parity harness", () => {
     expect(massMailHtml).toContain('data-toggle="mail-type"');
     expect(massMailHtml).toContain('placeholder="Project name"');
     expect(massMailHtml).toContain('data-loading-text="Loading..."');
-    expect(massMailHtml).toContain('id="select-project" type="submit"');
-    expect(massMailHtml).toContain('id="write-email" type="submit"');
+    expect(massMailHtml).toContain('id="select-project" type="button"');
+    expect(massMailHtml).toContain('id="write-email" type="button"');
+    expect(massMailHtml).not.toContain('id="select-project" type="submit"');
+    expect(massMailHtml).not.toContain('id="write-email" type="submit"');
     expect(massMailHtml).toContain("<strong>Add</strong>");
     expect(massMailHtml).toContain("<strong>Write</strong>");
     expect(massMailHtml).not.toContain(">Mass Mail<");
