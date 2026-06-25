@@ -5262,7 +5262,8 @@ describe("file-route parity harness", () => {
     );
     expect(html).toContain('class="new-webhook-wrap"');
     expect(html).toContain('id="formNewWebhook"');
-    expect(html).toContain('action="/yona/yona/projectYobi/webhooks"');
+    expect(html).not.toContain('action="/yona/yona/projectYobi/webhooks"');
+    expect(html).not.toContain('method="post"');
     expect(html).toContain('<strong class="form-legend">Create new webhook</strong>');
     expect(html).toContain('placeholder="Payload URL"');
     expect(html).toContain('type="text"');
@@ -5529,6 +5530,8 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("ProjectForkPage");
     expect(viewSource).toContain('<ProjectMenu activeMenu="pullRequest"');
     expect(viewSource).toContain("href={`${projectHref}/newFork`}");
+    expect(viewSource).not.toContain("action={forkPath}");
+    expect(viewSource).not.toContain('className="form-horizontal nm"\n              method="post"');
     expect(viewSource).toContain("if (!props.onFork) {");
     expect(viewSource).toContain("void props.onFork({");
     expect(viewSource).toContain('className="content-wrap frm-wrap"');

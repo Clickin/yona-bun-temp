@@ -1243,17 +1243,15 @@ export function OrganizationSettingsPage(props: {
             runtimeConfig={props.runtimeConfig}
           />
           <form
-            action={buildOrganizationHref(props.runtimeConfig, detail.organizationName, "setting")}
             className="nm"
             encType="multipart/form-data"
             id="saveSetting"
-            method="post"
             name="update-org"
             onSubmit={(event) => {
+              event.preventDefault();
               if (!props.onUpdateOrganization) {
                 return;
               }
-              event.preventDefault();
               if (!isLegacyOrganizationName(formState.organizationName)) {
                 setValidationMessage("organization.name.alert");
                 return;

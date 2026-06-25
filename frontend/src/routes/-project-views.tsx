@@ -2286,15 +2286,13 @@ export function ProjectWebhooksPage(props: {
           <div className="content-wrap frm-wrap">
             {detail.viewerCanUpdate ? (
               <form
-                action={prefixBasePath(props.runtimeConfig.basePath, webhooksPath)}
                 className="new-webhook-wrap"
                 id="formNewWebhook"
-                method="post"
                 onSubmit={(event) => {
+                  event.preventDefault();
                   if (!props.onCreateWebhook) {
                     return;
                   }
-                  event.preventDefault();
                   if (formState.payloadUrl.length === 0) {
                     setValidationMessage("project.webhook.payloadUrl.empty");
                     return;
@@ -2702,13 +2700,6 @@ export function ProjectForkPage(props: {
   );
   const canSubmit =
     Boolean(props.forkOptions?.canFork) && owner.trim().length > 0 && name.trim().length > 0;
-  const forkPath = buildProjectHref(
-    props.runtimeConfig,
-    detail.ownerName,
-    detail.projectName,
-    "fork",
-  );
-
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} messages={messages} runtimeConfig={props.runtimeConfig} />
@@ -2717,14 +2708,12 @@ export function ProjectForkPage(props: {
         <div className="project-page-wrap">
           <div className="content-wrap frm-wrap">
             <form
-              action={forkPath}
               className="form-horizontal nm"
-              method="post"
               onSubmit={(event) => {
+                event.preventDefault();
                 if (!props.onFork) {
                   return;
                 }
-                event.preventDefault();
                 if (!canSubmit || props.pending) {
                   return;
                 }
@@ -3379,21 +3368,14 @@ export function ProjectSettingsPage(props: {
             runtimeConfig={props.runtimeConfig}
           />
           <form
-            action={buildProjectHref(
-              props.runtimeConfig,
-              detail.ownerName,
-              detail.projectName,
-              "setting",
-            )}
             className="nm"
             encType="multipart/form-data"
             id="saveSetting"
-            method="post"
             onSubmit={(event) => {
+              event.preventDefault();
               if (!props.onUpdateProjectSettings) {
                 return;
               }
-              event.preventDefault();
               if (!PROJECT_NAME_PATTERN.test(formState.projectName)) {
                 setValidationMessage("project.name.alert");
                 return;

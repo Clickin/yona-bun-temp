@@ -102,7 +102,8 @@ describe("project settings parity", () => {
     );
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('id="saveSetting"');
-    expect(html).toContain('action="/yona/admin/projectYobi/setting"');
+    expect(html).not.toContain('action="/yona/admin/projectYobi/setting"');
+    expect(html).not.toContain('method="post"');
     expect(html).toContain('class="bubble-wrap gray"');
     expect(html).toContain('class="box-wrap top clearfix frm-wrap"');
     expect(html).toContain('class="setting-box left"');
@@ -120,8 +121,8 @@ describe("project settings parity", () => {
     expect(html).toContain('id="menuSettingCode"');
     expect(html).toContain('id="menuSettingPullRequest"');
     expect(html).toContain('id="save"');
-    expect(viewSource).toContain("action={buildProjectHref(");
-    expect(viewSource).toContain('      "setting",');
+    expect(viewSource).not.toContain("action={buildProjectHref(");
+    expect(viewSource).toContain("event.preventDefault();");
     expect(viewSource).toContain("if (!props.onUpdateProjectSettings) {");
     expect(viewSource).toContain("props.onUpdateProjectSettings({");
   });
