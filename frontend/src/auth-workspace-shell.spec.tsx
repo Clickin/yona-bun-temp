@@ -70,6 +70,8 @@ describe("auth and workspace views", () => {
     expect(source).toContain(
       'messages("title.yobi.feedback", { fallback: "title.yobi.feedback" })',
     );
+    expect(source).toContain("runtimeConfig.feedbackUrl");
+    expect(source).not.toContain("https://github.com/yona-projects/yona/issues");
     expect(source).toContain('name="gnb-search-form"');
     expect(source).toContain('name="searchType"');
     expect(source).toContain('accessKey="S"');

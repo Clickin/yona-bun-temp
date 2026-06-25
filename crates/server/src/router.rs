@@ -174,6 +174,7 @@ fn build_router_with_app_config(
         &base_path,
         app_config.project_default_menus.clone(),
         runtime.project_default_scope.clone(),
+        app_config.feedback_url.clone(),
         app_config.navbar_custom_link_name.clone(),
         app_config.navbar_custom_link_url.clone(),
         runtime.site_name.clone(),

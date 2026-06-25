@@ -75,11 +75,13 @@ function RootHeader() {
             </a>
           </li>
           <li className="divider"></li>
-          <li>
-            <a href="https://github.com/yona-projects/yona/issues" rel="noreferrer" target="_blank">
-              {messages("title.yobi.feedback", { fallback: "title.yobi.feedback" })}
-            </a>
-          </li>
+          {runtimeConfig.feedbackUrl ? (
+            <li>
+              <a href={runtimeConfig.feedbackUrl} rel="noreferrer" target="_blank">
+                {messages("title.yobi.feedback", { fallback: "title.yobi.feedback" })}
+              </a>
+            </li>
+          ) : null}
           <li>
             <form
               action={prefixBasePath(runtimeConfig.basePath, "/search")}

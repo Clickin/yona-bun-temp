@@ -44,6 +44,7 @@ pub struct StartupConfig {
     pub mailbox_polling_initial_delay: Option<String>,
     pub mailbox_polling_interval: Option<String>,
     pub max_file_size: Option<usize>,
+    pub feedback_url: Option<String>,
     pub navbar_custom_link_name: Option<String>,
     pub navbar_custom_link_url: Option<String>,
     pub project_default_menus: Option<Vec<String>>,
@@ -147,6 +148,7 @@ struct SiteConfigFile {
     base_path: Option<String>,
     guest_login_prefix: Option<String>,
     hostname: Option<String>,
+    feedback_url: Option<String>,
     langs: Option<Vec<String>>,
     name: Option<String>,
     navbar_custom_link_name: Option<String>,
@@ -360,6 +362,9 @@ pub fn load_startup_config(
     let supported_languages = env_string(&env, "YONA_LANGS")
         .map(|value| split_csv(&value))
         .or(site.langs);
+    let feedback_url = env_string(&env, "YONA_FEEDBACK_URL")
+        .or_else(|| env_string(&env, "application.feedback.url"))
+        .or_else(|| non_empty_string(site.feedback_url));
     let navbar_custom_link_name = env_string(&env, "YONA_NAVBAR_CUSTOM_LINK_NAME")
         .or_else(|| env_string(&env, "application.navbar.custom.link.name"))
         .or_else(|| non_empty_string(site.navbar_custom_link_name));
@@ -576,6 +581,7 @@ pub fn load_startup_config(
         mailbox_polling_initial_delay,
         mailbox_polling_interval,
         max_file_size,
+        feedback_url,
         navbar_custom_link_name,
         navbar_custom_link_url,
         project_default_menus,

@@ -108,6 +108,7 @@ base_path = "/sectioned"
 allow_anonymous_access = false
 allowed_sending_mail_domains = ["allowed.example.com", "other.example.com"]
 guest_login_prefix = "guest-"
+feedback_url = "https://feedback.example.com"
 navbar_custom_link_name = "Docs"
 navbar_custom_link_url = "https://docs.example.com"
 send_yona_usage = false
@@ -216,6 +217,10 @@ draft_time = "1s"
         ])
     );
     assert_eq!(config.guest_login_prefix.as_deref(), Some("guest-"));
+    assert_eq!(
+        config.feedback_url.as_deref(),
+        Some("https://feedback.example.com")
+    );
     assert_eq!(config.navbar_custom_link_name.as_deref(), Some("Docs"));
     assert_eq!(
         config.navbar_custom_link_url.as_deref(),
@@ -621,6 +626,10 @@ draft_time = "30s"
             ),
             ("YONA_LANGS".to_string(), "ja-JP,en-US".to_string()),
             (
+                "application.feedback.url".to_string(),
+                "https://env.example/feedback".to_string(),
+            ),
+            (
                 "YONA_TRANSLATION_API".to_string(),
                 "https://env.example/translate".to_string(),
             ),
@@ -729,6 +738,10 @@ draft_time = "30s"
     assert_eq!(config.show_user_email, Some(true));
     assert_eq!(config.send_yona_usage, Some(false));
     assert_eq!(config.site_name.as_deref(), Some("Env Yona"));
+    assert_eq!(
+        config.feedback_url.as_deref(),
+        Some("https://env.example/feedback")
+    );
     assert_eq!(config.navbar_custom_link_name.as_deref(), Some("Env Docs"));
     assert_eq!(
         config.navbar_custom_link_url.as_deref(),

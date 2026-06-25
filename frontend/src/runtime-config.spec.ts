@@ -17,6 +17,7 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/api",
       basePath: "/",
+      feedbackUrl: "",
       navbarCustomLinkName: "",
       navbarCustomLinkUrl: "",
       projectDefaultMenus: ["code", "issue", "pullRequest", "review", "milestone", "board"],
@@ -35,6 +36,7 @@ describe("readRuntimeConfig", () => {
     browserWindow.__YONA_RUNTIME_CONFIG__ = {
       apiBaseUrl: "/yona/api",
       basePath: "/yona/",
+      feedbackUrl: " https://feedback.example.com ",
       navbarCustomLinkName: "Docs",
       navbarCustomLinkUrl: "https://docs.example.com",
       projectDefaultMenus: ["issue", "pull-request", "unknown"],
@@ -47,6 +49,7 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
+      feedbackUrl: "https://feedback.example.com",
       navbarCustomLinkName: "Docs",
       navbarCustomLinkUrl: "https://docs.example.com",
       projectDefaultMenus: ["issue", "pullRequest"],
@@ -60,6 +63,7 @@ describe("readRuntimeConfig", () => {
   it("falls back to vite env runtime config when the server did not inject one", () => {
     globalThis.window = {} as Window & typeof globalThis;
     process.env.VITE_YONA_BASE_PATH = "/yona";
+    process.env.VITE_YONA_FEEDBACK_URL = "https://feedback.example.test";
     process.env.VITE_YONA_LANGS = "ja-JP, en-US";
     process.env.VITE_YONA_PROJECT_DEFAULT_MENUS = "issue,board";
     process.env.VITE_YONA_NAVBAR_CUSTOM_LINK_NAME = " Support ";
@@ -69,6 +73,7 @@ describe("readRuntimeConfig", () => {
     (import.meta as { env?: Record<string, string> }).env = {
       ...originalImportMetaEnv,
       VITE_YONA_BASE_PATH: "/yona",
+      VITE_YONA_FEEDBACK_URL: "https://feedback.example.test",
       VITE_YONA_LANGS: "ja-JP, en-US",
       VITE_YONA_NAVBAR_CUSTOM_LINK_NAME: " Support ",
       VITE_YONA_NAVBAR_CUSTOM_LINK_URL: "/support",
@@ -80,6 +85,7 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
+      feedbackUrl: "https://feedback.example.test",
       navbarCustomLinkName: "Support",
       navbarCustomLinkUrl: "/support",
       projectDefaultMenus: ["issue", "board"],

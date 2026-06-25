@@ -160,6 +160,7 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 | `project.default.scope.when.create`        | `YONA_PROJECT_DEFAULT_SCOPE`                        | public/protected/private     |
 | `project.creation.default.menus`           | `YONA_PROJECT_DEFAULT_MENUS`                        | issue, milestone, board 등   |
 | `application.langs`                        | `YONA_LANGS`                                        | i18n 지원 언어 목록          |
+| `application.feedback.url`                 | `YONA_FEEDBACK_URL` / `yoram.toml` `[site] feedback_url` | top layout feedback menu; empty disables menu like legacy commented config |
 
 **검수 기준**: legacy `application.conf.default`의 모든 핵심 설정 키에 대응하는 환경변수 또는 TOML 키가 존재하고, 설정 migration 가이드 문서가 제공되어야 한다.
 
