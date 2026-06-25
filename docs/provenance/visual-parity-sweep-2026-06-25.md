@@ -119,6 +119,13 @@ Asset note: the local browser sweep must run against a binary built with
 server test asset fixture and produces the same class of broken UI symptom reported in the Windows
 smoke test.
 
+2026-06-25 i18n rerun note: after tightening the visible i18n rule to keep
+legacy key names while requiring page chrome to render translated values, the
+local embedded sweep passed 152/152 and direct API fragment conversion passed
+4/4. The detector excludes user-authored Markdown/help examples from raw-key
+matching, but still scans document titles and page chrome for unresolved legacy
+message keys.
+
 ## Failures
 
 None in the stabilized 152-route local rendered-screen sweep or same-path comparison.

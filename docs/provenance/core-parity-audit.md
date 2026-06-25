@@ -79,6 +79,12 @@
   `pnpm --dir frontend check`.
 - 2026-06-25 visual sweep note: legacy `/admin` remains the public user profile route and now falls through to the React `/$user` SPA surface instead of being intercepted by site-admin aliases. The expanded Playwright visual sweep covers that route together with route-tree-derived samples and records route evidence in `docs/provenance/visual-parity-sweep-2026-06-25.md`.
 - 2026-06-25 visible i18n sweep note: the rendered local Playwright sweep no longer exposes raw legacy message keys. The React i18n boundary now loads `yona-original/conf/messages*` as the only bundled message dictionary, so legacy keys such as `user.role.owner` are not manually mirrored one-by-one in a React-owned fallback map. Focused evidence: `i18n.spec.tsx`, `migration-route-parity.spec.tsx`, route parity specs, and `docs/provenance/visual-parity-sweep-2026-06-25.md`.
+- 2026-06-25 visible i18n sweep continuation: the post-fix embedded Playwright
+  sweep passed local 152/152 and direct API fragment conversion 4/4 after
+  replacing remaining visible literals for `notification`, `milestone`, and
+  `fork` with legacy-key lookups. The raw-key detector now scans page chrome
+  separately from user-authored Markdown/help examples so legacy keys can still
+  be used as content without masking UI key leaks.
 - 2026-06-25 legacy default-message fallback continuation: provider-backed React i18n now follows the Play/Yona message fallback chain by checking the selected legacy language file first, then default `conf/messages`, then the explicit caller fallback/key. This prevents raw-key leakage for keys missing in a localized file but present in the default file, such as `project.webhook.includeGitPush` and `title.pullrequest`, while preserving raw-key output when no i18n provider is mounted. Focused evidence: `frontend/src/i18n.spec.tsx` and `frontend/src/project-settings-parity.spec.tsx`.
 - 2026-06-25 legacy MessageFormat escaping continuation: React i18n now
   unescapes doubled apostrophes from `yona-original/conf/messages*`, matching

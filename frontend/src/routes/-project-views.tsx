@@ -1744,7 +1744,7 @@ export function ProjectDetailPage(props: {
                   {detail.showCode ? (
                     <span className="project-btn-item">
                       <a className="ybtn ybtn-inverse" href={`${projectHref}/newFork`}>
-                        fork
+                        {legacyMessage(messages, "fork")}
                       </a>
                     </span>
                   ) : null}
@@ -2660,7 +2660,7 @@ export function ProjectForkPage(props: {
               <fieldset>
                 <legend>
                   <h4>
-                    {detail.ownerName} / {detail.projectName} fork
+                    {detail.ownerName} / {detail.projectName} {legacyMessage(messages, "fork")}
                   </h4>
                 </legend>
                 <div className="well" id="helpMessage">
@@ -2669,7 +2669,7 @@ export function ProjectForkPage(props: {
                       <>
                         <div className="pull-left">
                           <img
-                            alt="fork"
+                            alt={legacyMessage(messages, "fork")}
                             className="img-polaroid"
                             src={prefixBasePath(
                               props.runtimeConfig.basePath,
@@ -2807,7 +2807,7 @@ export function ProjectForkPage(props: {
                     disabled={!canSubmit || props.pending}
                     type="submit"
                   >
-                    <i className="yobicon-fork" /> fork
+                    <i className="yobicon-fork" /> {legacyMessage(messages, "fork")}
                   </button>
                   <a
                     className="ybtn"

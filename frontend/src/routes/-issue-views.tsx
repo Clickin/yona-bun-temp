@@ -3171,7 +3171,9 @@ function UserIssueMySeriesMenuTabs(props: {
   return (
     <ul className="nav nav-tabs">
       <li>
-        <a href={prefixBasePath(props.basePath, "/notifications")}>notification</a>
+        <a href={prefixBasePath(props.basePath, "/notifications")}>
+          {legacyMessage(props.messages, "notification")}
+        </a>
       </li>
       <li className="active">
         <a href={prefixBasePath(props.basePath, "/user/issues")}>
@@ -4695,7 +4697,7 @@ export function ProjectIssueFormPage(props: {
                       </dd>
                     </dl>
                     <dl className="issue-option" id="milestoneOption">
-                      <dt>milestone</dt>
+                      <dt>{legacyMessage(messages, "milestone")}</dt>
                       <dd>
                         {milestoneOptions.length === 0 ? (
                           <a

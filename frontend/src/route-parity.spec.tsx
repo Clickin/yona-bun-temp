@@ -5480,9 +5480,9 @@ describe("file-route parity harness", () => {
         runtimeConfig={runtimeConfig}
       />,
     );
-    expect(html).toContain("<h4>yona / projectYobi fork</h4>");
+    expect(html).toContain("<h4>yona / projectYobi Fork</h4>");
     expect(html).toContain('<button class="ybtn ybtn-info" type="submit">');
-    expect(html).toContain('<i class="yobicon-fork"></i> fork');
+    expect(html).toContain('<i class="yobicon-fork"></i> Fork');
     expect(html).not.toContain("project.fork");
   });
 

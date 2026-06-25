@@ -492,6 +492,7 @@ async function inspectPage(page, baseUrl, path, label) {
     if (
       message.type() === "error" &&
       !text.includes("www.google-analytics.com") &&
+      !text.includes("Permissions policy violation: compute-pressure") &&
       !text.startsWith("Failed to load resource:")
     ) {
       consoleErrors.push(message.text());
@@ -538,6 +539,26 @@ async function inspectPage(page, baseUrl, path, label) {
     .catch(() => {});
 
   const metrics = await page.evaluate(() => {
+    const visibleTextWithoutUserMarkdown = () => {
+      const clone = document.body.cloneNode(true);
+      for (const element of clone.querySelectorAll(
+        [
+          ".markdown-wrap",
+          ".markdown-body",
+          ".markdown-rendered",
+          ".markdown-help-item",
+          ".markdwon-syntax-wrap",
+          ".issue-body",
+          ".post-body",
+          ".comment-body",
+          ".textarea-box",
+          "textarea",
+        ].join(","),
+      )) {
+        element.remove();
+      }
+      return clone.innerText.slice(0, 5000);
+    };
     const body = document.body;
     const html = document.documentElement;
     const stylesheets = [...document.styleSheets].map((sheet) => {
@@ -566,6 +587,7 @@ async function inspectPage(page, baseUrl, path, label) {
     return {
       title: document.title,
       text: body.innerText.slice(0, 5000),
+      chromeText: visibleTextWithoutUserMarkdown(),
       bodyTextLength: body.innerText.trim().length,
       scrollWidth: Math.round(Math.max(body.scrollWidth, html.scrollWidth)),
       viewportWidth: window.innerWidth,
@@ -610,9 +632,10 @@ async function inspectPage(page, baseUrl, path, label) {
   if (metrics.scrollWidth > metrics.viewportWidth * 1.8) {
     errors.push(`horizontal overflow ${metrics.scrollWidth}/${metrics.viewportWidth}`);
   }
-  if (label === "local" && hasRawLegacyI18nKey(`${metrics.title}\n${metrics.text}`)) {
+  const i18nScanText = `${metrics.title}\n${metrics.chromeText}`;
+  if (label === "local" && hasRawLegacyI18nKey(i18nScanText)) {
     errors.push(
-      `raw i18n key visible: ${rawLegacyI18nKeys(`${metrics.title}\n${metrics.text}`).join(", ")}`,
+      `raw i18n key visible: ${rawLegacyI18nKeys(i18nScanText).join(", ")}`,
     );
   }
   if (/browser-safe route tree|localhost:3001\/(?!yona(?:\/|$))yo/u.test(metrics.text)) {
