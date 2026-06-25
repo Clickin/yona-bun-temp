@@ -2573,8 +2573,11 @@ describe("file-route parity harness", () => {
     expect(childCommentHtml).toContain(
       'placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"',
     );
+    expect(childCommentHtml).toContain('aria-label="button.comment.new"');
     expect(childCommentHtml).toContain('data-legacy-label="OK"');
-    expect(childCommentHtml).toContain(">comment.save</button>");
+    expect(childCommentHtml).toContain('<span aria-hidden="true">OK</span>');
+    expect(childCommentHtml).toContain('<span class="sr-only">button.comment.new</span>');
+    expect(childCommentHtml).not.toContain(">comment.save</button>");
     expect(childCommentHtml).toContain('class="notification-receiver"');
     expect(childCommentHtml).toContain("notification.receiver.list.title");
 

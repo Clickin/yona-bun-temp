@@ -271,6 +271,12 @@
   the child-comment surfaces. Focused evidence:
   `markdown-renderer.spec.tsx`, `issue-detail-shell.spec.tsx`, and
   `route-parity.spec.tsx`.
+- 2026-06-25 child-comment submit label continuation: nested issue and board
+  child-comment forms now keep the legacy `common/child_commentForm.scala.html`
+  literal `OK` submit button instead of exposing a non-legacy `comment.save` or
+  `OK` message key; the non-visible accessible name uses the legacy
+  `button.comment.new` key. Focused evidence:
+  `issue-board-pr-milestone-i18n.spec.tsx` and `route-parity.spec.tsx`.
 - 2026-06-25 raw Markdown sanitizer continuation: React raw HTML rendering now
   keeps the legacy `utils/Markdown.java` sanitizer allowlist for media embeds,
   including `video` `autoplay`/`controls`/`preload`/`type`/`responsive`/

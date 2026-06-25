@@ -2350,11 +2350,15 @@ export function ProjectIssueDetailPage(props: {
                                         } as unknown as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
                                       />
                                       <button
+                                        aria-label={legacyMessage(messages, "button.comment.new")}
                                         className="ybtn ybtn-success"
                                         data-legacy-label="OK"
                                         type="submit"
                                       >
-                                        {legacyMessage(messages, "OK")}
+                                        <span aria-hidden="true">OK</span>
+                                        <span className="sr-only">
+                                          {legacyMessage(messages, "button.comment.new")}
+                                        </span>
                                       </button>
                                     </div>
                                     <div className="notification-receiver">

@@ -311,7 +311,9 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     expect(fallbackHtml).toContain('aria-label="common.comment.edit"');
     expect(fallbackHtml).toContain('aria-label="common.comment.delete"');
     expect(fallbackHtml).toContain(">post.unwatch</button>");
-    expect(fallbackHtml).toContain(">comment.save</button>");
+    expect(fallbackHtml).toContain('aria-label="button.comment.new"');
+    expect(fallbackHtml).toContain('<span aria-hidden="true">OK</span>');
+    expect(fallbackHtml).toContain('<span class="sr-only">button.comment.new</span>');
     expect(fallbackHtml).toContain(
       'placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"',
     );
@@ -326,10 +328,13 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     expect(koreanHtml).toContain('aria-label="댓글 수정"');
     expect(koreanHtml).toContain('aria-label="댓글 삭제"');
     expect(koreanHtml).toContain(">글 그만 지켜보기</button>");
-    expect(koreanHtml).toContain(">comment.save</button>");
+    expect(koreanHtml).toContain('aria-label="댓글 입력"');
+    expect(koreanHtml).toContain('<span aria-hidden="true">OK</span>');
+    expect(koreanHtml).toContain('<span class="sr-only">댓글 입력</span>');
     expect(koreanHtml).toContain('placeholder="대댓글 추가 (CTRL + ENTER)"');
     expect(koreanHtml).not.toContain(">change.history</span>");
     expect(koreanHtml).not.toContain("<strong>common.comment</strong>");
+    expect(koreanHtml).not.toContain(">comment.save</button>");
   });
 
   it("opts the bounded P4-A issue/board shared controls into legacy message lookups", () => {
