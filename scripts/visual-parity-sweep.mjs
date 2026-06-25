@@ -171,6 +171,39 @@ const localDirectApiSurfaces = [
     method: "GET",
     path: "/-_-api/v1/owners/admin/projects/sample/issues/1/sharableUsers?query=admin",
   },
+  {
+    expectKeys: ["result"],
+    expectNestedArrayItemKeys: {
+      result: ["loginid", "name", "searchText"],
+    },
+    expectNestedArrayMinItems: {
+      result: 1,
+    },
+    method: "GET",
+    path: "/admin/sample/mentionList?number=1&resourceType=ISSUE_POST&mentionType=user&query=",
+  },
+  {
+    expectKeys: ["result"],
+    expectNestedArrayItemKeys: {
+      result: ["issueNo", "name", "title"],
+    },
+    expectNestedArrayMinItems: {
+      result: 1,
+    },
+    method: "GET",
+    path: "/admin/sample/mentionList?mentionType=issue&query=Sample",
+  },
+  {
+    expectKeys: ["result"],
+    expectNestedArrayItemKeys: {
+      result: ["loginid", "name", "searchText"],
+    },
+    expectNestedArrayMinItems: {
+      result: 1,
+    },
+    method: "GET",
+    path: "/admin/sample/mentionListAtCommitDiff?mentionType=user&query=admin&commitId=HEAD",
+  },
 ];
 
 const routeSampleValues = {
@@ -326,7 +359,7 @@ async function login(page, baseUrl) {
   }
   await loginField.fill(loginId);
   await passwordField.fill(password);
-  const loginForm = page.locator('form[action$="/users/login"]').first();
+  const loginForm = page.locator('form:has(input[name="loginIdOrEmail"])').first();
   const submitButton = loginForm.locator('button[type="submit"], input[type="submit"]').first();
   await Promise.all([page.waitForLoadState("networkidle").catch(() => {}), submitButton.click()]);
   return true;
@@ -500,9 +533,7 @@ async function inspectLocalDirectApiSurface(page, baseUrl, surface) {
           payload.length > 0 &&
           !payload.some(
             (item) =>
-              item &&
-              typeof item === "object" &&
-              Object.prototype.hasOwnProperty.call(item, key),
+              item && typeof item === "object" && Object.prototype.hasOwnProperty.call(item, key),
           )
         ) {
           errors.push(`missing array item key: ${key}`);
@@ -512,6 +543,35 @@ async function inspectLocalDirectApiSurface(page, baseUrl, surface) {
     for (const key of surface.expectKeys ?? []) {
       if (!Object.prototype.hasOwnProperty.call(payload, key)) {
         errors.push(`missing payload key: ${key}`);
+      }
+    }
+    for (const [path, keys] of Object.entries(surface.expectNestedArrayItemKeys ?? {})) {
+      const value = path
+        .split(".")
+        .reduce(
+          (current, segment) => (current && typeof current === "object" ? current[segment] : null),
+          payload,
+        );
+      if (!Array.isArray(value)) {
+        errors.push(`nested path is not an array: ${path}`);
+        continue;
+      }
+      const minItems = surface.expectNestedArrayMinItems?.[path] ?? 0;
+      if (minItems && value.length < minItems) {
+        errors.push(
+          `nested array ${path} has ${value.length} item(s), expected at least ${minItems}`,
+        );
+      }
+      for (const key of keys) {
+        if (
+          value.length > 0 &&
+          !value.some(
+            (item) =>
+              item && typeof item === "object" && Object.prototype.hasOwnProperty.call(item, key),
+          )
+        ) {
+          errors.push(`missing nested array item key ${path}.${key}`);
+        }
       }
     }
     for (const path of surface.expectPaths ?? []) {
@@ -545,8 +605,7 @@ async function inspectLocalDirectApiSurface(page, baseUrl, surface) {
     contentType,
     method: surface.method,
     ok: errors.length === 0,
-    payloadKind:
-      payload === null ? null : Array.isArray(payload) ? "array" : typeof payload,
+    payloadKind: payload === null ? null : Array.isArray(payload) ? "array" : typeof payload,
     payloadKeys:
       payload && typeof payload === "object" && !Array.isArray(payload)
         ? Object.keys(payload).sort()
@@ -738,9 +797,7 @@ async function inspectPage(page, baseUrl, path, label) {
   }
   const i18nScanText = `${metrics.title}\n${metrics.chromeText}\n${metrics.chromeAttributes}`;
   if (label === "local" && hasRawLegacyI18nKey(i18nScanText)) {
-    errors.push(
-      `raw i18n key visible: ${rawLegacyI18nKeys(i18nScanText).join(", ")}`,
-    );
+    errors.push(`raw i18n key visible: ${rawLegacyI18nKeys(i18nScanText).join(", ")}`);
   }
   if (/browser-safe route tree|localhost:3001\/(?!yona(?:\/|$))yo/u.test(metrics.text)) {
     errors.push("implementation fixture copy visible");

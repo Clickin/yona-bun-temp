@@ -48,9 +48,10 @@ Status: current audit evidence.
 - Direct API criterion: the local sweep also checks legacy direct fragment
   surfaces that have been converted to React-owned data boundaries. It fails if
   `/user/usermenuTabContentList`, `/user/sidebar`, `/notification?from=...`,
-  `POST /markdown/:owner/:project`, direct label helpers, or legacy external
-  assignable/sharer lookup helpers return an HTML fragment instead of JSON, or
-  if markdown preview returns a rendered HTML field instead of Markdown source.
+  `POST /markdown/:owner/:project`, direct label helpers, legacy external
+  assignable/sharer lookup helpers, or legacy project mention-list helper
+  aliases return an HTML fragment instead of JSON, or if markdown preview
+  returns a rendered HTML field instead of Markdown source.
 - i18n criterion: React-owned views must keep using legacy `conf/messages*`
   keys as-is. The sweep fails when a rendered normal page exposes raw legacy
   message keys; new React-specific message keys are not a parity substitute.
@@ -100,10 +101,14 @@ Playwright render the legacy responses from `127.0.0.1`.
   `/admin/sample/post/1/editform`, `/admin/sample/compare/main...main`, and
   `/admin/sample/branches` returned HTTP 500 from the homelab sample.
 - Local Playwright visual sweep: 152 checked, 152 passed, 0 failed, authenticated session confirmed.
-- Local direct API fragment-conversion sweep: 10 checked, 10 passed, 0
+- Latest recorded local direct API fragment-conversion sweep: 10 checked, 10 passed, 0
   failed. The direct surfaces now cover the workspace sidebar/menu,
   notification paging, Markdown preview source return, direct issue/project
   label helpers, and legacy external assignable/sharer lookup helpers.
+- Harness update after the latest recorded sweep: the next local direct API
+  fragment-conversion rerun checks 13 surfaces by adding project mention-list
+  autocomplete helper aliases for user mentions, issue mentions, and
+  commit-diff mentions.
 - 2026-06-25T06:57:15Z local rerun after the Markdown editor i18n fallback
   repair: `YORAM_SWEEP_TARGET=local` against
   `http://127.0.0.1:18111/yona` passed 152/152 rendered pages, 10/10 direct
