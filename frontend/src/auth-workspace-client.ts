@@ -291,7 +291,6 @@ export type RestIssueDetailResponse = ReadIssueDetailResponse & {
   childOpenCount?: number;
   createdLabel?: string;
   dueDateLabel?: string;
-  historyHtml?: string;
   historyMarkdown?: string;
   issueId?: bigint | number;
   issueVoters?: Array<{

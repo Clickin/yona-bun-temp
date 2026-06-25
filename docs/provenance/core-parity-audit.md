@@ -404,6 +404,12 @@
   `common/childComments.scala.html` one-line child-comment fragments, both of
   which are also unwrapped in legacy templates. Focused evidence:
   `markdown-render-boundary.spec.tsx`.
+- 2026-06-25 markdown render-model boundary continuation: REST/API modules may
+  still carry empty server-HTML compatibility fields for legacy wire shape, but
+  React render view-model boundaries no longer expose `bodyHtml`,
+  `contentsHtml`, or `historyHtml` fields. Project README, issue body/history,
+  and comments flow into views through Markdown source plus reference metadata.
+  Focused evidence: `markdown-render-boundary.spec.tsx`.
 - 2026-06-25 markdown unclosed-fence stability continuation: legacy `marked`
   closes fenced code blocks at EOF. React Markdown now preserves that behavior
   even when the source does not end with a trailing newline, while keeping

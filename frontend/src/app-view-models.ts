@@ -363,7 +363,6 @@ export function toProjectContainerView(
     isUsingReviewerCount?: boolean;
     maxReviewerCount?: number;
     readmeFile?: {
-      bodyHtml?: string;
       bodyMarkdown?: string;
       mentionReferences?: Partial<MentionReferenceMetadata>[];
       name?: string;
@@ -721,7 +720,6 @@ type IssueDetailResponseWithHistory = Awaited<ReturnType<typeof readIssueDetail>
     parentCommentId?: bigint | number | null;
   }>;
   dueDateLabel?: string;
-  historyHtml?: string;
   historyMarkdown?: string;
   issueId?: bigint | number;
   issueVoters?: Array<{

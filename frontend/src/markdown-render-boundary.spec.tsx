@@ -17,6 +17,7 @@ const serverRenderedHtmlCompatibilityFiles = new Set([
   "api/pull-requests.ts",
 ]);
 const allowedResponseTextReaders = new Set(["api/rest-client.ts", "api/translation.ts"]);
+const renderModelBoundaryFiles = ["app-view-models.ts", "auth-workspace-client.ts"];
 const allowedMarkdownRendererCallsWithoutMarkdownWrap = [
   {
     file: "routes/-board-views.tsx",
@@ -166,6 +167,14 @@ describe("Markdown render boundary", () => {
 
     expect(compatibilitySources.join("\n")).toContain("bodyHtml");
     expect(compatibilitySources.join("\n")).toContain("contentsHtml");
+  });
+
+  it("keeps render view-model boundaries off server HTML compatibility fields", () => {
+    for (const file of renderModelBoundaryFiles) {
+      expect(readSource(file), file).not.toMatch(
+        /\b(?:bodyHtml|contentsHtml|historyHtml|descriptionHtml|renderedHtml|markdownHtml)\b/,
+      );
+    }
   });
 
   it("keeps MarkdownRenderer calls wrapped like legacy markdown surfaces", () => {
