@@ -1430,8 +1430,11 @@ export function OrganizationMembersPage(props: {
               id="addNewMember"
               method="post"
               onSubmit={(event) => {
+                if (!props.onAddMember) {
+                  return;
+                }
                 event.preventDefault();
-                props.onAddMember?.(detail.organizationName, loginId);
+                props.onAddMember(detail.organizationName, loginId);
               }}
             >
               <input

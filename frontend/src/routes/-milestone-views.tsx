@@ -679,6 +679,9 @@ export function ProjectMilestoneFormPage(props: {
               id="milestone-form"
               method="post"
               onSubmit={(event) => {
+                if (!props.onSubmit) {
+                  return;
+                }
                 event.preventDefault();
                 const nextValidationMessage = legacyMilestoneValidationMessage({
                   contentsMarkdown,
@@ -692,7 +695,7 @@ export function ProjectMilestoneFormPage(props: {
                 setValidationMessage(null);
                 setPending(true);
                 void props
-                  .onSubmit?.({
+                  .onSubmit({
                     attachmentIds,
                     contentsMarkdown,
                     dueDate,

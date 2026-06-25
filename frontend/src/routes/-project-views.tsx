@@ -1989,8 +1989,11 @@ export function ProjectMembersPage(props: {
               id="addNewMember"
               method="post"
               onSubmit={(event) => {
+                if (!props.onAddMember) {
+                  return;
+                }
                 event.preventDefault();
-                props.onAddMember?.(loginId);
+                props.onAddMember(loginId);
               }}
             >
               <input
@@ -2231,13 +2234,16 @@ export function ProjectWebhooksPage(props: {
                 id="formNewWebhook"
                 method="post"
                 onSubmit={(event) => {
+                  if (!props.onCreateWebhook) {
+                    return;
+                  }
                   event.preventDefault();
                   if (formState.payloadUrl.length === 0) {
                     setValidationMessage("project.webhook.payloadUrl.empty");
                     return;
                   }
                   setValidationMessage(null);
-                  props.onCreateWebhook?.(formState);
+                  props.onCreateWebhook(formState);
                   setFormState({
                     gitPush: false,
                     payloadUrl: "",
@@ -2658,11 +2664,14 @@ export function ProjectForkPage(props: {
               className="form-horizontal nm"
               method="post"
               onSubmit={(event) => {
+                if (!props.onFork) {
+                  return;
+                }
                 event.preventDefault();
                 if (!canSubmit || props.pending) {
                   return;
                 }
-                void props.onFork?.({
+                void props.onFork({
                   name: name.trim(),
                   owner: owner.trim(),
                   projectScope,
@@ -3313,11 +3322,20 @@ export function ProjectSettingsPage(props: {
             runtimeConfig={props.runtimeConfig}
           />
           <form
+            action={buildProjectHref(
+              props.runtimeConfig,
+              detail.ownerName,
+              detail.projectName,
+              "setting",
+            )}
             className="nm"
             encType="multipart/form-data"
             id="saveSetting"
             method="post"
             onSubmit={(event) => {
+              if (!props.onUpdateProjectSettings) {
+                return;
+              }
               event.preventDefault();
               if (!PROJECT_NAME_PATTERN.test(formState.projectName)) {
                 setValidationMessage("project.name.alert");
@@ -3328,7 +3346,7 @@ export function ProjectSettingsPage(props: {
                 return;
               }
               setValidationMessage(null);
-              props.onUpdateProjectSettings?.({
+              props.onUpdateProjectSettings({
                 board: formState.board,
                 code: formState.code,
                 defaultReviewerCount: formState.defaultReviewerCount,

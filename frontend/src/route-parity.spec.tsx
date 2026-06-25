@@ -3171,6 +3171,12 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('class="content-wrap frm-wrap"');
     expect(createHtml).toContain('id="milestone-form"');
     expect(createHtml).toContain('action="/yona/owner/projectYobi/milestones"');
+    const milestoneViewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-milestone-views.tsx"),
+      "utf8",
+    );
+    expect(milestoneViewSource).toContain("if (!props.onSubmit) {");
+    expect(milestoneViewSource).toContain(".onSubmit({");
     expect(createHtml).toContain('class="row-fluid"');
     expect(createHtml).toContain('class="span12"');
     expect(createHtml).toContain('id="title"');
@@ -4872,6 +4878,8 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("ProjectMembersPage");
     expect(viewSource).toContain("<ProjectHeader");
     expect(viewSource).toContain('id="addNewMember"');
+    expect(viewSource).toContain("if (!props.onAddMember) {");
+    expect(viewSource).toContain("props.onAddMember(loginId);");
     expect(viewSource).toContain('className="members project row-fluid"');
     expect(viewSource).toContain('data-action="apply"');
     expect(viewSource).toContain('data-action="delete"');
@@ -4953,6 +4961,8 @@ describe("file-route parity harness", () => {
     );
     expect(viewSource).toContain("OrganizationMembersPage");
     expect(viewSource).toContain('id="addNewMember"');
+    expect(viewSource).toContain("if (!props.onAddMember) {");
+    expect(viewSource).toContain("props.onAddMember(detail.organizationName, loginId);");
     expect(viewSource).toContain('className="members project row-fluid"');
     expect(viewSource).toContain('data-action="apply"');
     expect(viewSource).toContain('data-action="delete"');
@@ -5120,6 +5130,8 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("ProjectWebhooksPage");
     expect(viewSource).toContain("webhook-editor-wrap");
     expect(viewSource).toContain('id="formNewWebhook"');
+    expect(viewSource).toContain("if (!props.onCreateWebhook) {");
+    expect(viewSource).toContain("props.onCreateWebhook(formState);");
     expect(viewSource).toContain("input-webhook-payload");
     expect(viewSource).toContain("input-webhook-secret");
     expect(viewSource).toContain('id="gitPush"');
@@ -5467,6 +5479,8 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("ProjectForkPage");
     expect(viewSource).toContain('<ProjectMenu activeMenu="pullRequest"');
     expect(viewSource).toContain("href={`${projectHref}/newFork`}");
+    expect(viewSource).toContain("if (!props.onFork) {");
+    expect(viewSource).toContain("void props.onFork({");
     expect(viewSource).toContain('className="content-wrap frm-wrap"');
     expect(viewSource).toContain('id="helpMessage"');
     expect(viewSource).toContain('id="project-owner"');

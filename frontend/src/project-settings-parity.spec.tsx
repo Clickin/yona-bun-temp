@@ -85,6 +85,10 @@ describe("project settings parity", () => {
     const html = renderToStaticMarkup(
       <ProjectSettingsPage detail={projectDetail} runtimeConfig={runtimeConfig} />,
     );
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-project-views.tsx"),
+      "utf8",
+    );
 
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="project-header-outer"');
@@ -98,6 +102,7 @@ describe("project settings parity", () => {
     );
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('id="saveSetting"');
+    expect(html).toContain('action="/yona/admin/projectYobi/setting"');
     expect(html).toContain('class="bubble-wrap gray"');
     expect(html).toContain('class="box-wrap top clearfix frm-wrap"');
     expect(html).toContain('class="setting-box left"');
@@ -115,6 +120,10 @@ describe("project settings parity", () => {
     expect(html).toContain('id="menuSettingCode"');
     expect(html).toContain('id="menuSettingPullRequest"');
     expect(html).toContain('id="save"');
+    expect(viewSource).toContain("action={buildProjectHref(");
+    expect(viewSource).toContain('      "setting",');
+    expect(viewSource).toContain("if (!props.onUpdateProjectSettings) {");
+    expect(viewSource).toContain("props.onUpdateProjectSettings({");
   });
 
   it("uses default legacy messages without AppRuntimeContext messages", () => {
