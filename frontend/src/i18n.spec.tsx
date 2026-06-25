@@ -302,6 +302,15 @@ describe("legacy i18n runtime", () => {
     ).toBe("missing.fallback.key");
   });
 
+  it("resolves root sidebar empty-state keys from legacy message files", () => {
+    const rootSource = readFileSync(`${__dirname}/routes/__root.tsx`, "utf8");
+
+    expect(lookupLegacyMessage("en-US", "title.no.results")).toBe("No results");
+    expect(lookupLegacyMessage("ko-KR", "title.no.results")).toBe("결과 없음");
+    expect(rootSource).toContain('messages("title.no.results"');
+    expect(rootSource).not.toContain(">title.no.results<");
+  });
+
   it("keeps route fallback literals inside the legacy message keyspace", () => {
     const legacyKeys = parseLegacyMessageKeys(
       readFileSync(new URL("../../yona-original/conf/messages", import.meta.url), "utf8"),
