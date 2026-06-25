@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const serverRenderedHtmlFieldAccessPattern =
   /\.(?:bodyHtml|contentsHtml|historyHtml|descriptionHtml|renderedHtml|markdownHtml)\b/;
+const markdownWrapClassPattern = /\bmarkdown-wrap\b/;
 const serverRenderedHtmlCompatibilityFiles = new Set([
   "api/boards.ts",
   "api/code-commits.ts",
@@ -12,6 +13,30 @@ const serverRenderedHtmlCompatibilityFiles = new Set([
   "api/pull-requests.ts",
   "app-view-models.ts",
 ]);
+const allowedMarkdownRendererCallsWithoutMarkdownWrap = [
+  {
+    file: "routes/-board-views.tsx",
+    marker: /className="modal-body"/,
+    reason: "legacy common/partial_history.scala.html renders sanitized history inside modal-body",
+  },
+  {
+    file: "routes/-board-views.tsx",
+    marker: /translatedCommentMarkdownById\[childComment\.id\]/,
+    reason:
+      "legacy common/childComments.scala.html renders one-line child comments without markdown-wrap",
+  },
+  {
+    file: "routes/-issue-views.tsx",
+    marker: /className="modal-body"/,
+    reason: "legacy common/partial_history.scala.html renders sanitized history inside modal-body",
+  },
+  {
+    file: "routes/-issue-views.tsx",
+    marker: /markdown=\{childComment\.contentsMarkdown\}/,
+    reason:
+      "legacy common/childComments.scala.html renders one-line child comments without markdown-wrap",
+  },
+];
 
 function listSourceFiles(directory = __dirname): string[] {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -43,6 +68,52 @@ function readSource(relativePath: string) {
   return fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
 }
 
+function openingTagEnd(source: string, start: number) {
+  let braceDepth = 0;
+  let quote: '"' | "'" | "`" | null = null;
+  for (let index = start; index < source.length; index += 1) {
+    const char = source[index];
+    const previous = source[index - 1];
+    if (quote) {
+      if (char === quote && previous !== "\\") {
+        quote = null;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'" || char === "`") {
+      quote = char;
+      continue;
+    }
+    if (char === "{") {
+      braceDepth += 1;
+      continue;
+    }
+    if (char === "}") {
+      braceDepth = Math.max(0, braceDepth - 1);
+      continue;
+    }
+    if (char === ">" && braceDepth === 0) {
+      return index + 1;
+    }
+  }
+  return source.length;
+}
+
+function markdownRendererCallsWithoutMarkdownWrap() {
+  const calls: Array<{ file: string; tag: string }> = [];
+  for (const file of listSourceFiles(path.resolve(__dirname, "routes"))) {
+    const source = readSource(file);
+    for (const match of source.matchAll(/<MarkdownRenderer\b/g)) {
+      const tagStart = match.index ?? 0;
+      const tag = source.slice(tagStart, openingTagEnd(source, tagStart));
+      if (!markdownWrapClassPattern.test(tag)) {
+        calls.push({ file, tag });
+      }
+    }
+  }
+  return calls;
+}
+
 describe("Markdown render boundary", () => {
   it("keeps React render surfaces off server-rendered HTML fields", () => {
     for (const file of listRenderSurfaceFiles()) {
@@ -61,5 +132,21 @@ describe("Markdown render boundary", () => {
 
     expect(compatibilitySources.join("\n")).toContain("bodyHtml");
     expect(compatibilitySources.join("\n")).toContain("contentsHtml");
+  });
+
+  it("keeps MarkdownRenderer calls wrapped like legacy markdown surfaces", () => {
+    const actual = markdownRendererCallsWithoutMarkdownWrap();
+
+    expect(
+      actual,
+      `Every MarkdownRenderer displaying legacy markdown content should carry markdown-wrap unless it matches a documented legacy exception.`,
+    ).toHaveLength(allowedMarkdownRendererCallsWithoutMarkdownWrap.length);
+
+    for (const allowed of allowedMarkdownRendererCallsWithoutMarkdownWrap) {
+      expect(
+        actual.some((call) => call.file === allowed.file && allowed.marker.test(call.tag)),
+        allowed.reason,
+      ).toBe(true);
+    }
   });
 });

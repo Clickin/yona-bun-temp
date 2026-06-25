@@ -395,6 +395,14 @@
   Markdown links, bare autolinks, inline raw HTML anchors, and raw HTML block
   anchors, while leaving relative/internal anchors unchanged. Focused evidence:
   `markdown-renderer.spec.tsx`.
+- 2026-06-25 markdown wrapper boundary continuation: React Markdown call sites
+  must keep `markdown-wrap` on legacy Markdown content surfaces so
+  `.markdown-wrap`-scoped behavior such as external-link targeting applies.
+  The only unwrapped route-level exceptions are the legacy
+  `common/partial_history.scala.html` modal body and
+  `common/childComments.scala.html` one-line child-comment fragments, both of
+  which are also unwrapped in legacy templates. Focused evidence:
+  `markdown-render-boundary.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks preserve only
