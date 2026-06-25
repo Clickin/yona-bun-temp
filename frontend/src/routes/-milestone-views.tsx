@@ -664,9 +664,6 @@ export function ProjectMilestoneFormPage(props: {
               id="milestone-form"
               onSubmit={(event) => {
                 event.preventDefault();
-                if (!props.onSubmit) {
-                  return;
-                }
                 const nextValidationMessage = legacyMilestoneValidationMessage({
                   contentsMarkdown,
                   dueDate,
@@ -676,17 +673,19 @@ export function ProjectMilestoneFormPage(props: {
                   setValidationMessage(nextValidationMessage);
                   return;
                 }
+                const submitMilestone = props.onSubmit;
+                if (!submitMilestone) {
+                  return;
+                }
                 setValidationMessage(null);
                 setPending(true);
-                void props
-                  .onSubmit({
-                    attachmentIds,
-                    contentsMarkdown,
-                    dueDate,
-                    state,
-                    title,
-                  })
-                  .finally(() => setPending(false));
+                void submitMilestone({
+                  attachmentIds,
+                  contentsMarkdown,
+                  dueDate,
+                  state,
+                  title,
+                }).finally(() => setPending(false));
               }}
             >
               <div className="row-fluid">

@@ -2482,14 +2482,11 @@ function ReviewThreadItem(props: {
 
   async function submitEdit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!props.onCommentUpdate) {
-      return;
-    }
     const contentsMarkdown = editText.trim();
     if (!editingCommentId || !contentsMarkdown) {
       return;
     }
-    await props.onCommentUpdate(editingCommentId, contentsMarkdown, editAttachmentIds);
+    await props.onCommentUpdate?.(editingCommentId, contentsMarkdown, editAttachmentIds);
     setEditingCommentId(null);
     setEditText("");
     setEditAttachmentIds([]);
@@ -2497,14 +2494,11 @@ function ReviewThreadItem(props: {
 
   async function submitReply(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!props.onThreadCommentSubmit) {
-      return;
-    }
     const contentsMarkdown = replyText.trim();
     if (!contentsMarkdown) {
       return;
     }
-    await props.onThreadCommentSubmit(props.thread.id, contentsMarkdown, replyAttachmentIds);
+    await props.onThreadCommentSubmit?.(props.thread.id, contentsMarkdown, replyAttachmentIds);
     setReplyAttachmentIds([]);
     setReplyText("");
   }
@@ -3095,16 +3089,13 @@ function PullRequestBlockReviewForm(props: {
     props.pullRequest.contributor.userLabel || props.pullRequest.contributor.loginId;
   async function submitBlockReview(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!props.onSubmit) {
-      return;
-    }
     const formData = new FormData(event.currentTarget);
     const contentsMarkdown = String(formData.get("contents") ?? "").trim();
     const draft = props.draft;
     if (!contentsMarkdown || !draft) {
       return;
     }
-    await props.onSubmit({
+    await props.onSubmit?.({
       attachmentIds: [],
       commitId: props.pullRequest.mergedCommitIdTo,
       contentsMarkdown,
@@ -3301,14 +3292,11 @@ export function PullRequestChangesPage(props: {
 
   async function submitInlineComment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!props.onInlineCommentSubmit) {
-      return;
-    }
     const contentsMarkdown = inlineCommentText.trim();
     if (!contentsMarkdown || !inlineDraft || !pr) {
       return;
     }
-    await props.onInlineCommentSubmit({
+    await props.onInlineCommentSubmit?.({
       attachmentIds: inlineAttachmentIds,
       commitId: pr.mergedCommitIdTo,
       contentsMarkdown,
@@ -3326,14 +3314,11 @@ export function PullRequestChangesPage(props: {
 
   async function submitNonRangedComment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!props.onCommentSubmit) {
-      return;
-    }
     const contentsMarkdown = commentDraft.trim();
     if (!contentsMarkdown) {
       return;
     }
-    await props.onCommentSubmit(contentsMarkdown, commentAttachmentIds);
+    await props.onCommentSubmit?.(contentsMarkdown, commentAttachmentIds);
     setCommentAttachmentIds([]);
     setCommentDraft("");
   }

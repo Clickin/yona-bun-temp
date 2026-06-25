@@ -1227,20 +1227,17 @@ export function ProjectBoardDetailPage(props: {
                                   encType="multipart/form-data"
                                   onSubmit={(event) => {
                                     event.preventDefault();
-                                    if (!props.onCommentUpdate) {
-                                      return;
-                                    }
                                     const contents = editingCommentDraft.trim();
                                     if (!contents) {
                                       return;
                                     }
                                     void props
-                                      .onCommentUpdate(
+                                      .onCommentUpdate?.(
                                         comment.id,
                                         contents,
                                         editingCommentAttachmentIds,
                                       )
-                                      .then(() => {
+                                      ?.then(() => {
                                         setEditingCommentAttachmentIds([]);
                                         setEditingCommentId(null);
                                       });
@@ -1436,9 +1433,6 @@ export function ProjectBoardDetailPage(props: {
                                       encType="multipart/form-data"
                                       onSubmit={(event) => {
                                         event.preventDefault();
-                                        if (!props.onCommentSubmit) {
-                                          return;
-                                        }
                                         const contents = (
                                           childCommentDrafts[comment.id] ?? ""
                                         ).trim();
@@ -1446,8 +1440,8 @@ export function ProjectBoardDetailPage(props: {
                                           return;
                                         }
                                         void props
-                                          .onCommentSubmit(contents, [], comment.id)
-                                          .then(() =>
+                                          .onCommentSubmit?.(contents, [], comment.id)
+                                          ?.then(() =>
                                             setChildCommentDrafts((current) => ({
                                               ...current,
                                               [comment.id]: "",
@@ -1529,14 +1523,11 @@ export function ProjectBoardDetailPage(props: {
                     id="comment-form"
                     onSubmit={(event) => {
                       event.preventDefault();
-                      if (!props.onCommentSubmit) {
-                        return;
-                      }
                       const contents = commentDraft.trim();
                       if (!contents) {
                         return;
                       }
-                      void props.onCommentSubmit(contents, commentAttachmentIds).then(() => {
+                      void props.onCommentSubmit?.(contents, commentAttachmentIds)?.then(() => {
                         setCommentAttachmentIds([]);
                         setCommentDraft("");
                       });

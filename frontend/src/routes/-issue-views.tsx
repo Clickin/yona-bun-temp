@@ -2343,9 +2343,6 @@ export function ProjectIssueDetailPage(props: {
                                     encType="multipart/form-data"
                                     onSubmit={(event) => {
                                       event.preventDefault();
-                                      if (!props.onCommentSubmit) {
-                                        return;
-                                      }
                                       const contents = (
                                         childCommentDrafts[comment.id] ?? ""
                                       ).trim();
@@ -2353,8 +2350,8 @@ export function ProjectIssueDetailPage(props: {
                                         return;
                                       }
                                       void props
-                                        .onCommentSubmit(contents, [], comment.id)
-                                        .then(() =>
+                                        .onCommentSubmit?.(contents, [], comment.id)
+                                        ?.then(() =>
                                           setChildCommentDrafts((current) => ({
                                             ...current,
                                             [comment.id]: "",
@@ -4029,15 +4026,16 @@ function IssueCommentForm(props: {
       id="comment-form"
       onSubmit={(event) => {
         event.preventDefault();
-        if (!props.onSubmit) {
-          return;
-        }
         const nextContents = contentsMarkdown.trim();
         if (!nextContents) {
           return;
         }
+        const submitComment = props.onSubmit;
+        if (!submitComment) {
+          return;
+        }
         setSubmitting(true);
-        void props.onSubmit(nextContents, attachmentIds).finally(() => {
+        void submitComment(nextContents, attachmentIds).finally(() => {
           setAttachmentIds([]);
           setContentsMarkdown("");
           setSubmitting(false);
@@ -4192,14 +4190,11 @@ function IssueCommentEditForm(props: {
         encType="multipart/form-data"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!props.onSubmit) {
-            return;
-          }
           const nextContents = contentsMarkdown.trim();
           if (!nextContents) {
             return;
           }
-          void props.onSubmit(props.commentId, nextContents, attachmentIds).then(() => {
+          void props.onSubmit?.(props.commentId, nextContents, attachmentIds)?.then(() => {
             setAttachmentIds([]);
             props.onCancel();
           });

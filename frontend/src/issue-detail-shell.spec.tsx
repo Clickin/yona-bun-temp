@@ -724,8 +724,10 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(directFallbackHtml).toContain('action="/yona/owner/projectYobi/issue/1/comments/56"');
 
     const source = fs.readFileSync(path.resolve(__dirname, "routes/-issue-views.tsx"), "utf8");
-    expect(source).toContain("if (!props.onSubmit) {");
-    expect(source).toContain("if (!props.onCommentSubmit) {");
+    expect(source).not.toContain("if (!props.onSubmit) {");
+    expect(source).not.toContain("if (!props.onCommentSubmit) {");
+    expect(source).toContain("const submitComment = props.onSubmit;");
+    expect(source).toContain(".onCommentSubmit?.(contents, [], comment.id)");
 
     const disabledHtml = renderToStaticMarkup(
       <ProjectIssueDetailPage

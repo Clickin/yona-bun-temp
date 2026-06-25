@@ -2625,11 +2625,11 @@ describe("file-route parity harness", () => {
       path.resolve(__dirname, "routes/-board-views.tsx"),
       "utf8",
     );
-    expect(boardViewSource).toContain("if (!props.onCommentUpdate) {");
-    expect(boardViewSource).toContain(".onCommentUpdate(");
-    expect(boardViewSource).toContain("if (!props.onCommentSubmit) {");
-    expect(boardViewSource).toContain(".onCommentSubmit(contents, [], comment.id)");
-    expect(boardViewSource).toContain(".onCommentSubmit(contents, commentAttachmentIds)");
+    expect(boardViewSource).not.toContain("if (!props.onCommentUpdate) {");
+    expect(boardViewSource).toContain(".onCommentUpdate?.(");
+    expect(boardViewSource).not.toContain("if (!props.onCommentSubmit) {");
+    expect(boardViewSource).toContain(".onCommentSubmit?.(contents, [], comment.id)");
+    expect(boardViewSource).toContain(".onCommentSubmit?.(contents, commentAttachmentIds)");
 
     const orgHtml = renderToStaticMarkup(
       <OrganizationBoardListPage
@@ -3195,8 +3195,9 @@ describe("file-route parity harness", () => {
       path.resolve(__dirname, "routes/-milestone-views.tsx"),
       "utf8",
     );
-    expect(milestoneViewSource).toContain("if (!props.onSubmit) {");
-    expect(milestoneViewSource).toContain(".onSubmit({");
+    expect(milestoneViewSource).not.toContain("if (!props.onSubmit) {");
+    expect(milestoneViewSource).toContain("const submitMilestone = props.onSubmit;");
+    expect(milestoneViewSource).toContain("void submitMilestone({");
     expect(createHtml).toContain('class="row-fluid"');
     expect(createHtml).toContain('class="span12"');
     expect(createHtml).toContain('id="title"');
@@ -4760,15 +4761,12 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain('id="review-form"');
     expect(pullRequestViewsSource).toContain("submitBlockReview");
     expect(pullRequestViewsSource).toContain("props.onInlineCommentSubmit");
-    expect(pullRequestViewsSource).toContain(
-      "event.preventDefault();\n    if (!props.onCommentSubmit) {\n      return;\n    }",
-    );
-    expect(pullRequestViewsSource).toContain(
-      "event.preventDefault();\n    if (!props.onThreadCommentSubmit) {\n      return;\n    }",
-    );
-    expect(pullRequestViewsSource).toContain(
-      "event.preventDefault();\n    if (!props.onCommentUpdate) {\n      return;\n    }",
-    );
+    expect(pullRequestViewsSource).not.toContain("if (!props.onCommentSubmit) {");
+    expect(pullRequestViewsSource).not.toContain("if (!props.onThreadCommentSubmit) {");
+    expect(pullRequestViewsSource).not.toContain("if (!props.onCommentUpdate) {");
+    expect(pullRequestViewsSource).toContain("await props.onCommentSubmit?.(");
+    expect(pullRequestViewsSource).toContain("await props.onThreadCommentSubmit?.(");
+    expect(pullRequestViewsSource).toContain("await props.onCommentUpdate?.(");
     expect(pullRequestViewsSource).toContain(
       "props.pullRequest && props.runtimeConfig && props.canComment",
     );
