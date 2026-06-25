@@ -513,6 +513,9 @@
   scope; React screens remain REST JSON/API-return plus React render; Markdown
   surfaces remain owned by `MarkdownRenderer` and its Yona compatibility
   plugins.
+- Report path: active explorer packets write evidence under
+  `docs/provenance/ui-parity-reports/<packet>.md`; the parent owns phase queue,
+  canonical/provenance status updates, integration verification, and commits.
 - Gate: existing visual sweep and curl HTML audit coverage are the baseline,
   not the finish line. Each active packet must check form validation, modal
   confirm/cancel paths, permission-filtered controls, empty/populated states,

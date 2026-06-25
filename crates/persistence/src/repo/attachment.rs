@@ -187,6 +187,217 @@ impl AppRepositoryImpl<'_> {
         }))
     }
 
+    pub async fn read_attachment_location_path(
+        &self,
+        container_type: &str,
+        container_id: i64,
+    ) -> Result<Option<String>, DbErr> {
+        let normalized = container_type.trim().to_ascii_uppercase();
+        match normalized.as_str() {
+            USER_ATTACHMENT_CONTAINER | USER_AVATAR_ATTACHMENT_CONTAINER => Ok(None),
+            PROJECT_ATTACHMENT_CONTAINER => {
+                let Some(project) = self.read_project_by_id(container_id).await? else {
+                    return Ok(None);
+                };
+                Ok(Some(format!(
+                    "/{}/{}",
+                    project.owner_name, project.project_name
+                )))
+            }
+            ISSUE_ATTACHMENT_CONTAINER | RUST_ISSUE_ATTACHMENT_CONTAINER => {
+                self.issue_location_path(container_id, None).await
+            }
+            ISSUE_COMMENT_ATTACHMENT_CONTAINER => {
+                let Some(comment) = issue_comment::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                self.issue_location_path(comment.issue_id.unwrap_or_default(), Some(comment.id))
+                    .await
+            }
+            BOARD_POST_ATTACHMENT_CONTAINER => self.posting_location_path(container_id, None).await,
+            BOARD_COMMENT_ATTACHMENT_CONTAINER | RUST_BOARD_COMMENT_ATTACHMENT_CONTAINER => {
+                let Some(comment) = posting_comment::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                self.posting_location_path(comment.posting_id.unwrap_or_default(), Some(comment.id))
+                    .await
+            }
+            MILESTONE_ATTACHMENT_CONTAINER => self.milestone_location_path(container_id).await,
+            PULL_REQUEST_ATTACHMENT_CONTAINER => {
+                self.pull_request_location_path(container_id, None, None)
+                    .await
+            }
+            REVIEW_COMMENT_ATTACHMENT_CONTAINER => {
+                let Some(comment) = review_comment::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(thread_id) = comment.thread_id else {
+                    return Ok(None);
+                };
+                self.comment_thread_location_path(thread_id, Some(comment.id))
+                    .await
+            }
+            "COMMENT_THREAD" => self.comment_thread_location_path(container_id, None).await,
+            _ => Ok(None),
+        }
+    }
+
+    async fn issue_location_path(
+        &self,
+        issue_id: i64,
+        comment_id: Option<i64>,
+    ) -> Result<Option<String>, DbErr> {
+        let Some(issue) = issue::Entity::find_by_id(issue_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        let Some(project_id) = issue.project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        let mut path = format!(
+            "/{}/{}/issue/{}",
+            project.owner_name,
+            project.project_name,
+            issue.number.unwrap_or_default()
+        );
+        if let Some(comment_id) = comment_id {
+            path.push_str(&format!("#comment-{comment_id}"));
+        }
+        Ok(Some(path))
+    }
+
+    async fn posting_location_path(
+        &self,
+        posting_id: i64,
+        comment_id: Option<i64>,
+    ) -> Result<Option<String>, DbErr> {
+        let Some(posting) = posting::Entity::find_by_id(posting_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(project_id) = posting.project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        let mut path = format!(
+            "/{}/{}/post/{}",
+            project.owner_name,
+            project.project_name,
+            posting.number.unwrap_or_default()
+        );
+        if let Some(comment_id) = comment_id {
+            path.push_str(&format!("#comment-{comment_id}"));
+        }
+        Ok(Some(path))
+    }
+
+    async fn milestone_location_path(&self, milestone_id: i64) -> Result<Option<String>, DbErr> {
+        let Some(milestone) = milestone::Entity::find_by_id(milestone_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(project_id) = milestone.project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        Ok(Some(format!(
+            "/{}/{}/milestone/{}",
+            project.owner_name, project.project_name, milestone.id
+        )))
+    }
+
+    async fn pull_request_location_path(
+        &self,
+        pull_request_id: i64,
+        thread_id: Option<i64>,
+        comment_id: Option<i64>,
+    ) -> Result<Option<String>, DbErr> {
+        let Some(pull_request) = pull_request::Entity::find_by_id(pull_request_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(project_id) = pull_request.to_project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        let mut path = format!(
+            "/{}/{}/pullRequest/{}",
+            project.owner_name,
+            project.project_name,
+            pull_request.number.unwrap_or_default()
+        );
+        if let Some(comment_id) = comment_id {
+            path.push_str(&format!("#comment-{comment_id}"));
+        } else if let Some(thread_id) = thread_id {
+            path.push_str(&format!("#thread-{thread_id}"));
+        }
+        Ok(Some(path))
+    }
+
+    async fn comment_thread_location_path(
+        &self,
+        thread_id: i64,
+        comment_id: Option<i64>,
+    ) -> Result<Option<String>, DbErr> {
+        let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if let Some(pull_request_id) = thread.pull_request_id {
+            return self
+                .pull_request_location_path(pull_request_id, Some(thread.id), comment_id)
+                .await;
+        }
+        let Some(project_id) = thread.project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        let commit_id = thread.commit_id.unwrap_or_default();
+        if commit_id.trim().is_empty() {
+            return Ok(Some(format!(
+                "/{}/{}",
+                project.owner_name, project.project_name
+            )));
+        }
+        let mut path = format!(
+            "/{}/{}/commit/{}",
+            project.owner_name, project.project_name, commit_id
+        );
+        if let Some(comment_id) = comment_id {
+            path.push_str(&format!("#comment-{comment_id}"));
+        } else {
+            path.push_str(&format!("#thread-{}", thread.id));
+        }
+        Ok(Some(path))
+    }
+
     pub async fn list_user_attachments(
         &self,
         owner_login_id: &str,

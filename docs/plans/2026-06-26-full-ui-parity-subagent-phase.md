@@ -27,8 +27,12 @@ the supported app-runtime scope.
 
 - Parent owns this document, status updates, shared RC checklist updates, and
   final integration.
+- Parent must keep this phase as a separate UI-parity gate. Do not mix it with
+  RC feature improvement, performance work, or new capability planning.
 - Subagents start as read-only explorers unless the parent assigns a disjoint
   write scope.
+- Explorer subagents write findings only into the report path assigned by the
+  parent; they do not edit implementation, canonical docs, or provenance.
 - No subagent may replace React rendering with server-rendered HTML fragments.
 - No subagent may introduce a second Markdown renderer or bypass
   `MarkdownRenderer`.
@@ -44,6 +48,34 @@ the supported app-runtime scope.
 - If an explorer reports a `gap` or `deviation`, the parent must either assign a
   worker with a disjoint write scope or reclassify the item in root canonical
   docs, provenance, and follow-up plan before this phase can close.
+
+## Execution Model
+
+1. Parent prepares/maintains this phase document and assigns explorer packets.
+2. Explorer packets audit user-visible parity from legacy evidence and current
+   React/browser evidence, then write one report under
+   `docs/provenance/ui-parity-reports/`.
+3. Parent consolidates explorer reports into the Audit Result Queue and selects
+   concrete gap rows.
+4. Worker subagents are spawned only for concrete gap rows with disjoint owned
+   files. Worker prompts must name the owned files or modules explicitly.
+5. Parent reviews worker patches, updates root canonical/provenance/plan status,
+   runs integration gates, and commits.
+
+Explorer report file naming:
+
+- `docs/provenance/ui-parity-reports/<packet>.md`
+- Historical broad packets may stay in this document as baseline evidence, but
+  active packets must have their own report before this phase closes.
+
+Worker branch rule:
+
+- A worker may edit only the owned scope in its assignment plus directly related
+  tests/provenance rows named by the parent.
+- Workers must not revert unrelated changes. Other agents may be changing the
+  codebase at the same time.
+- Parent does not edit a worker-owned file until the worker completes or is
+  explicitly cancelled.
 
 ## Full UI Parity Matrix
 
@@ -106,7 +138,7 @@ the supported app-runtime scope.
 | User profile `daysAgo` number input was read-only | `ui-parity-user-workspace-profile` | `covered in current follow-up` | `frontend/src/routes/-workspace-views.tsx` now renders editable uncontrolled `#daysAgoBtn` inputs for `/me` and `/:user`, and `frontend/src/workspace-profile-i18n.spec.tsx` pins absence of `readonly`. |
 | Public profile email visibility when `application.show.user.email=true` | `ui-parity-user-workspace-profile` | `covered in current follow-up` | `crates/server/src/routes/users.rs` now keeps public profile email when `AppRuntimeConfig.show_user_email` is true and redacts only when false; `crates/server/tests/rest_contract.rs` and `frontend/src/wave1-auth-workspace-parity.spec.tsx` pin both visible and hidden states. |
 | Workspace/public profile issue author/assignee and PR contributor/receiver user links | `ui-parity-user-workspace-profile` | `covered in current follow-up` | `WorkspaceIssueItem` and `WorkspacePullRequestItem` now carry actor login IDs, and `frontend/src/routes/-workspace-views.tsx` renders legacy `/:loginId` anchors for issue author/assignee cells plus PR contributor/receiver avatar links. Evidence: `crates/server/tests/auth_workspace_contract.rs` and `frontend/src/route-parity.spec.tsx`. |
-| Workspace file location URL | `ui-parity-user-workspace-profile` | `gap` | Explorer found `/user/files` returns generic/empty location for non-user containers, while legacy `RouteUtil.getUrl(containerType, containerId)` links to the actual resource. Owner scope: `crates/server/src/routes/workspace.rs`, workspace files tests, frontend render evidence if needed. |
+| Workspace file location URL | `ui-parity-user-workspace-profile` | `covered in current follow-up` | `/user/files` now resolves non-user attachment rows through `read_attachment_location_path`, matching legacy `RouteUtil.getUrl(containerType, containerId)` for project, issue/comment, board/comment, milestone, PR/review-thread, and commit-thread resources. `crates/server/tests/assets_contract.rs::workspace_files_list_returns_current_users_legacy_attachment_rows` pins ISSUE_POST location href/label under a base path. |
 | Workspace settings avatar invalid/crop UX | `ui-parity-user-account-settings` | `gap` | Browser verification needed for legacy `$yobi.alert(Messages(\"user.avatar.onlyImage\"))`, Jcrop-style crop handle/preview, and current modal/canvas crop behavior. Owner scope: `frontend/src/routes/-workspace-settings-view.tsx` plus a focused Playwright scenario. |
 | Workspace notification settings hash tab activation | `ui-parity-user-account-settings` | `weak evidence` | Explorer found static anchors/data-href parity but no browser proof that `/user/editform/notifications#<projectId>` activates the matching tab like legacy. Owner scope: focused Playwright e2e before code changes. |
 

@@ -1,30 +1,30 @@
 use crate::api_types::OwnedView;
 use axum::{
+    Json, Router,
     extract::{Form, Path, Query},
     http::{HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Redirect, Response},
     routing::{delete, get, patch, post, put},
-    Json, Router,
 };
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{DEFAULT_COST, hash, verify};
 use http::header::SET_COOKIE;
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use yoram_domain::{
-    authorize_project_access, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
-    ProjectScope,
+    ProjectAccessFacts, ProjectOperation, ProjectScope, authorize_project_access,
+    normalize_default_landing_path,
 };
 
 use crate::api_types::*;
 use crate::persistence::{self, PilotRepository};
 use crate::{
-    anonymous_current_session_response, attach_session_headers, base_path_href, gravatar_url,
-    headers_with_form_csrf, internal_error, normalize_identifier, redirect_to,
-    project_logo_url, require_authenticated_user, require_session, require_valid_csrf,
+    ConnectError, Context, LEGACY_MIN_PASSWORD_LENGTH, PilotBackend, PilotServiceImpl,
+    RestRouteError, anonymous_current_session_response, attach_session_headers, base_path_href,
+    gravatar_url, headers_with_form_csrf, internal_error, normalize_identifier, project_logo_url,
+    redirect_to, require_authenticated_user, require_session, require_valid_csrf,
     resolve_current_session_response, rest_json_response, rest_owned_view,
-    send_workspace_email_validation_mail, session, workspace_invalid_argument, ConnectError,
-    Context, PilotBackend, PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
+    send_workspace_email_validation_mail, session, workspace_invalid_argument,
 };
 
 use super::rest_delete_project_member;
@@ -37,7 +37,7 @@ use legacy_favorites::{
     legacy_external_favorite_projects, legacy_external_toggle_favorite_issue,
     legacy_external_toggle_favorite_organization, legacy_external_toggle_favorite_project,
 };
-use sidebar::{direct_user_menu_tab_content_list, direct_user_sidebar, DirectUserSidebarQuery};
+use sidebar::{DirectUserSidebarQuery, direct_user_menu_tab_content_list, direct_user_sidebar};
 
 #[derive(Deserialize)]
 struct DirectDefaultLoginPageQuery {
@@ -85,9 +85,8 @@ async fn workspace_member_project_item_from_record(
     };
     let viewer_is_project_owner = !viewer_login_id.is_empty() && viewer_login_id == item.owner_name;
     let project_is_public = normalize_identifier(&item.project_scope) == "public";
-    let viewer_can_watch = viewer_id.is_some()
-        && !viewer_is_project_owner
-        && (is_watching || project_is_public);
+    let viewer_can_watch =
+        viewer_id.is_some() && !viewer_is_project_owner && (is_watching || project_is_public);
     let viewer_can_leave =
         viewer_id == Some(subject_user_id) && subject_login_id != item.owner_name;
 
@@ -341,15 +340,14 @@ async fn load_workspace_dashboard_data(
         .list_member_projects_for_user(user_id)
         .await
         .map_err(internal_error)?;
-    let member_projects =
-        filter_workspace_member_projects_by_read_acl(
-            repository,
-            base_path,
-            user_id,
-            &subject_login_id,
-            member_projects,
-        )
-        .await?;
+    let member_projects = filter_workspace_member_projects_by_read_acl(
+        repository,
+        base_path,
+        user_id,
+        &subject_login_id,
+        member_projects,
+    )
+    .await?;
 
     Ok((profile, issue_items, pull_request_items, member_projects))
 }
@@ -1790,13 +1788,17 @@ async fn rest_list_workspace_files(
         .list_user_attachments(&actor.login_id, &filter, page, WORKSPACE_FILES_PAGE_SIZE)
         .await
         .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let mut file_items = Vec::with_capacity(files.attachments.len());
+    for record in &files.attachments {
+        file_items.push(
+            rest_workspace_file_item(record, repository, &service.base_path)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?,
+        );
+    }
 
     Ok(Json(RestWorkspaceFilesResponse {
-        files: files
-            .attachments
-            .iter()
-            .map(|record| rest_workspace_file_item(record, &service.base_path))
-            .collect(),
+        files: file_items,
         filter: files.filter,
         page: files.page,
         page_size: files.page_size,
@@ -1966,19 +1968,21 @@ pub(crate) async fn rest_toggle_workspace_notification(
     Ok(rest_json_response(payload, ctx))
 }
 
-fn rest_workspace_file_item(
+async fn rest_workspace_file_item(
     record: &persistence::UserAttachmentRecord,
+    repository: &persistence::PilotRepository,
     base_path: &str,
-) -> RestWorkspaceFileItem {
+) -> Result<RestWorkspaceFileItem, sea_orm::DbErr> {
     let url = base_path_href(base_path, &format!("/files/{}", record.id));
     let preview_url = if record.mime_type.starts_with("image/") {
         url.clone()
     } else {
         String::new()
     };
-    let (location_href, location_label) = rest_workspace_file_location(record);
+    let (location_href, location_label) =
+        rest_workspace_file_location(record, repository, base_path).await?;
 
-    RestWorkspaceFileItem {
+    Ok(RestWorkspaceFileItem {
         container_id: record.container_id,
         container_type: record.container_type.clone(),
         created_label: record.created_label.clone(),
@@ -1992,16 +1996,28 @@ fn rest_workspace_file_item(
         size: record.size,
         size_label: human_readable_byte_count(record.size),
         url,
-    }
+    })
 }
 
-fn rest_workspace_file_location(record: &persistence::UserAttachmentRecord) -> (String, String) {
+async fn rest_workspace_file_location(
+    record: &persistence::UserAttachmentRecord,
+    repository: &persistence::PilotRepository,
+    base_path: &str,
+) -> Result<(String, String), sea_orm::DbErr> {
     match normalize_identifier(&record.container_type).as_str() {
-        "user" | "user_avatar" => (String::new(), String::new()),
-        container_type => (
-            String::new(),
-            format!("{} #{}", container_type, record.container_id),
-        ),
+        "user" | "user_avatar" => Ok((String::new(), String::new())),
+        container_type => {
+            let Some(route_path) = repository
+                .read_attachment_location_path(&record.container_type, record.container_id)
+                .await?
+            else {
+                return Ok((
+                    String::new(),
+                    format!("{} #{}", container_type, record.container_id),
+                ));
+            };
+            Ok((base_path_href(base_path, &route_path), route_path))
+        }
     }
 }
 
