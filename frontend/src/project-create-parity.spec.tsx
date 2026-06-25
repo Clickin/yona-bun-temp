@@ -95,7 +95,8 @@ describe("project create parity", () => {
     expect(viewSource).not.toContain("action={createAction}");
     expect(viewSource).not.toContain('id="newProjectForm"\n            method="post"');
     expect(viewSource).toContain("event.preventDefault();");
-    expect(viewSource).toContain("if (!props.onCreateProject) {");
+    expect(viewSource).not.toContain("if (!props.onCreateProject) {");
+    expect(viewSource).toContain("props.onCreateProject?.(formState);");
     expect(routeSource).not.toContain("Create project failed.");
     expect(routeSource).toContain('messages("error.badrequest", { fallback: "error.badrequest" })');
   });

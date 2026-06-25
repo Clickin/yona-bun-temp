@@ -426,15 +426,12 @@ export function OrganizationNewPage(props: {
               name="new-org"
               onSubmit={(event) => {
                 event.preventDefault();
-                if (!props.onCreateOrganization) {
-                  return;
-                }
                 if (!isLegacyOrganizationName(formState.organizationName)) {
                   setValidationMessage("organization.name.alert");
                   return;
                 }
                 setValidationMessage(null);
-                props.onCreateOrganization(formState);
+                props.onCreateOrganization?.(formState);
               }}
             >
               <legend>{legacyMessage(messages, "title.newOrganization")}</legend>
@@ -1249,15 +1246,12 @@ export function OrganizationSettingsPage(props: {
             name="update-org"
             onSubmit={(event) => {
               event.preventDefault();
-              if (!props.onUpdateOrganization) {
-                return;
-              }
               if (!isLegacyOrganizationName(formState.organizationName)) {
                 setValidationMessage("organization.name.alert");
                 return;
               }
               setValidationMessage(null);
-              props.onUpdateOrganization(formState);
+              props.onUpdateOrganization?.(formState);
             }}
           >
             <input name="id" type="hidden" value={detail.organizationName} />

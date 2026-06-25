@@ -931,10 +931,7 @@ export function ProjectNewPage(props: {
             id="newProjectForm"
             onSubmit={(event) => {
               event.preventDefault();
-              if (!props.onCreateProject) {
-                return;
-              }
-              props.onCreateProject(formState);
+              props.onCreateProject?.(formState);
             }}
           >
             <legend>
@@ -3367,9 +3364,6 @@ export function ProjectSettingsPage(props: {
             id="saveSetting"
             onSubmit={(event) => {
               event.preventDefault();
-              if (!props.onUpdateProjectSettings) {
-                return;
-              }
               if (!PROJECT_NAME_PATTERN.test(formState.projectName)) {
                 setValidationMessage("project.name.alert");
                 return;
@@ -3379,7 +3373,7 @@ export function ProjectSettingsPage(props: {
                 return;
               }
               setValidationMessage(null);
-              props.onUpdateProjectSettings({
+              props.onUpdateProjectSettings?.({
                 board: formState.board,
                 code: formState.code,
                 defaultReviewerCount: formState.defaultReviewerCount,

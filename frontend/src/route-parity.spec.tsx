@@ -5051,8 +5051,10 @@ describe("file-route parity harness", () => {
     expect(viewSource).not.toContain(
       'action={prefixBasePath(props.basePath ?? "", "/organizations/new")}',
     );
-    expect(viewSource).toContain("if (!props.onCreateOrganization) {");
-    expect(viewSource).toContain("if (!props.onUpdateOrganization) {");
+    expect(viewSource).not.toContain("if (!props.onCreateOrganization) {");
+    expect(viewSource).not.toContain("if (!props.onUpdateOrganization) {");
+    expect(viewSource).toContain("props.onCreateOrganization?.(formState);");
+    expect(viewSource).toContain("props.onUpdateOrganization?.(formState);");
     expect(viewSource.match(/setValidationMessage\("organization\.name\.alert"\)/g)?.length).toBe(
       2,
     );

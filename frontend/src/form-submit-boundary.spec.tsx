@@ -36,6 +36,8 @@ const forbiddenReactOwnedLegacyActions = [
 const propsSubmitFallbackPattern =
   /if \(!props\.on(?:Submit|CreateComment|UpdateComment|CommentSubmit|CommentUpdate|ThreadCommentSubmit|InlineCommentSubmit)\) \{/;
 const memberSubmitFallbackPattern = /if \(!props\.on(?:AddMember|UpdateMemberRole)\) \{/;
+const createSettingsSubmitFallbackPattern =
+  /if \(!props\.on(?:CreateProject|CreateOrganization|UpdateProjectSettings|UpdateOrganization)\) \{/;
 
 function readRouteSource(relativePath: string) {
   return fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
@@ -162,6 +164,16 @@ describe("React form submit boundary", () => {
       expect(source, file).toContain('id="addNewMember"');
       expect(source, file).not.toMatch(memberSubmitFallbackPattern);
       expect(source, file).not.toContain('id="addNewMember"\n              method="post"');
+    }
+  });
+
+  it("keeps React-owned create and settings forms inside the callback boundary", () => {
+    const createSettingsFiles = ["routes/-project-views.tsx", "routes/-organization-views.tsx"];
+
+    for (const file of createSettingsFiles) {
+      const source = readRouteSource(file);
+      expect(source, file).toContain("event.preventDefault()");
+      expect(source, file).not.toMatch(createSettingsSubmitFallbackPattern);
     }
   });
 });

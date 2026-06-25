@@ -123,8 +123,8 @@ describe("project settings parity", () => {
     expect(html).toContain('id="save"');
     expect(viewSource).not.toContain("action={buildProjectHref(");
     expect(viewSource).toContain("event.preventDefault();");
-    expect(viewSource).toContain("if (!props.onUpdateProjectSettings) {");
-    expect(viewSource).toContain("props.onUpdateProjectSettings({");
+    expect(viewSource).not.toContain("if (!props.onUpdateProjectSettings) {");
+    expect(viewSource).toContain("props.onUpdateProjectSettings?.({");
   });
 
   it("uses default legacy messages without AppRuntimeContext messages", () => {
