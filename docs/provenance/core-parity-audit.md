@@ -117,8 +117,10 @@
 - 2026-06-25 markdown tasklist continuation: rendered task-list checkboxes now
   follow `yona.Tasklist.js` `disableCheckboxIfNeeds`: `data-allowed-update`
   other than `true` renders disabled checkboxes, while `data-allowed-update=true`
-  leaves them enabled for the legacy update affordance. Focused evidence:
-  `markdown-renderer.spec.tsx`.
+  leaves them enabled for the legacy update affordance. The React markdown
+  module also preserves the legacy `checkTask` line-toggle regex for unordered
+  `-`, `+`, and `*` checklist rows as a reusable helper for wiring the click
+  mutation path. Focused evidence: `markdown-renderer.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks are derived

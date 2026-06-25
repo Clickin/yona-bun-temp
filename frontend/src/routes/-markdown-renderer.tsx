@@ -229,6 +229,7 @@ const rawHtmlVideoLegacyAttributes = new Set([
   "type",
 ]);
 const legacyTasklistTemplate = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
+const legacyTaskCheckboxLinePattern = /^([ ]*[-+*] \[[ xX]?])([ ]?.+)$/gm;
 
 export function insertLegacyTasklistTemplate(value: string, cursorIndex: number) {
   let cursor = Math.max(0, Math.min(cursorIndex, value.length));
@@ -239,6 +240,25 @@ export function insertLegacyTasklistTemplate(value: string, cursorIndex: number)
     cursorIndex: cursor + legacyTasklistTemplate.length,
     value: `${value.slice(0, cursor)}${legacyTasklistTemplate}${value.slice(cursor)}`,
   };
+}
+
+export function toggleLegacyTasklistMarkdownItem(
+  value: string,
+  checkboxIndex: number,
+  checked: boolean,
+) {
+  let counter = 0;
+  return value.replace(legacyTaskCheckboxLinePattern, (match, checkbox: string, text: string) => {
+    if (counter !== checkboxIndex) {
+      counter += 1;
+      return match;
+    }
+    counter += 1;
+    const nextCheckbox = checked
+      ? checkbox.replace(/\[[ ]?]/, "[x]")
+      : checkbox.replace(/\[[xX]?]/, "[ ]");
+    return `${nextCheckbox}${text}`;
+  });
 }
 
 function updateTextareaValue(textarea: HTMLTextAreaElement, value: string) {

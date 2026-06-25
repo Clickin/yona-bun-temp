@@ -5,6 +5,7 @@ import {
   LegacyMarkdownEditorShell,
   LegacyMarkdownHelp,
   MarkdownRenderer,
+  toggleLegacyTasklistMarkdownItem,
 } from "./routes/-markdown-renderer";
 import { MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH } from "./routes/-syntax-highlighting";
 
@@ -83,6 +84,29 @@ describe("MarkdownRenderer", () => {
       cursorIndex: 45,
       value: "Before\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo CAfter",
     });
+  });
+
+  it("toggles legacy checklist markdown lines like yona.Tasklist.js checkTask", () => {
+    const markdown = [
+      "- [ ] Todo A",
+      "- [x] Todo B",
+      "- [X] Todo C",
+      "+ [ ] Plus item",
+      "* [] Empty marker",
+      "1. [ ] Ordered item",
+      "- [ ]",
+      "- [ ] ",
+    ].join("\n");
+
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 0, true)).toContain("- [x] Todo A");
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 1, false)).toContain("- [ ] Todo B");
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 2, false)).toContain("- [ ] Todo C");
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 3, true)).toContain("+ [x] Plus item");
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 4, true)).toContain("* [x] Empty marker");
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 5, true)).toContain("- [x] ");
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 99, true)).toBe(markdown);
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 6, true)).toBe(markdown);
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 5, true)).toContain("1. [ ] Ordered item");
   });
 
   it("renders legacy preview autolinks on the React side", () => {
