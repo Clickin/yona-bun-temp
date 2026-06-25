@@ -97,13 +97,29 @@ const boardPost = {
 };
 
 const milestoneIssue = {
+  assigneeAvatarUrl: "/avatar/assignee.png",
   assigneeLabel: "Owner",
+  assigneeLoginId: "owner",
+  authorLabel: "Reporter",
+  authorLoginId: "reporter",
+  childClosedCount: 0,
+  childOpenCount: 0,
   commentCount: 0,
+  dueDateLabel: "2026-07-01",
+  dueDateOverdue: true,
+  id: 3003,
   issueNumber: 3,
   labels: [{ color: "#abc", id: 7, name: "guide" }],
+  milestoneId: 5,
+  milestoneTitle: "M1",
+  parentIssueNumber: 0,
+  parentIssueTitle: "",
   state: "open",
   title: "Milestone issue",
   updatedLabel: "later",
+  voterCount: 0,
+  watcherCount: 0,
+  weight: 0,
 };
 
 const milestone = {
@@ -219,6 +235,11 @@ describe("board/milestone UI parity closure", () => {
     );
     expect(detailHtml).toContain('class="mass-update-wrap hide-in-mobile"');
     expect(detailHtml).toContain('data-toggle="item-search"');
+    expect(detailHtml).toContain('class="post-list-wrap row-fluid"');
+    expect(detailHtml).toContain('class="post-item title"');
+    expect(detailHtml).toContain('data-toggle="issue-checkbox"');
+    expect(detailHtml).toContain('class="avatar-wrap assinee"');
+    expect(detailHtml).toContain("Overdue");
     expect(source).toContain('validationMessage?.field === "title" ? " error"');
     expect(source).toContain('<div className="message">');
     expect(source).not.toContain('className="alert alert-error"');

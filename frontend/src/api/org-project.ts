@@ -79,8 +79,10 @@ export type ProjectCreateFormOptionsResponse = {
 type ProjectUpdateInput = ProjectPathInput & {
   board?: boolean;
   code?: boolean;
+  defaultBranch?: string;
   defaultReviewerCount?: number;
   issue?: boolean;
+  isCodeAccessibleMemberOnly?: boolean;
   isUsingReviewerCount?: boolean;
   milestone?: boolean;
   overview: string;
@@ -1026,6 +1028,9 @@ export function updateProjectRest(
         ...projectMenuBody(input),
         ...(input.defaultReviewerCount !== undefined
           ? { defaultReviewerCount: input.defaultReviewerCount }
+          : {}),
+        ...(input.isCodeAccessibleMemberOnly !== undefined
+          ? { isCodeAccessibleMemberOnly: input.isCodeAccessibleMemberOnly }
           : {}),
         ...(input.isUsingReviewerCount !== undefined
           ? { isUsingReviewerCount: input.isUsingReviewerCount }

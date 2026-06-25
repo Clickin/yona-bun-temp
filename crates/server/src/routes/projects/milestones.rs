@@ -1,15 +1,50 @@
 use super::*;
 
-fn milestone_to_summary(milestone: IssueMilestone) -> ProjectMilestoneSummary {
-    ProjectMilestoneSummary {
-        title: milestone.title,
-        due_date_label: milestone.due_date_label,
-        open_issue_count: milestone.open_issue_count,
-        closed_issue_count: milestone.closed_issue_count,
-        completion_percent: milestone.completion_percent,
-        id: milestone.id,
-        state: milestone.state,
+fn project_milestone_due_date_projection(due_date: Option<DateTime>) -> (bool, String) {
+    let Some(due_date) = due_date else {
+        return (false, String::new());
+    };
+    let today =
+        sea_orm::entity::prelude::DateTimeUtc::from(std::time::SystemTime::now()).naive_utc();
+    let today = today.date();
+    let days = due_date.date().signed_duration_since(today).num_days();
+    if days < 0 {
+        (true, format!("{} days past", days.abs()))
+    } else {
+        (false, format!("{days} days left"))
     }
+}
+
+fn project_milestone_from_record(
+    record: &persistence::IssueMilestoneRecord,
+    base_path: &str,
+) -> IssueMilestone {
+    let mut milestone = issue_milestone_from_record(record, base_path);
+    let (due_date_overdue, until_label) = project_milestone_due_date_projection(record.due_date);
+    milestone.due_date_overdue = due_date_overdue;
+    milestone.until_label = until_label;
+    milestone
+}
+
+async fn project_milestone_from_record_with_issue_references(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+    record: &persistence::IssueMilestoneRecord,
+    base_path: &str,
+) -> Result<IssueMilestone, ConnectError> {
+    let mut milestone = issue_milestone_from_record_with_issue_references(
+        repository,
+        authorization,
+        actor_id,
+        record,
+        base_path,
+    )
+    .await?;
+    let (due_date_overdue, until_label) = project_milestone_due_date_projection(record.due_date);
+    milestone.due_date_overdue = due_date_overdue;
+    milestone.until_label = until_label;
+    Ok(milestone)
 }
 
 pub(crate) fn milestone_list_filter_from_request(
@@ -96,7 +131,7 @@ pub(crate) async fn project_milestone_state_mutation(
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-    let mut milestone = issue_milestone_from_record_with_issue_references(
+    let mut milestone = project_milestone_from_record_with_issue_references(
         repository,
         &authorization,
         session.user_id,
@@ -108,7 +143,7 @@ pub(crate) async fn project_milestone_state_mutation(
     milestone.viewer_can_delete = true;
     Ok((
         ProjectMilestoneMutationResponse {
-            milestone: Some(milestone_to_summary(milestone)),
+            milestone: Some(milestone),
             ..Default::default()
         },
         ctx,
@@ -146,7 +181,7 @@ pub(crate) async fn project_milestone_list(
         .map_err(internal_error)?;
     let milestones = records
         .iter()
-        .map(|record| milestone_to_summary(issue_milestone_from_record(record, &service.base_path)))
+        .map(|record| project_milestone_from_record(record, &service.base_path))
         .collect();
     Ok((
         ListProjectMilestonesResponse {
@@ -187,7 +222,7 @@ pub(crate) async fn project_milestone_read(
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-    let mut milestone = issue_milestone_from_record_with_issue_references(
+    let mut milestone = project_milestone_from_record_with_issue_references(
         repository,
         &authorization,
         session.as_ref().and_then(|session| session.user_id),
@@ -199,7 +234,7 @@ pub(crate) async fn project_milestone_read(
     milestone.viewer_can_delete = viewer_can_update;
     Ok((
         ProjectMilestoneMutationResponse {
-            milestone: Some(milestone_to_summary(milestone)),
+            milestone: Some(milestone),
             ..Default::default()
         },
         ctx,
@@ -260,7 +295,7 @@ pub(crate) async fn project_milestone_create(
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
-    let mut milestone = issue_milestone_from_record_with_issue_references(
+    let mut milestone = project_milestone_from_record_with_issue_references(
         repository,
         &authorization,
         session.user_id,
@@ -272,7 +307,7 @@ pub(crate) async fn project_milestone_create(
     milestone.viewer_can_delete = true;
     Ok((
         ProjectMilestoneMutationResponse {
-            milestone: Some(milestone_to_summary(milestone)),
+            milestone: Some(milestone),
             ..Default::default()
         },
         ctx,
@@ -336,7 +371,7 @@ pub(crate) async fn project_milestone_update(
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-    let mut milestone = issue_milestone_from_record_with_issue_references(
+    let mut milestone = project_milestone_from_record_with_issue_references(
         repository,
         &authorization,
         session.user_id,
@@ -348,7 +383,7 @@ pub(crate) async fn project_milestone_update(
     milestone.viewer_can_delete = true;
     Ok((
         ProjectMilestoneMutationResponse {
-            milestone: Some(milestone_to_summary(milestone)),
+            milestone: Some(milestone),
             ..Default::default()
         },
         ctx,

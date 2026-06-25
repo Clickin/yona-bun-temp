@@ -38,11 +38,15 @@ export type SearchItem = {
   authorLabel: string;
   authorLoginId: string;
   createdLabel: string;
+  dueDateUntilLabel?: string;
   href: string;
   id: string;
   number: string;
+  originOwnerName?: string;
+  originProjectName?: string;
   ownerName: string;
   projectName: string;
+  projectLogoUrl?: string;
   snippets: SearchSnippet[];
   state: string;
   title: string;

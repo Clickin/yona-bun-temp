@@ -3738,8 +3738,10 @@ export function ProjectSettingsPage(props: {
   onUpdateProjectSettings?: (input: {
     board: boolean;
     code: boolean;
+    defaultBranch?: string;
     defaultReviewerCount: number;
     issue: boolean;
+    isCodeAccessibleMemberOnly: boolean;
     isUsingReviewerCount: boolean;
     milestone: boolean;
     overview: string;
@@ -3749,6 +3751,8 @@ export function ProjectSettingsPage(props: {
     projectScope: string;
     review: boolean;
   }) => void;
+  defaultBranch?: string;
+  defaultBranchOptions?: Array<{ name: string; shortName?: string }>;
 }) {
   const detail = React.useMemo(
     () =>
@@ -3770,6 +3774,8 @@ export function ProjectSettingsPage(props: {
   );
   const [formState, setFormState] = React.useState({
     defaultReviewerCount: Math.max(1, detail.defaultReviewerCount ?? 1),
+    defaultBranch: props.defaultBranch ?? props.defaultBranchOptions?.[0]?.name ?? "",
+    isCodeAccessibleMemberOnly: detail.codeMemberOnly === true,
     isUsingReviewerCount: detail.isUsingReviewerCount ?? false,
     overview: detail.overview,
     projectName: detail.projectName,
@@ -3781,13 +3787,15 @@ export function ProjectSettingsPage(props: {
   React.useEffect(() => {
     setFormState({
       defaultReviewerCount: Math.max(1, detail.defaultReviewerCount ?? 1),
+      defaultBranch: props.defaultBranch ?? props.defaultBranchOptions?.[0]?.name ?? "",
+      isCodeAccessibleMemberOnly: detail.codeMemberOnly === true,
       isUsingReviewerCount: detail.isUsingReviewerCount ?? false,
       overview: detail.overview,
       projectName: detail.projectName,
       projectScope: detail.projectScope,
       ...projectMenuSettingsFromDetail(detail),
     });
-  }, [detail]);
+  }, [detail, props.defaultBranch, props.defaultBranchOptions]);
   const maxReviewerCount = Math.max(1, detail.maxReviewerCount ?? 1);
   const reviewerCountOptions = Array.from({ length: maxReviewerCount }, (_, index) => index + 1);
   const isGitProject = !detail.vcs || detail.vcs.toLowerCase() === "git";
@@ -3829,8 +3837,10 @@ export function ProjectSettingsPage(props: {
               props.onUpdateProjectSettings?.({
                 board: formState.board,
                 code: formState.code,
+                defaultBranch: formState.defaultBranch,
                 defaultReviewerCount: formState.defaultReviewerCount,
                 issue: formState.issue,
+                isCodeAccessibleMemberOnly: formState.isCodeAccessibleMemberOnly,
                 isUsingReviewerCount: formState.isUsingReviewerCount,
                 milestone: formState.milestone,
                 overview: formState.overview,
@@ -3997,25 +4007,35 @@ export function ProjectSettingsPage(props: {
                 </div>
                 <div className="cu-desc">
                   <input
-                    checked={detail.codeMemberOnly === true}
+                    checked={formState.isCodeAccessibleMemberOnly}
                     className="radio-btn"
                     id="codeAccessibleMemberOnly"
                     name="isCodeAccessibleMemberOnly"
-                    readOnly
                     type="radio"
                     value="true"
+                    onChange={() =>
+                      setFormState((current) => ({
+                        ...current,
+                        isCodeAccessibleMemberOnly: true,
+                      }))
+                    }
                   />
                   <label className="bg-radiobtn label-public" htmlFor="codeAccessibleMemberOnly">
                     {legacyMessage(props.messages, "button.yes")}
                   </label>
                   <input
-                    checked={detail.codeMemberOnly !== true}
+                    checked={!formState.isCodeAccessibleMemberOnly}
                     className="radio-btn"
                     id="codeAccessibleAnyone"
                     name="isCodeAccessibleMemberOnly"
-                    readOnly
                     type="radio"
                     value="false"
+                    onChange={() =>
+                      setFormState((current) => ({
+                        ...current,
+                        isCodeAccessibleMemberOnly: false,
+                      }))
+                    }
                   />
                   <label className="bg-radiobtn label-private" htmlFor="codeAccessibleAnyone">
                     {legacyMessage(props.messages, "button.no")}
@@ -4105,6 +4125,37 @@ export function ProjectSettingsPage(props: {
                         {legacyMessage(props.messages, "project.reviewer.count.description")}
                       </span>
                     </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {isGitProject && formState.code && props.defaultBranchOptions?.length ? (
+                <div className="box-wrap middle" id="defaultBranceSettingPanel">
+                  <div className="cu-label vmiddle">
+                    {legacyMessage(props.messages, "code.branches.defaultBranch")}
+                  </div>
+                  <div className="cu-desc">
+                    <select
+                      data-dropdown-css-class="branches"
+                      data-format="branch"
+                      data-toggle="select2"
+                      id="project-default-branch"
+                      name="defaultBranch"
+                      style={{ minWidth: 220 }}
+                      value={formState.defaultBranch}
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          defaultBranch: event.target.value,
+                        }))
+                      }
+                    >
+                      {props.defaultBranchOptions.map((branch) => (
+                        <option key={branch.name} value={branch.name}>
+                          {branch.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               ) : null}

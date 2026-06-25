@@ -1186,6 +1186,7 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
     assert!(!menu_settings.milestone);
     assert!(menu_settings.board);
     assert_eq!(authorization.project.default_reviewer_count, 1);
+    assert!(!authorization.project.is_code_accessible_member_only);
     assert!(!authorization.project.is_using_reviewer_count);
     app_repo
         .add_project_membership(authorization.project.id, reviewer_id, "member")
@@ -1217,6 +1218,7 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
     assert_eq!(payload["projectName"], "projectYobi");
     assert!(payload["logoUrl"].is_string());
     assert_eq!(payload["defaultReviewerCount"], 1);
+    assert_eq!(payload["codeMemberOnly"], false);
     assert_eq!(payload["isUsingReviewerCount"], false);
     assert_eq!(payload["maxReviewerCount"], 2);
 
@@ -1231,7 +1233,7 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
                 .body(Body::from(
-                    "{\"projectName\":\"projectYobi\",\"overview\":\"Yona\",\"projectScope\":\"protected\",\"code\":true,\"issue\":false,\"pullRequest\":true,\"review\":true,\"milestone\":true,\"board\":false,\"isUsingReviewerCount\":true,\"defaultReviewerCount\":2}",
+                    "{\"projectName\":\"projectYobi\",\"overview\":\"Yona\",\"projectScope\":\"protected\",\"code\":true,\"issue\":false,\"pullRequest\":true,\"review\":true,\"milestone\":true,\"board\":false,\"isCodeAccessibleMemberOnly\":true,\"isUsingReviewerCount\":true,\"defaultReviewerCount\":2}",
                 ))
                 .unwrap(),
         )
@@ -1256,6 +1258,7 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
         .expect("read updated project authorization")
         .expect("updated project authorization");
     assert!(updated_authorization.project.is_using_reviewer_count);
+    assert!(updated_authorization.project.is_code_accessible_member_only);
     assert_eq!(updated_authorization.project.default_reviewer_count, 2);
 
     let updated_settings = app
@@ -1275,6 +1278,7 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
         serde_json::from_str(&response_json(updated_settings).await)
             .expect("updated settings json");
     assert_eq!(updated_payload["defaultReviewerCount"], 2);
+    assert_eq!(updated_payload["codeMemberOnly"], true);
     assert_eq!(updated_payload["isUsingReviewerCount"], true);
     assert_eq!(updated_payload["maxReviewerCount"], 2);
 }

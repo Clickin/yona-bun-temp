@@ -166,26 +166,166 @@ impl AppRepositoryImpl<'_> {
             .all(&self.db)
             .await?
         {
+            let event_type = row.event_type.unwrap_or_default();
+            let old_value = self
+                .read_text_column("issue_event", "old_value", row.id)
+                .await?;
+            let new_value = self
+                .read_text_column("issue_event", "new_value", row.id)
+                .await?;
+            let sender_login_id = row.sender_login_id.unwrap_or_default();
+            let sender_label = self
+                .find_user_by_login_id(&sender_login_id)
+                .await?
+                .map(|user| user.display_name)
+                .filter(|label| !label.is_empty())
+                .unwrap_or_else(|| sender_login_id.clone());
+            let event_target = self
+                .issue_event_target(issue_id, &event_type, &old_value, &new_value)
+                .await?;
             items.push((
                 row.created,
                 row.id,
                 IssueTimelineItemRecord::Event {
                     created_label: format_workspace_date_label(row.created),
-                    event_type: row.event_type.unwrap_or_default(),
+                    event_type,
                     id: row.id,
-                    new_value: self
-                        .read_text_column("issue_event", "new_value", row.id)
-                        .await?,
-                    old_value: self
-                        .read_text_column("issue_event", "old_value", row.id)
-                        .await?,
-                    sender_login_id: row.sender_login_id.unwrap_or_default(),
+                    new_value,
+                    old_value,
+                    resource_href: event_target.resource_href,
+                    resource_label: event_target.resource_label,
+                    resource_title: event_target.resource_title,
+                    sender_login_id,
+                    sender_label,
+                    target_login_id: event_target.target_login_id,
+                    target_label: event_target.target_label,
                 },
             ));
         }
         let _ = viewer_id;
         items.sort_by_key(|(created, id, _)| (*created, *id));
         Ok(items.into_iter().map(|(_, _, item)| item).collect())
+    }
+
+    async fn issue_event_target(
+        &self,
+        issue_id: i64,
+        event_type: &str,
+        old_value: &str,
+        new_value: &str,
+    ) -> Result<IssueEventTargetRecord, DbErr> {
+        let mut target = IssueEventTargetRecord::default();
+        let value = if new_value.trim().is_empty() {
+            old_value.trim()
+        } else {
+            new_value.trim()
+        };
+        match event_type {
+            "ISSUE_ASSIGNEE_CHANGED" => {
+                if let Ok(user_id) = value.parse::<i64>() {
+                    if let Some(assignee) = assignee::Entity::find_by_id(user_id)
+                        .one(&self.db)
+                        .await?
+                    {
+                        if let Some(user_id) = assignee.user_id {
+                            if let Some(user) = self.find_user_by_id(user_id).await? {
+                                target.target_login_id = user.login_id;
+                                target.target_label = user.display_name;
+                            }
+                        }
+                    } else if let Some(user) = self.find_user_by_id(user_id).await? {
+                        target.target_login_id = user.login_id;
+                        target.target_label = user.display_name;
+                    }
+                } else if !value.is_empty() {
+                    if let Some(user) = self.find_user_by_login_id(value).await? {
+                        target.target_login_id = user.login_id;
+                        target.target_label = user.display_name;
+                    }
+                }
+            }
+            "ISSUE_SHARER_CHANGED" => {
+                if !value.is_empty() {
+                    if let Some(user) = self.find_user_by_login_id(value).await? {
+                        target.target_login_id = user.login_id;
+                        target.target_label = user.display_name;
+                    } else {
+                        target.target_login_id = value.to_string();
+                        target.target_label = value.to_string();
+                    }
+                }
+            }
+            "ISSUE_MILESTONE_CHANGED" => {
+                if let Ok(milestone_id) = value.parse::<i64>() {
+                    if let Some(row) = milestone::Entity::find_by_id(milestone_id)
+                        .one(&self.db)
+                        .await?
+                    {
+                        target.resource_href = format!("/milestone/{}", row.id);
+                        target.resource_label = row.title.unwrap_or_default();
+                        target.resource_title = "milestone".to_string();
+                    }
+                }
+            }
+            "ISSUE_REFERRED_FROM_COMMIT" => {
+                if !value.is_empty() {
+                    target.resource_href = format!("/commit/{}", value);
+                    target.resource_label = format!("@{}", value);
+                    target.resource_title = "code.commits".to_string();
+                }
+            }
+            "ISSUE_REFERRED_FROM_PULL_REQUEST" => {
+                if let Ok(pull_request_id) = value.parse::<i64>() {
+                    if let Some(row) = pull_request::Entity::find_by_id(pull_request_id)
+                        .one(&self.db)
+                        .await?
+                    {
+                        let number = row.number.unwrap_or_default();
+                        target.resource_href = format!("/pullRequest/{}", number);
+                        target.resource_label =
+                            format!("pullRequest -{} {}", number, row.title.unwrap_or_default());
+                        target.resource_title = "pullRequest".to_string();
+                    }
+                }
+            }
+            "ISSUE_MOVED" => {
+                let project_path = old_value.trim();
+                if project_path.contains('/') {
+                    target.resource_href = format!("/{}", project_path);
+                    target.resource_label = project_path.to_string();
+                }
+            }
+            "ISSUE_LABEL_CHANGED" => {
+                target.resource_label = value.to_string();
+            }
+            _ => {}
+        }
+        if target.resource_href.starts_with('/')
+            && matches!(
+                event_type,
+                "ISSUE_MILESTONE_CHANGED"
+                    | "ISSUE_REFERRED_FROM_COMMIT"
+                    | "ISSUE_REFERRED_FROM_PULL_REQUEST"
+            )
+        {
+            let Some(issue_row) = issue::Entity::find_by_id(issue_id).one(&self.db).await? else {
+                return Ok(target);
+            };
+            if let Some(project_id) = issue_row.project_id {
+                if let Some(project) = project::Entity::find_by_id(project_id)
+                    .one(&self.db)
+                    .await?
+                {
+                    target.resource_href = format!(
+                        "/{}/{}{}",
+                        project.owner.unwrap_or_default(),
+                        project.name.unwrap_or_default(),
+                        target.resource_href
+                    );
+                }
+            }
+        }
+        Ok(target)
     }
 
     pub(super) async fn user_email_for_id_or_login(
@@ -301,4 +441,13 @@ impl AppRepositoryImpl<'_> {
         self.bind_attachments(container_type, container_id, attachment_ids, actor_id)
             .await
     }
+}
+
+#[derive(Default)]
+struct IssueEventTargetRecord {
+    resource_href: String,
+    resource_label: String,
+    resource_title: String,
+    target_login_id: String,
+    target_label: String,
 }

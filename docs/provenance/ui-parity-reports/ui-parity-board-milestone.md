@@ -25,12 +25,16 @@ Worker update, 2026-06-26:
   cached post detail from the returned DTO, and invalidates project API queries.
   The legacy compatibility `/-_-api/v1/.../postlabel/:number` route remains
   evidence/compatibility only for the React-visible flow.
-- Remaining milestone due-date relative/overdue and linked issue partial-list
-  parity are reclassified as projection/shared-component gaps: current
-  milestone REST reduces milestone reads/lists to `ProjectMilestoneSummary`, so
-  runtime responses do not yet carry `untilLabel` / `dueDateOverdue`, full
-  milestone body/attachments, or the richer issue-list fields needed to reuse
-  legacy `issue.partial_list` and `partial_massupdate` behavior end to end.
+- Worker update, Wave 5: project milestone REST/RPC no longer reduces project
+  milestone reads/lists/mutations to `ProjectMilestoneSummary`. Runtime
+  responses now carry the richer `IssueMilestone` projection, including
+  `untilLabel`, `dueDateOverdue`, body markdown, attachment rows, markdown
+  references, and open/closed `ProjectIssueListItem` rows. React milestone
+  detail renders those linked issues with the legacy `issue.partial_list`
+  `post-list-wrap` / `post-item` / checkbox / author / count / assignee /
+  due-date selectors. Exact legacy mass-update dropdown option population and
+  mutation behavior remains a narrowed shared issue-list/mass-update follow-up;
+  the milestone-owned REST projection gap is closed.
 
 ## Evidence Checked
 
@@ -74,12 +78,12 @@ Current evidence:
 | milestone list tabs/empty/progress/counts | Legacy open/closed/all tabs, empty state, counts, completion, progress. | `ProjectMilestoneListPage` renders tabs, empty state, counts, completion and progress. | covered | none |
 | milestone list sort links | Legacy inactive sort links use `orderDir=asc`; active links toggle asc/desc. | `sortHref` now uses `orderDir=asc` for inactive fields and toggles only the active field. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 | milestone list search | Legacy `.textbox` keyup filters `.issue-link` rows client-side. | `ProjectMilestoneListPage` now keeps React filter state and hides non-matching `.issue-link` rows client-side. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
-| milestone due-date relative/overdue display | Legacy renders `milestone.until` and overdue class. | React renders `untilLabel` and `.due-date.over` when supplied, but runtime REST does not yet project those fields from milestone records. | gap, reclassified | next milestone API owner: `crates/server/src/routes/projects/milestones.rs`, `crates/server/src/api_types.rs`, `frontend/src/app-view-models.ts`, focused milestone REST contract |
+| milestone due-date relative/overdue display | Legacy renders `milestone.until` and overdue class. | Project milestone REST/RPC projects `untilLabel` and `dueDateOverdue`; React renders `untilLabel` and `.due-date.over` on list/detail through the legacy selectors. | covered | `crates/server/src/routes/projects/milestones.rs`, `crates/server/src/api_types.rs`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-milestone-views.tsx`, `crates/server/tests/milestone_contract.rs`, `crates/server/tests/rest_contract.rs`, `frontend/src/board-milestone-parity.spec.tsx` |
 | milestone form validation shell | Legacy field errors render beside fields with input `.error` and `.message`. | `ProjectMilestoneFormPage` now attaches `.error` and `.message` beside title/content/due-date fields. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 | milestone form attachments | Legacy uses `common.fileUploader(ResourceType.MILESTONE, ...)`. | `ProjectMilestoneFormPage` renders `.upload-wrap.content-footer[data-resource-type="MILESTONE"]` while preserving REST upload insertion. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 | milestone detail actions/delete modal | Legacy list/edit/delete/open/close plus `#deleteConfirm` modal. | Current renders action links and delete modal with legacy request attrs. | covered | none |
-| milestone detail attachments | Legacy `.attachments` carries serialized attachment data. | React serializes milestone DTO attachments into `.attachments[data-attachments]` and visible `.attached-file` rows when the detail DTO carries attachment rows; runtime REST still needs the richer milestone projection noted above. | gap, reclassified | next milestone API owner: `crates/server/src/routes/projects/milestones.rs`, `crates/server/src/api_types.rs`, focused milestone REST contract |
-| milestone linked issue tabs/list | Legacy uses issue tabs, mass update, and `issue.partial_list` rows. | React now renders the legacy mass-update shell and client search behavior, but rows remain simplified because milestone DTOs do not carry the full issue-list projection needed for `issue.partial_list` parity. | gap, reclassified | next shared owner: milestone REST projection plus issue-list row/shared component owner |
+| milestone detail attachments | Legacy `.attachments` carries serialized attachment data. | Project milestone REST/RPC carries milestone attachments in the richer detail/list projection; React serializes them into `.attachments[data-attachments]` and visible `.attached-file` rows. | covered | `crates/server/src/routes/projects/milestones.rs`, `crates/server/src/api_types.rs`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-milestone-views.tsx`, `crates/server/tests/rest_contract.rs`, `frontend/src/board-milestone-parity.spec.tsx` |
+| milestone linked issue tabs/list | Legacy uses issue tabs, mass update, and `issue.partial_list` rows. | Project milestone REST/RPC carries open/closed `ProjectIssueListItem` rows, and React renders legacy `issue.partial_list` selectors (`.post-list-wrap`, `.post-item`, mass-update checkboxes, author/count/assignee/due-date cells) with client search. Exact mass-update dropdown option population and mutation remains a narrowed shared issue-list follow-up. | covered, narrowed follow-up | next shared owner for remaining mass-update option/mutation behavior |
 | milestone issue search | Legacy `data-toggle="item-search"` filters `.issue-item`. | `ProjectMilestoneDetailPage` now filters rendered issue links through React state from the legacy search input. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 
 ## Playwright Scenario Rows
@@ -97,4 +101,4 @@ Current evidence:
 | `/:owner/:project/milestones` | search | `.textbox` keyup filters rows | React keyup/change filters non-matching `.issue-link` rows | type title | client-only behavior | covered |
 | `/:owner/:project/newMilestoneForm` | invalid submit | field-level `.error` and `.message` | field-adjacent `.error` and `.message` source/rendering | submit invalid | React validation before REST POST | covered |
 | `/:owner/:project/milestone/:id` | actions | `.actrow .ybtn`, `#deleteConfirm`, open/close | same selectors | modal, close/reopen | REST state/delete callbacks | covered |
-| `/:owner/:project/milestone/:id#issues` | linked issues | tabs plus mass update and issue partial list rows | tabs, search, and mass-update shell present; full issue partial-list rows need richer DTO/shared component | switch tabs/search | REST detail issue arrays | gap, reclassified |
+| `/:owner/:project/milestone/:id#issues` | linked issues | tabs plus mass update and issue partial list rows | tabs, search, mass-update shell, and legacy partial-list row selectors render from REST detail issue arrays; exact mass-update option/mutation behavior remains narrowed shared follow-up | switch tabs/search | REST detail issue arrays | covered, narrowed follow-up |

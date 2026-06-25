@@ -3106,32 +3106,134 @@ function IssueTimelineEvent(props: {
   }
 
   const eventState = issueEventState(item);
-  const eventMessage = legacyMessage(props.messages, issueEventMessageKey(item), {
-    args: [item.senderLoginId || "", item.newValue || item.oldValue || ""],
-  });
-  const senderHref = item.senderLoginId
-    ? prefixBasePath(props.basePath, `/${item.senderLoginId}`)
-    : "#";
+  const messageParts = issueEventMessageParts(item, props.basePath, props.messages);
 
   return (
     <li className="event" id={`event-${item.id}`}>
       <span className={eventState.className}>
         {legacyMessage(props.messages, eventState.label)}
       </span>{" "}
-      <span className="event-message">
-        {item.senderLoginId ? (
-          <a className="user-link" href={senderHref}>
-            {eventMessage}
-          </a>
-        ) : (
-          eventMessage
-        )}
-      </span>
+      <span className="event-message">{messageParts}</span>
       <span className="date">
         <a href={`#event-${item.id}`}>{item.createdLabel}</a>
       </span>
     </li>
   );
+}
+
+function issueEventMessageParts(
+  item: IssueTimelineEventItem,
+  basePath: string,
+  messages?: LegacyMessageLookup,
+): React.ReactNode {
+  const key = issueEventMessageKey(item);
+  const sender = item.senderLoginId ? (
+    <IssueEventUserLink
+      basePath={basePath}
+      key="sender"
+      label={item.senderLabel || item.senderLoginId}
+      loginId={item.senderLoginId}
+    />
+  ) : (
+    item.senderLabel || item.senderLoginId || "Anonymous"
+  );
+  const target = issueEventTargetNode(item, basePath);
+  return legacyMessageWithNodes(messages, key, [sender, target]);
+}
+
+function issueEventTargetNode(item: IssueTimelineEventItem, basePath: string): React.ReactNode {
+  if (item.targetLoginId) {
+    return (
+      <IssueEventUserLink
+        basePath={basePath}
+        label={item.targetLabel || item.targetLoginId}
+        loginId={item.targetLoginId}
+      />
+    );
+  }
+  if (item.resourceHref) {
+    const label = issueEventResourceLabel(item);
+    return (
+      <strong>
+        <a
+          className="link"
+          href={prefixBasePath(basePath, item.resourceHref)}
+          title={item.resourceTitle ? legacyMessage(undefined, item.resourceTitle) : undefined}
+        >
+          {label}
+        </a>
+      </strong>
+    );
+  }
+  if (item.eventType === "ISSUE_LABEL_CHANGED") {
+    return <IssueEventLabelBox label={item.resourceLabel || item.newValue || item.oldValue} />;
+  }
+  return item.newValue || item.oldValue || "";
+}
+
+function IssueEventUserLink(props: { basePath: string; label: string; loginId: string }) {
+  return (
+    <a
+      className="usf-group"
+      data-placement="top"
+      data-toggle="tooltip"
+      href={prefixBasePath(props.basePath, `/${props.loginId}`)}
+      title={props.loginId}
+    >
+      <strong>{props.label || props.loginId}</strong>
+    </a>
+  );
+}
+
+function IssueEventLabelBox(props: { label: string }) {
+  const labels = props.label.split(",").flatMap((label) => {
+    const trimmed = label.trim();
+    return trimmed ? [trimmed] : [];
+  });
+  if (labels.length === 0) {
+    return "";
+  }
+  return (
+    <>
+      {labels.map((label, index) => (
+        <React.Fragment key={label}>
+          {index > 0 ? ", " : null}
+          <div className="label issue-label">{label}</div>
+        </React.Fragment>
+      ))}
+    </>
+  );
+}
+
+function issueEventResourceLabel(item: IssueTimelineEventItem): string {
+  if (item.eventType === "ISSUE_REFERRED_FROM_COMMIT") {
+    return `${legacyMessage(undefined, "code.commits")} ${item.resourceLabel || item.newValue}`;
+  }
+  if (item.eventType === "ISSUE_REFERRED_FROM_PULL_REQUEST") {
+    return (
+      item.resourceLabel?.replace(/^pullRequest/, legacyMessage(undefined, "pullRequest")) ?? ""
+    );
+  }
+  return item.resourceLabel || item.newValue || item.oldValue || "";
+}
+
+function legacyMessageWithNodes(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  args: React.ReactNode[],
+): React.ReactNode {
+  const template = legacyMessage(messages, key);
+  const parts = template.split(/(\{\d+\})/g);
+  if (parts.length === 1) {
+    return template;
+  }
+  return parts.map((part) => {
+    const match = part.match(/^\{(\d+)\}$/);
+    if (!match) {
+      return part;
+    }
+    return <React.Fragment key={part}>{args[Number(match[1])] ?? ""}</React.Fragment>;
+  });
 }
 
 function issueEventState(item: IssueTimelineEventItem): { className: string; label: string } {
@@ -3193,7 +3295,12 @@ function issueEventMessageKey(item: IssueTimelineEventItem): string {
     case "ISSUE_STATE_CHANGED":
       return item.newValue ? `issue.event.${item.newValue}` : "ISSUE_STATE_CHANGED";
     case "ISSUE_ASSIGNEE_CHANGED":
-      return item.newValue ? "issue.event.assigned" : "issue.event.unassigned";
+      if (!item.newValue) {
+        return "issue.event.unassigned";
+      }
+      return item.targetLoginId && item.targetLoginId === item.senderLoginId
+        ? "issue.event.assignedToMe"
+        : "issue.event.assigned";
     case "ISSUE_MILESTONE_CHANGED":
       return "issue.event.milestone.changed";
     case "ISSUE_REFERRED_FROM_COMMIT":
@@ -4200,6 +4307,42 @@ function markdownTextForAttachment(attachment: UploadedAttachment): string {
   return attachment.mimeType.toLowerCase().startsWith("image/") ? `!${link}` : link;
 }
 
+function LegacyIssueFileUploaderShell(props: {
+  messages?: LegacyMessageLookup;
+  resourceId?: string | number | null;
+  resourceType: string;
+}) {
+  return (
+    <div
+      className="upload-wrap content-footer"
+      data-resource-id={props.resourceId ?? undefined}
+      data-resource-type={props.resourceType}
+      id="upload"
+    >
+      <div className="attach-wrap">
+        <span className="help help-droppable">
+          {legacyMessage(props.messages, "common.attach.drophere")}
+        </span>
+        <div className="btn-wrap">
+          <div className="nbtn medium white fake-file-wrap">
+            <i className="yobicon-upload"></i> {legacyMessage(props.messages, "button.upload")}
+            <input className="file" multiple name="filePath" type="file" />
+          </div>
+        </div>
+        <span className="plain">{legacyMessage(props.messages, "common.attach.clickbutton")}</span>
+        <span className="help help-pastable">
+          {legacyMessage(props.messages, "common.attach.pastehere")}
+        </span>
+      </div>
+      <ul className="attached-files unstyled"></ul>
+      <p className="right-txt help">
+        <i className="yobicon-supportrequest"></i>{" "}
+        {legacyMessage(props.messages, "common.attach.attachIfYouSave")}
+      </p>
+    </div>
+  );
+}
+
 function insertMarkdownText(
   value: string,
   cursorIndex: number,
@@ -4631,7 +4774,7 @@ function IssueCommentForm(props: {
           readOnly
         />
         <div className="attachment-files"></div>
-        <div data-resourceid="" data-resourcetype="ISSUE_COMMENT" id="upload"></div>
+        <LegacyIssueFileUploaderShell messages={props.messages} resourceType="ISSUE_COMMENT" />
         <div className="write-comment-wrap">
           <div className="right-txt">
             <button className="ybtn hidden" id="dynamic-comment-btn" type="button"></button>
@@ -5073,11 +5216,11 @@ export function ProjectIssueFormPage(props: {
                         </LegacyMarkdownEditorShell>
                       </dd>
                     </dl>
-                    <div
-                      data-resourceid={props.initialIssue?.issueNumber ?? ""}
-                      data-resourcetype="ISSUE_POST"
-                      id="upload"
-                    ></div>
+                    <LegacyIssueFileUploaderShell
+                      messages={messages}
+                      resourceId={props.initialIssue?.issueId ?? null}
+                      resourceType="ISSUE_POST"
+                    />
                     <div className="actrow right-txt">
                       {props.mode === "edit" &&
                       props.initialIssue &&

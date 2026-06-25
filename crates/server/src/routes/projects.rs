@@ -534,6 +534,7 @@ pub(crate) async fn project_overview_update(
         .update_project(persistence::UpdateProjectInput {
             current_owner_name: authorization.project.owner_name.clone(),
             current_project_name: authorization.project.project_name.clone(),
+            is_code_accessible_member_only: None,
             overview: Some(request.overview.trim().to_string()),
             project_name: authorization.project.project_name.clone(),
             project_scope: authorization.project.project_scope.clone(),
@@ -632,6 +633,7 @@ pub(crate) async fn project_update(
         .update_project(persistence::UpdateProjectInput {
             current_owner_name: request.current_owner_name.trim().to_string(),
             current_project_name: request.current_project_name.trim().to_string(),
+            is_code_accessible_member_only: request.is_code_accessible_member_only,
             overview: Some(request.overview.trim().to_string()),
             project_name: request.project_name.trim().to_string(),
             project_scope: map_project_scope(&request.project_scope)?
@@ -1113,6 +1115,7 @@ struct RestProjectUpdateBody {
     code: Option<bool>,
     default_reviewer_count: Option<u32>,
     issue: Option<bool>,
+    is_code_accessible_member_only: Option<bool>,
     is_using_reviewer_count: Option<bool>,
     logo_attachment_id: Option<i64>,
     milestone: Option<bool>,
@@ -1843,6 +1846,7 @@ async fn rest_update_project(
     let request = UpdateProjectRequest {
         current_owner_name,
         current_project_name,
+        is_code_accessible_member_only: body.is_code_accessible_member_only,
         owner_name,
         overview: body.overview,
         project_name: body.project_name,

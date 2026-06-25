@@ -144,6 +144,10 @@ impl AppRepositoryImpl<'_> {
 
         let mut active = project::ActiveModel::from(current.clone());
         active.name = Set(Some(input.project_name.trim().to_string()));
+        if let Some(is_code_accessible_member_only) = input.is_code_accessible_member_only {
+            active.is_code_accessible_member_only =
+                Set(Some(if is_code_accessible_member_only { 1 } else { 0 }));
+        }
         active.overview = Set(empty_to_none(input.overview));
         active.project_scope = Set(Some(normalize_identity(&input.project_scope)));
         active.previous_name = Set(current.name.clone());

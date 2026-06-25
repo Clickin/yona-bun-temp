@@ -114,6 +114,206 @@ function MilestoneIssueLink(props: {
   );
 }
 
+function LegacyMilestoneIssuePartialRow(props: {
+  detail: ProjectDetailViewModel;
+  hidden?: boolean;
+  issue: ProjectMilestoneIssueViewModel;
+  messages?: LegacyMessageLookup;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { detail, issue, runtimeConfig } = props;
+  const issueHref = buildProjectHref(
+    runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    `issue/${issue.issueNumber}`,
+  );
+  const issueId = issue.id ?? issue.issueNumber;
+  return (
+    <li
+      className="post-item title"
+      data-item="issue-item"
+      data-value={`${issue.authorLoginId ?? ""} ${issue.issueNumber} ${issue.title}`}
+      id={`issue-item-${issueId}`}
+      style={props.hidden ? { display: "none" } : undefined}
+    >
+      <div className="span9 span-hard-wrap">
+        {issue.id ? (
+          <label className="mass-update-check hide-in-mobile" htmlFor={`issue-${issueId}`}>
+            <input
+              data-issue-id={issue.id}
+              data-issue-labels={issue.labels
+                .map((label) => `,${label.id},${label.name},,false|`)
+                .join("")}
+              data-toggle="issue-checkbox"
+              id={`issue-${issueId}`}
+              name="checked-issue"
+              type="checkbox"
+            />
+            <span className="blind">{`#${issue.issueNumber}`}</span>
+          </label>
+        ) : null}
+        <div className="issue-item-row">
+          <div className="title-wrap">
+            <a className="title" href={issueHref}>
+              <span className="post-id">{`#${issue.issueNumber}`}</span>
+            </a>
+            {(issue.weight ?? 0) > 0 ? (
+              <span
+                className="weight-up-arrow"
+                data-placement="right"
+                data-toggle="tooltip"
+                title={`${legacyMessage(props.messages, "issue.weight")} ${issue.weight ?? 0}`}
+              >
+                <i className="yobicon-angle-circled-up" />
+              </span>
+            ) : null}
+            {(issue.weight ?? 0) < 0 ? (
+              <span
+                className="weight-down-arrow"
+                data-placement="right"
+                data-toggle="tooltip"
+                title={`${legacyMessage(props.messages, "issue.weight")} ${issue.weight ?? 0}`}
+              >
+                <i className="yobicon-angle-circled-down" />
+              </span>
+            ) : null}
+            <a className="title" href={issueHref}>
+              {issue.title}
+            </a>
+          </div>
+          <div className="infos">
+            {issue.authorLabel ? (
+              <a
+                className="infos-item infos-link-item"
+                data-placement="bottom"
+                data-toggle="tooltip"
+                href={`${runtimeConfig.basePath}/users/${issue.authorLoginId ?? ""}`}
+                title={issue.authorLoginId ?? ""}
+              >
+                {issue.authorLabel}
+              </a>
+            ) : (
+              <span className="infos-item">{legacyMessage(props.messages, "issue.noAuthor")}</span>
+            )}
+            {issue.updatedLabel ? (
+              <span className="infos-item" data-placement="bottom" data-toggle="tooltip">
+                {issue.updatedLabel}
+              </span>
+            ) : null}
+            {(issue.childOpenCount ?? 0) + (issue.childClosedCount ?? 0) > 0 ? (
+              <span className="infos-item child-issue-count">
+                {`${issue.childClosedCount ?? 0} / ${
+                  (issue.childOpenCount ?? 0) + (issue.childClosedCount ?? 0)
+                }`}
+              </span>
+            ) : null}
+            {issue.milestoneTitle ? (
+              <span className="mileston-tag">
+                <a
+                  data-placement="bottom"
+                  data-toggle="tooltip"
+                  href={buildProjectHref(
+                    runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    `milestone/${issue.milestoneId ?? ""}`,
+                  )}
+                  title={legacyMessage(props.messages, "milestone")}
+                >
+                  {issue.milestoneTitle}
+                </a>
+              </span>
+            ) : null}
+            {issue.commentCount > 0 ||
+            (issue.voterCount ?? 0) > 0 ||
+            (issue.watcherCount ?? 0) > 0 ? (
+              <span className="infos-item item-count-groups">
+                {issue.commentCount > 0 ? (
+                  <a className="comment-count" href={`${issueHref}#comments`}>
+                    <i className="yobicon-comments" /> {issue.commentCount}
+                  </a>
+                ) : null}
+                {(issue.voterCount ?? 0) > 0 ? (
+                  <a className="vote-count" href={`${issueHref}#vote`}>
+                    <i className="yobicon-hearts" /> {issue.voterCount ?? 0}
+                  </a>
+                ) : null}
+                {(issue.watcherCount ?? 0) > 0 ? (
+                  <span className="sharer-count">
+                    <i className="yobicon-share" /> {issue.watcherCount ?? 0}
+                  </span>
+                ) : null}
+              </span>
+            ) : null}
+            {issue.labels.map((label) => (
+              <a
+                className="label issue-label list-label active"
+                data-category-id=""
+                data-label-id={label.id}
+                href={buildProjectHref(
+                  runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  `issues?labelIds=${label.id}`,
+                )}
+                key={label.id}
+                style={{ backgroundColor: label.color }}
+              >
+                {label.name}
+              </a>
+            ))}
+            <div className="child-issue-list hide" />
+          </div>
+        </div>
+      </div>
+      <div className="span3 hide-in-mobile">
+        <div className="mt5 pull-right">
+          {issue.assigneeLabel ? (
+            <a
+              className="avatar-wrap assinee"
+              data-placement="top"
+              data-toggle="tooltip"
+              href={`${runtimeConfig.basePath}/users/${issue.assigneeLoginId ?? ""}`}
+              title={`${legacyMessage(props.messages, "issue.assignee")}: ${issue.assigneeLabel}`}
+            >
+              {issue.assigneeAvatarUrl ? (
+                <img
+                  alt={issue.assigneeLabel}
+                  height={32}
+                  src={issue.assigneeAvatarUrl}
+                  width={32}
+                />
+              ) : (
+                <span>{issue.assigneeLabel.slice(0, 1).toUpperCase()}</span>
+              )}
+            </a>
+          ) : (
+            <div className="empty-avatar-wrap">&nbsp;</div>
+          )}
+        </div>
+        {issue.dueDateLabel ? (
+          <div
+            className={`mr20 mt10 pull-right${issue.state === "closed" ? " darkgray-txt" : ""}${
+              issue.state === "open" && (issue.dueDateOverdue ?? false) ? " overdue" : ""
+            }`}
+            data-placement={issue.state === "open" ? "top" : undefined}
+            data-toggle={issue.state === "open" ? "tooltip" : undefined}
+            title={issue.state === "open" ? issue.dueDateLabel : undefined}
+          >
+            <i className="yobicon-clock2 mr3 vmiddle" />
+            <span className="vmiddle">
+              {issue.state === "open" && (issue.dueDateOverdue ?? false)
+                ? legacyMessage(props.messages, "issue.dueDate.overdue")
+                : issue.dueDateLabel}
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </li>
+  );
+}
+
 function milestoneActionHref(
   runtimeConfig: RuntimeConfig,
   detail: ProjectDetailViewModel,
@@ -741,15 +941,18 @@ export function ProjectMilestoneDetailPage(props: {
                         </button>
                       </div>
                     </div>
-                    {issues.map((issue) => (
-                      <MilestoneIssueLink
-                        detail={detail}
-                        hidden={milestoneIssueHidden(issue, filter)}
-                        issue={issue}
-                        key={`${issue.state}-${issue.issueNumber}`}
-                        runtimeConfig={props.runtimeConfig}
-                      />
-                    ))}
+                    <ul className="post-list-wrap row-fluid">
+                      {issues.map((issue) => (
+                        <LegacyMilestoneIssuePartialRow
+                          detail={detail}
+                          hidden={milestoneIssueHidden(issue, filter)}
+                          issue={issue}
+                          key={`${issue.state}-${issue.issueNumber}`}
+                          messages={props.messages}
+                          runtimeConfig={props.runtimeConfig}
+                        />
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </section>

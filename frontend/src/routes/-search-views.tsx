@@ -263,6 +263,7 @@ function SearchMeta({
         {item.updatedLabel ? (
           <span className="due-date meta-item">
             {legacySearchMessage(messages, "label.dueDate")} <strong>{item.updatedLabel}</strong>
+            {item.dueDateUntilLabel ? ` (${item.dueDateUntilLabel})` : null}
           </span>
         ) : null}
       </div>
@@ -356,10 +357,13 @@ function SearchResultItem(props: {
         <a className="avatar-wrap" href={prefixBasePath(props.runtimeConfig.basePath, item.href)}>
           <img
             alt=""
-            src={prefixBasePath(
-              props.runtimeConfig.basePath,
-              "/assets/images/project_default_logo.png",
-            )}
+            src={
+              item.projectLogoUrl ||
+              prefixBasePath(
+                props.runtimeConfig.basePath,
+                "/assets/images/project_default_logo.png",
+              )
+            }
           />
         </a>
         <div className="title-wrap">
@@ -370,6 +374,25 @@ function SearchResultItem(props: {
             {item.ownerName}/{item.projectName}
           </a>
         </div>
+        {item.originOwnerName && item.originProjectName ? (
+          <div className="search-meta-info nm np">
+            <span>
+              <i className="yobicon-split yobicon-white vmiddle" />{" "}
+              {legacySearchMessage(props.messages, "fork.original")}
+            </span>
+            <span>
+              <a
+                className="project-link"
+                href={prefixBasePath(
+                  props.runtimeConfig.basePath,
+                  `/${item.originOwnerName}/${item.originProjectName}`,
+                )}
+              >
+                {item.originOwnerName}/{item.originProjectName}
+              </a>
+            </span>
+          </div>
+        ) : null}
         <div className="search-content np">
           {item.snippets.map((snippet) => (
             <p className="search-content-body" key={snippetKey(snippet)}>

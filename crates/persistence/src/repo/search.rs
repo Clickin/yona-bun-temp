@@ -192,6 +192,7 @@ impl AppRepositoryImpl<'_> {
                     author_label: row.author_name.unwrap_or_default(),
                     author_login_id: row.author_login_id.unwrap_or_default(),
                     created_label: format_workspace_date_label(row.created_date),
+                    due_date_until_label: String::new(),
                     href: format!(
                         "/{}/{}/issue/{}",
                         project.owner_name,
@@ -200,8 +201,11 @@ impl AppRepositoryImpl<'_> {
                     ),
                     id: row.id.to_string(),
                     number: row.number.unwrap_or_default().to_string(),
+                    origin_owner_name: String::new(),
+                    origin_project_name: String::new(),
                     owner_name: project.owner_name,
                     project_name: project.project_name,
+                    project_logo_url: String::new(),
                     snippets,
                     state: issue_state_from_raw(row.state),
                     title,
@@ -272,11 +276,15 @@ impl AppRepositoryImpl<'_> {
                     author_label: display_name.clone(),
                     author_login_id: login_id.clone(),
                     created_label: format_workspace_date_label(row.created_date),
+                    due_date_until_label: String::new(),
                     href: format!("/users/{login_id}"),
                     id: row.id.to_string(),
                     number: String::new(),
+                    origin_owner_name: String::new(),
+                    origin_project_name: String::new(),
                     owner_name: String::new(),
                     project_name: String::new(),
+                    project_logo_url: String::new(),
                     snippets,
                     state: row.state.unwrap_or_default(),
                     title: display_name,
@@ -320,6 +328,11 @@ impl AppRepositoryImpl<'_> {
             let snippets = self.search_snippets(&title, &overview, &input.keyword);
             let score = relevance_score(&title, &overview, &input.keyword);
             let ordinal = ranked_items.len();
+            let origin_project = if let Some(original_project_id) = project.original_project_id {
+                self.read_project_by_id(original_project_id).await?
+            } else {
+                None
+            };
             ranked_items.push((
                 score,
                 ordinal,
@@ -327,11 +340,21 @@ impl AppRepositoryImpl<'_> {
                     author_label: project.owner_name.clone(),
                     author_login_id: project.owner_name.clone(),
                     created_label: format_workspace_date_label(project.created_date),
+                    due_date_until_label: String::new(),
                     href: format!("/{}/{}", project.owner_name, project.project_name),
                     id: project.id.to_string(),
                     number: String::new(),
+                    origin_owner_name: origin_project
+                        .as_ref()
+                        .map(|project| project.owner_name.clone())
+                        .unwrap_or_default(),
+                    origin_project_name: origin_project
+                        .as_ref()
+                        .map(|project| project.project_name.clone())
+                        .unwrap_or_default(),
                     owner_name: project.owner_name,
                     project_name: project.project_name,
+                    project_logo_url: String::new(),
                     snippets,
                     state: project.project_scope,
                     title,
@@ -386,6 +409,7 @@ impl AppRepositoryImpl<'_> {
                     author_label: row.author_name.unwrap_or_default(),
                     author_login_id: row.author_login_id.unwrap_or_default(),
                     created_label: format_workspace_date_label(row.created_date),
+                    due_date_until_label: String::new(),
                     href: format!(
                         "/{}/{}/post/{}",
                         project.owner_name,
@@ -394,8 +418,11 @@ impl AppRepositoryImpl<'_> {
                     ),
                     id: row.id.to_string(),
                     number: row.number.unwrap_or_default().to_string(),
+                    origin_owner_name: String::new(),
+                    origin_project_name: String::new(),
                     owner_name: project.owner_name,
                     project_name: project.project_name,
+                    project_logo_url: String::new(),
                     snippets,
                     state: String::new(),
                     title,
@@ -454,14 +481,18 @@ impl AppRepositoryImpl<'_> {
                     author_label: String::new(),
                     author_login_id: String::new(),
                     created_label: String::new(),
+                    due_date_until_label: format_legacy_milestone_until_label(row.due_date),
                     href: format!(
                         "/{}/{}/milestone/{}",
                         project.owner_name, project.project_name, row.id
                     ),
                     id: row.id.to_string(),
                     number: row.id.to_string(),
+                    origin_owner_name: String::new(),
+                    origin_project_name: String::new(),
                     owner_name: project.owner_name,
                     project_name: project.project_name,
+                    project_logo_url: String::new(),
                     snippets,
                     state: issue_state_from_raw(row.state),
                     title,
@@ -523,6 +554,7 @@ impl AppRepositoryImpl<'_> {
                     author_label: row.author_name.unwrap_or_default(),
                     author_login_id: row.author_login_id.unwrap_or_default(),
                     created_label: format_workspace_date_label(row.created_date),
+                    due_date_until_label: String::new(),
                     href: format!(
                         "/{}/{}/issue/{}#comment-{}",
                         project.owner_name,
@@ -532,8 +564,11 @@ impl AppRepositoryImpl<'_> {
                     ),
                     id: row.id.to_string(),
                     number: issue.number.unwrap_or_default().to_string(),
+                    origin_owner_name: String::new(),
+                    origin_project_name: String::new(),
                     owner_name: project.owner_name,
                     project_name: project.project_name,
+                    project_logo_url: String::new(),
                     snippets: make_snippets(&contents, &input.keyword, 40),
                     state: issue_state_from_raw(issue.state),
                     title,
@@ -598,6 +633,7 @@ impl AppRepositoryImpl<'_> {
                     author_label: row.author_name.unwrap_or_default(),
                     author_login_id: row.author_login_id.unwrap_or_default(),
                     created_label: format_workspace_date_label(row.created_date),
+                    due_date_until_label: String::new(),
                     href: format!(
                         "/{}/{}/post/{}#comment-{}",
                         project.owner_name,
@@ -607,8 +643,11 @@ impl AppRepositoryImpl<'_> {
                     ),
                     id: row.id.to_string(),
                     number: posting.number.unwrap_or_default().to_string(),
+                    origin_owner_name: String::new(),
+                    origin_project_name: String::new(),
                     owner_name: project.owner_name,
                     project_name: project.project_name,
+                    project_logo_url: String::new(),
                     snippets: make_snippets(&contents, &input.keyword, 40),
                     state: String::new(),
                     title,
@@ -684,6 +723,7 @@ impl AppRepositoryImpl<'_> {
                     author_label: row.author_name.unwrap_or_default(),
                     author_login_id: row.author_login_id.unwrap_or_default(),
                     created_label: format_workspace_date_label(row.created_date),
+                    due_date_until_label: String::new(),
                     href: format!(
                         "/{}/{}/pullRequest/{}#comment-{}",
                         project.owner_name,
@@ -693,8 +733,11 @@ impl AppRepositoryImpl<'_> {
                     ),
                     id: row.id.to_string(),
                     number: pull_request.number.unwrap_or_default().to_string(),
+                    origin_owner_name: String::new(),
+                    origin_project_name: String::new(),
                     owner_name: project.owner_name,
                     project_name: project.project_name,
+                    project_logo_url: String::new(),
                     snippets,
                     state: pull_request_state_from_raw(
                         pull_request.state,

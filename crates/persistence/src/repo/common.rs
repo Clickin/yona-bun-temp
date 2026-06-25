@@ -662,6 +662,22 @@ pub(super) fn format_workspace_date_label(value: Option<DateTime>) -> String {
         .unwrap_or_default()
 }
 
+pub(super) fn format_legacy_milestone_until_label(value: Option<DateTime>) -> String {
+    let Some(value) = value else {
+        return String::new();
+    };
+    let due_date = value.date();
+    let today = current_datetime().date();
+    let days = due_date.signed_duration_since(today).num_days();
+    if days == 0 {
+        "Today".to_string()
+    } else if days < 0 {
+        format!("{} days past", days.saturating_abs())
+    } else {
+        format!("{days} days left")
+    }
+}
+
 pub(super) fn format_legacy_datetime_title(value: Option<DateTime>) -> String {
     value
         .map(|value| value.format("%Y-%m-%d %-I:%M:%S %p").to_string())

@@ -489,7 +489,13 @@ export interface ProjectIssueDetailViewModel {
     kind: string;
     newValue: string;
     oldValue: string;
+    resourceHref?: string;
+    resourceLabel?: string;
+    resourceTitle?: string;
     senderLoginId: string;
+    senderLabel?: string;
+    targetLoginId?: string;
+    targetLabel?: string;
   }>;
   title: string;
   viewerCanComment: boolean;
@@ -511,13 +517,29 @@ export interface ProjectIssueDetailViewModel {
 }
 
 export interface ProjectMilestoneIssueViewModel {
+  assigneeAvatarUrl?: string;
   assigneeLabel: string;
+  assigneeLoginId?: string;
+  authorLabel?: string;
+  authorLoginId?: string;
+  childClosedCount?: number;
+  childOpenCount?: number;
   commentCount: number;
+  dueDateLabel?: string;
+  dueDateOverdue?: boolean;
+  id?: number;
   issueNumber: number;
   labels: Array<{ color: string; id: number; name: string }>;
+  milestoneId?: number;
+  milestoneTitle?: string;
+  parentIssueNumber?: number;
+  parentIssueTitle?: string;
   state: string;
   title: string;
   updatedLabel: string;
+  voterCount?: number;
+  watcherCount?: number;
+  weight?: number;
 }
 
 export interface ProjectMilestoneViewModel {

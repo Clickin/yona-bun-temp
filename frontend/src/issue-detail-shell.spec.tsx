@@ -673,7 +673,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(writableHtml).toContain('name="contents"');
     expect(writableHtml).toContain('data-editor-mode="comment-body"');
     expect(writableHtml).toContain('class="temporaryUploadFiles"');
-    expect(writableHtml).toContain('data-resourcetype="ISSUE_COMMENT"');
+    expect(writableHtml).toContain('data-resource-type="ISSUE_COMMENT"');
     expect(writableHtml).toContain('id="dynamic-comment-btn"');
     expect(writableHtml).toContain("Add a comment");
     expect(writableHtml).not.toContain("Leave a comment");
@@ -807,6 +807,31 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
             },
             {
               createdLabel: "now",
+              eventType: "ISSUE_ASSIGNEE_CHANGED",
+              id: 20,
+              kind: "event",
+              newValue: "2",
+              oldValue: "",
+              senderLabel: "Owner User",
+              senderLoginId: "owner",
+              targetLabel: "Assignee User",
+              targetLoginId: "assignee",
+            },
+            {
+              createdLabel: "now",
+              eventType: "ISSUE_MILESTONE_CHANGED",
+              id: 21,
+              kind: "event",
+              newValue: "7",
+              oldValue: "",
+              resourceHref: "/owner/repo/milestone/7",
+              resourceLabel: "Sprint 1",
+              resourceTitle: "milestone",
+              senderLabel: "Owner User",
+              senderLoginId: "owner",
+            },
+            {
+              createdLabel: "now",
               eventType: "ISSUE_BODY_CHANGED",
               id: 19,
               kind: "event",
@@ -823,16 +848,50 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="event" id="event-17"');
     expect(html).toContain('class="state closed"');
     expect(html).toContain(">Closed</span>");
-    expect(html).toContain(">owner closed this issue</a>");
+    expect(html).toContain("<strong>owner</strong></a> closed this issue");
     expect(html).not.toContain("issue.event.closed");
     expect(html).toContain('href="/yona/owner"');
     expect(html).toContain('class="date"><a href="#event-17">1 minute ago</a></span>');
     expect(html).toContain('class="event" id="event-18"');
     expect(html).toContain('class="state label-added"');
     expect(html).toContain(">Added</span>");
-    expect(html).toContain(">owner added bug label</a>");
+    expect(html).toContain("<strong>owner</strong></a> added ");
+    expect(html).toContain('<div class="label issue-label">bug</div>');
     expect(html).not.toContain("issue.event.label.added");
+    expect(html).toContain('class="event" id="event-20"');
+    expect(html).toContain('href="/yona/assignee"');
+    expect(html).toContain("<strong>Owner User</strong></a> assigned this issue to ");
+    expect(html).toContain("<strong>Assignee User</strong></a>");
+    expect(html).toContain('class="event" id="event-21"');
+    expect(html).toContain('href="/yona/owner/repo/milestone/7"');
+    expect(html).toContain(">Sprint 1</a>");
     expect(html).not.toContain('id="event-19"');
+  });
+
+  it("renders the legacy issue and comment uploader shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          viewerCanComment: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('class="upload-wrap content-footer"');
+    expect(html).toContain('data-resource-type="ISSUE_COMMENT"');
+    expect(html).toContain('class="help help-droppable"');
+    expect(html).toContain('class="nbtn medium white fake-file-wrap"');
+    expect(html).toContain('class="yobicon-upload"');
+    expect(html).toContain('name="filePath"');
+    expect(html).toContain('multiple=""');
+    expect(html).toContain('class="attached-files unstyled"');
+    expect(html).toContain("Drag &amp; Drop files to attach here or");
+    expect(html).toContain("Click upload button");
+    expect(html).toContain("Paste the clipboard image");
+    expect(html).toContain("Selected file will be attached when your comment is saved.");
   });
 
   it("renders the legacy inline issue metadata update form", () => {

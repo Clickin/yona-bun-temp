@@ -10,8 +10,8 @@ use yoram_search::SearchType;
 
 use crate::{
     decode_query_component, internal_error, normalize_identifier, parse_rest_query_u32,
-    persistence, require_project_read, PilotBackend, PilotRepository, PilotServiceImpl,
-    RestRouteError,
+    persistence, project_logo_url, require_project_read, PilotBackend, PilotRepository,
+    PilotServiceImpl, RestRouteError,
 };
 
 pub(crate) fn routes(service: PilotServiceImpl) -> Router {
@@ -119,6 +119,7 @@ async fn rest_search_global(
         .and_then(|session| session.user_id);
     rest_search_with_input(
         repository,
+        &service.base_path,
         persistence::SearchRepositoryInput {
             actor_id,
             keyword: query.keyword,
@@ -164,6 +165,7 @@ async fn rest_search_project(
         .map_err(RestRouteError::from_connect_error)?;
     rest_search_with_input(
         repository,
+        &service.base_path,
         persistence::SearchRepositoryInput {
             actor_id,
             keyword: query.keyword,
@@ -208,6 +210,7 @@ async fn rest_search_organization(
         .ok_or_else(|| RestRouteError::not_found("organization not found"))?;
     rest_search_with_input(
         repository,
+        &service.base_path,
         persistence::SearchRepositoryInput {
             actor_id,
             keyword: query.keyword,
@@ -225,13 +228,28 @@ async fn rest_search_organization(
 
 async fn rest_search_with_input(
     repository: &PilotRepository,
+    base_path: &str,
     input: persistence::SearchRepositoryInput,
 ) -> Result<Json<persistence::SearchResultRecord>, RestRouteError> {
-    repository
+    let mut result = repository
         .search_app(input)
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
-        .map(Json)
-        .ok_or_else(|| RestRouteError::not_found("search scope not found"))
+        .ok_or_else(|| RestRouteError::not_found("search scope not found"))?;
+
+    for item in result
+        .items
+        .iter_mut()
+        .filter(|item| item.r#type == "project")
+    {
+        let Ok(project_id) = item.id.parse::<i64>() else {
+            continue;
+        };
+        item.project_logo_url = project_logo_url(repository, base_path, project_id)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    }
+
+    Ok(Json(result))
 }

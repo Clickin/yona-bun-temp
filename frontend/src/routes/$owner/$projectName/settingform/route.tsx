@@ -1,5 +1,10 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  readCodeBranches,
+  setDefaultCodeBranchRest,
+  type CodeBranchListResponse,
+} from "../../../../api/code-branches";
 import { readProjectSettings, updateProject } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { ProjectSettingsPage } from "../../../-project-views";
@@ -24,6 +29,7 @@ function ProjectSettingsRouteComponent() {
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
+  const [branchList, setBranchList] = React.useState<CodeBranchListResponse | null>(null);
   const routeHref = `/${owner}/${projectName}/settingform`;
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
@@ -39,7 +45,19 @@ function ProjectSettingsRouteComponent() {
       try {
         const nextDetail = await readProjectSettings(runtimeConfig, owner, projectName);
         if (!cancelled) {
-          setDetail(toProjectContainerView(nextDetail));
+          const nextView = toProjectContainerView(nextDetail);
+          setDetail(nextView);
+          if (nextView.showCode !== false && (!nextView.vcs || nextView.vcs === "GIT")) {
+            const nextBranchList = await readCodeBranches(runtimeConfig, {
+              ownerName: owner,
+              projectName,
+            });
+            if (!cancelled) {
+              setBranchList(nextBranchList);
+            }
+          } else {
+            setBranchList(null);
+          }
         }
       } catch (error) {
         if (cancelled) {
@@ -78,6 +96,8 @@ function ProjectSettingsRouteComponent() {
   return (
     <ProjectSettingsPage
       detail={detail}
+      defaultBranch={branchList?.defaultBranch}
+      defaultBranchOptions={branchList?.branches ?? []}
       messages={messages}
       runtimeConfig={runtimeConfig}
       onUpdateProjectSettings={async (input) => {
@@ -87,12 +107,34 @@ function ProjectSettingsRouteComponent() {
             currentOwnerName: owner,
             currentProjectName: projectName,
           });
+          if (
+            input.defaultBranch &&
+            branchList?.defaultBranch &&
+            input.defaultBranch !== branchList.defaultBranch
+          ) {
+            await setDefaultCodeBranchRest(runtimeConfig, csrfToken, {
+              branchName: input.defaultBranch,
+              ownerName: updated.ownerName,
+              projectName: updated.projectName,
+            });
+          }
           const nextDetail = await readProjectSettings(
             runtimeConfig,
             updated.ownerName,
             updated.projectName,
           );
-          setDetail(toProjectContainerView(nextDetail));
+          const nextView = toProjectContainerView(nextDetail);
+          setDetail(nextView);
+          if (nextView.showCode !== false && (!nextView.vcs || nextView.vcs === "GIT")) {
+            setBranchList(
+              await readCodeBranches(runtimeConfig, {
+                ownerName: updated.ownerName,
+                projectName: updated.projectName,
+              }),
+            );
+          } else {
+            setBranchList(null);
+          }
           navigateToAppHref(
             runtimeConfig.basePath,
             `/${nextDetail.ownerName}/${nextDetail.projectName}/settingform`,

@@ -4,8 +4,8 @@ use http_body_util::BodyExt;
 use sea_orm::Database;
 use serde_json::json;
 use tower::ServiceExt;
-use yoram_persistence::AppRepository;
 use yoram_migration::Migrator;
+use yoram_persistence::AppRepository;
 use yoram_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
@@ -161,6 +161,19 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     let milestone_id = created["milestone"]["id"].as_i64().unwrap();
     assert_eq!(created["milestone"]["title"], "v1.0");
     assert_eq!(created["milestone"]["dueDateLabel"], "2026-05-09");
+    assert_eq!(created["milestone"]["dueDateOverdue"], true);
+    assert!(created["milestone"]["untilLabel"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("days past"));
+    assert_eq!(
+        created["milestone"]["contentsMarkdown"],
+        "Ship **parity** @guest @owner/projectYobi @nforge @nforge/yobi <script>alert(1)</script>"
+    );
+    assert!(created["milestone"]["attachments"]
+        .as_array()
+        .unwrap()
+        .is_empty());
     assert_eq!(
         created["milestone"]["contentsHtml"].as_str().unwrap_or(""),
         ""
@@ -256,6 +269,21 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     assert_eq!(listed["milestones"][0]["openIssueCount"], 1);
     assert_eq!(listed["milestones"][0]["closedIssueCount"], 1);
     assert_eq!(listed["milestones"][0]["completionPercent"], 50);
+    assert_eq!(listed["milestones"][0]["dueDateOverdue"], true);
+    assert!(listed["milestones"][0]["untilLabel"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("days past"));
+    assert_eq!(
+        listed["milestones"][0]["openIssues"][0]["title"],
+        "Open milestone issue"
+    );
+    assert_eq!(
+        listed["milestones"][0]["closedIssues"][0]["title"],
+        "Closed milestone issue"
+    );
+    assert_eq!(listed["milestones"][0]["openIssues"][0]["commentCount"], 0);
+    assert!(listed["milestones"][0]["openIssues"][0]["labels"].is_array());
 
     let detail = response_json(
         rpc(
@@ -274,6 +302,12 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     .await;
     assert_eq!(detail["milestone"]["openIssueCount"], 1);
     assert_eq!(detail["milestone"]["closedIssueCount"], 1);
+    assert_eq!(
+        detail["milestone"]["contentsMarkdown"],
+        created["milestone"]["contentsMarkdown"]
+    );
+    assert_eq!(detail["milestone"]["openIssues"][0]["issueNumber"], 1);
+    assert_eq!(detail["milestone"]["closedIssues"][0]["issueNumber"], 2);
 
     let updated = response_json(
         rpc(

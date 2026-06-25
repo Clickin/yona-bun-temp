@@ -1051,7 +1051,13 @@ pub(super) async fn legacy_external_issue_events_result(
             id,
             new_value,
             old_value,
+            resource_href: _,
+            resource_label: _,
+            resource_title: _,
             sender_login_id,
+            sender_label: _,
+            target_login_id: _,
+            target_label: _,
         } = item
         else {
             continue;

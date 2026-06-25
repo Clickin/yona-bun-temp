@@ -10,12 +10,12 @@ use std::path::Path;
 use std::time::{Duration, SystemTime};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yoram_persistence::{
-    comment_thread, pull_request, review_comment, AppRepository, CreateIssueCommentInput,
-    CreateIssueInput, CreatePostingCommentInput, CreatePostingInput, IssueMutationInput,
-    MilestoneMutationInput, PostingMutationInput,
-};
 use yoram_migration::Migrator;
+use yoram_persistence::{
+    comment_thread, pull_request, review_comment, AppRepository, CreateForkProjectInput,
+    CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput, CreatePostingInput,
+    IssueMutationInput, MilestoneMutationInput, PostingMutationInput,
+};
 use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
     AppRuntimeConfig, RuntimeConfig,
@@ -590,6 +590,59 @@ async fn global_project_search_matches_legacy_anonymous_public_private_acl() {
         "/owner/publicProjectAclNeedle"
     );
     assert_eq!(anonymous["items"][0]["state"], "public");
+}
+
+#[tokio::test]
+async fn project_search_rows_include_legacy_fork_origin_metadata() {
+    let data_dir = tempdir().expect("yona data tempdir");
+    let (app, repo, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "originForkMetaNeedle",
+        "public",
+    )
+    .await;
+    let origin = repo
+        .read_project_by_owner_and_name("owner", "originForkMetaNeedle")
+        .await
+        .unwrap()
+        .expect("origin project");
+    repo.create_fork_project(CreateForkProjectInput {
+        organization_id: None,
+        original_project_id: origin.id,
+        owner_name: "owner".to_string(),
+        overview: Some("ForkMetaNeedle fork overview".to_string()),
+        project_name: "forkForkMetaNeedle".to_string(),
+        project_scope: "public".to_string(),
+        vcs: "GIT".to_string(),
+    })
+    .await
+    .unwrap();
+
+    let payload = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=ForkMetaNeedle&searchType=project&pageNum=1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    let fork = payload["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["projectName"] == "forkForkMetaNeedle")
+        .expect("fork project search row");
+    assert_eq!(fork["originOwnerName"], "owner");
+    assert_eq!(fork["originProjectName"], "originForkMetaNeedle");
+    assert!(fork["projectLogoUrl"]
+        .as_str()
+        .unwrap_or_default()
+        .is_empty());
 }
 
 #[tokio::test]
@@ -2210,6 +2263,7 @@ async fn milestone_search_visibility_matches_legacy_public_and_private_acl() {
         anonymous["items"][0]["title"],
         "MilestoneNeedle public milestone"
     );
+    assert_eq!(anonymous["items"][0]["dueDateUntilLabel"], "2 days past");
 
     let owner = response_json(
         rest_get(

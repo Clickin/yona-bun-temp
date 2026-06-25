@@ -1780,6 +1780,7 @@ export async function updateProject(
     {
       ...projectMenuSettingsInput(input),
       defaultReviewerCount: input.defaultReviewerCount,
+      isCodeAccessibleMemberOnly: input.isCodeAccessibleMemberOnly,
       isUsingReviewerCount: input.isUsingReviewerCount,
       ownerName: input.ownerName ?? "",
       overview: input.overview ?? "",
@@ -1795,6 +1796,7 @@ type ProjectMenuSettingsInput = {
   code?: boolean;
   defaultReviewerCount?: number;
   issue?: boolean;
+  isCodeAccessibleMemberOnly?: boolean;
   isUsingReviewerCount?: boolean;
   milestone?: boolean;
   pullRequest?: boolean;

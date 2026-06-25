@@ -175,7 +175,19 @@ pub struct IssueTimelineItem {
     #[serde(default)]
     pub new_value: String,
     #[serde(default)]
+    pub resource_href: String,
+    #[serde(default)]
+    pub resource_label: String,
+    #[serde(default)]
+    pub resource_title: String,
+    #[serde(default)]
     pub sender_login_id: String,
+    #[serde(default)]
+    pub sender_label: String,
+    #[serde(default)]
+    pub target_login_id: String,
+    #[serde(default)]
+    pub target_label: String,
     #[serde(default)]
     pub created_label: String,
     pub comment: Option<IssueComment>,
@@ -192,6 +204,10 @@ pub struct IssueMilestone {
     pub state: String,
     #[serde(default)]
     pub due_date_label: String,
+    #[serde(default)]
+    pub due_date_overdue: bool,
+    #[serde(default)]
+    pub until_label: String,
     #[serde(default)]
     pub open_issue_count: u32,
     #[serde(default)]
@@ -591,6 +607,10 @@ pub struct ProjectMilestoneSummary {
     pub state: String,
     #[serde(default)]
     pub due_date_label: String,
+    #[serde(default)]
+    pub due_date_overdue: bool,
+    #[serde(default)]
+    pub until_label: String,
     #[serde(default)]
     pub open_issue_count: u32,
     #[serde(default)]
@@ -1470,6 +1490,8 @@ pub struct UpdateProjectRequest {
     #[serde(default)]
     pub current_project_name: String,
     #[serde(default)]
+    pub is_code_accessible_member_only: Option<bool>,
+    #[serde(default)]
     pub owner_name: String,
     #[serde(default)]
     pub project_name: String,
@@ -1816,14 +1838,14 @@ pub struct ProjectLabelDeleteResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ListProjectMilestonesResponse {
     #[serde(default)]
-    pub milestones: Vec<ProjectMilestoneSummary>,
+    pub milestones: Vec<IssueMilestone>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectMilestoneMutationResponse {
     #[serde(default)]
-    pub milestone: Option<ProjectMilestoneSummary>,
+    pub milestone: Option<IssueMilestone>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]

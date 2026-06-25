@@ -192,7 +192,13 @@ function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIs
       kind: item.kind ?? "",
       newValue: item.newValue ?? "",
       oldValue: item.oldValue ?? "",
+      resourceHref: item.resourceHref ?? "",
+      resourceLabel: item.resourceLabel ?? "",
+      resourceTitle: item.resourceTitle ?? "",
       senderLoginId: item.senderLoginId ?? "",
+      senderLabel: item.senderLabel ?? "",
+      targetLoginId: item.targetLoginId ?? "",
+      targetLabel: item.targetLabel ?? "",
       comment: item.comment
         ? {
             ...item.comment,

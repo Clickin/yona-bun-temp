@@ -84,10 +84,19 @@ describe("project settings parity", () => {
 
   it("renders the legacy project setting form shell and controls", () => {
     const html = renderToStaticMarkup(
-      <ProjectSettingsPage detail={projectDetail} runtimeConfig={runtimeConfig} />,
+      <ProjectSettingsPage
+        defaultBranch="main"
+        defaultBranchOptions={[{ name: "main" }, { name: "feature/settings" }]}
+        detail={projectDetail}
+        runtimeConfig={runtimeConfig}
+      />,
     );
     const viewSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-project-views.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/settingform/route.tsx"),
       "utf8",
     );
 
@@ -121,7 +130,17 @@ describe("project settings parity", () => {
     expect(html).toContain(">Edit</a>");
     expect(html).toContain('id="codeAccessibleMemberOnly"');
     expect(html).toContain('checked="" value="true"');
+    expect(html).not.toContain(
+      'id="codeAccessibleMemberOnly" name="isCodeAccessibleMemberOnly" readOnly',
+    );
     expect(html).toContain('id="reviewerCountSettingPanel"');
+    expect(html).toContain('id="defaultBranceSettingPanel"');
+    expect(html).toContain('id="project-default-branch"');
+    expect(html).toContain('name="defaultBranch"');
+    expect(html).toContain('data-toggle="select2"');
+    expect(html).toContain('data-format="branch"');
+    expect(html).toContain('<option value="main" selected="">main</option>');
+    expect(html).toContain('<option value="feature/settings">feature/settings</option>');
     expect(html).toContain('id="menuSettingCode"');
     expect(html).toContain('id="menuSettingPullRequest"');
     expect(html).toContain('id="save"');
@@ -129,6 +148,9 @@ describe("project settings parity", () => {
     expect(viewSource).toContain("event.preventDefault();");
     expect(viewSource).not.toContain("if (!props.onUpdateProjectSettings) {");
     expect(viewSource).toContain("props.onUpdateProjectSettings?.({");
+    expect(routeSource).toContain("readCodeBranches");
+    expect(routeSource).toContain("setDefaultCodeBranchRest");
+    expect(routeSource).toContain("input.defaultBranch !== branchList.defaultBranch");
   });
 
   it("preserves legacy visibility for protected and Git-only project setting controls", () => {
@@ -146,6 +168,8 @@ describe("project settings parity", () => {
     );
     const codeMenuOffHtml = renderToStaticMarkup(
       <ProjectSettingsPage
+        defaultBranch="main"
+        defaultBranchOptions={[{ name: "main" }, { name: "feature/settings" }]}
         detail={{ ...projectDetail, showCode: false }}
         runtimeConfig={runtimeConfig}
       />,

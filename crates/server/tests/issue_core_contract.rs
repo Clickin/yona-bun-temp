@@ -8,8 +8,8 @@ use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
 use yoram_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
-use yoram_persistence::AppRepository;
 use yoram_migration::Migrator;
+use yoram_persistence::AppRepository;
 use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
     AppRuntimeConfig, RuntimeConfig,
@@ -864,11 +864,18 @@ async fn issue_core_contract_enqueues_legacy_mass_update_state_assignee_mileston
     )
     .await;
     assert_eq!(first_after_assignee["assigneeLoginId"], "assigned");
-    assert!(first_after_assignee["timeline"]
+    let assignee_event = first_after_assignee["timeline"]
         .as_array()
         .unwrap()
         .iter()
-        .any(|item| item["eventType"] == "ISSUE_ASSIGNEE_CHANGED"));
+        .find(|item| {
+            item["eventType"] == "ISSUE_ASSIGNEE_CHANGED"
+                && item["targetLoginId"] == "assigned"
+        })
+        .expect("assignee changed timeline event");
+    assert_eq!(assignee_event["senderLoginId"], "owner");
+    assert_eq!(assignee_event["targetLoginId"], "assigned");
+    assert_eq!(assignee_event["targetLabel"], "assigned");
     clear_test_webhook_outbox();
 
     response_json(
@@ -915,11 +922,17 @@ async fn issue_core_contract_enqueues_legacy_mass_update_state_assignee_mileston
             .expect("issue milestone id"),
         milestone_id
     );
-    assert!(first_after_milestone["timeline"]
+    let milestone_event = first_after_milestone["timeline"]
         .as_array()
         .unwrap()
         .iter()
-        .any(|item| item["eventType"] == "ISSUE_MILESTONE_CHANGED"));
+        .find(|item| item["eventType"] == "ISSUE_MILESTONE_CHANGED")
+        .expect("milestone changed timeline event");
+    assert_eq!(
+        milestone_event["resourceHref"],
+        format!("/owner/projectYobi/milestone/{milestone_id}")
+    );
+    assert_eq!(milestone_event["resourceLabel"], "v1.0");
 
     clear_test_webhook_outbox();
 

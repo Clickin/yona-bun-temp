@@ -188,8 +188,11 @@ describe("search legacy i18n opt-in", () => {
       href: "/owner/projectYobi",
       id: "project-1",
       number: "",
+      originOwnerName: "upstream",
+      originProjectName: "originYobi",
       ownerName: "owner",
       projectName: "projectYobi",
+      projectLogoUrl: "/yona/files/77",
       snippets: [{ highlights: [{ end: 6, start: 0 }], text: "Needle project overview" }],
       state: "public",
       title: "owner/projectYobi",
@@ -197,7 +200,10 @@ describe("search legacy i18n opt-in", () => {
       updatedLabel: "2026-05-02",
     });
     expect(projectHtml).toContain('class="title project-link"');
-    expect(projectHtml).toContain("/yona/assets/images/project_default_logo.png");
+    expect(projectHtml).toContain('src="/yona/files/77"');
+    expect(projectHtml).toContain('class="search-meta-info nm np"');
+    expect(projectHtml).toContain("Forked from");
+    expect(projectHtml).toContain('href="/yona/upstream/originYobi"');
     expect(projectHtml).toContain('Create a project <strong title="2026-05-01">2026-05-01');
     expect(projectHtml).toContain('Latest code update <strong title="2026-05-02">2026-05-02');
 
@@ -214,10 +220,11 @@ describe("search legacy i18n opt-in", () => {
       state: "open",
       title: "Needle milestone",
       type: "milestone",
+      dueDateUntilLabel: "3 days left",
       updatedLabel: "2026-05-09",
     });
     expect(milestoneHtml).toContain('class="due-date meta-item"');
-    expect(milestoneHtml).toContain("Due Date <strong>2026-05-09</strong>");
+    expect(milestoneHtml).toContain("Due Date <strong>2026-05-09</strong> (3 days left)");
 
     for (const item of [
       {

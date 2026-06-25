@@ -751,7 +751,12 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('name="body"');
     expect(createHtml).toContain('data-editor-mode="content-body"');
     expect(createHtml).toContain("Template body");
-    expect(createHtml).toContain('data-resourcetype="ISSUE_POST"');
+    expect(createHtml).toContain('class="upload-wrap content-footer"');
+    expect(createHtml).toContain('data-resource-type="ISSUE_POST"');
+    expect(createHtml).toContain('class="help help-droppable"');
+    expect(createHtml).toContain('class="nbtn medium white fake-file-wrap"');
+    expect(createHtml).toContain('name="filePath"');
+    expect(createHtml).toContain('class="attached-files unstyled"');
     expect(createHtml).toContain('id="button-save"');
     expect(createHtml).toContain('class="ybtn ybtn-success"');
     expect(createHtml).toContain('id="draft-save-btn"');
@@ -1643,6 +1648,7 @@ describe("file-route parity harness", () => {
               state: "open",
               title: "Search milestone",
               type: "milestone",
+              dueDateUntilLabel: "Today",
               updatedLabel: "2026-05-18",
             },
           ],
@@ -1663,7 +1669,7 @@ describe("file-route parity harness", () => {
       'class="project-link meta-item" href="/yona/owner/projectYobi"',
     );
     expect(milestoneResultsHtml).toContain(
-      '<span class="due-date meta-item">Due Date <strong>2026-05-18</strong></span>',
+      '<span class="due-date meta-item">Due Date <strong>2026-05-18</strong> (Today)</span>',
     );
     expect(milestoneResultsHtml).not.toContain("label.dueDate");
     expect(milestoneResultsHtml).not.toContain(">issue.noAuthor</span>");
