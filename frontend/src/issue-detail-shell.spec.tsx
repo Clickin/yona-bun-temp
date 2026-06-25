@@ -229,6 +229,12 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('data-label-id="5"');
     expect(html).toContain('href="/yona/owner/projectYobi/issues?state=open&amp;labelIds=5"');
     expect(html).not.toContain('class="label issue-label list-label active"');
+    expect(html).toContain('class="hide" id="issue-1"');
+    expect(html).toContain(
+      'action="/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/content"',
+    );
+    expect(html).toContain("<textarea>Body **markdown** with `React`</textarea>");
+    expect(html).toContain('id="issue-body-1"');
     expect(html).toContain("<strong>markdown</strong>");
     expect(html).toContain("<code>React</code>");
   });

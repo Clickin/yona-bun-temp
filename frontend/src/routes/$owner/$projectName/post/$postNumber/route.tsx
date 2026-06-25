@@ -8,6 +8,7 @@ import {
   readProjectPostQueryOptions,
   unwatchPostRest,
   updatePostCommentRest,
+  updateProjectPostContentRest,
   watchPostRest,
 } from "../../../../../api/boards";
 import { apiQueryKeys } from "../../../../../api/query-keys";
@@ -150,6 +151,23 @@ function BoardDetailRouteComponent() {
           });
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() });
           navigateToAppHref(runtimeConfig.basePath, `/${owner}/${projectName}/posts`);
+        } catch (error) {
+          reportMutationError(error);
+        }
+      }}
+      onPostContentUpdate={async ({ nextMarkdown, originalMarkdown }) => {
+        try {
+          await updateProjectPostContentRest(runtimeConfig, csrfToken, {
+            content: nextMarkdown,
+            original: originalMarkdown,
+            ownerName: owner,
+            projectName,
+            postNumber,
+          });
+          await Promise.all([
+            postQuery.refetch(),
+            queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() }),
+          ]);
         } catch (error) {
           reportMutationError(error);
         }

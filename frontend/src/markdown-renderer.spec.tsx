@@ -8024,6 +8024,26 @@ describe("MarkdownRenderer", () => {
     expect(writableHtml).toContain('data-allowed-update="true"');
   });
 
+  it("renders writable task checkboxes with legacy indices for update callbacks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        data-allowed-update="true"
+        markdown={"- [ ] open\n- [x] done"}
+        onTasklistToggle={() => undefined}
+        showTasklistBar
+      />,
+    );
+
+    expect(html).toContain(
+      '<input class="task-list-item-checkbox" data-task-index="0" type="checkbox"/> open',
+    );
+    expect(html).toContain(
+      '<input class="task-list-item-checkbox" data-task-index="1" type="checkbox" checked=""/> done',
+    );
+    expect(html).not.toContain('class="task-list-item-checkbox" disabled=""');
+    expect(html).not.toContain('class="task-list-item-checkbox" data-task-index="0" readOnly=""');
+  });
+
   it("renders a complete tasklist progress bar as green like legacy", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- [x] done\n- [X] done upper"} showTasklistBar />,

@@ -10,7 +10,11 @@ import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attac
 import { translateLegacyResource } from "../api/translation";
 import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { LegacyMarkdownEditorShell, MarkdownRenderer } from "./-markdown-renderer";
+import {
+  LegacyMarkdownEditorShell,
+  MarkdownRenderer,
+  type MarkdownTasklistToggleInput,
+} from "./-markdown-renderer";
 import { OrganizationHeader, OrganizationMenu } from "./-organization-views";
 import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
 import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-view-models";
@@ -770,6 +774,7 @@ export function ProjectBoardDetailPage(props: {
     attachmentIds?: number[],
   ) => Promise<void>;
   onDeletePost?: () => Promise<void>;
+  onPostContentUpdate?: (input: MarkdownTasklistToggleInput) => Promise<void>;
   onWatchToggle?: () => Promise<void>;
 }) {
   const [commentDraft, setCommentDraft] = React.useState("");
@@ -936,7 +941,7 @@ export function ProjectBoardDetailPage(props: {
                     <form
                       action={prefixBasePath(
                         props.runtimeConfig.basePath,
-                        `/api/v1/projects/${post.ownerName}/${post.projectName}/posts/${post.postNumber}/content`,
+                        `/-_-api/v1/owners/${post.ownerName}/projects/${post.projectName}/posts/${post.postNumber}/content`,
                       )}
                     >
                       <textarea defaultValue={post.bodyMarkdown} />
@@ -952,7 +957,9 @@ export function ProjectBoardDetailPage(props: {
                       mentionReferences={post.mentionReferences}
                       ownerName={post.ownerName}
                       projectName={post.projectName}
+                      onTasklistToggle={props.onPostContentUpdate}
                       showTasklistBar
+                      tasklistSourceMarkdown={post.bodyMarkdown}
                     />
                   </div>
                 </>

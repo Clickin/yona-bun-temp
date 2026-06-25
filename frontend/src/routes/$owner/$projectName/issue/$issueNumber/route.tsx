@@ -23,7 +23,10 @@ import {
   voteIssueComment,
   watchIssue,
 } from "../../../../../auth-workspace-client";
-import { projectIssueReferencesQueryOptions } from "../../../../../api/issue-meta";
+import {
+  projectIssueReferencesQueryOptions,
+  updateIssueContentRest,
+} from "../../../../../api/issue-meta";
 import { useAppRuntime } from "../../../../../app-runtime-context";
 import { toProjectContainerView, toProjectIssueDetailView } from "../../../../../app-view-models";
 import { ProjectIssueDetailPage } from "../../../../-issue-views";
@@ -226,6 +229,22 @@ function IssueDetailRouteComponent() {
               }
             : current,
         );
+      }}
+      onIssueContentUpdate={async ({ nextMarkdown, originalMarkdown }) => {
+        await updateIssueContentRest(runtimeConfig, csrfToken, {
+          content: nextMarkdown,
+          issueNumber: BigInt(Number(issueNumber)),
+          original: originalMarkdown,
+          ownerName: owner,
+          projectName,
+        });
+        const nextIssue = await readIssueDetail(
+          runtimeConfig,
+          owner,
+          projectName,
+          Number(issueNumber),
+        );
+        setIssue(toProjectIssueDetailView(nextIssue));
       }}
       onStateChange={async (state) => {
         const nextIssue = await updateIssueState(runtimeConfig, csrfToken, {

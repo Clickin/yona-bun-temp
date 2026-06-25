@@ -2381,6 +2381,10 @@ describe("file-route parity harness", () => {
     expect(detailHtml).toContain('<div class="board-body row-fluid">');
     expect(detailHtml).toContain('<div class="span9 span-left-pane">');
     expect(detailHtml).toContain('<div class="author-info">');
+    expect(detailHtml).toContain('class="hide" id="post-16"');
+    expect(detailHtml).toContain(
+      'action="/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/16/content"',
+    );
     expect(detailHtml).toContain('class="content markdown-wrap"');
     expect(detailHtml).toContain('<div class="board-actrow right-txt board-actions">');
     expect(detailHtml).toContain('id="translate"');

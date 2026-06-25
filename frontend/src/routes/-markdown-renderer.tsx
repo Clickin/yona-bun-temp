@@ -76,8 +76,22 @@ type MarkdownContext = {
   projectName?: string;
   reactMarkdownReferenceDefinitions?: string;
   referenceMap?: Map<string, MarkdownReferenceDefinition>;
+  taskCheckboxIndex?: { current: number };
   taskCheckboxDisabled?: boolean;
+  tasklistSourceMarkdown?: string;
+  onTasklistToggle?: MarkdownTasklistToggleHandler;
 };
+
+export type MarkdownTasklistToggleInput = {
+  checked: boolean;
+  checkboxIndex: number;
+  nextMarkdown: string;
+  originalMarkdown: string;
+};
+
+export type MarkdownTasklistToggleHandler = (
+  input: MarkdownTasklistToggleInput,
+) => Promise<void> | void;
 
 type MarkdownBlockRecord = {
   key: string;
@@ -2172,12 +2186,37 @@ function MarkdownTaskCheckbox(props: { context?: MarkdownContext; item: Markdown
   if (!props.item.task) {
     return null;
   }
+  const checkboxIndex = props.context?.taskCheckboxIndex?.current ?? 0;
+  if (props.context?.taskCheckboxIndex) {
+    props.context.taskCheckboxIndex.current += 1;
+  }
+  const disabled = props.context?.taskCheckboxDisabled ?? true;
+  const onTasklistToggle = props.context?.onTasklistToggle;
+  const originalMarkdown = props.context?.tasklistSourceMarkdown ?? "";
   return (
     <input
       checked={props.item.checked}
       className="task-list-item-checkbox"
-      disabled={props.context?.taskCheckboxDisabled ?? true}
-      readOnly
+      data-task-index={!disabled && onTasklistToggle ? checkboxIndex : undefined}
+      disabled={disabled}
+      onChange={
+        !disabled && onTasklistToggle
+          ? (event) => {
+              const checked = event.currentTarget.checked;
+              void onTasklistToggle({
+                checked,
+                checkboxIndex,
+                nextMarkdown: toggleLegacyTasklistMarkdownItem(
+                  originalMarkdown,
+                  checkboxIndex,
+                  checked,
+                ),
+                originalMarkdown,
+              });
+            }
+          : undefined
+      }
+      readOnly={disabled || !onTasklistToggle}
       type="checkbox"
     />
   );
@@ -3495,11 +3534,36 @@ function reactMarkdownComponents(context: MarkdownContext): Components {
         (normalizedClassName === "task-list-item-checkbox" ||
           (checked !== undefined && disabled === true && Object.keys(rest).length === 0));
       if (isTaskListCheckbox) {
+        const checkboxIndex = context.taskCheckboxIndex?.current ?? 0;
+        if (context.taskCheckboxIndex) {
+          context.taskCheckboxIndex.current += 1;
+        }
+        const taskDisabled = context.taskCheckboxDisabled ?? disabled;
+        const onTasklistToggle = context.onTasklistToggle;
+        const originalMarkdown = context.tasklistSourceMarkdown ?? "";
         return (
           <input
             className="task-list-item-checkbox"
-            disabled={context.taskCheckboxDisabled ?? disabled}
-            readOnly
+            data-task-index={!taskDisabled && onTasklistToggle ? checkboxIndex : undefined}
+            disabled={taskDisabled}
+            onChange={
+              !taskDisabled && onTasklistToggle
+                ? (event) => {
+                    const nextChecked = event.currentTarget.checked;
+                    void onTasklistToggle({
+                      checked: nextChecked,
+                      checkboxIndex,
+                      nextMarkdown: toggleLegacyTasklistMarkdownItem(
+                        originalMarkdown,
+                        checkboxIndex,
+                        nextChecked,
+                      ),
+                      originalMarkdown,
+                    });
+                  }
+                : undefined
+            }
+            readOnly={taskDisabled || !onTasklistToggle}
             type="checkbox"
             checked={checked}
           />
@@ -6777,7 +6841,9 @@ export function MarkdownRenderer(props: {
   ownerName?: string;
   projectName?: string;
   breaks?: boolean;
+  onTasklistToggle?: MarkdownTasklistToggleHandler;
   showTasklistBar?: boolean;
+  tasklistSourceMarkdown?: string;
 }) {
   const parsedMarkdown = extractReferenceDefinitions(props.markdown);
   const blocks = paragraphBlocks(parsedMarkdown.markdown);
@@ -6822,7 +6888,10 @@ export function MarkdownRenderer(props: {
       parsedMarkdown.referenceMap,
     ),
     referenceMap: parsedMarkdown.referenceMap,
+    taskCheckboxIndex: { current: 0 },
     taskCheckboxDisabled: props["data-allowed-update"] !== "true",
+    tasklistSourceMarkdown: props.tasklistSourceMarkdown ?? props.markdown,
+    onTasklistToggle: props.onTasklistToggle,
   };
   const Container = props.containerElement ?? "div";
   if (blocks.length === 0) {

@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
+import { prefixBasePath } from "../runtime-config";
 import type { IssueReferenceMetadata, MentionReferenceMetadata } from "./issue-meta";
 import { normalizeIssueReferences, normalizeMentionReferences } from "./issue-meta";
 import { apiQueryKeys } from "./query-keys";
@@ -177,6 +178,14 @@ export type BoardPostUpdateInput = BoardPostMutationInput & {
   postNumber: number | string;
 };
 
+export type BoardPostContentUpdateInput = {
+  content: string;
+  original: string;
+  ownerName: string;
+  postNumber: number | string;
+  projectName: string;
+};
+
 export type BoardCommentInput = {
   attachmentIds?: Array<number | string>;
   contentsMarkdown: string;
@@ -200,6 +209,38 @@ function projectPostsPath(ownerName: string, projectName: string): string {
 
 function projectPostPath(ownerName: string, projectName: string, postNumber: number | string) {
   return `${projectPostsPath(ownerName, projectName)}/${String(postNumber)}`;
+}
+
+function legacyExternalPostContentPath(input: BoardPostContentUpdateInput): string {
+  return `/-_-api/v1/owners/${encodeURIComponent(input.ownerName)}/projects/${encodeURIComponent(
+    input.projectName,
+  )}/posts/${String(input.postNumber)}/content`;
+}
+
+async function parseLegacyJson(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (text.trim() === "") {
+    return undefined;
+  }
+  return JSON.parse(text) as unknown;
+}
+
+function legacyContentUpdateBody(input: { content: string; original: string }) {
+  return {
+    content: input.content,
+    original: input.original,
+  };
+}
+
+function legacyContentUpdateError(response: Response, payload: unknown): Error {
+  const message =
+    payload &&
+    typeof payload === "object" &&
+    "message" in payload &&
+    typeof payload.message === "string"
+      ? payload.message
+      : `REST request failed with ${response.status}.`;
+  return new Error(message);
 }
 
 function appendQueryParam(
@@ -583,6 +624,32 @@ export function updateProjectPostRest(
       method: "PATCH",
     },
   ).then(normalizePostDetail);
+}
+
+export async function updateProjectPostContentRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: BoardPostContentUpdateInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<unknown> {
+  const response = await fetchImpl(
+    prefixBasePath(runtimeConfig.basePath, legacyExternalPostContentPath(input)),
+    {
+      body: JSON.stringify(legacyContentUpdateBody(input)),
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+      },
+      method: "PATCH",
+    },
+  );
+  const payload = await parseLegacyJson(response);
+  if (!response.ok) {
+    throw legacyContentUpdateError(response, payload);
+  }
+  return payload;
 }
 
 export async function deleteProjectPostRest(

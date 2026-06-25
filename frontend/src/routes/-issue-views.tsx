@@ -11,12 +11,13 @@ import type {
 import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
 import { translateLegacyResource } from "../api/translation";
 import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
-import type { RuntimeConfig } from "../runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import {
   addLegacyTasklistTemplateFromButton,
   LegacyMarkdownEditorShell,
   LegacyMarkdownHelp,
   MarkdownRenderer,
+  type MarkdownTasklistToggleInput,
 } from "./-markdown-renderer";
 import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
 import type {
@@ -27,7 +28,6 @@ import type {
   ProjectMilestoneViewModel,
   UserIssueListViewModel,
 } from "./-view-models";
-import { prefixBasePath } from "../runtime-config";
 
 type IssueTimelineCommentViewModel = NonNullable<
   ProjectIssueDetailViewModel["timeline"][number]["comment"]
@@ -1471,6 +1471,7 @@ export function ProjectIssueDetailPage(props: {
   onCommentVoteToggle?: (commentId: number, viewerHasVoted: boolean) => Promise<void>;
   onDeleteIssue?: () => Promise<void>;
   onFavoriteToggle?: () => Promise<void>;
+  onIssueContentUpdate?: (input: MarkdownTasklistToggleInput) => Promise<void>;
   onShareIssue?: (loginId: string, targetType?: IssueAssignableUserItem["type"]) => Promise<void>;
   onIssueWeightChange?: (delta: 1 | -1) => Promise<void>;
   onStateChange?: (state: string) => Promise<void>;
@@ -1696,6 +1697,18 @@ export function ProjectIssueDetailPage(props: {
                   ) : null}
                 </a>
               </div>
+              {issue ? (
+                <div className="hide" id={`issue-${issue.issueNumber}`}>
+                  <form
+                    action={prefixBasePath(
+                      props.runtimeConfig.basePath,
+                      `/-_-api/v1/owners/${detail.ownerName}/projects/${detail.projectName}/issues/${issue.issueNumber}/content`,
+                    )}
+                  >
+                    <textarea defaultValue={issue.bodyMarkdown} />
+                  </form>
+                </div>
+              ) : null}
               <div id={issue ? `issue-body-${issue.issueNumber}` : undefined}>
                 <MarkdownRenderer
                   className="content markdown-wrap"
@@ -1706,7 +1719,9 @@ export function ProjectIssueDetailPage(props: {
                   mentionReferences={issue?.mentionReferences}
                   ownerName={detail.ownerName}
                   projectName={detail.projectName}
+                  onTasklistToggle={props.onIssueContentUpdate}
                   showTasklistBar
+                  tasklistSourceMarkdown={issue?.bodyMarkdown ?? ""}
                 />
               </div>
               <div className="attachments" id="attachments">
