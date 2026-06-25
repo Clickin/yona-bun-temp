@@ -230,8 +230,9 @@ describe("site-admin route parity harness", () => {
     const fallbackHtml = renderToStaticMarkup(<SiteAdminLoadingShell />);
 
     expect(fallbackHtml).toContain(
-      '<main class="app-shell site-admin-page"><h1>common.loading</h1></main>',
+      '<main class="app-shell site-admin-page"><h1>Loading</h1></main>',
     );
+    expect(fallbackHtml).not.toContain("<h1>common.loading</h1>");
 
     const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
     const englishHtml = renderToStaticMarkup(<SiteAdminLoadingShell messages={runtime.t} />);

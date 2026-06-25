@@ -39,7 +39,12 @@ import {
   type SiteUserState,
 } from "../../../api/site-admin";
 import { useAppRuntime } from "../../../app-runtime-context";
-import { type LegacyI18nContextValue, useLegacyMessages } from "../../../i18n";
+import {
+  LEGACY_DEFAULT_LANGUAGE,
+  lookupLegacyMessage,
+  type LegacyI18nContextValue,
+  useLegacyMessages,
+} from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   BadRequestPage,
@@ -87,7 +92,9 @@ function legacyMessage(
   args?: Array<number | string>,
   fallback = key,
 ): string {
-  return messages ? messages(key, { args, fallback }) : fallback;
+  return messages
+    ? messages(key, { args, fallback })
+    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { args, fallback });
 }
 
 function legacySiteAdminMessage(
