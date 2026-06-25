@@ -105,6 +105,92 @@ test("public user profile route preserves the legacy user view shell", async ({ 
   await expect(page.getByText("Edit Profile")).toHaveCount(0);
 });
 
+test("public user profile tabs preserve the legacy selected query state on click", async ({
+  page,
+}) => {
+  await page.route(/\/api\/v1\/users\/door\/profile(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        daysAgo: 7,
+        issueItems: [
+          {
+            assigneeLabel: "Door",
+            assigneeLoginId: "door",
+            authorLabel: "Door",
+            authorLoginId: "door",
+            commentCount: 0,
+            issueNumber: 11,
+            ownerName: "owner",
+            projectName: "publicYobi",
+            state: "open",
+            title: "Visible issue",
+            updatedLabel: "Jun 26, 2026",
+          },
+        ],
+        memberProjects: [
+          {
+            createdLabel: "May 16, 2026",
+            lastPushedLabel: "May 16, 2026",
+            memberCount: 2,
+            ownerName: "owner",
+            overview: "Visible member project",
+            projectName: "publicYobi",
+            projectScope: "public",
+            watchCount: 3,
+          },
+        ],
+        profile: {
+          avatarUrl: "",
+          connectedSocialProviders: [],
+          displayName: "Door",
+          englishName: "Door English",
+          isBlocked: false,
+          isSiteAdmin: false,
+          loginId: "door",
+          primaryEmailAddress: "",
+          sinceLabel: "May 16, 2026",
+        },
+        pullRequestItems: [
+          {
+            commentCount: 0,
+            contributorLabel: "Door",
+            contributorLoginId: "door",
+            ownerName: "owner",
+            projectName: "publicYobi",
+            pullRequestNumber: 3,
+            receiverLabel: "Owner",
+            receiverLoginId: "owner",
+            state: "open",
+            title: "Visible pull request",
+            updatedLabel: "Jun 26, 2026",
+          },
+        ],
+        selected: "projects",
+        viewerCanEditProfile: false,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/door?daysAgo=7&selected=projects");
+  await expect(page.locator(".nav.nav-tabs > li.active a[href='#projects']")).toBeVisible();
+  await expect(page.locator("#projects")).toHaveClass(/active/);
+  await expect(page.locator("#daysAgoBtn")).toHaveValue("7");
+
+  await page.locator(".nav.nav-tabs > li a[href='#pullRequests']").click();
+  await expect(page.locator(".nav.nav-tabs > li.active a[href='#pullRequests']")).toBeVisible();
+  await expect(page.locator("#pullRequests")).toHaveClass(/active/);
+  await expect(page.locator("#daysAgoBtn")).toHaveValue("7");
+  await expect(page).toHaveURL(/\/yona\/door\?daysAgo=7&selected=projects$/);
+
+  await page.locator(".nav.nav-tabs > li a[href='#issues']").click();
+  await expect(page.locator(".nav.nav-tabs > li.active a[href='#issues']")).toBeVisible();
+  await expect(page.locator("#issues")).toHaveClass(/active/);
+  await expect(page.locator("#daysAgoBtn")).toHaveValue("7");
+  await expect(page).toHaveURL(/\/yona\/door\?daysAgo=7&selected=projects$/);
+});
+
 test("organization names on the user profile endpoint redirect to the organization route", async ({
   page,
 }) => {
