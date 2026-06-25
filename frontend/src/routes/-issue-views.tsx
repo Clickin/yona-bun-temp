@@ -5538,7 +5538,7 @@ export function ProjectIssueFormPage(props: {
               </div>
               {validationMessage ? (
                 <div className="alert alert-error" role="alert">
-                  {validationMessage}
+                  {legacyMessage(messages, validationMessage)}
                 </div>
               ) : null}
             </form>

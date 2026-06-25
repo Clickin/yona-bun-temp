@@ -105,6 +105,11 @@ function IssueCreateRouteComponent() {
     return <BadRequestPage href={routeHref} />;
   }
 
+  const searchParams = new URLSearchParams(window.location.search);
+  const initialParentIssueId = Number(searchParams.get("parentIssueId") ?? 0);
+  const referCommentId =
+    searchParams.get("referCommentId") ?? searchParams.get("commentId") ?? undefined;
+
   return (
     <ProjectIssueFormPage
       csrfToken={csrfToken}
@@ -149,6 +154,7 @@ function IssueCreateRouteComponent() {
           ownerName: owner,
           parentIssueId: parentIssueId ? BigInt(parentIssueId) : undefined,
           projectName,
+          referCommentId,
           title,
         });
         navigateToAppHref(
@@ -156,10 +162,9 @@ function IssueCreateRouteComponent() {
           `/${owner}/${projectName}/issue/${Number(issue.issueNumber)}`,
         );
       }}
-      initialParentIssueId={Number(
-        new URLSearchParams(window.location.search).get("parentIssueId") ?? 0,
-      )}
+      initialParentIssueId={initialParentIssueId}
       parentIssueOptions={parentIssueOptions}
+      referCommentId={referCommentId}
       runtimeConfig={runtimeConfig}
     />
   );

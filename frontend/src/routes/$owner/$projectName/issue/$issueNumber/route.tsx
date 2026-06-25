@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
 import {
   assignIssue,
   createIssueComment,
@@ -54,6 +54,9 @@ function IssueDetailRouteComponent() {
   const { owner, projectName, issueNumber } = Route.useParams();
   const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issue/${issueNumber}`;
+  const isEditFormRoute = window.location.pathname
+    .replace(/\/+$/u, "")
+    .endsWith(`/issue/${issueNumber}/editform`);
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
@@ -101,7 +104,16 @@ function IssueDetailRouteComponent() {
     };
   }, [issueNumber, owner, projectName, runtimeConfig]);
 
-  React.useEffect(() => loadIssue(), [loadIssue]);
+  React.useEffect(() => {
+    if (!isEditFormRoute) {
+      return loadIssue();
+    }
+    return undefined;
+  }, [isEditFormRoute, loadIssue]);
+
+  if (isEditFormRoute) {
+    return <Outlet />;
+  }
 
   if (bootstrapping) {
     return (
