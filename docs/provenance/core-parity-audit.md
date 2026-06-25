@@ -424,6 +424,13 @@
   invalid or truncated very long SQL fenced blocks on the escaped plain-source
   code path instead of expanding into a giant paragraph/line-break tree or
   syntax-highlight spans. Focused evidence: `markdown-renderer.spec.tsx`.
+- 2026-06-25 markdown mention-boundary continuation: current-user comment
+  highlighting now follows the same legacy AutoLinkRenderer boundary as rendered
+  mentions. Raw Markdown fallback detection only treats `@loginId` tokens with
+  legacy non-word boundaries as a mention, while resolved mention metadata still
+  marks the current user. Plain substrings such as `ann` inside `banner` no
+  longer mark a comment as mentioning the viewer. Focused evidence:
+  `markdown-renderer.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks preserve only

@@ -84,6 +84,15 @@ function legacyMentionReferenceMatchesCurrentUser(
   );
 }
 
+function legacyRawMarkdownMentionsLoginId(markdown: string, loginId: string) {
+  if (!loginId) {
+    return false;
+  }
+  const escapedLoginId = loginId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const mentionPattern = new RegExp(`(^|[^\\w])@${escapedLoginId}(?=$|[^A-Za-z0-9_./가-힣-])`, "i");
+  return mentionPattern.test(markdown);
+}
+
 export function legacyCommentMentionsCurrentUser(
   markdown: string,
   currentUserLabel?: string,
@@ -95,11 +104,7 @@ export function legacyCommentMentionsCurrentUser(
   if (!label && !loginId) {
     return false;
   }
-  const normalizedMarkdown = markdown.toLowerCase();
-  if (
-    (label && normalizedMarkdown.includes(label)) ||
-    (loginId && normalizedMarkdown.includes(`@${loginId}`))
-  ) {
+  if (legacyRawMarkdownMentionsLoginId(markdown, loginId)) {
     return true;
   }
   return (mentionReferences ?? []).some((reference) =>

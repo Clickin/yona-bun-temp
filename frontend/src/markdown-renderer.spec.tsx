@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   insertLegacyTasklistTemplate,
+  legacyCommentMentionsCurrentUser,
   LegacyMarkdownEditorShell,
   LegacyMarkdownHelp,
   MarkdownRenderer,
@@ -5234,6 +5235,21 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain('class="no-text-decoration user-link" href="/yona/owner"');
     expect(html).toContain('class="no-text-decoration user-link me" href="/yona/yobi"');
+  });
+
+  it("detects current-user comment mentions with legacy AutoLinkRenderer boundaries", () => {
+    expect(legacyCommentMentionsCurrentUser("hello @yobi", "Yobi User", "yobi")).toBe(true);
+    expect(legacyCommentMentionsCurrentUser("hello (@yobi)", "Yobi User", "yobi")).toBe(true);
+    expect(legacyCommentMentionsCurrentUser("hello user@yobi", "Yobi User", "yobi")).toBe(false);
+    expect(legacyCommentMentionsCurrentUser("hello @yobi/project", "Yobi User", "yobi")).toBe(
+      false,
+    );
+    expect(legacyCommentMentionsCurrentUser("banner text only", "ann", "ann")).toBe(false);
+    expect(
+      legacyCommentMentionsCurrentUser("display name only", "Ann", "ann", [
+        { kind: "user", label: "Ann", loginId: "ann" },
+      ]),
+    ).toBe(true);
   });
 
   it("renders formatted text around Yona autolinks through ReactMarkdown", () => {
