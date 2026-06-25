@@ -93,6 +93,25 @@ test("full UI parity Gate A keeps one report for every active packet", () => {
   }
 });
 
+test("full UI parity phase stays a separate inventory-before-worker gate", () => {
+  const phasePlan = readText(phasePlanPath);
+  const objective = section(phasePlan, "Phase Objective");
+  const rules = section(phasePlan, "Phase Rule");
+  const executionModel = section(phasePlan, "Execution Model");
+  const parallelization = section(phasePlan, "Parallelization Plan");
+
+  assert.match(objective, /This document is the separate UI parity phase/);
+  assert.match(objective, /before broad RC\s+implementation resumes/);
+  assert.match(objective, /Split the inventory into subagent explorer packets/);
+  assert.match(objective, /Assign worker subagents only for concrete queued rows/);
+  assert.match(rules, /Parent must keep this phase as a separate UI-parity gate/);
+  assert.match(rules, /must not assign a worker from an isolated smoke-test failure alone/);
+  assert.match(executionModel, /Gate A is documentation-only inventory/);
+  assert.match(executionModel, /Gate B is bounded implementation/);
+  assert.match(parallelization, /Gate A documents the complete UI parity\s+inventory first/);
+  assert.match(parallelization, /Gate B distributes only the concrete queued rows/);
+});
+
 test("full UI parity Gate A reports have no open blocker summary rows", () => {
   const phasePlan = readText(phasePlanPath);
 

@@ -10,6 +10,23 @@ normal users should not notice route, layout, copy, interaction, permission
 state, form, modal, fragment-conversion, or Markdown rendering differences in
 the supported app-runtime scope.
 
+## Phase Objective
+
+This document is the separate UI parity phase. It must run before broad RC
+implementation resumes, and it exists to prevent ad-hoc smoke-test fixes from
+masking uninspected legacy pages or states.
+
+The required order is:
+
+1. Build the full route/state inventory from legacy Yona evidence, generated
+   audit outputs, and current Playwright/browser proof.
+2. Split the inventory into subagent explorer packets with report-only output.
+3. Consolidate every report into this phase's Audit Result Queue.
+4. Assign worker subagents only for concrete queued rows with disjoint write
+   scopes.
+5. Close the parent integration gate only after the reports, browser-visible
+   proof, contracts, and focused implementation checks are current.
+
 ## Source of Truth
 
 - Agent rules: `AGENTS.md`
@@ -29,6 +46,9 @@ the supported app-runtime scope.
   final integration.
 - Parent must keep this phase as a separate UI-parity gate. Do not mix it with
   RC feature improvement, performance work, or new capability planning.
+- Parent must not assign a worker from an isolated smoke-test failure alone.
+  The owning report row and Audit Result Queue row must exist first, unless the
+  patch is only restoring the evidence path needed to complete that report.
 - Subagents start as read-only explorers unless the parent assigns a disjoint
   write scope.
 - Explorer subagents write findings only into the report path assigned by the
@@ -493,6 +513,12 @@ Before this phase can close:
 
 ## Parent Integration Evidence
 
+- 2026-06-27 parent gate refresh: `node --test
+  tests/ui-parity-gate-a-contract.test.mjs
+  tests/rc-ux-checklist-contract.test.mjs` passed 11 tests, and
+  `pnpm test:dev-scripts` passed 72 tests after documenting the separate
+  inventory-before-worker UI parity phase objective and pinning that operating
+  model in the Gate A contract test.
 - 2026-06-26 parent gate refresh: `node --test
   tests/rc-ux-checklist-contract.test.mjs` passed 6 tests after the phase status
   cleanup.
