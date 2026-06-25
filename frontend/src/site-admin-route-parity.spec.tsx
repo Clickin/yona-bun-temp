@@ -126,21 +126,17 @@ describe("site-admin route parity harness", () => {
     expect(routeSource).toContain("legacySiteUserAdminMutationUri");
     expect(routeSource).toContain("legacySiteUserPasswordResetUri");
     expect(routeSource).toContain("legacySiteUserDeleteUri");
-    expect(routeSource).toContain(
-      "if (!onToggleGuest) {\n                return;\n              }",
-    );
-    expect(routeSource).toContain(
-      "if (!onToggleAccountLock) {\n                return;\n              }",
-    );
-    expect(routeSource).toContain(
-      "if (!onResetPassword) {\n                return;\n              }",
-    );
-    expect(routeSource).toContain(
-      "if (!onToggleSiteAdmin) {\n                return;\n              }",
-    );
-    expect(routeSource).toContain(
-      "if (!onRequestDelete) {\n                return;\n              }",
-    );
+    for (const callback of [
+      "onToggleGuest",
+      "onToggleAccountLock",
+      "onResetPassword",
+      "onToggleSiteAdmin",
+      "onRequestDelete",
+    ]) {
+      expect(routeSource).toContain(
+        `event.preventDefault();\n              if (!${callback}) {\n                return;\n              }`,
+      );
+    }
     expect(routeSource).toContain("BadRequestPage");
     expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("NotFoundPage");

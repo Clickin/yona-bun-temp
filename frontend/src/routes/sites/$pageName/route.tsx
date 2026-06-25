@@ -2329,10 +2329,10 @@ function SiteUserRow({
             )}
             type="button"
             onClick={(event) => {
+              event.preventDefault();
               if (!onToggleGuest) {
                 return;
               }
-              event.preventDefault();
               onToggleGuest(user.loginId);
             }}
           >
@@ -2353,10 +2353,10 @@ function SiteUserRow({
             )}
             type="button"
             onClick={(event) => {
+              event.preventDefault();
               if (!onToggleAccountLock) {
                 return;
               }
-              event.preventDefault();
               onToggleAccountLock(user.loginId);
             }}
           >
@@ -2374,10 +2374,10 @@ function SiteUserRow({
             id={user.loginId}
             type="button"
             onClick={(event) => {
+              event.preventDefault();
               if (!onResetPassword) {
                 return;
               }
-              event.preventDefault();
               onResetPassword(user.loginId);
             }}
           >
@@ -2394,10 +2394,10 @@ function SiteUserRow({
             data-request-uri={legacySiteUserAdminMutationUri(runtimeConfig, user.loginId)}
             type="button"
             onClick={(event) => {
+              event.preventDefault();
               if (!onToggleSiteAdmin) {
                 return;
               }
-              event.preventDefault();
               onToggleSiteAdmin(user.loginId);
             }}
           >
@@ -2416,10 +2416,10 @@ function SiteUserRow({
             disabled={pendingDelete}
             type="button"
             onClick={(event) => {
+              event.preventDefault();
               if (!onRequestDelete) {
                 return;
               }
-              event.preventDefault();
               onRequestDelete(user);
             }}
           >

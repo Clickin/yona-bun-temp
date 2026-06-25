@@ -448,6 +448,22 @@ describe("React form submit boundary", () => {
     }
   });
 
+  it("keeps site-admin user actions from falling back to legacy request hooks", () => {
+    const source = readRouteSource("routes/sites/$pageName/route.tsx");
+
+    for (const callback of [
+      "onToggleGuest",
+      "onToggleAccountLock",
+      "onResetPassword",
+      "onToggleSiteAdmin",
+      "onRequestDelete",
+    ]) {
+      expect(source).toContain(
+        `event.preventDefault();\n              if (!${callback}) {\n                return;\n              }`,
+      );
+    }
+  });
+
   it("keeps form buttons explicit about native submit behavior", () => {
     for (const element of formButtonElements()) {
       expect(element.tag, `${element.file}:${element.line}`).toMatch(/\btype\s*=/);
