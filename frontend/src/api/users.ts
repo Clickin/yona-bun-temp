@@ -150,12 +150,10 @@ export async function searchLegacyMemberUsers(
       method: "GET",
     },
   );
-  const text = await response.text();
-  const payload = text.trim() === "" ? [] : (JSON.parse(text) as unknown);
-
   if (!response.ok) {
     throw new Error(`Legacy users search failed with ${response.status}.`);
   }
+  const payload = response.status === 204 ? [] : await response.json().catch(() => []);
 
   return normalizeLegacyMemberUserSearchResponse(payload, response.headers.get("Content-Range"));
 }

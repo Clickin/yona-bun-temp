@@ -5156,7 +5156,7 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("props.onAddMember?.(detail.organizationName, loginId);");
     expect(viewSource).toContain("onSearchMemberUsers");
     expect(viewSource).toContain('className="typeahead dropdown-menu"');
-    expect(viewSource).toContain("dangerouslySetInnerHTML");
+    expect(viewSource).not.toContain("dangerouslySetInnerHTML");
     expect(viewSource).toContain('className="members project row-fluid"');
     expect(viewSource).toContain('data-action="apply"');
     expect(viewSource).toContain('data-action="delete"');

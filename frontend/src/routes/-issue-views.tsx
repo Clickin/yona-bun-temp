@@ -1490,11 +1490,10 @@ function IssueMassUpdateToolbar(props: {
         action="#"
         className="mass-update-form pull-left"
         id="mass-update-form"
-        method="post"
         onSubmit={(event) => event.preventDefault()}
       >
         <div className="btn-group check-all">
-          <label aria-label={legacyMessage(props.messages, "issue.selectAll")} htmlFor="check-all">
+          <label aria-label={legacyMessage(props.messages, "button.selectAll")} htmlFor="check-all">
             <input
               checked={props.totalCount > 0 && props.selectedCount === props.totalCount}
               data-selected-count={props.selectedCount}
@@ -2791,7 +2790,6 @@ export function ProjectIssueDetailPage(props: {
                     "issues",
                   )}
                   id="issueUpdateForm"
-                  method="post"
                   onSubmit={(event) => event.preventDefault()}
                 >
                   {issue ? (

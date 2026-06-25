@@ -777,13 +777,12 @@ describe("issue assignable user REST client", () => {
       }),
       ok: true,
       status: 200,
-      text: async () =>
-        JSON.stringify([
-          {
-            info: "<img class='mention_image' src='/avatar'><b class='mention_name'>Door</b><span class='mention_username'> @door</span>",
-            loginId: "door",
-          },
-        ]),
+      json: async () => [
+        {
+          info: "<img class='mention_image' src='/avatar'><b class='mention_name'>Door</b><span class='mention_username'> @door</span>",
+          loginId: "door",
+        },
+      ],
     }));
 
     const result = await searchLegacyMemberUsers(

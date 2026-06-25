@@ -1582,8 +1582,9 @@ export function OrganizationMembersPage(props: {
                           setLoginId(item.loginId);
                           setTypeaheadOpen(false);
                         }}
-                        dangerouslySetInnerHTML={{ __html: item.info }}
-                      />
+                      >
+                        {item.info}
+                      </a>
                     </li>
                   ))}
                 </ul>

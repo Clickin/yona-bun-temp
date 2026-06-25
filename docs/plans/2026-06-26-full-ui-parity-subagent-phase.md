@@ -384,6 +384,11 @@ Before this phase can close:
   the `/reviews` row-fidelity closure and report-summary reconciliation, with no
   remaining documented `gap`, `deviation`, or `weak evidence` count in the UI
   parity reports.
+- 2026-06-26 parent frontend boundary refresh: `pnpm --dir frontend test` passed
+  908 tests and `pnpm --dir frontend build` passed after closing stale native
+  form-submit markers, stale `issue.selectAll` message-key usage, organization
+  member typeahead `dangerouslySetInnerHTML`, and legacy users-search
+  `response.text()` parsing.
 
 ## Initial Delegation Prompts
 

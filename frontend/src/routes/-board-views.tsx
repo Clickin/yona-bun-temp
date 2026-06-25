@@ -463,6 +463,7 @@ function boardDetailLabels(props: {
           multiple
           name="labelIds"
           onChange={(event) => {
+            event.preventDefault();
             const labelIds = Array.from(event.currentTarget.selectedOptions).map(
               (option) => option.value,
             );

@@ -463,7 +463,7 @@ function LegacyMilestoneMassUpdateShell(props: {
         onSubmit={(event) => event.preventDefault()}
       >
         <div className="btn-group check-all">
-          <label aria-label={legacyMessage(props.messages, "issue.selectAll")} htmlFor="check-all">
+          <label aria-label={legacyMessage(props.messages, "button.selectAll")} htmlFor="check-all">
             <input data-target="checked-issue" id="check-all" type="checkbox" />
           </label>
         </div>
