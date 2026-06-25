@@ -4,18 +4,39 @@ import { describe, expect, it } from "vitest";
 
 const serverRenderedHtmlFieldAccessPattern =
   /\.(?:bodyHtml|contentsHtml|historyHtml|descriptionHtml|renderedHtml|markdownHtml)\b/;
+const serverRenderedHtmlCompatibilityFiles = new Set([
+  "api/boards.ts",
+  "api/code-commits.ts",
+  "api/issue-meta.ts",
+  "api/milestones.ts",
+  "api/pull-requests.ts",
+  "app-view-models.ts",
+]);
 
-function listRouteFiles(directory = path.resolve(__dirname, "routes")): string[] {
+function listSourceFiles(directory = __dirname): string[] {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(directory, entry.name);
     if (entry.isDirectory()) {
-      return listRouteFiles(entryPath);
+      return listSourceFiles(entryPath);
     }
-    if (!entry.isFile() || !entry.name.endsWith(".tsx")) {
+    if (!entry.isFile() || !/\.[cm]?[jt]sx?$/.test(entry.name)) {
       return [];
     }
     return [path.relative(__dirname, entryPath)];
   });
+}
+
+function listRenderSurfaceFiles() {
+  return listSourceFiles().filter(
+    (file) =>
+      !file.endsWith(".spec.ts") &&
+      !file.endsWith(".spec.tsx") &&
+      !file.endsWith(".test.ts") &&
+      !file.endsWith(".test.tsx") &&
+      !file.endsWith(".gen.ts") &&
+      !file.endsWith(".d.ts") &&
+      !serverRenderedHtmlCompatibilityFiles.has(file),
+  );
 }
 
 function readSource(relativePath: string) {
@@ -23,28 +44,22 @@ function readSource(relativePath: string) {
 }
 
 describe("Markdown render boundary", () => {
-  it("keeps React routes off server-rendered HTML fields", () => {
-    for (const file of listRouteFiles()) {
+  it("keeps React render surfaces off server-rendered HTML fields", () => {
+    for (const file of listRenderSurfaceFiles()) {
       const source = readSource(file);
       expect(source, file).not.toContain("dangerouslySetInnerHTML");
       expect(source, file).not.toMatch(serverRenderedHtmlFieldAccessPattern);
     }
   });
 
-  it("keeps server HTML compatibility fields in typed API mapping only", () => {
-    const apiSources = [
-      "api/boards.ts",
-      "api/code-commits.ts",
-      "api/issue-meta.ts",
-      "api/milestones.ts",
-      "api/pull-requests.ts",
-    ].map(readSource);
+  it("keeps server HTML compatibility fields in API/view-model mapping only", () => {
+    const compatibilitySources = Array.from(serverRenderedHtmlCompatibilityFiles, readSource);
 
-    for (const source of apiSources) {
+    for (const source of compatibilitySources) {
       expect(source).not.toContain("dangerouslySetInnerHTML");
     }
 
-    expect(apiSources.join("\n")).toContain("bodyHtml");
-    expect(apiSources.join("\n")).toContain("contentsHtml");
+    expect(compatibilitySources.join("\n")).toContain("bodyHtml");
+    expect(compatibilitySources.join("\n")).toContain("contentsHtml");
   });
 });
