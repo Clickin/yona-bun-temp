@@ -180,6 +180,14 @@ describe("legacy i18n runtime", () => {
     );
   });
 
+  it("uses legacy default messages for public home signup fallback without hardcoded templates", () => {
+    expect(lookupLegacyDefaultMessage("button.signup")).toBe("Sign up for {0}");
+
+    const homeSource = readFileSync(`${__dirname}/routes/-home-view.tsx`, "utf8");
+    expect(homeSource).toContain('lookupLegacyDefaultMessage("button.signup")');
+    expect(homeSource).not.toContain("fallback: `Sign up for ${siteName}`");
+  });
+
   it("uses browser preferred languages for initial state when they match configured legacy languages", () => {
     expect(resolveInitialLanguage(["en-US", "ko-KR"], ["ko-KR", "en-US"])).toBe("ko-KR");
     expect(resolveInitialLanguage(["en-US", "ko-KR"], ["fr-FR", "ko"])).toBe("ko-KR");

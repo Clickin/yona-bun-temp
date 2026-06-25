@@ -628,6 +628,7 @@ function ProjectKeymapHelp(props: {
   const isMac = projectKeymapIsMacintosh();
   const ctrlKey = isMac ? "\u2318" : "CTRL";
   const searchKeys = isMac ? ["CTRL", "ALT", "S"] : ["ALT", "S"];
+  const sectionTitleKey = projectKeymapSectionTitle(section, mode);
 
   return (
     <div className="pull-left" style={{ marginLeft: 55, padding: "10px 0" }}>
@@ -665,8 +666,8 @@ function ProjectKeymapHelp(props: {
             <div className="row-fluid">
               <div className="span5">
                 <h5>
-                  {messages.t(projectKeymapSectionTitle(section, mode), {
-                    fallback: projectKeymapSectionTitle(section, mode),
+                  {messages.t(sectionTitleKey, {
+                    fallback: sectionTitleKey,
                   })}
                 </h5>
                 {section === "board" ? (
