@@ -616,6 +616,23 @@ describe("auth and workspace views", () => {
     expect(source).toContain("onResetPassword?.({");
   });
 
+  it("routes auth form submits through REST JSON wrappers instead of legacy form posts", () => {
+    const routeContracts = [
+      ["routes/users/loginform/route.tsx", "signInWithPassword"],
+      ["routes/users/signupform/route.tsx", "registerWithPassword"],
+      ["routes/lostPassword/route.tsx", "requestPasswordReset"],
+      ["routes/resetPassword/route.tsx", "completePasswordReset"],
+    ] as const;
+
+    for (const [routeFile, restWrapper] of routeContracts) {
+      const source = fs.readFileSync(path.resolve(__dirname, routeFile), "utf8");
+      expect(source, routeFile).toContain(`import { ${restWrapper} }`);
+      expect(source, routeFile).toContain(`await ${restWrapper}(runtimeConfig, csrfToken, input)`);
+      expect(source, routeFile).not.toContain("fetch(");
+      expect(source, routeFile).not.toContain('method: "POST"');
+    }
+  });
+
   it("renders auth capability help copy when email verification or signup confirmation is enabled", () => {
     const loginHtml = renderLogin({
       authUiCapabilities: {
