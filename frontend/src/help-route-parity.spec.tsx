@@ -51,7 +51,8 @@ describe("legacy help route parity", () => {
 
     expect(html).toContain('class="site-breadcrumb-outer"');
     expect(html).toContain('class="site-breadcrumb-inner"');
-    expect(html).toContain("<h3>title.help</h3>");
+    expect(html).toContain("<h3>Help</h3>");
+    expect(html).not.toContain("<h3>title.help</h3>");
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="page-wrap"');
     expect(html).toContain('class="qas"');

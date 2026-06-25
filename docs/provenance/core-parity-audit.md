@@ -142,6 +142,9 @@
   lookup as other visible React surfaces: `common.loading` renders as the
   default legacy `Loading`, while provider-backed Korean rendering remains
   `불러오는 중`.
+- 2026-06-25 help route direct-render i18n continuation: anonymous `/_help`
+  direct rendering now expects the legacy default `title.help` value `Help`
+  while preserving Korean runtime lookup coverage for the same title.
 - 2026-06-25 root search form continuation: root navigation preserves the
   legacy `common/navbar.scala.html` global search anchors:
   `name="gnb-search-form"`, hidden `searchType=auto`, `keyword`, and
