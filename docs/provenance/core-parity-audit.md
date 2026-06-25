@@ -149,6 +149,11 @@
   watchers page direct-render parity check now expects legacy default message
   output for `project.watcher.title` and `project.watcher.description` instead
   of raw fallback keys.
+- 2026-06-25 issue/board/pr/milestone direct-render i18n continuation:
+  provider-less project issue, board, pull-request, milestone, project-create,
+  and Markdown help surfaces now resolve visible legacy keys through
+  `yona-original/conf/messages` default output instead of accepting raw key
+  leakage in direct-render parity tests.
 - 2026-06-25 root search form continuation: root navigation preserves the
   legacy `common/navbar.scala.html` global search anchors:
   `name="gnb-search-form"`, hidden `searchType=auto`, `keyword`, and

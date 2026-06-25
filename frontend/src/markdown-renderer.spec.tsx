@@ -15,7 +15,8 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain('class="markdown-help"');
     expect(html).toContain('class="markdown-help-nav"');
-    expect(html).toContain("title.markdown.help");
+    expect(html).toContain("Markdown help");
+    expect(html).not.toContain("title.markdown.help");
     expect(html).toContain('data-toggle="markdown-help"');
     expect(html).toContain('data-target="markdownHeaders"');
     expect(html).toContain('data-target="markdownShortLinks"');

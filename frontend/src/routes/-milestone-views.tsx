@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { LegacyI18nContextValue } from "../i18n";
+import { LEGACY_DEFAULT_LANGUAGE, lookupLegacyMessage, type LegacyI18nContextValue } from "../i18n";
 import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
 import { LegacyMarkdownEditorShell, MarkdownRenderer } from "./-markdown-renderer";
@@ -14,7 +14,9 @@ import type {
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
 function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
-  return messages ? messages(key, { fallback: key }) : key;
+  return messages
+    ? messages(key, { fallback: key })
+    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key);
 }
 
 function fallbackProjectDetail(ownerName: string, projectName: string): ProjectDetailViewModel {

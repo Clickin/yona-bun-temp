@@ -45,7 +45,8 @@ describe("project create parity", () => {
     const html = renderToStaticMarkup(<ProjectNewPage pending />);
 
     expect(html).toContain('<button class="ybtn ybtn-success" disabled="" type="submit">');
-    expect(html).toContain("project.create");
+    expect(html).toContain("Create a project");
+    expect(html).not.toContain("project.create");
     expect(html).not.toContain("Creating…");
   });
 
@@ -59,9 +60,16 @@ describe("project create parity", () => {
     expect(html).toContain('value="PROTECTED"');
     expect(html).toContain('id="private"');
     expect(html).toContain('checked="" value="PRIVATE"');
-    expect(html).toContain("project.public.notice");
-    expect(html).toContain("project.protected.notice");
-    expect(html).toContain("project.private.notice");
+    expect(html).toContain("Anonymous users are able to access the project.");
+    expect(html).toContain(
+      "Users in the group and also users who have been explicitly granted access are able to access the project.",
+    );
+    expect(html).toContain(
+      "Project access must be granted explicitly for each user, but basic information (name, description, etc.) can be exposed to public.",
+    );
+    expect(html).not.toContain("project.public.notice");
+    expect(html).not.toContain("project.protected.notice");
+    expect(html).not.toContain("project.private.notice");
     expect(html).not.toContain('<select name="projectScope"');
   });
 

@@ -8,7 +8,12 @@ import type {
 } from "../api/boards";
 import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
 import { translateLegacyResource } from "../api/translation";
-import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
+import {
+  LEGACY_DEFAULT_LANGUAGE,
+  lookupLegacyMessage,
+  useLegacyMessages,
+  type LegacyI18nContextValue,
+} from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import {
   legacyCommentMentionsCurrentUser,
@@ -24,7 +29,9 @@ import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-vie
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
 function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
-  return messages ? messages(key, { fallback: key }) : key;
+  return messages
+    ? messages(key, { fallback: key })
+    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key);
 }
 
 function boardProjectShellDetail(input: {

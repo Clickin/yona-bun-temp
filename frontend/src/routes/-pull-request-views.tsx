@@ -16,7 +16,7 @@ import type {
   ReviewThreadListQuery,
   ReviewThreadListResponse,
 } from "../api/pull-requests";
-import type { LegacyI18nContextValue } from "../i18n";
+import { LEGACY_DEFAULT_LANGUAGE, lookupLegacyMessage, type LegacyI18nContextValue } from "../i18n";
 import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
 import {
@@ -42,7 +42,7 @@ function legacyMessage(
   if (messages) {
     return messages(key, { args, fallback: fallbackText });
   }
-  return fallbackText;
+  return lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { args, fallback: fallbackText });
 }
 
 const LEGACY_ANONYMOUS_USER_NAME = "User.anonymous.name";

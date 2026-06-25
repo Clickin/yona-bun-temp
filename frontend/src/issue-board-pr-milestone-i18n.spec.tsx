@@ -295,30 +295,30 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     expect(runtime.t("post.update.error", { fallback: "post.update.error" })).toBe("입력값 오류");
   });
 
-  it("keeps legacy key fallbacks when rendered without AppRuntimeContext messages", () => {
+  it("uses legacy default messages when rendered without AppRuntimeContext messages", () => {
     const html = renderIssueBoardPrMilestoneControls();
 
-    expect(html).toContain(">issue.menu.new</a>");
-    expect(html).toContain(">issue.state.open");
-    expect(html).toContain(">issue.is.empty</p>");
-    expect(html).toContain('placeholder="project.searchPlaceholder"');
-    expect(html).toContain(">post.write</a>");
-    expect(html).toContain(">post.is.empty</p>");
-    expect(html).toContain(">pullRequest.state.open");
-    expect(html).toContain(">pullRequest.sent");
-    expect(html).toContain(">pullRequest.is.empty</p>");
-    expect(html).toContain('title="common.two.column.mode"');
-    expect(html).toContain('data-content="common.two.column.mode.desc"');
-    expect(html).toContain('class="two-column-mode-text">common.two.column.view</span>');
-    expect(html).toContain(">milestone.menu.new</a>");
-    expect(html).toContain(">milestone.is.empty</p>");
-    expect(html).toContain(">milestone.form.state</dt>");
-    expect(html).toContain(">button.save</button>");
+    expect(html).toContain(">New issue</a>");
+    expect(html).toContain(">Open");
+    expect(html).toContain(">No issue found</p>");
+    expect(html).toContain('placeholder="Search current project"');
+    expect(html).toContain(">New post</a>");
+    expect(html).toContain(">No post has been added.</p>");
+    expect(html).toContain(">Sent code");
+    expect(html).toContain(">No pull requests have been received</p>");
+    expect(html).toContain('title="Two Column Mode"');
+    expect(html).toContain('data-content="Splits list and body into columns respectively"');
+    expect(html).toContain('class="two-column-mode-text">Column View</span>');
+    expect(html).toContain(">New milestone</a>");
+    expect(html).toContain(">No milestone entered.</p>");
+    expect(html).toContain(">Milestone status</dt>");
+    expect(html).toContain(">Save</button>");
+    expect(html).not.toContain(">issue.menu.new</a>");
+    expect(html).not.toContain(">post.write</a>");
+    expect(html).not.toContain(">milestone.menu.new</a>");
 
     const reviewMetricsHtml = renderProjectPullRequestListWithReviewMetrics();
-    expect(reviewMetricsHtml).toContain(
-      'title="pullRequest.review.closed / pullRequest.review.total"',
-    );
+    expect(reviewMetricsHtml).toContain('title="Closed review / Total review"');
     expect(reviewMetricsHtml).not.toContain("pullRequest.reviewers");
   });
 
@@ -326,7 +326,8 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     const fallbackHtml = renderToStaticMarkup(
       <ProjectBoardDetailPage post={null} runtimeConfig={testRuntimeConfig} />,
     );
-    expect(fallbackHtml).toContain("<h1>common.loading</h1>");
+    expect(fallbackHtml).toContain("<h1>Loading</h1>");
+    expect(fallbackHtml).not.toContain("<h1>common.loading</h1>");
 
     const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
     runtime.setLanguage("ko-KR");
@@ -370,18 +371,19 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
   it("opts board detail auxiliary comment controls into legacy messages", () => {
     const fallbackHtml = renderBoardDetailCommentHelpers();
 
-    expect(fallbackHtml).toContain(">change.history</span>");
-    expect(fallbackHtml).toContain("<strong>common.comment</strong>");
-    expect(fallbackHtml).toContain('title="button.translation"');
-    expect(fallbackHtml).toContain('aria-label="common.comment.edit"');
-    expect(fallbackHtml).toContain('aria-label="common.comment.delete"');
-    expect(fallbackHtml).toContain(">post.unwatch</button>");
-    expect(fallbackHtml).toContain('aria-label="button.comment.new"');
+    expect(fallbackHtml).toContain(">Change history</span>");
+    expect(fallbackHtml).toContain("<strong>Comment</strong>");
+    expect(fallbackHtml).toContain('title="Translation"');
+    expect(fallbackHtml).toContain('aria-label="Edit comment"');
+    expect(fallbackHtml).toContain('aria-label="Delete comment"');
+    expect(fallbackHtml).toContain(">Stop watching</button>");
+    expect(fallbackHtml).toContain('aria-label="Add a comment"');
     expect(fallbackHtml).toContain('<span aria-hidden="true">OK</span>');
-    expect(fallbackHtml).toContain('<span class="sr-only">button.comment.new</span>');
-    expect(fallbackHtml).toContain(
-      'placeholder="comment.oneline.comment.placeholder (CTRL + ENTER)"',
-    );
+    expect(fallbackHtml).toContain('<span class="sr-only">Add a comment</span>');
+    expect(fallbackHtml).toContain('placeholder="Reply (CTRL + ENTER)"');
+    expect(fallbackHtml).not.toContain(">change.history</span>");
+    expect(fallbackHtml).not.toContain("<strong>common.comment</strong>");
+    expect(fallbackHtml).not.toContain(">post.unwatch</button>");
 
     const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
     runtime.setLanguage("ko-KR");
