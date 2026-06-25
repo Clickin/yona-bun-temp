@@ -110,6 +110,14 @@
   evidence: `auth-workspace-shell.spec.tsx`, `workspace-settings-i18n.spec.tsx`,
   `code-views.spec.tsx`, `project-code-browser-routing.spec.ts`,
   `i18n.spec.tsx`, and `pnpm --dir frontend check`.
+- 2026-06-25 provider-missing i18n fallback correction: React visible i18n
+  call sites still use the exact legacy message keys from
+  `yona-original/conf/messages*`; however the `useLegacyMessages()` default
+  context no longer returns the raw key when a component is rendered outside
+  `LegacyI18nProvider`. It now follows the same legacy default-message lookup
+  before falling back to the key, so provider boundary mistakes do not surface
+  raw values such as `title.no.results` in user-visible HTML. Focused evidence:
+  `frontend/src/i18n.spec.tsx`.
 - 2026-06-25 root search form continuation: root navigation preserves the
   legacy `common/navbar.scala.html` global search anchors:
   `name="gnb-search-form"`, hidden `searchType=auto`, `keyword`, and

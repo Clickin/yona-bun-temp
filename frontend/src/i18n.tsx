@@ -165,7 +165,7 @@ const fallbackI18n: LegacyI18nContextValue = {
   language: LEGACY_DEFAULT_LANGUAGE,
   setLanguage: () => {},
   supportedLanguages: [...LEGACY_LANGUAGE_CODES],
-  t: (key) => key,
+  t: (key, options) => lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, options),
 };
 
 const LegacyI18nContext = React.createContext<LegacyI18nContextValue>(fallbackI18n);

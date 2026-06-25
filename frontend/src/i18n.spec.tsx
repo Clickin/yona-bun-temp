@@ -180,7 +180,7 @@ describe("legacy i18n runtime", () => {
     expect(html).not.toContain("project.webhook.includeGitPush");
   });
 
-  it("keeps legacy keys outside an i18n provider", () => {
+  it("falls back through default legacy messages outside an i18n provider", () => {
     const html = renderToStaticMarkup(
       <LoginPage
         authUiCapabilities={{
@@ -193,9 +193,12 @@ describe("legacy i18n runtime", () => {
       />,
     );
 
-    expect(html).toContain(">title.loginFor<");
-    expect(html).toContain(">app.description<");
-    expect(html).toContain(">button.login<");
+    expect(html).toContain('Log in to <span class="highlight">Yona</span>');
+    expect(html).toContain(">Web-based platform for collaborative software development<");
+    expect(html).toContain(">Log in<");
+    expect(html).not.toContain(">title.loginFor<");
+    expect(html).not.toContain(">app.description<");
+    expect(html).not.toContain(">button.login<");
   });
 
   it("opts common runtime shell message keys into legacy lookup without adding UI", () => {
