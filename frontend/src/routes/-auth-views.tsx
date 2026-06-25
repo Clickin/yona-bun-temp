@@ -181,17 +181,12 @@ export function LoginPage({
   const passwordPlaceholder =
     authUiCapabilities?.passwordPlaceholder?.trim() ||
     messages.t("user.password", { fallback: "user.password" });
-  const authProvider = searchParams.get("provider")?.trim();
   const authError = searchParams.get("error");
   const authErrorMessage =
     authError === "unsupported"
-      ? authProvider
-        ? `auth.socialLogin.unsupportedProvider ${authProvider}`
-        : "auth.socialLogin.unsupportedProvider"
+      ? "error.badrequest"
       : authError === "oauthDenied"
-        ? authProvider
-          ? `auth.socialLogin.denied ${authProvider}`
-          : "auth.socialLogin.denied"
+        ? "error.forbidden.or.not.allowed"
         : null;
   const postSubmitMessage =
     searchParams.get("signup") === "requested"
@@ -214,7 +209,11 @@ export function LoginPage({
           </p>
         </div>
         <div className="login-form-wrap frm-wrap">
-          {authErrorMessage ? <div className="alert alert-error">{authErrorMessage}</div> : null}
+          {authErrorMessage ? (
+            <div className="alert alert-error">
+              {messages.t(authErrorMessage, { fallback: authErrorMessage })}
+            </div>
+          ) : null}
           {postSubmitMessage ? (
             <div className="alert alert-success">{postSubmitMessage}</div>
           ) : null}

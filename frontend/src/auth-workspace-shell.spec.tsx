@@ -590,8 +590,9 @@ describe("auth and workspace views", () => {
       routeHref: "/users/loginform?error=unsupported&provider=github",
     });
 
-    expect(html).toContain("auth.socialLogin.unsupportedProvider");
-    expect(html).toContain("github");
+    expect(html).toContain("error.badrequest");
+    expect(html).not.toContain("auth.socialLogin.unsupportedProvider");
+    expect(html).not.toContain("github");
     expect(html).not.toContain("Social login provider is not configured.");
   });
 
@@ -600,8 +601,9 @@ describe("auth and workspace views", () => {
       routeHref: "/users/loginform?error=oauthDenied&provider=github",
     });
 
-    expect(html).toContain("auth.socialLogin.denied");
-    expect(html).toContain("github");
+    expect(html).toContain("error.forbidden.or.not.allowed");
+    expect(html).not.toContain("auth.socialLogin.denied");
+    expect(html).not.toContain("github");
     expect(html).not.toContain("auth.socialLogin.unsupportedProvider");
   });
 

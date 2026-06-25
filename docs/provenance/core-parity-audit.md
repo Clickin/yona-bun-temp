@@ -141,6 +141,14 @@
   `frontend/src/code-views.spec.tsx`,
   `frontend/src/pull-request-review-i18n.spec.tsx`,
   `frontend/src/route-parity.spec.tsx`, and `pnpm --dir frontend check`.
+- 2026-06-25 auth OAuth warning key continuation: unsupported and denied
+  OAuth redirects still preserve the bounded `/users/loginform?error=...`
+  state, but the login warning no longer renders React-only
+  `auth.socialLogin.*` keys or provider-name suffixes. Unsupported providers
+  surface through legacy `error.badrequest`, and denied callbacks surface
+  through legacy `error.forbidden.or.not.allowed`, both via the React i18n
+  runtime. Focused evidence: `auth-workspace-shell.spec.tsx` and
+  `i18n.spec.tsx`.
 - 2026-06-25 legacy mention highlight continuation: board, issue, and pull
   request review comment rendering now reproduces the legacy
   `board/view.scala.html`, `issue/view.scala.html`, and `git/view.scala.html`
