@@ -1404,9 +1404,10 @@ export function ProjectBoardDetailPage(props: {
                                                   childComment.id,
                                                 )}
                                                 data-toggle="comment-delete"
-                                                onClick={() =>
-                                                  void props.onCommentDelete?.(childComment.id)
-                                                }
+                                                onClick={(event) => {
+                                                  event.preventDefault();
+                                                  void props.onCommentDelete?.(childComment.id);
+                                                }}
                                                 title={legacyMessage(
                                                   props.messages,
                                                   "common.comment.delete",

@@ -652,7 +652,10 @@ export function WorkspaceSettingsPage(props: {
                         props.runtimeConfig,
                         `/user/email/delete/${email.id}`,
                       )}
-                      onClick={() => props.onDeleteWorkspaceEmail?.(email.id)}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        props.onDeleteWorkspaceEmail?.(email.id);
+                      }}
                       type="button"
                     >
                       {legacyMessage(props.messages, "button.delete")}
@@ -665,7 +668,10 @@ export function WorkspaceSettingsPage(props: {
                           props.runtimeConfig,
                           `/user/email/setAsMain/${email.id}`,
                         )}
-                        onClick={() => props.onSetMainWorkspaceEmail?.(email.id)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          props.onSetMainWorkspaceEmail?.(email.id);
+                        }}
                         style={{ width: "150px" }}
                         type="button"
                       >
@@ -679,7 +685,10 @@ export function WorkspaceSettingsPage(props: {
                           props.runtimeConfig,
                           `/user/email/sendValidationEmail/${email.id}`,
                         )}
-                        onClick={() => props.onSendWorkspaceEmailValidation?.(email.id)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          props.onSendWorkspaceEmailValidation?.(email.id);
+                        }}
                         style={{ width: "150px" }}
                         type="button"
                       >

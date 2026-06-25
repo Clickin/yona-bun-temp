@@ -1639,7 +1639,10 @@ export function SiteAdminMassMailPage({
                     disabled={pending}
                     id="write-email"
                     type="button"
-                    onClick={resolveRecipients}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      resolveRecipients();
+                    }}
                   >
                     <strong>{legacyMessage(messages, "site.mail.write")}</strong>
                   </button>
@@ -2480,10 +2483,10 @@ function SiteDeleteUserModal({
           id="accountToggleBtn"
           type="button"
           onClick={(event) => {
+            event.preventDefault();
             if (!onConfirm) {
               return;
             }
-            event.preventDefault();
             if (user !== null) {
               onConfirm(user.loginId);
             }

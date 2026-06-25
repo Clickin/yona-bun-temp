@@ -459,9 +459,12 @@
   `cargo check -p yoram-server`.
 - 2026-06-25 data-request guard continuation: the React submit boundary guard now
   covers legacy `data-request-uri` markers even when `data-request-method` is
-  absent, requiring mutation anchors to intercept navigation and mutation buttons
-  to declare `type="button"`. This keeps board/issue child comment delete
-  controls and similar legacy-markup helpers inside the React event boundary.
+  absent, requiring mutation anchors to intercept navigation and mutation
+  buttons with React click handlers to both declare `type="button"` and call
+  `event.preventDefault()`. This keeps board/issue child comment delete,
+  comment vote, code discussion, milestone, pull-request review/thread/source
+  branch, workspace email, and site-admin user/mail controls inside the React
+  event boundary while preserving legacy marker attributes for DOM parity.
   Focused evidence: `frontend/src/form-submit-boundary.spec.tsx`.
 - 2026-06-25 mutation data-href guard continuation: the same React boundary
   guard now covers legacy mutation-flavored `data-href` markers such as leave,

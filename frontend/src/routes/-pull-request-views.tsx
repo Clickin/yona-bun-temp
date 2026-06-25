@@ -1752,7 +1752,10 @@ function PullRequestReviewMergeControls(props: {
           <button
             className="ybtn ybtn-default"
             data-request-method="post"
-            onClick={() => void props.onUnreview?.()}
+            onClick={(event) => {
+              event.preventDefault();
+              void props.onUnreview?.();
+            }}
             type="button"
           >
             {legacyMessage(props.messages, "pullRequest.unreview")}
@@ -1761,7 +1764,10 @@ function PullRequestReviewMergeControls(props: {
           <button
             className={`ybtn ${pr.reviewed ? "ybtn-default" : "ybtn-success"}`}
             data-request-method="post"
-            onClick={() => void props.onReview?.()}
+            onClick={(event) => {
+              event.preventDefault();
+              void props.onReview?.();
+            }}
             type="button"
           >
             {legacyMessage(props.messages, "pullRequest.review")}
@@ -2068,7 +2074,10 @@ function PullRequestStateNotice(props: {
           className="ybtn ybtn-danger ybtn-mini pull-right"
           data-request-method="delete"
           data-request-uri={deleteHref}
-          onClick={() => void props.onDeleteSourceBranch?.()}
+          onClick={(event) => {
+            event.preventDefault();
+            void props.onDeleteSourceBranch?.();
+          }}
           type="button"
         >
           {legacyMessage(props.messages, "pullRequest.delete.branch")}
@@ -2549,7 +2558,10 @@ function ReviewThreadItem(props: {
               className="ybtn ybtn-default ybtn-small"
               data-request-method="post"
               data-request-uri={reviewThreadStateHref(props.runtimeConfig, props.thread.id, "open")}
-              onClick={() => void props.onThreadOpen?.(props.thread.id)}
+              onClick={(event) => {
+                event.preventDefault();
+                void props.onThreadOpen?.(props.thread.id);
+              }}
               type="button"
             >
               {legacyMessage(props.messages, "commentThread.open")}
@@ -2563,7 +2575,10 @@ function ReviewThreadItem(props: {
                 props.thread.id,
                 "close",
               )}
-              onClick={() => void props.onThreadClose?.(props.thread.id)}
+              onClick={(event) => {
+                event.preventDefault();
+                void props.onThreadClose?.(props.thread.id);
+              }}
               type="button"
             >
               {legacyMessage(props.messages, "commentThread.close")}
@@ -2635,7 +2650,10 @@ function ReviewThreadItem(props: {
                             props.pullRequest,
                             `/comments/${comment.id}`,
                           )}
-                          onClick={() => beginEdit(comment)}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            beginEdit(comment);
+                          }}
                           type="button"
                         >
                           {legacyMessage(props.messages, "button.edit")}
@@ -2651,7 +2669,10 @@ function ReviewThreadItem(props: {
                           `/comments/${comment.id}`,
                         )}
                         data-toggle="comment-delete"
-                        onClick={() => void props.onCommentDelete?.(comment.id)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void props.onCommentDelete?.(comment.id);
+                        }}
                         title={legacyMessage(props.messages, "common.comment.delete")}
                         type="button"
                       >
@@ -2928,7 +2949,10 @@ function ReviewThreadItem(props: {
                         props.thread.id,
                         "open",
                       )}
-                      onClick={() => void props.onThreadOpen?.(props.thread.id)}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        void props.onThreadOpen?.(props.thread.id);
+                      }}
                       type="button"
                     >
                       {legacyMessage(props.messages, "commentThread.open")}
@@ -2942,7 +2966,10 @@ function ReviewThreadItem(props: {
                         props.thread.id,
                         "close",
                       )}
-                      onClick={() => void props.onThreadClose?.(props.thread.id)}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        void props.onThreadClose?.(props.thread.id);
+                      }}
                       type="button"
                     >
                       {legacyMessage(props.messages, "commentThread.close")}

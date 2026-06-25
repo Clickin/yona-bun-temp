@@ -1218,7 +1218,8 @@ function CodeBranchRow(props: {
                 branch.name,
               )}
               disabled={props.pending}
-              onClick={() => {
+              onClick={(event) => {
+                event.preventDefault();
                 void props.onSetDefaultBranch(branch.name);
               }}
               type="button"
@@ -1790,7 +1791,10 @@ function CommitDiscussionThread(props: {
                           props.commitDetail,
                           `/comments/${comment.id}`,
                         )}
-                        onClick={() => beginEdit(comment)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          beginEdit(comment);
+                        }}
                         type="button"
                       >
                         {legacyMessage(props.messages, "button.edit")}
@@ -1804,7 +1808,8 @@ function CommitDiscussionThread(props: {
                         props.commitDetail,
                         `/comments/${comment.id}`,
                       )}
-                      onClick={() => {
+                      onClick={(event) => {
+                        event.preventDefault();
                         void props.onDeleteComment?.(comment.id);
                       }}
                       title={legacyMessage(props.messages, "common.comment.delete")}
@@ -1889,7 +1894,8 @@ function CommitDiscussionThread(props: {
           className="ybtn ybtn-small"
           data-request-method="post"
           data-request-uri={stateAction}
-          onClick={() => {
+          onClick={(event) => {
+            event.preventDefault();
             if (state === "closed") {
               void props.onOpenThread?.(props.thread.id);
             } else {

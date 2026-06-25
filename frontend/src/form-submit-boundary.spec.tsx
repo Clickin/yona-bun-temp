@@ -232,8 +232,7 @@ function indirectSubmitForms() {
         return [];
       }
       const tag = source.slice(formStart, openingTagEnd(source, formStart));
-      const body = source.slice(formStart, formClose);
-      if (!tag.includes("onSubmit=") || body.includes("event.preventDefault()")) {
+      if (!tag.includes("onSubmit=") || tag.includes("event.preventDefault()")) {
         return [];
       }
       const handler = tag.match(/onSubmit=\{(\w+)\}/)?.[1] ?? tag.match(/void\s+(\w+)\(/)?.[1];
@@ -432,7 +431,9 @@ describe("React form submit boundary", () => {
     for (const element of requestMethodElements()) {
       if (element.tag === "button") {
         expect(element.snippet, `${element.file}:${element.line}`).toContain('type="button"');
-        continue;
+        if (!/onClick=/.test(element.snippet)) {
+          continue;
+        }
       }
       expect(element.snippet, `${element.file}:${element.line}`).toContain(
         "event.preventDefault()",

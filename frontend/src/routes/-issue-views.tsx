@@ -2127,12 +2127,13 @@ export function ProjectIssueDetailPage(props: {
                                         className="comment-vote btn-transparent-with-fontsize-lineheight"
                                         data-request-type="comment-vote"
                                         data-request-uri={commentVoteUri}
-                                        onClick={() =>
+                                        onClick={(event) => {
+                                          event.preventDefault();
                                           void props.onCommentVoteToggle?.(
                                             comment.id,
                                             comment.viewerHasVoted,
-                                          )
-                                        }
+                                          );
+                                        }}
                                         title={
                                           comment.viewerHasVoted
                                             ? legacyMessage(messages, "common.comment.unvote")
@@ -2187,7 +2188,10 @@ export function ProjectIssueDetailPage(props: {
                                       className="btn-transparent-with-fontsize-lineheight ml6"
                                       data-request-uri={commentDeleteUri}
                                       data-toggle="comment-delete"
-                                      onClick={() => setCommentDeleteTargetId(comment.id)}
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        setCommentDeleteTargetId(comment.id);
+                                      }}
                                       title={legacyMessage(messages, "common.comment.delete")}
                                       type="button"
                                     >
@@ -2313,9 +2317,10 @@ export function ProjectIssueDetailPage(props: {
                                                   `issue/${issueNumber}/comment/${childComment.id}/delete`,
                                                 )}
                                                 data-toggle="comment-delete"
-                                                onClick={() =>
-                                                  setCommentDeleteTargetId(childComment.id)
-                                                }
+                                                onClick={(event) => {
+                                                  event.preventDefault();
+                                                  setCommentDeleteTargetId(childComment.id);
+                                                }}
                                                 title={legacyMessage(
                                                   messages,
                                                   "common.comment.delete",
@@ -2525,7 +2530,10 @@ export function ProjectIssueDetailPage(props: {
                 <button
                   className="ybtn ybtn-danger"
                   data-request-method="delete"
-                  onClick={() => void onDeleteIssue()}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void onDeleteIssue();
+                  }}
                   type="button"
                 >
                   {legacyMessage(messages, "button.yes")}
@@ -2564,7 +2572,8 @@ export function ProjectIssueDetailPage(props: {
                   data-request-method="delete"
                   data-request-uri={commentDeleteRequestUri}
                   id="comment-delete-confirm"
-                  onClick={() => {
+                  onClick={(event) => {
+                    event.preventDefault();
                     if (commentDeleteTargetId === null || !props.onCommentDelete) {
                       return;
                     }

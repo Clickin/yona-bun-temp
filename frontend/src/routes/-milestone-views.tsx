@@ -482,7 +482,10 @@ export function ProjectMilestoneDetailPage(props: {
                             milestone.id,
                             "close",
                           )}
-                          onClick={() => void props.onClose?.()}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            void props.onClose?.();
+                          }}
                           type="button"
                         >
                           {legacyMessage(props.messages, "milestone.close")}
@@ -498,7 +501,10 @@ export function ProjectMilestoneDetailPage(props: {
                             milestone.id,
                             "open",
                           )}
-                          onClick={() => void props.onOpen?.()}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            void props.onOpen?.();
+                          }}
                           type="button"
                         >
                           {legacyMessage(props.messages, "milestone.open")}
@@ -594,7 +600,10 @@ export function ProjectMilestoneDetailPage(props: {
                     milestone.id,
                     "delete",
                   )}
-                  onClick={() => void props.onDelete?.()}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void props.onDelete?.();
+                  }}
                   type="button"
                 >
                   {legacyMessage(props.messages, "button.yes")}
