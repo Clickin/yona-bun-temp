@@ -43,6 +43,19 @@ const clickMutationFallbackPattern =
   /if \(!props\.on(?:LeaveOrganization|ToggleProjectWatch|LeaveProject)\) \{/;
 const mutationDataHrefPattern =
   /data-href=[\s\S]{0,240}(?:delete|leave|member\/[^"'\s}]+\/(?:edit|delete)|resetPassword|toggleSiteAdminRole|watch|unwatch|enroll|cancel|transfer|changeVCS|pushedBranch)/;
+const submitHandlerDefinitionPattern = /\b(?:function|const)\s+(\w+)\b/g;
+const allowedIndirectSubmitHandlers = [
+  { file: "routes/-code-views.tsx", handler: "submitInlineComment" },
+  { file: "routes/-code-views.tsx", handler: "submitComment" },
+  { file: "routes/-code-views.tsx", handler: "submitEdit" },
+  { file: "routes/-code-views.tsx", handler: "submitReply" },
+  { file: "routes/-pull-request-views.tsx", handler: "submitEdit" },
+  { file: "routes/-pull-request-views.tsx", handler: "submitReply" },
+  { file: "routes/-pull-request-views.tsx", handler: "submitBlockReview" },
+  { file: "routes/-pull-request-views.tsx", handler: "submitInlineComment" },
+  { file: "routes/-pull-request-views.tsx", handler: "submitNonRangedComment" },
+  { file: "routes/sites/$pageName/route.tsx", handler: "handleSubmit" },
+];
 
 function readRouteSource(relativePath: string) {
   return fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
@@ -94,6 +107,45 @@ function openingTagEnd(source: string, start: number) {
     }
   }
   return source.length;
+}
+
+function blockEnd(source: string, start: number) {
+  let braceDepth = 0;
+  let quote: '"' | "'" | "`" | null = null;
+  for (let index = start; index < source.length; index += 1) {
+    const char = source[index];
+    const previous = source[index - 1];
+    if (quote) {
+      if (char === quote && previous !== "\\") {
+        quote = null;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'" || char === "`") {
+      quote = char;
+      continue;
+    }
+    if (char === "{") {
+      braceDepth += 1;
+      continue;
+    }
+    if (char === "}") {
+      braceDepth -= 1;
+      if (braceDepth === 0) {
+        return index + 1;
+      }
+    }
+  }
+  return source.length;
+}
+
+function nextOpeningBrace(source: string, start: number) {
+  for (let index = start; index < source.length; index += 1) {
+    if (source[index] === "{") {
+      return index;
+    }
+  }
+  return -1;
 }
 
 function requestMethodElements() {
@@ -162,6 +214,47 @@ function legacyApiActionForms() {
       ];
     });
   });
+}
+
+function indirectSubmitForms() {
+  return listRouteFiles().flatMap((file) => {
+    const source = readRouteSource(file);
+    return Array.from(source.matchAll(/<form\b/g)).flatMap((formMatch) => {
+      const formStart = formMatch.index ?? 0;
+      const formClose = source.indexOf("</form>", formStart);
+      if (formClose < 0) {
+        return [];
+      }
+      const tag = source.slice(formStart, openingTagEnd(source, formStart));
+      const body = source.slice(formStart, formClose);
+      if (!tag.includes("onSubmit=") || body.includes("event.preventDefault()")) {
+        return [];
+      }
+      const handler = tag.match(/onSubmit=\{(\w+)\}/)?.[1] ?? tag.match(/void\s+(\w+)\(/)?.[1];
+      return [
+        {
+          file,
+          handler,
+          line: lineNumberForIndex(source, formStart),
+          tag,
+        },
+      ];
+    });
+  });
+}
+
+function functionBodies(source: string, functionName: string) {
+  const bodies: string[] = [];
+  for (const match of source.matchAll(submitHandlerDefinitionPattern)) {
+    if (match[1] !== functionName) {
+      continue;
+    }
+    const blockStart = nextOpeningBrace(source, match.index ?? 0);
+    if (blockStart >= 0) {
+      bodies.push(source.slice(blockStart, blockEnd(source, blockStart)));
+    }
+  }
+  return bodies;
 }
 
 function mutationDataHrefElements() {
@@ -350,6 +443,27 @@ describe("React form submit boundary", () => {
     for (const element of legacyApiActionForms()) {
       expect(element.tag, `${element.file}:${element.line}`).toContain("onSubmit=");
       expect(element.body, `${element.file}:${element.line}`).toContain("event.preventDefault()");
+    }
+  });
+
+  it("keeps indirect submit handlers from falling through to native form submit", () => {
+    const actual = indirectSubmitForms().map((element) => ({
+      file: element.file,
+      handler: element.handler,
+      line: element.line,
+    }));
+
+    expect(
+      actual.map((element) => `${element.file}:${element.handler}`),
+      `Update allowedIndirectSubmitHandlers when a form delegates submit prevention to a named handler.`,
+    ).toEqual(allowedIndirectSubmitHandlers.map((element) => `${element.file}:${element.handler}`));
+
+    for (const { file, handler } of allowedIndirectSubmitHandlers) {
+      const bodies = functionBodies(readRouteSource(file), handler);
+      expect(bodies, `${file}:${handler}`).not.toHaveLength(0);
+      for (const body of bodies) {
+        expect(body, `${file}:${handler}`).toContain("event.preventDefault()");
+      }
     }
   });
 });
