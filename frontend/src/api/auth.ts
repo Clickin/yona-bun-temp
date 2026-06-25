@@ -80,3 +80,33 @@ export function verifyUserRest<TInput extends object>(
     fetchImpl,
   });
 }
+
+export interface PasswordResetMutationResponse {
+  redirectPath: string;
+}
+
+export function requestPasswordResetRest<TInput extends object>(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: TInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PasswordResetMutationResponse> {
+  return restFetch<PasswordResetMutationResponse>(runtimeConfig, "/auth/password-reset/request", {
+    body: input,
+    csrfToken,
+    fetchImpl,
+  });
+}
+
+export function completePasswordResetRest<TInput extends object>(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: TInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PasswordResetMutationResponse> {
+  return restFetch<PasswordResetMutationResponse>(runtimeConfig, "/auth/password-reset/complete", {
+    body: input,
+    csrfToken,
+    fetchImpl,
+  });
+}

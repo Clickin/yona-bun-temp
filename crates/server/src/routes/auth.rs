@@ -25,8 +25,8 @@ use crate::{
     auth_ui_capabilities_from_config, base_path_href, headers_with_form_csrf, normalize_identifier,
     percent_encode_uri_component, require_session, require_valid_csrf, rest_json_response,
     rest_owned_view, rest_read_current_session, send_password_reset_mail, AssetMode, AuthUiConfig,
-    BrowserRuntimeConfig, ConnectError, Context, LdapFixtureUser, LdapRuntimeConfig, PilotBackend,
-    PilotRepository, PilotServiceImpl, RestRouteError, LEGACY_LOGIN_INVALID_MESSAGE,
+    BrowserRuntimeConfig, ConnectError, Context, ErrorCode, LdapFixtureUser, LdapRuntimeConfig,
+    PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError, LEGACY_LOGIN_INVALID_MESSAGE,
     LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
@@ -55,6 +55,21 @@ pub(crate) struct RestRegisterRequest {
 pub(crate) struct RestVerifyUserRequest {
     login_id: String,
     verification_code: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RestRequestPasswordResetRequest {
+    email_address: String,
+    login_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RestCompletePasswordResetRequest {
+    hash_string: String,
+    password: String,
+    retyped_password: String,
 }
 
 #[derive(Deserialize)]
@@ -125,6 +140,26 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Json(input): Json<RestVerifyUserRequest>| {
                     let service = service.clone();
                     async move { rest_verify_user(headers, input, service).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/password-reset/request",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(input): Json<RestRequestPasswordResetRequest>| {
+                    let service = service.clone();
+                    async move { rest_request_password_reset(headers, input, service).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/password-reset/complete",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(input): Json<RestCompletePasswordResetRequest>| {
+                    let service = service.clone();
+                    async move { rest_complete_password_reset(headers, input, service).await }
                 }
             }),
         )
@@ -203,6 +238,49 @@ pub(crate) async fn rest_verify_user(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_request_password_reset(
+    headers: HeaderMap,
+    input: RestRequestPasswordResetRequest,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    request_password_reset_email(&service, &input.login_id, &input.email_address)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(rest_json_response(
+        serde_json::json!({ "redirectPath": "/lostPassword?requested=1" }),
+        Context::new(headers),
+    ))
+}
+
+pub(crate) async fn rest_complete_password_reset(
+    headers: HeaderMap,
+    input: RestCompletePasswordResetRequest,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    complete_password_reset(
+        &service,
+        &input.hash_string,
+        &input.password,
+        &input.retyped_password,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(rest_json_response(
+        serde_json::json!({ "redirectPath": "/users/loginform?password=reset" }),
+        Context::new(headers),
+    ))
 }
 
 pub(crate) async fn rest_secret_admin_setup(
@@ -683,42 +761,16 @@ pub(crate) async fn direct_request_reset_password_email(
     service: PilotServiceImpl,
 ) -> Response {
     let session = service.session_manager.ensure_anonymous_session(&headers);
-    let redirect_path = match &service.backend {
-        PilotBackend::Repository(repository) => {
-            let login_id =
-                normalize_identifier(form.get("loginId").map(String::as_str).unwrap_or_default());
-            let email_address = normalize_identifier(
-                form.get("emailAddress")
-                    .map(String::as_str)
-                    .unwrap_or_default(),
-            );
-            match repository
-                .find_user_by_login_id(&login_id)
-                .await
-                .ok()
-                .flatten()
-            {
-                Some(user) if normalize_identifier(&user.email_address) == email_address => {
-                    if let Ok(code) = repository
-                        .create_password_reset_verification_for_user(user.id, &user.login_id)
-                        .await
-                    {
-                        let _ = send_password_reset_mail(
-                            &user.email_address,
-                            &code,
-                            &service.public_origin,
-                            &service.base_path,
-                            &service.site_name,
-                            &service.smtp.default_from(),
-                            &service.integrations,
-                        );
-                    }
-                    "/lostPassword?requested=1"
-                }
-                _ => "/lostPassword?error=invalid",
-            }
-        }
-        _ => "/lostPassword?error=unsupported",
+    let login_id = form.get("loginId").map(String::as_str).unwrap_or_default();
+    let email_address = form
+        .get("emailAddress")
+        .map(String::as_str)
+        .unwrap_or_default();
+    let redirect_path = match request_password_reset_email(&service, login_id, email_address).await
+    {
+        Ok(()) => "/lostPassword?requested=1",
+        Err(error) if error.code == ErrorCode::Unimplemented => "/lostPassword?error=unsupported",
+        Err(_) => "/lostPassword?error=invalid",
     };
 
     let mut response =
@@ -739,46 +791,102 @@ pub(crate) async fn direct_reset_password(
     let hash_string = form.get("hashString").cloned().unwrap_or_default();
     let password = form.get("password").cloned().unwrap_or_default();
     let retyped_password = form.get("retypedPassword").cloned().unwrap_or_default();
-
-    if password.len() < LEGACY_MIN_PASSWORD_LENGTH || password != retyped_password {
-        let query = if hash_string.is_empty() {
-            "/resetPassword?error=invalid".to_string()
-        } else {
-            format!("/resetPassword?error=invalid&s={hash_string}")
-        };
-        return Redirect::to(&base_path_href(&service.base_path, &query)).into_response();
-    }
-
-    let redirect_path = match &service.backend {
-        PilotBackend::Repository(repository) => {
-            match repository
-                .find_valid_password_reset_user_id(&hash_string)
-                .await
-            {
-                Ok(Some(user_id)) => match hash(&password, DEFAULT_COST) {
-                    Ok(password_hash) => {
-                        if repository
-                            .update_password_hash_for_user(user_id, &password_hash)
-                            .await
-                            .is_ok()
-                        {
-                            let _ = repository
-                                .delete_password_reset_verification(&hash_string)
-                                .await;
-                            "/users/loginform?password=reset".to_string()
-                        } else {
-                            format!("/resetPassword?error=invalid&s={hash_string}")
-                        }
-                    }
-                    Err(_) => format!("/resetPassword?error=invalid&s={hash_string}"),
-                },
-                _ => format!("/resetPassword?error=invalid&s={hash_string}"),
-            }
-        }
-        _ => "/resetPassword?error=unsupported".to_string(),
+    let invalid_path = if hash_string.is_empty() {
+        "/resetPassword?error=invalid".to_string()
+    } else {
+        format!("/resetPassword?error=invalid&s={hash_string}")
     };
+    let redirect_path =
+        match complete_password_reset(&service, &hash_string, &password, &retyped_password).await {
+            Ok(()) => "/users/loginform?password=reset".to_string(),
+            Err(error) if error.code == ErrorCode::Unimplemented => {
+                "/resetPassword?error=unsupported".to_string()
+            }
+            Err(_) => invalid_path,
+        };
 
     Redirect::to(&base_path_href(&service.base_path, &redirect_path)).into_response()
+}
+
+async fn request_password_reset_email(
+    service: &PilotServiceImpl,
+    login_id: &str,
+    email_address: &str,
+) -> Result<(), ConnectError> {
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "password reset requires repository backend",
+        ));
+    };
+    let login_id = normalize_identifier(login_id);
+    let email_address = normalize_identifier(email_address);
+    let Some(user) = repository
+        .find_user_by_login_id(&login_id)
+        .await
+        .map_err(crate::internal_error)?
+    else {
+        return Err(ConnectError::invalid_argument(
+            "site.resetPasswordEmail.invalidRequest",
+        ));
+    };
+    if normalize_identifier(&user.email_address) != email_address {
+        return Err(ConnectError::invalid_argument(
+            "site.resetPasswordEmail.invalidRequest",
+        ));
+    }
+
+    let code = repository
+        .create_password_reset_verification_for_user(user.id, &user.login_id)
+        .await
+        .map_err(crate::internal_error)?;
+    send_password_reset_mail(
+        &user.email_address,
+        &code,
+        &service.public_origin,
+        &service.base_path,
+        &service.site_name,
+        &service.smtp.default_from(),
+        &service.integrations,
+    )?;
+    Ok(())
+}
+
+async fn complete_password_reset(
+    service: &PilotServiceImpl,
+    hash_string: &str,
+    password: &str,
+    retyped_password: &str,
+) -> Result<(), ConnectError> {
+    if password.len() < LEGACY_MIN_PASSWORD_LENGTH || password != retyped_password {
+        return Err(ConnectError::invalid_argument(
+            "site.resetPasswordEmail.wrongUrl",
+        ));
+    }
+
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "password reset requires repository backend",
+        ));
+    };
+    let Some(user_id) = repository
+        .find_valid_password_reset_user_id(hash_string)
+        .await
+        .map_err(crate::internal_error)?
+    else {
+        return Err(ConnectError::invalid_argument(
+            "site.resetPasswordEmail.wrongUrl",
+        ));
+    };
+    let password_hash = hash(password, DEFAULT_COST).map_err(crate::internal_error)?;
+    repository
+        .update_password_hash_for_user(user_id, &password_hash)
+        .await
+        .map_err(crate::internal_error)?;
+    repository
+        .delete_password_reset_verification(hash_string)
+        .await
+        .map_err(crate::internal_error)?;
+    Ok(())
 }
 
 fn legacy_form_checkbox_checked(form: &HashMap<String, String>, key: &str) -> bool {

@@ -1232,7 +1232,10 @@ async fn secret_admin_setup_rest_updates_legacy_default_admin_and_redirect_fallb
         .unwrap();
     assert_eq!(direct_response.status(), StatusCode::SEE_OTHER);
     assert_eq!(
-        direct_response.headers().get(http::header::LOCATION).unwrap(),
+        direct_response
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap(),
         "/yona/restart"
     );
 }
@@ -2588,6 +2591,114 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
         .await
         .unwrap()
         .is_empty());
+}
+
+#[tokio::test]
+async fn rest_password_reset_routes_round_trip() {
+    let _outbox_guard = auth_outbox_lock().lock().unwrap();
+    clear_test_outbox();
+    let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            site_name: "Yona Test".to_string(),
+            smtp: SmtpRuntimeConfig {
+                from: "reset-sender@example.com".to_string(),
+                ..SmtpRuntimeConfig::default()
+            },
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/register")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let request_reset = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/password-reset/request")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"loginId\":\"door\",\"emailAddress\":\"door@example.com\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(request_reset.status(), StatusCode::OK);
+    let request_payload: serde_json::Value =
+        serde_json::from_str(&response_text(request_reset).await).unwrap();
+    assert_eq!(
+        request_payload
+            .get("redirectPath")
+            .and_then(|value| value.as_str()),
+        Some("/lostPassword?requested=1")
+    );
+
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].to, "door@example.com");
+
+    let verification = user_verification::Entity::find()
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("password reset verification");
+    let reset_code = verification
+        .verification_code
+        .clone()
+        .expect("verification code");
+
+    let reset_password = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/password-reset/complete")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!(
+                    "{{\"hashString\":\"{reset_code}\",\"password\":\"renewpass1\",\"retypedPassword\":\"renewpass1\"}}"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(reset_password.status(), StatusCode::OK);
+    let reset_payload: serde_json::Value =
+        serde_json::from_str(&response_text(reset_password).await).unwrap();
+    assert_eq!(
+        reset_payload
+            .get("redirectPath")
+            .and_then(|value| value.as_str()),
+        Some("/users/loginform?password=reset")
+    );
+
+    let user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("user after reset");
+    assert!(bcrypt::verify("renewpass1", &user.password_hash).unwrap());
 }
 
 #[tokio::test]

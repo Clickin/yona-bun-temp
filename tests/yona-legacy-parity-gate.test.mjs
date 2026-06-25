@@ -151,6 +151,8 @@ test("maps auth runtime context changes to the account lifecycle slice", () => {
     "frontend/src/app-runtime-context.tsx",
     "frontend/src/routes/users/loginform/route.tsx",
     "frontend/src/routes/users/signupform/route.tsx",
+    "frontend/src/routes/lostPassword/route.tsx",
+    "frontend/src/routes/resetPassword/route.tsx",
     "frontend/src/auth-workspace-shell.spec.tsx",
     "docs/provenance/core-parity-audit.md",
   ]);

@@ -6,6 +6,7 @@ import {
   cancelEnrollOrganization,
   cancelEnrollProject,
   changePassword,
+  completePasswordReset,
   copyProjectLabels,
   createOrganization,
   createIssue,
@@ -45,6 +46,7 @@ import {
   readSessionBootstrap,
   recordRecentProjectVisit,
   registerWithPassword,
+  requestPasswordReset,
   resetApiToken,
   resetVisitedProjects,
   sendWorkspaceEmailValidation,
@@ -1246,6 +1248,61 @@ describe("REST auth wrappers", () => {
     expect(JSON.parse(verifyInit.body)).toEqual({
       loginId: "door",
       verificationCode: "signup:token",
+    });
+  });
+
+  it("posts password reset payloads to the v1 REST auth routes", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(async () =>
+        okJsonResponse({ redirectPath: "/lostPassword?requested=1" }),
+      )
+      .mockImplementationOnce(async () =>
+        okJsonResponse({ redirectPath: "/users/loginform?password=reset" }),
+      );
+
+    await requestPasswordReset(
+      runtimeConfig,
+      "csrf-reset",
+      {
+        emailAddress: "door@example.com",
+        loginId: "door",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await completePasswordReset(
+      runtimeConfig,
+      "csrf-reset",
+      {
+        hashString: "reset-token",
+        password: "renewpass1",
+        retypedPassword: "renewpass1",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { body: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe("/yona/api/v1/auth/password-reset/request");
+    expect(requestInit.headers.get("x-csrf-token")).toBe("csrf-reset");
+    expect(requestInit.method).toBe("POST");
+    expect(JSON.parse(requestInit.body)).toEqual({
+      emailAddress: "door@example.com",
+      loginId: "door",
+    });
+
+    const [completeUrl, completeInit] = fetchMock.mock.calls[1] as unknown as [
+      string,
+      { body: string; headers: Headers; method: string },
+    ];
+    expect(completeUrl).toBe("/yona/api/v1/auth/password-reset/complete");
+    expect(completeInit.headers.get("Content-Type")).toBe("application/json");
+    expect(JSON.parse(completeInit.body)).toEqual({
+      hashString: "reset-token",
+      password: "renewpass1",
+      retypedPassword: "renewpass1",
     });
   });
 

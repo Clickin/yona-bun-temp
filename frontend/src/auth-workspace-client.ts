@@ -26,8 +26,10 @@ import type {
   ToggleFavoriteProjectResponse,
 } from "./api/types";
 import {
+  completePasswordResetRest,
   readAuthUiCapabilitiesRest,
   registerWithPasswordRest,
+  requestPasswordResetRest,
   signInWithPasswordRest,
   signOutRest,
   verifyUserRest,
@@ -406,6 +408,24 @@ export async function registerWithPassword(
   fetchImpl: typeof fetch = fetch,
 ) {
   return registerWithPasswordRest(runtimeConfig, csrfToken, input, fetchImpl);
+}
+
+export async function requestPasswordReset(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: RequestInput,
+  fetchImpl: typeof fetch = fetch,
+) {
+  return requestPasswordResetRest(runtimeConfig, csrfToken, input, fetchImpl);
+}
+
+export async function completePasswordReset(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: RequestInput,
+  fetchImpl: typeof fetch = fetch,
+) {
+  return completePasswordResetRest(runtimeConfig, csrfToken, input, fetchImpl);
 }
 
 export async function signOut(

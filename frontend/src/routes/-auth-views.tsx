@@ -639,13 +639,21 @@ export function RegisterPage({
 }
 
 export function LostPasswordPage({
+  csrfToken,
+  onRequestReset,
   routeHref,
   runtimeConfig,
 }: {
+  csrfToken?: string;
+  onRequestReset?: (input: { emailAddress: string; loginId: string }) => void;
   routeHref: string;
   runtimeConfig: RuntimeConfig;
 }) {
   const messages = useLegacyMessages();
+  const [formState, setFormState] = React.useState({
+    emailAddress: "",
+    loginId: "",
+  });
   const searchParams = readSearchParams(routeHref);
   const feedback =
     searchParams.get("requested") === "1"
@@ -684,16 +692,28 @@ export function LostPasswordPage({
               {feedback.body ? messages.t(feedback.body, { fallback: feedback.body }) : null}
             </div>
           ) : null}
-          <form action={appHref(runtimeConfig, "/lostPassword")} method="post">
+          <form
+            action={appHref(runtimeConfig, "/lostPassword")}
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onRequestReset?.(formState);
+            }}
+          >
+            <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
             <dl>
               <dd>
                 <input
                   className="text"
                   id="loginId"
                   name="loginId"
+                  onChange={(event) =>
+                    setFormState((current) => ({ ...current, loginId: event.target.value }))
+                  }
                   placeholder={messages.t("user.loginId", { fallback: "user.loginId" })}
                   required
                   type="text"
+                  value={formState.loginId}
                 />
               </dd>
               <dd>
@@ -701,9 +721,16 @@ export function LostPasswordPage({
                   className="text"
                   id="emailAddress"
                   name="emailAddress"
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      emailAddress: event.target.value,
+                    }))
+                  }
                   placeholder={messages.t("user.email", { fallback: "user.email" })}
                   required
                   type="email"
+                  value={formState.emailAddress}
                 />
               </dd>
             </dl>
@@ -720,15 +747,27 @@ export function LostPasswordPage({
 }
 
 export function ResetPasswordPage({
+  csrfToken,
+  onResetPassword,
   routeHref,
   runtimeConfig,
 }: {
+  csrfToken?: string;
+  onResetPassword?: (input: {
+    hashString: string;
+    password: string;
+    retypedPassword: string;
+  }) => void;
   routeHref: string;
   runtimeConfig: RuntimeConfig;
 }) {
   const messages = useLegacyMessages();
   const searchParams = readSearchParams(routeHref);
   const hashString = searchParams.get("s") ?? searchParams.get("hashString") ?? "";
+  const [formState, setFormState] = React.useState({
+    password: "",
+    retypedPassword: "",
+  });
   const message =
     searchParams.get("error") === "invalid" ? "site.resetPasswordEmail.wrongUrl" : null;
 
@@ -751,7 +790,16 @@ export function ResetPasswordPage({
             action={appHref(runtimeConfig, "/resetPassword")}
             method="post"
             name="passwordReset"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onResetPassword?.({
+                hashString,
+                password: formState.password,
+                retypedPassword: formState.retypedPassword,
+              });
+            }}
           >
+            <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
             <input name="hashString" type="hidden" value={hashString} />
             <dl>
               <dd>
@@ -760,8 +808,12 @@ export function ResetPasswordPage({
                   className="text password"
                   id="password"
                   name="password"
+                  onChange={(event) =>
+                    setFormState((current) => ({ ...current, password: event.target.value }))
+                  }
                   placeholder={messages.t("user.password", { fallback: "user.password" })}
                   type="password"
+                  value={formState.password}
                 />
               </dd>
               <dd>
@@ -770,10 +822,17 @@ export function ResetPasswordPage({
                   className="text password"
                   id="retypedPassword"
                   name="retypedPassword"
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      retypedPassword: event.target.value,
+                    }))
+                  }
                   placeholder={messages.t("validation.retypePassword", {
                     fallback: "validation.retypePassword",
                   })}
                   type="password"
+                  value={formState.retypedPassword}
                 />
               </dd>
             </dl>
