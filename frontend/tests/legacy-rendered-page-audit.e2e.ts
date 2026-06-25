@@ -350,7 +350,7 @@ async function expectLegacySignals(page: Page, anchors: string[], structuralToke
 
 test("renders legacy audited anchors for /lostPassword", async ({ page }) => {
   await page.goto("/yona/lostPassword");
-  await expectLegacySignals(page, ["login-form-wrap", "email"]);
+  await expectLegacySignals(page, ["login-form-wrap", "emailAddress"]);
 });
 
 test("renders legacy audited anchors for logged-in /", async ({ page }) => {
@@ -376,6 +376,22 @@ test("renders legacy audited anchors for /_help", async ({ page }) => {
 test("renders legacy audited anchors for /projects", async ({ page }) => {
   await page.goto("/yona/projects");
   await expectLegacySignals(page, ["all-projects"]);
+});
+
+test("renders directory and project creation anchors on a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+
+  await page.goto("/yona/projects");
+  await expectLegacySignals(page, ["all-projects"]);
+  await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
+
+  await page.goto("/yona/projectform");
+  await expectLegacySignals(page, ["newProjectForm", "project-name", "advanced-options"]);
+  await expect(page.locator("#newProjectForm")).toBeVisible();
+
+  await page.goto("/yona/_import");
+  await expectLegacySignals(page, ["importGit", "url", "project-name"]);
+  await expect(page.locator("#importGit")).toBeVisible();
 });
 
 test("renders legacy audited anchors for /projectform", async ({ page }) => {
@@ -540,6 +556,22 @@ test("renders legacy audited anchors for project reviews", async ({ page }) => {
 test("renders legacy audited anchors for project code", async ({ page }) => {
   await page.goto("/yona/admin/sample/code");
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+});
+
+test("renders code, pull request, and review anchors on a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+
+  await page.goto("/yona/admin/sample/code");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+
+  await page.goto("/yona/admin/sample/pullRequests");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+
+  await page.goto("/yona/admin/sample/reviews");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator(".project-page-wrap")).toBeVisible();
 });
 
 test("renders legacy audited anchors for project members", async ({ page }) => {

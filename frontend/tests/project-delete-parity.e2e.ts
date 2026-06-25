@@ -148,6 +148,7 @@ test("project deleteform preserves the legacy confirmation shell and deletes by 
     await route.fallback();
   });
 
+  await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/yona/owner/projectYobi/deleteform");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator("#subMenuProjectDelete")).toHaveClass(/active/);
