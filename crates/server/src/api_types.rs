@@ -462,6 +462,10 @@ pub struct ProjectContainer {
     #[serde(default)]
     pub viewer_can_watch: bool,
     #[serde(default)]
+    pub viewer_can_leave: bool,
+    #[serde(default)]
+    pub viewer_user_id: i64,
+    #[serde(default)]
     pub is_watching: bool,
     #[serde(default)]
     pub watch_count: u32,

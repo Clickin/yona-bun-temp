@@ -8,7 +8,10 @@ import {
   updateProjectOverview,
 } from "../../../auth-workspace-client";
 import { listProjectPostsQueryOptions } from "../../../api/boards";
-import { readProjectContainerQueryOptions } from "../../../api/org-project";
+import {
+  deleteProjectMemberRest,
+  readProjectContainerQueryOptions,
+} from "../../../api/org-project";
 import { RestApiError } from "../../../api/rest-client";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { toProjectContainerView } from "../../../app-view-models";
@@ -145,6 +148,25 @@ export function ProjectDetailRouteComponent() {
           }
         } catch (error) {
           setErrorMessage(legacyProjectEnrollFallback(error));
+        }
+      }}
+      onLeaveProject={async (nextOwnerName, nextProjectName, userId) => {
+        try {
+          const response = await deleteProjectMemberRest(runtimeConfig, csrfToken, {
+            ownerName: nextOwnerName,
+            projectName: nextProjectName,
+            userId,
+          });
+          if (currentSession && !currentSession.isAnonymous) {
+            await refreshWorkspace(currentSession);
+          }
+          navigateToAppHref(runtimeConfig.basePath, response.redirectPath ?? "/");
+        } catch (error) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
         }
       }}
       onToggleFavoriteProject={async (nextOwnerName, nextProjectName) => {

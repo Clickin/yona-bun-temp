@@ -249,8 +249,10 @@ export interface ProjectDetailViewModel {
   showPullRequest?: boolean;
   showReview?: boolean;
   viewerCanEnroll: boolean;
+  viewerCanLeave?: boolean;
   viewerCanUpdate: boolean;
   viewerCanWatch?: boolean;
+  viewerUserId?: number;
   vcs?: string;
   watchCount?: number;
 }

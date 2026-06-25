@@ -158,6 +158,19 @@ describe("project home tab parity", () => {
     expect(unwatchHtml).toContain('class="yobicon-eye-off"');
   });
 
+  it("renders project leave as the legacy direct leave button", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi", {
+      members: [{ avatarUrl: "/avatar.png", loginId: "door", role: "member", userLabel: "Door" }],
+      viewerCanLeave: true,
+      viewerUserId: 42,
+    });
+
+    expect(html).toContain(
+      'class="ybtn ybtn-minimum ybtn-danger pull-right" data-href="/yona/yona/projectYobi/member/42/delete" id="projectLeaveBtn"',
+    );
+    expect(html).not.toContain("project.member.leave</button>");
+  });
+
   it("keeps project overview mentions plain like legacy Markdown.render(String)", () => {
     const html = renderProjectHome("/yona/yona/projectYobi", {
       overview: "Project **home** @admin @yona/projectYobi",

@@ -1516,6 +1516,7 @@ export function ProjectDetailPage(props: {
   runtimeConfig: RuntimeConfig;
   onEnrollProject?: (ownerName: string, projectName: string) => void;
   onCancelEnrollProject?: (ownerName: string, projectName: string) => void;
+  onLeaveProject?: (ownerName: string, projectName: string, userId: number) => void;
   onToggleFavoriteProject?: (ownerName: string, projectName: string) => void;
   onToggleProjectWatch?: (ownerName: string, projectName: string, watching: boolean) => void;
   onUpdateProjectOverview?: (ownerName: string, projectName: string, overview: string) => void;
@@ -1532,7 +1533,9 @@ export function ProjectDetailPage(props: {
         projectName: "",
         projectScope: "public",
         viewerCanEnroll: false,
+        viewerCanLeave: false,
         viewerCanUpdate: false,
+        viewerUserId: 0,
       },
     [props.detail],
   );
@@ -1559,6 +1562,12 @@ export function ProjectDetailPage(props: {
     detail.ownerName,
     detail.projectName,
     detail.isWatching ? "unwatch" : "watch",
+  );
+  const projectLeaveHref = buildProjectHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    `member/${detail.viewerUserId ?? 0}/delete`,
   );
   const isGitProject = !detail.vcs || detail.vcs.toLowerCase() === "git";
 
@@ -1871,6 +1880,27 @@ export function ProjectDetailPage(props: {
                       </li>
                     ))}
                   </ul>
+                  {detail.viewerCanLeave && detail.viewerUserId ? (
+                    <button
+                      className="ybtn ybtn-minimum ybtn-danger pull-right"
+                      data-href={projectLeaveHref}
+                      id="projectLeaveBtn"
+                      onClick={(event) => {
+                        if (!props.onLeaveProject) {
+                          return;
+                        }
+                        event.preventDefault();
+                        props.onLeaveProject(
+                          detail.ownerName,
+                          detail.projectName,
+                          detail.viewerUserId ?? 0,
+                        );
+                      }}
+                      type="button"
+                    >
+                      {legacyMessage(messages, "project.member.leave")}
+                    </button>
+                  ) : null}
                 </section>
                 {detail.currentMilestone ? (
                   <div className="milestone-info">

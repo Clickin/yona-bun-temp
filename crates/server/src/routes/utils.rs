@@ -1611,6 +1611,19 @@ pub(crate) async fn build_project_container_response(
         .iter()
         .map(project_member_summary_from_record)
         .collect();
+    let viewer_can_leave = actor_id
+        .and_then(|user_id| {
+            project_directory
+                .members
+                .iter()
+                .find(|member| member.user_id == user_id)
+        })
+        .map(|member| {
+            authorization.project.organization_id.is_some()
+                || normalize_identifier(&authorization.project.owner_name)
+                    != normalize_identifier(&member.login_id)
+        })
+        .unwrap_or(false);
     let current_milestone = if show_milestone {
         repository
             .read_current_milestone_for_project(authorization.project.id)
@@ -1700,8 +1713,10 @@ pub(crate) async fn build_project_container_response(
         show_pull_request,
         show_review,
         viewer_can_enroll,
+        viewer_can_leave,
         viewer_can_update,
         viewer_can_watch,
+        viewer_user_id: actor_id.unwrap_or_default(),
         watch_count,
         ..Default::default()
     })

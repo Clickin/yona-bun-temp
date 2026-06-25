@@ -454,8 +454,10 @@ export function toProjectContainerView(
     showPullRequest: detail.showPullRequest,
     showReview: detail.showReview,
     viewerCanEnroll: detail.viewerCanEnroll,
+    viewerCanLeave: detail.viewerCanLeave,
     viewerCanUpdate: detail.viewerCanUpdate,
     viewerCanWatch: detail.viewerCanWatch,
+    viewerUserId: Number(detail.viewerUserId ?? 0),
     watchCount: detail.watchCount,
   };
 }
