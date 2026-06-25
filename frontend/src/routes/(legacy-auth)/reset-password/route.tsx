@@ -8,5 +8,7 @@ export const Route = createFileRoute("/(legacy-auth)/reset-password")({
 
 function ResetPasswordAliasRouteComponent() {
   const { runtimeConfig } = useAppRuntime();
-  return <RedirectPage basePath={runtimeConfig.basePath} to="/resetPassword" />;
+  return (
+    <RedirectPage basePath={runtimeConfig.basePath} preserveSearch={true} to="/resetPassword" />
+  );
 }

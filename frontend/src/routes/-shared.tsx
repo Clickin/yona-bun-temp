@@ -173,12 +173,21 @@ export function NotFoundPage({ href }: { href: string }) {
   return <RouteStatusPage href={href} title="error.notfound" />;
 }
 
-export function RedirectPage({ basePath, to }: { basePath: string; to: string }) {
+export function RedirectPage({
+  basePath,
+  preserveSearch = false,
+  to,
+}: {
+  basePath: string;
+  preserveSearch?: boolean;
+  to: string;
+}) {
   const messages = useLegacyMessages();
 
   React.useEffect(() => {
-    navigateToAppHref(basePath, to);
-  }, [basePath, to]);
+    const search = preserveSearch && typeof window !== "undefined" ? window.location.search : "";
+    navigateToAppHref(basePath, `${to}${search}`);
+  }, [basePath, preserveSearch, to]);
 
   return (
     <main className="app-shell">

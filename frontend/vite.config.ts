@@ -18,7 +18,7 @@ function prefixBasePath(basePath: string, leaf: string): string {
 
 function buildBackendProxy(basePath: string, target: string) {
   return Object.fromEntries(
-    ["api", "rpc", "files", "resetPassword", "user/email"].map((leaf) => [
+    ["api", "rpc", "files", "user/email"].map((leaf) => [
       prefixBasePath(basePath, leaf),
       {
         changeOrigin: false,

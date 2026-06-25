@@ -19,17 +19,20 @@ Date: 2026-06-26
   `frontend/src/routes/users/signupform/route.tsx`,
   `frontend/src/routes/lostPassword/route.tsx`,
   `frontend/src/routes/resetPassword/route.tsx`,
+  `frontend/src/routes/(legacy-auth)/reset-password/route.tsx`,
   `frontend/src/routes/verify/$loginId/$verificationCode/route.tsx`,
-  `frontend/src/api/auth.ts`, `frontend/src/auth-workspace-client.ts`
+  `frontend/src/api/auth.ts`, `frontend/src/auth-workspace-client.ts`,
+  `frontend/vite.config.ts`
 - Focused specs: `frontend/src/auth-workspace-shell.spec.tsx`,
-  `frontend/src/wave1-auth-workspace-parity.spec.tsx`
+  `frontend/src/wave1-auth-workspace-parity.spec.tsx`,
+  `frontend/tests/auth-public-entry-parity.e2e.ts`
 
 ## Summary
 
 | Status | Count |
 | --- | ---: |
-| covered | 4 |
-| weak evidence | 1 |
+| covered | 5 |
+| weak evidence | 0 |
 | gap | 0 |
 | not-applicable | 1 |
 
@@ -42,4 +45,4 @@ Date: 2026-06-26
 | `/resetPassword` valid submit | `PasswordResetApp.resetPassword()` updates the password, flashes `user.loginWithNewPassword`, and returns the legacy login template. | REST `/auth/password-reset/complete` returns `/users/loginform?password=reset`; `LoginPage` renders the legacy login shell and `user.loginWithNewPassword`. Redirect-after-REST is the app-runtime boundary replacement for a direct POST template response. | covered | none |
 | `/resetPassword` invalid submit | `PasswordResetApp.resetPassword()` returns `400` `ErrorViews.BadRequest.render("site.resetPasswordEmail.wrongUrl")`, which uses `badrequest_default.scala.html`. | `ResetPasswordPage` now renders the same bad-request wrapper and `site.resetPasswordEmail.wrongUrl` message for `/resetPassword?error=invalid` instead of keeping the reset form visible; focused render spec pins `.page-wrap-outer`, `.project-page-wrap`, `.error-wrap`, `.ico-404`, Home link, and absence of `name="passwordReset"`. | covered | none |
 | `/verify/:loginId/:verificationCode` invalid verification | `UserApp.verifyUser()` returns `404` plain body `Invalid verification`. | `frontend/src/routes/verify/$loginId/$verificationCode/route.tsx` now keeps a pending state until REST verification resolves, and `VerifyUserPage` renders plain `Invalid verification` without the SPA error shell when REST `/api/v1/auth/verify` rejects. The browser HTTP status for a React deep link remains SPA fallback behavior; REST verify already carries not-found status. | not-applicable | Exact deep-link HTTP status would need server direct-route/fallback ownership, not React auth view scope. |
-| Public auth browser-proof checklist depth | Legacy public entry includes `/`, login form with `rememberMe` and `redirectUrl`, signup, lost/reset password valid/invalid states, verify success/invalid states, auth aliases, and optional OAuth/social-login-only variants. | Current focused specs cover important render and post-state boundaries, but this report does not yet inventory every browser-visible route/form/copy/redirect/error-state row required by the phase packet. No concrete implementation gap is known from this row. | weak evidence | `frontend/tests/` focused auth public-entry Playwright proof plus this report and the phase queue if failures are found. |
+| Public auth browser-proof checklist depth | Legacy public entry includes `/`, login form with `rememberMe` and `redirectUrl`, signup, lost/reset password valid/invalid states, verify success/invalid states, auth aliases, and optional OAuth/social-login-only variants. | `frontend/tests/auth-public-entry-parity.e2e.ts` now proves browser-visible login submit through REST JSON with `rememberMe=false` and `redirectUrl`, signup-confirm redirect and flash, auth aliases including `/reset-password?s=...` query preservation, social-login-only GitHub/Google controls, OAuth unsupported/denied alerts, lost/reset valid and invalid states, and verify success/invalid states. `frontend/vite.config.ts` no longer proxies the React-owned `/resetPassword` page path to the backend during dev, so mounted-base-path deep links render the React route. Verification: `pnpm --dir frontend test:e2e -- auth-public-entry-parity.e2e.ts` passed 6 Playwright tests on 2026-06-26. | covered | none |

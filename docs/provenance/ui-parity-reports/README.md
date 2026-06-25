@@ -20,6 +20,10 @@ Rules:
 - Reports must include a route inventory summary with counts for `covered`,
   `gap`, `deviation`, `deferred`, `not-applicable`, `weak evidence`, and
   `needs-parent-decision`.
+- The parent cannot close Gate A while any active packet report is missing or
+  while any report has nonzero `gap`, `deviation`, `weak evidence`, or
+  `needs-parent-decision` rows. `deferred` rows are allowed only when the parent
+  records the same boundary in canonical/provenance/follow-up documents.
 - Every row must name the legacy source, current React/API source, user state,
   interaction state, API/direct-fragment boundary, and proposed owner scope when
   the row is not fully covered.

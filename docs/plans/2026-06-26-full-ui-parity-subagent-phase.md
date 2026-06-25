@@ -183,7 +183,7 @@ as `covered` inside the report.
 | Root project search-scope dropdown needs legacy `project.hasGroup` evidence | `ui-parity-root-navigation-shell` | `covered in Wave 4` | Root header now reads the real project container on project-scoped pages and shows `search.scope.group` only when the container has `organizationName`, matching legacy `project.hasGroup`; organization-scoped hide-project-listing/guest behavior remains unchanged. Evidence: `frontend/src/routes/__root.tsx`, `frontend/src/auth-workspace-shell.spec.tsx`. |
 | Root shell browser-visible state matrix | `ui-parity-root-navigation-shell` | `covered in current follow-up` | `frontend/tests/root-shell-parity.e2e.ts` now proves anonymous global nav, configured feedback link, login dialog open/submit/error/close, authenticated site-admin affix, user menu/sidebar tab content, guest project-list/org-create gating, standalone `/secret` root-footer suppression, and project route group/global search-scope actions under mounted `/yona` base path. `frontend/src/routes/__root.tsx` strips the runtime base path before shell route-family classification. |
 | Auth signup confirm/email-verification post state differs from legacy flash target | `ui-parity-auth-public-entry` | `covered in Wave 4` | Anonymous signup confirmation and verification post-states now redirect to legacy index targets (`/?signup=requested`, `/?verify=sent`), and the home route renders a `data-toggle="yobi-notify"` success message from the legacy flash keys `user.signup.requested` / `user.verification.mail.sent`. Evidence: `frontend/src/routes/users/signupform/route.tsx`, `frontend/src/routes/index.tsx`, `frontend/src/routes/-home-view.tsx`, `frontend/src/auth-workspace-shell.spec.tsx`, `frontend/src/route-parity.spec.tsx`. |
-| Auth public-entry browser-proof checklist depth | `ui-parity-auth-public-entry` | `weak evidence` | Static/render specs cover important public auth routes and post states, but the report still needs browser-visible rows for normal login/signup submit, `rememberMe`/`redirectUrl`, aliases, OAuth/social-login-only variants, and lost/reset/verify valid/invalid flows. Owner scope: `frontend/tests/`, `docs/provenance/ui-parity-reports/ui-parity-auth-public-entry.md`, and this queue row. |
+| Auth public-entry browser-proof checklist depth | `ui-parity-auth-public-entry` | `covered in current follow-up` | `frontend/tests/auth-public-entry-parity.e2e.ts` now proves browser-visible login submit through REST JSON with `rememberMe=false` and `redirectUrl`, signup-confirm redirect and flash, auth aliases including `/reset-password?s=...` query preservation, social-login-only GitHub/Google controls, OAuth unsupported/denied alerts, lost/reset valid and invalid states, and verify success/invalid states. `frontend/vite.config.ts` no longer proxies the React-owned `/resetPassword` page path to the backend during dev, and the `/reset-password` alias preserves query strings through `RedirectPage`. Verification: `pnpm --dir frontend test:e2e -- auth-public-entry-parity.e2e.ts` passed 6 Playwright tests. |
 | Auth reset invalid/valid post states and verify invalid status differ from legacy | `ui-parity-auth-public-entry` | `covered in current follow-up` | `frontend/src/routes/-auth-views.tsx` now renders invalid reset as the legacy bad-request wrapper with `site.resetPasswordEmail.wrongUrl` and renders invalid verify as plain `Invalid verification` instead of a SPA error shell; `frontend/src/routes/verify/$loginId/$verificationCode/route.tsx` keeps pending state until REST verification resolves. Valid reset remains REST redirect to the legacy login shell with `user.loginWithNewPassword`, which preserves visible post-state under the React REST boundary. Evidence: `frontend/src/wave1-auth-workspace-parity.spec.tsx`, `frontend/src/auth-workspace-shell.spec.tsx`, `docs/provenance/ui-parity-reports/ui-parity-auth-public-entry.md`. Browser deep-link HTTP 404 for invalid verify is not applicable to React fallback; REST verify already owns not-found status. |
 | User profile `daysAgo` number input was read-only | `ui-parity-user-workspace-profile` | `covered in current follow-up` | `frontend/src/routes/-workspace-views.tsx` now renders editable uncontrolled `#daysAgoBtn` inputs for `/me` and `/:user`, and `frontend/src/workspace-profile-i18n.spec.tsx` pins absence of `readonly`. |
 | Public profile email visibility when `application.show.user.email=true` | `ui-parity-user-workspace-profile` | `covered in current follow-up` | `crates/server/src/routes/users.rs` now keeps public profile email when `AppRuntimeConfig.show_user_email` is true and redacts only when false; `crates/server/tests/rest_contract.rs` and `frontend/src/wave1-auth-workspace-parity.spec.tsx` pin both visible and hidden states. |
@@ -291,10 +291,20 @@ Each subagent report must include:
 
 Run the phase in two distinct gates. Gate A documents the complete UI parity
 inventory first; Gate B distributes only the concrete queued rows produced by
-that inventory. The inventory gate is complete enough to start worker delegation
-because each active packet now has a report under
-`docs/provenance/ui-parity-reports/`, but new or reopened pages must return to
+that inventory. Gate A is not closed while any active packet lacks a report, or
+while any report records `gap`, `deviation`, `weak evidence`, or
+`needs-parent-decision` rows. Concrete implementation may continue only for
+already recorded queue rows; newly discovered pages or states must return to
 Gate A before implementation.
+
+Current Gate A blockers:
+
+| Blocker | Status | Next action |
+| --- | --- | --- |
+| `ui-parity-user-workspace-profile` report file is missing | open | Assign an explorer to write `docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md` before declaring inventory closure. |
+| `ui-parity-user-account-settings` report file is missing | open | Assign an explorer to write `docs/provenance/ui-parity-reports/ui-parity-user-account-settings.md` before declaring inventory closure. |
+| `ui-parity-fragment-security-db` report file is missing | open | Assign an explorer to write `docs/provenance/ui-parity-reports/ui-parity-fragment-security-db.md` before declaring inventory closure. |
+| `ui-parity-auth-public-entry` browser-proof depth | closed 2026-06-26 | `frontend/tests/auth-public-entry-parity.e2e.ts` passed 6 Playwright tests and the auth report now has no weak-evidence row. |
 
 1. Keep `docs/provenance/ui-parity-reports/*` as the route-family inventory
    baseline. If a new legacy page or user-visible state is discovered, add a
@@ -385,11 +395,18 @@ Before this phase can close:
   comparison, legacy HTML page audit, legacy route coverage, REST/HTML boundary
   guards, and cargo harness contracts.
 - 2026-06-26 parent gate refresh: `pnpm test:dev-scripts` passed 67 tests after
-  the `/reviews` row-fidelity closure and report-summary reconciliation, with no
-  remaining documented `gap`, `deviation`, or `weak evidence` count in the UI
-  parity reports at that point.
+  the `/reviews` row-fidelity closure and report-summary reconciliation. Later
+  Gate A re-audit found missing active packet report files, so this evidence
+  remains historical test proof rather than current inventory-closure proof.
 - 2026-06-26 parent Gate A refresh: `ui-parity-root-navigation-shell.md` was
   added as the missing root-shell report.
+- 2026-06-26 auth public-entry browser proof refresh: `pnpm --dir frontend
+  test:e2e -- auth-public-entry-parity.e2e.ts` passed 6 Playwright tests after
+  adding login submit, signup confirmation, alias, social-login-only/OAuth
+  alert, lost/reset password, and verify route coverage. Current Gate A still
+  remains open because `ui-parity-user-workspace-profile`,
+  `ui-parity-user-account-settings`, and `ui-parity-fragment-security-db` report
+  files are missing.
 - 2026-06-26 root-shell browser proof refresh: `pnpm --dir frontend test:e2e
   -- root-shell-parity.e2e.ts` passed 5 Playwright tests after adding
   anonymous/authenticated/site-admin/guest shell coverage, login dialog
