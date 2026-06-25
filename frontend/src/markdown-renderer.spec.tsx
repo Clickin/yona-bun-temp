@@ -181,6 +181,24 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("alert(1)");
   });
 
+  it("collapses entity-obfuscated javascript targets across Markdown and raw HTML", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '[link](jav&#x61;script:alert(1)) ![image](jav&#x61;script:alert(2)) <a href="jav&#x61;script:alert(3)">raw</a> <iframe src="jav&#x61;script:alert(4)"></iframe>'
+        }
+      />,
+    );
+
+    expect(html).toContain('<a href="#">link</a>');
+    expect(html).toContain('<img alt="image" src="#"/>');
+    expect(html).toContain('<a href="#">raw</a>');
+    expect(html).toContain("<iframe></iframe>");
+    expect(html).not.toContain("javascript:");
+    expect(html).not.toContain("alert(");
+    expect(html).not.toContain("<iframe src=");
+  });
+
   it("strips raw script and style blocks while preserving legacy block boundaries", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
