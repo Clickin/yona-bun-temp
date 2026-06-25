@@ -65,6 +65,37 @@ function lineNumberForIndex(source: string, index: number) {
   return source.slice(0, index).split("\n").length;
 }
 
+function openingTagEnd(source: string, start: number) {
+  let braceDepth = 0;
+  let quote: '"' | "'" | "`" | null = null;
+  for (let index = start; index < source.length; index += 1) {
+    const char = source[index];
+    const previous = source[index - 1];
+    if (quote) {
+      if (char === quote && previous !== "\\") {
+        quote = null;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'" || char === "`") {
+      quote = char;
+      continue;
+    }
+    if (char === "{") {
+      braceDepth += 1;
+      continue;
+    }
+    if (char === "}") {
+      braceDepth = Math.max(0, braceDepth - 1);
+      continue;
+    }
+    if (char === ">" && braceDepth === 0) {
+      return index + 1;
+    }
+  }
+  return source.length;
+}
+
 function requestMethodElements() {
   return listRouteFiles().flatMap((file) => {
     const source = readRouteSource(file);
@@ -80,6 +111,29 @@ function requestMethodElements() {
         snippet: source.slice(start, index + 1400),
         tag,
       };
+    });
+  });
+}
+
+function formButtonElements() {
+  return listRouteFiles().flatMap((file) => {
+    const source = readRouteSource(file);
+    return Array.from(source.matchAll(/<form\b/g)).flatMap((formMatch) => {
+      const formStart = formMatch.index ?? 0;
+      const formClose = source.indexOf("</form>", formStart);
+      if (formClose < 0) {
+        return [];
+      }
+      const formSource = source.slice(formStart, formClose);
+      return Array.from(formSource.matchAll(/<button\b/g), (buttonMatch) => {
+        const buttonStart = formStart + (buttonMatch.index ?? 0);
+        const tag = source.slice(buttonStart, openingTagEnd(source, buttonStart));
+        return {
+          file,
+          line: lineNumberForIndex(source, buttonStart),
+          tag,
+        };
+      });
     });
   });
 }
@@ -257,6 +311,12 @@ describe("React form submit boundary", () => {
       expect(element.snippet, `${element.file}:${element.line}`).toContain(
         "event.preventDefault()",
       );
+    }
+  });
+
+  it("keeps form buttons explicit about native submit behavior", () => {
+    for (const element of formButtonElements()) {
+      expect(element.tag, `${element.file}:${element.line}`).toMatch(/\btype\s*=/);
     }
   });
 });
