@@ -1033,22 +1033,6 @@ pub(crate) async fn direct_legacy_signup(
     }
 }
 
-pub(crate) async fn direct_legacy_secret_admin_setup(
-    form: HashMap<String, String>,
-    service: PilotServiceImpl,
-) -> Response {
-    let name = form.get("name").cloned().unwrap_or_default();
-    let email = form.get("email").cloned().unwrap_or_default();
-    let password = form.get("password").cloned().unwrap_or_default();
-    let retyped_password = form.get("retypedPassword").cloned().unwrap_or_default();
-    match update_legacy_default_site_admin(&service, &name, &email, &password, &retyped_password)
-        .await
-    {
-        Ok(()) => Redirect::to(&base_path_href(&service.base_path, "/restart")).into_response(),
-        Err(error) => RestRouteError::from_connect_error(error).into_response(),
-    }
-}
-
 async fn update_legacy_default_site_admin(
     service: &PilotServiceImpl,
     name: &str,
@@ -1641,7 +1625,6 @@ pub(crate) fn routes(
     let legacy_secret_page_browser_runtime = browser_runtime.clone();
     let legacy_restart_page_assets = assets;
     let legacy_restart_page_browser_runtime = browser_runtime;
-    let secret_setup_service = service.clone();
     let reset_password_service = service;
 
     Router::new()
@@ -1725,12 +1708,7 @@ pub(crate) fn routes(
                 let assets = legacy_secret_page_assets.clone();
                 let browser_runtime = legacy_secret_page_browser_runtime.clone();
                 async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
-            })
-            .post(
-                move |Form(form): Form<HashMap<String, String>>| async move {
-                    direct_legacy_secret_admin_setup(form, secret_setup_service.clone()).await
-                },
-            ),
+            }),
         )
         .route(
             "/restart",

@@ -1168,7 +1168,7 @@ async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
 }
 
 #[tokio::test]
-async fn secret_admin_setup_rest_updates_legacy_default_admin_and_redirect_fallback_remains() {
+async fn secret_admin_setup_rest_updates_legacy_default_admin_and_form_post_is_not_a_mutation() {
     let (app, _repo, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -1213,7 +1213,7 @@ async fn secret_admin_setup_rest_updates_legacy_default_admin_and_redirect_fallb
         1
     );
 
-    let direct_response = app
+    let form_post_response = app
         .clone()
         .oneshot(
             Request::builder()
@@ -1230,13 +1230,25 @@ async fn secret_admin_setup_rest_updates_legacy_default_admin_and_redirect_fallb
         )
         .await
         .unwrap();
-    assert_eq!(direct_response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(form_post_response.status(), StatusCode::METHOD_NOT_ALLOWED);
+
+    let admin_after_form_post = n4user::Entity::find()
+        .filter(n4user::Column::LoginId.eq(Some("admin".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("default admin user after form post");
+    assert_eq!(admin_after_form_post.name.as_deref(), Some("Root Admin"));
     assert_eq!(
-        direct_response
-            .headers()
-            .get(http::header::LOCATION)
-            .unwrap(),
-        "/yona/restart"
+        admin_after_form_post.email.as_deref(),
+        Some("root@example.com")
+    );
+    assert!(
+        bcrypt::verify(
+            "rootpass1",
+            admin_after_form_post.password.as_deref().unwrap()
+        )
+        .unwrap()
     );
 }
 
