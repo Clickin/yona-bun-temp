@@ -381,21 +381,61 @@ function OrganizationMembershipActions(props: {
   runtimeConfig: RuntimeConfig;
 }) {
   const { detail } = props;
+  const [modalOpen, setModalOpen] = React.useState(false);
 
   if (detail.viewerCanLeave) {
     return (
-      <button
-        className="ybtn ybtn-minimum ybtn-danger pull-right"
-        data-href={buildOrganizationHref(props.runtimeConfig, detail.organizationName, "leave")}
-        id="groupLeaveBtn"
-        onClick={(event) => {
-          event.preventDefault();
-          props.onLeaveOrganization?.(detail.organizationName);
-        }}
-        type="button"
-      >
-        {legacyMessage(props.messages, "organization.member.leave")}
-      </button>
+      <>
+        <button
+          className="ybtn ybtn-minimum ybtn-danger pull-right"
+          data-href={buildOrganizationHref(props.runtimeConfig, detail.organizationName, "leave")}
+          id="groupLeaveBtn"
+          onClick={(event) => {
+            event.preventDefault();
+            setModalOpen(true);
+          }}
+          type="button"
+        >
+          {legacyMessage(props.messages, "organization.member.leave")}
+        </button>
+        <div className={modalOpen ? "modal" : "modal hide"} id="alertLeave">
+          <div className="modal-header">
+            <button
+              className="close"
+              data-dismiss="modal"
+              onClick={() => setModalOpen(false)}
+              type="button"
+            >
+              ×
+            </button>
+            <h3>{legacyMessage(props.messages, "organization.member.leave")}</h3>
+          </div>
+          <div className="modal-body">
+            <p>{legacyMessage(props.messages, "organization.member.leaveConfirm")}</p>
+          </div>
+          <div className="modal-footer">
+            <button
+              className="ybtn ybtn-info ybtn-mini"
+              id="leaveBtn"
+              onClick={() => {
+                props.onLeaveOrganization?.(detail.organizationName);
+                setModalOpen(false);
+              }}
+              type="button"
+            >
+              {legacyMessage(props.messages, "button.yes")}
+            </button>
+            <button
+              className="ybtn ybtn-mini"
+              data-dismiss="modal"
+              onClick={() => setModalOpen(false)}
+              type="button"
+            >
+              {legacyMessage(props.messages, "button.no")}
+            </button>
+          </div>
+        </div>
+      </>
     );
   }
 
@@ -524,6 +564,16 @@ export function OrganizationDetailPage(props: {
     viewerCanUpdate: false,
     visibleProjects: [],
   };
+  const [projectFilter, setProjectFilter] = React.useState("");
+  const normalizedProjectFilter = projectFilter.trim().toLocaleLowerCase();
+  const visibleProjects = (detail.visibleProjects ?? []).filter((project) => {
+    if (!normalizedProjectFilter) {
+      return true;
+    }
+    return `${project.projectName} ${project.overview}`
+      .toLocaleLowerCase()
+      .includes(normalizedProjectFilter);
+  });
 
   return (
     <main className="app-shell organization-page">
@@ -562,9 +612,10 @@ export function OrganizationDetailPage(props: {
                       data-toggle="item-search"
                       id="mylist-filter"
                       name="mylist-filter"
+                      onChange={(event) => setProjectFilter(event.currentTarget.value)}
                       placeholder={legacyMessage(props.messages, "title.type.name")}
                       type="text"
-                      defaultValue=""
+                      value={projectFilter}
                     />
                     <button className="search-btn" type="button">
                       <i className="yobicon-search" />
@@ -577,7 +628,7 @@ export function OrganizationDetailPage(props: {
                       className="ybtn ybtn-primary"
                       href={prefixBasePath(
                         props.runtimeConfig.basePath,
-                        `/projects/new?owner=${encodeURIComponent(detail.organizationName)}`,
+                        `/projectform?owner=${encodeURIComponent(detail.organizationName)}`,
                       )}
                     >
                       {legacyMessage(props.messages, "button.newProject")}
@@ -587,7 +638,7 @@ export function OrganizationDetailPage(props: {
               </div>
               <div className="project-list-wrap organization-project-list">
                 <ul className="all-projects organization-project-list">
-                  {(detail.visibleProjects ?? []).map((project) => {
+                  {visibleProjects.map((project) => {
                     const projectHref = prefixBasePath(
                       props.runtimeConfig.basePath,
                       `/${project.ownerName}/${project.projectName}`,
@@ -1549,6 +1600,7 @@ export function OrganizationMembersPage(props: {
                 aria-label={legacyMessage(props.messages, "button.close")}
                 className="close"
                 data-dismiss="modal"
+                onClick={() => setDeleteTarget(null)}
                 type="button"
               >
                 ×
@@ -1572,7 +1624,12 @@ export function OrganizationMembersPage(props: {
               >
                 {legacyMessage(props.messages, "button.yes")}
               </button>
-              <button className="ybtn ybtn-mini" data-dismiss="modal" type="button">
+              <button
+                className="ybtn ybtn-mini"
+                data-dismiss="modal"
+                onClick={() => setDeleteTarget(null)}
+                type="button"
+              >
                 {legacyMessage(props.messages, "button.no")}
               </button>
             </div>

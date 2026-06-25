@@ -84,6 +84,8 @@ describe("organization home parity", () => {
     expect(html).toContain('class="markdown-wrap"');
     expect(html).toContain('class="row-fluid organization-home-body"');
     expect(html).toContain('class="span9 span-left-pane"');
+    expect(html).toContain('href="/yona/projectform?owner=weblabs"');
+    expect(html).not.toContain('href="/yona/projects/new?owner=weblabs"');
     expect(html).toContain('class="project-list-wrap organization-project-list"');
     expect(html).toContain('class="listitem organization-project-card"');
     expect(html).toContain('class="yobicon-friends yobicon-middle"');
@@ -111,6 +113,37 @@ describe("organization home parity", () => {
     expect(routeSource).not.toContain("Server Error");
     expect(routeSource).not.toContain("Cancel enrollment failed.");
     expect(routeSource).not.toContain("Enroll failed.");
+  });
+
+  it("keeps organization home client-side project filtering and modal cancel state", () => {
+    const viewSource = readFileSync(
+      resolve(process.cwd(), "src/routes/-organization-views.tsx"),
+      "utf8",
+    );
+
+    expect(viewSource).toContain('const [projectFilter, setProjectFilter] = React.useState("")');
+    expect(viewSource).toContain("setProjectFilter(event.currentTarget.value)");
+    expect(viewSource).toContain("const visibleProjects = (detail.visibleProjects ?? []).filter");
+    expect(viewSource).toContain("onClick={() => setDeleteTarget(null)}");
+    expect(viewSource).toContain("onClick={() => setModalOpen(false)}");
+  });
+
+  it("renders the legacy leave confirmation modal before the leave mutation", () => {
+    const html = renderOrganizationDetail({
+      description: "web labs",
+      organizationName: "weblabs",
+      viewerCanLeave: true,
+      viewerCanUpdate: false,
+    });
+
+    expect(html).toContain(
+      'class="ybtn ybtn-minimum ybtn-danger pull-right" data-href="/yona/organizations/weblabs/leave" id="groupLeaveBtn"',
+    );
+    expect(html).toContain('class="modal hide" id="alertLeave"');
+    expect(html).toContain("<h3>Leave the group</h3>");
+    expect(html).toContain("Do you want to leave this group?");
+    expect(html).toContain('class="ybtn ybtn-info ybtn-mini" id="leaveBtn" type="button"');
+    expect(html).toContain('class="ybtn ybtn-mini" data-dismiss="modal" type="button"');
   });
 
   it("keeps legacy organization submit copy while mutations are pending", () => {
