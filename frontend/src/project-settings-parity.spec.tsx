@@ -293,6 +293,7 @@ describe("project settings parity", () => {
     expect(membersHtml).toContain(">멤버 등록 요청 (1)</h3>");
     expect(webhooksHtml).toContain(">새 웹후크 생성</strong>");
     expect(webhooksHtml).toContain('placeholder="전송할 주소"');
+    expect(webhooksHtml).toContain("Include git push events");
     expect(webhooksHtml).toContain(">웹후크 추가</button>");
     expect(transferHtml).toContain(">이관받을 사용자 또는 그룹</div>");
     expect(transferHtml).toContain("프로젝트를 이관합니다.</a>");

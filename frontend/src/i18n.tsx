@@ -107,7 +107,11 @@ export function lookupLegacyMessage(
   key: string,
   options: TranslateOptions = {},
 ): string {
-  const raw = LEGACY_MESSAGES[language][key] ?? options.fallback ?? key;
+  const raw =
+    LEGACY_MESSAGES[language][key] ??
+    LEGACY_MESSAGES[LEGACY_DEFAULT_LANGUAGE][key] ??
+    options.fallback ??
+    key;
   return formatLegacyMessage(raw, options.args);
 }
 

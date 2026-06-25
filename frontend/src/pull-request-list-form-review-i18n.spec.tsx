@@ -160,7 +160,7 @@ describe("PR list/form/review-list legacy i18n opt-in", () => {
       runtime.t("pullRequest.error.newPullRequestForm", {
         fallback: "pullRequest.error.newPullRequestForm",
       }),
-    ).toBe("pullRequest.error.newPullRequestForm");
+    ).toBe("Invalid project or branch<br>({0} {1})");
   });
 
   it("keeps literal key fallbacks without runtime messages", () => {

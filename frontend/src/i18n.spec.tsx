@@ -61,7 +61,7 @@ describe("legacy i18n runtime", () => {
       "영문, 한글, 숫자 및 일부 기호(_-.)만 사용할 수 있습니다",
     );
     expect(runtime.t("project.new.vcsType.subversion")).toBe("Subversion");
-    expect(runtime.t("title.pullrequest")).toBe("title.pullrequest");
+    expect(runtime.t("title.pullrequest")).toBe("Pull Request");
     expect(runtime.t("user.verification")).toBe("사용자 정보 확인");
     expect(runtime.t("menu.home")).toBe("홈");
     expect(runtime.t("user.login.failed.network")).toBe(
@@ -195,7 +195,7 @@ describe("legacy i18n runtime", () => {
     }
   });
 
-  it("uses legacy message files only where the language has evidence", () => {
+  it("falls back through the default legacy message file before key fallback", () => {
     expect(lookupLegacyMessage("en-US", "post.update.error")).toBe("Errors in input values.");
     expect(lookupLegacyMessage("ko-KR", "post.update.error")).toBe("입력값 오류");
     expect(lookupLegacyMessage("ja-JP", "post.update.error")).toBe("入力エラー");
@@ -220,6 +220,12 @@ describe("legacy i18n runtime", () => {
       lookupLegacyMessage("ja-JP", "pullRequest.error.newPullRequestForm", {
         fallback: "pullRequest.error.newPullRequestForm",
       }),
-    ).toBe("pullRequest.error.newPullRequestForm");
+    ).toBe("Invalid project or branch<br>({0} {1})");
+    expect(lookupLegacyMessage("ko-KR", "project.webhook.includeGitPush")).toBe(
+      "Include git push events",
+    );
+    expect(
+      lookupLegacyMessage("ko-KR", "missing.legacy.key", { fallback: "missing.legacy.key" }),
+    ).toBe("missing.legacy.key");
   });
 });
