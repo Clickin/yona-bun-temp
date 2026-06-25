@@ -196,11 +196,11 @@ Round 2 cannot close while any packet status below is `pending`, `running`,
 
 | Round 2 packet | Browser scope | Status | Required report update |
 | --- | --- | --- | --- |
-| `r2-auth-setup-public-shell` | `/`, first-run/no-admin setup state, `/users/loginform`, `/users/signupform`, `/lostPassword`, `/resetPassword`, `/verify/**`, login dialog, base-path asset loading | pending | Reopen `ui-parity-auth-public-entry.md` and `ui-parity-root-navigation-shell.md` with browser-visible rows |
-| `r2-workspace-settings-directory` | `/me`, `/:user`, `/user/issues`, `/user/files`, `/user/editform/**`, `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`, org settings/member/delete flows | pending | Reopen workspace/settings/directory reports with per-route Playwright proof |
-| `r2-project-issue-board-milestone` | project home/admin/settings plus issue, board, and milestone list/form/detail/comment flows | pending | Reopen project/issues/board-milestone reports with route and interaction rows |
-| `r2-code-pr-review-search-notification` | code browser, commits, branches, compare, PR list/form/detail/changes/reviews, search, notification page and incremental notification route | pending | Reopen code/PR/search-notification reports with browser-visible rows |
-| `r2-site-admin-security-db` | `/sites/**`, `/secret`, `/restart`, `/migration`, security probes, DB matrix/adopt smoke entry pages | pending | Reopen site-admin and fragment-security-db reports with browser/security rows |
+| `r2-auth-setup-public-shell` | `/`, first-run/no-admin setup state, `/users/loginform`, `/users/signupform`, `/lostPassword`, `/resetPassword`, `/verify/**`, login dialog, base-path asset loading | running: `019f0079-8de1-7fa0-9af1-a43f67ec2148` (`Chandrasekhar`) | Reopen `ui-parity-auth-public-entry.md` and `ui-parity-root-navigation-shell.md` with browser-visible rows |
+| `r2-workspace-settings-directory` | `/me`, `/:user`, `/user/issues`, `/user/files`, `/user/editform/**`, `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`, org settings/member/delete flows | running: `019f0079-b757-7c03-ace6-47d17ef02989` (`Schrodinger`) | Reopen workspace/settings/directory reports with per-route Playwright proof |
+| `r2-project-issue-board-milestone` | project home/admin/settings plus issue, board, and milestone list/form/detail/comment flows | running: `019f0079-dd88-74e3-b8ae-8d8e7f688cad` (`Halley`) | Reopen project/issues/board-milestone reports with route and interaction rows |
+| `r2-code-pr-review-search-notification` | code browser, commits, branches, compare, PR list/form/detail/changes/reviews, search, notification page and incremental notification route | running: `019f007a-03c0-7ce3-946a-57dc683762a9` (`Peirce`) | Reopen code/PR/search-notification reports with browser-visible rows |
+| `r2-site-admin-security-db` | `/sites/**`, `/secret`, `/restart`, `/migration`, security probes, DB matrix/adopt smoke entry pages | running: `019f007a-27ed-7cf1-97f7-e0ecac68bd5f` (`Fermat`) | Reopen site-admin and fragment-security-db reports with browser/security rows |
 
 ## Full UI Parity Matrix
 
