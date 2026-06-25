@@ -9,6 +9,7 @@ import {
   toggleLegacyTasklistMarkdownItem,
 } from "./routes/-markdown-renderer";
 import {
+  highlightCodeBlock,
   MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH,
   MAX_HIGHLIGHTED_CODE_BLOCK_LINES,
 } from "./routes/-syntax-highlighting";
@@ -1360,6 +1361,21 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="sql"');
     expect(html).toContain(`SELECT ${MAX_HIGHLIGHTED_CODE_BLOCK_LINES};`);
     expect(html).not.toContain("syntax-token");
+  });
+
+  it("short-circuits syntax highlighting before tokenizing pathological code blocks", () => {
+    const longSqlLine = "SELECT body FROM pathological_article WHERE body LIKE '%markdown%';\n";
+    const longSql = longSqlLine.repeat(
+      Math.ceil((MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH + 1) / longSqlLine.length),
+    );
+    const manySqlLines = Array.from(
+      { length: MAX_HIGHLIGHTED_CODE_BLOCK_LINES + 1 },
+      (_, index) => `SELECT ${index};`,
+    ).join("\n");
+
+    expect(highlightCodeBlock(longSql, "sql")).toBe(longSql);
+    expect(highlightCodeBlock(manySqlLines, "sql")).toBe(manySqlLines);
+    expect(Array.isArray(highlightCodeBlock("SELECT 1;", "sql"))).toBe(true);
   });
 
   it("recognizes legacy Highlight.js Rust numeric literals in fenced blocks", () => {
