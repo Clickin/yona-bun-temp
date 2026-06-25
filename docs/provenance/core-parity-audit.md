@@ -105,6 +105,12 @@
   `title.massMail`, `site.mail.sended`) while runtime-provider rendering still
   resolves through `yona-original/conf/messages*`. Focused evidence:
   `site-admin-route-parity.spec.tsx` and `i18n.spec.tsx`.
+- 2026-06-25 markdown help continuation: the React-rendered markdown help keeps
+  the legacy `help/markdown.scala.html` examples where the list input displays
+  `- Green.` while the rendered output omits the period, and the image input
+  displays the `https://repo.yona.io/.../ico-like-small.png` URL while the
+  rendered output uses `/assets/images/ico-like-small.png`. Focused evidence:
+  `markdown-renderer.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks are derived

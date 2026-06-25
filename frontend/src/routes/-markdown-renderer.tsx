@@ -6861,7 +6861,8 @@ export function LegacyMarkdownHelp(props: { messages?: LegacyMessageLookup } = {
       target: "markdownLinks",
     },
     {
-      input: "- Red\n    1. White\n    2. Blue\n- Green",
+      input: "- Red\n    1. White\n    2. Blue\n- Green.",
+      outputMarkdown: "- Red\n    1. White\n    2. Blue\n- Green",
       label: "List",
       target: "markdownLists",
     },
@@ -6871,7 +6872,8 @@ export function LegacyMarkdownHelp(props: { messages?: LegacyMessageLookup } = {
       target: "markdownTaskList",
     },
     {
-      input: '![title](/assets/images/ico-like-small.png "Yobi")',
+      input: '![title](https://repo.yona.io/assets/images/ico-like-small.png "Yobi")',
+      outputMarkdown: '![title](/assets/images/ico-like-small.png "Yobi")',
       label: "Image",
       target: "markdownImages",
     },
@@ -6925,7 +6927,7 @@ export function LegacyMarkdownHelp(props: { messages?: LegacyMessageLookup } = {
               <div className="span6">
                 <MarkdownRenderer
                   className="markdown-wrap"
-                  markdown={section.input}
+                  markdown={section.outputMarkdown ?? section.input}
                   showTasklistBar={section.target === "markdownTaskList"}
                 />
               </div>

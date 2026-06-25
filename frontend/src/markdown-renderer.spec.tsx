@@ -23,6 +23,11 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="markdown-help-item markdownShortLinks"');
     expect(html).toContain("Markdown Input");
     expect(html).toContain("Markdown Output");
+    expect(html).toContain("- Green.");
+    expect(html).toContain(
+      "![title](https://repo.yona.io/assets/images/ico-like-small.png &quot;Yobi&quot;)",
+    );
+    expect(html).toContain('src="/assets/images/ico-like-small.png"');
     expect(html).toContain("Issue no: #2");
     expect(html).toContain("commit: @763575");
   });
