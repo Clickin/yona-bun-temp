@@ -205,7 +205,7 @@ as `covered` inside the report.
 | Search user/project/milestone result row visual shape | `ui-parity-search-notification` | `gap` | Generic renderer lacks legacy user avatar/card/since, project logo/created/code-update/fork metadata, and milestone due-date/relative text. Owner scope: `frontend/src/routes/-search-views.tsx`, search DTO/repository projection if needed. |
 | Search comment/review result row browser proof | `ui-parity-search-notification` | `weak evidence` | REST contracts cover ACL/hrefs, but issue_comment/post_comment/review row shapes need focused render/browser proof. Owner scope: `frontend/src/routes/-search-views.tsx` focused specs before code changes. |
 | Notification welcome guide persistence proof | `ui-parity-search-notification` | `weak evidence` | `#toggleIntro` source matches legacy localStorage key/class behavior, but click/localStorage browser proof is missing. Owner scope: focused Playwright scenario for notifications route. |
-| Notification load-more semantics | `ui-parity-search-notification` | `deviation` | Legacy `/notification` loads the next fragment chunk with `from+size`; current React increases `size` from zero and may refetch prior rows or navigate via the anchor. Owner scope: `frontend/src/routes/notification/route.tsx`, `frontend/src/api/notifications.ts`, notification list Playwright test. |
+| Notification load-more semantics | `ui-parity-search-notification` | `covered in current follow-up` | `/notifications` now preserves the legacy append-next-chunk behavior in React: the initial REST query reads `from=0&size=20`, `#notification-more` prevents anchor navigation, fetches `from=items.length&size=20`, appends `nextPage.items`, and updates `hasMore` instead of refetching prior rows by increasing `size` from zero. Evidence: `frontend/src/routes/notification/route.tsx`, `frontend/src/route-parity.spec.tsx`, existing `frontend/src/auth-workspace-client.spec.ts` API query coverage. |
 | Pull request contributor sent-by-me option | `ui-parity-pull-request-review` | `gap` | PR list contributor select omits the legacy current-user `pullRequest.sentByMe` option. Owner scope: `frontend/src/routes/-pull-request-views.tsx`, `frontend/src/api/pull-requests.ts`, `crates/server/src/routes/pull_requests.rs`, focused list spec. |
 | Pull request create/edit selector id semantics | `ui-parity-pull-request-review` | `deviation` | Current form uses `#pullRequestState` for title input and `#status` for body textarea, while legacy uses hidden `#pullRequestState` and merge-check `#status`. Owner scope: `frontend/src/routes/-pull-request-views.tsx`, PR interaction e2e/render specs. |
 | Pull request create/edit body validation | `ui-parity-pull-request-review` | `gap` | Backend rejects empty body, but React form does not surface legacy `pullRequest.body.required` in the visible submit flow. Owner scope: `frontend/src/routes/-pull-request-views.tsx`, focused form validation e2e/spec. |
@@ -278,20 +278,55 @@ Each subagent report must include:
 
 ## Parallelization Plan
 
-Run explorers first, then workers:
+Run the phase in two distinct lanes. The inventory lane is complete enough to
+start worker delegation because each active packet now has a report under
+`docs/provenance/ui-parity-reports/`. The worker lane must still stay bounded
+to the queued findings below; do not reopen broad design work.
 
-1. Assign all unassigned explorer packets in parallel:
-   `ui-parity-code-vcs`, `ui-parity-pull-request-review`,
-   `ui-parity-search-notification`, and `ui-parity-site-admin-setup`.
-2. Do not assign implementation to a packet until its explorer report exists.
-3. Batch worker assignments by disjoint write scope:
-   root shell/auth, workspace/settings, directory/organization,
-   project-admin, issues, board/milestone, code/VCS, PR/review,
-   search/notification, site-admin/setup.
-4. Within one batch, avoid overlapping files. If two gaps touch the same route
+1. Keep `docs/provenance/ui-parity-reports/*` as the route-family inventory
+   baseline. If a new legacy page or user-visible state is discovered, add a
+   row to the owning report before assigning implementation.
+2. Assign implementation by disjoint write scope, not by one giant route family.
+   A worker receives one row group, the exact owned files/modules, and the
+   focused test/provenance files it may update.
+3. Within one batch, avoid overlapping files. If two gaps touch the same route
    helper/component/API module, keep them in the same worker assignment.
-5. Parent integrates one completed worker at a time, updates this queue, then
+4. Parent integrates one completed worker at a time, updates this queue, then
    runs focused checks before assigning the next overlapping worker.
+5. After each wave, rerun the lightweight route/spec gates and refresh the
+   remaining queue statuses before starting the next wave.
+
+## Worker Wave Plan
+
+Wave 0 is already in progress for small, isolated follow-ups found by the
+inventory reports. Later waves should be assigned only after the previous wave
+has landed and the queue statuses are refreshed.
+
+| Wave | Worker packet | Owned scope | Queue rows |
+| --- | --- | --- | --- |
+| 0 | `ui-worker-notification-load-more` | `frontend/src/routes/notification/route.tsx`, `frontend/src/route-parity.spec.tsx`, notification report/phase rows | Notification load-more semantics |
+| 1 | `ui-worker-auth-post-state` | `frontend/src/routes/-auth-views.tsx`, auth route files, auth focused specs, auth report rows | Signup confirm/email verification, reset/verify invalid post states |
+| 1 | `ui-worker-workspace-settings-proof` | focused Playwright/e2e specs plus `frontend/src/routes/-workspace-settings-view.tsx` only if a concrete diff appears | Avatar invalid/crop UX, notification hash tab activation |
+| 1 | `ui-worker-directory-validation-org-member` | `frontend/src/routes/-project-views.tsx`, `frontend/src/routes/-organization-views.tsx`, project/org focused specs | Project/import client validation, organization member typeahead/browser proof |
+| 2 | `ui-worker-project-admin-home` | `frontend/src/routes/-project-views.tsx`, project route/API projections if required, project focused specs | Project home dashboard, member block/leave modal, settings general controls |
+| 2 | `ui-worker-issues-detail-list` | issue React route/view/client files, issue focused specs, issue provenance rows | Issue list filters/mass update, create/edit selector copy, detail metadata/timeline/upload/preview |
+| 2 | `ui-worker-board-milestone` | `frontend/src/routes/-board-views.tsx`, `frontend/src/routes/-milestone-views.tsx`, board/milestone focused specs | Board label picker deviation, board attachment/delete/label parity, milestone list/form/detail parity |
+| 3 | `ui-worker-code-vcs-proof` | `frontend/src/routes/-code-views.tsx`, code route files, focused Playwright/specs | Commit watch/unwatch, anonymous author decision, branch action proof, diff selector exactness |
+| 3 | `ui-worker-pr-review` | `frontend/src/routes/-pull-request-views.tsx`, PR API/server route files if required, PR focused specs | Contributor sent-by-me, selector ID semantics, body validation, event timeline i18n, stale e2e copy decision |
+| 3 | `ui-worker-search-chrome-results` | `frontend/src/routes/-search-views.tsx`, search DTO/repository projection if required, search focused specs | Scoped chrome, missing keyword state decision, user/project/milestone row shapes, comment/review proof |
+| 4 | `ui-worker-site-admin-setup` | `crates/server/src/routes/auth.rs`, `frontend/src/routes/secret/route.tsx`, site-admin focused specs | `/secret` configured-state proof/fix |
+
+Worker assignment prompts must name the exact wave row and must include:
+
+- The worker is not alone in the codebase and must not revert unrelated changes.
+- The worker may edit only the owned scope plus explicitly named focused tests
+  and report rows.
+- The worker must keep legacy Yona UI/UX as source of truth and must not add
+  improved UX.
+- The worker must keep React-visible flows on REST JSON/API-return plus React
+  render unless the row is a direct legacy compatibility route.
+- The worker final response must list changed files, verification commands, and
+  any row it could not close.
 
 ## Worker Split Rule
 

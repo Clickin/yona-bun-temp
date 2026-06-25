@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { listNotificationsQueryOptions } from "../../api/notifications";
+import { listNotificationsQueryOptions, listNotificationsRest } from "../../api/notifications";
 import { setDefaultLandingPathRest } from "../../api/workspace";
 import { useAppRuntime } from "../../app-runtime-context";
 import {
@@ -47,13 +47,15 @@ export function NotificationRouteComponent({
     syncWorkspaceFromOverview,
   } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(routePath);
-  const [size, setSize] = React.useState(NOTIFICATION_PAGE_SIZE);
+  const [items, setItems] = React.useState<NotificationListItem[]>([]);
+  const [hasMore, setHasMore] = React.useState(false);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const [expandedMessages, setExpandedMessages] = React.useState<ReadonlySet<string>>(
     () => new Set(),
   );
   const [readFailed, setReadFailed] = React.useState(false);
   const notificationsQuery = useQuery({
-    ...listNotificationsQueryOptions(runtimeConfig, { from: 0, size }),
+    ...listNotificationsQueryOptions(runtimeConfig, { from: 0, size: NOTIFICATION_PAGE_SIZE }),
     enabled: canRender,
   });
 
@@ -66,6 +68,14 @@ export function NotificationRouteComponent({
     }
     setReadFailed(true);
   }, [notificationsQuery.error]);
+
+  React.useEffect(() => {
+    if (!notificationsQuery.data) {
+      return;
+    }
+    setItems(notificationsQuery.data.items);
+    setHasMore(notificationsQuery.data.hasMore);
+  }, [notificationsQuery.data]);
 
   if (bootstrapping || !canRender) {
     return (
@@ -84,8 +94,6 @@ export function NotificationRouteComponent({
     return <BadRequestPage href={routePath} />;
   }
 
-  const notifications = notificationsQuery.data;
-  const items = notifications?.items ?? [];
   const defaultAvatarUrl = prefixBasePath(
     runtimeConfig.basePath,
     "/assets/images/default-avatar-64.png",
@@ -132,6 +140,24 @@ export function NotificationRouteComponent({
       await syncWorkspaceFromOverview(overview);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "set Default page failed: ");
+    }
+  };
+  const loadMoreNotifications = async () => {
+    if (loadingMore || !hasMore) {
+      return;
+    }
+    setLoadingMore(true);
+    try {
+      const nextPage = await listNotificationsRest(runtimeConfig, {
+        from: items.length,
+        size: NOTIFICATION_PAGE_SIZE,
+      });
+      setItems((current) => [...current, ...nextPage.items]);
+      setHasMore(nextPage.hasMore);
+    } catch {
+      setReadFailed(true);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -231,13 +257,16 @@ export function NotificationRouteComponent({
                       );
                     })
                   )}
-                  {notifications?.hasMore ? (
+                  {hasMore ? (
                     <li>
                       <a
                         className="ybtn"
                         href={locationHref}
                         id="notification-more"
-                        onClick={() => setSize((current) => current + NOTIFICATION_PAGE_SIZE)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void loadMoreNotifications();
+                        }}
                       >
                         More
                       </a>
@@ -253,6 +282,8 @@ export function NotificationRouteComponent({
     </main>
   );
 }
+
+type NotificationListItem = Awaited<ReturnType<typeof listNotificationsRest>>["items"][number];
 
 function NotificationMessage({
   expanded,

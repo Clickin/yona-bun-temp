@@ -2084,6 +2084,14 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).toContain('type="button"');
     expect(notificationRouteSource).not.toContain('href="javascript:void(0);"');
     expect(notificationRouteSource).toContain('id="notification-more"');
+    expect(notificationRouteSource).toContain("listNotificationsRest(runtimeConfig");
+    expect(notificationRouteSource).toContain("from: items.length");
+    expect(notificationRouteSource).toContain("size: NOTIFICATION_PAGE_SIZE");
+    expect(notificationRouteSource).toContain("event.preventDefault()");
+    expect(notificationRouteSource).toContain(
+      "setItems((current) => [...current, ...nextPage.items])",
+    );
+    expect(notificationRouteSource).not.toContain("setSize((current) => current +");
     expect(notificationRouteSource).not.toContain("`/users/${encodeURIComponent(loginId)}`");
     expect(notificationRouteSource).toContain("`/${encodeURIComponent(loginId)}`");
     const appCssSource = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
