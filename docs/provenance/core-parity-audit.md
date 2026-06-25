@@ -1733,6 +1733,10 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   legacy OOM-risk class reported for very long SQL Markdown codeblocks while
   preserving readable source output. Focused coverage:
   `frontend/src/markdown-renderer.spec.tsx`.
+- 2026-06-25 RC Markdown fragment-path continuation: the same long SQL
+  fenced-code cutoff is now covered for `containerElement="fragment"` render
+  paths used by child comments and preview-like inline surfaces, so those
+  React-owned paths also render plain source without `syntax-token` spans.
 - 2026-06-25 home/directory i18n evidence tightening: the
   directory/home/user-files/notification focused i18n test now drives the
   provider-backed case through `createLegacyI18nRuntime(["en-US", "ko-KR"])`,

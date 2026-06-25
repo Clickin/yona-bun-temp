@@ -1198,6 +1198,21 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("syntax-token");
   });
 
+  it("keeps very long SQL fenced blocks safe in fragment rendering paths", () => {
+    const sqlLine = "SELECT body FROM child_comment_table WHERE body LIKE '%markdown%';";
+    const longSql = `${sqlLine}\n`
+      .repeat(Math.ceil((MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH + 1) / sqlLine.length))
+      .trimEnd();
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer containerElement="fragment" markdown={`\`\`\`sql\n${longSql}\n\`\`\``} />,
+    );
+
+    expect(html).toContain("<pre><code");
+    expect(html).toContain('class="sql"');
+    expect(html).toContain("child_comment_table");
+    expect(html).not.toContain("syntax-token");
+  });
+
   it("renders any very long fenced block as plain source without syntax highlighting", () => {
     const rustLine = "fn release_candidate() { return; }";
     const longRust = `${`${rustLine}\n`.repeat(
