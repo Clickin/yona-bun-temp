@@ -243,6 +243,15 @@ async function apiLogin(page, baseUrl) {
         "x-csrf-token": csrfToken,
       },
     });
+    await page.request.post(`${baseUrl}/api/v1/workspace/recent-projects`, {
+      data: {
+        ownerName: "admin",
+        projectName: "sample",
+      },
+      headers: {
+        "x-csrf-token": csrfToken,
+      },
+    });
   };
   const adminRegisterResponse = await page.request.post(`${baseUrl}/api/v1/auth/register`, {
     data: {

@@ -15,7 +15,9 @@ Status: current audit evidence.
 - Local fixture alignment: the sweep ensures an `admin/sample` project exists
   after local admin bootstrap so direct issue shortcuts such as
   `/user/issues/new/mine` compare against the same project shape as the homelab
-  legacy sample.
+  legacy sample. It also records `admin/sample` as the local recent project,
+  matching legacy `IssueApp.newDirectIssueForm`, which selects the current
+  user's most recent visited project for `/user/issues/new`.
 - Local route corpus: explicit legacy base pages, route-tree sample expansion, and discovered seeded
   project links. Each route is inspected in an isolated Playwright page so one navigation failure
   cannot cascade into later false failures.
@@ -70,6 +72,12 @@ Playwright render the legacy responses from `127.0.0.1`.
 - Local Playwright visual sweep: 107 checked, 107 passed, 0 failed, authenticated session confirmed.
 - Cross-target comparison failures: 0. The harness now catches the class of issue where legacy
   renders a normal page and local renders a not-found/forbidden/bad-request page.
+- A rerun first exposed `/user/issues/new` as that exact class of failure:
+  legacy rendered the normal `새 이슈 - admin/sample` form, while local rendered
+  a not-found page because the sweep-created `admin/sample` project had not
+  been recorded as recently visited. The harness now records that recent
+  project during local bootstrap instead of changing app semantics, preserving
+  legacy `newDirectIssueForm` behavior.
 - Local discovered project route root: `/pilot/yona`.
 - Legacy discovered project route root: `/admin/sample`.
 
