@@ -132,6 +132,7 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 | `application.context`                      | `YONA_BASE_PATH`                                    |                              |
 | `application.allowsAnonymousAccess`        | `YONA_ALLOW_ANONYMOUS_ACCESS`                       |                              |
 | `application.guest.user.login.id.prefix`   | `YONA_GUEST_LOGIN_PREFIX`                           |                              |
+| `application.hide.project.listing`         | `YONA_HIDE_PROJECT_LISTING` / `yoram.toml` `[site] hide_project_listing` | global project listing menu/search scope hiding |
 | `application.use.email.verification`       | `YONA_AUTH_EMAIL_VERIFICATION_ENABLED`              |                              |
 | `signup.require.admin.confirm`             | `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM`                  |                              |
 | `application.use.social.login.only`        | `YONA_AUTH_SOCIAL_LOGIN_ONLY`                       |                              |

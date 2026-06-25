@@ -18,6 +18,7 @@ describe("readRuntimeConfig", () => {
       apiBaseUrl: "/api",
       basePath: "/",
       feedbackUrl: "",
+      hideProjectListing: false,
       navbarCustomLinkName: "",
       navbarCustomLinkUrl: "",
       projectDefaultMenus: ["code", "issue", "pullRequest", "review", "milestone", "board"],
@@ -37,6 +38,7 @@ describe("readRuntimeConfig", () => {
       apiBaseUrl: "/yona/api",
       basePath: "/yona/",
       feedbackUrl: " https://feedback.example.com ",
+      hideProjectListing: "true",
       navbarCustomLinkName: "Docs",
       navbarCustomLinkUrl: "https://docs.example.com",
       projectDefaultMenus: ["issue", "pull-request", "unknown"],
@@ -50,6 +52,7 @@ describe("readRuntimeConfig", () => {
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
       feedbackUrl: "https://feedback.example.com",
+      hideProjectListing: true,
       navbarCustomLinkName: "Docs",
       navbarCustomLinkUrl: "https://docs.example.com",
       projectDefaultMenus: ["issue", "pullRequest"],
@@ -64,6 +67,7 @@ describe("readRuntimeConfig", () => {
     globalThis.window = {} as Window & typeof globalThis;
     process.env.VITE_YONA_BASE_PATH = "/yona";
     process.env.VITE_YONA_FEEDBACK_URL = "https://feedback.example.test";
+    process.env.VITE_YONA_HIDE_PROJECT_LISTING = "1";
     process.env.VITE_YONA_LANGS = "ja-JP, en-US";
     process.env.VITE_YONA_PROJECT_DEFAULT_MENUS = "issue,board";
     process.env.VITE_YONA_NAVBAR_CUSTOM_LINK_NAME = " Support ";
@@ -74,6 +78,7 @@ describe("readRuntimeConfig", () => {
       ...originalImportMetaEnv,
       VITE_YONA_BASE_PATH: "/yona",
       VITE_YONA_FEEDBACK_URL: "https://feedback.example.test",
+      VITE_YONA_HIDE_PROJECT_LISTING: "1",
       VITE_YONA_LANGS: "ja-JP, en-US",
       VITE_YONA_NAVBAR_CUSTOM_LINK_NAME: " Support ",
       VITE_YONA_NAVBAR_CUSTOM_LINK_URL: "/support",
@@ -86,6 +91,7 @@ describe("readRuntimeConfig", () => {
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
       feedbackUrl: "https://feedback.example.test",
+      hideProjectListing: true,
       navbarCustomLinkName: "Support",
       navbarCustomLinkUrl: "/support",
       projectDefaultMenus: ["issue", "board"],

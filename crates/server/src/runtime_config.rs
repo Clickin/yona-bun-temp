@@ -45,6 +45,7 @@ pub struct StartupConfig {
     pub mailbox_polling_interval: Option<String>,
     pub max_file_size: Option<usize>,
     pub feedback_url: Option<String>,
+    pub hide_project_listing: Option<bool>,
     pub navbar_custom_link_name: Option<String>,
     pub navbar_custom_link_url: Option<String>,
     pub project_default_menus: Option<Vec<String>>,
@@ -149,6 +150,7 @@ struct SiteConfigFile {
     guest_login_prefix: Option<String>,
     hostname: Option<String>,
     feedback_url: Option<String>,
+    hide_project_listing: Option<bool>,
     langs: Option<Vec<String>>,
     name: Option<String>,
     navbar_custom_link_name: Option<String>,
@@ -365,6 +367,9 @@ pub fn load_startup_config(
     let feedback_url = env_string(&env, "YONA_FEEDBACK_URL")
         .or_else(|| env_string(&env, "application.feedback.url"))
         .or_else(|| non_empty_string(site.feedback_url));
+    let hide_project_listing = env_bool(&env, "YONA_HIDE_PROJECT_LISTING")
+        .or_else(|| env_bool(&env, "application.hide.project.listing"))
+        .or(site.hide_project_listing);
     let navbar_custom_link_name = env_string(&env, "YONA_NAVBAR_CUSTOM_LINK_NAME")
         .or_else(|| env_string(&env, "application.navbar.custom.link.name"))
         .or_else(|| non_empty_string(site.navbar_custom_link_name));
@@ -582,6 +587,7 @@ pub fn load_startup_config(
         mailbox_polling_interval,
         max_file_size,
         feedback_url,
+        hide_project_listing,
         navbar_custom_link_name,
         navbar_custom_link_url,
         project_default_menus,

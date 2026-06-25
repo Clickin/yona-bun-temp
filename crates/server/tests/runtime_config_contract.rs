@@ -109,6 +109,7 @@ allow_anonymous_access = false
 allowed_sending_mail_domains = ["allowed.example.com", "other.example.com"]
 guest_login_prefix = "guest-"
 feedback_url = "https://feedback.example.com"
+hide_project_listing = true
 navbar_custom_link_name = "Docs"
 navbar_custom_link_url = "https://docs.example.com"
 send_yona_usage = false
@@ -221,6 +222,7 @@ draft_time = "1s"
         config.feedback_url.as_deref(),
         Some("https://feedback.example.com")
     );
+    assert_eq!(config.hide_project_listing, Some(true));
     assert_eq!(config.navbar_custom_link_name.as_deref(), Some("Docs"));
     assert_eq!(
         config.navbar_custom_link_url.as_deref(),
@@ -630,6 +632,10 @@ draft_time = "30s"
                 "https://env.example/feedback".to_string(),
             ),
             (
+                "application.hide.project.listing".to_string(),
+                "true".to_string(),
+            ),
+            (
                 "YONA_TRANSLATION_API".to_string(),
                 "https://env.example/translate".to_string(),
             ),
@@ -742,6 +748,7 @@ draft_time = "30s"
         config.feedback_url.as_deref(),
         Some("https://env.example/feedback")
     );
+    assert_eq!(config.hide_project_listing, Some(true));
     assert_eq!(config.navbar_custom_link_name.as_deref(), Some("Env Docs"));
     assert_eq!(
         config.navbar_custom_link_url.as_deref(),

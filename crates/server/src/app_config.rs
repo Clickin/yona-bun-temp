@@ -35,6 +35,7 @@ pub struct AppRuntimeConfig {
     pub ldap: LdapRuntimeConfig,
     pub max_uploaded_file_size: usize,
     pub feedback_url: String,
+    pub hide_project_listing: bool,
     pub navbar_custom_link_name: String,
     pub navbar_custom_link_url: String,
     pub oauth: OAuthRuntimeConfig,
@@ -296,6 +297,7 @@ impl Default for AppRuntimeConfig {
             ldap: LdapRuntimeConfig::default(),
             max_uploaded_file_size: LEGACY_DEFAULT_MAX_FILE_SIZE,
             feedback_url: String::new(),
+            hide_project_listing: false,
             navbar_custom_link_name: String::new(),
             navbar_custom_link_url: String::new(),
             oauth: OAuthRuntimeConfig::default(),
@@ -327,6 +329,7 @@ impl AppRuntimeConfig {
             ldap: LdapRuntimeConfig::from_startup(config),
             max_uploaded_file_size: max_uploaded_file_size_from_option(config.max_file_size),
             feedback_url: trimmed_option(config.feedback_url.as_deref()).unwrap_or_default(),
+            hide_project_listing: config.hide_project_listing.unwrap_or(false),
             navbar_custom_link_name: trimmed_option(config.navbar_custom_link_name.as_deref())
                 .unwrap_or_default(),
             navbar_custom_link_url: trimmed_option(config.navbar_custom_link_url.as_deref())

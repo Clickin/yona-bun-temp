@@ -196,6 +196,8 @@ pub(crate) struct BrowserRuntimeConfig {
     base_path: String,
     #[serde(rename = "feedbackUrl")]
     feedback_url: String,
+    #[serde(rename = "hideProjectListing")]
+    hide_project_listing: bool,
     #[serde(rename = "navbarCustomLinkName")]
     navbar_custom_link_name: String,
     #[serde(rename = "navbarCustomLinkUrl")]
@@ -224,6 +226,7 @@ impl BrowserRuntimeConfig {
         project_default_menus: Vec<String>,
         project_default_scope: String,
         feedback_url: String,
+        hide_project_listing: bool,
         navbar_custom_link_name: String,
         navbar_custom_link_url: String,
         site_name: String,
@@ -241,6 +244,7 @@ impl BrowserRuntimeConfig {
             api_base_url,
             base_path,
             feedback_url,
+            hide_project_listing,
             navbar_custom_link_name,
             navbar_custom_link_url,
             project_default_menus,

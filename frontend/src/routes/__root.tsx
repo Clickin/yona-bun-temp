@@ -95,7 +95,9 @@ function SiteAdminLoggedInAffix() {
 }
 
 function RootHeader() {
-  const { currentSession, messages, runtimeConfig } = useAppRuntime();
+  const { currentSession, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
+  const isGuest = workspaceOverview?.profile?.isGuest ?? false;
+  const showProjectListing = !runtimeConfig.hideProjectListing && !isGuest;
 
   return (
     <header className="gnb-outer">
@@ -110,15 +112,19 @@ function RootHeader() {
               Y
             </a>
           </li>
-          <li>
-            <a
-              className="show-progress-bar"
-              href={prefixBasePath(runtimeConfig.basePath, "/projects")}
-            >
-              {messages("title.list", { fallback: "title.list" })}
-            </a>
-          </li>
-          <li className="divider"></li>
+          {showProjectListing ? (
+            <>
+              <li>
+                <a
+                  className="show-progress-bar"
+                  href={prefixBasePath(runtimeConfig.basePath, "/projects")}
+                >
+                  {messages("title.list", { fallback: "title.list" })}
+                </a>
+              </li>
+              <li className="divider"></li>
+            </>
+          ) : null}
           {runtimeConfig.feedbackUrl ? (
             <li>
               <a href={runtimeConfig.feedbackUrl} rel="noreferrer" target="_blank">

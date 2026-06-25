@@ -431,6 +431,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
         },
         AppRuntimeConfig {
             feedback_url: "https://feedback.example.com".to_string(),
+            hide_project_listing: true,
             navbar_custom_link_name: "Docs".to_string(),
             navbar_custom_link_url: "https://docs.example.com".to_string(),
             project_default_scope: "private".to_string(),
@@ -463,6 +464,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
     assert!(html.contains("\"basePath\":\"/yona\""));
     assert!(html.contains("\"feedbackUrl\":\"https://feedback.example.com\""));
+    assert!(html.contains("\"hideProjectListing\":true"));
     assert!(html.contains("\"navbarCustomLinkName\":\"Docs\""));
     assert!(html.contains("\"navbarCustomLinkUrl\":\"https://docs.example.com\""));
     assert!(html.contains("\"projectDefaultScope\":\"private\""));

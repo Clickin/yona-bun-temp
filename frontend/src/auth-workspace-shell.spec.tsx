@@ -67,6 +67,9 @@ describe("auth and workspace views", () => {
     );
     expect(source).toContain("user.siteAdminLoggedInAffix.maxim");
     expect(source).toContain('messages("title.list", { fallback: "title.list" })');
+    expect(source).toContain("runtimeConfig.hideProjectListing");
+    expect(source).toContain("workspaceOverview?.profile?.isGuest");
+    expect(source).toContain("showProjectListing");
     expect(source).toContain(
       'messages("title.yobi.feedback", { fallback: "title.yobi.feedback" })',
     );

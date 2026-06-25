@@ -2,6 +2,7 @@ export interface RuntimeConfig {
   apiBaseUrl: string;
   basePath: string;
   feedbackUrl?: string;
+  hideProjectListing?: boolean;
   navbarCustomLinkName?: string;
   navbarCustomLinkUrl?: string;
   projectDefaultMenus?: string[];
@@ -16,11 +17,13 @@ type RuntimeConfigInput = Omit<
   | "navbarCustomLinkName"
   | "navbarCustomLinkUrl"
   | "feedbackUrl"
+  | "hideProjectListing"
   | "projectDefaultMenus"
   | "showUserEmail"
   | "supportedLanguages"
 > & {
   feedbackUrl?: string | null;
+  hideProjectListing?: boolean | string | null;
   navbarCustomLinkName?: string | null;
   navbarCustomLinkUrl?: string | null;
   projectDefaultMenus?: string[] | string | null;
@@ -33,6 +36,7 @@ declare global {
     readonly VITE_YONA_API_BASE_URL?: string;
     readonly VITE_YONA_BASE_PATH?: string;
     readonly VITE_YONA_FEEDBACK_URL?: string;
+    readonly VITE_YONA_HIDE_PROJECT_LISTING?: string;
     readonly VITE_YONA_LANGS?: string;
     readonly VITE_YONA_NAVBAR_CUSTOM_LINK_NAME?: string;
     readonly VITE_YONA_NAVBAR_CUSTOM_LINK_URL?: string;
@@ -65,6 +69,7 @@ export function resolveRuntimeConfig(input: RuntimeConfigInput = {}): RuntimeCon
     apiBaseUrl: input.apiBaseUrl ?? joinBasePath(basePath, "api"),
     basePath,
     feedbackUrl: normalizeOptionalString(input.feedbackUrl),
+    hideProjectListing: normalizeBoolean(input.hideProjectListing, false),
     navbarCustomLinkName: normalizeOptionalString(input.navbarCustomLinkName),
     navbarCustomLinkUrl: normalizeOptionalString(input.navbarCustomLinkUrl),
     projectDefaultMenus: normalizeProjectDefaultMenus(input.projectDefaultMenus),
@@ -80,6 +85,7 @@ function readViteRuntimeConfig(): RuntimeConfigInput {
     apiBaseUrl: import.meta.env.VITE_YONA_API_BASE_URL,
     basePath: import.meta.env.VITE_YONA_BASE_PATH,
     feedbackUrl: import.meta.env.VITE_YONA_FEEDBACK_URL,
+    hideProjectListing: import.meta.env.VITE_YONA_HIDE_PROJECT_LISTING,
     navbarCustomLinkName: import.meta.env.VITE_YONA_NAVBAR_CUSTOM_LINK_NAME,
     navbarCustomLinkUrl: import.meta.env.VITE_YONA_NAVBAR_CUSTOM_LINK_URL,
     projectDefaultMenus: import.meta.env.VITE_YONA_PROJECT_DEFAULT_MENUS,
@@ -189,6 +195,10 @@ export function normalizeSupportedLanguages(input: string[] | string | null | un
 }
 
 export function normalizeShowUserEmail(input: boolean | string | null | undefined): boolean {
+  return normalizeBoolean(input, true);
+}
+
+function normalizeBoolean(input: boolean | string | null | undefined, fallback: boolean): boolean {
   if (typeof input === "boolean") {
     return input;
   }
@@ -205,7 +215,7 @@ export function normalizeShowUserEmail(input: boolean | string | null | undefine
     case "on":
       return true;
     default:
-      return true;
+      return fallback;
   }
 }
 
