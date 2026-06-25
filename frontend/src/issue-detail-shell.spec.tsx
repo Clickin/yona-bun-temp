@@ -9,9 +9,16 @@ import {
   IssueReferenceSuggestions,
   ProjectIssueDetailPage,
 } from "./routes/-issue-views";
+import { legacyIssueLabelTextClass } from "./routes/-shared";
 import type { ProjectDetailViewModel, ProjectIssueDetailViewModel } from "./routes/-view-models";
 
 describe("ProjectIssueDetailPage legacy issue shell", () => {
+  it("matches legacy issue label text contrast classes", () => {
+    expect(legacyIssueLabelTextClass("#ffffff")).toBe("dimgray");
+    expect(legacyIssueLabelTextClass("#f44336")).toBe("white");
+    expect(legacyIssueLabelTextClass("#abc")).toBe("white");
+  });
+
   it("renders issue assignee autocomplete loading, empty, error, and suggestion states", () => {
     expect(ISSUE_ASSIGNEE_SEARCH_DEBOUNCE_MS).toBe(300);
 
@@ -225,7 +232,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('<div class="watcher-list"></div>');
     expect(html).not.toContain("Watchers: 3");
     expect(html).toContain("<dt>label</dt>");
-    expect(html).toContain('class="label issue-label active static"');
+    expect(html).toContain('class="label issue-label active static white"');
     expect(html).toContain('data-label-id="5"');
     expect(html).toContain('href="/yona/owner/projectYobi/issues?state=open&amp;labelIds=5"');
     expect(html).not.toContain('class="label issue-label list-label active"');

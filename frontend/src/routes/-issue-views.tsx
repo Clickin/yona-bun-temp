@@ -21,6 +21,7 @@ import {
   type MarkdownTasklistToggleInput,
 } from "./-markdown-renderer";
 import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
+import { legacyIssueLabelClassName } from "./-shared";
 import type {
   ProjectDetailViewModel,
   ProjectIssueDetailViewModel,
@@ -231,7 +232,10 @@ function IssueSubtaskItem(props: {
       </span>
       {child.labels.map((label) => (
         <a
-          className="label issue-label list-label active twoColumeModeTarget"
+          className={legacyIssueLabelClassName(
+            "label issue-label list-label active twoColumeModeTarget",
+            label.color,
+          )}
           data-label-id={label.id}
           href={`${listHref}&labelIds=${label.id}`}
           key={label.id}
@@ -266,7 +270,7 @@ function IssueDetailSelectedLabels(props: {
       <dd>
         {issue.labels.map((label) => (
           <a
-            className="label issue-label active static"
+            className={legacyIssueLabelClassName("label issue-label active static", label.color)}
             data-label-id={label.id}
             href={`${listHref}&labelIds=${label.id}`}
             key={label.id}
@@ -1247,7 +1251,10 @@ function ProjectIssueRows(props: {
                   ) : null}
                   {item.labels.map((label) => (
                     <a
-                      className="label issue-label list-label active"
+                      className={legacyIssueLabelClassName(
+                        "label issue-label list-label active",
+                        label.color,
+                      )}
                       data-label-id={label.id}
                       href={projectIssueListPageHref(
                         props.runtimeConfig,
@@ -2962,7 +2969,10 @@ export function UserIssueListPage(props: {
                                 </span>
                                 {item.labels.map((label) => (
                                   <a
-                                    className="label issue-label list-label twoColumeModeTarget"
+                                    className={legacyIssueLabelClassName(
+                                      "label issue-label list-label twoColumeModeTarget",
+                                      label.color,
+                                    )}
                                     data-label-id={label.id}
                                     href={`${buildProjectHref(
                                       props.runtimeConfig,
@@ -4776,7 +4786,10 @@ export function ProjectIssueFormPage(props: {
                                   value={label.id}
                                 />
                                 <span
-                                  className="label issue-label list-label active"
+                                  className={legacyIssueLabelClassName(
+                                    "label issue-label list-label active",
+                                    label.color,
+                                  )}
                                   style={{ backgroundColor: label.color }}
                                 >
                                   {label.name}

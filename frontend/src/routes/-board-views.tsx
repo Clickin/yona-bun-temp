@@ -18,6 +18,7 @@ import {
 } from "./-markdown-renderer";
 import { OrganizationHeader, OrganizationMenu } from "./-organization-views";
 import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
+import { legacyIssueLabelClassName } from "./-shared";
 import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-view-models";
 
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
@@ -302,7 +303,7 @@ function boardLabels(labels: BoardLabel[], messages?: LegacyMessageLookup) {
       <dd>
         {labels.map((label) => (
           <a
-            className="label issue-label active static"
+            className={legacyIssueLabelClassName("label issue-label active static", label.color)}
             data-label-id={label.id}
             href={`&labelIds=${label.id}`}
             key={label.id}

@@ -7,6 +7,7 @@ import type {
   OrganizationDetailViewModel,
   OrganizationIssueListViewModel,
 } from "./-view-models";
+import { legacyIssueLabelClassName } from "./-shared";
 
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
@@ -1069,7 +1070,10 @@ export function OrganizationIssueListPage(props: {
                               <span className="post-id margin-right-5">#{issue.issueNumber}</span>
                               {issue.labels.map((label) => (
                                 <a
-                                  className="label issue-label list-label"
+                                  className={legacyIssueLabelClassName(
+                                    "label issue-label list-label",
+                                    label.color,
+                                  )}
                                   data-label-id={label.id}
                                   href={`${labelHrefBase}&labelIds=${label.id}`}
                                   key={label.id}

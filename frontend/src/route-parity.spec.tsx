@@ -623,7 +623,7 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('data-format="issuelabel"');
     expect(createHtml).toContain('aria-label="label.select"');
     expect(createHtml).toContain('data-placeholder="label.select"');
-    expect(createHtml).toContain('class="label issue-label list-label active"');
+    expect(createHtml).toContain('class="label issue-label list-label active white"');
     expect(createHtml).toContain('name="referCommentId"');
     expect(createHtml).toContain('value="55"');
     expect(createHtml).not.toContain("Yona Rust Project");
@@ -1630,7 +1630,7 @@ describe("file-route parity harness", () => {
     expect(listHtml).toContain("infos-item item-count-groups");
     expect(listHtml).toContain('class="infos-link-item group-project-name"');
     expect(listHtml).toContain('class="post-id margin-right-5">#7');
-    expect(listHtml).toContain('class="label issue-label list-label"');
+    expect(listHtml).toContain('class="label issue-label list-label white"');
     expect(listHtml).toContain('data-label-id="11"');
     expect(listHtml).toContain('title="issue.assignee: Mona"');
     expect(listHtml).toContain('id="pagination"');
@@ -2437,7 +2437,7 @@ describe("file-route parity harness", () => {
     expect(detailHtml).toContain('data-login="required"');
     expect(detailHtml).toContain('class="comment disabled"');
     expect(detailHtml).toContain("<dt>label</dt>");
-    expect(detailHtml).toContain('class="label issue-label active static"');
+    expect(detailHtml).toContain('class="label issue-label active static white"');
     expect(detailHtml).toContain('data-label-id="7"');
     expect(detailHtml).toContain('href="&amp;labelIds=7"');
     expect(detailHtml).toContain("guide");

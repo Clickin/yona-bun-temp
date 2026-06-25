@@ -19,6 +19,35 @@ export function navigateToAppHref(basePath: string, href: string) {
   window.location.assign(prefixBasePath(basePath, href));
 }
 
+function normalizedIssueLabelColor(color: string | null | undefined) {
+  const trimmed = (color ?? "").trim();
+  const withoutHash = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
+  if (/^[0-9a-fA-F]{3}$/u.test(withoutHash)) {
+    return `#${withoutHash
+      .split("")
+      .map((value) => `${value}${value}`)
+      .join("")
+      .toLowerCase()}`;
+  }
+  if (/^[0-9a-fA-F]{6}$/u.test(withoutHash)) {
+    return `#${withoutHash.toLowerCase()}`;
+  }
+  return "#ffffff";
+}
+
+export function legacyIssueLabelTextClass(color: string | null | undefined) {
+  const normalized = normalizedIssueLabelColor(color).slice(1);
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  const colorSpace = red * 0.21 + green * 0.72 + blue * 0.07;
+  return colorSpace > 192 ? "dimgray" : "white";
+}
+
+export function legacyIssueLabelClassName(baseClassName: string, color: string | null | undefined) {
+  return `${baseClassName} ${legacyIssueLabelTextClass(color)}`;
+}
+
 export function useRequireAuthenticatedRoute(targetHref: string) {
   const { bootstrapping, currentSession, runtimeConfig } = useAppRuntime();
 

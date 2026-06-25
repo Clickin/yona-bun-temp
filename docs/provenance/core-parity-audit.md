@@ -137,6 +137,17 @@
   child comment fragments. Focused evidence: `markdown-renderer.spec.tsx`,
   `issue-detail-shell.spec.tsx`, `route-parity.spec.tsx`,
   `pull-request-review-i18n.spec.tsx`, and `pnpm --dir frontend check`.
+- 2026-06-25 legacy issue-label contrast continuation: React issue, board, and
+  organization issue-label anchors now apply the legacy `dimgray` / `white`
+  contrast class from `issue/view.scala.html`'s
+  `$yobi.getContrastColor(background-color)` pass at render time. The shared
+  frontend helper mirrors the existing Rust label CSS utility's hex
+  normalization and `0.21R + 0.72G + 0.07B > 192` threshold so detail sidebars,
+  project issue lists, organization issue lists, child issue rows, and issue
+  form selected-label fallbacks keep the same text-color hooks without a
+  jQuery post-render mutation. Focused evidence: `issue-detail-shell.spec.tsx`,
+  `issue-list-filter.spec.tsx`, `route-parity.spec.tsx`,
+  `organization-shell-i18n.spec.tsx`, and `pnpm --dir frontend check`.
 - 2026-06-25 markdown help continuation: the React-rendered markdown help keeps
   the legacy `help/markdown.scala.html` examples where the list input displays
   `- Green.` while the rendered output omits the period, and the image input
