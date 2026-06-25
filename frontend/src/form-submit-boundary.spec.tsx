@@ -41,6 +41,8 @@ const createSettingsSubmitFallbackPattern =
 const projectActionSubmitFallbackPattern = /if \(!props\.on(?:CreateWebhook|Fork)\) \{/;
 const clickMutationFallbackPattern =
   /if \(!props\.on(?:LeaveOrganization|ToggleProjectWatch|LeaveProject)\) \{/;
+const mutationDataHrefPattern =
+  /data-href=[\s\S]{0,240}(?:delete|leave|member\/[^"'\s}]+\/(?:edit|delete)|resetPassword|toggleSiteAdminRole|watch|unwatch|enroll|cancel|transfer|changeVCS|pushedBranch)/;
 
 function readRouteSource(relativePath: string) {
   return fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
@@ -79,6 +81,26 @@ function requestMethodElements() {
         tag,
       };
     });
+  });
+}
+
+function mutationDataHrefElements() {
+  return listRouteFiles().flatMap((file) => {
+    const source = readRouteSource(file);
+    return Array.from(source.matchAll(/data-href=/g), (match) => {
+      const index = match.index ?? 0;
+      const anchorStart = source.lastIndexOf("<a", index);
+      const buttonStart = source.lastIndexOf("<button", index);
+      const divStart = source.lastIndexOf("<div", index);
+      const liStart = source.lastIndexOf("<li", index);
+      const start = Math.max(anchorStart, buttonStart, divStart, liStart);
+      const snippet = source.slice(start, index + 1400);
+      return {
+        file,
+        line: lineNumberForIndex(source, index),
+        snippet,
+      };
+    }).filter((element) => mutationDataHrefPattern.test(element.snippet));
   });
 }
 
@@ -224,6 +246,14 @@ describe("React form submit boundary", () => {
         expect(element.snippet, `${element.file}:${element.line}`).toContain('type="button"');
         continue;
       }
+      expect(element.snippet, `${element.file}:${element.line}`).toContain(
+        "event.preventDefault()",
+      );
+    }
+  });
+
+  it("keeps legacy mutation data-href markers inside React click handlers", () => {
+    for (const element of mutationDataHrefElements()) {
       expect(element.snippet, `${element.file}:${element.line}`).toContain(
         "event.preventDefault()",
       );
