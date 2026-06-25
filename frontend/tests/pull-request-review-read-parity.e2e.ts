@@ -324,7 +324,7 @@ test.beforeEach(async ({ page }) => {
   );
 
   await page.route(
-    apiV1Route("/owners/admin/projects/projectYobi/pull-requests/3/changes"),
+    /\/api\/v1\/owners\/admin\/projects\/projectYobi\/pull-requests\/3\/changes(?:\?.*)?$/,
     async (route) => {
       await route.fulfill({
         body: JSON.stringify({
@@ -408,11 +408,12 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
   await expect(page.locator("ul#comments")).not.toContainText("pullRequest.event.message");
   await expect(page.locator(".review-card")).toHaveCount(0);
   await expect(
-    page.locator(".pull-request-overview-tabs a", { hasText: "Code review" }),
+    page.locator(".pull-request-overview-tabs a", { hasText: "Overview" }),
   ).toBeVisible();
+  await expect(page.locator(".pull-request-overview-tabs a", { hasText: "Changes" })).toBeVisible();
 
   await page.goto("/yona/admin/projectYobi/pullRequest/3/changes");
-  await expect(page.locator("#commits")).toContainText("Changes of all commits");
+  await expect(page.locator("#commits")).toContainText("All commit changes");
   await expect(page.locator(".diff-body.diffs-wrap-scroll")).toBeVisible();
   await expect(page.locator(".diff-body .btnPop")).toBeVisible();
   await expect(page.locator(".review-card")).toContainText("Review **comment** body");
@@ -470,4 +471,47 @@ test("renders organization PR lists and REST error shells", async ({ page }) => 
   );
   await page.goto("/yona/admin/projectYobi/pullRequest/404");
   await expect(page.locator(".error-wrap > p").first()).toHaveText("Page not found");
+});
+
+test("renders PR detail, changes, and review thread anchors on a mobile viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  await page.goto("/yona/admin/projectYobi/pullRequest/3");
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".pullRequest-branchInfo")).toContainText("topic/pr-3");
+  await expect(
+    page.locator(".pull-request-overview-tabs a", { hasText: "Overview" }),
+  ).toBeVisible();
+  await expect(page.locator(".pull-request-overview-tabs a", { hasText: "Changes" })).toBeVisible();
+  await expect(page.locator("ul#comments")).toContainText("nori opened this pull request.");
+  await expect(page.locator("main")).not.toContainText("File-based route placeholder");
+  await expect(page.locator("body")).not.toContainText("pullRequest.");
+
+  await page.goto("/yona/admin/projectYobi/pullRequest/3/changes");
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".pullRequest-branchInfo")).toContainText("topic/pr-3");
+  await expect(page.locator("#commits")).toContainText("All commit changes");
+  await expect(page.locator(".diff-body.diffs-wrap-scroll")).toBeVisible();
+  await expect(page.locator(".diff-body .btnPop")).toBeVisible();
+  await expect(page.locator(".review-card")).toContainText("Review **comment** body");
+  await expect(page.locator(".review-card")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/pullRequest/3/changes/abcdef123456#thread-7",
+  );
+  await expect(page.locator("body")).not.toContainText("pullRequest.");
+
+  await page.goto("/yona/admin/projectYobi/pullRequest/3/changes/abcdef123456#thread-7");
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator("#commits")).toContainText("abcdef1");
+  await expect(page.locator(".review-card")).toContainText("Review **comment** body");
+  await expect(page.locator(".review-card")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/pullRequest/3/changes/abcdef123456#thread-7",
+  );
+  await expect(page.locator("body")).not.toContainText("pullRequest.error.newPullRequestForm");
 });
