@@ -1711,16 +1711,6 @@ export function ProjectPostFormPage(props: {
     setValidationMessage(null);
   }, [props.initialPost, onlineCommit?.preparedBodyMarkdown, onlineCommit?.title]);
 
-  const formAction =
-    props.mode === "edit" && props.initialPost?.postNumber
-      ? prefixBasePath(
-          props.runtimeConfig.basePath,
-          `/${props.ownerName}/${props.projectName}/post/${props.initialPost.postNumber}`,
-        )
-      : prefixBasePath(
-          props.runtimeConfig.basePath,
-          `/${props.ownerName}/${props.projectName}/post`,
-        );
   const shellDetail = boardProjectShellDetail({
     ownerName: props.ownerName,
     projectName: props.projectName,
@@ -1738,10 +1728,8 @@ export function ProjectPostFormPage(props: {
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <form
-            action={formAction}
             className="nm board-form"
             encType="multipart/form-data"
-            method="post"
             onSubmit={(event) => {
               event.preventDefault();
               if (title.length === 0) {

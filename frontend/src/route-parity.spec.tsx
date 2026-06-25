@@ -2754,8 +2754,8 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('<h1 class="sr-only">New post</h1>');
     expect(createHtml).not.toContain('<h1 class="sr-only">post.write</h1>');
     expect(createHtml).toContain('<div class="project-page-wrap">');
-    expect(createHtml).toContain('action="/yona/owner/projectYobi/post"');
-    expect(createHtml).toContain('method="post"');
+    expect(createHtml).not.toContain('action="/yona/owner/projectYobi/post"');
+    expect(createHtml).not.toContain('method="post"');
     expect(createHtml).toContain('encType="multipart/form-data"');
     expect(createHtml).toContain('class="nm board-form"');
     expect(createHtml).toContain('<div class="content-wrap frm-wrap">');
@@ -2868,7 +2868,7 @@ describe("file-route parity harness", () => {
         onSubmit={noopSubmit}
       />,
     );
-    expect(editHtml).toContain('action="/yona/owner/projectYobi/post/16"');
+    expect(editHtml).not.toContain('action="/yona/owner/projectYobi/post/16"');
     expect(editHtml).toContain('<h1 class="sr-only">Edit post</h1>');
     expect(editHtml).not.toContain('<h1 class="sr-only">post.modify</h1>');
     expect(editHtml).toContain('<label for="title">Title</label>');
