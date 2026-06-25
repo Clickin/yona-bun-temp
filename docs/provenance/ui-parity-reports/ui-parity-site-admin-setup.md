@@ -64,8 +64,8 @@ Current evidence:
 
 | status | count |
 | --- | ---: |
-| covered | 14 |
-| gap | 1 |
+| covered | 15 |
+| gap | 0 |
 | deviation | 0 |
 | deferred | 1 |
 | not-applicable | 1 |

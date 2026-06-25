@@ -155,14 +155,14 @@ as `covered` inside the report.
 | `ui-parity-root-navigation-shell` | `019eff8b-a5cf-7343-8b07-4875c99d806a` (`Dirac`) | completed | Mostly covered; organization search-scope condition closed in this follow-up, project `hasGroup` scope remains queued |
 | `ui-parity-user-workspace-profile` | `019eff8b-cb85-7862-9cc5-4bb6a0632452` (`Arendt`) | completed | DaysAgo editability closed in this follow-up; public email/PR receiver/user-file location remain queued |
 | `ui-parity-user-account-settings` | `019eff8b-ec3b-7d72-b5b4-4f4a9c183bf2` (`Herschel`) | completed | Broadly mapped; avatar invalid/crop UX and notification hash activation closed by `ui-worker-workspace-settings-proof` |
-| `ui-parity-directory-organization` | `019effaa-2dc0-7231-8af5-8804caf07703` (`Godel`) | completed | Report: `docs/provenance/ui-parity-reports/ui-parity-directory-organization.md`; gap/deviation rows queued below |
-| `ui-parity-project-home-admin` | `019effaa-4c2c-7a91-8845-ea0edd3d5d48` (`Socrates`) | completed | Report: `docs/provenance/ui-parity-reports/ui-parity-project-home-admin.md`; gap rows queued below |
-| `ui-parity-issues` | `019effaa-67d8-7581-860a-b08920fd073e` (`Linnaeus`) | completed | Report: `docs/provenance/ui-parity-reports/ui-parity-issues.md`; gap rows queued below |
-| `ui-parity-board-milestone` | `019effaa-8a27-7321-aaec-e27b7371880f` (`Archimedes`) | completed | Report: `docs/provenance/ui-parity-reports/ui-parity-board-milestone.md`; gap/deviation rows queued below |
-| `ui-parity-code-vcs` | `019effbc-a056-7cf2-8fa6-5d6de40e1198` (`Anscombe`) | completed | Report: `docs/provenance/ui-parity-reports/ui-parity-code-vcs.md`; gap/deviation/weak-evidence rows queued below |
-| `ui-parity-pull-request-review` | `019effbc-c970-7850-bfe3-ab7d8e897eb6` (`Wegener`) | completed | Report: `docs/provenance/ui-parity-reports/ui-parity-pull-request-review.md`; gap/deviation/weak-evidence rows queued below |
-| `ui-parity-search-notification` | `019effbc-f514-74b2-8067-ecc811844244` (`Leibniz`) | completed | Report: `docs/provenance/ui-parity-reports/ui-parity-search-notification.md`; gap/deviation/weak-evidence rows queued below |
-| `ui-parity-site-admin-setup` | `019effbd-1fe5-7803-997a-af04e8b3ee4e` (`Descartes`) | completed | Report: `docs/provenance/ui-parity-reports/ui-parity-site-admin-setup.md`; gap/weak-evidence rows queued below |
+| `ui-parity-directory-organization` | `019effaa-2dc0-7231-8af5-8804caf07703` (`Godel`) | completed | Report reconciled; queue rows below are covered or classified |
+| `ui-parity-project-home-admin` | `019effaa-4c2c-7a91-8845-ea0edd3d5d48` (`Socrates`) | completed | Report reconciled; queue rows below are covered or classified |
+| `ui-parity-issues` | `019effaa-67d8-7581-860a-b08920fd073e` (`Linnaeus`) | completed | Report reconciled; queue rows below are covered or classified |
+| `ui-parity-board-milestone` | `019effaa-8a27-7321-aaec-e27b7371880f` (`Archimedes`) | completed | Report reconciled; queue rows below are covered or classified |
+| `ui-parity-code-vcs` | `019effbc-a056-7cf2-8fa6-5d6de40e1198` (`Anscombe`) | completed | Report reconciled; queue rows below are covered or classified |
+| `ui-parity-pull-request-review` | `019effbc-c970-7850-bfe3-ab7d8e897eb6` (`Wegener`) | completed | Report reconciled; `/reviews` row fidelity gap closed in current follow-up |
+| `ui-parity-search-notification` | `019effbc-f514-74b2-8067-ecc811844244` (`Leibniz`) | completed | Report reconciled; summary now has no gap/deviation/weak-evidence rows |
+| `ui-parity-site-admin-setup` | `019effbd-1fe5-7803-997a-af04e8b3ee4e` (`Descartes`) | completed | Report reconciled; summary now has no gap/weak-evidence rows |
 
 ## Audit Result Queue
 

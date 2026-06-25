@@ -57,9 +57,9 @@ Total rows: 23
 
 | status | count |
 | --- | ---: |
-| covered | 21 |
+| covered | 22 |
 | gap | 0 |
-| deviation | 1 |
+| deviation | 0 |
 | deferred | 0 |
 | not-applicable | 1 |
 | weak evidence | 0 |
