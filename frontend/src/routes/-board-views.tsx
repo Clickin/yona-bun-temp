@@ -1227,13 +1227,16 @@ export function ProjectBoardDetailPage(props: {
                                   encType="multipart/form-data"
                                   method="post"
                                   onSubmit={(event) => {
+                                    if (!props.onCommentUpdate) {
+                                      return;
+                                    }
                                     event.preventDefault();
                                     const contents = editingCommentDraft.trim();
                                     if (!contents) {
                                       return;
                                     }
                                     void props
-                                      .onCommentUpdate?.(
+                                      .onCommentUpdate(
                                         comment.id,
                                         contents,
                                         editingCommentAttachmentIds,
@@ -1434,6 +1437,9 @@ export function ProjectBoardDetailPage(props: {
                                       encType="multipart/form-data"
                                       method="post"
                                       onSubmit={(event) => {
+                                        if (!props.onCommentSubmit) {
+                                          return;
+                                        }
                                         event.preventDefault();
                                         const contents = (
                                           childCommentDrafts[comment.id] ?? ""
@@ -1442,7 +1448,7 @@ export function ProjectBoardDetailPage(props: {
                                           return;
                                         }
                                         void props
-                                          .onCommentSubmit?.(contents, [], comment.id)
+                                          .onCommentSubmit(contents, [], comment.id)
                                           .then(() =>
                                             setChildCommentDrafts((current) => ({
                                               ...current,
@@ -1525,12 +1531,15 @@ export function ProjectBoardDetailPage(props: {
                     id="comment-form"
                     method="post"
                     onSubmit={(event) => {
+                      if (!props.onCommentSubmit) {
+                        return;
+                      }
                       event.preventDefault();
                       const contents = commentDraft.trim();
                       if (!contents) {
                         return;
                       }
-                      void props.onCommentSubmit?.(contents, commentAttachmentIds).then(() => {
+                      void props.onCommentSubmit(contents, commentAttachmentIds).then(() => {
                         setCommentAttachmentIds([]);
                         setCommentDraft("");
                       });

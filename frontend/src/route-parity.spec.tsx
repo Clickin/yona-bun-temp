@@ -2612,6 +2612,16 @@ describe("file-route parity harness", () => {
     expect(childCommentHtml).toContain('class="notification-receiver"');
     expect(childCommentHtml).toContain("Notification receivers");
 
+    const boardViewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-board-views.tsx"),
+      "utf8",
+    );
+    expect(boardViewSource).toContain("if (!props.onCommentUpdate) {");
+    expect(boardViewSource).toContain(".onCommentUpdate(");
+    expect(boardViewSource).toContain("if (!props.onCommentSubmit) {");
+    expect(boardViewSource).toContain(".onCommentSubmit(contents, [], comment.id)");
+    expect(boardViewSource).toContain(".onCommentSubmit(contents, commentAttachmentIds)");
+
     const orgHtml = renderToStaticMarkup(
       <OrganizationBoardListPage
         boards={{
