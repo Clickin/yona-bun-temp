@@ -2509,7 +2509,13 @@ describe("file-route parity harness", () => {
     expect(writableDetailHtml).toContain(">Stop watching</button>");
     expect(writableDetailHtml).toContain('aria-label="Edit"');
     expect(writableDetailHtml).toContain('<span class="sr-only">Edit</span>');
+    expect(writableDetailHtml).toContain(
+      'class="icon btn-transparent-with-fontsize-lineheight ml6"',
+    );
     expect(writableDetailHtml).toContain('<span class="sr-only">Delete</span>');
+    expect(writableDetailHtml).not.toContain(
+      'class="icon btn-transparent-with-fontsize-lineheight ml6 danger"',
+    );
     expect(writableDetailHtml).not.toContain(">post.unwatch</button>");
     expect(writableDetailHtml).not.toContain("Watchers 2");
     expect(writableDetailHtml).toContain('href="/yona/owner/projectYobi/postform"');
@@ -2596,6 +2602,8 @@ describe("file-route parity harness", () => {
     expect(childCommentHtml).toContain('aria-label="Delete comment"');
     expect(childCommentHtml).not.toContain('aria-label="common.comment.edit"');
     expect(childCommentHtml).toContain('<span class="sr-only">Delete comment</span>');
+    expect(childCommentHtml).toContain('class="btn-transparent ml6"');
+    expect(childCommentHtml).not.toContain('class="btn-transparent ml6 danger"');
     expect(childCommentHtml).toContain('class="btn-transparent deleteButtonX"');
     expect(childCommentHtml).toContain('class="child-comment-input-form"');
     expect(childCommentHtml).toContain('class="parentCommentId"');

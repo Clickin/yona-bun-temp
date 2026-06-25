@@ -1043,7 +1043,7 @@ export function ProjectBoardDetailPage(props: {
                   {post.permissions.canDelete ? (
                     <a href="#deleteConfirm" data-toggle="modal">
                       <button
-                        className="icon btn-transparent-with-fontsize-lineheight ml6 danger"
+                        className="icon btn-transparent-with-fontsize-lineheight ml6"
                         data-toggle="tooltip"
                         onClick={props.onDeletePost}
                         title={legacyMessage(props.messages, "button.delete")}
@@ -1202,7 +1202,7 @@ export function ProjectBoardDetailPage(props: {
                                         props.messages,
                                         "common.comment.delete",
                                       )}
-                                      className="btn-transparent ml6 danger"
+                                      className="btn-transparent ml6"
                                       data-request-uri={commentAction}
                                       data-toggle="comment-delete"
                                       onClick={() => void props.onCommentDelete?.(comment.id)}
@@ -1632,7 +1632,7 @@ export function ProjectBoardDetailPage(props: {
                   {post.permissions.canDelete ? (
                     <a href="#deleteConfirm" data-toggle="modal">
                       <button
-                        className="icon btn-transparent-with-fontsize-lineheight ml6 danger"
+                        className="icon btn-transparent-with-fontsize-lineheight ml6"
                         data-toggle="tooltip"
                         onClick={props.onDeletePost}
                         title={legacyMessage(props.messages, "button.delete")}

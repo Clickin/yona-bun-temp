@@ -515,6 +515,8 @@ Board detail watch-shell refresh: React now preserves legacy `board/view.scala.h
 
 Board action-copy refresh: React board create/edit forms and board comment update forms now use legacy `button.save` / `button.cancel` message-key copy from `board/create.scala.html`, `board/edit.scala.html`, and `common/commentUpdateForm.scala.html`.
 
+Board delete-control class refresh: React board detail post/comment delete controls now preserve the legacy `board/view.scala.html` and `board/partial_comments.scala.html` `btn-transparent... ml6` class shape without the React-only `danger` class while retaining the existing modal/direct delete anchors.
+
 Board list comment-count refresh: React now mirrors `board/partial_list.scala.html` by rendering `.comments-count` only when `numOfComments > 0`, with legacy `.count-groups` inner spans, and no temporary `Comments 0` text for zero-comment posts.
 
 Board list badge refresh: React now uses only the legacy inline `.label.label-notice` and `.label.label-important` markers from `board/partial_list.scala.html`, without the previous extra `.board-badge` wrapper.
