@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -17,6 +17,31 @@ import { BadRequestPage, ForbiddenPage, NotFoundPage } from "./routes/-shared";
 function LegacyMessageProbe({ messageKey }: { messageKey: string }) {
   const { t } = useLegacyMessages();
   return <span>{t(messageKey, { fallback: messageKey })}</span>;
+}
+
+function parseLegacyMessageKeys(source: string): Set<string> {
+  const keys = new Set<string>();
+  for (const line of source.split(/\r?\n/u)) {
+    const trimmed = line.trim();
+    if (trimmed === "" || trimmed.startsWith("#")) {
+      continue;
+    }
+    const messageMatch = /^([^=]+)=/u.exec(trimmed);
+    if (messageMatch) {
+      keys.add(messageMatch[1].trim());
+    }
+  }
+  return keys;
+}
+
+function collectSourceFiles(path: URL): URL[] {
+  return readdirSync(path, { withFileTypes: true }).flatMap((entry) => {
+    const entryUrl = new URL(`${entry.name}${entry.isDirectory() ? "/" : ""}`, path);
+    if (entry.isDirectory()) {
+      return collectSourceFiles(entryUrl);
+    }
+    return entry.isFile() && /\.(ts|tsx)$/u.test(entry.name) ? [entryUrl] : [];
+  });
 }
 
 describe("legacy i18n runtime", () => {
@@ -244,6 +269,52 @@ describe("legacy i18n runtime", () => {
     expect(
       lookupLegacyMessage("ko-KR", "missing.legacy.key", { fallback: "missing.legacy.key" }),
     ).toBe("missing.legacy.key");
+  });
+
+  it("treats explicit fallback values as legacy keys, not replacement copy", () => {
+    expect(
+      lookupLegacyMessage("ko-KR", "missing.primary.key", {
+        args: ["Yoram"],
+        fallback: "title.loginFor",
+      }),
+    ).toBe('<span class="highlight">Yoram</span> 로그인');
+    expect(
+      lookupLegacyMessage("ko-KR", "missing.primary.key", {
+        fallback: "missing.fallback.key",
+      }),
+    ).toBe("missing.fallback.key");
+  });
+
+  it("keeps route fallback literals inside the legacy message keyspace", () => {
+    const legacyKeys = parseLegacyMessageKeys(
+      readFileSync(new URL("../../yona-original/conf/messages", import.meta.url), "utf8"),
+    );
+    const routeFiles = collectSourceFiles(new URL("./routes/", import.meta.url));
+    const missingFallbacks: string[] = [];
+
+    for (const routeFile of routeFiles) {
+      const source = readFileSync(routeFile, "utf8");
+      for (const match of source.matchAll(/fallback:\s*["']([^"']+)["']/gu)) {
+        const fallbackKey = match[1];
+        if (!legacyKeys.has(fallbackKey)) {
+          missingFallbacks.push(`${routeFile.pathname}: ${fallbackKey}`);
+        }
+      }
+    }
+
+    expect(missingFallbacks).toEqual([]);
+  });
+
+  it("does not keep route-local i18n fallback dictionaries", () => {
+    const routeSources = collectSourceFiles(new URL("./routes/", import.meta.url)).map((path) =>
+      readFileSync(path, "utf8"),
+    );
+
+    for (const source of routeSources) {
+      expect(source).not.toContain("LEGACY_COPY");
+      expect(source).not.toContain("SOURCE_MESSAGES");
+      expect(source).not.toContain("LOCAL_MESSAGES");
+    }
   });
 
   it("uses legacy MessageFormat apostrophe escaping", () => {

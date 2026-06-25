@@ -271,6 +271,14 @@
   the child-comment surfaces. Focused evidence:
   `markdown-renderer.spec.tsx`, `issue-detail-shell.spec.tsx`, and
   `route-parity.spec.tsx`.
+- 2026-06-25 raw Markdown sanitizer continuation: React raw HTML rendering now
+  keeps the legacy `utils/Markdown.java` sanitizer allowlist for media embeds,
+  including `video` `autoplay`/`controls`/`preload`/`type`/`responsive`/
+  `fluid`/`liveui`/`data-setup`/dimensions, `source` `src`/`type`/`target`,
+  and `iframe` `src`/dimensions/`frameborder`/`allow`/`allowfullscreen`, while
+  still dropping unsafe `javascript:` media URLs and event handler attributes.
+  Focused evidence: `markdown-renderer.spec.tsx` and
+  `yona-original/app/utils/Markdown.java`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks preserve only

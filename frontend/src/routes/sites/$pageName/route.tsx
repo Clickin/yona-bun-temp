@@ -90,55 +90,12 @@ function legacyMessage(
   return messages ? messages(key, { args, fallback }) : fallback;
 }
 
-const SITE_ADMIN_LEGACY_COPY: Record<string, string> = {
-  "issue.state.closed": "issue.state.closed",
-  "issue.state.open": "issue.state.open",
-  "button.nextPage": "button.nextPage",
-  "button.prevPage": "button.prevPage",
-  "button.user.make.guest.mode": "button.user.make.guest.mode",
-  "button.user.make.normal.mode": "button.user.make.normal.mode",
-  "button.user.makeAccountUnlock.false": "button.user.makeAccountUnlock.false",
-  "button.user.makeAccountUnlock.true": "button.user.makeAccountUnlock.true",
-  "button.user.revoke.site.admin.role": "button.user.revoke.site.admin.role",
-  "button.user.upgrade.to.site.admin": "button.user.upgrade.to.site.admin",
-  "site.diagnostic.errorFound": "site.diagnostic.errorFound",
-  "site.diagnostic.errorNotFound": "site.diagnostic.errorNotFound",
-  "site.sidebar.diagnostics": "site.sidebar.diagnostics",
-  "site.sidebar.issueList": "site.sidebar.issueList",
-  "site.sidebar.mailSend": "site.sidebar.mailSend",
-  "site.sidebar.massMail": "site.sidebar.massMail",
-  "site.sidebar.postList": "site.sidebar.postList",
-  "site.sidebar.projectList": "site.sidebar.projectList",
-  "site.sidebar.update": "site.sidebar.update",
-  "site.sidebar.userList": "site.sidebar.userList",
-  "site.update.currentVersion": "site.update.currentVersion",
-  "site.update.download": "site.update.download",
-  "site.update.isAvailable": "site.update.isAvailable",
-  "site.update.isNotNecessary": "site.update.isNotNecessary",
-  "site.mail.sended": "site.mail.sended",
-  "user.newPassword": "user.newPassword",
-  "site.userList.deleted": "site.userList.deleted",
-  "site.userList.guest": "site.userList.guest",
-  "site.userList.locked": "site.userList.locked",
-  "site.userList.siteAdmin": "site.userList.siteAdmin",
-  "site.userList.unlocked": "site.userList.unlocked",
-  "title.massMail": "title.massMail",
-  "title.sendMail": "title.sendMail",
-};
-
 function legacySiteAdminMessage(
   messages: LegacyMessageLookup | undefined,
   key: string,
   args?: Array<number | string>,
 ): string {
-  const copy = SITE_ADMIN_LEGACY_COPY[key];
-  if (messages) {
-    return messages(key, { args, fallback: copy ?? key });
-  }
-  if (copy) {
-    return copy.replace(/\{(\d+)\}/g, (_, index) => String(args?.[Number(index)] ?? ""));
-  }
-  return legacyMessage(undefined, key, args);
+  return legacyMessage(messages, key, args, key);
 }
 
 function useSiteAdminMessages(messages: LegacyMessageLookup | undefined): LegacyMessageLookup {
