@@ -46,7 +46,7 @@ describe("route loading shell legacy i18n opt-in", () => {
     expect(notificationSource).not.toContain('<div className="warning-none">common.loading</div>');
   });
 
-  it("renders the shared redirect loading shell through legacy messages with exact fallback", () => {
+  it("renders the shared redirect loading shell through legacy messages", () => {
     const fallbackHtml = renderToStaticMarkup(<RedirectPage basePath="/yona" to="/projectform" />);
     const koreanHtml = renderToStaticMarkup(
       <LegacyI18nProvider supportedLanguages={["ko-KR"]}>
@@ -54,7 +54,8 @@ describe("route loading shell legacy i18n opt-in", () => {
       </LegacyI18nProvider>,
     );
 
-    expect(fallbackHtml).toContain("<h1>common.loading</h1>");
+    expect(fallbackHtml).toContain("<h1>Loading</h1>");
+    expect(fallbackHtml).not.toContain("<h1>common.loading</h1>");
     expect(koreanHtml).toContain("<h1>불러오는 중</h1>");
     expect(koreanHtml).not.toContain("<h1>common.loading</h1>");
   });

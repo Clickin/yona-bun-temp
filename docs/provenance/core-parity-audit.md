@@ -137,6 +137,11 @@
   direct-rendered surfaces assert user-visible messages from
   `yona-original/conf/messages*` instead of raw fallback keys. Korean runtime
   lookup coverage remains unchanged.
+- 2026-06-25 route-loading direct-render i18n continuation: the shared
+  redirect/loading shell now asserts the same provider-missing legacy default
+  lookup as other visible React surfaces: `common.loading` renders as the
+  default legacy `Loading`, while provider-backed Korean rendering remains
+  `불러오는 중`.
 - 2026-06-25 root search form continuation: root navigation preserves the
   legacy `common/navbar.scala.html` global search anchors:
   `name="gnb-search-form"`, hidden `searchType=auto`, `keyword`, and
