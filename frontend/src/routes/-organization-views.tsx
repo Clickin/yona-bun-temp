@@ -1436,10 +1436,7 @@ export function OrganizationMembersPage(props: {
               id="addNewMember"
               onSubmit={(event) => {
                 event.preventDefault();
-                if (!props.onAddMember) {
-                  return;
-                }
-                props.onAddMember(detail.organizationName, loginId);
+                props.onAddMember?.(detail.organizationName, loginId);
               }}
             >
               <input
@@ -1515,11 +1512,8 @@ export function OrganizationMembersPage(props: {
                               `member/${member.userId}/edit`,
                             )}
                             onClick={(event) => {
-                              if (!props.onUpdateMemberRole) {
-                                return;
-                              }
                               event.preventDefault();
-                              props.onUpdateMemberRole(
+                              props.onUpdateMemberRole?.(
                                 detail.organizationName,
                                 member.userId,
                                 roleOption.role,

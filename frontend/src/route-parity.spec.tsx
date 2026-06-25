@@ -4910,13 +4910,13 @@ describe("file-route parity harness", () => {
       "action={prefixBasePath(props.runtimeConfig.basePath, memberPath)}",
     );
     expect(viewSource).not.toContain('id="addNewMember"\n              method="post"');
-    expect(viewSource).toContain("if (!props.onAddMember) {");
-    expect(viewSource).toContain("props.onAddMember(loginId);");
+    expect(viewSource).not.toContain("if (!props.onAddMember) {");
+    expect(viewSource).toContain("props.onAddMember?.(loginId);");
     expect(viewSource).toContain('className="members project row-fluid"');
     expect(viewSource).toContain('data-action="apply"');
     expect(viewSource).toContain('data-action="delete"');
-    expect(viewSource).toContain("if (!props.onUpdateMemberRole) {");
-    expect(viewSource).toContain("props.onUpdateMemberRole(member.userId, roleOption.role);");
+    expect(viewSource).not.toContain("if (!props.onUpdateMemberRole) {");
+    expect(viewSource).toContain("props.onUpdateMemberRole?.(member.userId, roleOption.role);");
   });
 
   it("requires project issue label management route to preserve legacy label editor anchors", () => {
@@ -5004,14 +5004,14 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('id="addNewMember"');
     expect(viewSource).not.toContain("action={memberPath}");
     expect(viewSource).not.toContain('id="addNewMember"\n              method="post"');
-    expect(viewSource).toContain("if (!props.onAddMember) {");
-    expect(viewSource).toContain("props.onAddMember(detail.organizationName, loginId);");
+    expect(viewSource).not.toContain("if (!props.onAddMember) {");
+    expect(viewSource).toContain("props.onAddMember?.(detail.organizationName, loginId);");
     expect(viewSource).toContain('className="members project row-fluid"');
     expect(viewSource).toContain('data-action="apply"');
     expect(viewSource).toContain('data-action="delete"');
-    expect(viewSource).toContain("if (!props.onUpdateMemberRole) {");
+    expect(viewSource).not.toContain("if (!props.onUpdateMemberRole) {");
     expect(viewSource).toContain(
-      "props.onUpdateMemberRole(\n                                detail.organizationName,",
+      "props.onUpdateMemberRole?.(\n                                detail.organizationName,",
     );
     expect(viewSource).toContain('id="alertDeletion"');
     expect(viewSource).toContain("enrollAcceptBtn");

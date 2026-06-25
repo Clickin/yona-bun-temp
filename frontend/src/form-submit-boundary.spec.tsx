@@ -35,6 +35,7 @@ const forbiddenReactOwnedLegacyActions = [
 ];
 const propsSubmitFallbackPattern =
   /if \(!props\.on(?:Submit|CreateComment|UpdateComment|CommentSubmit|CommentUpdate|ThreadCommentSubmit|InlineCommentSubmit)\) \{/;
+const memberSubmitFallbackPattern = /if \(!props\.on(?:AddMember|UpdateMemberRole)\) \{/;
 
 function readRouteSource(relativePath: string) {
   return fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
@@ -150,6 +151,17 @@ describe("React form submit boundary", () => {
       const source = readRouteSource(file);
       expect(source, file).toContain("event.preventDefault()");
       expect(source, file).not.toMatch(propsSubmitFallbackPattern);
+    }
+  });
+
+  it("keeps React-owned member management forms inside the callback boundary", () => {
+    const memberFormFiles = ["routes/-project-views.tsx", "routes/-organization-views.tsx"];
+
+    for (const file of memberFormFiles) {
+      const source = readRouteSource(file);
+      expect(source, file).toContain('id="addNewMember"');
+      expect(source, file).not.toMatch(memberSubmitFallbackPattern);
+      expect(source, file).not.toContain('id="addNewMember"\n              method="post"');
     }
   });
 });

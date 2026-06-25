@@ -2044,10 +2044,7 @@ export function ProjectMembersPage(props: {
               id="addNewMember"
               onSubmit={(event) => {
                 event.preventDefault();
-                if (!props.onAddMember) {
-                  return;
-                }
-                props.onAddMember(loginId);
+                props.onAddMember?.(loginId);
               }}
             >
               <input
@@ -2121,11 +2118,8 @@ export function ProjectMembersPage(props: {
                                 data-href={`/${detail.ownerName}/${detail.projectName}/member/${member.userId}/edit`}
                                 data-loginid={member.loginId}
                                 onClick={(event) => {
-                                  if (!props.onUpdateMemberRole) {
-                                    return;
-                                  }
                                   event.preventDefault();
-                                  props.onUpdateMemberRole(member.userId, roleOption.role);
+                                  props.onUpdateMemberRole?.(member.userId, roleOption.role);
                                 }}
                                 type="button"
                               >
