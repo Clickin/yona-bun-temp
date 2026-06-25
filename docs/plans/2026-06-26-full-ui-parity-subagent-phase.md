@@ -46,6 +46,41 @@ or Markdown rendering differences in the supported app-runtime scope.
 | `ui-parity-project-content` | project home/code/commits/branches, issues, board, milestones, PR/review, project admin | explorer | Missing page/state/interaction/Markdown evidence, grouped by disjoint implementation owner |
 | `ui-parity-fragment-security-db` | legacy fragment conversions, XSS/SQLi/pathological Markdown, visual sweep status deltas, DB/migration smoke evidence | explorer | Any weak evidence links or missing guard coverage |
 
+## Active Subagent Assignments
+
+| Packet | Agent | Status | Notes |
+| --- | --- | --- | --- |
+| `ui-parity-public-auth-shell` | `019eff61-971c-7903-aca3-b7f9b3cdc76d` (`Dewey`) | completed | Covered; `/secret` and `/restart` are state-flow pages backed by FG-01/routes/contracts/local visual 200 but not paired legacy audit/diff pages |
+| `ui-parity-directory-workspace-site-admin` | `019eff61-b850-7873-a81b-c6bae630a8a9` (`Locke`) | completed | Covered; weakest evidence is `/user/issues/new/mine`, still backed by route parity, rendered e2e, visual sweep, and legacy HTML audit |
+| `ui-parity-project-content` | `019eff61-dd1d-7233-b182-10898e1735ee` (`Averroes`) | completed | Gap: `/admin/sample/postform?readme=true` README preload/update semantics; gap: query-string discovered links are weak in generated visual/audit coverage; needs parent decision for sample-data status-delta policy |
+| `ui-parity-fragment-security-db` | `019eff61-fd34-7df2-bdd5-12a76a596ecb` (`Kuhn`) | completed | Gaps: issue timeline fragment closure evidence and legacy MariaDB adopted-data user-visible smoke; parent decision needed for issue-list XHR/PJAX fragment policy |
+
+## Audit Result Queue
+
+| Item | Source packet | Status | Next owner scope |
+| --- | --- | --- | --- |
+| `/admin/sample/postform?readme=true` legacy README preload/update semantics | `ui-parity-project-content` | `gap` | `frontend/src/routes/$owner/$projectName/postform/route.tsx`, `frontend/src/api/boards.ts`, `crates/server/src/routes/boards.rs`, focused board tests |
+| Query-string discovered links can be lost from generated coverage evidence (`postform?readme=true`, `postform?issueTemplate=true`, `issues?format=xls`, `reviews?format=xls`) | `ui-parity-project-content` | `gap` | `scripts/audit-legacy-html-pages.mjs`, `scripts/visual-parity-sweep.mjs`, `tests/rc-ux-checklist-contract.test.mjs` |
+| Sample-data status deltas such as `/admin/sample/newPullRequestForm`, `/admin/sample/post/1`, `/admin/sample/milestone/1`, `/admin/sample/pullRequest/1/**`, `/admin/sample/code/main/**`, `/admin/sample/commits/**`, `/admin/sample/search` | `ui-parity-project-content` | `needs-parent-decision` | Parent documents policy: local seeded-data success is acceptable when legacy homelab sample lacks the corresponding object/branch and route-specific functional tests cover normal UX |
+| Legacy broken homelab endpoints returning 500 (`/admin/sample/branches`, `/admin/sample/compare/main...main`, `/admin/sample/post/1/editform`) | `ui-parity-project-content` | `covered` | Keep documented as expected legacy reference errors; do not mirror server failures |
+| `/:user/:project/issue/:number/timeline` fragment endpoint closure | `ui-parity-fragment-security-db` | `gap` | `crates/server/src/routes/issues.rs`, `crates/server/tests/issue_core_contract.rs`, visual/direct route evidence |
+| Project issue-list XHR/PJAX fragment mode | `ui-parity-fragment-security-db` | `needs-parent-decision` | Parent documents policy: app-runtime React route + REST list is primary; direct fragment compatibility is required only when legacy deep-link/XHR callers are still intentionally supported |
+| Legacy MariaDB in-place adopt smoke proves startup/schema but not user-visible migrated pages | `ui-parity-fragment-security-db` | `gap` | `scripts/smoke-legacy-mariadb-dump.mjs` plus release scope/checklist evidence |
+| `/secret` and `/restart` paired visual diff coverage | `ui-parity-public-auth-shell` | `covered with weak evidence` | Keep as state-flow pages backed by legacy `Global.onRequest`, welcome templates, FG-01, current routes/contracts, and local visual 200 |
+| `/user/issues/new/mine` focused frontend spec thickness | `ui-parity-directory-workspace-site-admin` | `covered with weak evidence` | Current route parity, rendered e2e, visual sweep, and legacy HTML audit are sufficient unless a concrete diff appears |
+
+## Parent Decisions
+
+- Sample-data status deltas are not automatic parity failures when the legacy
+  homelab sample lacks the required object/branch or returns a known reference
+  error, and the Rust sample fixture renders the normal legacy UX with
+  route-specific functional tests. These stay documented as status deltas rather
+  than requiring Yoram to reproduce broken reference-instance data states.
+- Project issue-list XHR/PJAX fragment mode is not a new React data source. If
+  retained, it must be a direct compatibility adapter returning API-shaped data
+  or the SPA shell; normal user-visible issue-list UX remains React route plus
+  REST JSON list data.
+
 ## Subagent Report Contract
 
 Each subagent report must include:
