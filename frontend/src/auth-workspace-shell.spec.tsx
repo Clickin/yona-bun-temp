@@ -1201,6 +1201,29 @@ describe("auth and workspace views", () => {
     expect(routeSources).not.toContain("Set main email failed.");
   });
 
+  it("keeps REST workspace settings submit handlers primary without swallowing legacy direct form fallbacks", () => {
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "routes/-workspace-settings-view.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain('action={appHref(props.runtimeConfig, "/user/edit")}');
+    expect(source).toContain('action={appHref(props.runtimeConfig, "/user/resetVisitedList")}');
+    expect(source).toContain('action={appHref(props.runtimeConfig, "/user/resetPassword")}');
+    expect(source).toContain('action={appHref(props.runtimeConfig, "/user/email")}');
+    expect(source).toContain('action={appHref(props.runtimeConfig, "/user/editform/token_reset")}');
+    expect(source).toContain("if (!props.onUpdateProfile) {");
+    expect(source).toContain("if (!props.onResetVisitedProjects) {");
+    expect(source).toContain("if (!props.onChangePassword) {");
+    expect(source).toContain("if (!props.onAddWorkspaceEmail) {");
+    expect(source).toContain("if (!props.onResetApiToken) {");
+    expect(source).toContain("props.onUpdateProfile(buildProfileUpdateInput");
+    expect(source).toContain("props.onResetVisitedProjects();");
+    expect(source).toContain("props.onChangePassword({");
+    expect(source).toContain("props.onAddWorkspaceEmail(");
+    expect(source).toContain("props.onResetApiToken();");
+  });
+
   it("renders issue sharer list and manager controls in the issue sidebar", () => {
     const html = renderIssueDetailPage(
       {

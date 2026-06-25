@@ -296,9 +296,12 @@ export function WorkspaceSettingsPage(props: {
             id="frmBasic"
             method="post"
             onSubmit={(event) => {
+              if (!props.onUpdateProfile) {
+                return;
+              }
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
-              props.onUpdateProfile?.(buildProfileUpdateInput(formData, avatarAttachmentId));
+              props.onUpdateProfile(buildProfileUpdateInput(formData, avatarAttachmentId));
             }}
           >
             <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
@@ -375,8 +378,11 @@ export function WorkspaceSettingsPage(props: {
               action={appHref(props.runtimeConfig, "/user/resetVisitedList")}
               method="post"
               onSubmit={(event) => {
+                if (!props.onResetVisitedProjects) {
+                  return;
+                }
                 event.preventDefault();
-                props.onResetVisitedProjects?.();
+                props.onResetVisitedProjects();
               }}
             >
               <button className="ybtn" type="submit">
@@ -497,9 +503,12 @@ export function WorkspaceSettingsPage(props: {
             id="frmPassword"
             method="post"
             onSubmit={(event) => {
+              if (!props.onChangePassword) {
+                return;
+              }
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
-              props.onChangePassword?.({
+              props.onChangePassword({
                 loginId: String(formData.get("loginId") ?? ""),
                 oldPassword: String(formData.get("oldPassword") ?? ""),
                 password: String(formData.get("password") ?? ""),
@@ -609,9 +618,12 @@ export function WorkspaceSettingsPage(props: {
             className="form-inline inner-bubble"
             method="post"
             onSubmit={(event) => {
+              if (!props.onAddWorkspaceEmail) {
+                return;
+              }
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
-              props.onAddWorkspaceEmail?.(String(formData.get("email") ?? ""));
+              props.onAddWorkspaceEmail(String(formData.get("email") ?? ""));
             }}
           >
             <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
@@ -717,8 +729,11 @@ export function WorkspaceSettingsPage(props: {
             id="frmBasic"
             method="post"
             onSubmit={(event) => {
+              if (!props.onResetApiToken) {
+                return;
+              }
               event.preventDefault();
-              props.onResetApiToken?.();
+              props.onResetApiToken();
             }}
             style={{ width: "100%" }}
           >
