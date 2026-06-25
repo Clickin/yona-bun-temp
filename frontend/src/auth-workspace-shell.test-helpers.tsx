@@ -1,5 +1,5 @@
 import { renderToString } from "react-dom/server";
-import type { LegacyI18nContextValue } from "./i18n";
+import { createLegacyI18nRuntime, type LegacyI18nContextValue } from "./i18n";
 import type { RuntimeConfig } from "./runtime-config";
 import { HomePage } from "./routes/-home-view";
 import {
@@ -42,8 +42,10 @@ export const testRuntimeConfig: RuntimeConfig = {
   basePath: "/yona",
 };
 
+export const testLegacyMessages = createLegacyI18nRuntime(["en-US"]).t;
+
 export function renderHome(runtimeConfig: RuntimeConfig = testRuntimeConfig): string {
-  return renderToString(<HomePage runtimeConfig={runtimeConfig} />);
+  return renderToString(<HomePage messages={testLegacyMessages} runtimeConfig={runtimeConfig} />);
 }
 
 export function renderLogin(
@@ -96,7 +98,11 @@ export function renderWorkspace(
   runtimeConfig: RuntimeConfig = testRuntimeConfig,
 ): string {
   return renderToString(
-    <WorkspacePage runtimeConfig={runtimeConfig} workspaceOverview={workspaceOverview} />,
+    <WorkspacePage
+      messages={testLegacyMessages}
+      runtimeConfig={runtimeConfig}
+      workspaceOverview={workspaceOverview}
+    />,
   );
 }
 
@@ -107,6 +113,7 @@ export function renderPublicUserProfile(
 ): string {
   return renderToString(
     <PublicUserProfilePage
+      messages={testLegacyMessages}
       profileOverview={profileOverview}
       routeHref={routeHref}
       runtimeConfig={runtimeConfig}
@@ -123,7 +130,7 @@ export function renderWorkspaceSettings(
 ): string {
   return renderToString(
     <WorkspaceSettingsPage
-      messages={messages}
+      messages={messages ?? testLegacyMessages}
       routeHref={routeHref}
       runtimeConfig={runtimeConfig}
       section={section}
@@ -138,7 +145,12 @@ export function renderProjectDirectory(
   runtimeConfig: RuntimeConfig = testRuntimeConfig,
 ): string {
   return renderToString(
-    <ProjectDirectoryPage directory={directory} href={href} runtimeConfig={runtimeConfig} />,
+    <ProjectDirectoryPage
+      directory={directory}
+      href={href}
+      messages={testLegacyMessages}
+      runtimeConfig={runtimeConfig}
+    />,
   );
 }
 
@@ -148,7 +160,12 @@ export function renderOrganizationDirectory(
   runtimeConfig: RuntimeConfig = testRuntimeConfig,
 ): string {
   return renderToString(
-    <OrganizationDirectoryPage directory={directory} href={href} runtimeConfig={runtimeConfig} />,
+    <OrganizationDirectoryPage
+      directory={directory}
+      href={href}
+      messages={testLegacyMessages}
+      runtimeConfig={runtimeConfig}
+    />,
   );
 }
 
@@ -157,13 +174,21 @@ export function renderOrganizationDetail(
   _members: OrganizationMembersViewModel | null = null,
 ): string {
   return renderToString(
-    <OrganizationDetailPage detail={detail} runtimeConfig={testRuntimeConfig} />,
+    <OrganizationDetailPage
+      detail={detail}
+      messages={testLegacyMessages}
+      runtimeConfig={testRuntimeConfig}
+    />,
   );
 }
 
 export function renderOrganizationSettings(detail: OrganizationDetailViewModel | null): string {
   return renderToString(
-    <OrganizationSettingsPage detail={detail} runtimeConfig={testRuntimeConfig} />,
+    <OrganizationSettingsPage
+      detail={detail}
+      messages={testLegacyMessages}
+      runtimeConfig={testRuntimeConfig}
+    />,
   );
 }
 
@@ -173,13 +198,21 @@ export function renderOrganizationNew(): string {
 
 export function renderOrganizationMembersAdmin(detail: OrganizationAdminViewModel | null): string {
   return renderToString(
-    <OrganizationMembersPage detail={detail} runtimeConfig={testRuntimeConfig} />,
+    <OrganizationMembersPage
+      detail={detail}
+      messages={testLegacyMessages}
+      runtimeConfig={testRuntimeConfig}
+    />,
   );
 }
 
 export function renderOrganizationDelete(detail: OrganizationAdminViewModel | null): string {
   return renderToString(
-    <OrganizationDeletePage detail={detail} runtimeConfig={testRuntimeConfig} />,
+    <OrganizationDeletePage
+      detail={detail}
+      messages={testLegacyMessages}
+      runtimeConfig={testRuntimeConfig}
+    />,
   );
 }
 
@@ -187,11 +220,23 @@ export function renderProjectDetail(
   detail: ProjectDetailViewModel | null,
   _members: ProjectMembersViewModel | null = null,
 ): string {
-  return renderToString(<ProjectDetailPage detail={detail} runtimeConfig={testRuntimeConfig} />);
+  return renderToString(
+    <ProjectDetailPage
+      detail={detail}
+      messages={testLegacyMessages}
+      runtimeConfig={testRuntimeConfig}
+    />,
+  );
 }
 
 export function renderProjectSettings(detail: ProjectDetailViewModel | null): string {
-  return renderToString(<ProjectSettingsPage detail={detail} runtimeConfig={testRuntimeConfig} />);
+  return renderToString(
+    <ProjectSettingsPage
+      detail={detail}
+      messages={testLegacyMessages}
+      runtimeConfig={testRuntimeConfig}
+    />,
+  );
 }
 
 export function renderProjectNew(): string {

@@ -215,7 +215,9 @@ export function LoginPage({
             </div>
           ) : null}
           {postSubmitMessage ? (
-            <div className="alert alert-success">{postSubmitMessage}</div>
+            <div className="alert alert-success">
+              {messages.t(postSubmitMessage, { fallback: postSubmitMessage })}
+            </div>
           ) : null}
           {authUiCapabilities?.emailVerificationEnabled ? (
             <div className="email-verification-help">

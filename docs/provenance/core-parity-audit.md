@@ -118,6 +118,14 @@
   before falling back to the key, so provider boundary mistakes do not surface
   raw values such as `title.no.results` in user-visible HTML. Focused evidence:
   `frontend/src/i18n.spec.tsx`.
+- 2026-06-25 auth/workspace direct-render i18n continuation: frontend
+  auth/workspace parity helpers now inject the same legacy default message
+  lookup used by the runtime, and auth post-submit alerts translate
+  `user.signup.requested`, `user.loginWithNewPassword`, and
+  `user.verification.mail.sent` through `yona-original/conf/messages*` instead
+  of rendering raw keys. The source-level contract still keeps all visible i18n
+  call sites on legacy keys. Focused evidence:
+  `frontend/src/auth-workspace-shell.spec.tsx` and `frontend/src/i18n.spec.tsx`.
 - 2026-06-25 root search form continuation: root navigation preserves the
   legacy `common/navbar.scala.html` global search anchors:
   `name="gnb-search-form"`, hidden `searchType=auto`, `keyword`, and
