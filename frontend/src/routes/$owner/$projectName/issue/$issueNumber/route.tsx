@@ -5,6 +5,8 @@ import {
   createIssueComment,
   deleteIssueComment,
   deleteIssue,
+  listProjectMilestones,
+  massUpdateIssues,
   readIssueDetail,
   readProjectContainer,
   searchIssueAssignableUsers,
@@ -28,8 +30,13 @@ import {
   updateIssueContentRest,
 } from "../../../../../api/issue-meta";
 import { useAppRuntime } from "../../../../../app-runtime-context";
-import { toProjectContainerView, toProjectIssueDetailView } from "../../../../../app-view-models";
+import {
+  toProjectContainerView,
+  toProjectIssueDetailView,
+  toProjectMilestoneListView,
+} from "../../../../../app-view-models";
 import { ProjectIssueDetailPage } from "../../../../-issue-views";
+import type { ProjectMilestoneViewModel } from "../../../../-view-models";
 import {
   BadRequestPage,
   classifyConnectFailure,
@@ -53,6 +60,7 @@ function IssueDetailRouteComponent() {
   const [issue, setIssue] = React.useState<ReturnType<typeof toProjectIssueDetailView> | null>(
     null,
   );
+  const [milestones, setMilestones] = React.useState<ProjectMilestoneViewModel[]>([]);
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
@@ -64,13 +72,17 @@ function IssueDetailRouteComponent() {
     setFailureKind(null);
     void (async () => {
       try {
-        const [nextDetail, nextIssue] = await Promise.all([
+        const [nextDetail, nextIssue, nextMilestones] = await Promise.all([
           readProjectContainer(runtimeConfig, owner, projectName),
           readIssueDetail(runtimeConfig, owner, projectName, Number(issueNumber)),
+          listProjectMilestones(runtimeConfig, owner, projectName, { state: "all" }),
         ]);
         if (!cancelled) {
           setDetail(toProjectContainerView(nextDetail));
           setIssue(toProjectIssueDetailView(nextIssue));
+          setMilestones(
+            toProjectMilestoneListView(nextMilestones, "all", "dueDate", "asc").milestones,
+          );
         }
       } catch (error) {
         if (cancelled) {
@@ -120,6 +132,7 @@ function IssueDetailRouteComponent() {
         })
       }
       issue={issue}
+      milestoneOptions={milestones}
       onAssign={async (assigneeLoginId) => {
         const nextIssue = await assignIssue(runtimeConfig, csrfToken, {
           assigneeLoginId,
@@ -236,6 +249,21 @@ function IssueDetailRouteComponent() {
           content: nextMarkdown,
           issueNumber: BigInt(Number(issueNumber)),
           original: originalMarkdown,
+          ownerName: owner,
+          projectName,
+        });
+        const nextIssue = await readIssueDetail(
+          runtimeConfig,
+          owner,
+          projectName,
+          Number(issueNumber),
+        );
+        setIssue(toProjectIssueDetailView(nextIssue));
+      }}
+      onMetadataUpdate={async (input) => {
+        await massUpdateIssues(runtimeConfig, csrfToken, {
+          ...input,
+          issueNumbers: [BigInt(Number(issueNumber))],
           ownerName: owner,
           projectName,
         });

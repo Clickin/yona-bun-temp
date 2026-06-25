@@ -163,6 +163,11 @@ impl AppRepositoryImpl<'_> {
             due_date_label: format_workspace_date_label(row.due_date),
             id: row.id,
             open_issue_count,
+            state: if row.state == Some(1) {
+                "closed".to_string()
+            } else {
+                "open".to_string()
+            },
             title: row.title.unwrap_or_default(),
         }))
     }
@@ -477,16 +482,14 @@ impl AppRepositoryImpl<'_> {
                     .await? as u32;
                 let (origin_owner_name, origin_project_name) =
                     match project_model.original_project_id {
-                        Some(original_project_id) => match self
-                            .read_project_by_id(original_project_id)
-                            .await?
-                        {
-                            Some(origin_project) => (
-                                origin_project.owner_name,
-                                origin_project.project_name,
-                            ),
-                            None => (String::new(), String::new()),
-                        },
+                        Some(original_project_id) => {
+                            match self.read_project_by_id(original_project_id).await? {
+                                Some(origin_project) => {
+                                    (origin_project.owner_name, origin_project.project_name)
+                                }
+                                None => (String::new(), String::new()),
+                            }
+                        }
                         None => (String::new(), String::new()),
                     };
 

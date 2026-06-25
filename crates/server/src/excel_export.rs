@@ -2,10 +2,10 @@ use axum::response::{IntoResponse, Response};
 use http::{HeaderMap, HeaderValue, Method, StatusCode};
 
 use crate::{
-    decode_query_component, internal_error, persistence, require_project_read,
+    PilotBackend, PilotServiceImpl, RestProjectIssuesQuery, RestReviewThreadListQuery,
+    RestRouteError, decode_query_component, internal_error, persistence, require_project_read,
     rest_project_issue_filter_from_query, rest_require_project_code_read,
-    rest_review_thread_filter, PilotBackend, PilotServiceImpl, RestProjectIssuesQuery,
-    RestReviewThreadListQuery, RestRouteError,
+    rest_review_thread_filter,
 };
 
 pub(crate) struct DirectIssueExcelRoute {
@@ -112,11 +112,15 @@ pub(crate) async fn direct_issue_excel_export(
             Err(error) => return RestRouteError::from_connect_error(error).into_response(),
         };
     query.page_num = 1;
+    let filter = match rest_project_issue_filter_from_query(query) {
+        Ok(filter) => filter,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
     let record = match repository
         .list_project_issues_for_export(
             &authorization.project.owner_name,
             &authorization.project.project_name,
-            rest_project_issue_filter_from_query(query),
+            filter,
         )
         .await
     {

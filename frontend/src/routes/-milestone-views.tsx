@@ -56,7 +56,7 @@ function sortHref(
   list: ProjectMilestoneListViewModel,
   orderBy: string,
 ) {
-  const nextDir = list.orderBy === orderBy && list.orderDir === "desc" ? "asc" : "desc";
+  const nextDir = list.orderBy === orderBy ? (list.orderDir === "desc" ? "asc" : "desc") : "asc";
   return `${buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "milestones")}?state=${list.state}&orderBy=${orderBy}&orderDir=${nextDir}`;
 }
 
@@ -70,6 +70,7 @@ function MilestoneProgress(props: { percent: number }) {
 
 function MilestoneIssueLink(props: {
   detail: ProjectDetailViewModel;
+  hidden?: boolean;
   issue: ProjectMilestoneIssueViewModel;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -81,7 +82,12 @@ function MilestoneIssueLink(props: {
     `issue/${issue.issueNumber}`,
   );
   return (
-    <a className="issue-link" href={issueHref} target="_blank">
+    <a
+      className="issue-link"
+      href={issueHref}
+      style={props.hidden ? { display: "none" } : undefined}
+      target="_blank"
+    >
       <div className="issue-item">
         <span className={`state-label ${issue.state}`}>
           {issue.state === "closed" ? <i className="yobicon-checkmark" /> : null}
@@ -126,25 +132,30 @@ function legacyMilestoneValidationMessage(input: {
   contentsMarkdown: string;
   dueDate: string;
   title: string;
-}) {
+}): null | { field: "contents" | "dueDate" | "title"; key: string } {
   if (input.title.trim().length === 0) {
-    return "milestone.error.title";
+    return { field: "title", key: "milestone.error.title" };
   }
   if (input.contentsMarkdown.trim().length === 0) {
-    return "milestone.error.content";
+    return { field: "contents", key: "milestone.error.content" };
   }
   if (input.dueDate.trim().length > 0 && !/\d{4}-\d{2}-\d{2}$/.test(input.dueDate.trim())) {
-    return "milestone.error.duedateFormat";
+    return { field: "dueDate", key: "milestone.error.duedateFormat" };
   }
   return null;
 }
 
-function MilestoneSearchBox(props: { placeholder: string }) {
+function MilestoneSearchBox(props: {
+  onChange: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
   return (
     <div className="pull-left search search-bar">
       <input
         className="textbox"
-        defaultValue=""
+        onChange={(event) => props.onChange(event.currentTarget.value)}
+        value={props.value}
         name="filter"
         placeholder={props.placeholder}
         type="text"
@@ -152,6 +163,150 @@ function MilestoneSearchBox(props: { placeholder: string }) {
       <button className="search-btn" type="submit">
         <i className="yobicon-search" />
       </button>
+    </div>
+  );
+}
+
+function milestoneIssueText(issue: ProjectMilestoneIssueViewModel) {
+  return [
+    `#${issue.issueNumber}`,
+    issue.title,
+    issue.assigneeLabel,
+    ...issue.labels.map((label) => label.name),
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function milestoneIssueHidden(issue: ProjectMilestoneIssueViewModel, filter: string) {
+  const value = filter.toLowerCase().trim();
+  return value.length > 0 && !milestoneIssueText(issue).includes(value);
+}
+
+function milestoneAttachmentMetadata(attachments: ProjectMilestoneViewModel["attachments"]) {
+  return attachments.map((attachment) => ({
+    fileHref: attachment.url,
+    fileId: attachment.id,
+    fileName: attachment.name,
+  }));
+}
+
+function LegacyMilestoneFileUploaderShell(props: {
+  messages?: LegacyMessageLookup;
+  resourceId?: number | null;
+}) {
+  return (
+    <div
+      className="upload-wrap content-footer"
+      data-resource-id={props.resourceId ?? undefined}
+      data-resource-type="MILESTONE"
+      id="upload"
+    >
+      <div className="attach-wrap">
+        <span className="help help-droppable">
+          {legacyMessage(props.messages, "common.attach.drophere")}
+        </span>
+        <div className="btn-wrap">
+          <div className="nbtn medium white fake-file-wrap">
+            <i className="yobicon-upload" /> {legacyMessage(props.messages, "button.upload")}
+            <input className="file" multiple name="filePath" type="file" />
+          </div>
+        </div>
+        <span className="plain">{legacyMessage(props.messages, "common.attach.clickbutton")}</span>
+        <span className="help help-pastable">
+          {legacyMessage(props.messages, "common.attach.pastehere")}
+        </span>
+      </div>
+      <ul className="attached-files unstyled" />
+      <p className="right-txt help">
+        <i className="yobicon-supportrequest" />{" "}
+        {legacyMessage(props.messages, "common.attach.attachIfYouSave")}
+      </p>
+    </div>
+  );
+}
+
+function LegacyMilestoneAttachmentList(props: {
+  attachments: ProjectMilestoneViewModel["attachments"];
+}) {
+  return (
+    <ul className="attached-files unstyled">
+      {props.attachments.map((attachment) => (
+        <li
+          className="attached-file"
+          data-href={attachment.url}
+          data-id={attachment.id}
+          data-name={attachment.name}
+          key={attachment.id}
+        >
+          <i className="yobicon-supportrequest" />
+          <i className="mimetype" />
+          <a className="name" href={attachment.url}>
+            {attachment.name}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function LegacyMilestoneMassUpdateShell(props: {
+  detail: ProjectDetailViewModel;
+  messages?: LegacyMessageLookup;
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <div className="mass-update-wrap hide-in-mobile">
+      <form
+        className="mass-update-form pull-left"
+        id="mass-update-form"
+        onSubmit={(event) => event.preventDefault()}
+      >
+        <div className="btn-group check-all">
+          <label aria-label={legacyMessage(props.messages, "issue.selectAll")} htmlFor="check-all">
+            <input data-target="checked-issue" id="check-all" type="checkbox" />
+          </label>
+        </div>
+        <div className="btn-group" data-name="state" id="state">
+          <button
+            className="btn dropdown-toggle medium"
+            data-toggle="dropdown"
+            disabled
+            type="button"
+          >
+            <span className="d-label">{legacyMessage(props.messages, "issue.update.state")}</span>
+            <span className="d-caret">
+              <span className="caret" />
+            </span>
+          </button>
+          <ul className="dropdown-menu mass-update-list">
+            <li data-value="OPEN">
+              <a
+                href={buildProjectHref(
+                  props.runtimeConfig,
+                  props.detail.ownerName,
+                  props.detail.projectName,
+                  "issues?state=open",
+                )}
+              >
+                {legacyMessage(props.messages, "issue.state.open")}
+              </a>
+            </li>
+            <li data-value="CLOSED">
+              <a
+                href={buildProjectHref(
+                  props.runtimeConfig,
+                  props.detail.ownerName,
+                  props.detail.projectName,
+                  "issues?state=closed",
+                )}
+              >
+                {legacyMessage(props.messages, "issue.state.closed")}
+              </a>
+            </li>
+          </ul>
+        </div>
+      </form>
     </div>
   );
 }
@@ -171,6 +326,7 @@ export function ProjectMilestoneListPage(props: {
     orderDir: "asc",
     state: "open",
   };
+  const [filter, setFilter] = React.useState("");
 
   return (
     <main className="app-shell">
@@ -251,7 +407,9 @@ export function ProjectMilestoneListPage(props: {
                       </a>
                     </div>
                     <MilestoneSearchBox
+                      onChange={setFilter}
                       placeholder={legacyMessage(props.messages, "search.title")}
+                      value={filter}
                     />
                   </>
                 ) : null}
@@ -292,11 +450,18 @@ export function ProjectMilestoneListPage(props: {
                                 <span className="sp">|</span>
                                 <span
                                   className={`due-date${
-                                    milestone.state === "closed" ? " ml5" : ""
+                                    milestone.state === "closed"
+                                      ? " ml5"
+                                      : milestone.dueDateOverdue
+                                        ? " over"
+                                        : ""
                                   }`}
                                 >
                                   {legacyMessage(props.messages, "label.dueDate")}{" "}
                                   <strong>{milestone.dueDateLabel}</strong>
+                                  {milestone.state !== "closed" && milestone.untilLabel ? (
+                                    <span className="date">({milestone.untilLabel})</span>
+                                  ) : null}
                                 </span>
                               </>
                             ) : null}
@@ -318,6 +483,7 @@ export function ProjectMilestoneListPage(props: {
                             {milestone.openIssues.map((issue) => (
                               <MilestoneIssueLink
                                 detail={detail}
+                                hidden={milestoneIssueHidden(issue, filter)}
                                 issue={issue}
                                 key={`open-${issue.issueNumber}`}
                                 runtimeConfig={props.runtimeConfig}
@@ -329,6 +495,7 @@ export function ProjectMilestoneListPage(props: {
                             {milestone.closedIssues.map((issue) => (
                               <MilestoneIssueLink
                                 detail={detail}
+                                hidden={milestoneIssueHidden(issue, filter)}
                                 issue={issue}
                                 key={`closed-${issue.issueNumber}`}
                                 runtimeConfig={props.runtimeConfig}
@@ -372,6 +539,7 @@ export function ProjectMilestoneDetailPage(props: {
       : issueState === "all"
         ? [...(milestone?.openIssues ?? []), ...(milestone?.closedIssues ?? [])]
         : (milestone?.openIssues ?? []);
+  const [filter, setFilter] = React.useState("");
 
   return (
     <main className="app-shell">
@@ -406,10 +574,15 @@ export function ProjectMilestoneDetailPage(props: {
                   </a>
                   <small className="ml10">
                     {milestone.dueDateLabel ? (
-                      <span className="due-date">
-                        {legacyMessage(props.messages, "label.dueDate")}{" "}
-                        <strong>{milestone.dueDateLabel}</strong>
-                      </span>
+                      <>
+                        <span className="due-date">
+                          {legacyMessage(props.messages, "label.dueDate")}{" "}
+                          <strong>{milestone.dueDateLabel}</strong>
+                        </span>
+                        {milestone.state !== "closed" && milestone.untilLabel ? (
+                          <span className="date">({milestone.untilLabel})</span>
+                        ) : null}
+                      </>
                     ) : null}
                     <span className={`badge badge-issue-${milestone.state} margin-left-5`}>
                       {legacyMessage(props.messages, stateLabel(milestone.state))}
@@ -428,12 +601,13 @@ export function ProjectMilestoneDetailPage(props: {
                       ownerName={detail.ownerName}
                       projectName={detail.projectName}
                     />
-                    <div className="attachments" data-attachments="[]">
-                      {milestone.attachments.map((attachment) => (
-                        <a href={attachment.url} key={attachment.id}>
-                          {attachment.name}
-                        </a>
-                      ))}
+                    <div
+                      className="attachments"
+                      data-attachments={JSON.stringify(
+                        milestoneAttachmentMetadata(milestone.attachments),
+                      )}
+                    >
+                      <LegacyMilestoneAttachmentList attachments={milestone.attachments} />
                     </div>
                   </div>
                 ) : (
@@ -546,15 +720,21 @@ export function ProjectMilestoneDetailPage(props: {
                   </ul>
                   <div className="issues">
                     <div className="filter-wrap">
+                      <LegacyMilestoneMassUpdateShell
+                        detail={detail}
+                        messages={props.messages}
+                        runtimeConfig={props.runtimeConfig}
+                      />
                       <div className="pull-right search search-bar">
                         <input
                           className="textbox"
                           data-items="issue-item"
                           data-toggle="item-search"
-                          defaultValue=""
                           name="filter"
+                          onChange={(event) => setFilter(event.currentTarget.value)}
                           placeholder={legacyMessage(props.messages, "milestone.searchPlaceholder")}
                           type="text"
+                          value={filter}
                         />
                         <button className="search-btn" type="submit">
                           <i className="yobicon-search" />
@@ -564,6 +744,7 @@ export function ProjectMilestoneDetailPage(props: {
                     {issues.map((issue) => (
                       <MilestoneIssueLink
                         detail={detail}
+                        hidden={milestoneIssueHidden(issue, filter)}
                         issue={issue}
                         key={`${issue.state}-${issue.issueNumber}`}
                         runtimeConfig={props.runtimeConfig}
@@ -645,7 +826,10 @@ export function ProjectMilestoneFormPage(props: {
   const [dueDate, setDueDate] = React.useState(initial?.dueDateLabel ?? "");
   const [state, setState] = React.useState(initial?.state ?? "open");
   const [pending, setPending] = React.useState(false);
-  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
+  const [validationMessage, setValidationMessage] = React.useState<null | {
+    field: "contents" | "dueDate" | "title";
+    key: string;
+  }>(null);
 
   React.useEffect(() => {
     setTitle(initial?.title ?? "");
@@ -702,7 +886,9 @@ export function ProjectMilestoneFormPage(props: {
                   <dl>
                     <dd>
                       <input
-                        className="zen-mode text title"
+                        className={`zen-mode text title${
+                          validationMessage?.field === "title" ? " error" : ""
+                        }`}
                         id="title"
                         maxLength={250}
                         name="title"
@@ -715,6 +901,11 @@ export function ProjectMilestoneFormPage(props: {
                         type="text"
                         value={title}
                       />
+                      {validationMessage?.field === "title" ? (
+                        <div className="message">
+                          <div>{legacyMessage(props.messages, validationMessage.key)}</div>
+                        </div>
+                      ) : null}
                     </dd>
                   </dl>
                 </div>
@@ -746,8 +937,17 @@ export function ProjectMilestoneFormPage(props: {
                             value={contentsMarkdown}
                           />
                         </LegacyMarkdownEditorShell>
+                        {validationMessage?.field === "contents" ? (
+                          <div className="message">
+                            <div>{legacyMessage(props.messages, validationMessage.key)}</div>
+                          </div>
+                        ) : null}
                       </dd>
                     </dl>
+                    <LegacyMilestoneFileUploaderShell
+                      messages={props.messages}
+                      resourceId={props.mode === "edit" ? initial?.id : null}
+                    />
                     <div className="actrow right-txt">
                       <button className="ybtn ybtn-info" disabled={pending} type="submit">
                         {legacyMessage(props.messages, "button.save")}
@@ -807,7 +1007,9 @@ export function ProjectMilestoneFormPage(props: {
                           >
                             <input
                               autoComplete="off"
-                              className="validate due-date"
+                              className={`validate due-date${
+                                validationMessage?.field === "dueDate" ? " error" : ""
+                              }`}
                               id="dueDate"
                               name="dueDate"
                               onChange={(event) => {
@@ -818,6 +1020,11 @@ export function ProjectMilestoneFormPage(props: {
                               value={dueDate}
                             />
                           </label>
+                          {validationMessage?.field === "dueDate" ? (
+                            <div className="message">
+                              <div>{legacyMessage(props.messages, validationMessage.key)}</div>
+                            </div>
+                          ) : null}
                           <div className="date-picker" id="datepicker" />
                         </div>
                       </dd>
@@ -825,11 +1032,6 @@ export function ProjectMilestoneFormPage(props: {
                   </div>
                 </div>
               </div>
-              {validationMessage ? (
-                <div className="alert alert-error" role="alert">
-                  {validationMessage}
-                </div>
-              ) : null}
             </form>
           </div>
         </div>

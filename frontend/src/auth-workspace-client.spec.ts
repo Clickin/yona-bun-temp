@@ -1559,9 +1559,15 @@ describe("issue REST clients", () => {
       "project/name",
       {
         assigneeLoginId: "guest",
+        authorId: 9,
         authorLoginId: "owner",
+        commenterId: 8,
+        dueDate: "2026-08-01",
+        filter: "body",
         labelIds: [1n, 2],
         milestoneId: 3n,
+        orderBy: "dueDate",
+        orderDir: "asc",
         pageNum: 2,
         state: "open",
       },
@@ -1610,7 +1616,7 @@ describe("issue REST clients", () => {
       [string, { credentials: string; headers: Headers; method: string }]
     >;
     expect(readCalls[0]![0]).toBe(
-      "/yona/api/v1/projects/owner%20space/project%2Fname/issues?assigneeLoginId=guest&authorLoginId=owner&labelIds=1&labelIds=2&milestoneId=3&pageNum=2&state=open",
+      "/yona/api/v1/projects/owner%20space/project%2Fname/issues?assigneeLoginId=guest&authorId=9&authorLoginId=owner&commenterId=8&dueDate=2026-08-01&filter=body&labelIds=1&labelIds=2&milestoneId=3&orderBy=dueDate&orderDir=asc&pageNum=2&state=open",
     );
     expect(readCalls[1]![0]).toBe(
       "/yona/api/v1/organizations/web%20labs/issues?assigneeId=9&authorId=7&filter=all&itemsPerPage=20&mentionId=5&orderBy=updatedDate&orderDir=desc&pageNum=3&projectNames=alpha&projectNames=beta&state=closed",
@@ -1816,6 +1822,9 @@ describe("issue REST clients", () => {
       addLabelIds: [],
       assigneeLoginId: "",
       assigneeUpdate: false,
+      delete: false,
+      dueDate: "",
+      isDueDateChanged: false,
       issueNumbers: ["1", "2"],
       milestoneId: "6",
       milestoneUpdate: false,

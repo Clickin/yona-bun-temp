@@ -510,6 +510,7 @@ export interface ProjectMilestoneViewModel {
   completionPercent: number;
   contentsMarkdown: string;
   dueDateLabel: string;
+  dueDateOverdue?: boolean;
   id: number;
   issueReferences?: IssueReferenceMetadata[];
   mentionReferences?: MentionReferenceMetadata[];
@@ -517,6 +518,7 @@ export interface ProjectMilestoneViewModel {
   openIssues: ProjectMilestoneIssueViewModel[];
   state: string;
   title: string;
+  untilLabel?: string;
   viewerCanDelete: boolean;
   viewerCanUpdate: boolean;
 }

@@ -8,6 +8,18 @@ describe("project issue list filters", () => {
     const html = renderToStaticMarkup(
       <ProjectIssueListPage
         detail={{
+          dashboard: {
+            assignees: [
+              {
+                avatarUrl: "",
+                loginId: "door",
+                openIssueCount: 1,
+                userId: 2,
+                userLabel: "Door User",
+              },
+            ],
+            labels: [],
+          },
           enrollmentRequested: false,
           isFavorited: false,
           organizationName: "",
@@ -154,6 +166,17 @@ describe("project issue list filters", () => {
     expect(html).toContain('id="toggle-show-subtasks"');
     expect(html).toContain('class="show-subtasks-text">Show subtask</span>');
     expect(html).toContain('class="filter-wrap board"');
+    expect(html).toContain('class="mass-update-wrap hide-in-mobile"');
+    expect(html).toContain('id="mass-update-form"');
+    expect(html).toContain('id="check-all"');
+    expect(html).toContain('id="state"');
+    expect(html).toContain('id="assignee"');
+    expect(html).toContain('id="milestone"');
+    expect(html).toContain('id="attaching-label"');
+    expect(html).toContain('id="detaching-label"');
+    expect(html).toContain("Door User");
+    expect(html).toContain("Attach label");
+    expect(html).toContain("Detach label");
     expect(html).toContain('class="ybtn small"');
     expect(html).toContain('class="yobicon-file-excel"');
     expect(html).toContain('data-list="draft-issues"');
@@ -185,13 +208,13 @@ describe("project issue list filters", () => {
     expect(html).toContain('name="pageNum"');
     expect(html).toContain('value="2"');
     expect(html).toContain(
-      'href="/yona/admin/projectYobi/issues?state=open&amp;authorLoginId=nori&amp;assigneeLoginId=door&amp;milestoneId=7&amp;labelIds=5"',
+      'href="/yona/admin/projectYobi/issues?state=open&amp;authorLoginId=nori&amp;assigneeLoginId=door&amp;milestoneId=7&amp;orderBy=updatedDate&amp;orderDir=desc&amp;labelIds=5"',
     );
     expect(html).toContain(
-      'href="/yona/admin/projectYobi/issues?state=open&amp;authorLoginId=nori&amp;assigneeLoginId=door&amp;milestoneId=7&amp;labelIds=5&amp;pageNum=3"',
+      'href="/yona/admin/projectYobi/issues?state=open&amp;authorLoginId=nori&amp;assigneeLoginId=door&amp;milestoneId=7&amp;orderBy=updatedDate&amp;orderDir=desc&amp;labelIds=5&amp;pageNum=3"',
     );
     expect(html).toContain(
-      'href="/yona/admin/projectYobi/issues?state=open&amp;authorLoginId=nori&amp;assigneeLoginId=door&amp;milestoneId=7&amp;labelIds=5&amp;format=xls"',
+      'href="/yona/admin/projectYobi/issues?state=open&amp;authorLoginId=nori&amp;assigneeLoginId=door&amp;milestoneId=7&amp;orderBy=updatedDate&amp;orderDir=desc&amp;labelIds=5&amp;format=xls"',
     );
     expect(html).not.toContain("Yona Rust Project");
     expect(html).not.toContain("Author:");

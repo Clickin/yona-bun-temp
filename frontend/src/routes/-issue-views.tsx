@@ -607,19 +607,25 @@ export function ProjectIssueListPage(props: {
   issueList: ProjectIssueListViewModel | null;
   messages?: LegacyMessageLookup;
   milestones?: IssueListFilterMilestone[];
+  onMassUpdate?: (input: ProjectIssueMassUpdateInput) => Promise<void>;
   query?: ProjectIssueListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
-  const query = props.query ?? {
+  const query: ProjectIssueListQuery = {
     assigneeLoginId: "",
     authorLoginId: "",
     dueDate: "",
+    filter: "",
     labelIds: [],
     milestoneId: 0,
+    orderBy: "updatedDate",
+    orderDir: "desc",
     pageNum: 1,
     state: "",
+    ...props.query,
   };
+  const [selectedIssueNumbers, setSelectedIssueNumbers] = React.useState<number[]>([]);
   const selectedLabelIds = query.labelIds.map(String);
   const issueList = props.issueList;
   const [dueDateFilter, setDueDateFilter] = React.useState(query.dueDate);
@@ -627,7 +633,8 @@ export function ProjectIssueListPage(props: {
   React.useEffect(() => {
     setDueDateFilter(query.dueDate);
     setValidationMessage(null);
-  }, [query.dueDate]);
+    setSelectedIssueNumbers([]);
+  }, [query.dueDate, issueList]);
   const openHref = buildProjectHref(
     props.runtimeConfig,
     detail.ownerName,
@@ -639,6 +646,13 @@ export function ProjectIssueListPage(props: {
     detail.ownerName,
     detail.projectName,
     "issues?state=closed",
+  );
+  const visibleIssueNumbers = React.useMemo(
+    () =>
+      [...(issueList?.draftItems ?? []), ...(issueList?.items ?? [])].map(
+        (item) => item.issueNumber,
+      ),
+    [issueList?.draftItems, issueList?.items],
   );
   const issueRows = issueList?.items ?? [];
   const totalPageCount = issueList
@@ -680,9 +694,19 @@ export function ProjectIssueListPage(props: {
     props.runtimeConfig,
     detail.ownerName,
     detail.projectName,
-    { ...query, pageNum: 1 },
+    { ...query, commenterId: query.commenterId ?? 0, pageNum: 1 },
     1,
   );
+  const submitMassUpdate = async (input: Omit<ProjectIssueMassUpdateInput, "issueNumbers">) => {
+    if (selectedIssueNumbers.length === 0 || !props.onMassUpdate) {
+      return;
+    }
+    await props.onMassUpdate({
+      ...input,
+      issueNumbers: selectedIssueNumbers,
+    });
+    setSelectedIssueNumbers([]);
+  };
 
   return (
     <main className="app-shell issue-list-page">
@@ -778,9 +802,17 @@ export function ProjectIssueListPage(props: {
                 }}
               >
                 <input name="pageNum" type="hidden" value="1" />
-                <input name="orderBy" type="hidden" value="updatedDate" />
-                <input name="orderDir" type="hidden" value="desc" />
+                <input name="orderBy" type="hidden" value={query.orderBy} />
+                <input name="orderDir" type="hidden" value={query.orderDir} />
                 <input name="state" type="hidden" value={query.state} />
+                {query.commenterId !== undefined ? (
+                  <input
+                    data-search="commenterId"
+                    name="commenterId"
+                    type="hidden"
+                    value={query.commenterId}
+                  />
+                ) : null}
                 {query.assigneeId !== undefined ? (
                   <input
                     data-search="assigneeId"
@@ -795,6 +827,14 @@ export function ProjectIssueListPage(props: {
                   type="hidden"
                   value={query.authorLoginId}
                 />
+                {query.authorId !== undefined ? (
+                  <input
+                    data-search="authorId"
+                    name="authorId"
+                    type="hidden"
+                    value={query.authorId}
+                  />
+                ) : null}
                 <input
                   data-search="assigneeLoginId"
                   name="assigneeLoginId"
@@ -809,7 +849,7 @@ export function ProjectIssueListPage(props: {
                       data-search="filter"
                       name="filter"
                       type="text"
-                      defaultValue=""
+                      defaultValue={query.filter}
                     />
                     <button className="search-btn" data-submit="submit" type="submit">
                       <i className="yobicon-search"></i>
@@ -880,15 +920,10 @@ export function ProjectIssueListPage(props: {
                         <option value="0">
                           {legacyMessage(props.messages, "issue.noMilestone")}
                         </option>
-                        {(props.milestones ?? []).map((milestone) => (
-                          <option
-                            data-state={milestone.state}
-                            key={milestone.id}
-                            value={milestone.id}
-                          >
-                            {milestone.title}
-                          </option>
-                        ))}
+                        <IssueMilestoneOptionGroups
+                          messages={props.messages}
+                          milestones={props.milestones ?? []}
+                        />
                       </select>
                     </dd>
                   </dl>
@@ -1006,6 +1041,21 @@ export function ProjectIssueListPage(props: {
               ) : (
                 <>
                   <div className="filter-wrap board">
+                    <IssueMassUpdateToolbar
+                      assignees={detail.dashboard?.assignees ?? []}
+                      disabled={selectedIssueNumbers.length === 0 || !props.onMassUpdate}
+                      labels={props.labels ?? []}
+                      messages={props.messages}
+                      milestones={(props.milestones ?? []).filter(
+                        (milestone) => milestone.state !== "closed",
+                      )}
+                      onCheckAll={(checked) =>
+                        setSelectedIssueNumbers(checked ? visibleIssueNumbers : [])
+                      }
+                      onMassUpdate={submitMassUpdate}
+                      selectedCount={selectedIssueNumbers.length}
+                      totalCount={visibleIssueNumbers.length}
+                    />
                     <div className="filters pull-right">
                       {[
                         ["dueDate", "common.order.dueDate"],
@@ -1014,17 +1064,29 @@ export function ProjectIssueListPage(props: {
                         ["numOfComments", "common.order.comments"],
                       ].map(([orderBy, label]) => (
                         <a
-                          className="filter"
-                          href={buildProjectHref(
+                          className={query.orderBy === orderBy ? "filter active" : "filter"}
+                          href={projectIssueListPageHref(
                             props.runtimeConfig,
                             detail.ownerName,
                             detail.projectName,
-                            `issues?orderBy=${encodeURIComponent(orderBy)}&orderDir=desc`,
+                            {
+                              ...query,
+                              orderBy,
+                              orderDir:
+                                query.orderBy === orderBy && query.orderDir === "desc"
+                                  ? "asc"
+                                  : "desc",
+                              pageNum: 1,
+                            },
+                            1,
                           )}
                           key={orderBy}
                           {...({
                             orderby: orderBy,
-                            orderdir: "desc",
+                            orderdir:
+                              query.orderBy === orderBy && query.orderDir === "desc"
+                                ? "asc"
+                                : "desc",
                           } as React.AnchorHTMLAttributes<HTMLAnchorElement> & {
                             orderby: string;
                             orderdir: string;
@@ -1041,16 +1103,20 @@ export function ProjectIssueListPage(props: {
                       items={issueList.draftItems}
                       listKind="draft"
                       messages={props.messages}
+                      onSelectionChange={setSelectedIssueNumbers}
                       query={query}
                       runtimeConfig={props.runtimeConfig}
+                      selectedIssueNumbers={selectedIssueNumbers}
                     />
                   ) : null}
                   <ProjectIssueRows
                     items={issueRows}
                     listKind="normal"
                     messages={props.messages}
+                    onSelectionChange={setSelectedIssueNumbers}
                     query={query}
                     runtimeConfig={props.runtimeConfig}
+                    selectedIssueNumbers={selectedIssueNumbers}
                   />
                   <div className="pull-left" style={{ padding: "10px" }}>
                     <a
@@ -1093,13 +1159,32 @@ export function ProjectIssueListPage(props: {
 export interface ProjectIssueListQuery {
   assigneeId?: number;
   assigneeLoginId: string;
+  authorId?: number;
   authorLoginId: string;
+  commenterId?: number;
   dueDate: string;
+  filter?: string;
   labelIds: number[];
   milestoneId: number;
+  orderBy?: string;
+  orderDir?: string;
   pageNum: number;
   state: string;
 }
+
+export type ProjectIssueMassUpdateInput = {
+  addLabelIds?: number[];
+  assigneeLoginId?: string;
+  assigneeUpdate?: boolean;
+  delete?: boolean;
+  dueDate?: string;
+  isDueDateChanged?: boolean;
+  issueNumbers: number[];
+  milestoneId?: number;
+  milestoneUpdate?: boolean;
+  removeLabelIds?: number[];
+  state?: string;
+};
 
 export interface IssueListFilterLabel {
   categoryName: string;
@@ -1114,12 +1199,44 @@ export interface IssueListFilterMilestone {
   title: string;
 }
 
+function IssueMilestoneOptionGroups(props: {
+  messages?: LegacyMessageLookup;
+  milestones: IssueListFilterMilestone[];
+}) {
+  const openMilestones = props.milestones.filter((milestone) => milestone.state !== "closed");
+  const closedMilestones = props.milestones.filter((milestone) => milestone.state === "closed");
+  return (
+    <>
+      {openMilestones.length > 0 ? (
+        <optgroup label={legacyMessage(props.messages, "milestone.state.open")}>
+          {openMilestones.map((milestone) => (
+            <option data-state={milestone.state} key={milestone.id} value={milestone.id}>
+              {milestone.title}
+            </option>
+          ))}
+        </optgroup>
+      ) : null}
+      {closedMilestones.length > 0 ? (
+        <optgroup label={legacyMessage(props.messages, "milestone.state.closed")}>
+          {closedMilestones.map((milestone) => (
+            <option data-state={milestone.state} key={milestone.id} value={milestone.id}>
+              {milestone.title}
+            </option>
+          ))}
+        </optgroup>
+      ) : null}
+    </>
+  );
+}
+
 function ProjectIssueRows(props: {
   items: ProjectIssueListViewModel["items"];
   listKind: "draft" | "normal";
   messages?: LegacyMessageLookup;
+  onSelectionChange?: React.Dispatch<React.SetStateAction<number[]>>;
   query: ProjectIssueListQuery;
   runtimeConfig: RuntimeConfig;
+  selectedIssueNumbers?: number[];
 }) {
   return (
     <ul
@@ -1135,6 +1252,7 @@ function ProjectIssueRows(props: {
         );
         const issueKey = `${props.listKind}-${item.ownerName}-${item.projectName}-${item.issueNumber}`;
         const legacyIssueId = item.id && item.id > 0 ? item.id : item.issueNumber;
+        const isSelected = (props.selectedIssueNumbers ?? []).includes(item.issueNumber);
         const issueItemHrefAttr = {
           href: issueHref,
         } as React.LiHTMLAttributes<HTMLLIElement> & { href: string };
@@ -1160,8 +1278,16 @@ function ProjectIssueRows(props: {
                     .map((label) => `,${label.id},${label.name},,|`)
                     .join("")}
                   data-toggle="issue-checkbox"
+                  checked={isSelected}
                   id={`issue-${legacyIssueId}`}
                   name="checked-issue"
+                  onChange={(event) => {
+                    const checked = event.currentTarget.checked;
+                    props.onSelectionChange?.((current) => {
+                      const without = current.filter((number) => number !== item.issueNumber);
+                      return checked ? [...without, item.issueNumber] : without;
+                    });
+                  }}
                   type="checkbox"
                 />
               </label>
@@ -1346,6 +1472,179 @@ function ProjectIssueRows(props: {
   );
 }
 
+function IssueMassUpdateToolbar(props: {
+  assignees?: NonNullable<ProjectDetailViewModel["dashboard"]>["assignees"];
+  disabled: boolean;
+  labels: IssueListFilterLabel[];
+  messages?: LegacyMessageLookup;
+  milestones: IssueListFilterMilestone[];
+  onCheckAll: (checked: boolean) => void;
+  onMassUpdate: (input: Omit<ProjectIssueMassUpdateInput, "issueNumbers">) => Promise<void>;
+  selectedCount: number;
+  totalCount: number;
+}) {
+  const disabled = props.disabled;
+  return (
+    <div className="mass-update-wrap hide-in-mobile">
+      <form
+        action="#"
+        className="mass-update-form pull-left"
+        id="mass-update-form"
+        method="post"
+        onSubmit={(event) => event.preventDefault()}
+      >
+        <div className="btn-group check-all">
+          <label aria-label={legacyMessage(props.messages, "issue.selectAll")} htmlFor="check-all">
+            <input
+              checked={props.totalCount > 0 && props.selectedCount === props.totalCount}
+              data-selected-count={props.selectedCount}
+              data-target="checked-issue"
+              id="check-all"
+              onChange={(event) => props.onCheckAll(event.currentTarget.checked)}
+              type="checkbox"
+            />
+          </label>
+        </div>
+        <IssueMassUpdateDropdown
+          disabled={disabled}
+          id="state"
+          label={legacyMessage(props.messages, "issue.update.state")}
+          name="state"
+          options={[
+            {
+              label: legacyMessage(props.messages, "issue.state.open"),
+              onSelect: () => props.onMassUpdate({ state: "open" }),
+              value: "OPEN",
+            },
+            {
+              label: legacyMessage(props.messages, "issue.state.closed"),
+              onSelect: () => props.onMassUpdate({ state: "closed" }),
+              value: "CLOSED",
+            },
+          ]}
+        />
+        <IssueMassUpdateDropdown
+          disabled={disabled}
+          id="assignee"
+          label={legacyMessage(props.messages, "issue.update.assignee.id")}
+          name="assignee.id"
+          options={[
+            {
+              label: legacyMessage(props.messages, "issue.noAssignee"),
+              onSelect: () =>
+                props.onMassUpdate({ assigneeLoginId: "anonymous", assigneeUpdate: true }),
+              value: "anonymous",
+            },
+            ...(props.assignees ?? []).map((assignee) => ({
+              label: assignee.userLabel || assignee.loginId,
+              onSelect: () =>
+                props.onMassUpdate({
+                  assigneeLoginId: assignee.loginId,
+                  assigneeUpdate: true,
+                }),
+              value: assignee.loginId,
+            })),
+          ]}
+        />
+        {props.milestones.length > 0 ? (
+          <IssueMassUpdateDropdown
+            disabled={disabled}
+            id="milestone"
+            label={legacyMessage(props.messages, "issue.update.milestone.id")}
+            name="milestone.id"
+            options={[
+              {
+                label: legacyMessage(props.messages, "issue.noMilestone"),
+                onSelect: () => props.onMassUpdate({ milestoneId: 0, milestoneUpdate: true }),
+                value: "0",
+              },
+              ...props.milestones.map((milestone) => ({
+                label: milestone.title,
+                onSelect: () =>
+                  props.onMassUpdate({ milestoneId: milestone.id, milestoneUpdate: true }),
+                value: String(milestone.id),
+              })),
+            ]}
+          />
+        ) : null}
+        {props.labels.length > 0 ? (
+          <>
+            <IssueMassUpdateDropdown
+              disabled={disabled}
+              id="attaching-label"
+              label={legacyMessage(props.messages, "issue.update.attachLabel")}
+              name="attachingLabelIds"
+              options={props.labels.map((label) => ({
+                label: label.name,
+                onSelect: () => props.onMassUpdate({ addLabelIds: [label.id] }),
+                value: String(label.id),
+              }))}
+            />
+            <IssueMassUpdateDropdown
+              disabled={disabled}
+              id="detaching-label"
+              label={legacyMessage(props.messages, "issue.update.detachLabel")}
+              name="detachingLabelIds"
+              options={props.labels.map((label) => ({
+                label: label.name,
+                onSelect: () => props.onMassUpdate({ removeLabelIds: [label.id] }),
+                value: String(label.id),
+              }))}
+            />
+          </>
+        ) : null}
+      </form>
+    </div>
+  );
+}
+
+function IssueMassUpdateDropdown(props: {
+  disabled: boolean;
+  id: string;
+  label: string;
+  name: string;
+  options: Array<{ label: string; onSelect: () => Promise<void>; value: string }>;
+}) {
+  return (
+    <div className="btn-group" data-name={props.name} id={props.id}>
+      <button
+        className="btn dropdown-toggle medium"
+        data-toggle="dropdown"
+        disabled={props.disabled}
+        type="button"
+      >
+        <span className="d-label">{props.label}</span>
+        <span className="d-caret">
+          <span className="caret"></span>
+        </span>
+      </button>
+      <ul
+        className="dropdown-menu mass-update-list"
+        id={
+          props.id === "attaching-label"
+            ? "attach-label-list"
+            : props.id === "detaching-label"
+              ? "delete-label-list"
+              : undefined
+        }
+      >
+        {props.options.map((option) => (
+          <li data-value={option.value} key={option.value}>
+            <button
+              className="btn-transparent"
+              disabled={props.disabled}
+              onClick={() => void option.onSelect()}
+              type="button"
+            >
+              {option.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function IssueListPagination(props: {
   currentPage: number;
   hrefForPage: (pageNum: number) => string;
@@ -1424,6 +1723,12 @@ function projectIssueListPageHref(
   if (query.authorLoginId) {
     params.set("authorLoginId", query.authorLoginId);
   }
+  if (query.authorId !== undefined) {
+    params.set("authorId", String(query.authorId));
+  }
+  if (query.commenterId !== undefined) {
+    params.set("commenterId", String(query.commenterId));
+  }
   if (query.assigneeLoginId) {
     params.set("assigneeLoginId", query.assigneeLoginId);
   }
@@ -1432,6 +1737,18 @@ function projectIssueListPageHref(
   }
   if (query.milestoneId > 0) {
     params.set("milestoneId", String(query.milestoneId));
+  }
+  if (query.dueDate) {
+    params.set("dueDate", query.dueDate);
+  }
+  if (query.filter) {
+    params.set("filter", query.filter);
+  }
+  if (query.orderBy) {
+    params.set("orderBy", query.orderBy);
+  }
+  if (query.orderDir) {
+    params.set("orderDir", query.orderDir);
   }
   for (const labelId of query.labelIds) {
     params.append("labelIds", String(labelId));
@@ -1457,6 +1774,12 @@ function projectIssueExcelExportHref(
   if (query.authorLoginId) {
     params.set("authorLoginId", query.authorLoginId);
   }
+  if (query.authorId !== undefined) {
+    params.set("authorId", String(query.authorId));
+  }
+  if (query.commenterId !== undefined) {
+    params.set("commenterId", String(query.commenterId));
+  }
   if (query.assigneeLoginId) {
     params.set("assigneeLoginId", query.assigneeLoginId);
   }
@@ -1465,6 +1788,18 @@ function projectIssueExcelExportHref(
   }
   if (query.milestoneId > 0) {
     params.set("milestoneId", String(query.milestoneId));
+  }
+  if (query.dueDate) {
+    params.set("dueDate", query.dueDate);
+  }
+  if (query.filter) {
+    params.set("filter", query.filter);
+  }
+  if (query.orderBy) {
+    params.set("orderBy", query.orderBy);
+  }
+  if (query.orderDir) {
+    params.set("orderDir", query.orderDir);
   }
   for (const labelId of query.labelIds) {
     params.append("labelIds", String(labelId));
@@ -1477,6 +1812,7 @@ export function ProjectIssueDetailPage(props: {
   detail: ProjectDetailViewModel | null;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   issue: ProjectIssueDetailViewModel | null;
+  milestoneOptions?: ProjectMilestoneViewModel[];
   onAssign?: (assigneeLoginId: string) => Promise<void>;
   onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
   onSearchMentionUsers?: (
@@ -1501,6 +1837,7 @@ export function ProjectIssueDetailPage(props: {
   onIssueContentUpdate?: (input: MarkdownTasklistToggleInput) => Promise<void>;
   onShareIssue?: (loginId: string, targetType?: IssueAssignableUserItem["type"]) => Promise<void>;
   onIssueWeightChange?: (delta: 1 | -1) => Promise<void>;
+  onMetadataUpdate?: (input: Omit<ProjectIssueMassUpdateInput, "issueNumbers">) => Promise<void>;
   onStateChange?: (state: string) => Promise<void>;
   onUnshareIssue?: (loginId: string) => Promise<void>;
   onVoteToggle?: () => Promise<void>;
@@ -1630,6 +1967,8 @@ export function ProjectIssueDetailPage(props: {
       });
     }
   };
+  const issueLabels = detail.dashboard?.labels ?? [];
+  const issueMilestones = props.milestoneOptions ?? [];
 
   return (
     <main className="app-shell issue-detail-page">
@@ -2443,53 +2782,205 @@ export function ProjectIssueDetailPage(props: {
               </section>
             </div>
             <aside className="span3 right-menu">
-              <div className="assignee-info">
-                {issueAssigneeLoginId ? (
-                  <a className="usf-group" href={issueAssigneeHref}>
-                    <span className="avatar-wrap smaller">
-                      {issue?.assigneeAvatarUrl ? (
-                        <img
-                          alt={issueAssigneeLabel}
-                          height={20}
-                          src={issue.assigneeAvatarUrl}
-                          width={20}
+              <div className="issue-info">
+                <form
+                  action={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "issues",
+                  )}
+                  id="issueUpdateForm"
+                  method="post"
+                  onSubmit={(event) => event.preventDefault()}
+                >
+                  {issue ? (
+                    <input
+                      name="issues[0].id"
+                      type="hidden"
+                      value={issue.issueId || issue.issueNumber}
+                    />
+                  ) : null}
+                  <dl>
+                    <dt>{legacyMessage(messages, "issue.assignee")}</dt>
+                    <dd>
+                      <div className="assignee-info">
+                        {issueAssigneeLoginId ? (
+                          <a className="usf-group" href={issueAssigneeHref}>
+                            <span className="avatar-wrap smaller">
+                              {issue?.assigneeAvatarUrl ? (
+                                <img
+                                  alt={issueAssigneeLabel}
+                                  height={20}
+                                  src={issue.assigneeAvatarUrl}
+                                  width={20}
+                                />
+                              ) : null}
+                            </span>
+                            <strong className="name">{issueAssigneeLabel}</strong>
+                            <span className="loginid">
+                              {" "}
+                              <strong>@</strong>
+                              {issueAssigneeLoginId}
+                            </span>
+                          </a>
+                        ) : (
+                          <div>{issueAssigneeLabel}</div>
+                        )}
+                      </div>
+                      {issue?.viewerCanUpdate && props.onAssign ? (
+                        <IssueAssignForm
+                          initialAssignee={issue.assigneeLoginId}
+                          messages={messages}
+                          onSearchAssignableUsers={props.onSearchAssignableUsers}
+                          onSubmit={props.onAssign}
                         />
                       ) : null}
-                    </span>
-                    <strong className="name">{issueAssigneeLabel}</strong>
-                    <span className="loginid">
-                      {" "}
-                      <strong>@</strong>
-                      {issueAssigneeLoginId}
-                    </span>
-                  </a>
-                ) : (
-                  <div>{issueAssigneeLabel}</div>
-                )}
+                    </dd>
+                  </dl>
+                  <dl>
+                    <dt>{legacyMessage(messages, "milestone")}</dt>
+                    <dd>
+                      {issue?.viewerCanUpdate && props.onMetadataUpdate ? (
+                        <select
+                          data-container-css-class="fullsize"
+                          data-format="milestone"
+                          data-toggle="select2"
+                          id="milestone"
+                          name="milestone.id"
+                          onChange={(event) =>
+                            void props.onMetadataUpdate?.({
+                              milestoneId: Number(event.currentTarget.value),
+                              milestoneUpdate: true,
+                            })
+                          }
+                          value={issue.milestoneId ?? 0}
+                        >
+                          <option value={0}>{legacyMessage(messages, "issue.noMilestone")}</option>
+                          <IssueMilestoneOptionGroups
+                            messages={messages}
+                            milestones={issueMilestones}
+                          />
+                        </select>
+                      ) : issue?.milestoneTitle ? (
+                        <a
+                          href={buildProjectHref(
+                            props.runtimeConfig,
+                            detail.ownerName,
+                            detail.projectName,
+                            `milestone/${issue.milestoneId}`,
+                          )}
+                        >
+                          {issue.milestoneTitle}
+                        </a>
+                      ) : (
+                        legacyMessage(messages, "issue.noMilestone")
+                      )}
+                    </dd>
+                  </dl>
+                  <dl>
+                    <dt>{legacyMessage(messages, "issue.dueDate")}</dt>
+                    <dd>
+                      {issue?.viewerCanUpdate && props.onMetadataUpdate ? (
+                        <div className="search search-bar">
+                          <input
+                            autoComplete="off"
+                            className="textbox full"
+                            data-toggle="calendar"
+                            name="dueDate"
+                            onBlur={(event) =>
+                              void props.onMetadataUpdate?.({
+                                dueDate: event.currentTarget.value,
+                                isDueDateChanged: true,
+                              })
+                            }
+                            type="text"
+                            defaultValue={issue.dueDateLabel ?? ""}
+                          />
+                          <button className="search-btn btn-calendar" type="button">
+                            <i className="yobicon-calendar2"></i>
+                          </button>
+                        </div>
+                      ) : (
+                        issue?.dueDateLabel || legacyMessage(messages, "issue.noDuedate")
+                      )}
+                    </dd>
+                  </dl>
+                  {issueLabels.length > 0 && issue?.viewerCanUpdate && props.onMetadataUpdate ? (
+                    <dl>
+                      <dt>
+                        {legacyMessage(messages, "label")}{" "}
+                        <a
+                          className="label-edit"
+                          href={buildProjectHref(
+                            props.runtimeConfig,
+                            detail.ownerName,
+                            detail.projectName,
+                            "issue/labelsform",
+                          )}
+                          target="_blank"
+                        >
+                          [{legacyMessage(messages, "button.edit")}]
+                        </a>
+                      </dt>
+                      <dd>
+                        <select
+                          className="hide"
+                          data-allow-clear="true"
+                          data-container-css-class="issue-labels bordered fullsize"
+                          data-dropdown-css-class="issue-labels"
+                          data-format="issuelabel"
+                          data-placeholder={legacyMessage(messages, "label.select")}
+                          data-search="labelIds"
+                          data-toggle="select2"
+                          id="labelIds"
+                          multiple
+                          name="labelIds"
+                          onChange={(event) => {
+                            const selected = Array.from(event.currentTarget.selectedOptions).map(
+                              (option) => Number(option.value),
+                            );
+                            const current = (issue.labels ?? []).map((label) => label.id);
+                            void props.onMetadataUpdate?.({
+                              addLabelIds: selected.filter((labelId) => !current.includes(labelId)),
+                              removeLabelIds: current.filter(
+                                (labelId) => !selected.includes(labelId),
+                              ),
+                            });
+                          }}
+                          value={(issue.labels ?? []).map((label) => String(label.id))}
+                        >
+                          <option></option>
+                          {issueLabels.map((label) => (
+                            <option
+                              data-category-id={label.categoryId ?? ""}
+                              data-category-is-exclusive={
+                                label.categoryIsExclusive ? "true" : "false"
+                              }
+                              key={label.id}
+                              value={label.id}
+                            >
+                              {label.name}
+                            </option>
+                          ))}
+                        </select>
+                      </dd>
+                    </dl>
+                  ) : (
+                    <IssueDetailSelectedLabels
+                      issue={issue}
+                      messages={messages}
+                      runtimeConfig={props.runtimeConfig}
+                    />
+                  )}
+                </form>
               </div>
-              <dl className="issue-info">
-                <dt>{legacyMessage(messages, "milestone")}</dt>
-                <dd>{issue?.milestoneTitle || legacyMessage(messages, "issue.noMilestone")}</dd>
-              </dl>
               <div className="watcher-list"></div>
               {issue ? (
                 <IssueSubtaskList
                   issue={issue}
                   messages={messages}
                   runtimeConfig={props.runtimeConfig}
-                />
-              ) : null}
-              <IssueDetailSelectedLabels
-                issue={issue}
-                messages={messages}
-                runtimeConfig={props.runtimeConfig}
-              />
-              {issue?.viewerCanUpdate && props.onAssign ? (
-                <IssueAssignForm
-                  initialAssignee={issue.assigneeLoginId}
-                  messages={messages}
-                  onSearchAssignableUsers={props.onSearchAssignableUsers}
-                  onSubmit={props.onAssign}
                 />
               ) : null}
               {issue ? (
@@ -2724,9 +3215,9 @@ function commentAgreementLabel(count: number): string {
 }
 
 export interface UserIssueListQuery {
-  filter: string;
-  orderBy: string;
-  orderDir: string;
+  filter?: string;
+  orderBy?: string;
+  orderDir?: string;
   pageNum: number;
   query: string;
   state: string;
@@ -3680,18 +4171,14 @@ export function insertIssueReferenceText(
   };
 }
 
-function isImageFile(file: File): boolean {
-  return file.type.toLowerCase().startsWith("image/");
+function filesFromList(files: FileList | null | undefined): File[] {
+  return Array.from(files ?? []);
 }
 
-function imageFilesFromList(files: FileList | null | undefined): File[] {
-  return Array.from(files ?? []).filter(isImageFile);
-}
-
-function imageFilesFromItems(items: DataTransferItemList | null | undefined): File[] {
+function filesFromItems(items: DataTransferItemList | null | undefined): File[] {
   const files: File[] = [];
   for (const item of Array.from(items ?? [])) {
-    if (item.kind !== "file" || !item.type.toLowerCase().startsWith("image/")) {
+    if (item.kind !== "file") {
       continue;
     }
     const file = item.getAsFile();
@@ -3702,9 +4189,9 @@ function imageFilesFromItems(items: DataTransferItemList | null | undefined): Fi
   return files;
 }
 
-function imageFilesFromDataTransfer(dataTransfer: DataTransfer | null): File[] {
-  const itemFiles = imageFilesFromItems(dataTransfer?.items);
-  return itemFiles.length > 0 ? itemFiles : imageFilesFromList(dataTransfer?.files);
+function filesFromDataTransfer(dataTransfer: DataTransfer | null): File[] {
+  const itemFiles = filesFromItems(dataTransfer?.items);
+  return itemFiles.length > 0 ? itemFiles : filesFromList(dataTransfer?.files);
 }
 
 function markdownTextForAttachment(attachment: UploadedAttachment): string {
@@ -3904,7 +4391,7 @@ function IssueMentionTextarea(props: {
     setCursorIndex(textarea.selectionStart ?? textarea.value.length);
   };
 
-  const handleMarkdownImageFiles = async (textarea: HTMLTextAreaElement, files: File[]) => {
+  const handleMarkdownFiles = async (textarea: HTMLTextAreaElement, files: File[]) => {
     const runtimeConfig = props.runtimeConfig;
     const csrfToken = props.csrfToken;
     if (files.length === 0 || !runtimeConfig || !csrfToken) {
@@ -3978,27 +4465,27 @@ function IssueMentionTextarea(props: {
           if (
             props.runtimeConfig &&
             props.csrfToken &&
-            imageFilesFromDataTransfer(event.dataTransfer).length > 0
+            filesFromDataTransfer(event.dataTransfer).length > 0
           ) {
             event.preventDefault();
           }
         }}
         onDrop={(event) => {
-          const files = imageFilesFromDataTransfer(event.dataTransfer);
+          const files = filesFromDataTransfer(event.dataTransfer);
           if (files.length === 0) {
             return;
           }
           event.preventDefault();
-          void handleMarkdownImageFiles(event.currentTarget, files);
+          void handleMarkdownFiles(event.currentTarget, files);
         }}
         onKeyUp={(event) => updateCursorIndex(event.currentTarget)}
         onPaste={(event) => {
-          const files = imageFilesFromDataTransfer(event.clipboardData);
+          const files = filesFromDataTransfer(event.clipboardData);
           if (files.length === 0) {
             return;
           }
           event.preventDefault();
-          void handleMarkdownImageFiles(event.currentTarget, files);
+          void handleMarkdownFiles(event.currentTarget, files);
         }}
         placeholder={props.placeholder}
         ref={textareaRef}
@@ -4119,7 +4606,14 @@ function IssueCommentForm(props: {
               </div>
             </div>
             <div className="tab-pane" id="preview-comment-body">
-              <div className="markdown-preview markdown-wrap comment-body"></div>
+              <MarkdownRenderer
+                basePath={props.runtimeConfig.basePath}
+                className="markdown-preview markdown-wrap comment-body"
+                issueReferences={[]}
+                markdown={contentsMarkdown}
+                ownerName=""
+                projectName=""
+              />
             </div>
             <div className="notification-receiver">
               <span className="notification-receiver-title">
@@ -4214,8 +4708,10 @@ function IssueCommentEditForm(props: {
         <div className="write-comment-box">
           <div className="write-comment-wrap">
             <LegacyMarkdownEditorShell
+              basePath={props.runtimeConfig.basePath}
               editId={`edit-${props.commentId}`}
               editorMode="update-comment-body"
+              markdownPreview={contentsMarkdown}
               messages={props.messages}
               previewId={`preview-${props.commentId}`}
             >
@@ -4349,7 +4845,10 @@ export function ProjectIssueFormPage(props: {
   const [submitting, setSubmitting] = React.useState(false);
   const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
   const availableLabels = detail.dashboard?.labels ?? [];
-  const milestoneOptions = props.milestoneOptions ?? [];
+  const milestoneOptions =
+    props.mode === "create"
+      ? (props.milestoneOptions ?? []).filter((milestone) => milestone.state !== "closed")
+      : (props.milestoneOptions ?? []);
   const parentIssueOptions = props.parentIssueOptions ?? [];
 
   React.useEffect(() => {
@@ -4541,9 +5040,13 @@ export function ProjectIssueFormPage(props: {
                     <dl>
                       <dd style={{ position: "relative" }}>
                         <LegacyMarkdownEditorShell
+                          basePath={props.runtimeConfig.basePath}
                           editId="edit-content-body"
                           editorMode="content-body"
+                          markdownPreview={bodyMarkdown}
                           messages={messages}
+                          ownerName={detail.ownerName}
+                          projectName={detail.projectName}
                           previewId="preview-content-body"
                         >
                           <IssueMentionTextarea
@@ -4763,15 +5266,22 @@ export function ProjectIssueFormPage(props: {
                             <option value={0}>
                               {legacyMessage(messages, "issue.noMilestone")}
                             </option>
-                            {milestoneOptions.map((milestone) => (
-                              <option
-                                data-state={milestone.state}
-                                key={milestone.id}
-                                value={milestone.id}
-                              >
-                                {milestone.title}
-                              </option>
-                            ))}
+                            {props.mode === "edit" ? (
+                              <IssueMilestoneOptionGroups
+                                messages={messages}
+                                milestones={milestoneOptions}
+                              />
+                            ) : (
+                              milestoneOptions.map((milestone) => (
+                                <option
+                                  data-state={milestone.state}
+                                  key={milestone.id}
+                                  value={milestone.id}
+                                >
+                                  {milestone.title}
+                                </option>
+                              ))
+                            )}
                           </select>
                         )}
                       </dd>
@@ -4801,7 +5311,7 @@ export function ProjectIssueFormPage(props: {
                     {availableLabels.length > 0 ? (
                       <dl className="issue-option">
                         <dt>
-                          label{" "}
+                          {legacyMessage(messages, "label")}{" "}
                           <a
                             className="label-edit"
                             href={buildProjectHref(
@@ -4812,7 +5322,7 @@ export function ProjectIssueFormPage(props: {
                             )}
                             target="_blank"
                           >
-                            [button.edit]
+                            [{legacyMessage(messages, "button.edit")}]
                           </a>
                         </dt>
                         <dd>

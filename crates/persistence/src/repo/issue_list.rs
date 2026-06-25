@@ -13,10 +13,16 @@ impl AppRepositoryImpl<'_> {
                 IssueListFilter {
                     assignee_id: None,
                     assignee_login_id: None,
+                    author_id: None,
                     author_login_id: None,
+                    commenter_id: None,
+                    due_date: None,
                     draft_author_login_id: None,
+                    filter: None,
                     label_ids: Vec::new(),
                     milestone_id: None,
+                    order_by: "updatedDate".to_string(),
+                    order_dir: "desc".to_string(),
                     page_num: 1,
                     state: None,
                 },
@@ -184,6 +190,36 @@ impl AppRepositoryImpl<'_> {
             }) {
                 continue;
             }
+            if let Some(author_id) = filter.author_id {
+                if author_id > 0 && model.author_id != Some(author_id) {
+                    continue;
+                }
+            }
+            if let Some(commenter_id) = filter.commenter_id {
+                if commenter_id > 0
+                    && !issue_comment::Entity::find()
+                        .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
+                        .filter(issue_comment::Column::AuthorId.eq(Some(commenter_id)))
+                        .one(&self.db)
+                        .await?
+                        .is_some()
+                {
+                    continue;
+                }
+            }
+            if let Some(due_date) = filter.due_date {
+                if model.due_date.map(|value| value.date()) != Some(due_date.date()) {
+                    continue;
+                }
+            }
+            if let Some(text_filter) = filter.filter.as_deref() {
+                if !self
+                    .issue_model_matches_text_filter(&model, text_filter)
+                    .await?
+                {
+                    continue;
+                }
+            }
             if let Some(milestone_id) = filter.milestone_id {
                 if model.milestone_id != Some(milestone_id) {
                     continue;
@@ -227,11 +263,10 @@ impl AppRepositoryImpl<'_> {
                 continue;
             }
 
-            filtered.push(
-                self.project_issue_list_item_from_model(model, &project)
-                    .await?,
-            );
+            filtered.push(model);
         }
+
+        sort_issue_models_for_project(&mut filtered, &filter.order_by, &filter.order_dir);
 
         let page_num = filter.page_num.max(1);
         let total_count = filtered.len() as u32;
@@ -247,9 +282,17 @@ impl AppRepositoryImpl<'_> {
             filtered
         };
 
+        let mut records = Vec::new();
+        for model in items {
+            records.push(
+                self.project_issue_list_item_from_model(model, &project)
+                    .await?,
+            );
+        }
+
         Ok(ProjectIssueListRecord {
             draft_items,
-            items,
+            items: records,
             page_num,
             page_size: effective_page_size,
             total_count,
@@ -443,4 +486,28 @@ impl AppRepositoryImpl<'_> {
             visible_projects: visible_project_options,
         })
     }
+}
+
+fn sort_issue_models_for_project(items: &mut [issue::Model], order_by: &str, order_dir: &str) {
+    let descending = normalize_identity(order_dir) != "asc";
+    let normalized_order = normalize_identity(order_by);
+    items.sort_by(|left, right| {
+        let ordering = match normalized_order.as_str() {
+            "duedate" => left.due_date.cmp(&right.due_date),
+            "updateddate" => left.updated_date.cmp(&right.updated_date),
+            "numofcomments" => left
+                .num_of_comments
+                .unwrap_or_default()
+                .cmp(&right.num_of_comments.unwrap_or_default()),
+            _ => left.created_date.cmp(&right.created_date),
+        }
+        .then_with(|| left.number.cmp(&right.number))
+        .then_with(|| left.id.cmp(&right.id));
+
+        if descending {
+            ordering.reverse()
+        } else {
+            ordering
+        }
+    });
 }

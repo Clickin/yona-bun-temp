@@ -1,5 +1,6 @@
 import * as React from "react";
 import type {
+  BoardAttachment,
   BoardLabel,
   BoardPostDetail,
   BoardPostListItem,
@@ -319,6 +320,169 @@ function boardLabels(labels: BoardLabel[], messages?: LegacyMessageLookup) {
             {label.name}
           </a>
         ))}
+      </dd>
+    </dl>
+  );
+}
+
+function boardAttachmentHref(runtimeConfig: RuntimeConfig, attachment: BoardAttachment) {
+  return prefixBasePath(runtimeConfig.basePath, `/files/${encodeURIComponent(attachment.id)}`);
+}
+
+function boardAttachmentMetadata(runtimeConfig: RuntimeConfig, attachments: BoardAttachment[]) {
+  return attachments.map((attachment) => ({
+    fileHref: boardAttachmentHref(runtimeConfig, attachment),
+    fileId: attachment.id,
+    fileName: attachment.name,
+    fileSize: attachment.size,
+    mimeType: attachment.mimeType,
+  }));
+}
+
+function LegacyFileUploaderShell(props: {
+  messages?: LegacyMessageLookup;
+  resourceId?: string | number | null;
+  resourceType: string;
+}) {
+  return (
+    <div
+      className="upload-wrap content-footer"
+      data-resource-id={props.resourceId ?? undefined}
+      data-resource-type={props.resourceType}
+      id="upload"
+    >
+      <div className="attach-wrap">
+        <span className="help help-droppable">
+          {legacyMessage(props.messages, "common.attach.drophere")}
+        </span>
+        <div className="btn-wrap">
+          <div className="nbtn medium white fake-file-wrap">
+            <i className="yobicon-upload" /> {legacyMessage(props.messages, "button.upload")}
+            <input className="file" multiple name="filePath" type="file" />
+          </div>
+        </div>
+        <span className="plain">{legacyMessage(props.messages, "common.attach.clickbutton")}</span>
+        <span className="help help-pastable">
+          {legacyMessage(props.messages, "common.attach.pastehere")}
+        </span>
+      </div>
+      <ul className="attached-files unstyled" />
+      <p className="right-txt help">
+        <i className="yobicon-supportrequest" />{" "}
+        {legacyMessage(props.messages, "common.attach.attachIfYouSave")}
+      </p>
+    </div>
+  );
+}
+
+function BoardAttachmentList(props: {
+  attachments: BoardAttachment[];
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <ul className="attached-files unstyled">
+      {props.attachments.map((attachment) => (
+        <li
+          className="attached-file"
+          data-href={boardAttachmentHref(props.runtimeConfig, attachment)}
+          data-id={attachment.id}
+          data-mime={attachment.mimeType}
+          data-name={attachment.name}
+          data-size={attachment.size}
+          key={attachment.id}
+        >
+          <i className="yobicon-supportrequest" />
+          <i className="mimetype" />
+          <a className="name" href={boardAttachmentHref(props.runtimeConfig, attachment)}>
+            {attachment.name}
+          </a>
+          <span className="size">{attachment.size}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function boardDetailLabels(props: {
+  canUpdate: boolean;
+  labels: BoardLabel[];
+  messages?: LegacyMessageLookup;
+  ownerName: string;
+  postNumber: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  if (props.labels.length === 0) {
+    return null;
+  }
+  if (!props.canUpdate) {
+    return boardLabels(props.labels, props.messages);
+  }
+
+  const categories = new Map<string, BoardLabel[]>();
+  for (const label of props.labels) {
+    const categoryName = label.categoryName || "";
+    categories.set(categoryName, [...(categories.get(categoryName) ?? []), label]);
+  }
+
+  return (
+    <dl>
+      <dt>
+        {legacyMessage(props.messages, "label")}{" "}
+        <a
+          className="label-edit"
+          href={buildProjectHref(
+            props.runtimeConfig,
+            props.ownerName,
+            props.projectName,
+            "issue/labelsform",
+          )}
+          target="_blank"
+          rel="noreferrer"
+        >
+          [{legacyMessage(props.messages, "button.edit")}]
+        </a>
+      </dt>
+      <dd>
+        <select
+          className="hide"
+          data-allow-clear="true"
+          data-container-css-class="issue-labels bordered fullsize"
+          data-dropdown-css-class="issue-labels"
+          data-format="issuelabel"
+          data-placeholder={legacyMessage(props.messages, "label.select")}
+          data-request-uri={prefixBasePath(
+            props.runtimeConfig.basePath,
+            `/-_-api/v1/owners/${props.ownerName}/projects/${props.projectName}/postlabel/${props.postNumber}`,
+          )}
+          data-search="labelIds"
+          data-toggle="select2"
+          defaultValue={props.labels.map((label) => label.id)}
+          id="labelIds"
+          multiple
+          name="labelIds"
+        >
+          <option />
+          {Array.from(categories.entries()).map(([categoryName, labels]) => (
+            <optgroup
+              data-category-id={labels[0]?.categoryId ?? ""}
+              data-category-is-exclusive={labels[0]?.categoryIsExclusive ? "true" : "false"}
+              key={categoryName}
+              label={categoryName}
+            >
+              {labels.map((label) => (
+                <option
+                  data-category-id={label.categoryId}
+                  data-category-is-exclusive={label.categoryIsExclusive ? "true" : "false"}
+                  key={label.id}
+                  value={label.id}
+                >
+                  {label.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
       </dd>
     </dl>
   );
@@ -978,7 +1142,18 @@ export function ProjectBoardDetailPage(props: {
               ) : (
                 <div className="content empty-content" />
               )}
-              <div className="attachments" id="attachments" />
+              <div
+                className="attachments"
+                data-attachments={JSON.stringify(
+                  boardAttachmentMetadata(props.runtimeConfig, post.attachments),
+                )}
+                id="attachments"
+              >
+                <BoardAttachmentList
+                  attachments={post.attachments}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              </div>
               <div className="board-actrow right-txt board-actions">
                 <div className="pull-left">
                   <div>
@@ -1046,7 +1221,6 @@ export function ProjectBoardDetailPage(props: {
                       <button
                         className="icon btn-transparent-with-fontsize-lineheight ml6"
                         data-toggle="tooltip"
-                        onClick={props.onDeletePost}
                         title={legacyMessage(props.messages, "button.delete")}
                         type="button"
                       >
@@ -1333,7 +1507,20 @@ export function ProjectBoardDetailPage(props: {
                                     showTasklistBar
                                     tasklistSourceMarkdown={comment.contentsMarkdown}
                                   />
-                                  <div className="attachments" />
+                                  <div
+                                    className="attachments"
+                                    data-attachments={JSON.stringify(
+                                      boardAttachmentMetadata(
+                                        props.runtimeConfig,
+                                        comment.attachments ?? [],
+                                      ),
+                                    )}
+                                  >
+                                    <BoardAttachmentList
+                                      attachments={comment.attachments ?? []}
+                                      runtimeConfig={props.runtimeConfig}
+                                    />
+                                  </div>
                                 </div>
                               )}
                               <div className="add-a-comment pull-right">
@@ -1375,6 +1562,20 @@ export function ProjectBoardDetailPage(props: {
                                             ownerName={post.ownerName}
                                             projectName={post.projectName}
                                           />
+                                          <div
+                                            className="attachments"
+                                            data-attachments={JSON.stringify(
+                                              boardAttachmentMetadata(
+                                                props.runtimeConfig,
+                                                childComment.attachments ?? [],
+                                              ),
+                                            )}
+                                          >
+                                            <BoardAttachmentList
+                                              attachments={childComment.attachments ?? []}
+                                              runtimeConfig={props.runtimeConfig}
+                                            />
+                                          </div>
                                           <span className="subcomment-author hide">
                                             {" - "}
                                             <a
@@ -1538,6 +1739,7 @@ export function ProjectBoardDetailPage(props: {
                     <div className="write-comment-box">
                       <BoardMarkdownTextarea
                         csrfToken={props.csrfToken}
+                        dataEditorMode="comment-body"
                         id="editor-contents-comment-body"
                         name="contents"
                         onAttachmentUpload={(attachment) =>
@@ -1546,6 +1748,10 @@ export function ProjectBoardDetailPage(props: {
                         onChange={setCommentDraft}
                         runtimeConfig={props.runtimeConfig}
                         value={commentDraft}
+                      />
+                      <LegacyFileUploaderShell
+                        messages={props.messages}
+                        resourceType="NONISSUE_COMMENT"
                       />
                       <div className="write-comment-wrap">
                         <div className="right-txt">
@@ -1598,7 +1804,15 @@ export function ProjectBoardDetailPage(props: {
                     </dd>
                   ) : null}
                 </dl>
-                {boardLabels(post.labels, props.messages)}
+                {boardDetailLabels({
+                  canUpdate: post.permissions.canUpdate,
+                  labels: post.labels,
+                  messages: props.messages,
+                  ownerName: post.ownerName,
+                  postNumber: post.postNumber,
+                  projectName: post.projectName,
+                  runtimeConfig: props.runtimeConfig,
+                })}
                 <div className="right-menu-icons">
                   <a href={editPostHref}>
                     <button
@@ -1624,7 +1838,6 @@ export function ProjectBoardDetailPage(props: {
                       <button
                         className="icon btn-transparent-with-fontsize-lineheight ml6"
                         data-toggle="tooltip"
-                        onClick={props.onDeletePost}
                         title={legacyMessage(props.messages, "button.delete")}
                         type="button"
                       >
@@ -1642,6 +1855,44 @@ export function ProjectBoardDetailPage(props: {
           <div className="board-footer" />
         </div>
       </div>
+      {post.permissions.canDelete ? (
+        <div className="modal hide fade" id="deleteConfirm">
+          <div className="modal-header">
+            <button
+              aria-label={legacyMessage(props.messages, "button.close")}
+              className="close"
+              data-dismiss="modal"
+              type="button"
+            >
+              ×
+            </button>
+            <h3>{legacyMessage(props.messages, "issue.delete")}</h3>
+          </div>
+          <div className="modal-body">
+            <p>{legacyMessage(props.messages, "post.delete.confirm")}</p>
+          </div>
+          <div className="modal-footer">
+            <button
+              className="ybtn ybtn-danger"
+              data-request-method="delete"
+              data-request-uri={prefixBasePath(
+                props.runtimeConfig.basePath,
+                `/${post.ownerName}/${post.projectName}/post/${post.postNumber}/delete`,
+              )}
+              onClick={(event) => {
+                event.preventDefault();
+                void props.onDeletePost?.();
+              }}
+              type="button"
+            >
+              {legacyMessage(props.messages, "button.yes")}
+            </button>
+            <button className="ybtn" data-dismiss="modal" type="button">
+              {legacyMessage(props.messages, "button.no")}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -1686,9 +1937,6 @@ export function ProjectPostFormPage(props: {
   const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   const [notice, setNotice] = React.useState(props.initialPost?.notice ?? false);
   const [readme, setReadme] = React.useState(props.initialPost?.readme ?? props.readme ?? false);
-  const [selectedLabelIds, setSelectedLabelIds] = React.useState(
-    () => new Set((props.initialPost?.labels ?? []).map((label) => label.id)),
-  );
   const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -1698,7 +1946,6 @@ export function ProjectPostFormPage(props: {
     setAttachmentIds([]);
     setNotice(props.initialPost?.notice ?? false);
     setReadme(props.initialPost?.readme ?? props.readme ?? false);
-    setSelectedLabelIds(new Set((props.initialPost?.labels ?? []).map((label) => label.id)));
     setValidationMessage(null);
   }, [props.initialPost, props.readme, onlineCommit?.preparedBodyMarkdown, onlineCommit?.title]);
 
@@ -1731,7 +1978,10 @@ export function ProjectPostFormPage(props: {
               void props.onSubmit({
                 attachmentIds,
                 bodyMarkdown,
-                labelIds: [...selectedLabelIds],
+                labelIds:
+                  props.mode === "edit"
+                    ? (props.initialPost?.labels ?? []).map((label) => label.id)
+                    : [],
                 newFileName,
                 notice,
                 readme,
@@ -1821,30 +2071,12 @@ export function ProjectPostFormPage(props: {
                   </LegacyMarkdownEditorShell>
                 </dd>
               </dl>
-              {props.labels.length && !isOnlineCommit ? (
-                <fieldset className="board-label-picker">
-                  <legend>{legacyMessage(messages, "label")}</legend>
-                  {props.labels.map((label) => (
-                    <label key={label.id}>
-                      <input
-                        checked={selectedLabelIds.has(label.id)}
-                        onChange={(event) => {
-                          setSelectedLabelIds((current) => {
-                            const next = new Set(current);
-                            if (event.target.checked) {
-                              next.add(label.id);
-                            } else {
-                              next.delete(label.id);
-                            }
-                            return next;
-                          });
-                        }}
-                        type="checkbox"
-                      />
-                      <span>{label.name}</span>
-                    </label>
-                  ))}
-                </fieldset>
+              {!isOnlineCommit ? (
+                <LegacyFileUploaderShell
+                  messages={messages}
+                  resourceId={props.mode === "edit" ? props.initialPost?.id : null}
+                  resourceType="BOARD_POST"
+                />
               ) : null}
               <div className="right-txt mt10 mb10">
                 {props.canMarkNotice && !isOnlineCommit ? (

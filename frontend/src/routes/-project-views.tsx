@@ -429,7 +429,9 @@ function ProjectHomeDashboardPane(props: {
                 {detail.currentMilestone ? (
                   <ProjectDashboardMetric
                     count={detail.currentMilestone.openIssueCount}
-                    href={projectHref("milestones")}
+                    href={projectHref(
+                      `issues?state=open&milestoneId=${detail.currentMilestone.id}`,
+                    )}
                     label={detail.currentMilestone.title}
                     percent={milestonePercent}
                   />
@@ -1781,6 +1783,7 @@ export function ProjectDetailPage(props: {
   );
   const [editingOverview, setEditingOverview] = React.useState(false);
   const [overviewDraft, setOverviewDraft] = React.useState(detail.overview);
+  const [leaveModalOpen, setLeaveModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     setOverviewDraft(detail.overview);
@@ -2109,14 +2112,52 @@ export function ProjectDetailPage(props: {
                 <section className="inner member-info">
                   <header>
                     <h3>{legacyMessage(messages, "project.members")}</h3>
+                    {detail.viewerCanUpdate ? (
+                      <a
+                        className="ybtn ybtn-minimum"
+                        href={buildProjectHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          "members",
+                        )}
+                        id="member-add-link"
+                      >
+                        <i className="yobicon-addfriend" /> {legacyMessage(messages, "button.add")}
+                      </a>
+                    ) : null}
                   </header>
-                  <ul>
-                    {(detail.members ?? []).map((member) => (
-                      <li key={member.loginId}>
-                        {`${member.userLabel} @${member.loginId} (${member.role})`}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="member-wrap">
+                    <ul className="project-members">
+                      {(detail.members ?? []).map((member) => (
+                        <li className="member" key={member.loginId}>
+                          <a
+                            className="avatar-wrap img-rounded pull-left small"
+                            href={prefixBasePath(
+                              props.runtimeConfig.basePath,
+                              `/${member.loginId}`,
+                            )}
+                          >
+                            <img
+                              alt={member.loginId}
+                              height="24"
+                              src={member.avatarUrl}
+                              width="24"
+                            />
+                          </a>
+                          <a
+                            className="name"
+                            href={prefixBasePath(
+                              props.runtimeConfig.basePath,
+                              `/${member.loginId}`,
+                            )}
+                          >
+                            <strong>{`${member.userLabel} (${member.loginId})`}</strong>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                   {detail.viewerCanLeave && detail.viewerUserId ? (
                     <button
                       className="ybtn ybtn-minimum ybtn-danger pull-right"
@@ -2124,11 +2165,7 @@ export function ProjectDetailPage(props: {
                       id="projectLeaveBtn"
                       onClick={(event) => {
                         event.preventDefault();
-                        props.onLeaveProject?.(
-                          detail.ownerName,
-                          detail.projectName,
-                          detail.viewerUserId ?? 0,
-                        );
+                        setLeaveModalOpen(true);
                       }}
                       type="button"
                     >
@@ -2176,6 +2213,47 @@ export function ProjectDetailPage(props: {
                   </div>
                 ) : null}
               </div>
+            </div>
+          </div>
+          <div className={`modal${leaveModalOpen ? "" : " hide"}`} id="alertLeave">
+            <div className="modal-header">
+              <button
+                aria-label={legacyMessage(messages, "button.close")}
+                className="close"
+                data-dismiss="modal"
+                onClick={() => setLeaveModalOpen(false)}
+                type="button"
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <h3>{legacyMessage(messages, "project.member.leave")}</h3>
+            </div>
+            <div className="modal-body">
+              <p>{legacyMessage(messages, "project.member.leaveConfirm")}</p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="ybtn ybtn-info ybtn-mini"
+                id="leaveBtn"
+                onClick={() =>
+                  props.onLeaveProject?.(
+                    detail.ownerName,
+                    detail.projectName,
+                    detail.viewerUserId ?? 0,
+                  )
+                }
+                type="button"
+              >
+                {legacyMessage(messages, "button.yes")}
+              </button>
+              <button
+                className="ybtn ybtn-mini"
+                data-dismiss="modal"
+                onClick={() => setLeaveModalOpen(false)}
+                type="button"
+              >
+                {legacyMessage(messages, "button.no")}
+              </button>
             </div>
           </div>
         </div>
@@ -3572,9 +3650,12 @@ export function ProjectSettingsPage(props: {
   }, [detail]);
   const maxReviewerCount = Math.max(1, detail.maxReviewerCount ?? 1);
   const reviewerCountOptions = Array.from({ length: maxReviewerCount }, (_, index) => index + 1);
+  const isGitProject = !detail.vcs || detail.vcs.toLowerCase() === "git";
   const projectScopes = [
     { id: "public", label: "project.public", value: "PUBLIC" },
-    { id: "protected", label: "project.protected", value: "PROTECTED" },
+    ...(detail.organizationName
+      ? [{ id: "protected", label: "project.protected", value: "PROTECTED" }]
+      : []),
     { id: "private", label: "project.private", value: "PRIVATE" },
   ];
 
@@ -3750,6 +3831,26 @@ export function ProjectSettingsPage(props: {
                 </div>
               </div>
 
+              {isGitProject ? (
+                <div className="box-wrap middle">
+                  <div className="cu-label">{legacyMessage(props.messages, "issue.template")}</div>
+                  <div className="cu-desc">
+                    <a
+                      className="ybtn"
+                      href={buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        "postform?issueTemplate=true",
+                      )}
+                      target="_blank"
+                    >
+                      {legacyMessage(props.messages, "issue.template.edit")}
+                    </a>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="box-wrap middle">
                 <div className="cu-label">
                   {legacyMessage(props.messages, "project.codeAccessible")}
@@ -3783,84 +3884,90 @@ export function ProjectSettingsPage(props: {
                 </div>
               </div>
 
-              <div className="box-wrap middle reviewer-count-wrap" id="reviewerCountSettingPanel">
-                <div className="cu-label vmiddle">
-                  {legacyMessage(props.messages, "project.reviewer.count")}
-                </div>
-                <div className="cu-desc">
-                  <input
-                    checked={formState.isUsingReviewerCount}
-                    className="radio-btn"
-                    data-action="show"
-                    data-toggle="reviewer-count"
-                    id="reviewerCountEnable"
-                    name="isUsingReviewerCount"
-                    type="radio"
-                    value="true"
-                    onChange={() =>
-                      setFormState((current) => ({
-                        ...current,
-                        isUsingReviewerCount: true,
-                      }))
-                    }
-                  />
-                  <label className="bg-radiobtn label-public" htmlFor="reviewerCountEnable">
-                    {legacyMessage(props.messages, "project.reviewer.count.enable")}
-                  </label>
-                  <input
-                    checked={!formState.isUsingReviewerCount}
-                    className="radio-btn"
-                    data-action="hide"
-                    data-toggle="reviewer-count"
-                    id="reviewerCountDisable"
-                    name="isUsingReviewerCount"
-                    type="radio"
-                    value="false"
-                    onChange={() =>
-                      setFormState((current) => ({
-                        ...current,
-                        isUsingReviewerCount: false,
-                      }))
-                    }
-                  />
-                  <label className="bg-radiobtn label-private" htmlFor="reviewerCountDisable">
-                    {legacyMessage(props.messages, "project.reviewer.count.disable")}
-                  </label>
-                  <div
-                    className={formState.isUsingReviewerCount ? undefined : "hide"}
-                    data-value={formState.isUsingReviewerCount ? "true" : "false"}
-                    id="welReviewerCount"
-                  >
+              {isGitProject ? (
+                <div
+                  className="box-wrap middle reviewer-count-wrap"
+                  id="reviewerCountSettingPanel"
+                  style={formState.code ? undefined : { display: "none" }}
+                >
+                  <div className="cu-label vmiddle">
+                    {legacyMessage(props.messages, "project.reviewer.count")}
+                  </div>
+                  <div className="cu-desc">
+                    <input
+                      checked={formState.isUsingReviewerCount}
+                      className="radio-btn"
+                      data-action="show"
+                      data-toggle="reviewer-count"
+                      id="reviewerCountEnable"
+                      name="isUsingReviewerCount"
+                      type="radio"
+                      value="true"
+                      onChange={() =>
+                        setFormState((current) => ({
+                          ...current,
+                          isUsingReviewerCount: true,
+                        }))
+                      }
+                    />
+                    <label className="bg-radiobtn label-public" htmlFor="reviewerCountEnable">
+                      {legacyMessage(props.messages, "project.reviewer.count.enable")}
+                    </label>
+                    <input
+                      checked={!formState.isUsingReviewerCount}
+                      className="radio-btn"
+                      data-action="hide"
+                      data-toggle="reviewer-count"
+                      id="reviewerCountDisable"
+                      name="isUsingReviewerCount"
+                      type="radio"
+                      value="false"
+                      onChange={() =>
+                        setFormState((current) => ({
+                          ...current,
+                          isUsingReviewerCount: false,
+                        }))
+                      }
+                    />
+                    <label className="bg-radiobtn label-private" htmlFor="reviewerCountDisable">
+                      {legacyMessage(props.messages, "project.reviewer.count.disable")}
+                    </label>
                     <div
-                      className="btn-group branches"
-                      data-id="project-reviewer-count"
-                      data-name="defaultReviewerCount"
+                      className={formState.isUsingReviewerCount ? undefined : "hide"}
+                      data-value={formState.isUsingReviewerCount ? "true" : "false"}
+                      id="welReviewerCount"
                     >
-                      <span className="d-label">{formState.defaultReviewerCount}</span>
-                      <select
-                        id="project-reviewer-count"
-                        name="defaultReviewerCount"
-                        value={Math.min(formState.defaultReviewerCount, maxReviewerCount)}
-                        onChange={(event) =>
-                          setFormState((current) => ({
-                            ...current,
-                            defaultReviewerCount: Number(event.target.value),
-                          }))
-                        }
+                      <div
+                        className="btn-group branches"
+                        data-id="project-reviewer-count"
+                        data-name="defaultReviewerCount"
                       >
-                        {reviewerCountOptions.map((count) => (
-                          <option key={count} value={count}>
-                            {count}
-                          </option>
-                        ))}
-                      </select>
+                        <span className="d-label">{formState.defaultReviewerCount}</span>
+                        <select
+                          id="project-reviewer-count"
+                          name="defaultReviewerCount"
+                          value={Math.min(formState.defaultReviewerCount, maxReviewerCount)}
+                          onChange={(event) =>
+                            setFormState((current) => ({
+                              ...current,
+                              defaultReviewerCount: Number(event.target.value),
+                            }))
+                          }
+                        >
+                          {reviewerCountOptions.map((count) => (
+                            <option key={count} value={count}>
+                              {count}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <span className="note ml10">
+                        {legacyMessage(props.messages, "project.reviewer.count.description")}
+                      </span>
                     </div>
-                    <span className="note ml10">
-                      {legacyMessage(props.messages, "project.reviewer.count.description")}
-                    </span>
                   </div>
                 </div>
-              </div>
+              ) : null}
 
               <div className="box-wrap middle">
                 <div className="cu-label vmiddle">

@@ -442,6 +442,8 @@ pub struct ProjectContainer {
     #[serde(default)]
     pub project_scope: String,
     #[serde(default)]
+    pub vcs: String,
+    #[serde(default)]
     pub is_forked: bool,
     #[serde(default)]
     pub origin_owner_name: String,
@@ -583,6 +585,8 @@ pub struct ProjectMemberSummary {
 pub struct ProjectMilestoneSummary {
     #[serde(default)]
     pub title: String,
+    #[serde(default)]
+    pub state: String,
     #[serde(default)]
     pub due_date_label: String,
     #[serde(default)]

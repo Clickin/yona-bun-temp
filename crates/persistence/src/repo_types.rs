@@ -419,10 +419,16 @@ pub struct OrganizationIssueListRecord {
 pub struct IssueListFilter {
     pub assignee_id: Option<i64>,
     pub assignee_login_id: Option<String>,
+    pub author_id: Option<i64>,
     pub author_login_id: Option<String>,
+    pub commenter_id: Option<i64>,
+    pub due_date: Option<DateTime>,
     pub draft_author_login_id: Option<String>,
+    pub filter: Option<String>,
     pub label_ids: Vec<i64>,
     pub milestone_id: Option<i64>,
+    pub order_by: String,
+    pub order_dir: String,
     pub page_num: u32,
     pub state: Option<String>,
 }
@@ -1269,6 +1275,7 @@ pub struct ProjectMilestoneSummaryRecord {
     pub due_date_label: String,
     pub id: i64,
     pub open_issue_count: u32,
+    pub state: String,
     pub title: String,
 }
 

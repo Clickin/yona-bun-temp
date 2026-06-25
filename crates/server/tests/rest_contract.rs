@@ -8,19 +8,19 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
     Set,
 };
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 use tower::ServiceExt;
-use yoram_persistence::{
-    email, issue, title_head, user_project_notification, watch, AppRepository,
-    CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput, CreatePostingInput,
-    CreateProjectInput, CreatePullRequestInput, CreatePullRequestResult, IssueMutationInput,
-    PostingMutationInput, PullRequestMutationInput,
-};
 use yoram_migration::Migrator;
+use yoram_persistence::{
+    AppRepository, CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput,
+    CreatePostingInput, CreateProjectInput, CreatePullRequestInput, CreatePullRequestResult,
+    IssueMutationInput, PostingMutationInput, PullRequestMutationInput, email, issue, title_head,
+    user_project_notification, watch,
+};
 use yoram_server::{
-    create_router, create_router_with_app_repository, create_router_with_repository_and_app_config,
-    AppRuntimeConfig, RuntimeConfig, TranslationProxyConfig,
+    AppRuntimeConfig, RuntimeConfig, TranslationProxyConfig, create_router,
+    create_router_with_app_repository, create_router_with_repository_and_app_config,
 };
 
 mod rest_test_support;
@@ -582,14 +582,18 @@ async fn rest_project_issue_list_exposes_legacy_row_payload_fields() {
     assert_eq!(item["assigneeLabel"], "owner");
     assert_eq!(item["assigneeLoginId"], "owner");
     assert_eq!(item["authorLoginId"], "owner");
-    assert!(item["authorAvatarUrl"]
-        .as_str()
-        .unwrap_or_default()
-        .contains("gravatar"));
-    assert!(item["assigneeAvatarUrl"]
-        .as_str()
-        .unwrap_or_default()
-        .contains("gravatar"));
+    assert!(
+        item["authorAvatarUrl"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("gravatar")
+    );
+    assert!(
+        item["assigneeAvatarUrl"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("gravatar")
+    );
     assert_eq!(item["dueDateLabel"], "2026-08-01");
     assert_eq!(item["dueDateOverdue"], false);
     assert_eq!(item["weight"], 3);
@@ -757,11 +761,13 @@ async fn rest_issue_create_update_persists_legacy_parent_issue_id() {
         .await,
     )
     .await;
-    assert!(selected_options["items"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|item| item["id"] == parent_issue_id && item["selected"] == true));
+    assert!(
+        selected_options["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|item| item["id"] == parent_issue_id && item["selected"] == true)
+    );
 
     let cleared = ok_json(
         rpc(
@@ -897,20 +903,24 @@ async fn rest_session_route_coexists_with_bootstrap_and_rpc() {
 
     assert_eq!(rest_response.status(), StatusCode::OK);
     assert!(rest_response.headers().get("x-csrf-token").is_some());
-    assert!(rest_response
-        .headers()
-        .get_all(http::header::SET_COOKIE)
-        .iter()
-        .any(|cookie| cookie.to_str().unwrap().starts_with("yona_session=")));
+    assert!(
+        rest_response
+            .headers()
+            .get_all(http::header::SET_COOKIE)
+            .iter()
+            .any(|cookie| cookie.to_str().unwrap().starts_with("yona_session="))
+    );
     let rest_json = response_json(rest_response).await;
     assert_eq!(
         rest_json.get("isAnonymous").and_then(Value::as_bool),
         Some(true)
     );
-    assert!(rest_json
-        .get("defaultLandingPath")
-        .and_then(Value::as_str)
-        .is_some());
+    assert!(
+        rest_json
+            .get("defaultLandingPath")
+            .and_then(Value::as_str)
+            .is_some()
+    );
 
     let bootstrap_response = app
         .clone()
@@ -1138,11 +1148,13 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
         .await,
     )
     .await;
-    assert!(added_member["members"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|member| member["loginId"] == "member"));
+    assert!(
+        added_member["members"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|member| member["loginId"] == "member")
+    );
 
     let enroll = ok_json(
         rest(
@@ -1214,11 +1226,13 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
         .await,
     )
     .await;
-    assert!(accepted["members"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|member| member["loginId"] == "guest"));
+    assert!(
+        accepted["members"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|member| member["loginId"] == "guest")
+    );
 
     let promoted = ok_json(
         rest(
@@ -1234,11 +1248,13 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
         .await,
     )
     .await;
-    assert!(promoted["members"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|member| member["loginId"] == "member" && member["role"] == "org_admin"));
+    assert!(
+        promoted["members"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|member| member["loginId"] == "member" && member["role"] == "org_admin")
+    );
 
     let deleted_member = ok_json(
         rest(
@@ -1252,11 +1268,13 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
         .await,
     )
     .await;
-    assert!(!deleted_member["members"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|member| member["loginId"] == "member"));
+    assert!(
+        !deleted_member["members"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|member| member["loginId"] == "member")
+    );
 
     let guest_leave = ok_json(
         rest(
@@ -1391,10 +1409,18 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .toggle_site_user_guest_mode("guest")
         .await
         .expect("mark project enrollment actor as guest");
-    repository
-        .toggle_site_admin_role("owner")
+    if !repository
+        .find_user_by_identifier("owner")
         .await
-        .expect("mark legacy admin users actor as site admin");
+        .expect("read legacy admin users actor")
+        .expect("owner user")
+        .is_site_admin
+    {
+        repository
+            .toggle_site_admin_role("owner")
+            .await
+            .expect("mark legacy admin users actor as site admin");
+    }
 
     let legacy_created_users_response = rest(
         app.clone(),
@@ -1424,8 +1450,13 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         })),
     )
     .await;
-    assert_eq!(legacy_created_users_response.status(), StatusCode::CREATED);
+    let legacy_created_users_status = legacy_created_users_response.status();
     let legacy_created_users = response_json(legacy_created_users_response).await;
+    assert_eq!(
+        legacy_created_users_status,
+        StatusCode::CREATED,
+        "legacy external user create response: {legacy_created_users:?}"
+    );
     assert_eq!(legacy_created_users[0]["status"], 201);
     assert_eq!(legacy_created_users[0]["reason"], "Created");
     assert_eq!(legacy_created_users[0]["user"]["loginId"], "legacy-import");
@@ -1437,11 +1468,13 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_created_users[1]["status"], 409);
     assert_eq!(legacy_created_users[1]["reason"], "Conflict");
     assert_eq!(legacy_created_users[1]["message"], "Already exists!");
-    assert!(repository
-        .find_user_by_identifier("legacy-import")
-        .await
-        .unwrap()
-        .is_some());
+    assert!(
+        repository
+            .find_user_by_identifier("legacy-import")
+            .await
+            .unwrap()
+            .is_some()
+    );
     let legacy_create_user_by_visitor = rest(
         app.clone(),
         Method::POST,
@@ -1768,9 +1801,11 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await,
     )
     .await;
-    assert!(project_labels_after_detach
-        .get(&attached_project_label_id)
-        .is_none());
+    assert!(
+        project_labels_after_detach
+            .get(&attached_project_label_id)
+            .is_none()
+    );
 
     let updated = ok_json(
         rest(
@@ -2105,7 +2140,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await,
     )
     .await;
-    assert_eq!(issue_created["issueNumber"], "1");
+    assert_eq!(issue_created["issueNumber"], 1);
     let issue_id = issue::Entity::find()
         .filter(issue::Column::Title.eq(Some("Favorite issue".to_string())))
         .one(&db)
@@ -2133,19 +2168,21 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_comment_receivers = legacy_comment_receivers["receivers"]
         .as_array()
         .expect("legacy comment receivers");
-    assert!(legacy_comment_receivers
-        .iter()
-        .any(|receiver| receiver["loginId"] == "visitor"
+    assert!(legacy_comment_receivers.iter().any(|receiver| {
+        receiver["loginId"] == "visitor"
             && receiver["name"] == "visitor"
             && receiver["pureNameOnly"] == "visitor"
             && receiver["type"] == "user"
             && receiver["avatarUrl"]
                 .as_str()
                 .expect("receiver avatar")
-                .contains("gravatar.com")));
-    assert!(!legacy_comment_receivers
-        .iter()
-        .any(|receiver| receiver["loginId"] == "owner"));
+                .contains("gravatar.com")
+    }));
+    assert!(
+        !legacy_comment_receivers
+            .iter()
+            .any(|receiver| receiver["loginId"] == "owner")
+    );
     let anonymous_legacy_comment_receivers = rest(
         app.clone(),
         Method::POST,
@@ -2177,7 +2214,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     let legacy_issue_label_id = legacy_issue_label_fixture["label"]["id"]
-        .as_str()
+        .as_i64()
         .expect("legacy issue label id")
         .to_string();
     let legacy_issue_label_update_response = rest(
@@ -2189,10 +2226,12 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         Some(json!([legacy_issue_label_id])),
     )
     .await;
-    assert!(legacy_issue_label_update_response
-        .headers()
-        .get(http::header::LOCATION)
-        .is_none());
+    assert!(
+        legacy_issue_label_update_response
+            .headers()
+            .get(http::header::LOCATION)
+            .is_none()
+    );
     let legacy_issue_label_update = ok_json(legacy_issue_label_update_response).await;
     assert_eq!(legacy_issue_label_update["id"], "owner");
     assert_eq!(legacy_issue_label_update["labels"], 1);
@@ -2231,10 +2270,12 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         None,
     )
     .await;
-    assert!(legacy_issue_weight_up_response
-        .headers()
-        .get(http::header::LOCATION)
-        .is_none());
+    assert!(
+        legacy_issue_weight_up_response
+            .headers()
+            .get(http::header::LOCATION)
+            .is_none()
+    );
     let legacy_issue_weight_up = ok_json(legacy_issue_weight_up_response).await;
     assert_eq!(legacy_issue_weight_up["weight"], 1);
     let legacy_issue_weight_down = ok_json(
@@ -2406,9 +2447,11 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_issue_comment_response.status(), StatusCode::CREATED);
     let legacy_issue_comment = response_json(legacy_issue_comment_response).await;
     assert_eq!(legacy_issue_comment["status"], 201);
-    assert!(legacy_issue_comment["location"]
-        .as_str()
-        .is_some_and(|location| location.starts_with("/yona/owner/projectYobi/issue/1#comment-")));
+    assert!(
+        legacy_issue_comment["location"].as_str().is_some_and(
+            |location| location.starts_with("/yona/owner/projectYobi/issue/1#comment-")
+        )
+    );
     let legacy_issue_comment_id = legacy_issue_comment["location"]
         .as_str()
         .expect("legacy issue comment location")
@@ -2496,15 +2539,15 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     );
     let nested_legacy_issue_attachment_comment =
         response_json(nested_legacy_issue_attachment_comment_response).await;
-    let nested_legacy_issue_attachment_comment_id = nested_legacy_issue_attachment_comment
-        ["location"]
-        .as_str()
-        .expect("nested legacy issue attachment comment location")
-        .rsplit_once("#comment-")
-        .expect("nested legacy issue attachment comment anchor")
-        .1
-        .parse::<i64>()
-        .expect("nested legacy issue attachment comment id");
+    let nested_legacy_issue_attachment_comment_id =
+        nested_legacy_issue_attachment_comment["location"]
+            .as_str()
+            .expect("nested legacy issue attachment comment location")
+            .rsplit_once("#comment-")
+            .expect("nested legacy issue attachment comment anchor")
+            .1
+            .parse::<i64>()
+            .expect("nested legacy issue attachment comment id");
     let legacy_issue_comment_file_after = repository
         .read_attachment_by_id(legacy_issue_comment_file.id)
         .await
@@ -2822,19 +2865,23 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         "Favorite issue via nested legacy put"
     );
     assert_eq!(legacy_issue_read["result"]["state"], "closed");
-    assert!(legacy_issue_read["result"]["comments"]
-        .as_array()
-        .expect("legacy issue read comments")
-        .iter()
-        .any(
-            |comment| comment["body"] == "legacy issue comment body nested update"
-                && comment["author"]["loginId"] == "visitor"
-        ));
-    assert!(legacy_issue_read["result"]["events"]
-        .as_array()
-        .expect("legacy issue read events")
-        .iter()
-        .any(|event| event["eventType"] == "ISSUE_STATE_CHANGED"));
+    assert!(
+        legacy_issue_read["result"]["comments"]
+            .as_array()
+            .expect("legacy issue read comments")
+            .iter()
+            .any(
+                |comment| comment["body"] == "legacy issue comment body nested update"
+                    && comment["author"]["loginId"] == "visitor"
+            )
+    );
+    assert!(
+        legacy_issue_read["result"]["events"]
+            .as_array()
+            .expect("legacy issue read events")
+            .iter()
+            .any(|event| event["eventType"] == "ISSUE_STATE_CHANGED")
+    );
     let anonymous_legacy_issue_read = rest(
         app.clone(),
         Method::GET,
@@ -2868,12 +2915,16 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_issue_detect_change["issueBodyChanged"], true);
     assert_eq!(legacy_issue_detect_change["numOfComments"], 6);
     assert_eq!(legacy_issue_detect_change["commentAuthorName"], "visitor");
-    assert!(legacy_issue_detect_change["issueBodyChecksum"]
-        .as_str()
-        .is_some_and(|value| value.len() == 40));
-    assert!(legacy_issue_detect_change["issueUpdateDate"]
-        .as_i64()
-        .is_some_and(|value| value > 0));
+    assert!(
+        legacy_issue_detect_change["issueBodyChecksum"]
+            .as_str()
+            .is_some_and(|value| value.len() == 40)
+    );
+    assert!(
+        legacy_issue_detect_change["issueUpdateDate"]
+            .as_i64()
+            .is_some_and(|value| value > 0)
+    );
     let anonymous_legacy_issue_detect_change = rest(
         app.clone(),
         Method::POST,
@@ -2953,15 +3004,21 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_parent_comment_receivers = legacy_parent_comment_receivers["receivers"]
         .as_array()
         .expect("legacy parent comment receivers");
-    assert!(legacy_parent_comment_receivers
-        .iter()
-        .any(|receiver| receiver["loginId"] == "guest"));
-    assert!(!legacy_parent_comment_receivers
-        .iter()
-        .any(|receiver| receiver["loginId"] == "visitor"));
-    assert!(!legacy_parent_comment_receivers
-        .iter()
-        .any(|receiver| receiver["loginId"] == "owner"));
+    assert!(
+        legacy_parent_comment_receivers
+            .iter()
+            .any(|receiver| receiver["loginId"] == "guest")
+    );
+    assert!(
+        !legacy_parent_comment_receivers
+            .iter()
+            .any(|receiver| receiver["loginId"] == "visitor")
+    );
+    assert!(
+        !legacy_parent_comment_receivers
+            .iter()
+            .any(|receiver| receiver["loginId"] == "owner")
+    );
     let legacy_issue_no_assignee = rest(
         app.clone(),
         Method::POST,
@@ -3024,11 +3081,13 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await,
     )
     .await;
-    assert!(legacy_issue_shared_detail["sharers"]
-        .as_array()
-        .expect("legacy issue sharers")
-        .iter()
-        .any(|sharer| sharer["loginId"] == "guest"));
+    assert!(
+        legacy_issue_shared_detail["sharers"]
+            .as_array()
+            .expect("legacy issue sharers")
+            .iter()
+            .any(|sharer| sharer["loginId"] == "guest")
+    );
     let legacy_issue_find_sharer = ok_json(
         rest(
             app.clone(),
@@ -3222,13 +3281,15 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await,
     )
     .await;
-    assert!(legacy_project_assignable
-        .as_array()
-        .expect("legacy project assignable users")
-        .iter()
-        .any(|user| user["loginId"] == "visitor"
-            && user["name"] == "visitor"
-            && user["type"] == "user"));
+    assert!(
+        legacy_project_assignable
+            .as_array()
+            .expect("legacy project assignable users")
+            .iter()
+            .any(|user| user["loginId"] == "visitor"
+                && user["name"] == "visitor"
+                && user["type"] == "user")
+    );
     let legacy_issue_assignable = ok_json(
         rest(
             app.clone(),
@@ -3241,21 +3302,27 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await,
     )
     .await;
-    assert!(legacy_issue_assignable
-        .as_array()
-        .expect("legacy issue assignable users")
-        .iter()
-        .any(|user| user["loginId"] == "owner" && user["name"] == "issue.assignToMe"));
-    assert!(legacy_issue_assignable
-        .as_array()
-        .expect("legacy issue assignable users")
-        .iter()
-        .any(|user| user["loginId"] == "anonymous" && user["name"] == "issue.noAssignee"));
-    assert!(legacy_issue_assignable
-        .as_array()
-        .expect("legacy issue assignable users")
-        .iter()
-        .any(|user| user["loginId"] == "visitor" && user["name"] == "visitor"));
+    assert!(
+        legacy_issue_assignable
+            .as_array()
+            .expect("legacy issue assignable users")
+            .iter()
+            .any(|user| user["loginId"] == "owner" && user["name"] == "issue.assignToMe")
+    );
+    assert!(
+        legacy_issue_assignable
+            .as_array()
+            .expect("legacy issue assignable users")
+            .iter()
+            .any(|user| user["loginId"] == "anonymous" && user["name"] == "issue.noAssignee")
+    );
+    assert!(
+        legacy_issue_assignable
+            .as_array()
+            .expect("legacy issue assignable users")
+            .iter()
+            .any(|user| user["loginId"] == "visitor" && user["name"] == "visitor")
+    );
     let legacy_assignable_html = rest_with_headers(
         app.clone(),
         Method::GET,
@@ -3277,13 +3344,15 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await,
     )
     .await;
-    assert!(legacy_sharable_user
-        .as_array()
-        .expect("legacy sharable users")
-        .iter()
-        .any(|item| item["loginId"] == "visitor"
-            && item["name"] == "visitor"
-            && item["type"] == "user"));
+    assert!(
+        legacy_sharable_user
+            .as_array()
+            .expect("legacy sharable users")
+            .iter()
+            .any(|item| item["loginId"] == "visitor"
+                && item["name"] == "visitor"
+                && item["type"] == "user")
+    );
     let legacy_sharable_project = ok_json(
         rest(
             app.clone(),
@@ -3296,11 +3365,13 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await,
     )
     .await;
-    assert!(legacy_sharable_project
-        .as_array()
-        .expect("legacy sharable projects")
-        .iter()
-        .any(|item| item["name"] == "owner/projectYobi" && item["type"] == "project"));
+    assert!(
+        legacy_sharable_project
+            .as_array()
+            .expect("legacy sharable projects")
+            .iter()
+            .any(|item| item["name"] == "owner/projectYobi" && item["type"] == "project")
+    );
     let legacy_sharable_html = rest_with_headers(
         app.clone(),
         Method::GET,
@@ -3668,10 +3739,12 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(legacy_board_create_response.status(), StatusCode::CREATED);
-    assert!(legacy_board_create_response
-        .headers()
-        .get(http::header::LOCATION)
-        .is_none());
+    assert!(
+        legacy_board_create_response
+            .headers()
+            .get(http::header::LOCATION)
+            .is_none()
+    );
     let legacy_board_created = response_json(legacy_board_create_response).await;
     assert_eq!(legacy_board_created[0]["status"], 201);
     assert_eq!(
@@ -3729,10 +3802,12 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         nested_legacy_board_create_response.status(),
         StatusCode::CREATED
     );
-    assert!(nested_legacy_board_create_response
-        .headers()
-        .get(http::header::LOCATION)
-        .is_none());
+    assert!(
+        nested_legacy_board_create_response
+            .headers()
+            .get(http::header::LOCATION)
+            .is_none()
+    );
     let nested_legacy_board_created = response_json(nested_legacy_board_create_response).await;
     assert_eq!(nested_legacy_board_created[0]["status"], 201);
     assert_eq!(
@@ -3813,11 +3888,13 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_board_content["number"], 77);
     assert_eq!(
         legacy_board_content["id"],
-        json!(legacy_board_detail["id"]
-            .as_str()
-            .expect("post detail id")
-            .parse::<i64>()
-            .expect("numeric post detail id"))
+        json!(
+            legacy_board_detail["id"]
+                .as_str()
+                .expect("post detail id")
+                .parse::<i64>()
+                .expect("numeric post detail id")
+        )
     );
     assert_eq!(legacy_board_content["title"], "legacy board post");
     assert_eq!(legacy_board_content["type"], "BOARD_POST");
@@ -3857,9 +3934,11 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         legacy_board_content["createdAt"],
         "2020-01-02T03:04:05+0000"
     );
-    assert!(legacy_board_content["updatedAt"]
-        .as_str()
-        .is_some_and(|value| value.ends_with("+0000")));
+    assert!(
+        legacy_board_content["updatedAt"]
+            .as_str()
+            .is_some_and(|value| value.ends_with("+0000"))
+    );
 
     let nested_legacy_board_content = ok_json(
         rest(
@@ -3929,9 +4008,11 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(legacy_board_comment_response.status(), StatusCode::CREATED);
     let legacy_board_comment = response_json(legacy_board_comment_response).await;
     assert_eq!(legacy_board_comment["status"], 201);
-    assert!(legacy_board_comment["location"]
-        .as_str()
-        .is_some_and(|location| location.starts_with("/yona/owner/projectYobi/post/77#comment-")));
+    assert!(
+        legacy_board_comment["location"].as_str().is_some_and(
+            |location| location.starts_with("/yona/owner/projectYobi/post/77#comment-")
+        )
+    );
     let legacy_board_comment_id = legacy_board_comment["location"]
         .as_str()
         .expect("legacy board comment location")
@@ -4028,20 +4109,24 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .find(|comment| comment["contentsMarkdown"] == "legacy board comment body")
         .expect("legacy board comment");
     assert_eq!(legacy_created_comment["authorLoginId"], "visitor");
-    assert!(legacy_board_detail_with_comment["comments"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(
-            |comment| comment["authorLoginId"] == "legacy-board-comment-author"
-                && comment["contentsMarkdown"] == "legacy board imported comment author body"
-        ));
-    assert!(legacy_board_detail_with_comment["comments"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|comment| comment["authorLoginId"] == "visitor"
-            && comment["contentsMarkdown"] == "legacy board nested comment body"));
+    assert!(
+        legacy_board_detail_with_comment["comments"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(
+                |comment| comment["authorLoginId"] == "legacy-board-comment-author"
+                    && comment["contentsMarkdown"] == "legacy board imported comment author body"
+            )
+    );
+    assert!(
+        legacy_board_detail_with_comment["comments"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|comment| comment["authorLoginId"] == "visitor"
+                && comment["contentsMarkdown"] == "legacy board nested comment body")
+    );
 
     let legacy_board_comment_update = ok_json(
         rest(
@@ -4144,7 +4229,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     let legacy_board_label_id = legacy_board_label_fixture["label"]["id"]
-        .as_str()
+        .as_i64()
         .expect("legacy board label id")
         .to_string();
     let legacy_board_label_update = ok_json(
@@ -4352,10 +4437,12 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(legacy_watchers_without_type.status(), StatusCode::OK);
-    assert!(legacy_watchers_without_type
-        .headers()
-        .get(http::header::LOCATION)
-        .is_none());
+    assert!(
+        legacy_watchers_without_type
+            .headers()
+            .get(http::header::LOCATION)
+            .is_none()
+    );
     assert_eq!(response_text(legacy_watchers_without_type).await, "");
 
     let watched = ok_json(
@@ -4398,15 +4485,19 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(direct_watched.status(), StatusCode::OK);
-    assert!(direct_watched
-        .headers()
-        .get(http::header::LOCATION)
-        .is_none());
+    assert!(
+        direct_watched
+            .headers()
+            .get(http::header::LOCATION)
+            .is_none()
+    );
     assert_eq!(response_text(direct_watched).await, "");
-    assert!(repository
-        .is_watching_project(visitor_id, project_id)
-        .await
-        .unwrap());
+    assert!(
+        repository
+            .is_watching_project(visitor_id, project_id)
+            .await
+            .unwrap()
+    );
 
     let direct_watch_notification = ok_json(
         rest(
@@ -4423,10 +4514,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await,
     )
     .await;
-    let direct_watch_notifications = direct_watch_notification["watchedProjects"][0]
-        ["notifications"]
-        .as_array()
-        .expect("notifications array after direct watch");
+    let direct_watch_notifications =
+        direct_watch_notification["watchedProjects"][0]["notifications"]
+            .as_array()
+            .expect("notifications array after direct watch");
     let direct_watch_new_comment = direct_watch_notifications
         .iter()
         .find(|entry| entry["eventType"] == "NEW_COMMENT")
@@ -4453,15 +4544,19 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     )
     .await;
     assert_eq!(direct_unwatched.status(), StatusCode::OK);
-    assert!(direct_unwatched
-        .headers()
-        .get(http::header::LOCATION)
-        .is_none());
+    assert!(
+        direct_unwatched
+            .headers()
+            .get(http::header::LOCATION)
+            .is_none()
+    );
     assert_eq!(response_text(direct_unwatched).await, "");
-    assert!(!repository
-        .is_watching_project(visitor_id, project_id)
-        .await
-        .unwrap());
+    assert!(
+        !repository
+            .is_watching_project(visitor_id, project_id)
+            .await
+            .unwrap()
+    );
     let direct_unwatch_override = user_project_notification::Entity::find()
         .filter(user_project_notification::Column::UserId.eq(Some(visitor_id)))
         .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
@@ -4505,9 +4600,11 @@ async fn rest_project_read_denies_legacy_guest_nonmember_on_public_project() {
     )
     .await;
     assert_eq!(empty_issue_title.status(), StatusCode::BAD_REQUEST);
-    assert!(response_text(empty_issue_title)
-        .await
-        .contains("issue.error.emptyTitle"));
+    assert!(
+        response_text(empty_issue_title)
+            .await
+            .contains("issue.error.emptyTitle")
+    );
 
     let empty_post_title = rest(
         app.clone(),
@@ -4522,9 +4619,11 @@ async fn rest_project_read_denies_legacy_guest_nonmember_on_public_project() {
     )
     .await;
     assert_eq!(empty_post_title.status(), StatusCode::BAD_REQUEST);
-    assert!(response_text(empty_post_title)
-        .await
-        .contains("post.error.emptyTitle"));
+    assert!(
+        response_text(empty_post_title)
+            .await
+            .contains("post.error.emptyTitle")
+    );
 
     let public_detail = ok_json(
         rest(
@@ -4684,10 +4783,12 @@ async fn rest_project_watchers_lists_actual_watchers_with_read_acl() {
     assert_eq!(watchers["totalCount"], 1);
     assert_eq!(watchers["watchers"][0]["loginId"], "guest");
     assert_eq!(watchers["watchers"][0]["userLabel"], "guest");
-    assert!(watchers["watchers"][0]["avatarUrl"]
-        .as_str()
-        .unwrap_or_default()
-        .contains("gravatar"));
+    assert!(
+        watchers["watchers"][0]["avatarUrl"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("gravatar")
+    );
 
     create_project_rest(
         app.clone(),
@@ -4743,11 +4844,13 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
         .await,
     )
     .await;
-    assert!(child_commented["commentParentLinks"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|link| link["parentCommentId"] == comment_id.parse::<i64>().unwrap()));
+    assert!(
+        child_commented["commentParentLinks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|link| link["parentCommentId"] == comment_id.parse::<i64>().unwrap())
+    );
 
     let anonymous_watch = rest(
         app.clone(),
@@ -4796,10 +4899,12 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
     assert_eq!(voted["issueVoters"][0]["loginId"], "guest");
     assert_eq!(voted["issueVoters"][0]["userLabel"], "guest");
     assert_eq!(voted["issueVoters"][0]["emailAddress"], "guest@example.com");
-    assert!(voted["issueVoters"][0]["avatarUrl"]
-        .as_str()
-        .unwrap_or_default()
-        .contains("gravatar.com"));
+    assert!(
+        voted["issueVoters"][0]["avatarUrl"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("gravatar.com")
+    );
 
     let weight_upvoted = ok_json(
         rest(
@@ -5053,11 +5158,13 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
         .await,
     )
     .await;
-    assert!(added_email["emails"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .any(|entry| entry["emailAddress"] == "alt@example.com"));
+    assert!(
+        added_email["emails"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .any(|entry| entry["emailAddress"] == "alt@example.com")
+    );
 
     let alt_email = email::Entity::find()
         .filter(email::Column::UserId.eq(Some(user.id)))
@@ -5079,11 +5186,13 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
         .await,
     )
     .await;
-    assert!(validation_sent["emails"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .any(|entry| entry["emailAddress"] == "alt@example.com"));
+    assert!(
+        validation_sent["emails"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .any(|entry| entry["emailAddress"] == "alt@example.com")
+    );
 
     let mut alt_email_active = email::ActiveModel::from(
         email::Entity::find_by_id(alt_email.id)
@@ -5195,10 +5304,12 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
     )
     .await;
     assert_eq!(direct_toggle_notification.status(), StatusCode::OK);
-    assert!(direct_toggle_notification
-        .headers()
-        .get(http::header::LOCATION)
-        .is_none());
+    assert!(
+        direct_toggle_notification
+            .headers()
+            .get(http::header::LOCATION)
+            .is_none()
+    );
     assert_eq!(response_text(direct_toggle_notification).await, "");
     let direct_toggle_row = user_project_notification::Entity::find()
         .filter(user_project_notification::Column::UserId.eq(Some(user.id)))
@@ -5225,10 +5336,10 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
         .await,
     )
     .await;
-    let rest_toggle_after_direct_notifications = rest_toggle_after_direct["watchedProjects"][0]
-        ["notifications"]
-        .as_array()
-        .expect("notifications array after rest toggle");
+    let rest_toggle_after_direct_notifications =
+        rest_toggle_after_direct["watchedProjects"][0]["notifications"]
+            .as_array()
+            .expect("notifications array after rest toggle");
     let rest_toggle_after_direct_new_comment = rest_toggle_after_direct_notifications
         .iter()
         .find(|entry| entry["eventType"] == "NEW_COMMENT")
@@ -5247,9 +5358,11 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
         .await,
     )
     .await;
-    assert!(reset_token["apiToken"]
-        .as_str()
-        .is_some_and(|value| !value.is_empty()));
+    assert!(
+        reset_token["apiToken"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty())
+    );
 
     let updated_main_email = email::Entity::find()
         .filter(email::Column::UserId.eq(Some(user.id)))
@@ -5270,11 +5383,13 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
         .await,
     )
     .await;
-    assert!(!deleted_email["emails"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .any(|entry| entry["emailAddress"] == "owner-updated@example.com"));
+    assert!(
+        !deleted_email["emails"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .any(|entry| entry["emailAddress"] == "owner-updated@example.com")
+    );
 
     let reset_recent = ok_json(
         rest(
@@ -6026,19 +6141,23 @@ async fn rest_label_routes_manage_labels_and_categories() {
     assert_eq!(legacy_title_heads["result"][1]["category"], "Type");
     assert_eq!(
         legacy_title_heads["result"][1]["categoryId"],
-        json!(created_label["label"]["categoryId"]
-            .as_str()
-            .unwrap()
-            .parse::<i64>()
-            .unwrap())
+        json!(
+            created_label["label"]["categoryId"]
+                .as_str()
+                .unwrap()
+                .parse::<i64>()
+                .unwrap()
+        )
     );
     assert_eq!(
         legacy_title_heads["result"][1]["id"],
-        json!(created_label["label"]["id"]
-            .as_str()
-            .unwrap()
-            .parse::<i64>()
-            .unwrap())
+        json!(
+            created_label["label"]["id"]
+                .as_str()
+                .unwrap()
+                .parse::<i64>()
+                .unwrap()
+        )
     );
     assert_eq!(legacy_title_heads["result"][1]["labelColor"], "#f44336");
     assert_eq!(legacy_title_heads["result"][1]["isExclusive"], true);
@@ -6133,16 +6252,20 @@ async fn rest_label_routes_manage_labels_and_categories() {
     .await;
     assert_eq!(copied["copied"], 1);
     assert_eq!(copied["skipped"], 1);
-    assert!(copied["labels"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|label| label["name"] == "Feature" && label["categoryName"] == "Type"));
-    assert!(copied["labels"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|label| label["name"] == "Bug" && label["color"] == "#f44336"));
+    assert!(
+        copied["labels"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|label| label["name"] == "Feature" && label["categoryName"] == "Type")
+    );
+    assert!(
+        copied["labels"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|label| label["name"] == "Bug" && label["color"] == "#f44336")
+    );
 
     let updated_category = ok_json(
         rest(
@@ -6238,9 +6361,11 @@ async fn rest_milestone_routes_manage_crud_and_state() {
     )
     .await;
     assert_eq!(empty_title.status(), StatusCode::BAD_REQUEST);
-    assert!(response_text(empty_title)
-        .await
-        .contains("milestone.error.title"));
+    assert!(
+        response_text(empty_title)
+            .await
+            .contains("milestone.error.title")
+    );
 
     let created = ok_json(
         rest(
@@ -6260,7 +6385,7 @@ async fn rest_milestone_routes_manage_crud_and_state() {
         .await,
     )
     .await;
-    let milestone_id = created["milestone"]["id"].as_str().unwrap();
+    let milestone_id = created["milestone"]["id"].as_i64().unwrap().to_string();
     assert_eq!(created["milestone"]["title"], "v1.0");
 
     let listed = ok_json(

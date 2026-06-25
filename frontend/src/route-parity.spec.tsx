@@ -534,7 +534,8 @@ describe("file-route parity harness", () => {
           closeButton.includes('aria-label="button.close"') ||
             closeButton.includes('aria-label={legacyMessage(messages, "button.close")}') ||
             closeButton.includes('aria-label={legacyMessage(props.messages, "button.close")}') ||
-            closeButton.includes('aria-label={messages.t("button.close",'),
+            closeButton.includes('aria-label={messages.t("button.close",') ||
+            /aria-label=\{legacyMessage\([^)]*,\s*"button\.close"\)\}/.test(closeButton),
         ).toBe(true);
         expect(closeButton).not.toMatch(/>\s*x\s*<\/button>/);
       }
@@ -663,6 +664,22 @@ describe("file-route parity harness", () => {
         viewerCanDelete: false,
         viewerCanUpdate: false,
       },
+      {
+        attachments: [],
+        closedIssueCount: 0,
+        closedIssues: [],
+        completionPercent: 0,
+        contentsHtml: "",
+        contentsMarkdown: "",
+        dueDateLabel: "",
+        id: 8,
+        openIssueCount: 0,
+        openIssues: [],
+        state: "closed",
+        title: "v0.9",
+        viewerCanDelete: false,
+        viewerCanUpdate: false,
+      },
     ];
 
     const createHtml = renderToStaticMarkup(
@@ -714,6 +731,7 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain(">Preview</a>");
     expect(createHtml).toContain('class="markdown-help"');
     expect(createHtml).toContain('class="markdown-preview markdown-wrap content-body"');
+    expect(createHtml).toContain("<p>Template body</p>");
     expect(createHtml).toContain('class="notification-receiver"');
     expect(createHtml).toContain('class="editorSeries content comment nm"');
     expect(createHtml).toContain('id="editor-body-content-body"');
@@ -733,6 +751,7 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('id="milestoneId"');
     expect(createHtml).toContain('data-format="milestone"');
     expect(createHtml).toContain('value="7"');
+    expect(createHtml).not.toContain('value="8"');
     expect(createHtml).toContain('id="issueDueDate"');
     expect(createHtml).toContain('data-toggle="calendar"');
     expect(createHtml).toContain('class="search-btn btn-calendar"');
@@ -741,6 +760,7 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('data-format="issuelabel"');
     expect(createHtml).toContain('aria-label="Select label"');
     expect(createHtml).toContain('data-placeholder="Select label"');
+    expect(createHtml).not.toContain("[button.edit]");
     expect(createHtml).toContain('class="label issue-label list-label active white"');
     expect(createHtml).toContain('name="referCommentId"');
     expect(createHtml).toContain('value="55"');
@@ -794,7 +814,11 @@ describe("file-route parity harness", () => {
     expect(editHtml).toContain('id="issueDueDate"');
     expect(editHtml).toContain('value="2026-08-02"');
     expect(editHtml).toContain('<option value="31" selected="">#12. Parent issue</option>');
+    expect(editHtml).toContain('<optgroup label="Open">');
     expect(editHtml).toContain('<option data-state="open" value="7" selected="">v1.0</option>');
+    expect(editHtml).toContain('<optgroup label="Closed">');
+    expect(editHtml).toContain('<option data-state="closed" value="8">v0.9</option>');
+    expect(editHtml).not.toContain("[button.edit]");
     expect(editHtml).toContain(
       '<option data-category-id="3" data-category-is-exclusive="false" value="5" selected="">bug</option>',
     );
@@ -2685,7 +2709,9 @@ describe("file-route parity harness", () => {
     expect(childCommentHtml).toContain('class="child-comments"');
     expect(childCommentHtml).toContain('class="one-line-comment"');
     expect(childCommentHtml).toContain("child reply");
-    expect(childCommentHtml).toContain('<div class="contents"><p>child reply</p><span');
+    expect(childCommentHtml).toContain(
+      '<div class="contents"><p>child reply</p><div class="attachments"',
+    );
     expect(childCommentHtml).not.toContain(
       '<div class="contents"><div><p>child reply</p></div><span',
     );
@@ -2914,8 +2940,9 @@ describe("file-route parity harness", () => {
         onSubmit={noopSubmit}
       />,
     );
-    expect(labeledCreateHtml).toContain("<legend>Label</legend>");
-    expect(labeledCreateHtml).not.toContain("<legend>Labels</legend>");
+    expect(labeledCreateHtml).not.toContain("board-label-picker");
+    expect(labeledCreateHtml).not.toContain("<legend>Label</legend>");
+    expect(labeledCreateHtml).toContain('data-resource-type="BOARD_POST"');
 
     const editHtml = renderToStaticMarkup(
       <ProjectPostFormPage

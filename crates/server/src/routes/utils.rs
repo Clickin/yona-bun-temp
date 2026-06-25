@@ -1,32 +1,32 @@
 use axum::{
+    Json,
     http::{HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Redirect, Response},
-    Json,
 };
-use bcrypt::{hash, DEFAULT_COST};
+use bcrypt::{DEFAULT_COST, hash};
 
 use md5::{Digest, Md5};
 use rand::RngCore;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{collections::HashMap, time::SystemTime};
-use yoram_integrations::{deliver_with_config, IntegrationConfig, OutboundMail};
+use yoram_integrations::{IntegrationConfig, OutboundMail, deliver_with_config};
 use yoram_vcs::{CodeFileRecord, VcsError};
 
 use crate::{
-    persistence,
-    session::{Session, SessionManager},
     AuthUiConfig, ConnectError, Context, ErrorCode, IssueLabel, IssueLabelCategory,
     OrganizationAdminMember, OrganizationAdminView, OrganizationContainer, OrganizationDetail,
     OrganizationEnrollmentRequestSummary, OrganizationIssueListItem, OrganizationMemberSummary,
     OrganizationProjectCard, OrganizationRoleOption, PilotBackend, PilotRepository,
     PilotServiceImpl, ProjectContainer, ProjectDetail, ProjectIssueListItem, ProjectMemberSummary,
     ProjectMilestoneSummary, ReadAuthUiCapabilitiesResponse, ReadCurrentSessionResponse,
+    persistence,
+    session::{Session, SessionManager},
 };
 use yoram_domain::{
+    DEFAULT_LANDING_FALLBACK_PATH, ProjectAccessFacts, ProjectOperation, ProjectScope,
     authorize_project_access, can_create_organization_project, can_request_project_enrollment,
-    can_update_organization, ProjectAccessFacts, ProjectOperation, ProjectScope,
-    DEFAULT_LANDING_FALLBACK_PATH,
+    can_update_organization,
 };
 
 pub(crate) fn normalize_identifier(value: &str) -> String {
@@ -1293,6 +1293,7 @@ pub(crate) fn project_milestone_summary_from_record(
         due_date_label: record.due_date_label.clone(),
         id: record.id,
         open_issue_count: record.open_issue_count,
+        state: record.state.clone(),
         title: record.title.clone(),
         ..Default::default()
     }
@@ -1717,6 +1718,7 @@ pub(crate) async fn build_project_container_response(
         viewer_can_update,
         viewer_can_watch,
         viewer_user_id: actor_id.unwrap_or_default(),
+        vcs: authorization.project.vcs.clone(),
         watch_count,
         ..Default::default()
     })

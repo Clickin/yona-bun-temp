@@ -4,6 +4,7 @@ import {
   listProjectIssues,
   listProjectLabels,
   listProjectMilestones,
+  massUpdateIssues,
   readProjectContainer,
 } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/$owner/$projectName/issues")({
 
 function ProjectIssuesRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issues`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -45,7 +46,7 @@ function ProjectIssuesRouteComponent() {
 
   useDocumentTitle("menu.issue");
 
-  React.useEffect(() => {
+  const loadIssues = React.useCallback(() => {
     let cancelled = false;
     setFailureKind(null);
     void (async () => {
@@ -57,9 +58,15 @@ function ProjectIssuesRouteComponent() {
           listProjectIssues(runtimeConfig, owner, projectName, {
             assigneeId: nextQuery.assigneeId,
             assigneeLoginId: nextQuery.assigneeLoginId,
+            authorId: nextQuery.authorId,
             authorLoginId: nextQuery.authorLoginId,
+            commenterId: nextQuery.commenterId,
+            dueDate: nextQuery.dueDate,
+            filter: nextQuery.filter,
             labelIds: nextQuery.labelIds,
             milestoneId: nextQuery.milestoneId,
+            orderBy: nextQuery.orderBy,
+            orderDir: nextQuery.orderDir,
             pageNum: nextQuery.pageNum,
             state: nextQuery.state,
           }),
@@ -103,6 +110,8 @@ function ProjectIssuesRouteComponent() {
     };
   }, [owner, projectName, runtimeConfig]);
 
+  React.useEffect(() => loadIssues(), [loadIssues]);
+
   if (bootstrapping) {
     return (
       <main className="app-shell">
@@ -127,6 +136,14 @@ function ProjectIssuesRouteComponent() {
       labels={labels}
       messages={messages}
       milestones={milestones}
+      onMassUpdate={async (input) => {
+        await massUpdateIssues(runtimeConfig, csrfToken, {
+          ...input,
+          ownerName: owner,
+          projectName,
+        });
+        loadIssues();
+      }}
       query={query}
       runtimeConfig={runtimeConfig}
     />
@@ -138,8 +155,11 @@ function defaultIssueListQuery(): ProjectIssueListQuery {
     assigneeLoginId: "",
     authorLoginId: "",
     dueDate: "",
+    filter: "",
     labelIds: [],
     milestoneId: 0,
+    orderBy: "updatedDate",
+    orderDir: "desc",
     pageNum: 1,
     state: "",
   };
@@ -156,11 +176,16 @@ function issueListQueryFromSearchParams(searchParams: URLSearchParams): ProjectI
 
   return {
     assigneeId: optionalNumber(searchParams.get("assigneeId")),
+    authorId: optionalNumber(searchParams.get("authorId")),
     assigneeLoginId: searchParams.get("assigneeLoginId") ?? "",
     authorLoginId: searchParams.get("authorLoginId") ?? "",
+    commenterId: optionalNumber(searchParams.get("commenterId")),
     dueDate: searchParams.get("dueDate") ?? "",
+    filter: searchParams.get("filter") ?? "",
     labelIds,
     milestoneId: positiveNumber(searchParams.get("milestoneId")),
+    orderBy: searchParams.get("orderBy") ?? "updatedDate",
+    orderDir: searchParams.get("orderDir") ?? "desc",
     pageNum: positiveNumber(searchParams.get("pageNum")) || 1,
     state: searchParams.get("state") ?? "",
   };

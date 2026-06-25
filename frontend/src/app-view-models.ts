@@ -467,6 +467,7 @@ export function toProjectContainerView(
     viewerCanUpdate: detail.viewerCanUpdate,
     viewerCanWatch: detail.viewerCanWatch,
     viewerUserId: Number(detail.viewerUserId ?? 0),
+    vcs: detail.vcs,
     watchCount: detail.watchCount,
   };
 }
@@ -908,6 +909,7 @@ function toProjectMilestoneView(
     completionPercent: milestone.completionPercent,
     contentsMarkdown: milestone.contentsMarkdown,
     dueDateLabel: milestone.dueDateLabel,
+    dueDateOverdue: Boolean(milestone.dueDateOverdue),
     id: Number(milestone.id),
     issueReferences: issueReferencesFrom(milestone),
     mentionReferences: mentionReferencesFrom(milestone),
@@ -915,6 +917,7 @@ function toProjectMilestoneView(
     openIssues: milestone.openIssues.map(toProjectMilestoneIssueView),
     state: milestone.state,
     title: milestone.title,
+    untilLabel: String(milestone.untilLabel ?? ""),
     viewerCanDelete: milestone.viewerCanDelete,
     viewerCanUpdate: milestone.viewerCanUpdate,
   };

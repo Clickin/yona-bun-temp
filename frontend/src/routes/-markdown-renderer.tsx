@@ -7304,10 +7304,18 @@ export function LegacyMarkdownHelp(props: { messages?: LegacyMessageLookup } = {
 }
 
 export function LegacyMarkdownEditorShell(props: {
+  basePath?: string;
   children: React.ReactNode;
+  currentUserLabel?: string;
+  currentUserLoginId?: string;
   editorMode?: string;
   editId: string;
+  issueReferences?: MarkdownIssueReference[];
+  markdownPreview?: string;
   messages?: LegacyMessageLookup;
+  mentionReferences?: MarkdownMentionReference[];
+  ownerName?: string;
+  projectName?: string;
   previewId: string;
   viaEmail?: boolean;
 }) {
@@ -7362,10 +7370,18 @@ export function LegacyMarkdownEditorShell(props: {
           <div className="textarea-box">{props.children}</div>
         </div>
         <div className="tab-pane" id={props.previewId}>
-          <div
+          <MarkdownRenderer
+            basePath={props.basePath}
             className={`markdown-preview markdown-wrap ${editorMode}`}
+            currentUserLabel={props.currentUserLabel}
+            currentUserLoginId={props.currentUserLoginId}
             data-via-email={props.viaEmail ? "true" : "false"}
-          ></div>
+            issueReferences={props.issueReferences}
+            markdown={props.markdownPreview ?? ""}
+            mentionReferences={props.mentionReferences}
+            ownerName={props.ownerName}
+            projectName={props.projectName}
+          />
         </div>
         <div className="notification-receiver">
           <span className="notification-receiver-title">

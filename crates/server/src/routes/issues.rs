@@ -178,10 +178,16 @@ struct RestMassUpdateIssuesBody {
 pub(crate) struct RestProjectIssuesQuery {
     assignee_id: Option<i64>,
     assignee_login_id: String,
+    author_id: Option<i64>,
     author_login_id: String,
+    commenter_id: Option<i64>,
+    due_date: String,
+    filter: String,
     pub(crate) format: String,
     label_ids: Vec<i64>,
     milestone_id: Option<i64>,
+    order_by: String,
+    order_dir: String,
     pub(crate) page_num: u32,
     state: String,
 }
@@ -200,7 +206,11 @@ impl RestProjectIssuesQuery {
             match key.as_str() {
                 "assigneeId" => query.assignee_id = Some(parse_rest_query_i64(&value)?),
                 "assigneeLoginId" => query.assignee_login_id = value,
+                "authorId" => query.author_id = Some(parse_rest_query_i64(&value)?),
                 "authorLoginId" => query.author_login_id = value,
+                "commenterId" => query.commenter_id = Some(parse_rest_query_i64(&value)?),
+                "dueDate" => query.due_date = value,
+                "filter" => query.filter = value,
                 "format" => query.format = value,
                 "labelIds" | "labelIds[]" => {
                     let parsed = parse_rest_query_i64(&value)?;
@@ -212,6 +222,8 @@ impl RestProjectIssuesQuery {
                     let parsed = parse_rest_query_i64(&value)?;
                     query.milestone_id = (parsed > 0).then_some(parsed);
                 }
+                "orderBy" => query.order_by = value,
+                "orderDir" => query.order_dir = value,
                 "pageNum" => query.page_num = parse_rest_query_u32(&value)?,
                 "state" => query.state = value,
                 _ => {}
@@ -315,11 +327,17 @@ pub(crate) fn issue_list_filter_from_request(
         assignee_id: None,
         assignee_login_id: (!request.assignee_login_id.trim().is_empty())
             .then(|| request.assignee_login_id.trim().to_string()),
+        author_id: None,
         author_login_id: (!request.author_login_id.trim().is_empty())
             .then(|| request.author_login_id.trim().to_string()),
+        commenter_id: None,
+        due_date: None,
         draft_author_login_id: None,
+        filter: None,
         label_ids: request.label_ids.to_vec(),
         milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
+        order_by: "updatedDate".to_string(),
+        order_dir: "desc".to_string(),
         page_num: request.page_num.max(1),
         state: (!request.state.trim().is_empty()).then(|| request.state.trim().to_string()),
     }
@@ -791,19 +809,33 @@ fn rest_issue_mutation_input_from_body(
 
 pub(crate) fn rest_project_issue_filter_from_query(
     query: RestProjectIssuesQuery,
-) -> persistence::IssueListFilter {
-    persistence::IssueListFilter {
+) -> Result<persistence::IssueListFilter, ConnectError> {
+    Ok(persistence::IssueListFilter {
         assignee_id: query.assignee_id,
         assignee_login_id: (!query.assignee_login_id.trim().is_empty())
             .then(|| query.assignee_login_id.trim().to_string()),
+        author_id: query.author_id.filter(|value| *value > 0),
         author_login_id: (!query.author_login_id.trim().is_empty())
             .then(|| query.author_login_id.trim().to_string()),
+        commenter_id: query.commenter_id.filter(|value| *value > 0),
+        due_date: parse_milestone_due_date(&query.due_date)?,
         draft_author_login_id: None,
+        filter: (!query.filter.trim().is_empty()).then(|| query.filter.trim().to_string()),
         label_ids: query.label_ids,
         milestone_id: query.milestone_id.filter(|value| *value > 0),
+        order_by: if query.order_by.trim().is_empty() {
+            "updatedDate".to_string()
+        } else {
+            query.order_by.trim().to_string()
+        },
+        order_dir: if query.order_dir.trim().is_empty() {
+            "desc".to_string()
+        } else {
+            query.order_dir.trim().to_string()
+        },
         page_num: query.page_num.max(1),
         state: (!query.state.trim().is_empty()).then(|| query.state.trim().to_string()),
-    }
+    })
 }
 
 pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
@@ -814,9 +846,11 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 let service = service.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
-                      Query(query): Query<RestProjectIssuesQuery>| {
+                      RawQuery(raw_query): RawQuery| {
                     let service = service.clone();
                     async move {
+                        let query =
+                            RestProjectIssuesQuery::from_raw_query(raw_query.as_deref())?;
                         rest_list_project_issues(
                             headers,
                             owner_name,
@@ -2451,7 +2485,8 @@ async fn rest_list_project_issues(
     let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    let mut filter = rest_project_issue_filter_from_query(query);
+    let mut filter =
+        rest_project_issue_filter_from_query(query).map_err(RestRouteError::from_connect_error)?;
     if let Some(actor_id) = actor_id {
         filter.draft_author_login_id = repository
             .find_user_by_id(actor_id)

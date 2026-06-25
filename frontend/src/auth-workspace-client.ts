@@ -166,9 +166,15 @@ export interface SessionBootstrapResult {
 export interface ProjectIssueListOptions {
   assigneeId?: bigint | number;
   assigneeLoginId?: string;
+  authorId?: bigint | number;
   authorLoginId?: string;
+  commenterId?: bigint | number;
+  dueDate?: string;
+  filter?: string;
   labelIds?: Array<bigint | number>;
   milestoneId?: bigint | number;
+  orderBy?: string;
+  orderDir?: string;
   pageNum?: number;
   state?: string;
 }
@@ -595,6 +601,9 @@ function massUpdateIssuesRestBody(input: RequestInput) {
     addLabelIds: input.addLabelIds ?? [],
     assigneeLoginId: input.assigneeLoginId ?? "",
     assigneeUpdate: input.assigneeUpdate ?? false,
+    delete: input.delete ?? false,
+    dueDate: input.dueDate ?? "",
+    isDueDateChanged: input.isDueDateChanged ?? false,
     issueNumbers: input.issueNumbers ?? [],
     milestoneId: input.milestoneId && input.milestoneId !== 0n ? input.milestoneId : undefined,
     milestoneUpdate: input.milestoneUpdate ?? false,
@@ -639,9 +648,15 @@ export async function listProjectIssues(
     `${projectIssuesRestPath(ownerName, projectName)}${issueQueryString({
       assigneeId: input.assigneeId,
       assigneeLoginId: input.assigneeLoginId,
+      authorId: input.authorId,
       authorLoginId: input.authorLoginId,
+      commenterId: input.commenterId,
+      dueDate: input.dueDate,
+      filter: input.filter,
       labelIds: input.labelIds,
       milestoneId: input.milestoneId,
+      orderBy: input.orderBy,
+      orderDir: input.orderDir,
       pageNum: input.pageNum ?? 1,
       state: input.state,
     })}`,

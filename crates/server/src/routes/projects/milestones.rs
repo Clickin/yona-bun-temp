@@ -8,6 +8,7 @@ fn milestone_to_summary(milestone: IssueMilestone) -> ProjectMilestoneSummary {
         closed_issue_count: milestone.closed_issue_count,
         completion_percent: milestone.completion_percent,
         id: milestone.id,
+        state: milestone.state,
     }
 }
 

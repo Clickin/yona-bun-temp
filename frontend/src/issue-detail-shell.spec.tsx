@@ -835,6 +835,91 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).not.toContain('id="event-19"');
   });
 
+  it("renders the legacy inline issue metadata update form", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={{
+          ...projectDetail,
+          dashboard: {
+            labels: [
+              {
+                categoryId: 3,
+                categoryIsExclusive: false,
+                categoryName: "Type",
+                color: "#f44336",
+                id: 5,
+                name: "bug",
+                openIssueCount: 1,
+              },
+            ],
+          },
+        }}
+        issue={{
+          ...issueDetail,
+          dueDateLabel: "2026-08-02",
+          issueId: 101,
+          labels: [{ color: "#f44336", id: 5, name: "bug" }],
+          milestoneId: 7,
+          milestoneTitle: "v1.0",
+          viewerCanUpdate: true,
+        }}
+        milestoneOptions={[
+          {
+            attachments: [],
+            closedIssueCount: 0,
+            closedIssues: [],
+            completionPercent: 0,
+            contentsMarkdown: "",
+            dueDateLabel: "",
+            id: 7,
+            openIssueCount: 0,
+            openIssues: [],
+            state: "open",
+            title: "v1.0",
+            viewerCanDelete: false,
+            viewerCanUpdate: false,
+          },
+          {
+            attachments: [],
+            closedIssueCount: 0,
+            closedIssues: [],
+            completionPercent: 0,
+            contentsMarkdown: "",
+            dueDateLabel: "",
+            id: 8,
+            openIssueCount: 0,
+            openIssues: [],
+            state: "closed",
+            title: "v0.9",
+            viewerCanDelete: false,
+            viewerCanUpdate: false,
+          },
+        ]}
+        onAssign={async () => undefined}
+        onMetadataUpdate={async () => undefined}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('class="issue-info"');
+    expect(html).toContain('id="issueUpdateForm"');
+    expect(html).toContain('name="issues[0].id"');
+    expect(html).toContain('value="101"');
+    expect(html).toContain('id="milestone"');
+    expect(html).toContain('name="milestone.id"');
+    expect(html).toContain('<optgroup label="Open">');
+    expect(html).toContain('<option data-state="open" value="7" selected="">v1.0</option>');
+    expect(html).toContain('<optgroup label="Closed">');
+    expect(html).toContain('<option data-state="closed" value="8">v0.9</option>');
+    expect(html).toContain('name="dueDate"');
+    expect(html).toContain('value="2026-08-02"');
+    expect(html).toContain('id="labelIds"');
+    expect(html).toContain('name="labelIds"');
+    expect(html).toContain('data-format="issuelabel"');
+    expect(html).toContain("[Edit]");
+    expect(html).not.toContain("[button.edit]");
+  });
+
   it("renders the legacy issue subtask list shell", () => {
     const html = renderToStaticMarkup(
       <ProjectIssueDetailPage

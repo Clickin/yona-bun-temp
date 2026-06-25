@@ -26,7 +26,7 @@ const projectDetail = {
   isFavorited: false,
   isUsingReviewerCount: true,
   maxReviewerCount: 3,
-  organizationName: "",
+  organizationName: "team",
   overview: "Overview",
   ownerName: "admin",
   projectName: "projectYobi",
@@ -39,6 +39,7 @@ const projectDetail = {
   showReview: false,
   viewerCanEnroll: false,
   viewerCanUpdate: true,
+  vcs: "GIT",
 };
 
 describe("project settings parity", () => {
@@ -115,6 +116,9 @@ describe("project settings parity", () => {
     expect(html).toContain('id="protected"');
     expect(html).toContain('checked="" value="PROTECTED"');
     expect(html).not.toContain('<select name="projectScope">');
+    expect(html).toContain(">Issue Template</div>");
+    expect(html).toContain('href="/yona/admin/projectYobi/postform?issueTemplate=true"');
+    expect(html).toContain(">Edit</a>");
     expect(html).toContain('id="codeAccessibleMemberOnly"');
     expect(html).toContain('checked="" value="true"');
     expect(html).toContain('id="reviewerCountSettingPanel"');
@@ -125,6 +129,35 @@ describe("project settings parity", () => {
     expect(viewSource).toContain("event.preventDefault();");
     expect(viewSource).not.toContain("if (!props.onUpdateProjectSettings) {");
     expect(viewSource).toContain("props.onUpdateProjectSettings?.({");
+  });
+
+  it("preserves legacy visibility for protected and Git-only project setting controls", () => {
+    const userOwnedHtml = renderToStaticMarkup(
+      <ProjectSettingsPage
+        detail={{ ...projectDetail, organizationName: "", projectScope: "public" }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const svnHtml = renderToStaticMarkup(
+      <ProjectSettingsPage
+        detail={{ ...projectDetail, showCode: true, vcs: "Subversion" }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const codeMenuOffHtml = renderToStaticMarkup(
+      <ProjectSettingsPage
+        detail={{ ...projectDetail, showCode: false }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(userOwnedHtml).not.toContain('id="protected"');
+    expect(userOwnedHtml).not.toContain('value="PROTECTED"');
+    expect(svnHtml).not.toContain("Issue Template");
+    expect(svnHtml).not.toContain("postform?issueTemplate=true");
+    expect(svnHtml).not.toContain('id="reviewerCountSettingPanel"');
+    expect(codeMenuOffHtml).toContain('id="reviewerCountSettingPanel" style="display:none"');
+    expect(codeMenuOffHtml).not.toContain('id="project-default-branch"');
   });
 
   it("uses default legacy messages without AppRuntimeContext messages", () => {
@@ -497,8 +530,8 @@ describe("project settings parity", () => {
     expect(forkHelpHtml).toContain(">FORK_HELP_2_LOOKUP</p>");
     expect(forkHelpHtml).toContain(">PROJECT_NAME_ALERT_LOOKUP</span>");
     expect(forkExistsHtml).toContain(">FORK_EXISTS_LOOKUP</p>");
-    expect(source).toContain('legacyMessage(messages, "user.loginId")');
-    expect(source).toContain('legacyMessage(messages, "user.password")');
+    expect(source).toContain('legacyMessage(messages, "project.import.auth.userid")');
+    expect(source).toContain('legacyMessage(messages, "project.import.auth.userpw")');
     expect(source).toContain('legacyMessage(messages, "button.edit")');
     expect(source).toContain('legacyMessage(messages, "code.copyUrl")');
   });

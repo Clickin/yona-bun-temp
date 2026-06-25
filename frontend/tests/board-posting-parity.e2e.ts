@@ -650,7 +650,8 @@ test("project board create edit and delete flows send CSRF REST mutations", asyn
   await page.locator("#editor-body-content-body").fill("Created body");
   await page.locator("#notice").check();
   await page.locator("#readme").check();
-  await page.getByLabel("guide").check();
+  await expect(page.locator(".board-label-picker")).toHaveCount(0);
+  await expect(page.locator('.upload-wrap[data-resource-type="BOARD_POST"]')).toBeVisible();
 
   const createRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts") && request.method() === "POST",
@@ -679,6 +680,8 @@ test("project board create edit and delete flows send CSRF REST mutations", asyn
     (request) => request.url().endsWith("/posts/1") && request.method() === "DELETE",
   );
   await page.locator(".board-view .board-actions").getByRole("button", { name: "Delete" }).click();
+  await expect(page.locator("#deleteConfirm")).toBeVisible();
+  await page.locator("#deleteConfirm").getByRole("button", { name: "Yes" }).click();
   expect((await deletePostRequest).headers()["x-csrf-token"]).toBe("csrf-123");
   await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/posts$/);
 });

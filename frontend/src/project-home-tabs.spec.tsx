@@ -162,13 +162,28 @@ describe("project home tab parity", () => {
     const html = renderProjectHome("/yona/yona/projectYobi", {
       members: [{ avatarUrl: "/avatar.png", loginId: "door", role: "member", userLabel: "Door" }],
       viewerCanLeave: true,
+      viewerCanUpdate: true,
       viewerUserId: 42,
     });
 
+    expect(html).toContain('class="inner member-info"');
+    expect(html).toContain('id="member-add-link"');
+    expect(html).toContain('class="member-wrap"');
+    expect(html).toContain('class="project-members"');
+    expect(html).toContain('class="member"');
+    expect(html).toContain('class="avatar-wrap img-rounded pull-left small"');
+    expect(html).toContain('href="/yona/door"');
+    expect(html).toContain('src="/avatar.png"');
+    expect(html).toContain("<strong>Door (door)</strong>");
     expect(html).toContain(
       'class="ybtn ybtn-minimum ybtn-danger pull-right" data-href="/yona/yona/projectYobi/member/42/delete" id="projectLeaveBtn"',
     );
-    expect(html).not.toContain("project.member.leave</button>");
+    expect(html).toContain('class="modal hide" id="alertLeave"');
+    expect(html).toContain("<h3>Leave project</h3>");
+    expect(html).toContain("Do you want to leave this project?");
+    expect(html).toContain('class="ybtn ybtn-info ybtn-mini" id="leaveBtn"');
+    expect(html).toContain(">Yes</button>");
+    expect(html).toContain(">No</button>");
   });
 
   it("keeps project overview mentions plain like legacy Markdown.render(String)", () => {
@@ -384,6 +399,7 @@ describe("project home tab parity", () => {
     expect(html).toContain('class="overview-pullrequest"');
     expect(html).toContain("Open issues: by assignee");
     expect(html).toContain("Project home parity");
+    expect(html).toContain('href="/yona/yona/projectYobi/issues?state=open&amp;milestoneId=7"');
     expect(html).not.toContain("Legacy placeholder panel");
     expect(html).not.toContain("No README post yet.");
     expect(noMilestoneHtml).toContain("No milestone");
