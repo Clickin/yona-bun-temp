@@ -15,7 +15,6 @@ const serverRenderedHtmlCompatibilityFiles = new Set([
   "api/issue-meta.ts",
   "api/milestones.ts",
   "api/pull-requests.ts",
-  "app-view-models.ts",
 ]);
 const allowedResponseTextReaders = new Set(["api/rest-client.ts", "api/translation.ts"]);
 const allowedMarkdownRendererCallsWithoutMarkdownWrap = [
@@ -158,7 +157,7 @@ describe("Markdown render boundary", () => {
     ).toEqual(Array.from(allowedResponseTextReaders).sort());
   });
 
-  it("keeps server HTML compatibility fields in API/view-model mapping only", () => {
+  it("keeps server HTML compatibility fields inside API compatibility modules only", () => {
     const compatibilitySources = Array.from(serverRenderedHtmlCompatibilityFiles, readSource);
 
     for (const source of compatibilitySources) {

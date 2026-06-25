@@ -443,7 +443,6 @@ export function toProjectContainerView(
     projectScope: detail.projectScope,
     readmeFile: detailWithReadme.readmeFile
       ? {
-          bodyHtml: detailWithReadme.readmeFile.bodyHtml ?? "",
           bodyMarkdown: detailWithReadme.readmeFile.bodyMarkdown ?? "",
           mentionReferences: normalizeMentionReferences(
             detailWithReadme.readmeFile.mentionReferences,
@@ -762,7 +761,6 @@ export function toProjectIssueDetailView(
     authorId: Number(response.authorId ?? 0),
     authorLabel: response.authorLabel,
     authorLoginId: response.authorLoginId,
-    bodyHtml: response.bodyHtml,
     bodyMarkdown: response.bodyMarkdown,
     commentCount: response.commentCount,
     createdLabel: response.createdLabel ?? "",
@@ -771,7 +769,6 @@ export function toProjectIssueDetailView(
       authorAvatarUrl: comment.authorAvatarUrl,
       authorLabel: comment.authorLabel,
       authorLoginId: comment.authorLoginId,
-      contentsHtml: comment.contentsHtml,
       contentsMarkdown: comment.contentsMarkdown,
       createdLabel: comment.createdLabel,
       id: Number(comment.id),
@@ -794,7 +791,6 @@ export function toProjectIssueDetailView(
     childIssues: (response.childIssues ?? []).map(toIssueChildView),
     childOpenCount: response.childOpenCount ?? 0,
     hasVoted: response.hasVoted,
-    historyHtml: response.historyHtml ?? "",
     historyMarkdown: response.historyMarkdown ?? "",
     issueReferences: issueReferencesFrom(response),
     mentionReferences: mentionReferencesFrom(response),
@@ -835,7 +831,6 @@ export function toProjectIssueDetailView(
             authorAvatarUrl: item.comment.authorAvatarUrl,
             authorLabel: item.comment.authorLabel,
             authorLoginId: item.comment.authorLoginId,
-            contentsHtml: item.comment.contentsHtml,
             contentsMarkdown: item.comment.contentsMarkdown,
             createdLabel: item.comment.createdLabel,
             id: Number(item.comment.id),
@@ -908,7 +903,6 @@ function toProjectMilestoneView(
     closedIssueCount: milestone.closedIssueCount,
     closedIssues: milestone.closedIssues.map(toProjectMilestoneIssueView),
     completionPercent: milestone.completionPercent,
-    contentsHtml: milestone.contentsHtml,
     contentsMarkdown: milestone.contentsMarkdown,
     dueDateLabel: milestone.dueDateLabel,
     id: Number(milestone.id),

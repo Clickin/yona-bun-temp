@@ -88,7 +88,6 @@ export interface CodeReviewCommentViewModel {
   authorLabel: string;
   authorLoginId: string;
   canDelete: boolean;
-  contentsHtml: string;
   contentsMarkdown: string;
   createdLabel: string;
   id: number;

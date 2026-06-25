@@ -241,7 +241,6 @@ export interface ProjectDetailViewModel {
   projectName: string;
   projectScope: string;
   readmeFile?: {
-    bodyHtml: string;
     bodyMarkdown: string;
     mentionReferences?: MentionReferenceMetadata[];
     name: string;
@@ -391,7 +390,6 @@ export interface ProjectIssueDetailViewModel {
   authorId?: number;
   authorLabel: string;
   authorLoginId: string;
-  bodyHtml: string;
   bodyMarkdown: string;
   commentCount: number;
   createdLabel: string;
@@ -400,7 +398,6 @@ export interface ProjectIssueDetailViewModel {
     authorAvatarUrl: string;
     authorLabel: string;
     authorLoginId: string;
-    contentsHtml: string;
     contentsMarkdown: string;
     createdLabel: string;
     id: number;
@@ -428,7 +425,6 @@ export interface ProjectIssueDetailViewModel {
   }>;
   childOpenCount: number;
   hasVoted: boolean;
-  historyHtml: string;
   historyMarkdown: string;
   issueReferences?: IssueReferenceMetadata[];
   mentionReferences?: MentionReferenceMetadata[];
@@ -453,7 +449,6 @@ export interface ProjectIssueDetailViewModel {
       authorAvatarUrl: string;
       authorLabel: string;
       authorLoginId: string;
-      contentsHtml: string;
       contentsMarkdown: string;
       createdLabel: string;
       id: number;
@@ -509,7 +504,6 @@ export interface ProjectMilestoneViewModel {
   closedIssueCount: number;
   closedIssues: ProjectMilestoneIssueViewModel[];
   completionPercent: number;
-  contentsHtml: string;
   contentsMarkdown: string;
   dueDateLabel: string;
   id: number;
