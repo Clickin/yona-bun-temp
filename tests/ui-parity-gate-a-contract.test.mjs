@@ -144,7 +144,7 @@ test("full UI parity Round 2 browser-visible gate remains explicit while active"
 
   const statuses = new Map(packets.map(({ packet, status }) => [packet, status]));
   assert.equal(statuses.get("r2-auth-setup-public-shell"), "covered in current follow-up");
-  assert.equal(statuses.get("r2-workspace-settings-directory"), "weak evidence");
+  assert.equal(statuses.get("r2-workspace-settings-directory"), "covered in current follow-up");
   assert.equal(statuses.get("r2-project-issue-board-milestone"), "weak evidence");
   assert.equal(statuses.get("r2-code-pr-review-search-notification"), "covered in current follow-up");
   assert.equal(statuses.get("r2-site-admin-security-db"), "covered in current follow-up");

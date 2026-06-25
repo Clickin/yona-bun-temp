@@ -11,7 +11,10 @@ const workspaceOverview = {
   apiToken: "door-token",
   daysAgo: 14,
   defaultLandingPath: "/me",
-  emails: [],
+  emails: [
+    { emailAddress: "alt@example.com", id: "2", valid: true },
+    { emailAddress: "pending@example.com", id: "3", valid: false },
+  ],
   favoriteProjects: [],
   issueItems: [],
   memberProjects: [],
@@ -155,4 +158,176 @@ test("workspace avatar invalid file and crop modal keep legacy settings selector
   await expect(page.locator("#avatarCropWrap .avatar-wrap img")).toBeVisible();
   await expect(page.locator("#avatarCropWrap .btnSubmitCrop")).toHaveText("Save");
   await expect(page.locator("#avatarCropWrap .modal-footer button").first()).toHaveText("Cancel");
+});
+
+test("workspace email settings keep legacy controls while mutating through REST", async ({
+  page,
+}) => {
+  const requests: Array<{ body: unknown; method: string; path: string }> = [];
+  let currentOverview = { ...workspaceOverview };
+  await page.route(apiV1Route("/workspace"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(currentOverview),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(/\/api\/v1\/workspace\/emails(?:\/.*)?$/, async (route) => {
+    const request = route.request();
+    const requestUrl = new URL(request.url());
+    requests.push({
+      body: request.method() === "POST" ? request.postDataJSON() : null,
+      method: request.method(),
+      path: requestUrl.pathname.replace("/yona/api/v1", ""),
+    });
+
+    if (request.method() === "POST" && requestUrl.pathname.endsWith("/workspace/emails")) {
+      currentOverview = {
+        ...currentOverview,
+        emails: [
+          ...currentOverview.emails,
+          { emailAddress: "new@example.com", id: "4", valid: false },
+        ],
+      };
+    }
+    if (request.method() === "DELETE") {
+      currentOverview = {
+        ...currentOverview,
+        emails: currentOverview.emails.filter((email) => email.id !== "2"),
+      };
+    }
+
+    await route.fulfill({
+      body: JSON.stringify(currentOverview),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/user/editform/emails");
+
+  await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("Account");
+  await expect(page.locator(".page-wrap > .nav-tabs li.active a")).toHaveAttribute(
+    "href",
+    "/yona/user/editform/emails",
+  );
+  await expect(page.locator('input[name="email"]')).toHaveAttribute(
+    "placeholder",
+    "New E-mail address",
+  );
+  await expect(page.locator("table.mt20")).toContainText("door@example.com");
+  await expect(page.locator("table.mt20")).toContainText("Primary email address");
+  await expect(page.locator("table.mt20")).toContainText("alt@example.com");
+  await expect(page.locator("table.mt20")).toContainText("pending@example.com");
+
+  await page.locator('input[name="email"]').fill("new@example.com");
+  await page.locator(".form-inline.inner-bubble button[type='submit']").click();
+  await expect.poll(() => requests.map((request) => request.path)).toContain("/workspace/emails");
+  expect(requests.at(-1)).toEqual({
+    body: { email: "new@example.com" },
+    method: "POST",
+    path: "/workspace/emails",
+  });
+  await expect(page.locator("table.mt20")).toContainText("new@example.com");
+
+  const setMainButton = page.locator('button[data-request-uri="/yona/user/email/setAsMain/2"]');
+  await expect(setMainButton).toHaveText("Set as primary email address.");
+  await setMainButton.click();
+  await expect
+    .poll(() => requests.some((request) => request.path === "/workspace/emails/2/main"))
+    .toBe(true);
+
+  const validationButton = page.locator(
+    'button[data-request-uri="/yona/user/email/sendValidationEmail/3"]',
+  );
+  await expect(validationButton).toContainText("Send a validation email.");
+  await validationButton.click();
+  await expect
+    .poll(() => requests.some((request) => request.path === "/workspace/emails/3/validation"))
+    .toBe(true);
+
+  const deleteButton = page.locator('button[data-request-uri="/yona/user/email/delete/2"]');
+  await expect(deleteButton).toHaveAttribute("data-request-method", "delete");
+  await deleteButton.click();
+  await expect
+    .poll(() => requests.some((request) => request.path === "/workspace/emails/2"))
+    .toBe(true);
+  await expect(page.locator("table.mt20")).not.toContainText("alt@example.com");
+});
+
+test("workspace token and password settings keep legacy forms while mutating through REST", async ({
+  page,
+}) => {
+  const requests: Array<{ body: unknown; method: string; path: string }> = [];
+  await page.route(apiV1Route("/workspace/api-token/reset"), async (route) => {
+    requests.push({
+      body: null,
+      method: route.request().method(),
+      path: new URL(route.request().url()).pathname.replace("/yona/api/v1", ""),
+    });
+    await route.fulfill({
+      body: JSON.stringify({ ...workspaceOverview, apiToken: "door-token-2" }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/workspace/password"), async (route) => {
+    requests.push({
+      body: route.request().postDataJSON(),
+      method: route.request().method(),
+      path: new URL(route.request().url()).pathname.replace("/yona/api/v1", ""),
+    });
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/me",
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/user/editform/token");
+  await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("User Token");
+  await expect(page.locator(".token-generate #frmBasic input[name='name']")).toHaveValue(
+    "door-token",
+  );
+  await page.locator(".token-generate #frmBasic button[type='submit']").click();
+  await expect
+    .poll(() => requests.some((request) => request.path === "/workspace/api-token/reset"))
+    .toBe(true);
+  await expect(page.locator(".token-generate #frmBasic input[name='name']")).toHaveValue(
+    "door-token-2",
+  );
+
+  await page.goto("/yona/user/editform/password");
+  await expect(page.locator(".page-wrap > .nav-tabs li.active a")).toHaveAttribute(
+    "href",
+    "/yona/user/editform/password",
+  );
+  await expect(page.locator("#frmPassword")).toBeVisible();
+  await page.locator("#oldPassword").fill("old-secret");
+  await page.locator("#password").fill("new-secret");
+  await page.locator("#retypedPassword").fill("new-secret");
+  await page.locator("#frmPassword button[type='submit']").click();
+
+  await expect
+    .poll(() => requests.some((request) => request.path === "/workspace/password"))
+    .toBe(true);
+  expect(requests.at(-1)).toEqual({
+    body: {
+      loginId: "door",
+      oldPassword: "old-secret",
+      password: "new-secret",
+      retypedPassword: "new-secret",
+    },
+    method: "POST",
+    path: "/workspace/password",
+  });
+  await expect(page).toHaveURL(/\/yona\/users\/loginform$/);
 });
