@@ -104,6 +104,11 @@ Playwright render the legacy responses from `127.0.0.1`.
   failed. The direct surfaces now cover the workspace sidebar/menu,
   notification paging, Markdown preview source return, direct issue/project
   label helpers, and legacy external assignable/sharer lookup helpers.
+- 2026-06-25T06:57:15Z local rerun after the Markdown editor i18n fallback
+  repair: `YORAM_SWEEP_TARGET=local` against
+  `http://127.0.0.1:18111/yona` passed 152/152 rendered pages, 10/10 direct
+  API surfaces, and 49/49 imported legacy-audit pages with no missing legacy
+  audit coverage.
 - Cross-target comparison failures: 0. The harness now catches the class of issue where legacy
   renders a normal page and local renders a not-found/forbidden/bad-request page.
 - A rerun first exposed `/user/issues/new` as that exact class of failure:
