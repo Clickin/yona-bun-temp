@@ -606,7 +606,8 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('class="project-page-wrap"');
     expect(createHtml).toContain('class="content-wrap frm-wrap"');
     expect(createHtml).toContain('id="issue-form"');
-    expect(createHtml).toContain('action="/yona/owner/projectYobi/issues/latest"');
+    expect(createHtml).not.toContain('action="/yona/owner/projectYobi/issues/latest"');
+    expect(createHtml).not.toContain('method="post"');
     expect(createHtml).toContain('encType="multipart/form-data"');
     expect(createHtml).toContain('id="title"');
     expect(createHtml).toContain('name="title"');
@@ -693,7 +694,7 @@ describe("file-route parity harness", () => {
         runtimeConfig={runtimeConfig}
       />,
     );
-    expect(editHtml).toContain('action="/yona/owner/projectYobi/issue/17/edit"');
+    expect(editHtml).not.toContain('action="/yona/owner/projectYobi/issue/17/edit"');
     expect(editHtml).toContain('name="authorId"');
     expect(editHtml).toContain('value="9"');
     expect(editHtml).toContain('<strong class="secondary-txt">#17</strong>');

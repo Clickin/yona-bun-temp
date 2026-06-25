@@ -4384,21 +4384,6 @@ export function ProjectIssueFormPage(props: {
     );
   };
 
-  const action =
-    props.mode === "edit" && props.initialIssue?.issueNumber
-      ? buildProjectHref(
-          props.runtimeConfig,
-          detail.ownerName,
-          detail.projectName,
-          `issue/${props.initialIssue.issueNumber}/edit`,
-        )
-      : buildProjectHref(
-          props.runtimeConfig,
-          detail.ownerName,
-          detail.projectName,
-          "issues/latest",
-        );
-
   const submitIssueForm = (intent: "save" | "draft" | "publish") => {
     const nextValidationMessage = legacyIssueValidationMessage({ dueDate, title });
     if (nextValidationMessage) {
@@ -4436,10 +4421,8 @@ export function ProjectIssueFormPage(props: {
         <div className="project-page-wrap">
           <div className="content-wrap frm-wrap">
             <form
-              action={action}
               encType="multipart/form-data"
               id="issue-form"
-              method="post"
               onSubmit={(event) => {
                 event.preventDefault();
                 submitIssueForm("save");
