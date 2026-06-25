@@ -536,10 +536,13 @@ export function PublicUserProfilePage(props: {
                                 projectHref(project.ownerName, project.projectName),
                               )}
                             >
-                              {project.projectName.slice(0, 1).toUpperCase()}
+                              <img
+                                alt={project.projectName}
+                                src={resolveWorkspaceAvatarUrl("", project.projectName)}
+                              />
                             </a>
                           </div>
-                          <div className="pull-left">
+                          <div className="pull-left" style={{ marginLeft: 10 }}>
                             <div className="header">
                               <a
                                 className="project-name"
@@ -1130,41 +1133,60 @@ export function WorkspacePage(props: {
                     {memberProjects.map((project) => (
                       <li className="project" key={`${project.ownerName}/${project.projectName}`}>
                         <div className="info-wrap">
-                          <div className="header">
+                          <div className="pull-left">
                             <a
-                              className="project-name"
+                              className="avatar-wrap small"
                               href={appHref(
                                 props.runtimeConfig,
                                 projectHref(project.ownerName, project.projectName),
                               )}
                             >
-                              {project.projectName}
+                              <img
+                                alt={project.projectName}
+                                src={resolveWorkspaceAvatarUrl("", project.projectName)}
+                              />
                             </a>
                           </div>
-                          <div className="desc">{project.overview}</div>
-                          <div className="name-tag">
-                            <i className="yobicon-friends yobicon-middle" />
-                            <strong>{project.memberCount}</strong>{" "}
-                            <a
-                              className="owner-name-small"
-                              href={appHref(props.runtimeConfig, `/${project.ownerName}`)}
-                            >
-                              {project.ownerName}
-                            </a>{" "}
-                            <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
-                            {project.lastPushedLabel ? (
-                              <>
-                                <span>, {projectCodeUpdateLabel} </span>
-                                <span title={project.lastPushedLabel}>
-                                  {project.lastPushedLabel}
-                                </span>
-                              </>
-                            ) : null}
-                          </div>
-                          <div className="stats-wrap pull-right">
-                            <div className="stats">
-                              <span className="num-badge">{project.watchCount}</span>
+                          <div className="pull-left" style={{ marginLeft: 10 }}>
+                            <div className="header">
+                              <a
+                                className="project-name"
+                                href={appHref(
+                                  props.runtimeConfig,
+                                  projectHref(project.ownerName, project.projectName),
+                                )}
+                              >
+                                {project.projectName}
+                              </a>
+                              {project.projectScope === "private" ? (
+                                <i className="yobicon-lock yobicon-small" />
+                              ) : null}
                             </div>
+                            <div className="desc">{project.overview}</div>
+                            <div className="name-tag">
+                              <i className="yobicon-friends yobicon-middle" />
+                              <strong>{project.memberCount}</strong>{" "}
+                              <a
+                                className="owner-name-small"
+                                href={appHref(props.runtimeConfig, `/${project.ownerName}`)}
+                              >
+                                {project.ownerName}
+                              </a>{" "}
+                              <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
+                              {project.lastPushedLabel ? (
+                                <>
+                                  <span>, {projectCodeUpdateLabel} </span>
+                                  <span title={project.lastPushedLabel}>
+                                    {project.lastPushedLabel}
+                                  </span>
+                                </>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="stats-wrap pull-right">
+                          <div className="stats">
+                            <span className="num-badge">{project.watchCount}</span>
                           </div>
                         </div>
                       </li>

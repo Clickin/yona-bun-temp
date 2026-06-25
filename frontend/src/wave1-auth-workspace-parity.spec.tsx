@@ -313,6 +313,10 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).not.toContain("Reviewer: Admin");
     expect(html).not.toContain("Comments: 2");
     expect(html).not.toContain("State: open");
+    expect(html).toContain(
+      'class="avatar-wrap small" href="/yona/admin/projectYobi"><img alt="projectYobi" src=',
+    );
+    expect(html).toContain('style="margin-left:10px"');
     expect(html).toContain('class="yobicon-friends yobicon-middle"');
     expect(html).toContain("<strong>4</strong>");
     expect(html).not.toContain("project.onmember 4");

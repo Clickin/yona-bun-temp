@@ -114,6 +114,10 @@ describe("workspace/profile legacy i18n opt-in", () => {
       expect(html).toContain("<strong>Connected Social Login</strong>");
       expect(html).toContain(">recently</span>");
       expect(html).toContain(">days ago</span>");
+      expect(html).toContain(
+        'class="avatar-wrap small" href="/yona/yona/projectYobi"><img alt="projectYobi" src=',
+      );
+      expect(html).toContain('style="margin-left:10px"');
       expect(html).not.toContain(">menu.issue <span");
       expect(html).not.toContain(">menu.pullRequest <span");
     }
