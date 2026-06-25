@@ -122,7 +122,76 @@ const baseIssueDetail: ProjectIssueDetailViewModel = {
   weight: 0,
 };
 
+function listRouteSourceFiles(directory = path.resolve(__dirname, "routes")): string[] {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      return listRouteSourceFiles(entryPath);
+    }
+    if (!entry.isFile() || !entry.name.endsWith(".tsx")) {
+      return [];
+    }
+    return [path.relative(__dirname, entryPath)];
+  });
+}
+
+function lineNumberForIndex(source: string, index: number) {
+  return source.slice(0, index).split("\n").length;
+}
+
+function sourceLineForIndex(source: string, index: number) {
+  return source.split("\n")[lineNumberForIndex(source, index) - 1]?.trim() ?? "";
+}
+
 describe("file-route parity harness", () => {
+  it("keeps direct browser navigation limited to legacy href/select pagination flows", () => {
+    const directNavigations = listRouteSourceFiles()
+      .flatMap((file) => {
+        const source = fs.readFileSync(path.resolve(__dirname, file), "utf8");
+        return Array.from(source.matchAll(/window\.location\.(?:assign|href\s*=)/g), (match) => ({
+          file,
+          line: lineNumberForIndex(source, match.index ?? 0),
+          sourceLine: sourceLineForIndex(source, match.index ?? 0),
+        }));
+      })
+      .sort((left, right) =>
+        left.file === right.file ? left.line - right.line : left.file.localeCompare(right.file),
+      );
+
+    expect(directNavigations).toEqual([
+      {
+        file: "routes/-code-views.tsx",
+        line: expect.any(Number),
+        sourceLine: "window.location.assign(event.currentTarget.value);",
+      },
+      {
+        file: "routes/-code-views.tsx",
+        line: expect.any(Number),
+        sourceLine: "window.location.assign(event.currentTarget.value);",
+      },
+      {
+        file: "routes/-code-views.tsx",
+        line: expect.any(Number),
+        sourceLine: "window.location.assign(newerHref);",
+      },
+      {
+        file: "routes/-code-views.tsx",
+        line: expect.any(Number),
+        sourceLine: "window.location.assign(olderHref);",
+      },
+      {
+        file: "routes/-pull-request-views.tsx",
+        line: expect.any(Number),
+        sourceLine: "window.location.href = props.hrefForPage(nextPage);",
+      },
+      {
+        file: "routes/-shared.tsx",
+        line: expect.any(Number),
+        sourceLine: "window.location.assign(prefixBasePath(basePath, href));",
+      },
+    ]);
+  });
+
   it("keeps canonical and alias auth/settings routes in the generated route tree", () => {
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
 
