@@ -7,6 +7,7 @@ import {
   IssueAssignableUserSuggestions,
   IssueMentionUserSuggestions,
   IssueReferenceSuggestions,
+  IssueSharerPanel,
   ProjectIssueDetailPage,
 } from "./routes/-issue-views";
 import { legacyIssueLabelTextClass } from "./routes/-shared";
@@ -94,6 +95,52 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(referenceHtml).toBe("");
     expect(referenceHtml).not.toContain("Searching…");
     expect(referenceHtml).not.toContain("Searching...");
+  });
+
+  it("opens the legacy issue sharer picker with the border class after share action", () => {
+    const manageableIssue = {
+      ...issueDetail,
+      sharers: [],
+      viewerCanManageSharers: true,
+      viewerCanUpdate: true,
+    };
+
+    const closedHtml = renderToStaticMarkup(
+      <IssueSharerPanel
+        issue={manageableIssue}
+        onShareIssue={async () => undefined}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona", showUserEmail: true }}
+      />,
+    );
+    expect(closedHtml).toContain('class="sharer-list hideFromDisplayOnly"');
+    expect(closedHtml).toContain('<dd class="hideFromDisplayOnly" id="sharer-list">');
+    expect(closedHtml).not.toContain("sharer-list-border");
+
+    const openHtml = renderToStaticMarkup(
+      <IssueSharerPanel
+        issue={manageableIssue}
+        onShareIssue={async () => undefined}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona", showUserEmail: true }}
+        sharePickerOpen
+      />,
+    );
+    expect(openHtml).toContain('class="sharer-list sharer-list-border"');
+    expect(openHtml).toContain('<dd id="sharer-list">');
+    expect(openHtml).not.toContain('class="hideFromDisplayOnly" id="sharer-list"');
+
+    const existingSharerHtml = renderToStaticMarkup(
+      <IssueSharerPanel
+        issue={{
+          ...manageableIssue,
+          sharers: [{ loginId: "door", userId: 2, userLabel: "Door User" }],
+        }}
+        onShareIssue={async () => undefined}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona", showUserEmail: true }}
+        sharePickerOpen
+      />,
+    );
+    expect(existingSharerHtml).toContain('class="sharer-list sharer-list-border"');
+    expect(existingSharerHtml).toContain("Door User");
   });
 
   it("renders the legacy board shell, state badge, watch, vote, and label anchors", () => {

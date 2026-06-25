@@ -1512,6 +1512,7 @@ export function ProjectIssueDetailPage(props: {
   const [translatingCommentIds, setTranslatingCommentIds] = React.useState<Set<number>>(
     () => new Set(),
   );
+  const [sharePickerOpen, setSharePickerOpen] = React.useState(false);
   const childCommentsByParent = React.useMemo(() => {
     const commentsByParent = new Map<number, ProjectIssueDetailViewModel["comments"]>();
     for (const comment of issue?.comments ?? []) {
@@ -1777,6 +1778,7 @@ export function ProjectIssueDetailPage(props: {
                         data-toggle="popover"
                         data-trigger="hover"
                         id="issue-share-button"
+                        onClick={() => setSharePickerOpen(true)}
                         type="button"
                       >
                         {legacyMessage(messages, "button.share.issue")}
@@ -2441,6 +2443,7 @@ export function ProjectIssueDetailPage(props: {
                   onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
                   onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
                   runtimeConfig={props.runtimeConfig}
+                  sharePickerOpen={sharePickerOpen}
                 />
               ) : null}
             </aside>
@@ -3176,19 +3179,21 @@ function UserIssueMySeriesMenuTabs(props: {
   );
 }
 
-function IssueSharerPanel(props: {
+export function IssueSharerPanel(props: {
   issue: ProjectIssueDetailViewModel;
   messages?: LegacyMessageLookup;
   onSearchSharableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
   onShareIssue?: (loginId: string, targetType?: IssueAssignableUserItem["type"]) => Promise<void>;
   onUnshareIssue?: (loginId: string) => Promise<void>;
   runtimeConfig: RuntimeConfig;
+  sharePickerOpen?: boolean;
 }) {
   const [loginId, setLoginId] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
   const canManage = props.issue.viewerCanManageSharers;
   const hasSharers = props.issue.sharers.length > 0;
   const onShareIssue = props.onShareIssue;
+  const sharerListOpen = hasSharers || props.sharePickerOpen;
 
   if (!hasSharers && !canManage) {
     return null;
@@ -3215,9 +3220,16 @@ function IssueSharerPanel(props: {
   };
 
   const sharerValue = props.issue.sharers.map((sharer) => sharer.loginId).join(",");
+  const sharerListClassName = [
+    "sharer-list",
+    sharerListOpen ? "" : "hideFromDisplayOnly",
+    props.sharePickerOpen ? "sharer-list-border" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <dl className={hasSharers ? "sharer-list" : "sharer-list hideFromDisplayOnly"}>
+    <dl className={sharerListClassName}>
       <dt className="issue-share-title mb10">
         {legacyMessage(props.messages, "issue.sharer")}{" "}
         <span className="num issue-sharer-count">
@@ -3248,7 +3260,7 @@ function IssueSharerPanel(props: {
       ) : null}
       {canManage && onShareIssue ? (
         <dd
-          className={hasSharers ? undefined : "hideFromDisplayOnly"}
+          className={sharerListOpen ? undefined : "hideFromDisplayOnly"}
           id={hasSharers ? undefined : "sharer-list"}
         >
           <input

@@ -161,6 +161,13 @@
   jQuery post-render mutation. Focused evidence: `issue-detail-shell.spec.tsx`,
   `issue-list-filter.spec.tsx`, `route-parity.spec.tsx`,
   `organization-shell-i18n.spec.tsx`, and `pnpm --dir frontend check`.
+- 2026-06-25 issue sharer picker continuation: React issue detail now mirrors
+  the legacy `issue/view.scala.html` `#issue-share-button` click behavior that
+  reveals `#sharer-list` and adds `.sharer-list-border` to `.sharer-list`.
+  The share/add/remove data path remains React-owned, but the user-visible
+  hidden/open class transition no longer depends on jQuery DOM mutation.
+  Focused evidence: `frontend/src/issue-detail-shell.spec.tsx` and
+  `frontend/src/route-parity.spec.tsx`.
 - 2026-06-25 markdown help continuation: the React-rendered markdown help keeps
   the legacy `help/markdown.scala.html` examples where the list input displays
   `- Green.` while the rendered output omits the period, and the image input
