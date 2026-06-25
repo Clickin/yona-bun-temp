@@ -197,6 +197,35 @@ describe("file-route parity harness", () => {
     );
     expect(restrictedRouteSource).toContain('useDocumentTitle(runtimeConfig.siteName ?? "Yona")');
     expect(restrictedRouteSource).not.toContain('useDocumentTitle("Yona")');
+
+    const secretRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/secret/route.tsx"),
+      "utf8",
+    );
+    expect(secretRouteSource).not.toContain("PlaceholderPage");
+    expect(secretRouteSource).toContain('createFileRoute("/secret")');
+    expect(secretRouteSource).toContain('useDocumentTitle("app.welcome")');
+    expect(secretRouteSource).toContain("setupSecretAdminRest");
+    expect(secretRouteSource).toContain("event.preventDefault()");
+    expect(secretRouteSource).toContain(
+      'action={prefixBasePath(runtimeConfig.basePath, "/secret")}',
+    );
+    expect(secretRouteSource).toContain('method="post"');
+    expect(secretRouteSource).toContain('value="admin"');
+    expect(secretRouteSource).toContain("app.welcome.warning.title");
+    expect(secretRouteSource).toContain("app.welcome.warning.desc");
+    expect(secretRouteSource).toContain("app.welcome.submit");
+    expect(secretRouteSource).not.toContain("registerWithPasswordRest");
+    expect(secretRouteSource).not.toContain("direct_legacy_secret_admin_setup");
+
+    const restartRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/restart/route.tsx"),
+      "utf8",
+    );
+    expect(restartRouteSource).not.toContain("PlaceholderPage");
+    expect(restartRouteSource).toContain('createFileRoute("/restart")');
+    expect(restartRouteSource).toContain('useDocumentTitle("app.restart.welcome")');
+    expect(restartRouteSource).toContain("app.restart.notice");
   });
 
   it("requires real project issue routes instead of placeholder pages", () => {
