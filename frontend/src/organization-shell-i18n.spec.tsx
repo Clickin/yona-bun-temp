@@ -244,7 +244,8 @@ describe("organization shell legacy i18n opt-in", () => {
     expect(homeHtml).toContain('placeholder="Type name"');
     expect(homeHtml).toContain(">Create new project<");
     expect(homeHtml).toContain(", Latest code update ");
-    expect(homeHtml).toContain('title="project.you.are.not.watching"');
+    expect(homeHtml).toContain('title="You are not watching the  project."');
+    expect(homeHtml).not.toContain("project.you.are.not.watching");
     expect(homeHtml).toContain(">Leave the group<");
     expect(homeHtml).toContain(">Group Manager<");
     expect(homeHtml).toContain(">Group Member<");

@@ -77,7 +77,10 @@ function legacyMessageWithKeyFallback(
   key: string,
   args?: string[],
 ) {
-  return messages ? messages(key, args ? { args } : undefined) : key;
+  if (messages) {
+    return messages(key, args ? { args } : undefined);
+  }
+  return lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, args ? { args } : undefined);
 }
 
 function LegacyTwoColumnModeCheckboxArea(props: { messages?: LegacyMessageLookup }) {

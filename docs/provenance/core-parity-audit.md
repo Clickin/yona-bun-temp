@@ -222,7 +222,9 @@
 - 2026-06-25 organization fallback-key continuation: organization header/menu
   rendering no longer composes provider-less fallback strings such as
   `organization.you.may.want.to.be.a.member <org>`. Missing-provider output
-  keeps only the legacy key, while provider-backed rendering still passes the
+  resolves through the legacy default message file instead of exposing raw keys,
+  including the organization home project-watch tooltip
+  `project.you.are.not.watching`; provider-backed rendering still passes the
   organization name as a legacy message argument. Focused evidence:
   `organization-shell-i18n.spec.tsx`, `organization-home-parity.spec.tsx`, and
   `i18n.spec.tsx`.
