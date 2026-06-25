@@ -40,6 +40,24 @@ test("server routes do not emit route-owned HTML fragments", () => {
   assert.deepEqual(violations, []);
 });
 
+test("server routes do not set route-owned text/html content types", () => {
+  const violations = [];
+  const htmlContentTypePattern =
+    /\bCONTENT_TYPE\b[\s\S]{0,180}["']text\/html\b|["']text\/html\b[\s\S]{0,180}\bCONTENT_TYPE\b/g;
+
+  for (const file of listRustFiles(ROUTES_DIR)) {
+    const source = readFileSync(file, "utf8");
+    for (const match of source.matchAll(htmlContentTypePattern)) {
+      violations.push(
+        `${path.relative(process.cwd(), file)}:${lineNumberForIndex(source, match.index ?? 0)} ` +
+          "sets text/html from a route module instead of using the SPA asset shell",
+      );
+    }
+  }
+
+  assert.deepEqual(violations, []);
+});
+
 test("auth signup and login keep REST JSON as the primary React boundary", () => {
   const source = readFileSync(AUTH_ROUTE, "utf8");
 
