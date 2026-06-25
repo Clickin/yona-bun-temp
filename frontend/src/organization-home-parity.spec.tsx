@@ -65,7 +65,7 @@ describe("organization home parity", () => {
     expect(html).toContain('data-toggle="dropdown" type="button"');
     expect(html).toContain("organization.member.enrollment.title");
     expect(html).toContain('class="dropdown-menu flat right title"');
-    expect(html).toContain("organization.you.may.want.to.be.a.member weblabs");
+    expect(html).toContain("organization.you.may.want.to.be.a.member");
     expect(html).toContain("organization.member.enrollment.help.before");
     expect(html).toContain(
       'class="ybtn ybtn-info enrollBtn" href="/yona/organizations/weblabs/enroll" id="enrollBtn"',

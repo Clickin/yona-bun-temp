@@ -15,7 +15,7 @@ function legacyMessage(messages: LegacyMessageLookup | undefined, key: string, a
   if (messages) {
     return messages(key, args ? { args } : undefined);
   }
-  return args && args.length > 0 ? `${key} ${args.join(" ")}` : key;
+  return key;
 }
 
 export function buildOrganizationHref(

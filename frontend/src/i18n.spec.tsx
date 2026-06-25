@@ -179,6 +179,7 @@ describe("legacy i18n runtime", () => {
       "./routes/-board-views.tsx",
       "./routes/-code-views.tsx",
       "./routes/-issue-views.tsx",
+      "./routes/-organization-views.tsx",
       "./routes/$owner/$projectName/issue/labelsform/route.tsx",
       "./routes/-project-views.tsx",
       "./routes/-pull-request-views.tsx",

@@ -149,6 +149,13 @@
   through legacy `error.forbidden.or.not.allowed`, both via the React i18n
   runtime. Focused evidence: `auth-workspace-shell.spec.tsx` and
   `i18n.spec.tsx`.
+- 2026-06-25 organization fallback-key continuation: organization header/menu
+  rendering no longer composes provider-less fallback strings such as
+  `organization.you.may.want.to.be.a.member <org>`. Missing-provider output
+  keeps only the legacy key, while provider-backed rendering still passes the
+  organization name as a legacy message argument. Focused evidence:
+  `organization-shell-i18n.spec.tsx`, `organization-home-parity.spec.tsx`, and
+  `i18n.spec.tsx`.
 - 2026-06-25 legacy mention highlight continuation: board, issue, and pull
   request review comment rendering now reproduces the legacy
   `board/view.scala.html`, `issue/view.scala.html`, and `git/view.scala.html`

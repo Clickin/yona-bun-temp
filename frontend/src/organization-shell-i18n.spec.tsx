@@ -187,7 +187,7 @@ describe("organization shell legacy i18n opt-in", () => {
     expect(homeHtml).toContain(">menu.board<");
     expect(homeHtml).toContain(">menu.pullRequest<");
     expect(homeHtml).toContain(" organization.member.enrollment.title</button>");
-    expect(homeHtml).toContain(">organization.you.may.want.to.be.a.member yona-org<");
+    expect(homeHtml).toContain(">organization.you.may.want.to.be.a.member<");
     expect(homeHtml).toContain(">organization.member.enrollment.help.before<");
     expect(homeHtml).toContain(" button.new.enrollment</a>");
     expect(settingsHtml).toContain(">organization.settingFrom<");
