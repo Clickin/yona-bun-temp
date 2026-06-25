@@ -44,7 +44,7 @@ export const Route = createFileRoute("/$owner/$projectName/issue/$issueNumber")(
 
 function IssueDetailRouteComponent() {
   const { owner, projectName, issueNumber } = Route.useParams();
-  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issue/${issueNumber}`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -293,6 +293,8 @@ function IssueDetailRouteComponent() {
         setIssue(toProjectIssueDetailView(nextIssue));
       }}
       runtimeConfig={runtimeConfig}
+      viewerLabel={currentSession?.userLabel}
+      viewerLoginId={currentSession?.loginId}
     />
   );
 }

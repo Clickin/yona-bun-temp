@@ -126,6 +126,17 @@
   reuse keys from `yona-original/conf/messages*`. Focused evidence:
   `i18n.spec.tsx`, `project-settings-parity.spec.tsx`,
   `route-parity.spec.tsx`, and `pnpm --dir frontend check`.
+- 2026-06-25 legacy mention highlight continuation: board, issue, and pull
+  request review comment rendering now reproduces the legacy
+  `board/view.scala.html`, `issue/view.scala.html`, and `git/view.scala.html`
+  jQuery pass that adds `mentioned` to comments containing the current user's
+  pure-name/login mention and `me` to matching `.user-link` anchors. React
+  passes the current session label/login into Markdown rendering instead of
+  relying on post-render DOM mutation, so the SPA output contains the same class
+  hooks for initial render, translated comment bodies, task-list rerenders, and
+  child comment fragments. Focused evidence: `markdown-renderer.spec.tsx`,
+  `issue-detail-shell.spec.tsx`, `route-parity.spec.tsx`,
+  `pull-request-review-i18n.spec.tsx`, and `pnpm --dir frontend check`.
 - 2026-06-25 markdown help continuation: the React-rendered markdown help keeps
   the legacy `help/markdown.scala.html` examples where the list input displays
   `- Green.` while the rendered output omits the period, and the image input

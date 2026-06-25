@@ -21,6 +21,7 @@ import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
 import {
   addLegacyTasklistTemplateFromButton,
+  legacyCommentMentionsCurrentUser,
   LegacyMarkdownEditorShell,
   LegacyMarkdownHelp,
   MarkdownRenderer,
@@ -1650,6 +1651,8 @@ function PullRequestReviewMergeControls(props: {
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
   viewerId?: number;
+  viewerLabel?: string;
+  viewerLoginId?: string;
   onAccept?: () => Promise<void>;
   onReview?: () => Promise<void>;
   onUnreview?: () => Promise<void>;
@@ -2221,6 +2224,8 @@ export function ProjectPullRequestDetailPage(props: {
   pullRequest: PullRequestDetailResponse | undefined;
   runtimeConfig: RuntimeConfig;
   viewerId?: number;
+  viewerLabel?: string;
+  viewerLoginId?: string;
   onAccept?: () => Promise<void>;
   onClose?: () => Promise<void>;
   onCommentDelete?: (commentId: number) => Promise<void>;
@@ -2321,6 +2326,8 @@ export function ProjectPullRequestDetailPage(props: {
                   className="content markdown-wrap"
                   basePath={props.runtimeConfig.basePath}
                   commitReferences={pullRequestMarkdownCommitReferences(pr)}
+                  currentUserLabel={props.viewerLabel}
+                  currentUserLoginId={props.viewerLoginId}
                   issueReferences={pr.issueReferences}
                   markdown={pr.bodyMarkdown}
                   mentionReferences={pr.mentionReferences}
@@ -2397,6 +2404,8 @@ function ReviewThreadItem(props: {
   pullRequest?: PullRequestDetailResponse;
   runtimeConfig?: RuntimeConfig;
   thread: ReviewThread;
+  viewerLabel?: string;
+  viewerLoginId?: string;
   onCommentDelete?: (commentId: number) => Promise<void>;
   onCommentUpdate?: (
     commentId: number,
@@ -2522,8 +2531,16 @@ function ReviewThreadItem(props: {
             props.runtimeConfig && comment.authorLoginId
               ? `${props.runtimeConfig.basePath}/${encodeURIComponent(comment.authorLoginId)}`
               : "#";
+          const commentClassName = legacyCommentMentionsCurrentUser(
+            comment.contentsMarkdown,
+            props.viewerLabel,
+            props.viewerLoginId,
+            comment.mentionReferences,
+          )
+            ? "comment mentioned"
+            : "comment";
           return (
-            <li className="comment" id={`comment-${comment.id}`} key={comment.id}>
+            <li className={commentClassName} id={`comment-${comment.id}`} key={comment.id}>
               <div className="comment-avatar">
                 <a
                   className="avatar-wrap"
@@ -2678,6 +2695,8 @@ function ReviewThreadItem(props: {
                         : []
                     }
                     data-via-email={comment.viaEmail ? "true" : undefined}
+                    currentUserLabel={props.viewerLabel}
+                    currentUserLoginId={props.viewerLoginId}
                     issueReferences={comment.issueReferences}
                     markdown={comment.contentsMarkdown}
                     mentionReferences={comment.mentionReferences}
@@ -3106,6 +3125,8 @@ export function PullRequestChangesPage(props: {
   runtimeConfig: RuntimeConfig;
   selectedCommitId?: string;
   viewerId?: number;
+  viewerLabel?: string;
+  viewerLoginId?: string;
   onCommentDelete?: (commentId: number) => Promise<void>;
   onCommentUpdate?: (
     commentId: number,
@@ -3236,6 +3257,8 @@ export function PullRequestChangesPage(props: {
         pullRequest={pr}
         runtimeConfig={props.runtimeConfig}
         thread={thread}
+        viewerLabel={props.viewerLabel}
+        viewerLoginId={props.viewerLoginId}
         csrfToken={props.csrfToken}
         onCommentDelete={props.onCommentDelete}
         onCommentUpdate={props.onCommentUpdate}
@@ -3757,6 +3780,8 @@ export function ProjectReviewsPage(props: {
   reviews: ReviewThreadListResponse | undefined;
   runtimeConfig: RuntimeConfig;
   viewerId?: number;
+  viewerLabel?: string;
+  viewerLoginId?: string;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const state = props.query.state === "closed" ? "closed" : "open";

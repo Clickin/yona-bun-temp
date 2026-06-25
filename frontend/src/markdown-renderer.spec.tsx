@@ -5060,6 +5060,23 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('title="Quoted commit"');
   });
 
+  it("marks the current user's legacy mention link with the me class", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        currentUserLoginId="yobi"
+        markdown="@owner @yobi"
+        mentionReferences={[
+          { kind: "user", loginId: "owner" },
+          { kind: "user", loginId: "yobi" },
+        ]}
+      />,
+    );
+
+    expect(html).toContain('class="no-text-decoration user-link" href="/yona/owner"');
+    expect(html).toContain('class="no-text-decoration user-link me" href="/yona/yobi"');
+  });
+
   it("renders formatted text around Yona autolinks through ReactMarkdown", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

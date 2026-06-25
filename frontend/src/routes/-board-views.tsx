@@ -11,6 +11,7 @@ import { translateLegacyResource } from "../api/translation";
 import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import {
+  legacyCommentMentionsCurrentUser,
   LegacyMarkdownEditorShell,
   MarkdownRenderer,
   type MarkdownTasklistToggleInput,
@@ -762,6 +763,8 @@ export function ProjectBoardDetailPage(props: {
   post: BoardPostDetail | null | undefined;
   runtimeConfig: RuntimeConfig;
   viewerId?: string;
+  viewerLabel?: string;
+  viewerLoginId?: string;
   onCommentDelete?: (commentId: string) => Promise<void>;
   onCommentSubmit?: (
     contentsMarkdown: string,
@@ -1076,11 +1079,24 @@ export function ProjectBoardDetailPage(props: {
                           post.postNumber,
                           comment.id,
                         );
+                        const commentClassName = [
+                          "comment",
+                          "board-comment",
+                          comment.authorLoginId === post.authorLoginId ? "author" : "",
+                          legacyCommentMentionsCurrentUser(
+                            comment.contentsMarkdown,
+                            props.viewerLabel,
+                            props.viewerLoginId,
+                            comment.mentionReferences,
+                          )
+                            ? "mentioned"
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ");
                         return (
                           <li
-                            className={`comment board-comment${
-                              comment.authorLoginId === post.authorLoginId ? " author" : ""
-                            }`}
+                            className={commentClassName}
                             id={`comment-${comment.id}`}
                             key={comment.id}
                           >
@@ -1288,6 +1304,8 @@ export function ProjectBoardDetailPage(props: {
                                   <MarkdownRenderer
                                     className="comment-body markdown-wrap"
                                     basePath={props.runtimeConfig.basePath}
+                                    currentUserLabel={props.viewerLabel}
+                                    currentUserLoginId={props.viewerLoginId}
                                     data-allowed-update={canEdit ? "true" : "false"}
                                     data-via-email={comment.viaEmail ? "true" : undefined}
                                     issueReferences={comment.issueReferences}
@@ -1338,6 +1356,8 @@ export function ProjectBoardDetailPage(props: {
                                           <MarkdownRenderer
                                             basePath={props.runtimeConfig.basePath}
                                             containerElement="fragment"
+                                            currentUserLabel={props.viewerLabel}
+                                            currentUserLoginId={props.viewerLoginId}
                                             issueReferences={childComment.issueReferences}
                                             markdown={
                                               translatedCommentMarkdownById[childComment.id] ??

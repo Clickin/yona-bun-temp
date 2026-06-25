@@ -49,13 +49,56 @@ type MarkdownCommitReference = {
   title?: string;
 };
 
-type MarkdownMentionReference = {
+export type MarkdownMentionReference = {
   kind: string;
   label?: string;
   loginId?: string;
   ownerName?: string;
   projectName?: string;
 };
+
+function normalizedLegacyMentionText(value: string | null | undefined) {
+  return value?.trim().toLowerCase() || "";
+}
+
+function legacyMentionReferenceMatchesCurrentUser(
+  reference: MarkdownMentionReference,
+  currentUserLabel: string,
+  currentUserLoginId: string,
+) {
+  if (reference.kind !== "user") {
+    return false;
+  }
+  const referenceLabel = normalizedLegacyMentionText(reference.label);
+  const referenceLoginId = normalizedLegacyMentionText(reference.loginId);
+  return Boolean(
+    (currentUserLabel && referenceLabel === currentUserLabel) ||
+    (currentUserLoginId && referenceLoginId === currentUserLoginId),
+  );
+}
+
+export function legacyCommentMentionsCurrentUser(
+  markdown: string,
+  currentUserLabel?: string,
+  currentUserLoginId?: string,
+  mentionReferences?: MarkdownMentionReference[],
+) {
+  const label = normalizedLegacyMentionText(currentUserLabel);
+  const loginId = normalizedLegacyMentionText(currentUserLoginId);
+  if (!label && !loginId) {
+    return false;
+  }
+  const normalizedMarkdown = markdown.toLowerCase();
+  if (
+    (label && normalizedMarkdown.includes(label)) ||
+    (loginId && normalizedMarkdown.includes(`@${loginId}`))
+  ) {
+    return true;
+  }
+  return (mentionReferences ?? []).some((reference) =>
+    legacyMentionReferenceMatchesCurrentUser(reference, label, loginId),
+  );
+}
 
 type MarkdownReferenceDefinition = {
   target?: string;
@@ -66,6 +109,8 @@ type MarkdownContext = {
   basePath?: string;
   breaks?: boolean;
   commitReferenceMap?: Map<string, MarkdownCommitReference>;
+  currentUserLabel?: string;
+  currentUserLoginId?: string;
   suppressBareAutolinks?: boolean;
   suppressBareEmailAutolinks?: boolean;
   suppressProjectAutolinks?: boolean;
@@ -893,8 +938,15 @@ function parseTextWithAutolinks(
       if (context?.mentionReferenceMap && !reference) {
         parts.push({ kind: "text", key, value: token });
       } else {
+        const className = legacyMentionReferenceMatchesCurrentUser(
+          reference ?? { kind: "user", loginId },
+          normalizedLegacyMentionText(context?.currentUserLabel),
+          normalizedLegacyMentionText(context?.currentUserLoginId),
+        )
+          ? "no-text-decoration user-link me"
+          : "no-text-decoration user-link";
         parts.push({
-          className: "no-text-decoration user-link",
+          className,
           kind: "link",
           key,
           label: token,
@@ -3075,6 +3127,7 @@ function reactMarkdownClassName(value: unknown): string | undefined {
 function reactMarkdownLinkClassName(props: {
   children?: React.ReactNode;
   className?: unknown;
+  context?: MarkdownContext;
   href?: string;
   title?: string;
   ["data-issue-state"]?: unknown;
@@ -3096,7 +3149,14 @@ function reactMarkdownLinkClassName(props: {
     return "no-text-decoration project-link";
   }
   if (label.startsWith("@") && /^@[^/@]+$/.test(label)) {
-    return "no-text-decoration user-link";
+    const loginId = label.slice(1);
+    return legacyMentionReferenceMatchesCurrentUser(
+      { kind: "user", loginId },
+      normalizedLegacyMentionText(props.context?.currentUserLabel),
+      normalizedLegacyMentionText(props.context?.currentUserLoginId),
+    )
+      ? "no-text-decoration user-link me"
+      : "no-text-decoration user-link";
   }
   return undefined;
 }
@@ -3525,6 +3585,7 @@ function reactMarkdownComponents(context: MarkdownContext): Components {
             ...rest,
             children,
             className,
+            context,
             href: transformedHref,
           })}
           href={transformedHref}
@@ -6858,6 +6919,8 @@ export function MarkdownRenderer(props: {
   className?: string;
   commitReferences?: MarkdownCommitReference[];
   containerElement?: "div" | "fragment" | "span";
+  currentUserLabel?: string;
+  currentUserLoginId?: string;
   "data-allowed-update"?: string;
   "data-via-email"?: string;
   id?: string;
@@ -6905,6 +6968,8 @@ export function MarkdownRenderer(props: {
     basePath: props.basePath,
     breaks,
     commitReferenceMap,
+    currentUserLabel: props.currentUserLabel,
+    currentUserLoginId: props.currentUserLoginId,
     headingSlugCounts: new Map<string, number>(),
     issueReferenceMap,
     mentionReferenceMap,

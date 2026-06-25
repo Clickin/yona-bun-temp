@@ -349,6 +349,55 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/78/delete"');
   });
 
+  it("marks comments and mention links for the current user like legacy jQuery", () => {
+    const comment = {
+      authorAvatarUrl: "https://cdn.yona/avatar-parent.png",
+      authorLabel: "Parent User",
+      authorLoginId: "parent",
+      contentsHtml: "",
+      contentsMarkdown: "Please check @door",
+      createdLabel: "1 minute ago",
+      id: 88,
+      mentionReferences: [
+        { kind: "user", label: "Door User", loginId: "door", ownerName: "", projectName: "" },
+      ],
+      viewerCanDelete: false,
+      viewerCanUpdate: false,
+      viewerHasVoted: false,
+      voterCount: 0,
+      voters: [],
+    };
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          commentCount: 1,
+          comments: [comment],
+          timeline: [
+            {
+              comment,
+              createdLabel: "1 minute ago",
+              eventType: "",
+              id: 88,
+              kind: "comment",
+              newValue: "",
+              oldValue: "",
+              senderLoginId: "",
+            },
+          ],
+          viewerCanComment: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        viewerLabel="Door User"
+        viewerLoginId="door"
+      />,
+    );
+
+    expect(html).toContain('<li class="comment mentioned" id="comment-88"');
+    expect(html).toContain('class="no-text-decoration user-link me" href="/yona/door"');
+  });
+
   it("uses the legacy no-author label for issue detail author fallback", () => {
     const html = renderToStaticMarkup(
       <ProjectIssueDetailPage

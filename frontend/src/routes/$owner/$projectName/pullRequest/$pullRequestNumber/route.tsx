@@ -364,6 +364,8 @@ function PullRequestDetailLeafRouteComponent() {
       pullRequest={pullRequestQuery.data}
       runtimeConfig={runtimeConfig}
       viewerId={currentSession ? Number(currentSession.actorId) : undefined}
+      viewerLabel={currentSession?.userLabel}
+      viewerLoginId={currentSession?.loginId}
       onClose={async () => {
         await closeMutation.mutateAsync();
       }}

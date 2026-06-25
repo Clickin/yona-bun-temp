@@ -322,6 +322,8 @@ export function PullRequestChangesRouteContent(props: {
       runtimeConfig={runtimeConfig}
       selectedCommitId={selectedCommitId}
       viewerId={currentSession ? Number(currentSession.actorId) : undefined}
+      viewerLabel={currentSession?.userLabel}
+      viewerLoginId={currentSession?.loginId}
       onCommentDelete={async (commentId) => {
         await deleteCommentMutation.mutateAsync(commentId);
       }}

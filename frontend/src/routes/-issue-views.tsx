@@ -14,6 +14,7 @@ import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import {
   addLegacyTasklistTemplateFromButton,
+  legacyCommentMentionsCurrentUser,
   LegacyMarkdownEditorShell,
   LegacyMarkdownHelp,
   MarkdownRenderer,
@@ -510,6 +511,8 @@ function PostingHistoryModal(props: {
   mentionReferences?: ProjectIssueDetailViewModel["mentionReferences"];
   ownerName?: string;
   projectName?: string;
+  viewerLabel?: string;
+  viewerLoginId?: string;
 }) {
   const historyMarkdown = props.historyMarkdown ?? "";
   if (!historyMarkdown.trim()) {
@@ -536,6 +539,8 @@ function PostingHistoryModal(props: {
         <MarkdownRenderer
           className="modal-body"
           basePath={props.basePath}
+          currentUserLabel={props.viewerLabel}
+          currentUserLoginId={props.viewerLoginId}
           issueReferences={props.issueReferences}
           markdown={historyMarkdown}
           mentionReferences={props.mentionReferences}
@@ -1480,6 +1485,8 @@ export function ProjectIssueDetailPage(props: {
   onWatchToggle?: () => Promise<void>;
   csrfToken?: string;
   runtimeConfig: RuntimeConfig;
+  viewerLabel?: string;
+  viewerLoginId?: string;
 }) {
   const { t: messages } = useLegacyMessages();
   const detail = props.detail ?? fallbackProjectDetail();
@@ -1670,6 +1677,8 @@ export function ProjectIssueDetailPage(props: {
                 mentionReferences={issue.mentionReferences}
                 ownerName={issue.ownerName}
                 projectName={issue.projectName}
+                viewerLabel={props.viewerLabel}
+                viewerLoginId={props.viewerLoginId}
               />
             ) : null}
           </header>
@@ -1713,6 +1722,8 @@ export function ProjectIssueDetailPage(props: {
                 <MarkdownRenderer
                   className="content markdown-wrap"
                   basePath={props.runtimeConfig.basePath}
+                  currentUserLabel={props.viewerLabel}
+                  currentUserLoginId={props.viewerLoginId}
                   data-allowed-update={issue ? String(issue.viewerCanUpdate) : undefined}
                   issueReferences={issue?.issueReferences}
                   markdown={translatedIssueMarkdown ?? issue?.bodyMarkdown ?? ""}
@@ -1959,10 +1970,18 @@ export function ProjectIssueDetailPage(props: {
                           props.runtimeConfig.basePath,
                           "/user/issues/new",
                         )}?commentId=${comment.id}`;
+                        const commentClassName = legacyCommentMentionsCurrentUser(
+                          comment.contentsMarkdown,
+                          props.viewerLabel,
+                          props.viewerLoginId,
+                          comment.mentionReferences,
+                        )
+                          ? "comment mentioned"
+                          : "comment";
 
                         return (
                           <li
-                            className="comment"
+                            className={commentClassName}
                             id={`comment-${comment.id}`}
                             key={`${item.kind}-${item.id}`}
                           >
@@ -2150,6 +2169,8 @@ export function ProjectIssueDetailPage(props: {
                                 <MarkdownRenderer
                                   className="comment-body markdown-wrap"
                                   basePath={props.runtimeConfig.basePath}
+                                  currentUserLabel={props.viewerLabel}
+                                  currentUserLoginId={props.viewerLoginId}
                                   data-allowed-update={String(comment.viewerCanUpdate)}
                                   data-via-email={comment.viaEmail ? "true" : undefined}
                                   issueReferences={comment.issueReferences}
@@ -2186,6 +2207,8 @@ export function ProjectIssueDetailPage(props: {
                                           <MarkdownRenderer
                                             basePath={props.runtimeConfig.basePath}
                                             containerElement="fragment"
+                                            currentUserLabel={props.viewerLabel}
+                                            currentUserLoginId={props.viewerLoginId}
                                             markdown={childComment.contentsMarkdown}
                                             ownerName={detail.ownerName}
                                             projectName={detail.projectName}

@@ -96,6 +96,8 @@ function BoardDetailRouteComponent() {
       post={postQuery.data}
       runtimeConfig={runtimeConfig}
       viewerId={currentSession?.actorId.toString()}
+      viewerLabel={currentSession?.userLabel}
+      viewerLoginId={currentSession?.loginId}
       onCommentDelete={async (commentId) => {
         try {
           const nextPost = await deletePostCommentRest(runtimeConfig, csrfToken, {
