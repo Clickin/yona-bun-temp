@@ -177,6 +177,14 @@ continues to fail on legacy failures so legacy-only audits do not mask reference
 The local sweep also fails if seeded fixture copy such as `browser-safe route tree` or an unbased
 `localhost:3001/yo` clone URL becomes visible in rendered UI.
 
+2026-06-25 harness hardening note: target bootstrap failures are now recorded as
+machine-readable target results instead of aborting before `latest.json` is written. A closed-port
+run,
+`YONA_LEGACY_BASE_URL=http://127.0.0.1:65534 YORAM_SWEEP_TARGET=legacy node scripts/visual-parity-sweep.mjs`,
+exited non-zero and wrote `legacy.status: "unreachable"` with the Playwright
+`net::ERR_CONNECTION_REFUSED` target error. Browser launch failures are also recorded as
+`status: "failed"`, so missing Playwright/Edge setup cannot masquerade as a passed visual sweep.
+
 ## Follow-Up
 
 - Raw i18n key visibility is currently clear in the 152-route local sweep.

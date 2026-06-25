@@ -867,53 +867,100 @@ async function inspectPage(page, baseUrl, path, label) {
   };
 }
 
-async function runTarget(label, baseUrl) {
-  const browser = await chromium.launch({
-    channel: process.env.PW_CHANNEL ?? "msedge",
-    headless: true,
-  });
-  const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
-  const page = await context.newPage();
-  const loggedIn = label === "local" ? await apiLogin(page, baseUrl) : await login(page, baseUrl);
-  const directApiSurfaces =
-    label === "local" && loggedIn ? await inspectLocalDirectApiSurfaces(page, baseUrl) : null;
-  const discoveredProjectPages = loggedIn ? await discoverProjectPaths(page, baseUrl) : [];
-  const legacyAuditPages = legacyAuditDiscoveredPageLinks();
-  const routeSamples = label === "legacy" ? [] : routeTreeSamplePaths();
-  const paths = [
-    ...new Set([...basePages, ...legacyAuditPages, ...routeSamples, ...discoveredProjectPages]),
-  ];
-  const results = [];
-  for (const path of paths) {
-    const routePage = await context.newPage();
-    try {
-      results.push(await inspectPage(routePage, baseUrl, path, label));
-    } finally {
-      await routePage.close().catch(() => {});
-    }
-  }
-  const resultPaths = new Set(results.map((result) => result.path));
-  const missingLegacyAuditPages = legacyAuditPages.filter((path) => !resultPaths.has(path));
-  await page.close().catch(() => {});
-  await browser.close();
+function targetFailureStatus(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /ECONNREFUSED|ERR_(?:ADDRESS_UNREACHABLE|CONNECTION_REFUSED|CONNECTION_TIMED_OUT)|Timeout \d+ms exceeded|Failed to connect/iu.test(
+    message,
+  )
+    ? "unreachable"
+    : "failed";
+}
+
+function failedTargetResult(label, baseUrl, error) {
+  const message = error instanceof Error ? error.message : String(error);
   return {
     label,
     baseUrl,
-    loggedIn,
-    total: results.length,
-    passed: results.filter((result) => result.ok).length,
-    failed: results.filter((result) => !result.ok).length,
-    directApiSurfaces,
-    legacyAuditPages,
-    legacyAuditPagesCovered: legacyAuditPages.length - missingLegacyAuditPages.length,
-    missingLegacyAuditPages,
-    discoveredProjectPages,
-    results,
+    status: targetFailureStatus(error),
+    loggedIn: false,
+    total: 0,
+    passed: 0,
+    failed: 1,
+    directApiSurfaces: null,
+    legacyAuditPages: legacyAuditDiscoveredPageLinks(),
+    legacyAuditPagesCovered: 0,
+    missingLegacyAuditPages: [],
+    discoveredProjectPages: [],
+    results: [],
+    targetError: message,
   };
 }
 
-const legacy = sweepTarget === "local" ? null : await runTarget("legacy", legacyBaseUrl);
-const local = sweepTarget === "legacy" ? null : await runTarget("local", localBaseUrl);
+async function launchBrowser() {
+  const channel = process.env.PW_CHANNEL ?? "msedge";
+  return chromium.launch({
+    ...(channel === "chromium" || channel === "" ? {} : { channel }),
+    headless: true,
+  });
+}
+
+async function runTarget(label, baseUrl) {
+  const browser = await launchBrowser();
+  try {
+    const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+    const page = await context.newPage();
+    const loggedIn = label === "local" ? await apiLogin(page, baseUrl) : await login(page, baseUrl);
+    const directApiSurfaces =
+      label === "local" && loggedIn ? await inspectLocalDirectApiSurfaces(page, baseUrl) : null;
+    const discoveredProjectPages = loggedIn ? await discoverProjectPaths(page, baseUrl) : [];
+    const legacyAuditPages = legacyAuditDiscoveredPageLinks();
+    const routeSamples = label === "legacy" ? [] : routeTreeSamplePaths();
+    const paths = [
+      ...new Set([...basePages, ...legacyAuditPages, ...routeSamples, ...discoveredProjectPages]),
+    ];
+    const results = [];
+    for (const path of paths) {
+      const routePage = await context.newPage();
+      try {
+        results.push(await inspectPage(routePage, baseUrl, path, label));
+      } finally {
+        await routePage.close().catch(() => {});
+      }
+    }
+    const resultPaths = new Set(results.map((result) => result.path));
+    const missingLegacyAuditPages = legacyAuditPages.filter((path) => !resultPaths.has(path));
+    await page.close().catch(() => {});
+    await context.close().catch(() => {});
+    return {
+      label,
+      baseUrl,
+      status: "ok",
+      loggedIn,
+      total: results.length,
+      passed: results.filter((result) => result.ok).length,
+      failed: results.filter((result) => !result.ok).length,
+      directApiSurfaces,
+      legacyAuditPages,
+      legacyAuditPagesCovered: legacyAuditPages.length - missingLegacyAuditPages.length,
+      missingLegacyAuditPages,
+      discoveredProjectPages,
+      results,
+    };
+  } finally {
+    await browser.close().catch(() => {});
+  }
+}
+
+async function runTargetSafely(label, baseUrl) {
+  try {
+    return await runTarget(label, baseUrl);
+  } catch (error) {
+    return failedTargetResult(label, baseUrl, error);
+  }
+}
+
+const legacy = sweepTarget === "local" ? null : await runTargetSafely("legacy", legacyBaseUrl);
+const local = sweepTarget === "legacy" ? null : await runTargetSafely("local", localBaseUrl);
 const byPath = new Map((legacy?.results ?? []).map((result) => [result.path, result]));
 const comparison = (local?.results ?? []).map((localResult) => {
   const legacyResult = byPath.get(localResult.path);
@@ -949,6 +996,8 @@ const missingLegacyAuditPages = [legacy, local].flatMap((target) =>
   (target?.missingLegacyAuditPages ?? []).map((path) => `${target.label}:${path}`),
 );
 if (
+  (legacy?.status !== "ok" && sweepTarget !== "local") ||
+  (local?.status !== "ok" && sweepTarget !== "legacy") ||
   (local?.failed ?? 0) > 0 ||
   (local?.directApiSurfaces?.failed ?? 0) > 0 ||
   (sweepTarget === "legacy" && (legacy?.failed ?? 0) > 0) ||
