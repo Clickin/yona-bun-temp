@@ -1746,6 +1746,7 @@ export function ProjectIssueDetailPage(props: {
                       props.runtimeConfig.basePath,
                       `/-_-api/v1/owners/${detail.ownerName}/projects/${detail.projectName}/issues/${issue.issueNumber}/content`,
                     )}
+                    onSubmit={(event) => event.preventDefault()}
                   >
                     <textarea defaultValue={issue.bodyMarkdown} />
                   </form>

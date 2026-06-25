@@ -443,6 +443,13 @@
   checklist insertion, draft save/publish, and review-thread state controls
   cannot silently become native submit buttons. Focused evidence:
   `frontend/src/form-submit-boundary.spec.tsx`.
+- 2026-06-25 legacy API action form guard hardening: hidden Markdown source
+  forms may keep `/-_-api/.../content` actions for legacy DOM/task-list parity,
+  but they now intercept submit explicitly and the boundary guard requires every
+  `/-_-api` action form to include `onSubmit` plus `event.preventDefault()`.
+  Focused evidence: `frontend/src/form-submit-boundary.spec.tsx`,
+  `frontend/src/route-parity.spec.tsx`, and
+  `frontend/src/issue-detail-shell.spec.tsx`.
 - 2026-06-20 runtime DI note: app route assembly now receives an explicit `RuntimeRegistry` built from the initialized `AppRuntimeConfig` snapshot, so route registration reads mail/update/auth/translation/site-name/default-scope/upload-size runtime config from one injected registry instead of threading those config fragments as separate function parameters. This is behavior-neutral plumbing toward per-test runtime config isolation without process-global env locks.
 - 2026-06-20 runtime DI note: project direct aliases for watch/unwatch, enroll/cancel-enroll, changeVCS, member CRUD, webhook CRUD, overview update, and clone now reuse the app-scoped `PilotServiceImpl` registered by `routes::projects` instead of rebuilding service/runtime config from process env in each handler. Existing project member, webhook, changeVCS, rest watch/enroll, and project overview/clone contract coverage remains the behavior evidence.
 - 2026-06-20 runtime DI note: legacy direct auth login/signup routes now receive the app-scoped `PilotServiceImpl` from auth route registration instead of rebuilding auth UI and SMTP runtime config from process env. The direct legacy login/signup contract now uses the explicit default `AppRuntimeConfig` helper without process-env mutation for the default auth UI path.

@@ -138,6 +138,32 @@ function formButtonElements() {
   });
 }
 
+function legacyApiActionForms() {
+  return listRouteFiles().flatMap((file) => {
+    const source = readRouteSource(file);
+    return Array.from(source.matchAll(/<form\b/g)).flatMap((formMatch) => {
+      const formStart = formMatch.index ?? 0;
+      const formClose = source.indexOf("</form>", formStart);
+      if (formClose < 0) {
+        return [];
+      }
+      const tag = source.slice(formStart, openingTagEnd(source, formStart));
+      const body = source.slice(formStart, formClose);
+      if (!body.includes("/-_-api/")) {
+        return [];
+      }
+      return [
+        {
+          body,
+          file,
+          line: lineNumberForIndex(source, formStart),
+          tag,
+        },
+      ];
+    });
+  });
+}
+
 function mutationDataHrefElements() {
   return listRouteFiles().flatMap((file) => {
     const source = readRouteSource(file);
@@ -317,6 +343,13 @@ describe("React form submit boundary", () => {
   it("keeps form buttons explicit about native submit behavior", () => {
     for (const element of formButtonElements()) {
       expect(element.tag, `${element.file}:${element.line}`).toMatch(/\btype\s*=/);
+    }
+  });
+
+  it("keeps legacy API action forms from native submit fallback", () => {
+    for (const element of legacyApiActionForms()) {
+      expect(element.tag, `${element.file}:${element.line}`).toContain("onSubmit=");
+      expect(element.body, `${element.file}:${element.line}`).toContain("event.preventDefault()");
     }
   });
 });

@@ -954,6 +954,7 @@ export function ProjectBoardDetailPage(props: {
                         props.runtimeConfig.basePath,
                         `/-_-api/v1/owners/${post.ownerName}/projects/${post.projectName}/posts/${post.postNumber}/content`,
                       )}
+                      onSubmit={(event) => event.preventDefault()}
                     >
                       <textarea defaultValue={post.bodyMarkdown} />
                     </form>
