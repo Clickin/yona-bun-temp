@@ -417,10 +417,8 @@ function IssueLabelCopyForm(props: {
   const [errorMessage, setErrorMessage] = React.useState<LegacyLabelFormMessage | null>(null);
   return (
     <form
-      action={buildProjectHref(props.runtimeConfig, props.owner, props.projectName, "copyLabels")}
       className="new-label-wrap"
       id="copyLabel"
-      method="post"
       onSubmit={(event) => {
         event.preventDefault();
         setErrorMessage(null);
@@ -484,10 +482,8 @@ function IssueLabelCreateForm(props: {
   const [errorMessage, setErrorMessage] = React.useState<LegacyLabelFormMessage | null>(null);
   return (
     <form
-      action={buildProjectHref(props.runtimeConfig, props.owner, props.projectName, "issue/labels")}
       className="new-label-wrap"
       id="frmNewLabel"
-      method="post"
       onSubmit={(event) => {
         event.preventDefault();
         const requestCategoryName = categoryName.trim();

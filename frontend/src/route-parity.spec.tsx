@@ -4951,6 +4951,13 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain("data-category-name");
     expect(routeSource).toContain("data-delete-uri");
     expect(routeSource).toContain("data-update-uri");
+    expect(routeSource).not.toContain(
+      'action={buildProjectHref(props.runtimeConfig, props.owner, props.projectName, "copyLabels")}',
+    );
+    expect(routeSource).not.toContain(
+      'action={buildProjectHref(props.runtimeConfig, props.owner, props.projectName, "issue/labels")}',
+    );
+    expect(routeSource).not.toMatch(/\n\s+method="post"/);
     expect(routeSource).toContain("label.failedTo");
     expect(routeSource).toContain("label.error.empty");
     expect(routeSource).toContain("label.error.color");
