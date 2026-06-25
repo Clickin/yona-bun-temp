@@ -97,6 +97,14 @@
   must reuse keys present in `yona-original/conf/messages*` instead of creating
   React-only message names. Focused evidence: `auth-workspace-shell.spec.tsx`
   and `i18n.spec.tsx`.
+- 2026-06-25 site-admin i18n fallback continuation: provider-less site-admin
+  rendering no longer carries ad-hoc English fallback copy for legacy labels
+  such as mail, mass-mail, update, and mail-sent status. Those fallbacks now
+  preserve the original legacy message keys (`site.sidebar.mailSend`,
+  `site.sidebar.massMail`, `site.sidebar.update`, `title.sendMail`,
+  `title.massMail`, `site.mail.sended`) while runtime-provider rendering still
+  resolves through `yona-original/conf/messages*`. Focused evidence:
+  `site-admin-route-parity.spec.tsx` and `i18n.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks are derived

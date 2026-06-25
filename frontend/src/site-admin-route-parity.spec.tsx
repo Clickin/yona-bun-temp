@@ -136,9 +136,9 @@ describe("site-admin route parity harness", () => {
     expect(html).toContain(">site.sidebar.postList<");
     expect(html).toContain(">site.sidebar.issueList<");
     expect(html).toContain(">site.sidebar.projectList<");
-    expect(html).toContain(">Mail Send<");
-    expect(html).toContain(">Mass Mail<");
-    expect(html).toContain(">Update<span");
+    expect(html).toContain(">site.sidebar.mailSend<");
+    expect(html).toContain(">site.sidebar.massMail<");
+    expect(html).toContain(">site.sidebar.update<span");
     expect(html).toContain(">site.sidebar.diagnostics<");
     expect(html).toContain('placeholder="site.userList.search"');
     expect(html).toContain(">site.userList.unlocked<");
@@ -150,6 +150,9 @@ describe("site-admin route parity harness", () => {
     expect(html).toContain('aria-label="button.close"');
     expect(html).toContain(">site.diagnostic.errorFound 2<");
     expect(html).toContain("site.update.isAvailable 1.1.0");
+    expect(html).not.toContain(">Mail Send<");
+    expect(html).not.toContain(">Mass Mail<");
+    expect(html).not.toContain(">Update<span");
   });
 
   it("uses default English legacy messages for site-admin shell labels", () => {
@@ -263,7 +266,7 @@ describe("site-admin route parity harness", () => {
     expect(userHtml).toContain('<div class="row-fluid"><div class="span2">');
     expect(userHtml).not.toContain("site-setting-layout");
     expect(userHtml).toContain(
-      '<a href="/yona/sites/update">Update<span class="notification-badge">1</span></a>',
+      '<a href="/yona/sites/update">site.sidebar.update<span class="notification-badge">1</span></a>',
     );
     expect(userHtml).toContain('placeholder="site.userList.search"');
     expect(userHtml).toContain(
@@ -701,11 +704,11 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(mailHtml).toContain(">Send Mail<");
+    expect(mailHtml).toContain(">title.sendMail<");
     expect(mailHtml).toContain(">site.mail.notConfigured /admin/mailconf<");
     expect(mailHtml).not.toContain(">site.mail.notConfigured<");
     expect(mailHtml).toContain("smtp.host");
-    expect(mailHtml).toContain(">Mail was sent<");
+    expect(mailHtml).toContain(">site.mail.sended<");
     expect(mailHtml).toContain(">site.mail.from<");
     expect(mailHtml).toContain('action="/yona/sites/mail"');
     expect(mailHtml).toContain('placeholder="site.mail.fromPlaceholder"');
@@ -716,6 +719,8 @@ describe("site-admin route parity harness", () => {
     expect(mailHtml).toContain("<strong>site.mail.send</strong>");
     expect(mailHtml).not.toContain("Mail configuration is incomplete.");
     expect(mailHtml).not.toContain("Mail was sent.");
+    expect(mailHtml).not.toContain(">Send Mail<");
+    expect(mailHtml).not.toContain(">Mail was sent<");
 
     const routeSource = fs.readFileSync(
       path.resolve(__dirname, "routes/sites/$pageName/route.tsx"),
@@ -737,7 +742,7 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(massMailHtml).toContain(">Mass Mail<");
+    expect(massMailHtml).toContain(">title.massMail<");
     expect(massMailHtml).toContain(">site.massMail.toAll<");
     expect(massMailHtml).toContain(">site.massMail.toProjects<");
     expect(massMailHtml).toContain('data-toggle="mail-type"');
@@ -747,7 +752,7 @@ describe("site-admin route parity harness", () => {
     expect(massMailHtml).toContain('id="write-email" type="submit"');
     expect(massMailHtml).toContain("<strong>button.add</strong>");
     expect(massMailHtml).toContain("<strong>site.mail.write</strong>");
-    expect(massMailHtml).not.toContain(">title.massMail<");
+    expect(massMailHtml).not.toContain(">Mass Mail<");
     expect(massMailHtml).not.toContain("All users");
     expect(massMailHtml).not.toContain("Project members");
     expect(massMailHtml).not.toContain("Write email");
@@ -784,15 +789,16 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(updateHtml).toContain(">Update<");
+    expect(updateHtml).toContain(">site.sidebar.update<");
     expect(updateHtml).toContain("site.update.isAvailable 1.1.0");
     expect(updateHtml).toContain(
-      '<a href="/yona/sites/update">Update<span class="notification-badge">1</span></a>',
+      '<a href="/yona/sites/update">site.sidebar.update<span class="notification-badge">1</span></a>',
     );
     expect(updateHtml).toContain('href="/yona/sites/update/download-file"');
     expect(updateHtml).toContain(">site.update.download<");
     expect(updateHtml).toContain("site.update.currentVersion 1.0.0");
     expect(updateHtml).not.toContain("Current version is Yona 1.0.0");
+    expect(updateHtml).not.toContain(">Update<");
 
     const noUpdateHtml = renderToStaticMarkup(
       <SiteAdminUpdatePage
