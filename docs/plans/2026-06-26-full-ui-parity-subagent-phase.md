@@ -48,6 +48,9 @@ the supported app-runtime scope.
 - If an explorer reports a `gap` or `deviation`, the parent must either assign a
   worker with a disjoint write scope or reclassify the item in root canonical
   docs, provenance, and follow-up plan before this phase can close.
+- This phase must finish as a complete UI parity inventory before broad
+  implementation resumes. Ad-hoc smoke-test fixes may continue only when they
+  close an already-recorded queue row.
 
 ## Execution Model
 
@@ -76,6 +79,44 @@ Worker branch rule:
   codebase at the same time.
 - Parent does not edit a worker-owned file until the worker completes or is
   explicitly cancelled.
+
+## Exhaustive Inventory Gate
+
+The first pass of this phase is documentation, not implementation. Parent and
+explorers must turn every legacy page or user-visible state into one of these
+records before the phase can be treated as actionable:
+
+- `covered`: React route/API render has selector/copy/interaction evidence.
+- `gap`: legacy behavior is in app-runtime scope but missing or visibly wrong.
+- `deviation`: current behavior intentionally or accidentally differs from
+  legacy and needs a parent decision before implementation.
+- `deferred`: out of current app-runtime scope, with canonical/deferred
+  provenance.
+- `not-applicable`: legacy behavior was server-side fragment, broken sample
+  data, or operator-only behavior that is explicitly replaced by API-return plus
+  React render or classified outside the replacement UX.
+- `weak evidence`: implementation may be present, but browser-visible proof is
+  not strong enough for RC.
+
+Every inventory row must include:
+
+- Legacy source: exact `yona-original/` template, controller route, JavaScript
+  helper, message key, or live legacy path.
+- Current source: exact React route/component, API/client/server module, test,
+  screenshot, or generated audit artifact.
+- User state: anonymous/authenticated/site-admin/project member/non-member,
+  owner/admin, guest, private/public project, and empty/populated data as
+  applicable.
+- Interaction state: initial render, validation failure, successful mutation,
+  modal open/cancel/confirm, upload/preview, pagination/filter/search, and
+  permission-hidden controls when applicable.
+- Boundary: REST JSON/API return plus React render, direct legacy compatibility
+  route, or explicitly unsupported server-rendered HTML fragment.
+- Proposed owner scope for any `gap`, `deviation`, or `weak evidence` row.
+
+The inventory is complete only when every active packet has a report and every
+report's row count is reflected in the Audit Result Queue or explicitly closed
+as `covered` inside the report.
 
 ## Full UI Parity Matrix
 
@@ -184,6 +225,14 @@ Worker branch rule:
   legacy instance when direct Playwright access to `192.168.45.10:9000` fails.
   This remains browser-rendered legacy HTML and is stronger than raw curl for
   user-visible checks.
+- Signup, user, project, organization, issue, board, milestone, PR, search, and
+  site-admin form submissions should stay consistent with the canonical
+  app-runtime boundary: React-visible flows submit through REST JSON/API
+  contracts and render with React. Legacy form routes are compatibility
+  adapters or evidence, not the preferred app data path.
+- Legacy i18n keys remain the scalar source. A visible raw key such as
+  `title.no.results` is a parity failure unless the legacy page visibly showed
+  that raw key in the same state.
 
 ## Subagent Report Contract
 
@@ -204,6 +253,26 @@ Each subagent report must include:
   `API/direct boundary`, `status`.
 - Screenshots are optional supporting evidence, but selector/copy assertions are
   required for form, modal, permission, empty-state, and mutation-visible checks.
+- A route inventory summary with counts for `covered`, `gap`, `deviation`,
+  `deferred`, `not-applicable`, and `weak evidence`. Parent cannot close this
+  phase from narrative-only reports.
+
+## Parallelization Plan
+
+Run explorers first, then workers:
+
+1. Assign all unassigned explorer packets in parallel:
+   `ui-parity-code-vcs`, `ui-parity-pull-request-review`,
+   `ui-parity-search-notification`, and `ui-parity-site-admin-setup`.
+2. Do not assign implementation to a packet until its explorer report exists.
+3. Batch worker assignments by disjoint write scope:
+   root shell/auth, workspace/settings, directory/organization,
+   project-admin, issues, board/milestone, code/VCS, PR/review,
+   search/notification, site-admin/setup.
+4. Within one batch, avoid overlapping files. If two gaps touch the same route
+   helper/component/API module, keep them in the same worker assignment.
+5. Parent integrates one completed worker at a time, updates this queue, then
+   runs focused checks before assigning the next overlapping worker.
 
 ## Worker Split Rule
 

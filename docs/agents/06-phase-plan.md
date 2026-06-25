@@ -1,5 +1,14 @@
 # 06) Phase 계획
 
+## Current UI Parity Gate
+
+- 2026-06-26부터 RC 전환 전 별도 phase로 전체 UI parity 전수조사를 먼저 완료한다.
+- 실행 기준은 `docs/plans/2026-06-26-full-ui-parity-subagent-phase.md`다.
+- 기존 broad smoke/visual sweep 결과는 baseline evidence일 뿐이며, route/page별
+  selector/copy/interaction/API-boundary inventory와 subagent report가 있어야
+  구현 worker를 배정한다.
+- 이 gate가 닫히기 전에는 개선 작업이나 새 기능 기획으로 이동하지 않는다.
+
 ## Phase -1: refactor temp development
 
 - 목적: REST pivot 이후 기존 임시 개발 내역을 새 canonical SPEC에 맞춰 재기준화한다.
