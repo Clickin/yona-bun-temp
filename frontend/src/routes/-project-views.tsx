@@ -196,7 +196,10 @@ function dashboardPercent(count: number, totalCount: number) {
   return totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
 }
 
-function ProjectHomeHistoryPane(props: { detail: ProjectDetailViewModel }) {
+function ProjectHomeHistoryPane(props: {
+  detail: ProjectDetailViewModel;
+  messages?: LegacyMessageLookup;
+}) {
   const items = props.detail.history?.items ?? [];
 
   return (
@@ -213,7 +216,9 @@ function ProjectHomeHistoryPane(props: { detail: ProjectDetailViewModel }) {
                   <a className="actor" href={item.actorUrl}>
                     {item.actorName}
                   </a>{" "}
-                  <span>{`project.history.type.${item.itemType}`}</span>{" "}
+                  <span>
+                    {legacyMessage(props.messages, `project.history.type.${item.itemType}`)}
+                  </span>{" "}
                   <span className="whereis">
                     <a className="where" href={item.url}>
                       {item.shortTitle}
@@ -1720,7 +1725,9 @@ export function ProjectDetailPage(props: {
                       </div>
                     )
                   ) : null}
-                  {activeTab === "history" ? <ProjectHomeHistoryPane detail={detail} /> : null}
+                  {activeTab === "history" ? (
+                    <ProjectHomeHistoryPane detail={detail} messages={props.messages} />
+                  ) : null}
                   {activeTab === "dashboard" ? (
                     <ProjectHomeDashboardPane
                       detail={detail}

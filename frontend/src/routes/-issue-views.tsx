@@ -155,9 +155,9 @@ function IssueSubtaskList(props: {
           <span className={progressDone ? "txt-green" : undefined}>
             {percentage === 100 ? totalCount : `${childClosedCount}/${totalCount}`}{" "}
           </span>
-          <span
-            className={`parent-issue-state ${parentIssueState}`}
-          >{`issue.state.${parentIssueState}`}</span>
+          <span className={`parent-issue-state ${parentIssueState}`}>
+            {legacyMessage(props.messages, `issue.state.${parentIssueState}`)}
+          </span>
         </div>
         <hr className="parent-issue-delimeter" />
         <div className="child-issues">

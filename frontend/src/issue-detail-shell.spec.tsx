@@ -815,7 +815,8 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="upload-progress red-outline"');
     expect(html).toContain('style="width:50%"');
     expect(html).toContain('class="parent-issue-state open"');
-    expect(html).toContain("issue.state.open");
+    expect(html).toContain(">Open</span>");
+    expect(html).not.toContain("issue.state.open");
     expect(html).not.toContain('class="parent-issue-state closed"');
     expect(html).toContain('class="issue-item child-issue"');
     expect(html).toContain('class="state-label closed"');

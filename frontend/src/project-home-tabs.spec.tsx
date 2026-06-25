@@ -176,7 +176,8 @@ describe("project home tab parity", () => {
     expect(html).toContain('class="actor"');
     expect(html).toContain('href="/yona/admin"');
     expect(html).toContain("Admin User");
-    expect(html).toContain("project.history.type.issue");
+    expect(html).toContain("New issue added.");
+    expect(html).not.toContain("project.history.type.issue");
     expect(html).toContain('class="where"');
     expect(html).toContain('class="title"');
     expect(html).toContain("History issue");

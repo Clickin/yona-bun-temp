@@ -382,6 +382,22 @@ describe("legacy i18n runtime", () => {
     expect(missingKeys).toEqual([]);
   });
 
+  it("does not render dynamic legacy-key templates directly in JSX text", () => {
+    const implementationFiles = collectImplementationSourceFiles(new URL("./", import.meta.url));
+    const directRenders: string[] = [];
+    const directLegacyKeyTemplatePattern =
+      />\s*\{\s*`(?:issue\.state|project\.history\.type|user\.role)\.\$\{/u;
+
+    for (const sourceFile of implementationFiles) {
+      const source = readFileSync(sourceFile, "utf8");
+      if (directLegacyKeyTemplatePattern.test(source)) {
+        directRenders.push(sourceFile.pathname);
+      }
+    }
+
+    expect(directRenders).toEqual([]);
+  });
+
   it("does not keep route-local i18n fallback dictionaries", () => {
     const routeSources = collectSourceFiles(new URL("./routes/", import.meta.url)).map((path) =>
       readFileSync(path, "utf8"),

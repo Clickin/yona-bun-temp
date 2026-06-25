@@ -259,3 +259,8 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
 - Phase 3A Code Browser changes may touch shared frontend client/view-model files that also serve issue routes. Those edits are contract plumbing only; they do not change issue lifecycle behavior or close any remaining Phase 2 issue follow-up.
 - Issue sharer project-target parity is closed for app-owned surfaces: Rust preserves legacy `IssueApi.updateSharer` `type=project` expansion by applying share/unshare to all target project members, while unsupported non-legacy target types fail explicitly.
 - 2026-06-18 env isolation note: issue and notification draft-merge timing now read through immutable `RepositoryConfig` on `AppRepository`, preserving the legacy `YONA_ISSUE_EVENT_DRAFT_TIME` / `YONA_NOTIFICATION_DRAFT_TIME` behavior while allowing repository tests to inject config without mutating process-global env.
+- 2026-06-25 subtask state i18n tightening: issue detail subtask parent-state
+  markers keep the legacy `issue.state.*` key names at the React call site but
+  now resolve them through the legacy message table instead of rendering raw
+  keys such as `issue.state.open` into the visible page. Focused coverage:
+  `frontend/src/issue-detail-shell.spec.tsx` and `frontend/src/i18n.spec.tsx`.

@@ -1812,6 +1812,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   key. Focused coverage: `frontend/src/route-parity.spec.tsx`,
   `frontend/src/issue-list-filter.spec.tsx`, and full
   `pnpm --dir frontend exec vitest run`.
+- 2026-06-25 dynamic legacy-key direct-render tightening: project home history
+  entries and issue subtask parent-state markers still compose the same legacy
+  keys (`project.history.type.*`, `issue.state.*`) but now resolve them through
+  the legacy message table before rendering. `frontend/src/i18n.spec.tsx` also
+  guards against directly rendering known dynamic legacy-key templates in JSX
+  text. Focused coverage: `frontend/src/project-home-tabs.spec.tsx`,
+  `frontend/src/issue-detail-shell.spec.tsx`, and full
+  `pnpm --dir frontend exec vitest run`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and
