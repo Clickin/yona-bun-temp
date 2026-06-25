@@ -209,7 +209,7 @@ describe("project settings parity", () => {
     expect(webhooksHtml).not.toContain("webhookDeliveryHistory");
     expect(transferHtml).toContain(">project.transfer.new.owner</div>");
     expect(deleteHtml).toContain(">project.delete.description</strong>");
-    expect(changeVcsHtml).toContain(">project.changeVCS.description1 Subversion</strong>");
+    expect(changeVcsHtml).toContain(">project.changeVCS.description1</strong>");
   });
 
   it("uses Korean legacy messages for project settings controls when lookup is provided", () => {

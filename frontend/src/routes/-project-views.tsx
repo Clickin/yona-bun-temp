@@ -2890,7 +2890,7 @@ export function ProjectChangeVcsPage(props: {
                     <strong>
                       {legacyMessage(props.messages, "project.changeVCS.description1", {
                         args: [changeVcs.nextVcs],
-                        fallback: `project.changeVCS.description1 ${changeVcs.nextVcs}`,
+                        fallback: "project.changeVCS.description1",
                       })}
                     </strong>
                   </li>
@@ -2958,7 +2958,7 @@ export function ProjectChangeVcsPage(props: {
               <h3>
                 {legacyMessage(props.messages, "project.changeVCS.requestion", {
                   args: [changeVcs.nextVcs],
-                  fallback: `project.changeVCS.requestion ${changeVcs.nextVcs}`,
+                  fallback: "project.changeVCS.requestion",
                 })}
               </h3>
             </div>

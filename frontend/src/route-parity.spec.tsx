@@ -5290,7 +5290,7 @@ describe("file-route parity harness", () => {
     expect(html).toContain("project.changeVCS.this");
     expect(html).toContain('id="alertChangeVCS"');
     expect(html).toContain("modal hide");
-    expect(html).toContain("project.changeVCS.requestion Subversion");
+    expect(html).toContain("project.changeVCS.requestion");
     expect(html).toContain("project.changeVCS.description2");
     expect(html).toContain("project.changeVCS.reaccept");
     expect(html).toContain('id="btnChangeVCSExec"');

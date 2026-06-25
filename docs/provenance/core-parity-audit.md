@@ -116,6 +116,16 @@
   `title.massMail`, `site.mail.sended`) while runtime-provider rendering still
   resolves through `yona-original/conf/messages*`. Focused evidence:
   `site-admin-route-parity.spec.tsx` and `i18n.spec.tsx`.
+- 2026-06-25 legacy-key-only fallback continuation: visible frontend i18n
+  fallbacks must keep the legacy key itself rather than composing a synthetic
+  fallback string with runtime arguments. `project.changeVCS.description1` and
+  `project.changeVCS.requestion` now pass `nextVcs` only through legacy message
+  arguments when a provider is present, while provider-less rendering preserves
+  the exact key. `frontend/src/i18n.spec.tsx` guards the main route view files
+  against fallback strings containing spaces, so newly added visible copy has to
+  reuse keys from `yona-original/conf/messages*`. Focused evidence:
+  `i18n.spec.tsx`, `project-settings-parity.spec.tsx`,
+  `route-parity.spec.tsx`, and `pnpm --dir frontend check`.
 - 2026-06-25 markdown help continuation: the React-rendered markdown help keeps
   the legacy `help/markdown.scala.html` examples where the list input displays
   `- Green.` while the rendered output omits the period, and the image input

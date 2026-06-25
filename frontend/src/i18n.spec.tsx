@@ -184,12 +184,21 @@ describe("legacy i18n runtime", () => {
     expect(notFoundHtml).toContain(">페이지를 찾을 수 없습니다</p>");
   });
 
-  it("keeps non-message runtime text unchanged", () => {
-    expect(
-      lookupLegacyMessage("ko-KR", "REST request failed with 500.", {
-        fallback: "REST request failed with 500.",
-      }),
-    ).toBe("REST request failed with 500.");
+  it("keeps visible fallbacks in the legacy keyspace", () => {
+    const routeSources = [
+      "./routes/-auth-views.tsx",
+      "./routes/-board-views.tsx",
+      "./routes/-issue-views.tsx",
+      "./routes/-project-views.tsx",
+      "./routes/-pull-request-views.tsx",
+      "./routes/__root.tsx",
+    ].map((path) => readFileSync(new URL(path, import.meta.url), "utf8"));
+
+    for (const source of routeSources) {
+      expect(source).not.toMatch(/fallback:\s*`[^`]*\s[^`]*`/u);
+      expect(source).not.toMatch(/fallback:\s*"[^"]*\s[^"]*"/u);
+      expect(source).not.toMatch(/fallback:\s*'[^']*\s[^']*'/u);
+    }
   });
 
   it("uses legacy message files only where the language has evidence", () => {
