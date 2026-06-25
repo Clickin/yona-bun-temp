@@ -130,6 +130,47 @@ const localDirectApiSurfaces = [
     method: "POST",
     path: "/markdown/admin/sample",
   },
+  {
+    expectJsonKind: "array",
+    method: "GET",
+    path: "/admin/sample/issue/labels",
+  },
+  {
+    expectJsonKind: "object",
+    headers: { accept: "application/json" },
+    method: "GET",
+    path: "/admin/sample/labels",
+  },
+  {
+    expectArrayItemKeys: ["loginId", "name", "type"],
+    expectJsonKind: "array",
+    headers: { accept: "application/json" },
+    method: "GET",
+    minItems: 1,
+    path: "/-_-api/v1/owners/admin/projects/sample/assignableUsers?query=admin",
+  },
+  {
+    expectArrayItemKeys: ["loginId", "name", "type"],
+    expectJsonKind: "array",
+    headers: { accept: "application/json" },
+    method: "GET",
+    minItems: 1,
+    path: "/-_-api/v1/owners/admin/projects/sample/issues/1/assignableUsers",
+  },
+  {
+    expectArrayItemKeys: ["loginId", "name", "type"],
+    expectJsonKind: "array",
+    headers: { accept: "application/json" },
+    method: "GET",
+    path: "/-_-api/v1/owners/admin/projects/sample/issues/1/findSharer?query=admin",
+  },
+  {
+    expectArrayItemKeys: ["loginId", "name", "type"],
+    expectJsonKind: "array",
+    headers: { accept: "application/json" },
+    method: "GET",
+    path: "/-_-api/v1/owners/admin/projects/sample/issues/1/sharableUsers?query=admin",
+  },
 ];
 
 const routeSampleValues = {
@@ -446,7 +487,29 @@ async function inspectLocalDirectApiSurface(page, baseUrl, surface) {
     errors.push("response is not valid JSON");
   }
   if (payload) {
-    for (const key of surface.expectKeys) {
+    const payloadKind = Array.isArray(payload) ? "array" : typeof payload;
+    if (surface.expectJsonKind && payloadKind !== surface.expectJsonKind) {
+      errors.push(`payload kind ${payloadKind}, expected ${surface.expectJsonKind}`);
+    }
+    if (Array.isArray(payload)) {
+      if (surface.minItems && payload.length < surface.minItems) {
+        errors.push(`payload has ${payload.length} item(s), expected at least ${surface.minItems}`);
+      }
+      for (const key of surface.expectArrayItemKeys ?? []) {
+        if (
+          payload.length > 0 &&
+          !payload.some(
+            (item) =>
+              item &&
+              typeof item === "object" &&
+              Object.prototype.hasOwnProperty.call(item, key),
+          )
+        ) {
+          errors.push(`missing array item key: ${key}`);
+        }
+      }
+    }
+    for (const key of surface.expectKeys ?? []) {
       if (!Object.prototype.hasOwnProperty.call(payload, key)) {
         errors.push(`missing payload key: ${key}`);
       }
@@ -482,10 +545,13 @@ async function inspectLocalDirectApiSurface(page, baseUrl, surface) {
     contentType,
     method: surface.method,
     ok: errors.length === 0,
+    payloadKind:
+      payload === null ? null : Array.isArray(payload) ? "array" : typeof payload,
     payloadKeys:
       payload && typeof payload === "object" && !Array.isArray(payload)
         ? Object.keys(payload).sort()
         : [],
+    arrayLength: Array.isArray(payload) ? payload.length : null,
     path: surface.path,
     status: response.status(),
     errors,

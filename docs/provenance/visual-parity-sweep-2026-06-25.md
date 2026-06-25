@@ -41,8 +41,9 @@ Status: current audit evidence.
   title so legacy 404/500 pages are not misclassified as normal pages.
 - Direct API criterion: the local sweep also checks legacy direct fragment
   surfaces that have been converted to React-owned data boundaries. It fails if
-  `/user/usermenuTabContentList`, `/user/sidebar`, `/notification?from=...`, or
-  `POST /markdown/:owner/:project` return an HTML fragment instead of JSON, or
+  `/user/usermenuTabContentList`, `/user/sidebar`, `/notification?from=...`,
+  `POST /markdown/:owner/:project`, direct label helpers, or legacy external
+  assignable/sharer lookup helpers return an HTML fragment instead of JSON, or
   if markdown preview returns a rendered HTML field instead of Markdown source.
 - i18n criterion: React-owned views must keep using legacy `conf/messages*`
   keys as-is. The sweep fails when a rendered normal page exposes raw legacy
@@ -91,7 +92,10 @@ Playwright render the legacy responses from `127.0.0.1`.
   `/admin/sample/post/1/editform`, `/admin/sample/compare/main...main`, and
   `/admin/sample/branches` returned HTTP 500 from the homelab sample.
 - Local Playwright visual sweep: 152 checked, 152 passed, 0 failed, authenticated session confirmed.
-- Local direct API fragment-conversion sweep: 4 checked, 4 passed, 0 failed.
+- Local direct API fragment-conversion sweep: 10 checked, 10 passed, 0
+  failed. The direct surfaces now cover the workspace sidebar/menu,
+  notification paging, Markdown preview source return, direct issue/project
+  label helpers, and legacy external assignable/sharer lookup helpers.
 - Cross-target comparison failures: 0. The harness now catches the class of issue where legacy
   renders a normal page and local renders a not-found/forbidden/bad-request page.
 - A rerun first exposed `/user/issues/new` as that exact class of failure:
