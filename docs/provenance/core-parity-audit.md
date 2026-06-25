@@ -114,6 +114,11 @@
   issue/board/code bodies, not the static help panel, and keeps the static
   checkbox example free of runtime task-list classes. Focused evidence:
   `markdown-renderer.spec.tsx`.
+- 2026-06-25 markdown tasklist continuation: rendered task-list checkboxes now
+  follow `yona.Tasklist.js` `disableCheckboxIfNeeds`: `data-allowed-update`
+  other than `true` renders disabled checkboxes, while `data-allowed-update=true`
+  leaves them enabled for the legacy update affordance. Focused evidence:
+  `markdown-renderer.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks are derived

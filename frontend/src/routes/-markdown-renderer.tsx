@@ -76,6 +76,7 @@ type MarkdownContext = {
   projectName?: string;
   reactMarkdownReferenceDefinitions?: string;
   referenceMap?: Map<string, MarkdownReferenceDefinition>;
+  taskCheckboxDisabled?: boolean;
 };
 
 type MarkdownBlockRecord = {
@@ -2099,7 +2100,7 @@ function MarkdownTightListItemContent(props: {
   if (nestedBlockIndex === null) {
     return (
       <>
-        <MarkdownTaskCheckbox item={props.item} />
+        <MarkdownTaskCheckbox context={props.context} item={props.item} />
         {props.item.task ? " " : null}
         <MarkdownInlineLines context={props.context} text={itemText} />
       </>
@@ -2113,7 +2114,7 @@ function MarkdownTightListItemContent(props: {
   const nestedLines = lines.slice(nestedBlockIndex);
   return (
     <>
-      <MarkdownTaskCheckbox item={props.item} />
+      <MarkdownTaskCheckbox context={props.context} item={props.item} />
       {props.item.task ? " " : null}
       {inlineText ? <MarkdownInlineLines context={props.context} text={inlineText} /> : null}
       <MarkdownBlockSequence context={props.context} lines={nestedLines} />
@@ -2147,7 +2148,7 @@ function markdownListItemNestedBlockIndex(text: string) {
   return null;
 }
 
-function MarkdownTaskCheckbox(props: { item: MarkdownListItem }) {
+function MarkdownTaskCheckbox(props: { context?: MarkdownContext; item: MarkdownListItem }) {
   if (!props.item.task) {
     return null;
   }
@@ -2155,7 +2156,7 @@ function MarkdownTaskCheckbox(props: { item: MarkdownListItem }) {
     <input
       checked={props.item.checked}
       className="task-list-item-checkbox"
-      disabled
+      disabled={props.context?.taskCheckboxDisabled ?? true}
       readOnly
       type="checkbox"
     />
@@ -3477,7 +3478,7 @@ function reactMarkdownComponents(context: MarkdownContext): Components {
         return (
           <input
             className="task-list-item-checkbox"
-            disabled={disabled}
+            disabled={context.taskCheckboxDisabled ?? disabled}
             readOnly
             type="checkbox"
             checked={checked}
@@ -6801,6 +6802,7 @@ export function MarkdownRenderer(props: {
       parsedMarkdown.referenceMap,
     ),
     referenceMap: parsedMarkdown.referenceMap,
+    taskCheckboxDisabled: props["data-allowed-update"] !== "true",
   };
   const Container = props.containerElement ?? "div";
   if (blocks.length === 0) {

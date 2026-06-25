@@ -7974,6 +7974,32 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<div class="content markdown-wrap"><ul>');
   });
 
+  it("enables task checkboxes only when legacy data-allowed-update is true", () => {
+    const readonlyHtml = renderToStaticMarkup(
+      <MarkdownRenderer
+        data-allowed-update="false"
+        markdown={"- [ ] open\n- [x] done"}
+        showTasklistBar
+      />,
+    );
+    const writableHtml = renderToStaticMarkup(
+      <MarkdownRenderer
+        data-allowed-update="true"
+        markdown={"- [ ] open\n- [x] done"}
+        showTasklistBar
+      />,
+    );
+
+    expect(readonlyHtml).toContain(
+      '<input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> open',
+    );
+    expect(writableHtml).toContain(
+      '<input class="task-list-item-checkbox" readOnly="" type="checkbox"/> open',
+    );
+    expect(writableHtml).not.toContain('class="task-list-item-checkbox" disabled=""');
+    expect(writableHtml).toContain('data-allowed-update="true"');
+  });
+
   it("renders a complete tasklist progress bar as green like legacy", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- [x] done\n- [X] done upper"} showTasklistBar />,
