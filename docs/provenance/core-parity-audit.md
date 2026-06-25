@@ -131,6 +131,12 @@
   user-visible render path and expects legacy default-message output for
   profile, password, email, and token controls rather than raw key leakage.
   Korean runtime lookup coverage remains unchanged.
+- 2026-06-25 directory/home/files/notification direct-render i18n
+  continuation: the directory, anonymous home, user-files, and notification
+  welcome focused helper now supplies the legacy default lookup by default, so
+  direct-rendered surfaces assert user-visible messages from
+  `yona-original/conf/messages*` instead of raw fallback keys. Korean runtime
+  lookup coverage remains unchanged.
 - 2026-06-25 root search form continuation: root navigation preserves the
   legacy `common/navbar.scala.html` global search anchors:
   `name="gnb-search-form"`, hidden `searchType=auto`, `keyword`, and

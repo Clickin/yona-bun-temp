@@ -10,7 +10,11 @@ import { UserFilesPage } from "./routes/user/files/route";
 
 type LegacyMessageLookup = ReturnType<typeof createLegacyI18nRuntime>["t"];
 
-function renderDirectoryHomeUserFilesNotification(messagesLookup?: LegacyMessageLookup) {
+const defaultMessages = createLegacyI18nRuntime(["en-US"]).t;
+
+function renderDirectoryHomeUserFilesNotification(
+  messagesLookup: LegacyMessageLookup = defaultMessages,
+) {
   return renderToStaticMarkup(
     <>
       <ProjectDirectoryPage
@@ -38,22 +42,26 @@ function renderDirectoryHomeUserFilesNotification(messagesLookup?: LegacyMessage
 }
 
 describe("directory/home/user-files/notification legacy i18n opt-in", () => {
-  it("keeps legacy message-key fallbacks without a provider", () => {
+  it("uses legacy default messages for direct-rendered helper surfaces", () => {
     const html = renderDirectoryHomeUserFilesNotification();
 
-    expect(html).toContain(">project.public title.projectList</a>");
-    expect(html).toContain('placeholder="site.project.filter"');
-    expect(html).toContain(">project.is.empty</p>");
-    expect(html).toContain('placeholder="site.organization.filter"');
-    expect(html).toContain(">organization.is.empty</p>");
-    expect(html).toContain(">title.features</span>");
-    expect(html).toContain(">site.features.workTeam</p>");
-    expect(html).toContain('placeholder="search.title"');
-    expect(html).toContain(">notification</a>");
-    expect(html).toContain(">issue.myIssue</a>");
-    expect(html).toContain(">user.files</a>");
-    expect(html).toContain(">button.newProject</a>");
-    expect(html).toContain(">app.welcome.searchProject.desc</td>");
+    expect(html).toContain(">PUBLIC Project list</a>");
+    expect(html).toContain('placeholder="Search by keyword"');
+    expect(html).toContain(">Project is non existent</p>");
+    expect(html).toContain('placeholder="Find organization by name"');
+    expect(html).toContain(">You do not belong to any group</p>");
+    expect(html).toContain(">Key features</span>");
+    expect(html).toContain(
+      ">Yona provides a simple and easy team management tool to help you build teams for projects.</p>",
+    );
+    expect(html).toContain('placeholder="Search"');
+    expect(html).toContain(">Notification</a>");
+    expect(html).toContain(">My Issues</a>");
+    expect(html).toContain(">My Files</a>");
+    expect(html).toContain(">Create new project</a>");
+    expect(html).toContain(">Find a project in which you are interested</td>");
+    expect(html).not.toContain(">project.public title.projectList</a>");
+    expect(html).not.toContain('placeholder="site.project.filter"');
   });
 
   it("uses a supplied legacy message lookup for the touched keys", () => {
