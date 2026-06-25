@@ -9,6 +9,8 @@ const htmlFragmentDomApiPattern =
 const routeHtmlFragmentFetchPattern = /\bresponse\.text\(|\btext\/html\b/;
 const responseTextReadPattern = /\bresponse\.text\(/;
 const markdownWrapClassPattern = /\bmarkdown-wrap\b/;
+const reactMarkdownDirectUsePattern =
+  /from\s+["']react-markdown["']|require\(\s*["']react-markdown["']\s*\)|<ReactMarkdown\b/;
 const serverRenderedHtmlCompatibilityFiles = new Set([
   "api/boards.ts",
   "api/code-commits.ts",
@@ -16,6 +18,7 @@ const serverRenderedHtmlCompatibilityFiles = new Set([
   "api/milestones.ts",
   "api/pull-requests.ts",
 ]);
+const allowedReactMarkdownDirectUseFiles = new Set(["routes/-markdown-renderer.tsx"]);
 const allowedResponseTextReaders = new Set(["api/rest-client.ts", "api/translation.ts"]);
 const renderModelBoundaryFiles = ["app-view-models.ts", "auth-workspace-client.ts"];
 const allowedMarkdownRendererCallsWithoutMarkdownWrap = [
@@ -191,6 +194,17 @@ describe("Markdown render boundary", () => {
         allowed.reason,
       ).toBe(true);
     }
+  });
+
+  it("keeps direct ReactMarkdown usage owned by the legacy compatibility renderer", () => {
+    const actual = listRenderSurfaceFiles()
+      .filter((file) => reactMarkdownDirectUsePattern.test(readSource(file)))
+      .sort();
+
+    expect(
+      actual,
+      "Legacy markdown content must go through MarkdownRenderer so the Yona compatibility plugins and sanitizer cannot be bypassed.",
+    ).toEqual(Array.from(allowedReactMarkdownDirectUseFiles).sort());
   });
 
   it("keeps ReactMarkdown wired through the Yona legacy compatibility plugins", () => {
