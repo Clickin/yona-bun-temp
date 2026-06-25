@@ -304,6 +304,15 @@ function functionBodies(source: string, functionName: string) {
   return bodies;
 }
 
+function expectPreventDefaultBeforeReturn(source: string, label: string) {
+  const preventIndex = source.indexOf("event.preventDefault()");
+  const returnIndex = source.indexOf("return;");
+  expect(preventIndex, label).toBeGreaterThanOrEqual(0);
+  if (returnIndex >= 0) {
+    expect(preventIndex, label).toBeLessThan(returnIndex);
+  }
+}
+
 function mutationDataHrefElements() {
   return listRouteFiles().flatMap((file) => {
     const source = readRouteSource(file);
@@ -526,6 +535,30 @@ describe("React form submit boundary", () => {
     for (const element of legacyApiActionForms()) {
       expect(element.tag, `${element.file}:${element.line}`).toContain("onSubmit=");
       expect(element.body, `${element.file}:${element.line}`).toContain("event.preventDefault()");
+    }
+  });
+
+  it("keeps submit handlers from returning before preventing native submit", () => {
+    for (const element of indirectSubmitForms()) {
+      if (!element.handler) {
+        continue;
+      }
+      const bodies = functionBodies(readRouteSource(element.file), element.handler);
+      for (const body of bodies) {
+        expectPreventDefaultBeforeReturn(body, `${element.file}:${element.handler}`);
+      }
+    }
+
+    for (const file of listRouteFiles()) {
+      const source = readRouteSource(file);
+      for (const formMatch of source.matchAll(/<form\b/g)) {
+        const formStart = formMatch.index ?? 0;
+        const tag = source.slice(formStart, openingTagEnd(source, formStart));
+        if (!/onSubmit=/.test(tag) || !/event\.preventDefault\(\)/.test(tag)) {
+          continue;
+        }
+        expectPreventDefaultBeforeReturn(tag, `${file}:${lineNumberForIndex(source, formStart)}`);
+      }
     }
   });
 
