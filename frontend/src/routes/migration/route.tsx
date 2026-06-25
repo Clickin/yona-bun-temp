@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useAppRuntime } from "../../app-runtime-context";
-import { type RuntimeConfig, prefixBasePath } from "../../runtime-config";
 import { useDocumentTitle, useRequireAuthenticatedRoute } from "../-shared";
 
 export const Route = createFileRoute("/migration")({
@@ -9,13 +8,9 @@ export const Route = createFileRoute("/migration")({
 
 export function MigrationDisabledPage({
   messages,
-  runtimeConfig,
 }: {
   messages: ReturnType<typeof useAppRuntime>["messages"];
-  runtimeConfig: RuntimeConfig;
 }) {
-  const guideHref = prefixBasePath(runtimeConfig.basePath, "/sites/data");
-
   return (
     <main className="yobi-migration">
       <div className="header-pannel">
@@ -135,10 +130,6 @@ export function MigrationDisabledPage({
               </tbody>
             </table>
             <div className="left-title">기존 이슈 담당자</div>
-            <div className="caution">Migration 기능은 현재 사용할 수 없습니다.</div>
-            <div className="caution">
-              <a href={guideHref}>/sites/data</a>
-            </div>
           </div>
         </div>
       </div>
@@ -159,5 +150,5 @@ function MigrationRouteComponent() {
     );
   }
 
-  return <MigrationDisabledPage messages={messages} runtimeConfig={runtimeConfig} />;
+  return <MigrationDisabledPage messages={messages} />;
 }
