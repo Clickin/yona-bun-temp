@@ -538,7 +538,10 @@ export function PublicUserProfilePage(props: {
                             >
                               <img
                                 alt={project.projectName}
-                                src={resolveWorkspaceAvatarUrl("", project.projectName)}
+                                src={
+                                  project.logoUrl ||
+                                  resolveWorkspaceAvatarUrl("", project.projectName)
+                                }
                               />
                             </a>
                           </div>
@@ -1143,7 +1146,10 @@ export function WorkspacePage(props: {
                             >
                               <img
                                 alt={project.projectName}
-                                src={resolveWorkspaceAvatarUrl("", project.projectName)}
+                                src={
+                                  project.logoUrl ||
+                                  resolveWorkspaceAvatarUrl("", project.projectName)
+                                }
                               />
                             </a>
                           </div>

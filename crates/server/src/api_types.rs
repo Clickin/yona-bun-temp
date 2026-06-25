@@ -732,6 +732,8 @@ pub struct WorkspaceMemberProjectItem {
     #[serde(default)]
     pub project_name: String,
     #[serde(default)]
+    pub logo_url: String,
+    #[serde(default)]
     pub overview: String,
     #[serde(default)]
     pub project_scope: String,

@@ -20,6 +20,7 @@ export interface WorkspaceOverviewViewModel {
   memberProjects?: Array<{
     createdLabel: string;
     lastPushedLabel: string;
+    logoUrl?: string;
     memberCount: number;
     ownerName: string;
     overview: string;

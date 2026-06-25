@@ -32,6 +32,7 @@ const overview: WorkspaceOverviewViewModel = {
     {
       createdLabel: "2026-06-21",
       lastPushedLabel: "",
+      logoUrl: "/yona/files/202",
       memberCount: 2,
       ownerName: "yona",
       overview: "Project overview",
@@ -115,7 +116,7 @@ describe("workspace/profile legacy i18n opt-in", () => {
       expect(html).toContain(">recently</span>");
       expect(html).toContain(">days ago</span>");
       expect(html).toContain(
-        'class="avatar-wrap small" href="/yona/yona/projectYobi"><img alt="projectYobi" src=',
+        'class="avatar-wrap small" href="/yona/yona/projectYobi"><img alt="projectYobi" src="/yona/files/202"',
       );
       expect(html).toContain('style="margin-left:10px"');
       expect(html).not.toContain(">menu.issue <span");

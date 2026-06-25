@@ -21,7 +21,7 @@ use crate::persistence::{self, PilotRepository};
 use crate::{
     anonymous_current_session_response, attach_session_headers, base_path_href, gravatar_url,
     headers_with_form_csrf, internal_error, normalize_identifier, redirect_to,
-    require_authenticated_user, require_session, require_valid_csrf,
+    project_logo_url, require_authenticated_user, require_session, require_valid_csrf,
     resolve_current_session_response, rest_json_response, rest_owned_view,
     send_workspace_email_validation_mail, session, workspace_invalid_argument, ConnectError,
     Context, PilotBackend, PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
@@ -67,12 +67,15 @@ fn workspace_project_item_from_entry(
     }
 }
 
-fn workspace_member_project_item_from_record(
+async fn workspace_member_project_item_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
     item: &persistence::WorkspaceMemberProjectRecord,
-) -> WorkspaceMemberProjectItem {
-    WorkspaceMemberProjectItem {
+) -> Result<WorkspaceMemberProjectItem, ConnectError> {
+    Ok(WorkspaceMemberProjectItem {
         created_label: item.created_label.clone(),
         last_pushed_label: item.last_pushed_label.clone(),
+        logo_url: project_logo_url(repository, base_path, item.project_id).await?,
         member_count: item.member_count,
         owner_name: item.owner_name.clone(),
         project_name: item.project_name.clone(),
@@ -80,7 +83,7 @@ fn workspace_member_project_item_from_record(
         project_scope: item.project_scope.clone(),
         watch_count: item.watch_count,
         ..Default::default()
-    }
+    })
 }
 
 fn workspace_email_from_record(record: &persistence::WorkspaceEmailRecord) -> WorkspaceEmail {
@@ -307,7 +310,8 @@ async fn load_workspace_dashboard_data(
         .await
         .map_err(internal_error)?;
     let member_projects =
-        filter_workspace_member_projects_by_read_acl(repository, user_id, member_projects).await?;
+        filter_workspace_member_projects_by_read_acl(repository, base_path, user_id, member_projects)
+            .await?;
 
     Ok((profile, issue_items, pull_request_items, member_projects))
 }
@@ -377,14 +381,22 @@ pub(crate) async fn filter_workspace_pull_request_items_by_read_acl_for_viewer(
 
 async fn filter_workspace_member_projects_by_read_acl(
     repository: &PilotRepository,
+    base_path: &str,
     user_id: i64,
     items: Vec<persistence::WorkspaceMemberProjectRecord>,
 ) -> Result<Vec<WorkspaceMemberProjectItem>, ConnectError> {
-    filter_workspace_member_projects_by_read_acl_for_viewer(repository, Some(user_id), items).await
+    filter_workspace_member_projects_by_read_acl_for_viewer(
+        repository,
+        base_path,
+        Some(user_id),
+        items,
+    )
+    .await
 }
 
 pub(crate) async fn filter_workspace_member_projects_by_read_acl_for_viewer(
     repository: &PilotRepository,
+    base_path: &str,
     viewer_id: Option<i64>,
     items: Vec<persistence::WorkspaceMemberProjectRecord>,
 ) -> Result<Vec<WorkspaceMemberProjectItem>, ConnectError> {
@@ -399,7 +411,8 @@ pub(crate) async fn filter_workspace_member_projects_by_read_acl_for_viewer(
         )
         .await?
         {
-            visible.push(workspace_member_project_item_from_record(&item));
+            visible
+                .push(workspace_member_project_item_from_record(repository, base_path, &item).await?);
         }
     }
 

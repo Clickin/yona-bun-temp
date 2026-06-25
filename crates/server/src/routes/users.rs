@@ -224,6 +224,7 @@ async fn rest_read_public_user_profile(
     .map_err(RestRouteError::from_connect_error)?;
     let member_projects = filter_workspace_member_projects_by_read_acl_for_viewer(
         repository,
+        &service.base_path,
         viewer_id,
         repository
             .list_member_projects_for_user(user.id)

@@ -201,6 +201,7 @@ describe("wave 1 auth and workspace parity", () => {
         {
           createdLabel: "2026-04-01",
           lastPushedLabel: "2026-04-10",
+          logoUrl: "/yona/files/101",
           memberCount: 4,
           ownerName: "admin",
           overview: "Yona project",
@@ -314,7 +315,7 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).not.toContain("Comments: 2");
     expect(html).not.toContain("State: open");
     expect(html).toContain(
-      'class="avatar-wrap small" href="/yona/admin/projectYobi"><img alt="projectYobi" src=',
+      'class="avatar-wrap small" href="/yona/admin/projectYobi"><img alt="projectYobi" src="/yona/files/101"',
     );
     expect(html).toContain('style="margin-left:10px"');
     expect(html).toContain('class="yobicon-friends yobicon-middle"');

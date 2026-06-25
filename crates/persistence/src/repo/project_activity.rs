@@ -482,6 +482,7 @@ impl AppRepositoryImpl<'_> {
                     member_count,
                     owner_name: record.owner_name,
                     overview: record.overview.unwrap_or_default(),
+                    project_id: project_model.id,
                     project_name: record.project_name,
                     project_scope: record.project_scope,
                     watch_count,

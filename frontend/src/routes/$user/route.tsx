@@ -63,6 +63,7 @@ function toPublicProfileOverview(
     memberProjects: response.memberProjects.map((project) => ({
       createdLabel: project.createdLabel,
       lastPushedLabel: project.lastPushedLabel,
+      logoUrl: project.logoUrl ?? "",
       memberCount: project.memberCount,
       ownerName: project.ownerName,
       overview: project.overview,
