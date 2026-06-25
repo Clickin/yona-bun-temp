@@ -236,6 +236,30 @@ test("auth aliases redirect to the legacy public entry routes", async ({ page })
   await expect(page.locator("form[name='passwordReset']")).toBeVisible();
 });
 
+test("anonymous help page keeps the legacy FAQ shell and item-wide toggle", async ({ page }) => {
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+
+  await page.goto("/yona/_help");
+
+  await expect(page).toHaveTitle("Help");
+  await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("Help");
+  await expect(page.locator(".qas > .qa")).toHaveCount(6);
+  await expect(page.locator(".qas > .qa").first()).toContainText("Yona를 설치하고 싶어요.");
+  await expect(page.locator(".qas > .qa").first()).toContainText(
+    "https://github.com/doortts/yona#korean",
+  );
+  await expect(page.locator("body")).not.toContainText("title.help");
+  await expect(page.locator("body")).not.toContainText("app.name");
+
+  const firstQuestion = page.locator(".qas > .qa").first();
+  await expect(firstQuestion).not.toHaveClass(/open/);
+  await firstQuestion.locator(".question-wrap").click();
+  await expect(firstQuestion).toHaveClass(/open/);
+  await firstQuestion.locator(".question-wrap").click();
+  await expect(firstQuestion).not.toHaveClass(/open/);
+});
+
 test("signup confirmation redirects to the legacy home flash target", async ({ page }) => {
   await installRuntimeConfig(page);
   await installAuthEntryMocks(page, { signupRequireConfirm: true });
