@@ -263,6 +263,117 @@ async function routeAuditApis(page: Page, options: RouteAuditOptions = {}) {
         path: "",
         projectName: "sample",
       };
+    } else if (path === "/projects/admin/sample/commits") {
+      body = {
+        branches: [{ name: "main" }],
+        breadcrumbs: [],
+        commits: [
+          {
+            authorDate: "2026-04-21",
+            authorEmail: "author@example.com",
+            authorName: "Author",
+            commentCount: 0,
+            commitId: "abcdef1234567890abcdef1234567890abcdef12",
+            commitShortId: "abcdef1",
+            message: "Update main function",
+            shortMessage: "Update main function",
+          },
+        ],
+        hasNewer: false,
+        hasOlder: false,
+        noHead: false,
+        ownerName: "admin",
+        page: 0,
+        path: "",
+        projectName: "sample",
+        selectedBranch: "main",
+      };
+    } else if (path === "/projects/admin/sample/branches") {
+      body = {
+        branches: [
+          {
+            commitDate: "2026-04-21",
+            commitId: "abcdef1234567890abcdef1234567890abcdef12",
+            commitMessage: "Update main function",
+            commitShortId: "abcdef1",
+            isDefault: true,
+            name: "main",
+            pullRequest: null,
+            shortName: "main",
+          },
+        ],
+        defaultBranch: "main",
+        noHead: false,
+        ownerName: "admin",
+        permissions: { canDelete: true, canUpdate: true },
+        projectName: "sample",
+      };
+    } else if (path === "/projects/admin/sample/commit/abcdef1234567890abcdef1234567890abcdef12") {
+      body = {
+        branches: [{ name: "main" }],
+        breadcrumbs: [],
+        commit: {
+          authorDate: "2026-04-21",
+          authorEmail: "author@example.com",
+          authorName: "Author",
+          commentCount: 0,
+          commitId: "abcdef1234567890abcdef1234567890abcdef12",
+          commitShortId: "abcdef1",
+          message: "Update main function",
+          shortMessage: "Update main function",
+        },
+        files: [
+          {
+            patch:
+              'diff --git a/src/main.rs b/src/main.rs\n--- a/src/main.rs\n+++ b/src/main.rs\n@@ -1 +1,3 @@\n fn main() {\n+    println!("detail");\n }\n',
+            path: "src/main.rs",
+          },
+        ],
+        noHead: false,
+        ownerName: "admin",
+        parentCommit: {
+          commitId: "1234567890abcdef1234567890abcdef12345678",
+          commitShortId: "1234567",
+        },
+        path: "",
+        projectName: "sample",
+        selectedBranch: "main",
+      };
+    } else if (path === "/projects/admin/sample/compare/1234567..abcdef1") {
+      body = {
+        commitA: {
+          authorDate: "2026-04-20",
+          authorEmail: "seed@example.com",
+          authorName: "Seed",
+          commentCount: 0,
+          commitId: "1234567890abcdef1234567890abcdef12345678",
+          commitShortId: "1234567",
+          message: "Initial commit",
+          shortMessage: "Initial commit",
+        },
+        commitB: {
+          authorDate: "2026-04-21",
+          authorEmail: "author@example.com",
+          authorName: "Author",
+          commentCount: 0,
+          commitId: "abcdef1234567890abcdef1234567890abcdef12",
+          commitShortId: "abcdef1",
+          message: "Update main function",
+          shortMessage: "Update main function",
+        },
+        files: [
+          {
+            patch:
+              'diff --git a/src/main.rs b/src/main.rs\n--- a/src/main.rs\n+++ b/src/main.rs\n@@ -1 +1,3 @@\n fn main() {\n+    println!("compare");\n }\n',
+            path: "src/main.rs",
+          },
+        ],
+        noHead: false,
+        ownerName: "admin",
+        projectName: "sample",
+        revA: "1234567890abcdef1234567890abcdef12345678",
+        revB: "abcdef1234567890abcdef1234567890abcdef12",
+      };
     } else if (path.endsWith("/admin/projects/sample/members")) {
       body = {
         enrollmentRequests: [],
@@ -606,6 +717,35 @@ test("renders code, pull request, and review anchors on a mobile viewport", asyn
   await page.goto("/yona/admin/sample/reviews");
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
   await expect(page.locator(".project-page-wrap")).toBeVisible();
+});
+
+test("renders commit, branch, and compare anchors on a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+
+  await page.goto("/yona/admin/sample/commits");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator(".code-browse-wrap")).toBeVisible();
+  await expect(page.locator(".code-table.commits")).toContainText("Update main function");
+  await expect(page.locator("body")).not.toContainText("title.commitHistory");
+
+  await page.goto("/yona/admin/sample/commit/abcdef1234567890abcdef1234567890abcdef12");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator("#code-browse-wrap")).toBeVisible();
+  await expect(page.locator(".codediff-wrap")).toBeVisible();
+  await expect(page.locator(".diff-body")).toBeVisible();
+  await expect(page.locator("#watch-button")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("code.commits");
+
+  await page.goto("/yona/admin/sample/compare/1234567..abcdef1");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator(".code-browse-wrap")).toBeVisible();
+  await expect(page.locator(".diff-body.discommentable")).toBeVisible();
+
+  await page.goto("/yona/admin/sample/branches");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator(".branch-list-wrap")).toBeVisible();
+  await expect(page.locator("tr.head .branchName")).toContainText("main");
+  await expect(page.locator("body")).not.toContainText("title.branches");
 });
 
 test("renders legacy audited anchors for project members", async ({ page }) => {
