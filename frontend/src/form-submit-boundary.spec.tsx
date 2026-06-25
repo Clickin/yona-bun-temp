@@ -39,6 +39,8 @@ const memberSubmitFallbackPattern = /if \(!props\.on(?:AddMember|UpdateMemberRol
 const createSettingsSubmitFallbackPattern =
   /if \(!props\.on(?:CreateProject|CreateOrganization|UpdateProjectSettings|UpdateOrganization)\) \{/;
 const projectActionSubmitFallbackPattern = /if \(!props\.on(?:CreateWebhook|Fork)\) \{/;
+const clickMutationFallbackPattern =
+  /if \(!props\.on(?:LeaveOrganization|ToggleProjectWatch|LeaveProject)\) \{/;
 
 function readRouteSource(relativePath: string) {
   return fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
@@ -185,5 +187,15 @@ describe("React form submit boundary", () => {
     expect(source).toContain('className="form-horizontal nm"');
     expect(source).not.toMatch(projectActionSubmitFallbackPattern);
     expect(source).not.toContain('className="form-horizontal nm"\n              method="post"');
+  });
+
+  it("keeps React-owned leave and watch click mutations inside the callback boundary", () => {
+    const actionFiles = ["routes/-project-views.tsx", "routes/-organization-views.tsx"];
+
+    for (const file of actionFiles) {
+      const source = readRouteSource(file);
+      expect(source, file).toContain("event.preventDefault()");
+      expect(source, file).not.toMatch(clickMutationFallbackPattern);
+    }
   });
 });

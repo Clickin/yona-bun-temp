@@ -389,11 +389,8 @@ function OrganizationMembershipActions(props: {
         data-href={buildOrganizationHref(props.runtimeConfig, detail.organizationName, "leave")}
         id="groupLeaveBtn"
         onClick={(event) => {
-          if (!props.onLeaveOrganization) {
-            return;
-          }
           event.preventDefault();
-          props.onLeaveOrganization(detail.organizationName);
+          props.onLeaveOrganization?.(detail.organizationName);
         }}
         type="button"
       >

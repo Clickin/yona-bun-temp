@@ -1800,11 +1800,8 @@ export function ProjectDetailPage(props: {
                         className="ybtn ybtn-watching watchBtn"
                         href={watchHref}
                         onClick={(event) => {
-                          if (!props.onToggleProjectWatch) {
-                            return;
-                          }
                           event.preventDefault();
-                          props.onToggleProjectWatch(
+                          props.onToggleProjectWatch?.(
                             detail.ownerName,
                             detail.projectName,
                             !detail.isWatching,
@@ -1882,11 +1879,8 @@ export function ProjectDetailPage(props: {
                       data-href={projectLeaveHref}
                       id="projectLeaveBtn"
                       onClick={(event) => {
-                        if (!props.onLeaveProject) {
-                          return;
-                        }
                         event.preventDefault();
-                        props.onLeaveProject(
+                        props.onLeaveProject?.(
                           detail.ownerName,
                           detail.projectName,
                           detail.viewerUserId ?? 0,
