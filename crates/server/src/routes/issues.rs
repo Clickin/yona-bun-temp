@@ -1,10 +1,10 @@
 use crate::api_types::OwnedView;
 use axum::{
+    Form, Json, Router,
     extract::{Path, Query, RawQuery},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Redirect, Response},
     routing::{delete, get, patch, post, put},
-    Form, Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -21,21 +21,21 @@ use super::utils::{
 };
 use crate::api_types::*;
 use crate::{
-    absolute_app_url, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
-    deserialize_optional_i64_from_string_or_number, direct_project_update_allowed,
-    direct_status_from_connect_error, dispatch_issue_webhooks, form_bool, form_value,
-    headers_with_form_csrf, internal_error, issue_label_category_from_record, issue_label_css,
-    issue_label_from_record, issue_reference_metadata_from_resolved,
-    markdown_issue_references_for_project, markdown_mention_references,
-    mention_reference_metadata_from_resolved, normalize_identifier, normalize_issue_label_color,
-    parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
-    persistence, project_read_allowed, project_update_allowed, redirect_to,
-    require_authenticated_user, require_project_authorization, require_project_read,
-    require_project_resource_create, require_session, require_valid_csrf, rest_json_response,
-    rest_owned_view, user_issue_filter_name, user_issue_state, visible_projects_for_organization,
     ConnectError, Context, MarkdownIssueReference, MarkdownMentionReference, PilotBackend,
     PilotRepository, PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
-    RestRouteError,
+    RestRouteError, absolute_app_url, decode_query_component,
+    deserialize_i64_vec_from_strings_or_numbers, deserialize_optional_i64_from_string_or_number,
+    direct_project_update_allowed, direct_status_from_connect_error, dispatch_issue_webhooks,
+    form_bool, form_value, headers_with_form_csrf, internal_error,
+    issue_label_category_from_record, issue_label_css, issue_label_from_record,
+    issue_reference_metadata_from_resolved, markdown_issue_references_for_project,
+    markdown_mention_references, mention_reference_metadata_from_resolved, normalize_identifier,
+    normalize_issue_label_color, parse_attachment_ids, parse_milestone_due_date,
+    parse_rest_query_i64, parse_rest_query_u32, persistence, project_read_allowed,
+    project_update_allowed, redirect_to, require_authenticated_user, require_project_authorization,
+    require_project_read, require_project_resource_create, require_session, require_valid_csrf,
+    rest_json_response, rest_owned_view, user_issue_filter_name, user_issue_state,
+    visible_projects_for_organization,
 };
 
 mod comments;
@@ -46,21 +46,21 @@ mod meta;
 mod milestones;
 
 use comments::{
-    derived_issue_comment_markdown, direct_create_issue_comment, direct_delete_issue_comment,
-    direct_issue_body_markdown_from_comment, direct_issue_comment_vote,
-    direct_update_issue_comment, rest_create_issue_comment, rest_delete_issue_comment,
-    rest_update_issue_comment, RestIssueCommentBody,
+    RestIssueCommentBody, derived_issue_comment_markdown, direct_create_issue_comment,
+    direct_delete_issue_comment, direct_issue_body_markdown_from_comment,
+    direct_issue_comment_vote, direct_update_issue_comment, rest_create_issue_comment,
+    rest_delete_issue_comment, rest_update_issue_comment,
 };
 use labels::{
-    direct_copy_issue_labels, direct_create_issue_label, direct_create_issue_label_category,
-    direct_delete_issue_label, direct_delete_issue_label_category, direct_issue_label_css,
-    direct_list_issue_label_categories, direct_list_issue_labels, direct_read_issue_label_category,
-    direct_update_issue_label, direct_update_issue_label_category, rest_copy_project_labels,
-    rest_create_project_label, rest_create_project_label_category, rest_delete_project_label,
+    RestProjectLabelCategoryBody, RestProjectLabelCopyBody, RestProjectLabelCreateBody,
+    RestProjectLabelUpdateBody, direct_copy_issue_labels, direct_create_issue_label,
+    direct_create_issue_label_category, direct_delete_issue_label,
+    direct_delete_issue_label_category, direct_issue_label_css, direct_list_issue_label_categories,
+    direct_list_issue_labels, direct_read_issue_label_category, direct_update_issue_label,
+    direct_update_issue_label_category, rest_copy_project_labels, rest_create_project_label,
+    rest_create_project_label_category, rest_delete_project_label,
     rest_delete_project_label_category, rest_list_project_label_categories,
     rest_list_project_labels, rest_update_project_label, rest_update_project_label_category,
-    RestProjectLabelCategoryBody, RestProjectLabelCopyBody, RestProjectLabelCreateBody,
-    RestProjectLabelUpdateBody,
 };
 pub(crate) use labels::{
     project_label_categories_list, project_label_category_create, project_label_category_delete,
@@ -82,23 +82,23 @@ use legacy_external::{
 };
 pub(crate) use lookups::resolve_issue_reference_search_project;
 use lookups::{
+    RestIssueMentionUsersQuery, RestIssueParentOptionsQuery, RestProjectIssueReferencesQuery,
     rest_list_issue_assignable_users, rest_list_issue_mention_users,
     rest_list_issue_parent_options, rest_list_issue_sharable_users,
     rest_list_project_assignable_users, rest_list_project_issue_references,
-    RestIssueMentionUsersQuery, RestIssueParentOptionsQuery, RestProjectIssueReferencesQuery,
+};
+use meta::{
+    RestIssueAssigneeBody, RestIssueSharerBody, RestIssueSharerDeleteQuery,
+    direct_issue_participation, rest_assign_issue, rest_issue_comment_participation,
+    rest_issue_participation, rest_share_issue, rest_toggle_favorite_issue, rest_unshare_issue,
 };
 pub(crate) use meta::{
     issue_comment_participation_mutation, issue_favorite_toggle, issue_participation_mutation,
 };
-use meta::{
-    rest_assign_issue, rest_issue_comment_participation, rest_issue_participation,
-    rest_share_issue, rest_toggle_favorite_issue, rest_unshare_issue, RestIssueAssigneeBody,
-    RestIssueSharerBody, RestIssueSharerDeleteQuery,
-};
 use milestones::{
+    RestMilestoneListQuery, RestProjectMilestoneBody, RestProjectMilestoneStateBody,
     rest_create_project_milestone, rest_delete_project_milestone, rest_list_project_milestones,
     rest_read_project_milestone, rest_set_project_milestone_state, rest_update_project_milestone,
-    RestMilestoneListQuery, RestProjectMilestoneBody, RestProjectMilestoneStateBody,
 };
 
 #[derive(Default, Deserialize)]
@@ -1716,6 +1716,8 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let issue_comment_create_service = service.clone();
     let issue_comment_update_service = service.clone();
     let issue_comment_delete_service = service.clone();
+    let issue_vote_service = service.clone();
+    let issue_unvote_service = service.clone();
     let comment_vote_service = service.clone();
     let comment_unvote_service = service.clone();
     let label_list_service = service.clone();
@@ -2117,6 +2119,44 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                             number,
                             comment_id,
                             issue_comment_delete_service.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/issue/{number}/vote",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project, number)): Path<(String, String, i64)>| {
+                    async move {
+                        direct_issue_participation(
+                            headers,
+                            owner,
+                            project,
+                            number,
+                            "vote",
+                            issue_vote_service.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/issue/{number}/unvote",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project, number)): Path<(String, String, i64)>| {
+                    async move {
+                        direct_issue_participation(
+                            headers,
+                            owner,
+                            project,
+                            number,
+                            "unvote",
+                            issue_unvote_service.clone(),
                         )
                         .await
                     }

@@ -168,6 +168,15 @@
   hidden/open class transition no longer depends on jQuery DOM mutation.
   Focused evidence: `frontend/src/issue-detail-shell.spec.tsx` and
   `frontend/src/route-parity.spec.tsx`.
+- 2026-06-25 issue vote direct-route continuation: legacy
+  `POST /:owner/:project/issue/:number/vote|unvote` is restored for the
+  issue detail vote control from `issue/view.scala.html`. The React SPA still
+  handles in-place mutation through its callback, but the rendered control is
+  again an anchor with the legacy direct `href` and `data-request-method="post"`
+  shell so non-SPA request hooks and copied DOM match the legacy page. Focused
+  evidence: `crates/server/tests/issue_comment_vote_contract.rs`,
+  `frontend/src/issue-detail-shell.spec.tsx`, and
+  `frontend/src/route-parity.spec.tsx`.
 - 2026-06-25 markdown help continuation: the React-rendered markdown help keeps
   the legacy `help/markdown.scala.html` examples where the list input displays
   `- Green.` while the rendered output omits the period, and the image input

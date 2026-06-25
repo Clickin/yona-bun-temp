@@ -1543,6 +1543,14 @@ export function ProjectIssueDetailPage(props: {
   const issueNumberLabel = issue ? `#${issue.issueNumber}` : "";
   const issueNumber = issue?.issueNumber ?? 0;
   const voteWrapClass = issue && issue.voterCount > 0 ? "vote-wrap voter-exists" : "vote-wrap";
+  const issueVoteHref = issue
+    ? buildProjectHref(
+        props.runtimeConfig,
+        issue.ownerName,
+        issue.projectName,
+        `issue/${issue.issueNumber}/${issue.hasVoted ? "unvote" : "vote"}`,
+      )
+    : "#";
   const commentDeleteRequestUri =
     issue && commentDeleteTargetId !== null
       ? buildProjectHref(
@@ -1844,20 +1852,23 @@ export function ProjectIssueDetailPage(props: {
                 {issue ? (
                   <div className={voteWrapClass} id="vote">
                     {props.onVoteToggle ? (
-                      <button
+                      <a
                         className={`ybtn${issue.hasVoted ? " ybtn-watching" : ""}`}
                         data-request-method="post"
                         data-toggle="tooltip"
-                        onClick={() => void props.onVoteToggle?.()}
+                        href={issueVoteHref}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void props.onVoteToggle?.();
+                        }}
                         title={
                           issue.hasVoted ? "issue.unvote.description" : "issue.vote.description"
                         }
-                        type="button"
                       >
                         <span className="heart">
                           <i className="yobicon-hearts"></i>
                         </span>
-                      </button>
+                      </a>
                     ) : null}
                     <IssueDetailVoters
                       issue={issue}

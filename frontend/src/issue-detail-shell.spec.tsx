@@ -255,6 +255,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).not.toContain(">Edit</a>");
     expect(html).toContain('id="vote"');
     expect(html).toContain('class="vote-wrap voter-exists"');
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/1/unvote"');
     expect(html).toContain('data-request-method="post"');
     expect(html).toContain('class="heart"');
     expect(html).toContain('class="yobicon-hearts"');

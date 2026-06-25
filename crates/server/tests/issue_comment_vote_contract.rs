@@ -4,9 +4,9 @@ use http_body_util::BodyExt;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
 use serde_json::json;
 use tower::ServiceExt;
-use yoram_persistence::{issue, original_email, AppRepository};
 use yoram_migration::Migrator;
-use yoram_server::{create_router_with_app_repository, RuntimeConfig};
+use yoram_persistence::{AppRepository, issue, original_email};
+use yoram_server::{RuntimeConfig, create_router_with_app_repository};
 
 mod rest_test_support;
 
@@ -130,6 +130,28 @@ async fn direct_comment_vote(
         .expect("comment id");
     let mut builder = Request::builder().method(Method::POST).uri(format!(
         "/yona/owner/projectYobi/issue/{issue_number}/comment/{comment_id}/{action}"
+    ));
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+
+    app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
+async fn direct_issue_vote(
+    app: axum::Router,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    issue_number: i64,
+    action: &str,
+) -> Response<Body> {
+    let mut builder = Request::builder().method(Method::POST).uri(format!(
+        "/yona/owner/projectYobi/issue/{issue_number}/{action}"
     ));
     if let Some(cookie_header) = cookie_header {
         builder = builder.header(http::header::COOKIE, cookie_header);
@@ -528,6 +550,70 @@ async fn issue_comment_vote_contract_allows_direct_share_and_denies_inherited_sh
     )
     .await;
     assert_eq!(inherited_share_vote.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn issue_vote_legacy_post_routes_redirect_and_preserve_idempotent_unvote() {
+    let (app, _, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (guest_csrf, guest_cookie, _) = register_user(app.clone(), "guest").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Public issue").await;
+
+    let vote = direct_issue_vote(
+        app.clone(),
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        1,
+        "vote",
+    )
+    .await;
+    assert_eq!(vote.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        vote.headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/owner/projectYobi/issue/1")
+    );
+
+    let detail = response_json(
+        rpc(
+            app.clone(),
+            "ReadIssueDetail",
+            Some(&guest_cookie),
+            None,
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(json_u64(&detail, "voterCount"), 1);
+    assert!(json_bool(&detail, "hasVoted"));
+
+    let unvote = direct_issue_vote(
+        app.clone(),
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        1,
+        "unvote",
+    )
+    .await;
+    assert_eq!(unvote.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        unvote
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/owner/projectYobi/issue/1")
+    );
+
+    let second_unvote =
+        direct_issue_vote(app, Some(&guest_cookie), Some(&guest_csrf), 1, "unvote").await;
+    assert_eq!(second_unvote.status(), StatusCode::SEE_OTHER);
 }
 
 #[tokio::test]

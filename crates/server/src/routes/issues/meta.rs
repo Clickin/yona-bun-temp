@@ -60,6 +60,65 @@ pub(super) async fn rest_issue_participation(
     Ok(rest_json_response(payload, ctx))
 }
 
+pub(super) async fn direct_issue_participation(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    action: &str,
+    service: PilotServiceImpl,
+) -> Response {
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let session = match service.session_manager.read_session_from_headers(&headers) {
+        Some(session) if session.user_id.is_some() => session,
+        _ => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    if require_valid_csrf(&service.session_manager, &headers, &session).is_err() {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    let actor = match require_authenticated_user(repository, session.user_id).await {
+        Ok(actor) => actor,
+        Err(error) => return direct_status_from_connect_error(error).into_response(),
+    };
+    let access =
+        match read_issue_access(repository, &owner, &project, issue_number, Some(actor.id)).await {
+            Ok(access) => access,
+            Err(error) => return direct_status_from_connect_error(error).into_response(),
+        };
+    if !access.viewer_can_comment() {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+
+    match action {
+        "vote" => {
+            if repository
+                .vote_issue(access.issue.id, actor.id)
+                .await
+                .is_err()
+            {
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+        }
+        "unvote" => {
+            if repository
+                .unvote_issue(access.issue.id, actor.id)
+                .await
+                .is_err()
+            {
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+        }
+        _ => return StatusCode::BAD_REQUEST.into_response(),
+    }
+
+    redirect_to(
+        &service.base_path,
+        &format!("/{owner}/{project}/issue/{issue_number}"),
+    )
+}
+
 pub(crate) async fn issue_participation_mutation(
     service: &PilotServiceImpl,
     ctx: Context,
@@ -335,11 +394,13 @@ pub(crate) async fn issue_sharer_mutation(
             .await
             .map_err(internal_error)?
     } else if normalized_target_type.is_empty() || normalized_target_type == "user" {
-        vec![repository
-            .find_user_by_login_id(&request.login_id)
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?]
+        vec![
+            repository
+                .find_user_by_login_id(&request.login_id)
+                .await
+                .map_err(internal_error)?
+                .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?,
+        ]
     } else {
         return Err(ConnectError::invalid_argument(
             "unsupported issue sharer target type",
