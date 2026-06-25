@@ -906,6 +906,7 @@ export function WorkspacePage(props: {
   const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(profile.avatarUrl, headlineName);
   const profileEmailAddress = profile.primaryEmailAddress || session.emailAddress;
   const showUserEmail = props.runtimeConfig.showUserEmail !== false;
+  const showUserStreams = !profile.isGuest;
 
   return (
     <main>
@@ -972,414 +973,416 @@ export function WorkspacePage(props: {
               </div>
             </div>
 
-            <div className="user-stream-box">
-              <div className="pull-right">
-                <span>{daysAgoPrefixLabel}</span>
-                <input
-                  className="input-mini-min"
-                  defaultValue={daysAgo}
-                  id="daysAgoBtn"
-                  max={99}
-                  min={1}
-                  name="daysAgo"
-                  type="number"
-                />
-                <span>{daysAgoSuffixLabel}</span>
-              </div>
-              <ul className="nav nav-tabs">
-                <li className={activeTab === "issues" ? "active" : undefined}>
-                  <a
-                    data-toggle="tab"
-                    href="#issues"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setActiveTab("issues");
-                    }}
-                  >
-                    {`${issueTabLabel} `}
-                    <span className="num-badge">{issueItems.length}</span>
-                  </a>
-                </li>
-                <li className={activeTab === "pullRequests" ? "active" : undefined}>
-                  <a
-                    data-toggle="tab"
-                    href="#pullRequests"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setActiveTab("pullRequests");
-                    }}
-                  >
-                    {`${pullRequestTabLabel} `}
-                    <span className="num-badge">{pullRequestItems.length}</span>
-                  </a>
-                </li>
-                <li className={activeTab === "projects" ? "active" : undefined}>
-                  <a
-                    data-toggle="tab"
-                    href="#projects"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setActiveTab("projects");
-                    }}
-                  >
-                    {`${projectsTabLabel} `}
-                    <span className="num-badge">{memberProjects.length}</span>
-                  </a>
-                </li>
-                <li>
-                  <div
-                    className="two-column-icon mr10 hide-in-mobile"
-                    data-content={twoColumnModeDescription}
-                    id="two-column-mode-checkbox"
-                    title={twoColumnModeLabel}
-                  >
-                    <label className="checkbox" aria-label={twoColumnViewLabel}>
-                      <div className="two-column-icon-border">
-                        <input id="two-column-mode" type="checkbox" />
-                        <span className="two-column-mode-text">{twoColumnViewLabel}</span>
-                      </div>
-                    </label>
-                  </div>
-                </li>
-              </ul>
-              <div className="tab-content">
-                <div
-                  className={`tab-pane ${activeTab === "issues" ? "active" : ""}`}
-                  hidden={activeTab !== "issues"}
-                  id="issues"
-                >
-                  <ul className="nav nav-tabs nm">
-                    <li className={activeIssueTab === "open" ? "active" : undefined}>
-                      <a
-                        data-toggle="tab"
-                        href="#openIssues"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          setActiveIssueTab("open");
-                        }}
-                      >
-                        {`${openIssueStateLabel} `}
-                        <span className="num-badge">{openIssues.length}</span>
-                      </a>
-                    </li>
-                    <li className={activeIssueTab === "closed" ? "active" : undefined}>
-                      <a
-                        data-toggle="tab"
-                        href="#closedIssues"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          setActiveIssueTab("closed");
-                        }}
-                      >
-                        {`${closedIssueStateLabel} `}
-                        <span className="num-badge">{closedIssues.length}</span>
-                      </a>
-                    </li>
-                    <li className="show-subtasks-li">
-                      <div
-                        className="show-subtasks mr10"
-                        data-content={showSubtasksDescription}
-                        data-placement="top"
-                        data-toggle="popover"
-                        data-trigger="hover"
-                        id="two-column-mode-checkbox"
-                        title={showSubtasksLabel}
-                      >
-                        <label className="checkbox" aria-label={showSubtasksLabel}>
-                          <div className="show-subtasks-button-border">
-                            <input id="toggle-show-subtasks" type="checkbox" />
-                            <span className="show-subtasks-text">{showSubtasksLabel}</span>
-                          </div>
-                        </label>
-                      </div>
-                    </li>
-                  </ul>
-                  <div className="tab-content">
-                    <div
-                      className={`tab-pane ${activeIssueTab === "open" ? "active" : ""}`}
-                      hidden={activeIssueTab !== "open"}
-                      id="openIssues"
-                    >
-                      {issueItems.length === 0 ? (
-                        <div className="error-wrap">
-                          <p>{noIssueLabel}</p>
-                        </div>
-                      ) : null}
-                      <PublicProfileIssueItems
-                        items={openIssues}
-                        messages={props.messages}
-                        runtimeConfig={props.runtimeConfig}
-                      />
-                    </div>
-                    <div
-                      className={`tab-pane ${activeIssueTab === "closed" ? "active" : ""}`}
-                      hidden={activeIssueTab !== "closed"}
-                      id="closedIssues"
-                    >
-                      {issueItems.length === 0 ? (
-                        <div className="error-wrap">
-                          <p>{noIssueLabel}</p>
-                        </div>
-                      ) : null}
-                      <PublicProfileIssueItems
-                        items={closedIssues}
-                        messages={props.messages}
-                        runtimeConfig={props.runtimeConfig}
-                      />
-                    </div>
-                  </div>
+            {showUserStreams ? (
+              <div className="user-stream-box">
+                <div className="pull-right">
+                  <span>{daysAgoPrefixLabel}</span>
+                  <input
+                    className="input-mini-min"
+                    defaultValue={daysAgo}
+                    id="daysAgoBtn"
+                    max={99}
+                    min={1}
+                    name="daysAgo"
+                    type="number"
+                  />
+                  <span>{daysAgoSuffixLabel}</span>
                 </div>
-
-                <div
-                  className={`tab-pane ${activeTab === "pullRequests" ? "active" : ""}`}
-                  hidden={activeTab !== "pullRequests"}
-                  id="pullRequests"
-                >
-                  {pullRequestItems.length === 0 ? (
-                    <div className="error-wrap">
-                      <p>{noPullRequestLabel}</p>
+                <ul className="nav nav-tabs">
+                  <li className={activeTab === "issues" ? "active" : undefined}>
+                    <a
+                      data-toggle="tab"
+                      href="#issues"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setActiveTab("issues");
+                      }}
+                    >
+                      {`${issueTabLabel} `}
+                      <span className="num-badge">{issueItems.length}</span>
+                    </a>
+                  </li>
+                  <li className={activeTab === "pullRequests" ? "active" : undefined}>
+                    <a
+                      data-toggle="tab"
+                      href="#pullRequests"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setActiveTab("pullRequests");
+                      }}
+                    >
+                      {`${pullRequestTabLabel} `}
+                      <span className="num-badge">{pullRequestItems.length}</span>
+                    </a>
+                  </li>
+                  <li className={activeTab === "projects" ? "active" : undefined}>
+                    <a
+                      data-toggle="tab"
+                      href="#projects"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setActiveTab("projects");
+                      }}
+                    >
+                      {`${projectsTabLabel} `}
+                      <span className="num-badge">{memberProjects.length}</span>
+                    </a>
+                  </li>
+                  <li>
+                    <div
+                      className="two-column-icon mr10 hide-in-mobile"
+                      data-content={twoColumnModeDescription}
+                      id="two-column-mode-checkbox"
+                      title={twoColumnModeLabel}
+                    >
+                      <label className="checkbox" aria-label={twoColumnViewLabel}>
+                        <div className="two-column-icon-border">
+                          <input id="two-column-mode" type="checkbox" />
+                          <span className="two-column-mode-text">{twoColumnViewLabel}</span>
+                        </div>
+                      </label>
                     </div>
-                  ) : null}
-                  <ul className="post-list-wrap row-fluid">
-                    {pullRequestItems.map((pullRequest) => (
-                      <li
-                        className="post-item"
-                        key={`${pullRequest.ownerName}/${pullRequest.projectName}/${pullRequest.pullRequestNumber}`}
+                  </li>
+                </ul>
+                <div className="tab-content">
+                  <div
+                    className={`tab-pane ${activeTab === "issues" ? "active" : ""}`}
+                    hidden={activeTab !== "issues"}
+                    id="issues"
+                  >
+                    <ul className="nav nav-tabs nm">
+                      <li className={activeIssueTab === "open" ? "active" : undefined}>
+                        <a
+                          data-toggle="tab"
+                          href="#openIssues"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            setActiveIssueTab("open");
+                          }}
+                        >
+                          {`${openIssueStateLabel} `}
+                          <span className="num-badge">{openIssues.length}</span>
+                        </a>
+                      </li>
+                      <li className={activeIssueTab === "closed" ? "active" : undefined}>
+                        <a
+                          data-toggle="tab"
+                          href="#closedIssues"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            setActiveIssueTab("closed");
+                          }}
+                        >
+                          {`${closedIssueStateLabel} `}
+                          <span className="num-badge">{closedIssues.length}</span>
+                        </a>
+                      </li>
+                      <li className="show-subtasks-li">
+                        <div
+                          className="show-subtasks mr10"
+                          data-content={showSubtasksDescription}
+                          data-placement="top"
+                          data-toggle="popover"
+                          data-trigger="hover"
+                          id="two-column-mode-checkbox"
+                          title={showSubtasksLabel}
+                        >
+                          <label className="checkbox" aria-label={showSubtasksLabel}>
+                            <div className="show-subtasks-button-border">
+                              <input id="toggle-show-subtasks" type="checkbox" />
+                              <span className="show-subtasks-text">{showSubtasksLabel}</span>
+                            </div>
+                          </label>
+                        </div>
+                      </li>
+                    </ul>
+                    <div className="tab-content">
+                      <div
+                        className={`tab-pane ${activeIssueTab === "open" ? "active" : ""}`}
+                        hidden={activeIssueTab !== "open"}
+                        id="openIssues"
                       >
-                        <div className="span10">
-                          <a
-                            className="avatar-wrap mlarge"
-                            href={appHref(
-                              props.runtimeConfig,
-                              projectHref(pullRequest.ownerName, pullRequest.projectName),
-                            )}
-                          >
-                            <img
-                              alt={`${pullRequest.ownerName} / ${pullRequest.projectName}`}
-                              src={resolveWorkspaceAvatarUrl("", pullRequest.projectName)}
-                            />
-                          </a>
-                          <div className="title-wrap">
+                        {issueItems.length === 0 ? (
+                          <div className="error-wrap">
+                            <p>{noIssueLabel}</p>
+                          </div>
+                        ) : null}
+                        <PublicProfileIssueItems
+                          items={openIssues}
+                          messages={props.messages}
+                          runtimeConfig={props.runtimeConfig}
+                        />
+                      </div>
+                      <div
+                        className={`tab-pane ${activeIssueTab === "closed" ? "active" : ""}`}
+                        hidden={activeIssueTab !== "closed"}
+                        id="closedIssues"
+                      >
+                        {issueItems.length === 0 ? (
+                          <div className="error-wrap">
+                            <p>{noIssueLabel}</p>
+                          </div>
+                        ) : null}
+                        <PublicProfileIssueItems
+                          items={closedIssues}
+                          messages={props.messages}
+                          runtimeConfig={props.runtimeConfig}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`tab-pane ${activeTab === "pullRequests" ? "active" : ""}`}
+                    hidden={activeTab !== "pullRequests"}
+                    id="pullRequests"
+                  >
+                    {pullRequestItems.length === 0 ? (
+                      <div className="error-wrap">
+                        <p>{noPullRequestLabel}</p>
+                      </div>
+                    ) : null}
+                    <ul className="post-list-wrap row-fluid">
+                      {pullRequestItems.map((pullRequest) => (
+                        <li
+                          className="post-item"
+                          key={`${pullRequest.ownerName}/${pullRequest.projectName}/${pullRequest.pullRequestNumber}`}
+                        >
+                          <div className="span10">
                             <a
-                              className="title project"
+                              className="avatar-wrap mlarge"
                               href={appHref(
                                 props.runtimeConfig,
                                 projectHref(pullRequest.ownerName, pullRequest.projectName),
                               )}
                             >
-                              {pullRequest.projectName}
-                            </a>
-                            <span className="post-id">{pullRequest.pullRequestNumber}</span>
-                            <a
-                              className="title"
-                              href={appHref(
-                                props.runtimeConfig,
-                                pullRequestHref(
-                                  pullRequest.ownerName,
-                                  pullRequest.projectName,
-                                  pullRequest.pullRequestNumber,
-                                ),
-                              )}
-                            >
-                              {pullRequest.title}
-                            </a>
-                          </div>
-                          <div className="infos">
-                            {pullRequest.contributorLabel ? (
-                              <PublicProfileUserTextLink
-                                label={pullRequest.contributorLabel}
-                                loginId={pullRequest.contributorLoginId}
-                                runtimeConfig={props.runtimeConfig}
+                              <img
+                                alt={`${pullRequest.ownerName} / ${pullRequest.projectName}`}
+                                src={resolveWorkspaceAvatarUrl("", pullRequest.projectName)}
                               />
-                            ) : (
-                              <span className="infos-item">{noAuthorLabel}</span>
-                            )}
-                            <span className="infos-item" title={pullRequest.updatedLabel}>
-                              {pullRequest.updatedLabel}
-                            </span>
-                            {pullRequest.commentCount > 0 ? (
+                            </a>
+                            <div className="title-wrap">
                               <a
-                                className="infos-item infos-icon-link"
+                                className="title project"
                                 href={appHref(
                                   props.runtimeConfig,
-                                  `${pullRequestHref(
+                                  projectHref(pullRequest.ownerName, pullRequest.projectName),
+                                )}
+                              >
+                                {pullRequest.projectName}
+                              </a>
+                              <span className="post-id">{pullRequest.pullRequestNumber}</span>
+                              <a
+                                className="title"
+                                href={appHref(
+                                  props.runtimeConfig,
+                                  pullRequestHref(
                                     pullRequest.ownerName,
                                     pullRequest.projectName,
                                     pullRequest.pullRequestNumber,
-                                  )}#comments`,
+                                  ),
                                 )}
                               >
-                                <i className="yobicon-comments"></i>
-                                <span className="size">{pullRequest.commentCount}</span>
+                                {pullRequest.title}
                               </a>
-                            ) : null}
-                          </div>
-                        </div>
-                        <div className="span2">
-                          <div className="mt5 pull-right">
-                            {pullRequest.receiverLabel ? (
-                              <PublicProfileUserAvatarLink
-                                label={pullRequest.receiverLabel}
-                                loginId={pullRequest.receiverLoginId}
-                                runtimeConfig={props.runtimeConfig}
-                              >
-                                <img
-                                  alt={pullRequest.receiverLabel}
-                                  height={32}
-                                  src={resolveWorkspaceAvatarUrl("", pullRequest.receiverLabel)}
-                                  width={32}
+                            </div>
+                            <div className="infos">
+                              {pullRequest.contributorLabel ? (
+                                <PublicProfileUserTextLink
+                                  label={pullRequest.contributorLabel}
+                                  loginId={pullRequest.contributorLoginId}
+                                  runtimeConfig={props.runtimeConfig}
                                 />
-                              </PublicProfileUserAvatarLink>
-                            ) : (
-                              <div className="empty-avatar-wrap">&nbsp;</div>
-                            )}
-                          </div>
-                          <div className={`state ${pullRequest.state} pull-right`}>
-                            {legacyMessage(
-                              props.messages,
-                              `pullRequest.state.${pullRequest.state}`,
-                            )}
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div
-                  className={`tab-pane ${activeTab === "projects" ? "active" : ""}`}
-                  hidden={activeTab !== "projects"}
-                  id="projects"
-                >
-                  {memberProjects.length === 0 ? (
-                    <div className="error-wrap">
-                      <p>{legacyMessage(props.messages, "project.is.empty")}</p>
-                    </div>
-                  ) : null}
-                  <ul className="user-streams all-projects">
-                    {memberProjects.map((project) => (
-                      <li className="project" key={`${project.ownerName}/${project.projectName}`}>
-                        <div className="info-wrap">
-                          <div className="pull-left">
-                            <a
-                              className="avatar-wrap small"
-                              href={appHref(
-                                props.runtimeConfig,
-                                projectHref(project.ownerName, project.projectName),
+                              ) : (
+                                <span className="infos-item">{noAuthorLabel}</span>
                               )}
-                            >
-                              <img
-                                alt={project.projectName}
-                                src={
-                                  project.logoUrl ||
-                                  resolveWorkspaceAvatarUrl("", project.projectName)
-                                }
-                              />
-                            </a>
+                              <span className="infos-item" title={pullRequest.updatedLabel}>
+                                {pullRequest.updatedLabel}
+                              </span>
+                              {pullRequest.commentCount > 0 ? (
+                                <a
+                                  className="infos-item infos-icon-link"
+                                  href={appHref(
+                                    props.runtimeConfig,
+                                    `${pullRequestHref(
+                                      pullRequest.ownerName,
+                                      pullRequest.projectName,
+                                      pullRequest.pullRequestNumber,
+                                    )}#comments`,
+                                  )}
+                                >
+                                  <i className="yobicon-comments"></i>
+                                  <span className="size">{pullRequest.commentCount}</span>
+                                </a>
+                              ) : null}
+                            </div>
                           </div>
-                          <div className="pull-left" style={{ marginLeft: 10 }}>
-                            <div className="header">
+                          <div className="span2">
+                            <div className="mt5 pull-right">
+                              {pullRequest.receiverLabel ? (
+                                <PublicProfileUserAvatarLink
+                                  label={pullRequest.receiverLabel}
+                                  loginId={pullRequest.receiverLoginId}
+                                  runtimeConfig={props.runtimeConfig}
+                                >
+                                  <img
+                                    alt={pullRequest.receiverLabel}
+                                    height={32}
+                                    src={resolveWorkspaceAvatarUrl("", pullRequest.receiverLabel)}
+                                    width={32}
+                                  />
+                                </PublicProfileUserAvatarLink>
+                              ) : (
+                                <div className="empty-avatar-wrap">&nbsp;</div>
+                              )}
+                            </div>
+                            <div className={`state ${pullRequest.state} pull-right`}>
+                              {legacyMessage(
+                                props.messages,
+                                `pullRequest.state.${pullRequest.state}`,
+                              )}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div
+                    className={`tab-pane ${activeTab === "projects" ? "active" : ""}`}
+                    hidden={activeTab !== "projects"}
+                    id="projects"
+                  >
+                    {memberProjects.length === 0 ? (
+                      <div className="error-wrap">
+                        <p>{legacyMessage(props.messages, "project.is.empty")}</p>
+                      </div>
+                    ) : null}
+                    <ul className="user-streams all-projects">
+                      {memberProjects.map((project) => (
+                        <li className="project" key={`${project.ownerName}/${project.projectName}`}>
+                          <div className="info-wrap">
+                            <div className="pull-left">
                               <a
-                                className="project-name"
+                                className="avatar-wrap small"
                                 href={appHref(
                                   props.runtimeConfig,
                                   projectHref(project.ownerName, project.projectName),
                                 )}
                               >
-                                {project.projectName}
+                                <img
+                                  alt={project.projectName}
+                                  src={
+                                    project.logoUrl ||
+                                    resolveWorkspaceAvatarUrl("", project.projectName)
+                                  }
+                                />
                               </a>
-                              {project.originOwnerName && project.originProjectName ? (
-                                <>
-                                  <i className="yobicon-split yobicon-white vmiddle" />
-                                  <span>
-                                    {" "}
-                                    <a
-                                      href={appHref(
-                                        props.runtimeConfig,
-                                        projectHref(
-                                          project.originOwnerName,
-                                          project.originProjectName,
-                                        ),
-                                      )}
-                                    >
-                                      {project.originOwnerName}/{project.originProjectName}
-                                    </a>
-                                  </span>
-                                </>
-                              ) : null}
-                              {project.projectScope === "private" ? (
-                                <i className="yobicon-lock yobicon-small" />
-                              ) : null}
                             </div>
-                            <div className="desc">{project.overview}</div>
-                            <div className="name-tag">
-                              <i className="yobicon-friends yobicon-middle" />
-                              <strong>{project.memberCount}</strong>{" "}
-                              <a
-                                className="owner-name-small"
-                                href={appHref(props.runtimeConfig, `/${project.ownerName}`)}
-                              >
-                                {project.ownerName}
-                              </a>{" "}
-                              <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
-                              {project.lastPushedLabel ? (
-                                <>
-                                  <span>, {projectCodeUpdateLabel} </span>
-                                  <span title={project.lastPushedLabel}>
-                                    {project.lastPushedLabel}
-                                  </span>
-                                </>
+                            <div className="pull-left" style={{ marginLeft: 10 }}>
+                              <div className="header">
+                                <a
+                                  className="project-name"
+                                  href={appHref(
+                                    props.runtimeConfig,
+                                    projectHref(project.ownerName, project.projectName),
+                                  )}
+                                >
+                                  {project.projectName}
+                                </a>
+                                {project.originOwnerName && project.originProjectName ? (
+                                  <>
+                                    <i className="yobicon-split yobicon-white vmiddle" />
+                                    <span>
+                                      {" "}
+                                      <a
+                                        href={appHref(
+                                          props.runtimeConfig,
+                                          projectHref(
+                                            project.originOwnerName,
+                                            project.originProjectName,
+                                          ),
+                                        )}
+                                      >
+                                        {project.originOwnerName}/{project.originProjectName}
+                                      </a>
+                                    </span>
+                                  </>
+                                ) : null}
+                                {project.projectScope === "private" ? (
+                                  <i className="yobicon-lock yobicon-small" />
+                                ) : null}
+                              </div>
+                              <div className="desc">{project.overview}</div>
+                              <div className="name-tag">
+                                <i className="yobicon-friends yobicon-middle" />
+                                <strong>{project.memberCount}</strong>{" "}
+                                <a
+                                  className="owner-name-small"
+                                  href={appHref(props.runtimeConfig, `/${project.ownerName}`)}
+                                >
+                                  {project.ownerName}
+                                </a>{" "}
+                                <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
+                                {project.lastPushedLabel ? (
+                                  <>
+                                    <span>, {projectCodeUpdateLabel} </span>
+                                    <span title={project.lastPushedLabel}>
+                                      {project.lastPushedLabel}
+                                    </span>
+                                  </>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="stats-wrap pull-right">
+                            <div className="stats">
+                              {project.viewerCanWatch ? (
+                                <a
+                                  className="ybtn watchBtn"
+                                  href={appHref(
+                                    props.runtimeConfig,
+                                    `${projectHref(project.ownerName, project.projectName)}/${
+                                      project.isWatching ? "unwatch" : "watch"
+                                    }`,
+                                  )}
+                                >
+                                  <i
+                                    className={`${
+                                      project.isWatching ? "yobicon-eye-open" : "yobicon-eye-close"
+                                    } yobicon-middle yobicon-white`}
+                                  ></i>{" "}
+                                  {legacyMessage(
+                                    props.messages,
+                                    project.isWatching
+                                      ? "notification.unwatch"
+                                      : "notification.watch",
+                                  )}
+                                  <span className="num-badge">{project.watchCount}</span>
+                                </a>
+                              ) : null}
+                              {project.viewerCanLeave ? (
+                                <a
+                                  className="nbtn black medium last leaveProject"
+                                  data-projectname={project.projectName}
+                                  href={appHref(
+                                    props.runtimeConfig,
+                                    `/info/leave/${project.ownerName}/${project.projectName}`,
+                                  )}
+                                >
+                                  <i className="yobicon-trash"></i>{" "}
+                                  {legacyMessage(props.messages, "userinfo.leaveProject")}
+                                </a>
                               ) : null}
                             </div>
                           </div>
-                        </div>
-                        <div className="stats-wrap pull-right">
-                          <div className="stats">
-                            {project.viewerCanWatch ? (
-                              <a
-                                className="ybtn watchBtn"
-                                href={appHref(
-                                  props.runtimeConfig,
-                                  `${projectHref(project.ownerName, project.projectName)}/${
-                                    project.isWatching ? "unwatch" : "watch"
-                                  }`,
-                                )}
-                              >
-                                <i
-                                  className={`${
-                                    project.isWatching ? "yobicon-eye-open" : "yobicon-eye-close"
-                                  } yobicon-middle yobicon-white`}
-                                ></i>{" "}
-                                {legacyMessage(
-                                  props.messages,
-                                  project.isWatching
-                                    ? "notification.unwatch"
-                                    : "notification.watch",
-                                )}
-                                <span className="num-badge">{project.watchCount}</span>
-                              </a>
-                            ) : null}
-                            {project.viewerCanLeave ? (
-                              <a
-                                className="nbtn black medium last leaveProject"
-                                data-projectname={project.projectName}
-                                href={appHref(
-                                  props.runtimeConfig,
-                                  `/info/leave/${project.ownerName}/${project.projectName}`,
-                                )}
-                              >
-                                <i className="yobicon-trash"></i>{" "}
-                                {legacyMessage(props.messages, "userinfo.leaveProject")}
-                              </a>
-                            ) : null}
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : null}
           </section>
         </div>
       </div>
