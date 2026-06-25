@@ -6869,6 +6869,26 @@ export function LegacyMarkdownHelp(props: { messages?: LegacyMessageLookup } = {
     {
       input: "- [ ] Todos\n    - [x] To do A\n    - [ ] To do B\n    - [ ] To do C",
       label: "Checklist",
+      outputElement: (
+        <div className="markdown-wrap">
+          <ul>
+            <li>
+              <input type="checkbox" /> Todos
+              <ul>
+                <li>
+                  <input checked readOnly type="checkbox" /> To do A
+                </li>
+                <li>
+                  <input type="checkbox" /> To do B
+                </li>
+                <li>
+                  <input type="checkbox" /> To do C
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      ),
       target: "markdownTaskList",
     },
     {
@@ -6925,10 +6945,12 @@ export function LegacyMarkdownHelp(props: { messages?: LegacyMessageLookup } = {
                 <pre>{section.input}</pre>
               </div>
               <div className="span6">
-                <MarkdownRenderer
-                  className="markdown-wrap"
-                  markdown={section.outputMarkdown ?? section.input}
-                />
+                {section.outputElement ?? (
+                  <MarkdownRenderer
+                    className="markdown-wrap"
+                    markdown={section.outputMarkdown ?? section.input}
+                  />
+                )}
               </div>
             </div>
           </li>

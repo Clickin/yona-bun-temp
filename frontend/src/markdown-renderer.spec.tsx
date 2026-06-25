@@ -23,6 +23,10 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="markdown-help-item markdownShortLinks"');
     expect(html).toContain('class="markdown-help-item markdownTaskList"');
     expect(html).not.toContain('class="tasklist task-show"');
+    expect(html).not.toContain('class="task-list-item"');
+    expect(html).not.toContain('class="task-list-item-checkbox"');
+    expect(html).toContain('<input type="checkbox"/> Todos');
+    expect(html).toContain('<input readOnly="" type="checkbox" checked=""/> To do A');
     expect(html).toContain("Markdown Input");
     expect(html).toContain("Markdown Output");
     expect(html).toContain("- Green.");
