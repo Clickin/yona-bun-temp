@@ -262,12 +262,14 @@ export function OrganizationHeader(props: {
                         href={enrollmentHref}
                         id="enrollBtn"
                         onClick={(event) => {
-                          event.preventDefault();
-                          if (detail.enrollmentRequested) {
-                            props.onCancelEnrollOrganization?.(detail.organizationName);
+                          const handler = detail.enrollmentRequested
+                            ? props.onCancelEnrollOrganization
+                            : props.onEnrollOrganization;
+                          if (!handler) {
                             return;
                           }
-                          props.onEnrollOrganization?.(detail.organizationName);
+                          event.preventDefault();
+                          handler(detail.organizationName);
                         }}
                       >
                         <i
@@ -1510,8 +1512,11 @@ export function OrganizationMembersPage(props: {
                               `member/${member.userId}/edit`,
                             )}
                             onClick={(event) => {
+                              if (!props.onUpdateMemberRole) {
+                                return;
+                              }
                               event.preventDefault();
-                              props.onUpdateMemberRole?.(
+                              props.onUpdateMemberRole(
                                 detail.organizationName,
                                 member.userId,
                                 roleOption.role,

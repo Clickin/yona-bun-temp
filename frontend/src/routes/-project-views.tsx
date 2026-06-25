@@ -2067,8 +2067,11 @@ export function ProjectMembersPage(props: {
                                 data-href={`/${detail.ownerName}/${detail.projectName}/member/${member.userId}/edit`}
                                 data-loginid={member.loginId}
                                 onClick={(event) => {
+                                  if (!props.onUpdateMemberRole) {
+                                    return;
+                                  }
                                   event.preventDefault();
-                                  props.onUpdateMemberRole?.(member.userId, roleOption.role);
+                                  props.onUpdateMemberRole(member.userId, roleOption.role);
                                 }}
                                 type="button"
                               >
