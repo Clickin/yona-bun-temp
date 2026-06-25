@@ -46,25 +46,26 @@ const overview: WorkspaceOverviewViewModel = {
 };
 
 describe("workspace settings legacy i18n opt-in", () => {
-  it("keeps legacy key fallbacks when rendered without AppRuntimeContext messages", () => {
+  it("uses legacy default messages when rendered through direct test helpers", () => {
     const profileHtml = renderWorkspaceSettings("profile", "/user/editform", overview);
     const passwordHtml = renderWorkspaceSettings("password", "/user/editform/password", overview);
     const emailsHtml = renderWorkspaceSettings("emails", "/user/editform/emails", overview);
     const tokenHtml = renderWorkspaceSettings("token", "/user/editform/token", overview);
 
-    expect(profileHtml).toContain("<h3>userinfo.accountSetting</h3>");
-    expect(profileHtml).toContain(">userinfo.editProfile</a>");
-    expect(profileHtml).toContain(">user.loginId</dt>");
-    expect(profileHtml).toContain(">userinfo.changeAvatar");
-    expect(profileHtml).toContain(">button.save</button>");
-    expect(passwordHtml).toContain(">user.currentPassword</dt>");
-    expect(passwordHtml).toContain(">site.resetPasswordEmail.title</a>");
-    expect(emailsHtml).toContain('placeholder="user.email.new"');
-    expect(emailsHtml).toContain(">emails.main.email</span>");
-    expect(emailsHtml).toContain(">emails.set.as.main</button>");
-    expect(tokenHtml).toContain("<h3>userinfo.token</h3>");
-    expect(tokenHtml).toContain(">userinfo.recreateToken</button>");
-    expect(passwordHtml).toContain(">user.newPassword</dt>");
+    expect(profileHtml).toContain("<h3>Account</h3>");
+    expect(profileHtml).toContain(">Edit profile</a>");
+    expect(profileHtml).toContain(">Login ID</dt>");
+    expect(profileHtml).toContain(">Change avatar");
+    expect(profileHtml).toContain(">Save</button>");
+    expect(profileHtml).not.toContain("userinfo.accountSetting");
+    expect(passwordHtml).toContain(">Current password</dt>");
+    expect(passwordHtml).toContain(">Password reset request</a>");
+    expect(emailsHtml).toContain('placeholder="New E-mail address"');
+    expect(emailsHtml).toContain(">Primary email address</span>");
+    expect(emailsHtml).toContain(">Set as primary email address.</button>");
+    expect(tokenHtml).toContain("<h3>User Token</h3>");
+    expect(tokenHtml).toContain(">Recreate User Token</button>");
+    expect(passwordHtml).toContain(">New password</dt>");
   });
 
   it("uses Korean legacy messages for user settings controls when lookup is provided", () => {

@@ -126,6 +126,11 @@
   of rendering raw keys. The source-level contract still keeps all visible i18n
   call sites on legacy keys. Focused evidence:
   `frontend/src/auth-workspace-shell.spec.tsx` and `frontend/src/i18n.spec.tsx`.
+- 2026-06-25 workspace-settings direct-render i18n continuation:
+  `workspace-settings-i18n.spec.tsx` now treats the direct render helper as a
+  user-visible render path and expects legacy default-message output for
+  profile, password, email, and token controls rather than raw key leakage.
+  Korean runtime lookup coverage remains unchanged.
 - 2026-06-25 root search form continuation: root navigation preserves the
   legacy `common/navbar.scala.html` global search anchors:
   `name="gnb-search-form"`, hidden `searchType=auto`, `keyword`, and
