@@ -805,7 +805,8 @@ describe("site-admin route parity harness", () => {
     expect(dataHtml).toContain(">Export<");
     expect(dataHtml).toContain('href="/yona/sites/export"');
     expect(dataHtml).toContain(">Import<");
-    expect(dataHtml).toContain('action="/yona/sites/import"');
+    expect(dataHtml).not.toContain('action="/yona/sites/import"');
+    expect(dataHtml).not.toContain('method="post"');
     expect(dataHtml).toContain('name="data"');
     expect(dataHtml).toContain('<input type="submit"/>');
     expect(dataHtml).not.toContain('value="site.data.import"');

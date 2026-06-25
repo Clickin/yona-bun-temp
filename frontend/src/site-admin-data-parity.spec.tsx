@@ -18,13 +18,14 @@ describe("site-admin data management parity", () => {
       'className="ybtn ybtn-primary" href={appHref(runtimeConfig, "/sites/export")}',
     );
     expect(routeSource).toContain('href={appHref(runtimeConfig, "/sites/export")}');
-    expect(routeSource).toContain('action={appHref(runtimeConfig, "/sites/import")}');
+    expect(routeSource).not.toContain('action={appHref(runtimeConfig, "/sites/import")}');
     expect(routeSource).toContain("importSiteDataRest");
     expect(routeSource).toContain("JSON.parse(await data.text())");
     expect(routeSource).toContain("onImportSiteData");
     expect(routeSource).not.toContain('data-deferred="site.data.export"');
     expect(routeSource).not.toContain('data-deferred="site.data.import"');
     expect(routeSource).toContain('encType="multipart/form-data"');
+    expect(routeSource).not.toMatch(/<form[\s\S]{0,240}method="post"/);
     expect(routeSource).toContain('name="csrfToken"');
     expect(routeSource).toContain('name="data"');
     expect(routeSource).toContain('type="submit"');

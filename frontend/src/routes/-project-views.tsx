@@ -1209,23 +1209,20 @@ export function ProjectImportPage(props: {
       ? [{ organization: false, ownerName: selectedOwnerName, selected: true }]
       : [];
   const createFormHref = `/projectform?owner=${encodeURIComponent(formState.ownerName)}`;
-  const actionBasePath = props.basePath?.replace(/\/+$/, "") ?? "";
-  const importAction = `${actionBasePath}/_import`;
 
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
         <div className="form-wrap new-project">
           <form
-            action={importAction}
             className="frm-wrap"
             id="importGit"
-            method="post"
             onSubmit={(event) => {
-              if (props.onImportProject) {
-                event.preventDefault();
-                void props.onImportProject(formState);
+              event.preventDefault();
+              if (!props.onImportProject) {
+                return;
               }
+              void props.onImportProject(formState);
             }}
           >
             <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />

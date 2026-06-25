@@ -494,8 +494,9 @@
   evidence: `frontend/src/form-submit-boundary.spec.tsx`.
 - 2026-06-25 native POST guard hardening: the React form boundary now detects
   JSX native POST forms across quoted, single-quoted, expression-wrapped, and
-  case-varied `method` spellings, so only the documented multipart import forms
-  can keep direct POST behavior. Focused evidence:
+  case-varied `method` spellings. The route tree now has no React-rendered
+  native POST forms; multipart import screens keep legacy fields and file inputs
+  but submit through React handlers and API clients. Focused evidence:
   `frontend/src/form-submit-boundary.spec.tsx`.
 - 2026-06-25 form button submit guard hardening: the same boundary now scans
   route JSX form bodies and requires every nested `button` to declare `type`, so
@@ -625,7 +626,7 @@ Frontend type-safety parity note: on 2026-06-25 the React legacy page/test surfa
 
 Secret bootstrap submit-boundary note: on 2026-06-25 the React-rendered `/secret` site-admin bootstrap form was aligned with the auth/signup REST boundary. The SPA form now keeps the legacy `welcome/secret.scala.html` shell and field names but does not render `action="/secret"` or `method="post"`; submit always uses `/api/v1/auth/secret` JSON and navigates to `/restart`. The direct legacy `POST /secret` route remains a server compatibility adapter with the legacy redirect. Coverage: `frontend/src/route-parity.spec.tsx` plus `auth_workspace_contract::secret_admin_setup_rest_updates_legacy_default_admin_and_redirect_fallback_remains`.
 
-Comment submit-boundary note: on 2026-06-25 the React-rendered board, issue, pull-request review, and commit discussion comment/review forms were aligned with the REST JSON submit boundary. These forms still preserve legacy shell anchors, route strings, editor IDs, multipart upload markers, and request-button metadata for UI parity, but they call `preventDefault()` unconditionally and no longer render form-level native `method="post"` fallbacks. The only remaining React route-level native POST forms are the documented multipart import flows (`/_import` and `/sites/import`). Coverage: `frontend/src/form-submit-boundary.spec.tsx`, `frontend/src/code-views.spec.tsx`, and focused route parity specs.
+Comment/import submit-boundary note: on 2026-06-25 the React-rendered board, issue, pull-request review, commit discussion, project import, and site import forms were aligned with the REST/API submit boundary. These forms still preserve legacy shell anchors, route strings, editor IDs, multipart upload markers, file inputs, and request-button metadata for UI parity, but they call `preventDefault()` unconditionally and no longer render form-level native `method="post"` fallbacks. Coverage: `frontend/src/form-submit-boundary.spec.tsx`, `frontend/src/code-views.spec.tsx`, and focused route parity specs.
 
 Member/enrollment action boundary note: on 2026-06-25 project and organization
 member role dropdowns, enrollment anchors, watch/unwatch anchors, and
@@ -722,7 +723,7 @@ Issue label route module diet note: direct issue label/category/copy/CSS handler
 
 Issue label submit-boundary note: on 2026-06-25 the React-rendered `/:owner/:project/issue/labelsform` copy/create forms were aligned with the auth/workspace REST boundary. The page still preserves the legacy `project/issuelabels.scala.html` shell anchors (`#copyLabel`, `#frmNewLabel`, `.label-preset-colors`, and label/category list data URIs), but the copy/create forms no longer render direct `action` or form-level `method="post"` fallbacks; submit always uses the typed REST wrappers for `/api/v1/owners/:owner/projects/:project/labels` and `/labels/copy`. The legacy direct label routes remain server compatibility adapters and data URI evidence, not the React SPA submit path.
 
-React form submit-boundary guard note: on 2026-06-25 `frontend/src/form-submit-boundary.spec.tsx` began scanning every route source file for form-level `method="post"`. The only allowed native POST forms are documented direct multipart import routes (`/_import`, `/sites/import`). REST-owned auth, workspace, organization, project create/settings/member/webhook/fork, issue form/detail comments, issue label, board post/detail comments, PR review/comments, commit discussion comments, milestone, and site-mail forms are guarded against reintroducing native form submit fallbacks.
+React form submit-boundary guard note: on 2026-06-25 `frontend/src/form-submit-boundary.spec.tsx` began scanning every route source file for form-level `method="post"`. No React route-level native POST forms are allowed; REST/API-owned auth, workspace, organization, project create/settings/member/webhook/fork/import, issue form/detail comments, issue label, board post/detail comments, PR review/comments, commit discussion comments, milestone, site-import, and site-mail forms are guarded against reintroducing native form submit fallbacks.
 
 Project REST route module diet note: REST project/organization handler bodies, project webhook delivery helpers, repository cleanup helpers, legacy external post watcher handler, and legacy external milestone create handler/parser/result mapper moved from monolithic `crates/server/src/lib.rs` into `crates/server/src/routes/projects.rs` on 2026-06-19. Shared project/organization detail, logo URL, member summary, milestone summary, organization member/admin/enrollment, role option, and project date-label projection helpers now live in `crates/server/src/routes/utils.rs` so project routes, site-admin routes, notifications, and the root service implementation reuse the same projection boundary without root-owned mapper bodies. This is a route-module ownership build/check diet change; behavior remains covered by `rest_contract::rest_project_routes_cover_directory_views_and_mutations`, `rest_contract::rest_organization_routes_cover_directory_views_and_membership_mutations`, `milestone_contract`, and the focused org/project contract suites.
 

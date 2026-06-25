@@ -1678,10 +1678,10 @@ export function SiteAdminDataPage({
 }) {
   const messages = useSiteAdminMessages(i18nMessages);
   async function handleImportSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!onImportSiteData) {
       return;
     }
-    event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const data = formData.get("data");
     if (!(data instanceof File) || data.size === 0) {
@@ -1736,9 +1736,7 @@ export function SiteAdminDataPage({
               <h3>{legacyMessage(messages, "site.data.import")}</h3>
               <p>{legacyMessage(messages, "site.data.import.info")}</p>
               <form
-                action={appHref(runtimeConfig, "/sites/import")}
                 encType="multipart/form-data"
-                method="post"
                 onSubmit={(event) => void handleImportSubmit(event)}
               >
                 <input name="csrfToken" readOnly type="hidden" value={csrfToken} />

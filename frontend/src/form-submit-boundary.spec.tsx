@@ -2,35 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-type AllowedFormPost = {
-  file: string;
-  handler?: string;
-  marker: string;
-  primaryRestMarker: string;
-  reason: string;
-};
-
 type AllowedDefaultGetActionForm = {
   file: string;
   marker: string;
   reason: string;
 };
-
-const allowedFormPosts: AllowedFormPost[] = [
-  {
-    file: "routes/-project-views.tsx",
-    marker: 'id="importGit"',
-    primaryRestMarker: "props.onImportProject",
-    reason: "project Git import keeps the legacy direct form action as a fallback",
-  },
-  {
-    file: "routes/sites/$pageName/route.tsx",
-    handler: "handleImportSubmit",
-    marker: 'action={appHref(runtimeConfig, "/sites/import")}',
-    primaryRestMarker: "onImportSiteData",
-    reason: "site data import keeps the legacy direct multipart action as a fallback",
-  },
-];
 
 const allowedDefaultGetActionForms: AllowedDefaultGetActionForm[] = [
   {
@@ -349,39 +325,19 @@ function mutationDataHrefElements() {
 }
 
 describe("React form submit boundary", () => {
-  it("allows native POST only for documented direct multipart import forms", () => {
+  it("keeps React route forms free of native POST fallback", () => {
     const actual = listRouteFiles().flatMap((file) => {
       const source = readRouteSource(file);
       return Array.from(source.matchAll(formPostPattern), (match) => ({
         file,
-        index: match.index ?? 0,
         line: lineNumberForIndex(source, match.index ?? 0),
-        source,
       }));
     });
 
     expect(
       actual.map((item) => `${item.file}:${item.line}`),
-      `Update allowedFormPosts with a concrete reason when a native POST form is intentionally kept.`,
-    ).toHaveLength(allowedFormPosts.length);
-
-    for (const allowed of allowedFormPosts) {
-      const source = readRouteSource(allowed.file);
-      const [beforeMarker, ...afterMarker] = source.split(allowed.marker);
-      expect(afterMarker, allowed.reason).not.toHaveLength(0);
-      const markerIndex = beforeMarker.length;
-      const window = source.slice(Math.max(0, markerIndex - 700), markerIndex + 900);
-      expect(window, allowed.reason).toMatch(formPostPattern);
-      expect(window, allowed.reason).toContain("onSubmit=");
-      if (allowed.handler) {
-        const bodies = functionBodies(source, allowed.handler);
-        expect(bodies, allowed.reason).not.toHaveLength(0);
-        expect(bodies.join("\n"), allowed.reason).toContain("event.preventDefault()");
-      } else {
-        expect(window, allowed.reason).toContain("event.preventDefault()");
-      }
-      expect(source, allowed.reason).toContain(allowed.primaryRestMarker);
-    }
+      "React-rendered route forms must use SPA/API submit handlers instead of native POST.",
+    ).toEqual([]);
   });
 
   it("keeps default-method action forms limited to legacy GET search filters", () => {
@@ -573,7 +529,7 @@ describe("React form submit boundary", () => {
     }
   });
 
-  it("keeps site data import on the React REST JSON primary boundary", () => {
+  it("keeps site data import on the React REST JSON boundary", () => {
     const source = readRouteSource("routes/sites/$pageName/route.tsx");
     const apiSource = fs.readFileSync(path.resolve(__dirname, "api/site-admin.ts"), "utf8");
 
@@ -582,11 +538,13 @@ describe("React form submit boundary", () => {
     expect(source).toContain("JSON.parse(await data.text())");
     expect(source).toContain("onImportSiteData");
     expect(source).toContain("event.preventDefault()");
+    expect(source).not.toContain('action={appHref(runtimeConfig, "/sites/import")}');
   });
 
-  it("keeps project Git import on the React REST JSON primary boundary", () => {
+  it("keeps project Git import on the React REST JSON boundary", () => {
     const routeSource = readRouteSource("routes/[_]import/route.tsx");
     const apiSource = fs.readFileSync(path.resolve(__dirname, "api/org-project.ts"), "utf8");
+    const viewSource = readRouteSource("routes/-project-views.tsx");
 
     expect(routeSource).toContain("importProjectRest");
     expect(apiSource).toContain(
@@ -594,7 +552,8 @@ describe("React form submit boundary", () => {
     );
     expect(routeSource).toContain("onImportProject");
     expect(routeSource).toContain("navigateToAppHref");
-    expect(readRouteSource("routes/-project-views.tsx")).toContain("event.preventDefault()");
+    expect(viewSource).toContain("event.preventDefault()");
+    expect(viewSource).not.toContain("action={importAction}");
   });
 
   it("keeps indirect submit handlers from falling through to native form submit", () => {
