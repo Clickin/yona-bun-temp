@@ -1513,6 +1513,7 @@ export async function createOrganization(
     csrfToken,
     {
       description: input.description ?? "",
+      logoAttachmentId: input.logoAttachmentId,
       organizationName: input.organizationName ?? "",
     },
     fetchImpl,
@@ -1571,6 +1572,7 @@ export async function updateOrganization(
     input.currentOrganizationName ?? "",
     {
       description: input.description ?? "",
+      logoAttachmentId: input.logoAttachmentId,
       organizationName: input.organizationName ?? "",
     },
     fetchImpl,

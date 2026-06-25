@@ -198,6 +198,7 @@ describe("organization and project REST wrappers", () => {
       {
         currentOrganizationName: "weblabs",
         description: "updated labs",
+        logoAttachmentId: 42,
         organizationName: "weblabs",
       },
       fetchMock as unknown as typeof fetch,
@@ -402,6 +403,7 @@ describe("organization and project REST wrappers", () => {
     const updateOrgCall = mutationCalls[1]!;
     expect(JSON.parse(updateOrgCall[1].body ?? "")).toEqual({
       description: "updated labs",
+      logoAttachmentId: 42,
       organizationName: "weblabs",
     });
 

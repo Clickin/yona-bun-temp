@@ -418,6 +418,7 @@ export function updateOrganizationRest(
   return restFetch<OrganizationDetail>(runtimeConfig, organizationPath(currentOrganizationName), {
     body: {
       description: input.description,
+      logoAttachmentId: input.logoAttachmentId,
       organizationName: input.organizationName,
     },
     csrfToken,
