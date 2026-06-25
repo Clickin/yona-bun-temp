@@ -1125,6 +1125,11 @@ h1 {
   font-weight: 700;
 }
 
+.milesion-wrap #issues .filter-wrap {
+  height: auto;
+  min-height: 30px;
+}
+
 .error-wrap {
   padding: 100px 0;
   text-align: center;

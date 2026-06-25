@@ -254,6 +254,7 @@ test.beforeEach(async ({ page }) => {
                 {
                   assigneeLabel: "Nori",
                   commentCount: 0,
+                  id: 102,
                   issueNumber: "2",
                   labels: [],
                   state: "closed",
@@ -269,6 +270,7 @@ test.beforeEach(async ({ page }) => {
                 {
                   assigneeLabel: "Nori",
                   commentCount: 1,
+                  id: 101,
                   issueNumber: "1",
                   labels: [],
                   state: "open",
@@ -296,6 +298,7 @@ test.beforeEach(async ({ page }) => {
             {
               assigneeLabel: "Nori",
               commentCount: 0,
+              id: 102,
               issueNumber: "2",
               labels: [],
               state: "closed",
@@ -313,6 +316,7 @@ test.beforeEach(async ({ page }) => {
             {
               assigneeLabel: "Nori",
               commentCount: 1,
+              id: 101,
               issueNumber: "1",
               labels: [],
               state: "open",
@@ -972,6 +976,18 @@ test("project issue routes render data-backed issue list filters and detail scre
   page,
 }) => {
   let issueListUrl = "";
+  const massUpdateRequests: unknown[] = [];
+  await page.route(
+    /\/api\/v1\/projects\/admin\/projectYobi\/issues\/mass-update$/,
+    async (route) => {
+      massUpdateRequests.push(route.request().postDataJSON());
+      await route.fulfill({
+        body: JSON.stringify({ items: [] }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
   await page.route(/\/api\/v1\/projects\/admin\/projectYobi\/issues(?:\?.*)?$/, async (route) => {
     issueListUrl = route.request().url();
     await route.fulfill({
@@ -1071,6 +1087,16 @@ test("project issue routes render data-backed issue list filters and detail scre
   const issueListSearchParams = new URL(issueListUrl).searchParams;
   expect(issueListSearchParams.get("labelIds")).toBe("5");
   expect(issueListSearchParams.get("milestoneId")).toBe("7");
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+  await page.locator("#check-all").check();
+  await expect(page.locator("#state button.dropdown-toggle")).toBeEnabled();
+  await page.locator("#state button.dropdown-toggle").click();
+  await page.locator('#state li[data-value="CLOSED"] button').click();
+  await expect.poll(() => massUpdateRequests.length).toBe(1);
+  expect(massUpdateRequests[0]).toMatchObject({
+    issueNumbers: [1],
+    state: "closed",
+  });
 
   await page.goto("/yona/admin/projectYobi/issue/1");
   await expect(page.getByRole("heading", { name: "Pilot issue" })).toBeVisible();
@@ -1827,6 +1853,19 @@ test("project watchers route renders the legacy watcher directory shell", async 
 });
 
 test("project milestone routes render list detail and form shells", async ({ page }) => {
+  const milestoneMassUpdateRequests: unknown[] = [];
+  await page.route(
+    /\/api\/v1\/projects\/admin\/projectYobi\/issues\/mass-update$/,
+    async (route) => {
+      milestoneMassUpdateRequests.push(route.request().postDataJSON());
+      await route.fulfill({
+        body: JSON.stringify({ items: [] }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
   await page.goto("/yona/admin/projectYobi/milestones?state=open");
   await expect(page.locator(".project-page-wrap .tab-wrap")).toBeVisible();
   await expect(page.locator(".nav.nav-tabs a", { hasText: "Open" })).toBeVisible();
@@ -1849,10 +1888,20 @@ test("project milestone routes render list detail and form shells", async ({ pag
   await expect(page.locator("#issues .nav.nav-tabs a", { hasText: "Closed" })).toBeVisible();
   await expect(page.locator("#issues .nav.nav-tabs a", { hasText: "All" })).toBeVisible();
   await expect(page.getByPlaceholder("search at current milestone")).toBeVisible();
-  await expect(page.locator(".issue-link", { hasText: "Closed milestone issue" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Closed milestone issue" })).toBeVisible();
   await expect(page.locator(".actrow .ybtn", { hasText: "List" })).toBeVisible();
   await expect(page.locator(".actrow .ybtn", { hasText: "Edit" })).toBeVisible();
   await expect(page.locator(".actrow .ybtn", { hasText: "Close milestone" })).toBeVisible();
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+  await page.locator("#issue-101").check();
+  await expect(page.locator("#state button.dropdown-toggle")).toBeEnabled();
+  await page.locator("#state button.dropdown-toggle").click();
+  await page.locator('#state li[data-value="CLOSED"] button').click();
+  await expect.poll(() => milestoneMassUpdateRequests.length).toBe(1);
+  expect(milestoneMassUpdateRequests[0]).toMatchObject({
+    issueNumbers: ["1"],
+    state: "closed",
+  });
 
   await page.goto("/yona/admin/projectYobi/newMilestoneForm");
   await expect(page.locator(".milestone-form-page #milestone-form")).toBeVisible();
