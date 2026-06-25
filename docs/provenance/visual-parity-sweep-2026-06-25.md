@@ -97,10 +97,10 @@ Playwright render the legacy responses from `127.0.0.1`.
   legacy `newDirectIssueForm` behavior.
 - Local discovered project route root: `/pilot/yona`.
 - Legacy discovered project route root: `/admin/sample`.
-- Legacy i18n keys are now loaded directly from `yona-original/conf/messages*` before the local
-  fallback dictionary. React conversion work must keep those legacy key names rather than inventing
-  a new keyspace; visible keys such as `user.role.owner` now fail the sweep when they leak into a
-  rendered normal page.
+- Legacy i18n keys are now loaded directly from `yona-original/conf/messages*` without a local
+  React fallback dictionary. React conversion work must keep those legacy key names rather than
+  inventing a new keyspace; visible keys such as `user.role.owner` now fail the sweep when they
+  leak into a rendered normal page.
 - `/admin/sample/newPullRequestForm` now preserves the project pull-request page shell when the
   form-options endpoint reports the legacy `pullRequest.error.newPullRequestForm` condition,
   matching the legacy rendered page instead of replacing it with a generic bad-request screen.
