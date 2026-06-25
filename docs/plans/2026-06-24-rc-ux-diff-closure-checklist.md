@@ -520,7 +520,10 @@ global_search_treats_sql_injection_probe_as_plain_keyword -- --nocapture`
 - Legacy MariaDB in-place adopt smoke: `pnpm smoke:legacy-mariadb-dump` passed
   against `mariadb:10.3`. It imported the ignored dump, built the Rust server
   with `db-matrix`, started once with `YONA_SCHEMA_POLICY=validate_only`, then
-  started once with `YONA_SCHEMA_POLICY=adopt`. The JSON result recorded
+  started once with `YONA_SCHEMA_POLICY=adopt`. The smoke now verifies
+  user-visible migrated data by reading `/api/v1/users/:loginId/profile` for a
+  non-anonymous legacy user and comparing `loginId`, `displayName`, and
+  `englishName`. The JSON result records `migrated_profile` alongside
   `users: 1`, `validate_only_left_migration_table_absent: true`, and
   `adopted_version: m20260409_000001_create_legacy_start_schema`.
 - Env-backed matrix verification: `pnpm agent:cargo-test -- --outside-sandbox -p

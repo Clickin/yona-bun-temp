@@ -52,20 +52,22 @@ or Markdown rendering differences in the supported app-runtime scope.
 | --- | --- | --- | --- |
 | `ui-parity-public-auth-shell` | `019eff61-971c-7903-aca3-b7f9b3cdc76d` (`Dewey`) | completed | Covered; `/secret` and `/restart` are state-flow pages backed by FG-01/routes/contracts/local visual 200 but not paired legacy audit/diff pages |
 | `ui-parity-directory-workspace-site-admin` | `019eff61-b850-7873-a81b-c6bae630a8a9` (`Locke`) | completed | Covered; weakest evidence is `/user/issues/new/mine`, still backed by route parity, rendered e2e, visual sweep, and legacy HTML audit |
-| `ui-parity-project-content` | `019eff61-dd1d-7233-b182-10898e1735ee` (`Averroes`) | completed | Gap: `/admin/sample/postform?readme=true` README preload/update semantics; gap: query-string discovered links are weak in generated visual/audit coverage; needs parent decision for sample-data status-delta policy |
-| `ui-parity-fragment-security-db` | `019eff61-fd34-7df2-bdd5-12a76a596ecb` (`Kuhn`) | completed | Issue timeline fragment and project issue-list XHR/PJAX fragment policy are closed as API-return plus React render evidence; remaining gap: legacy MariaDB adopted-data user-visible smoke |
+| `ui-parity-project-content` | `019eff61-dd1d-7233-b182-10898e1735ee` (`Averroes`) | completed | Initial README postform and query-string coverage gaps are closed; sample-data status-delta policy is documented under Parent Decisions |
+| `ui-parity-fragment-security-db` | `019eff61-fd34-7df2-bdd5-12a76a596ecb` (`Kuhn`) | completed | Issue timeline/PJAX fragment policy and legacy MariaDB adopted-data smoke are closed as API-return plus React render and adopted-data profile evidence |
 
 ## Audit Result Queue
 
 | Item | Source packet | Status | Next owner scope |
 | --- | --- | --- | --- |
-| `/admin/sample/postform?readme=true` legacy README preload/update semantics | `ui-parity-project-content` | `covered, pending parent commit` | `frontend/src/routes/$owner/$projectName/postform/route.tsx`, `frontend/src/api/boards.ts`, `crates/server/src/routes/boards.rs`, focused board tests |
+| `/admin/sample/postform?readme=true` legacy README preload/update semantics | `ui-parity-project-content` | `covered, committed 19b24182` | `frontend/src/routes/$owner/$projectName/postform/route.tsx`, `frontend/src/api/boards.ts`, `crates/server/src/routes/boards.rs`, focused board tests |
 | Query-string discovered links can be lost from generated coverage evidence (`postform?readme=true`, `postform?issueTemplate=true`, `issues?format=xls`, `reviews?format=xls`) | `ui-parity-project-content` | `covered` | `f4f33829`; `scripts/audit-legacy-html-pages.mjs`, `scripts/visual-parity-sweep.mjs`, `tests/rc-ux-checklist-contract.test.mjs` |
-| Sample-data status deltas such as `/admin/sample/newPullRequestForm`, `/admin/sample/post/1`, `/admin/sample/milestone/1`, `/admin/sample/pullRequest/1/**`, `/admin/sample/code/main/**`, `/admin/sample/commits/**`, `/admin/sample/search` | `ui-parity-project-content` | `needs-parent-decision` | Parent documents policy: local seeded-data success is acceptable when legacy homelab sample lacks the corresponding object/branch and route-specific functional tests cover normal UX |
+| Sample-data status deltas such as `/admin/sample/newPullRequestForm`, `/admin/sample/post/1`, `/admin/sample/milestone/1`, `/admin/sample/pullRequest/1/**`, `/admin/sample/code/main/**`, `/admin/sample/commits/**`, `/admin/sample/search` | `ui-parity-project-content` | `covered by parent decision` | Documented as sample-data/reference-server status variance; local seeded-data success is acceptable when legacy homelab sample lacks the corresponding object/branch and route-specific functional tests cover normal UX |
 | Legacy broken homelab endpoints returning 500 (`/admin/sample/branches`, `/admin/sample/compare/main...main`, `/admin/sample/post/1/editform`) | `ui-parity-project-content` | `covered` | Keep documented as expected legacy reference errors; do not mirror server failures |
 | `/:user/:project/issue/:number/timeline` fragment endpoint closure | `ui-parity-fragment-security-db` | `covered` | Legacy `IssueApp.timeline` returned `partial_comments.scala.html`; Rust does not expose a server-rendered HTML fragment. `/api/v1/projects/:owner/:project/issues/:number` returns `comments` plus `timeline`, `frontend/src/app-view-models.ts` maps that API timeline, and the issue detail React shell renders the legacy comment/event anchors. Backend contract: `issue_core_contract_creates_reads_updates_and_deletes_over_rest`. |
 | Project issue-list XHR/PJAX fragment mode | `ui-parity-fragment-security-db` | `not-applicable compatibility` | Normal app-runtime issue-list UX is React route plus `/api/v1/projects/:owner/:project/issues` JSON. Legacy `IssueApp.issues` XHR/PJAX HTML fragment mode is not retained as a frontend data source; XHR/PJAX headers against the REST list still return API JSON for React rendering. Backend contract: `issue_core_contract_creates_reads_updates_and_deletes_over_rest`. |
-| Legacy MariaDB in-place adopt smoke proves startup/schema but not user-visible migrated pages | `ui-parity-fragment-security-db` | `covered` | `3e2ebc84`; `scripts/smoke-legacy-mariadb-dump.mjs` now verifies migrated `/api/v1/users/:loginId/profile` data during adopt startup |
+| Legacy MariaDB in-place adopt smoke proves startup/schema plus migrated profile data | `ui-parity-fragment-security-db` | `covered` | `3e2ebc84`; `scripts/smoke-legacy-mariadb-dump.mjs` now verifies migrated `/api/v1/users/:loginId/profile` data during adopt startup |
+| XSS, SQLi, and pathological Markdown probe evidence | `ui-parity-fragment-security-db` | `covered by RC checklist evidence` | `docs/plans/2026-06-24-rc-ux-diff-closure-checklist.md` `rc-ux-security-stability` records hostile rendered-page XSS/search probes, Markdown renderer stability tests, React Markdown render-boundary checks, and SQLi literal-keyword backend coverage |
+| SQLite, PostgreSQL, and MySQL/MariaDB DB matrix evidence | `ui-parity-fragment-security-db` | `covered by RC checklist evidence` | `docs/plans/2026-06-24-rc-ux-diff-closure-checklist.md` `rc-ux-db-migration-smoke` records env-backed and testcontainers DB matrix runs, including SQLite FTS5, PostgreSQL `to_tsvector`, and MariaDB `MATCH ... AGAINST` search paths |
 | `/secret` and `/restart` paired visual diff coverage | `ui-parity-public-auth-shell` | `covered with weak evidence` | Keep as state-flow pages backed by legacy `Global.onRequest`, welcome templates, FG-01, current routes/contracts, and local visual 200 |
 | `/user/issues/new/mine` focused frontend spec thickness | `ui-parity-directory-workspace-site-admin` | `covered with weak evidence` | Current route parity, rendered e2e, visual sweep, and legacy HTML audit are sufficient unless a concrete diff appears |
 
@@ -73,9 +75,9 @@ or Markdown rendering differences in the supported app-runtime scope.
 
 | Work item | Agent | Status | Owned scope |
 | --- | --- | --- | --- |
-| README postform parity | `019eff66-0f58-7cb2-929b-1326fb4d8125` (`Harvey`) | completed, pending parent commit | Board postform route/API/server/tests |
+| README postform parity | `019eff66-0f58-7cb2-929b-1326fb4d8125` (`Harvey`) | completed, committed `19b24182` | Board postform route/API/server/tests |
 | Query-string coverage evidence | `019eff66-28d2-74f2-a67b-7d34c6699949` (`Volta`) | completed, committed `f4f33829` | Audit/visual scripts and RC coverage contract |
-| Issue timeline/PJAX fragment closure | `019eff66-f18b-7092-8944-04839467097c` (`Gibbs`) | completed, pending parent commit | Issue routes/contracts and fragment policy docs |
+| Issue timeline/PJAX fragment closure | `019eff66-f18b-7092-8944-04839467097c` (`Gibbs`) | completed, committed `19b24182` | Issue routes/contracts and fragment policy docs |
 | Legacy MariaDB adopted-data smoke | `019eff67-24ae-77e3-9712-e71432bfd314` (`Mendel`) | completed, committed `3e2ebc84` | Legacy MariaDB dump smoke and release/checklist evidence |
 
 ## Parent Decisions
@@ -121,6 +123,21 @@ Before this phase can close:
 - Focused frontend/Playwright/cargo checks are run for any implementation
   packet that changes code.
 - The parent runs `pnpm test:dev-scripts` after documentation/guard updates.
+
+## Parent Integration Evidence
+
+- 2026-06-26 parent gate refresh: `node --test
+  tests/rc-ux-checklist-contract.test.mjs` passed 6 tests after the phase status
+  cleanup.
+- 2026-06-26 parent gate refresh: `node --test
+  scripts/visual-parity-comparison.spec.mjs
+  scripts/legacy-html-page-audit.spec.mjs
+  scripts/legacy-route-coverage.spec.mjs` passed 8 tests after the phase status
+  cleanup.
+- 2026-06-26 parent gate refresh: `pnpm test:dev-scripts` passed 67 tests after
+  the phase status cleanup, covering the RC checklist contract, visual
+  comparison, legacy HTML page audit, legacy route coverage, REST/HTML boundary
+  guards, and cargo harness contracts.
 
 ## Initial Delegation Prompts
 
