@@ -218,19 +218,33 @@ function siteMailSentFromHref(href: string): boolean {
   return params.get("sended") === "true";
 }
 
-function apiToggleUri(runtimeConfig: RuntimeConfig, loginId: string, action: string): string {
-  return appHref(
-    runtimeConfig,
-    `/api/v1/site/users/${encodeURIComponent(loginId)}/${action}/toggle`,
-  );
+function legacySiteUserListMutationUri(
+  runtimeConfig: RuntimeConfig,
+  action: "account-lock" | "guest",
+  loginId: string,
+  state: SiteUserState,
+  query: string,
+): string {
+  const params = new URLSearchParams();
+  params.set("loginId", loginId);
+  params.set("state", state);
+  if (query.trim() !== "") {
+    params.set("query", query.trim());
+  }
+  const legacyAction = action === "guest" ? "toggleGuestMode" : "toggleAccountLock";
+  return appHref(runtimeConfig, `/sites/${legacyAction}?${params.toString()}`);
 }
 
-function apiPasswordResetUri(runtimeConfig: RuntimeConfig, loginId: string): string {
-  return appHref(runtimeConfig, `/api/v1/site/users/${encodeURIComponent(loginId)}/password/reset`);
+function legacySiteUserAdminMutationUri(runtimeConfig: RuntimeConfig, loginId: string): string {
+  return appHref(runtimeConfig, `/sites/toggleSiteAdminRole/${encodeURIComponent(loginId)}`);
 }
 
-function apiDeleteSiteUserUri(runtimeConfig: RuntimeConfig, loginId: string): string {
-  return appHref(runtimeConfig, `/api/v1/site/users/${encodeURIComponent(loginId)}`);
+function legacySiteUserPasswordResetUri(runtimeConfig: RuntimeConfig, loginId: string): string {
+  return appHref(runtimeConfig, `/${encodeURIComponent(loginId)}?action=resetPassword`);
+}
+
+function legacySiteUserDeleteUri(runtimeConfig: RuntimeConfig, userId: number): string {
+  return appHref(runtimeConfig, `/sites/user/delete${userId}`);
 }
 
 function apiDeleteSiteProjectUri(runtimeConfig: RuntimeConfig, projectId: number): string {
@@ -1054,6 +1068,7 @@ export function SiteAdminUserListPage({
                     resetPassword={resetPasswords[user.loginId] ?? ""}
                     runtimeConfig={runtimeConfig}
                     messages={messages}
+                    selectedQuery={input.query}
                     selectedState={input.state}
                     user={user}
                     onRequestDelete={onRequestDelete}
@@ -2205,6 +2220,7 @@ function SiteUserRow({
   pendingSiteAdmin: _pendingSiteAdmin,
   resetPassword,
   runtimeConfig,
+  selectedQuery,
   selectedState,
   user,
   onToggleAccountLock,
@@ -2221,13 +2237,14 @@ function SiteUserRow({
   pendingSiteAdmin: boolean;
   resetPassword: string;
   runtimeConfig: RuntimeConfig;
+  selectedQuery: string;
   selectedState: SiteUserState;
   user: SiteUser;
-  onToggleAccountLock: (loginId: string) => void;
-  onToggleGuest: (loginId: string) => void;
-  onRequestDelete: (user: SiteUser) => void;
-  onResetPassword: (loginId: string) => void;
-  onToggleSiteAdmin: (loginId: string) => void;
+  onToggleAccountLock?: (loginId: string) => void;
+  onToggleGuest?: (loginId: string) => void;
+  onRequestDelete?: (user: SiteUser) => void;
+  onResetPassword?: (loginId: string) => void;
+  onToggleSiteAdmin?: (loginId: string) => void;
 }) {
   return (
     <li className="row-fluid listitem">
@@ -2259,9 +2276,18 @@ function SiteUserRow({
           <button
             className={`ybtn ybtn-small${user.isGuest ? " ybtn-success" : ""}`}
             data-request-method="post"
-            data-request-uri={apiToggleUri(runtimeConfig, user.loginId, "guest")}
+            data-request-uri={legacySiteUserListMutationUri(
+              runtimeConfig,
+              "guest",
+              user.loginId,
+              selectedState,
+              selectedQuery,
+            )}
             type="button"
             onClick={(event) => {
+              if (!onToggleGuest) {
+                return;
+              }
               event.preventDefault();
               onToggleGuest(user.loginId);
             }}
@@ -2274,9 +2300,18 @@ function SiteUserRow({
           <button
             className="ybtn ybtn-small"
             data-request-method="post"
-            data-request-uri={apiToggleUri(runtimeConfig, user.loginId, "account-lock")}
+            data-request-uri={legacySiteUserListMutationUri(
+              runtimeConfig,
+              "account-lock",
+              user.loginId,
+              selectedState,
+              selectedQuery,
+            )}
             type="button"
             onClick={(event) => {
+              if (!onToggleAccountLock) {
+                return;
+              }
               event.preventDefault();
               onToggleAccountLock(user.loginId);
             }}
@@ -2288,13 +2323,16 @@ function SiteUserRow({
           </button>
           <button
             className="ybtn ybtn-small"
-            data-href={appHref(runtimeConfig, `/${user.loginId}?action=resetPassword`)}
+            data-href={legacySiteUserPasswordResetUri(runtimeConfig, user.loginId)}
             data-request-method="post"
-            data-request-uri={apiPasswordResetUri(runtimeConfig, user.loginId)}
+            data-request-uri={legacySiteUserPasswordResetUri(runtimeConfig, user.loginId)}
             data-toggle="reset-password"
             id={user.loginId}
             type="button"
             onClick={(event) => {
+              if (!onResetPassword) {
+                return;
+              }
               event.preventDefault();
               onResetPassword(user.loginId);
             }}
@@ -2309,9 +2347,12 @@ function SiteUserRow({
           <button
             className={`ybtn ybtn-small ${user.isSiteAdmin ? "ybtn-info" : "label-info"}`}
             data-request-method="post"
-            data-request-uri={apiToggleUri(runtimeConfig, user.loginId, "site-admin")}
+            data-request-uri={legacySiteUserAdminMutationUri(runtimeConfig, user.loginId)}
             type="button"
             onClick={(event) => {
+              if (!onToggleSiteAdmin) {
+                return;
+              }
               event.preventDefault();
               onToggleSiteAdmin(user.loginId);
             }}
@@ -2322,15 +2363,18 @@ function SiteUserRow({
           </button>
           <button
             className="ybtn ybtn-small ybtn-danger"
-            data-href={appHref(runtimeConfig, `/sites/user/delete${user.id}`)}
+            data-href={legacySiteUserDeleteUri(runtimeConfig, user.id)}
             data-request-method="delete"
-            data-request-uri={apiDeleteSiteUserUri(runtimeConfig, user.loginId)}
+            data-request-uri={legacySiteUserDeleteUri(runtimeConfig, user.id)}
             data-toggle="account-delete"
             data-user-id={user.loginId}
             data-user-name={user.displayName}
             disabled={pendingDelete}
             type="button"
             onClick={(event) => {
+              if (!onRequestDelete) {
+                return;
+              }
               event.preventDefault();
               onRequestDelete(user);
             }}
@@ -2356,7 +2400,7 @@ function SiteDeleteUserModal({
   runtimeConfig: RuntimeConfig;
   user: SiteUser | null;
   onCancel: () => void;
-  onConfirm: (loginId: string) => void;
+  onConfirm?: (loginId: string) => void;
 }) {
   const visible = user !== null;
   return (
@@ -2387,11 +2431,14 @@ function SiteDeleteUserModal({
         <button
           className="ybtn ybtn-danger"
           data-request-method="delete"
-          data-request-uri={user === null ? "" : apiDeleteSiteUserUri(runtimeConfig, user.loginId)}
+          data-request-uri={user === null ? "" : legacySiteUserDeleteUri(runtimeConfig, user.id)}
           disabled={pending || user === null}
           id="accountToggleBtn"
           type="button"
           onClick={(event) => {
+            if (!onConfirm) {
+              return;
+            }
             event.preventDefault();
             if (user !== null) {
               onConfirm(user.loginId);

@@ -37,7 +37,7 @@ function renderSiteAdminI18nShell(messages?: LegacyMessageLookup) {
           loginId: "door",
           state: "ACTIVE",
         }}
-        input={{ page: 1, query: "", state: "ACTIVE" }}
+        input={{ page: 1, query: "door user", state: "ACTIVE" }}
         messages={messages}
         pendingAccountLockLoginId={undefined}
         pendingDeleteLoginId={undefined}
@@ -47,7 +47,7 @@ function renderSiteAdminI18nShell(messages?: LegacyMessageLookup) {
         response={{
           page: 1,
           pageSize: 30,
-          query: "",
+          query: "door user",
           siteAdminCount: 1,
           state: "ACTIVE",
           total: 1,
@@ -122,6 +122,25 @@ describe("site-admin route parity harness", () => {
     expect(routeSource).not.toContain("Password reset failed.");
     expect(routeSource).not.toContain("Project delete failed.");
     expect(routeSource).not.toContain("Mail recipient lookup failed.");
+    expect(routeSource).toContain("legacySiteUserListMutationUri");
+    expect(routeSource).toContain("legacySiteUserAdminMutationUri");
+    expect(routeSource).toContain("legacySiteUserPasswordResetUri");
+    expect(routeSource).toContain("legacySiteUserDeleteUri");
+    expect(routeSource).toContain(
+      "if (!onToggleGuest) {\n                return;\n              }",
+    );
+    expect(routeSource).toContain(
+      "if (!onToggleAccountLock) {\n                return;\n              }",
+    );
+    expect(routeSource).toContain(
+      "if (!onResetPassword) {\n                return;\n              }",
+    );
+    expect(routeSource).toContain(
+      "if (!onToggleSiteAdmin) {\n                return;\n              }",
+    );
+    expect(routeSource).toContain(
+      "if (!onRequestDelete) {\n                return;\n              }",
+    );
     expect(routeSource).toContain("BadRequestPage");
     expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("NotFoundPage");
@@ -233,7 +252,7 @@ describe("site-admin route parity harness", () => {
     const userHtml = renderToStaticMarkup(
       <SiteAdminUserListPage
         deleteTarget={null}
-        input={{ page: 1, query: "", state: "ACTIVE" }}
+        input={{ page: 1, query: "door user", state: "ACTIVE" }}
         pendingAccountLockLoginId={undefined}
         pendingDeleteLoginId={undefined}
         pendingGuestLoginId={undefined}
@@ -242,7 +261,7 @@ describe("site-admin route parity harness", () => {
         response={{
           page: 1,
           pageSize: 30,
-          query: "",
+          query: "door user",
           siteAdminCount: 0,
           state: "ACTIVE",
           total: 0,
@@ -322,7 +341,7 @@ describe("site-admin route parity harness", () => {
           loginId: "door",
           state: "ACTIVE",
         }}
-        input={{ page: 1, query: "", state: "ACTIVE" }}
+        input={{ page: 1, query: "door user", state: "ACTIVE" }}
         pendingAccountLockLoginId={undefined}
         pendingDeleteLoginId={undefined}
         pendingGuestLoginId={undefined}
@@ -331,7 +350,7 @@ describe("site-admin route parity harness", () => {
         response={{
           page: 1,
           pageSize: 30,
-          query: "",
+          query: "door user",
           siteAdminCount: 0,
           state: "ACTIVE",
           total: 1,
@@ -372,11 +391,20 @@ describe("site-admin route parity harness", () => {
       '<img alt="Door User" height="32" src="/yona/files/202" width="32"/>',
     );
     expect(userHtml).toContain(">Make Guest<");
+    expect(userHtml).toContain(
+      'data-request-uri="/yona/sites/toggleGuestMode?loginId=door&amp;state=ACTIVE&amp;query=door+user"',
+    );
     expect(userHtml).toContain(">Lock account<");
+    expect(userHtml).toContain(
+      'data-request-uri="/yona/sites/toggleAccountLock?loginId=door&amp;state=ACTIVE&amp;query=door+user"',
+    );
     expect(userHtml).toContain(">Reset password<");
+    expect(userHtml).toContain('data-request-uri="/yona/door?action=resetPassword"');
     expect(userHtml).toContain("New password: new-secret");
     expect(userHtml).toContain(">Upgrade to Site admin<");
+    expect(userHtml).toContain('data-request-uri="/yona/sites/toggleSiteAdminRole/door"');
     expect(userHtml).toContain(">Delete<");
+    expect(userHtml).toContain('data-request-uri="/yona/sites/user/delete7"');
     expect(userHtml).toContain(">Delete user<");
     expect(userHtml).toContain(">Are you sure you want this user to leave?<");
     expect(userHtml).toContain(
