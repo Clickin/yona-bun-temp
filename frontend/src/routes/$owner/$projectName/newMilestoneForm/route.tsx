@@ -3,12 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createProjectMilestone, readProjectContainer } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
-import { buildProjectHref } from "../../../-project-views";
 import { ProjectMilestoneFormPage } from "../../../-milestone-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
+  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../-shared";
@@ -90,8 +90,9 @@ function NewMilestoneFormRouteComponent() {
           title: input.title,
         });
         const milestoneId = response.milestone?.id ? Number(response.milestone.id) : 0;
-        window.location.assign(
-          buildProjectHref(runtimeConfig, owner, projectName, `milestone/${milestoneId}`),
+        navigateToAppHref(
+          runtimeConfig.basePath,
+          `/${owner}/${projectName}/milestone/${milestoneId}`,
         );
       }}
       owner={owner}

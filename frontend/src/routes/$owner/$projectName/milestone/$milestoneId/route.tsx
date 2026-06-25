@@ -12,12 +12,12 @@ import {
   toProjectContainerView,
   toProjectMilestoneDetailView,
 } from "../../../../../app-view-models";
-import { buildProjectHref } from "../../../../-project-views";
 import { ProjectMilestoneDetailPage } from "../../../../-milestone-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
+  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../../-shared";
@@ -115,7 +115,7 @@ function ProjectMilestoneDetailRouteComponent() {
           ownerName: owner,
           projectName,
         });
-        window.location.assign(buildProjectHref(runtimeConfig, owner, projectName, "milestones"));
+        navigateToAppHref(runtimeConfig.basePath, `/${owner}/${projectName}/milestones`);
       }}
       onOpen={async () => {
         const response = await openProjectMilestone(runtimeConfig, csrfToken, {

@@ -10,12 +10,12 @@ import {
   toProjectContainerView,
   toProjectMilestoneDetailView,
 } from "../../../../../../app-view-models";
-import { buildProjectHref } from "../../../../../-project-views";
 import { ProjectMilestoneFormPage } from "../../../../../-milestone-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
+  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../../../-shared";
@@ -107,8 +107,9 @@ function ProjectMilestoneEditFormRouteComponent() {
         const nextMilestoneId = response.milestone?.id
           ? Number(response.milestone.id)
           : Number(milestoneId);
-        window.location.assign(
-          buildProjectHref(runtimeConfig, owner, projectName, `milestone/${nextMilestoneId}`),
+        navigateToAppHref(
+          runtimeConfig.basePath,
+          `/${owner}/${projectName}/milestone/${nextMilestoneId}`,
         );
       }}
       owner={owner}

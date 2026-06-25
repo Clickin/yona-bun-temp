@@ -431,6 +431,16 @@ describe("file-route parity harness", () => {
       expect(source).toContain("BadRequestPage");
       expect(source).toContain('"bad-request"');
     }
+    for (const routePath of [
+      "routes/$owner/$projectName/newMilestoneForm/route.tsx",
+      "routes/$owner/$projectName/milestone/$milestoneId/route.tsx",
+      "routes/$owner/$projectName/milestone/$milestoneId/editform/route.tsx",
+    ]) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+      expect(source).toContain("navigateToAppHref(");
+      expect(source).toContain("runtimeConfig.basePath");
+      expect(source).not.toContain("window.location.assign(");
+    }
   });
 
   it("uses legacy message keys for modal close button labels", () => {
