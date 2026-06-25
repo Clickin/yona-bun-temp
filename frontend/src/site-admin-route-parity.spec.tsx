@@ -128,31 +128,31 @@ describe("site-admin route parity harness", () => {
     expect(routeSource).toContain("return <NotFoundPage href={`/sites/${pageName}`} />;");
   });
 
-  it("keeps site-admin shell fallback keys without a runtime provider", () => {
+  it("uses default legacy messages for site-admin shell labels without a runtime provider", () => {
     const html = renderSiteAdminI18nShell();
 
-    expect(html).toContain(">site.sidebar<");
-    expect(html).toContain(">site.sidebar.userList<");
-    expect(html).toContain(">site.sidebar.postList<");
-    expect(html).toContain(">site.sidebar.issueList<");
-    expect(html).toContain(">site.sidebar.projectList<");
-    expect(html).toContain(">site.sidebar.mailSend<");
-    expect(html).toContain(">site.sidebar.massMail<");
-    expect(html).toContain(">site.sidebar.update<span");
-    expect(html).toContain(">site.sidebar.diagnostics<");
-    expect(html).toContain('placeholder="site.userList.search"');
-    expect(html).toContain(">site.userList.unlocked<");
-    expect(html).toContain(">user.name<");
-    expect(html).toContain(">button.user.make.guest.mode<");
-    expect(html).toContain(">title.resetPassword<");
-    expect(html).toContain("user.newPassword: new-secret");
-    expect(html).toContain(">button.delete<");
-    expect(html).toContain('aria-label="button.close"');
-    expect(html).toContain(">site.diagnostic.errorFound<");
-    expect(html).toContain("site.update.isAvailable");
-    expect(html).not.toContain(">Mail Send<");
-    expect(html).not.toContain(">Mass Mail<");
-    expect(html).not.toContain(">Update<span");
+    expect(html).toContain(">Site management<");
+    expect(html).toContain(">Users<");
+    expect(html).toContain(">Posts<");
+    expect(html).toContain(">Issues<");
+    expect(html).toContain(">Projects<");
+    expect(html).toContain(">Send email<");
+    expect(html).toContain(">Send mass emails<");
+    expect(html).toContain(">Software Update<span");
+    expect(html).toContain(">Diagnostics<");
+    expect(html).toContain('placeholder="Find user by login ID, user name or email"');
+    expect(html).toContain(">Unlocked user<");
+    expect(html).toContain(">Name<");
+    expect(html).toContain(">Make Guest<");
+    expect(html).toContain(">Reset password<");
+    expect(html).toContain("New password: new-secret");
+    expect(html).toContain(">Delete<");
+    expect(html).toContain('aria-label="Close"');
+    expect(html).toContain(">2 errors were found<");
+    expect(html).toContain("Yona 1.1.0 is available");
+    expect(html).not.toContain(">site.sidebar<");
+    expect(html).not.toContain(">title.resetPassword<");
+    expect(html).not.toContain("site.update.isAvailable");
   });
 
   it("uses default English legacy messages for site-admin shell labels", () => {
@@ -262,13 +262,13 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(userHtml).toContain(">site.sidebar.userList<");
+    expect(userHtml).toContain(">Users<");
     expect(userHtml).toContain('<div class="row-fluid"><div class="span2">');
     expect(userHtml).not.toContain("site-setting-layout");
     expect(userHtml).toContain(
-      '<a href="/yona/sites/update">site.sidebar.update<span class="notification-badge">1</span></a>',
+      '<a href="/yona/sites/update">Software Update<span class="notification-badge">1</span></a>',
     );
-    expect(userHtml).toContain('placeholder="site.userList.search"');
+    expect(userHtml).toContain('placeholder="Find user by login ID, user name or email"');
     expect(userHtml).toContain(
       '<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>',
     );
@@ -297,8 +297,8 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(projectHtml).toContain(">site.sidebar.projectList<");
-    expect(projectHtml).toContain('placeholder="site.project.filter"');
+    expect(projectHtml).toContain(">Projects<");
+    expect(projectHtml).toContain('placeholder="Search by keyword"');
     expect(projectHtml).toContain(
       '<button class="search-btn" type="submit"><i class="yobicon-search"></i></button>',
     );
@@ -362,35 +362,34 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(userHtml).toContain(">user.name<");
-    expect(userHtml).toContain(">user.email<");
-    expect(userHtml).toContain(">userinfo.since<");
+    expect(userHtml).toContain(">Name<");
+    expect(userHtml).toContain(">Email address<");
+    expect(userHtml).toContain(">Member since<");
     expect(userHtml).toContain(">2026-01-01 10:20 AM<");
     expect(userHtml).not.toContain("10:20:30");
-    expect(userHtml).toContain(">site.userList.unlocked<");
+    expect(userHtml).toContain(">Unlocked user<");
     expect(userHtml).toContain(
       '<img alt="Door User" height="32" src="/yona/files/202" width="32"/>',
     );
-    expect(userHtml).toContain(">button.user.make.guest.mode<");
-    expect(userHtml).toContain(">button.user.makeAccountUnlock.false<");
-    expect(userHtml).toContain(">title.resetPassword<");
-    expect(userHtml).toContain("user.newPassword: new-secret");
-    expect(userHtml).toContain(">button.user.upgrade.to.site.admin<");
-    expect(userHtml).toContain(">button.delete<");
-    expect(userHtml).toContain(">site.user.delete<");
-    expect(userHtml).toContain(">site.user.deleteConfirm<");
+    expect(userHtml).toContain(">Make Guest<");
+    expect(userHtml).toContain(">Lock account<");
+    expect(userHtml).toContain(">Reset password<");
+    expect(userHtml).toContain("New password: new-secret");
+    expect(userHtml).toContain(">Upgrade to Site admin<");
+    expect(userHtml).toContain(">Delete<");
+    expect(userHtml).toContain(">Delete user<");
+    expect(userHtml).toContain(">Are you sure you want this user to leave?<");
     expect(userHtml).toContain(
-      '<button aria-label="button.close" class="close" data-dismiss="modal" type="button">×</button>',
+      '<button aria-label="Close" class="close" data-dismiss="modal" type="button">×</button>',
     );
-    expect(userHtml).not.toContain('aria-label="Close"');
-    expect(userHtml).toContain(">button.yes<");
+    expect(userHtml).not.toContain('aria-label="button.close"');
+    expect(userHtml).toContain(">Yes<");
     expect(userHtml).toContain(
-      '<button class="ybtn" data-dismiss="modal" type="button">button.no</button>',
+      '<button class="ybtn" data-dismiss="modal" type="button">No</button>',
     );
-    expect(userHtml).not.toContain(">User<");
-    expect(userHtml).not.toContain(">Email<");
-    expect(userHtml).not.toContain(">Reset Password<");
-    expect(userHtml).not.toContain(">Delete User<");
+    expect(userHtml).not.toContain(">user.name<");
+    expect(userHtml).not.toContain(">title.resetPassword<");
+    expect(userHtml).not.toContain(">site.user.delete<");
 
     const deletedUserHtml = renderToStaticMarkup(
       <SiteAdminUserListPage
@@ -436,11 +435,11 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(deletedUserHtml).toContain(">userinfo.leave<");
+    expect(deletedUserHtml).toContain(">Date of leaving<");
     expect(deletedUserHtml).toContain(">2026-01-02 11:12:13<");
     expect(deletedUserHtml).not.toContain(">2025-12-31 09:10:11</div>");
-    expect(deletedUserHtml).not.toContain(">button.user.make.guest.mode<");
-    expect(deletedUserHtml).not.toContain(">title.resetPassword<");
+    expect(deletedUserHtml).not.toContain(">Make Guest<");
+    expect(deletedUserHtml).not.toContain(">Reset password<");
 
     const projectHtml = renderToStaticMarkup(
       <SiteAdminProjectListPage
@@ -478,26 +477,26 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(projectHtml).toContain(">project.name<");
-    expect(projectHtml).toContain(">project.description<");
-    expect(projectHtml).toContain(">project.created<");
+    expect(projectHtml).toContain(">Project name<");
+    expect(projectHtml).toContain(">Description<");
+    expect(projectHtml).toContain(">Created date<");
     expect(projectHtml).toContain('<img alt="alpha" src="/yona/files/101"/>');
     expect(projectHtml).toContain(">yona/alpha<");
     expect(projectHtml).toContain(">2026-01-01<");
     expect(projectHtml).not.toContain("10:20:30");
-    expect(projectHtml).toContain(">button.delete<");
-    expect(projectHtml).toContain(">site.project.delete<");
-    expect(projectHtml).toContain(">site.project.deleteConfirm<");
+    expect(projectHtml).toContain(">Delete<");
+    expect(projectHtml).toContain(">Delete project<");
+    expect(projectHtml).toContain(">Do you really want to delete this project?<");
     expect(projectHtml).toContain(
-      '<button aria-label="button.close" class="close" data-dismiss="modal" type="button">×</button>',
+      '<button aria-label="Close" class="close" data-dismiss="modal" type="button">×</button>',
     );
-    expect(projectHtml).not.toContain('aria-label="Close"');
-    expect(projectHtml).toContain(">button.yes<");
+    expect(projectHtml).not.toContain('aria-label="button.close"');
+    expect(projectHtml).toContain(">Yes<");
     expect(projectHtml).toContain(
-      '<button class="ybtn" data-dismiss="modal" type="button">button.no</button>',
+      '<button class="ybtn" data-dismiss="modal" type="button">No</button>',
     );
-    expect(projectHtml).not.toContain(">Project<");
-    expect(projectHtml).not.toContain(">Delete Project<");
+    expect(projectHtml).not.toContain(">project.name<");
+    expect(projectHtml).not.toContain(">site.project.delete<");
     expect(projectHtml).not.toContain(">Are you sure?<");
   });
 
@@ -510,7 +509,7 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(postHtml).toContain(">site.sidebar.postList<");
+    expect(postHtml).toContain(">Posts<");
     expect(postHtml).toContain('<ul class="post-list-wrap"></ul>');
     expect(postHtml).not.toContain("No posts found.");
 
@@ -529,7 +528,7 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(issueHtml).toContain(">site.sidebar.issueList<");
+    expect(issueHtml).toContain(">Issues<");
     expect(issueHtml).toContain('<ul class="post-list-wrap"></ul>');
     expect(issueHtml).not.toContain("No issues found.");
   });
@@ -591,8 +590,8 @@ describe("site-admin route parity harness", () => {
     expect(postHtml).toContain('name="pageNum"');
     expect(postHtml).toContain('value="1"');
     expect(postHtml).toContain('href="/yona/sites/postList?pageNum=2"');
-    expect(postHtml).toContain("button.prevPage");
-    expect(postHtml).toContain("button.nextPage");
+    expect(postHtml).toContain("Previous page");
+    expect(postHtml).toContain("Next page");
     expect(postHtml).not.toContain("data-page-num");
 
     const issueHtml = renderToStaticMarkup(
@@ -631,10 +630,10 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(issueHtml).toContain(">issue.state.open<");
-    expect(issueHtml).toContain(">issue.state.closed<");
-    expect(issueHtml).not.toContain(">Open<");
-    expect(issueHtml).not.toContain(">Closed<");
+    expect(issueHtml).toContain(">Open<");
+    expect(issueHtml).toContain(">Closed<");
+    expect(issueHtml).not.toContain(">issue.state.open<");
+    expect(issueHtml).not.toContain(">issue.state.closed<");
     expect(issueHtml).toContain('class="row-fluid listitem"');
     expect(issueHtml).toContain('href="/yona/yona/alpha"');
     expect(issueHtml).toContain('<img alt="alpha" src="/yona/files/101"/>');
@@ -657,8 +656,8 @@ describe("site-admin route parity harness", () => {
     expect(issueHtml).toContain('name="pageNum"');
     expect(issueHtml).toContain('value="1"');
     expect(issueHtml).toContain('href="/yona/sites/issueList?state=open&amp;pageNum=2"');
-    expect(issueHtml).toContain("button.prevPage");
-    expect(issueHtml).toContain("button.nextPage");
+    expect(issueHtml).toContain("Previous page");
+    expect(issueHtml).toContain("Next page");
     expect(issueHtml).not.toContain("data-page-num");
   });
 
@@ -670,13 +669,12 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(okHtml).toContain(">site.sidebar<");
-    expect(okHtml).toContain(">site.sidebar.diagnostics<");
+    expect(okHtml).toContain(">Site management<");
+    expect(okHtml).toContain(">Diagnostics<");
     expect(okHtml).toContain('href="/yona/sites/diagnostic"');
-    expect(okHtml).toContain(">site.diagnostic.errorNotFound<");
-    expect(okHtml).not.toContain(">Site Admin<");
-    expect(okHtml).not.toContain(">Diagnostics<");
-    expect(okHtml).not.toContain("No errors were found");
+    expect(okHtml).toContain(">No errors were found<");
+    expect(okHtml).not.toContain(">site.sidebar<");
+    expect(okHtml).not.toContain("site.diagnostic.errorNotFound");
 
     const errorHtml = renderToStaticMarkup(
       <SiteAdminDiagnosticPage
@@ -685,12 +683,12 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(errorHtml).toContain(">site.diagnostic.errorFound<");
+    expect(errorHtml).toContain(">2 errors were found<");
     expect(errorHtml).toContain("<ul><li><pre>storage missing</pre></li>");
     expect(errorHtml).toContain("<pre>storage missing</pre>");
     expect(errorHtml).toContain("<pre>smtp missing</pre>");
     expect(errorHtml).not.toContain("site-diagnostic-errors");
-    expect(errorHtml).not.toContain("2 errors were found");
+    expect(errorHtml).not.toContain("site.diagnostic.errorFound");
   });
 
   it("renders legacy mail and mass-mail message-key form shells", () => {
@@ -704,19 +702,21 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(mailHtml).toContain(">title.sendMail<");
-    expect(mailHtml).toContain(">site.mail.notConfigured /admin/mailconf<");
+    expect(mailHtml).toContain(">Send email<");
+    expect(mailHtml).toContain(
+      ">Mailer has not been configured. Set following properties in conf/application.conf. /admin/mailconf<",
+    );
     expect(mailHtml).not.toContain(">site.mail.notConfigured<");
     expect(mailHtml).toContain("smtp.host");
-    expect(mailHtml).toContain(">site.mail.sended<");
-    expect(mailHtml).toContain(">site.mail.from<");
+    expect(mailHtml).toContain(">Mail has been sent.<");
+    expect(mailHtml).toContain(">From<");
     expect(mailHtml).toContain('action="/yona/sites/mail"');
-    expect(mailHtml).toContain('placeholder="site.mail.fromPlaceholder"');
-    expect(mailHtml).toContain(">site.mail.to<");
-    expect(mailHtml).toContain('placeholder="site.mail.toPlaceholder"');
-    expect(mailHtml).toContain(">site.mail.subject<");
-    expect(mailHtml).toContain(">site.mail.body<");
-    expect(mailHtml).toContain("<strong>site.mail.send</strong>");
+    expect(mailHtml).toContain('placeholder="sender@mail.com"');
+    expect(mailHtml).toContain(">To<");
+    expect(mailHtml).toContain('placeholder="receipient@mail.com"');
+    expect(mailHtml).toContain(">Subject<");
+    expect(mailHtml).toContain(">Body<");
+    expect(mailHtml).toContain("<strong>Send</strong>");
     expect(mailHtml).not.toContain("Mail configuration is incomplete.");
     expect(mailHtml).not.toContain("Mail was sent.");
     expect(mailHtml).not.toContain(">Send Mail<");
@@ -742,16 +742,16 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(massMailHtml).toContain(">title.massMail<");
-    expect(massMailHtml).toContain(">site.massMail.toAll<");
-    expect(massMailHtml).toContain(">site.massMail.toProjects<");
+    expect(massMailHtml).toContain(">Send mass mails<");
+    expect(massMailHtml).toContain(">To all<");
+    expect(massMailHtml).toContain(">To members of a specific project<");
     expect(massMailHtml).toContain('data-toggle="mail-type"');
-    expect(massMailHtml).toContain('placeholder="project.name"');
-    expect(massMailHtml).toContain('data-loading-text="site.massMail.loading"');
+    expect(massMailHtml).toContain('placeholder="Project name"');
+    expect(massMailHtml).toContain('data-loading-text="Loading..."');
     expect(massMailHtml).toContain('id="select-project" type="submit"');
     expect(massMailHtml).toContain('id="write-email" type="submit"');
-    expect(massMailHtml).toContain("<strong>button.add</strong>");
-    expect(massMailHtml).toContain("<strong>site.mail.write</strong>");
+    expect(massMailHtml).toContain("<strong>Add</strong>");
+    expect(massMailHtml).toContain("<strong>Write</strong>");
     expect(massMailHtml).not.toContain(">Mass Mail<");
     expect(massMailHtml).not.toContain("All users");
     expect(massMailHtml).not.toContain("Project members");
@@ -763,13 +763,19 @@ describe("site-admin route parity harness", () => {
       <SiteAdminDataPage csrfToken="csrf-token" runtimeConfig={runtimeConfig} />,
     );
 
-    expect(dataHtml).toContain(">site.sidebar.data<");
-    expect(dataHtml).toContain("<strong>site.data.warning1</strong>");
-    expect(dataHtml).toContain("<strong>site.data.warning2</strong>");
-    expect(dataHtml).toContain("<strong>site.data.warning3</strong>");
-    expect(dataHtml).toContain(">site.data.export<");
+    expect(dataHtml).toContain(">Data<");
+    expect(dataHtml).toContain(
+      "<strong>Before importing or exporting data, you should block other user&#x27;s access and only allow the site admin.</strong>",
+    );
+    expect(dataHtml).toContain(
+      "<strong>After clicking the export button please wait until the file download finishes.</strong>",
+    );
+    expect(dataHtml).toContain(
+      "<strong>Please backup database before import data, in some cases you can lose existing data.</strong>",
+    );
+    expect(dataHtml).toContain(">Export<");
     expect(dataHtml).toContain('href="/yona/sites/export"');
-    expect(dataHtml).toContain(">site.data.import<");
+    expect(dataHtml).toContain(">Import<");
     expect(dataHtml).toContain('action="/yona/sites/import"');
     expect(dataHtml).toContain('name="data"');
     expect(dataHtml).toContain('<input type="submit"/>');
@@ -789,16 +795,15 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(updateHtml).toContain(">site.sidebar.update<");
-    expect(updateHtml).toContain("site.update.isAvailable");
+    expect(updateHtml).toContain(">Software Update<");
+    expect(updateHtml).toContain("Yona 1.1.0 is available");
     expect(updateHtml).toContain(
-      '<a href="/yona/sites/update">site.sidebar.update<span class="notification-badge">1</span></a>',
+      '<a href="/yona/sites/update">Software Update<span class="notification-badge">1</span></a>',
     );
     expect(updateHtml).toContain('href="/yona/sites/update/download-file"');
-    expect(updateHtml).toContain(">site.update.download<");
-    expect(updateHtml).toContain("site.update.currentVersion");
-    expect(updateHtml).not.toContain("Current version is Yona 1.0.0");
-    expect(updateHtml).not.toContain(">Update<");
+    expect(updateHtml).toContain(">Download<");
+    expect(updateHtml).toContain("Current version is Yona 1.0.0");
+    expect(updateHtml).not.toContain("site.update.currentVersion");
 
     const noUpdateHtml = renderToStaticMarkup(
       <SiteAdminUpdatePage
@@ -814,8 +819,8 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(noUpdateHtml).toContain(">site.update.isNotNecessary<");
+    expect(noUpdateHtml).toContain(">You are using the latest version<");
     expect(noUpdateHtml).not.toContain('class="notification-badge"');
-    expect(noUpdateHtml).not.toContain("site.update.isNotNecessary 1.0.0");
+    expect(noUpdateHtml).not.toContain("site.update.isNotNecessary");
   });
 });

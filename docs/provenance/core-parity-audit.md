@@ -1746,6 +1746,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `frontend/src/project-settings-parity.spec.tsx`,
   `frontend/src/project-home-tabs.spec.tsx`, and
   `frontend/src/i18n.spec.tsx`.
+- 2026-06-25 site-admin direct-render i18n expectation continuation:
+  site-admin route parity tests now expect default English legacy message
+  output for user/project/post/issue lists, diagnostics, mail, mass mail,
+  data, and update pages when rendered without an explicit provider. This
+  keeps route/components calling the same legacy keys while preventing test
+  expectations from pinning raw key leakage as desired UI. Focused coverage:
+  `frontend/src/site-admin-route-parity.spec.tsx` and
+  `frontend/src/i18n.spec.tsx`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and
