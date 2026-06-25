@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
+import { hasRawLegacyI18nKey, rawLegacyI18nKeys } from "./legacy-i18n-key-detector.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const require = createRequire(new URL("../frontend/package.json", import.meta.url));
@@ -483,22 +484,6 @@ async function inspectLocalDirectApiSurfaces(page, baseUrl) {
   };
 }
 
-function hasRawI18n(text) {
-  return /(?<![a-z0-9_.-])(?:button|code|error|issue|label|menu|message|milestone|notification|post|project|search|title|user|userinfo)\.[A-Za-z0-9_.-]+\b/u.test(
-    text,
-  );
-}
-
-function rawI18nKeys(text) {
-  return [
-    ...new Set(
-      text.match(
-        /(?<![a-z0-9_.-])(?:button|code|error|issue|label|menu|message|milestone|notification|post|project|search|title|user|userinfo)\.[A-Za-z0-9_.-]+\b/gu,
-      ) ?? [],
-    ),
-  ].sort();
-}
-
 async function inspectPage(page, baseUrl, path, label) {
   const consoleErrors = [];
   const requestFailures = [];
@@ -625,9 +610,9 @@ async function inspectPage(page, baseUrl, path, label) {
   if (metrics.scrollWidth > metrics.viewportWidth * 1.8) {
     errors.push(`horizontal overflow ${metrics.scrollWidth}/${metrics.viewportWidth}`);
   }
-  if (label === "local" && hasRawI18n(`${metrics.title}\n${metrics.text}`)) {
+  if (label === "local" && hasRawLegacyI18nKey(`${metrics.title}\n${metrics.text}`)) {
     errors.push(
-      `raw i18n key visible: ${rawI18nKeys(`${metrics.title}\n${metrics.text}`).join(", ")}`,
+      `raw i18n key visible: ${rawLegacyI18nKeys(`${metrics.title}\n${metrics.text}`).join(", ")}`,
     );
   }
   if (/browser-safe route tree|localhost:3001\/(?!yona(?:\/|$))yo/u.test(metrics.text)) {
