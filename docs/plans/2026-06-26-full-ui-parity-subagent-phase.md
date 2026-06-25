@@ -154,9 +154,10 @@ as `covered` inside the report.
 
 ## Browser-Visible Round 2 Gate
 
-Round 2 is the current active UI parity gate after the completed explorer
-reports. It must be run as a separate phase before RC release because prior
-smoke tests missed first-screen rendering failures.
+Round 2 was the browser-visible UI parity gate after the completed explorer
+reports and is now closed with the evidence rows below. It remains documented as
+a separate phase before RC release because prior smoke tests missed first-screen
+rendering failures.
 
 Automatic `gap` findings:
 
@@ -191,8 +192,11 @@ Minimum Playwright assertions per route group:
 - Boundary: REST JSON/API return plus React render for React-visible flows,
   with direct legacy routes limited to compatibility/deep-link adapters.
 
-Round 2 cannot close while any packet status below is `pending`, `running`,
-`gap`, `weak evidence`, or `needs-parent-decision`.
+Round 2 is closed only while every packet status below is
+`covered in current follow-up` and no packet status is `pending`, `running`,
+`gap`, `weak evidence`, or `needs-parent-decision`. If a later browser-visible
+parity defect is found, reopen the owning packet and add a new Audit Result
+Queue row before assigning implementation.
 
 Round 2 remaining subagent split:
 
@@ -283,7 +287,7 @@ Round 2 remaining subagent split:
 | Round 2 broad site-admin mobile shell proof | `r2-site-admin-security-db` | `covered in current follow-up` | `frontend/tests/legacy-rendered-page-audit.e2e.ts` now opens `/sites/projectList`, `/sites/postList`, `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`, and `/sites/data` on a 390px viewport and asserts root user sidebars, `.site-breadcrumb-outer`, `.site-setting-wrap`, page-specific legacy anchors such as `.project-list-wrap`, `.post-list-wrap`, `#mailForm`, `#mailtoAll`, `#write-email`, `.title_area`, and absence of the file-route placeholder. This complements the existing focused site-admin E2Es for project/post/issue/mail/update/data interaction and REST mutation coverage. |
 | Round 2 stale search invalid-query expectation | `r2-code-pr-review-search-notification` | `covered in current follow-up` | `search-parity.e2e.ts` now supplies the project container mock needed for project-scoped invalid search-type requests to reach the legacy bad-request shell instead of accidentally proving a not-found route-shell state. |
 | Round 2 stale legacy-copy expectation cleanup | Round 2 packets | `covered in current follow-up` | Positive E2E expectations now use resolved legacy copy instead of raw keys across shell auth/directory/error/issue/member/site-admin/update paths. Proof: `shell-routing-smoke.e2e.ts` focused auth/directory/org-admin/issue/direct-issue/watcher subsets, `project-members-parity.e2e.ts`, and focused site-admin project/post/issue/update E2Es pass; `rg` over E2E files leaves only negative raw-key assertions, fixture payload values, filenames, or domain data. |
-| Round 2 remaining browser proof gaps | Round 2 packets | `covered in current follow-up` | No known Round 2 browser-proof-only gap remains after mobile PR detail/changes proof, broad site-admin mobile proof, and stale legacy-copy expectation cleanup. Any further parity work should come from newly discovered route-specific UX diffs, not the Round 2 browser-visible gate. |
+| Round 2 browser-visible gate closure | Round 2 packets | `covered in current follow-up` | No known Round 2 browser-proof-only gap remains after mobile PR detail/changes proof, broad site-admin mobile proof, stale legacy-copy expectation cleanup, workspace settings mutation proof, and project issue/milestone mass-update browser proof. Any further parity work should come from newly discovered route-specific UX diffs, not an already-open Round 2 browser-visible gate row. |
 | `/secret` and `/restart` paired visual diff coverage | `ui-parity-public-auth-shell` | `not-applicable for paired visual diff; UI state covered` | Legacy `/secret` and `/restart` are state-gated by `Global.onRequest` while `isSecretInvalid`; configured legacy has no normal comparable route, and visual sweep shows local 200 with `legacyOk: null`. UI selectors/copy remain covered by `welcome/secret.scala.html`, `welcome/restart.scala.html`, current `/secret`/`/restart` routes, and auth workspace contracts. |
 | `/user/issues/new/mine` focused frontend spec thickness | `ui-parity-directory-workspace-site-admin` | `covered` | Route thinness is intentional: `frontend/src/routes/user/issues/new/mine/route.tsx` delegates `mine={true}` to the shared direct issue form, REST reads `/api/v1/user/issues/new-options?mine=true`, rendered E2E covers submit payload, route parity pins legacy selectors, and backend contract pins legacy target selection fallback order. |
 | Root organization search-scope dropdown should not always render the group item | `ui-parity-root-navigation-shell` | `covered in current follow-up` | `frontend/src/routes/__root.tsx` now hides the org group search item unless `hideProjectListing`/guest mode plus known organization participation matches legacy; `frontend/src/auth-workspace-shell.spec.tsx` pins the guard |

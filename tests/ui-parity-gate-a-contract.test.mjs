@@ -117,7 +117,7 @@ test("full UI parity phase records Gate A report closure evidence", () => {
   assert.match(gateStatus, /ui-parity-fragment-security-db\.md` records 11 covered rows/);
 });
 
-test("full UI parity Round 2 browser-visible gate remains explicit while active", () => {
+test("full UI parity Round 2 browser-visible gate is closed with explicit evidence", () => {
   const phasePlan = readText(phasePlanPath);
   const roundTwo = section(phasePlan, "Browser-Visible Round 2 Gate");
   const packets = roundTwo
@@ -138,9 +138,9 @@ test("full UI parity Round 2 browser-visible gate remains explicit while active"
       "r2-code-pr-review-search-notification",
       "r2-site-admin-security-db",
     ],
-    "Round 2 browser-visible packets must stay explicit while this gate is active",
+    "Round 2 browser-visible packets must stay explicit after closure",
   );
-  assert.match(roundTwo, /Round 2 cannot close while any packet status below is `pending`, `running`/);
+  assert.match(roundTwo, /Round 2 is closed only while every packet status below is/);
 
   const statuses = new Map(packets.map(({ packet, status }) => [packet, status]));
   assert.equal(statuses.get("r2-auth-setup-public-shell"), "covered in current follow-up");
@@ -148,5 +148,10 @@ test("full UI parity Round 2 browser-visible gate remains explicit while active"
   assert.equal(statuses.get("r2-project-issue-board-milestone"), "covered in current follow-up");
   assert.equal(statuses.get("r2-code-pr-review-search-notification"), "covered in current follow-up");
   assert.equal(statuses.get("r2-site-admin-security-db"), "covered in current follow-up");
-  assert.match(phasePlan, /Round 2 remaining browser proof gaps/);
+  assert.deepEqual(
+    packets.filter(({ status }) => blockingStatuses.has(status)),
+    [],
+    "Round 2 closure must not leave blocking packet statuses",
+  );
+  assert.match(phasePlan, /Round 2 browser-visible gate closure/);
 });
