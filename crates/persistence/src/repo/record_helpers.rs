@@ -9,6 +9,7 @@ impl AppRepositoryImpl<'_> {
             id: model.id,
             organization_name: model.name?,
             description: model.descr,
+            created_date: model.created,
         })
     }
 

@@ -8,6 +8,7 @@ import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { OrganizationDirectoryViewModel, ProjectDirectoryViewModel } from "./-view-models";
 
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
+const legacyPjaxPageAttribute = { "pjax-page": "" };
 
 function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
@@ -30,6 +31,87 @@ function readSearchParams(href: string): URLSearchParams {
 function parsePositiveInt(value: string | null, fallback: number): number {
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function hrefWithPageNum(href: string, pageNum: number): string {
+  const url = new URL(href, "http://yona.local");
+  url.searchParams.set("pageNum", String(pageNum));
+  return `${url.pathname}${url.search}`;
+}
+
+function DirectoryPagination({
+  currentPageNum,
+  href,
+  messages,
+  runtimeConfig,
+  totalPageCount,
+}: {
+  currentPageNum: number;
+  href: string;
+  messages: LegacyMessageLookup | undefined;
+  runtimeConfig: RuntimeConfig;
+  totalPageCount: number;
+}) {
+  if (totalPageCount <= 0) {
+    return <div id="pagination"></div>;
+  }
+
+  const prevLabel = legacyMessage(messages, "button.prevPage");
+  const nextLabel = legacyMessage(messages, "button.nextPage");
+  const hasPrev = currentPageNum > 1;
+  const hasNext = currentPageNum < totalPageCount;
+
+  return (
+    <div className="page-navigation-wrap" id="pagination">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <a
+              href={appHref(runtimeConfig, hrefWithPageNum(href, currentPageNum - 1))}
+              {...legacyPjaxPageAttribute}
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>{prevLabel}</span>
+            </a>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">{prevLabel}</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            defaultValue={currentPageNum}
+            max={totalPageCount}
+            min={1}
+            name="pageNum"
+            pattern="[0-9]*"
+            type="number"
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPageCount}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <a
+              href={appHref(runtimeConfig, hrefWithPageNum(href, currentPageNum + 1))}
+              {...legacyPjaxPageAttribute}
+            >
+              <span>{nextLabel}</span>
+              <i className="ico btn-pg-next"></i>
+            </a>
+          ) : (
+            <>
+              <span className="off">{nextLabel}</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
+    </div>
+  );
 }
 
 export function ProjectDirectoryPage({
@@ -184,7 +266,13 @@ export function ProjectDirectoryPage({
                   </li>
                 ))}
               </ul>
-              <div id="pagination"></div>
+              <DirectoryPagination
+                currentPageNum={currentPageNum}
+                href={href}
+                messages={messages}
+                runtimeConfig={runtimeConfig}
+                totalPageCount={totalPageCount}
+              />
             </>
           )}
         </div>
@@ -301,12 +389,26 @@ export function OrganizationDirectoryPage({
                           </a>
                         </div>
                         <div className="desc">{organization.description}</div>
+                        {organization.createdLabel ? (
+                          <p className="name-tag">
+                            created{" "}
+                            <strong title={organization.createdLabel}>
+                              {organization.createdLabel}
+                            </strong>
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </li>
                 ))}
               </ul>
-              <div id="pagination"></div>
+              <DirectoryPagination
+                currentPageNum={currentPageNum}
+                href={href}
+                messages={messages}
+                runtimeConfig={runtimeConfig}
+                totalPageCount={totalPageCount}
+              />
             </>
           )}
         </div>

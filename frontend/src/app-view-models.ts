@@ -305,6 +305,7 @@ export function toOrganizationDirectoryView(
 ): OrganizationDirectoryViewModel {
   return {
     items: response.items.map((item) => ({
+      createdLabel: item.createdLabel ?? "",
       description: item.description,
       logoUrl: item.logoUrl,
       organizationName: item.organizationName,

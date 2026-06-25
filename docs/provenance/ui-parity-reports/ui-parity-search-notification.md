@@ -1,0 +1,118 @@
+# UI Parity Report: Search / Notification
+
+Status: explorer report only
+Packet: `ui-parity-search-notification`
+Date: 2026-06-26
+
+Scope audited: global/project/organization search, `/notifications`, and `/notification?from=&limit=`. This report does not edit implementation code and treats legacy Yona UI/UX as the only parity source.
+
+## Evidence Scope
+
+Legacy evidence:
+
+- `yona-original/conf/routes`: `/search`, `/organizations/:organizationName/search`, `/:user/:project/search`, `/notifications`, `/notification`
+- `yona-original/app/controllers/SearchApp.java`
+- `yona-original/app/controllers/NotificationApp.java`
+- `yona-original/app/views/search/result.scala.html`
+- `yona-original/app/views/search/partial_search.scala.html`
+- `yona-original/app/views/search/partial_issues.scala.html`
+- `yona-original/app/views/search/partial_users.scala.html`
+- `yona-original/app/views/search/partial_projects.scala.html`
+- `yona-original/app/views/search/partial_posts.scala.html`
+- `yona-original/app/views/search/partial_milestones.scala.html`
+- `yona-original/app/views/search/partial_issue_comments.scala.html`
+- `yona-original/app/views/search/partial_post_comments.scala.html`
+- `yona-original/app/views/search/partial_reviews.scala.html`
+- `yona-original/app/views/index/notifications.scala.html`
+- `yona-original/app/views/index/partial_notifications.scala.html`
+- `yona-original/app/views/common/mySeriesMenuTab.scala.html`
+- `yona-original/app/views/common/scripts.scala.html`
+- `yona-original/conf/messages`, `yona-original/conf/messages.ko-KR`
+
+Current evidence:
+
+- `frontend/src/routes/-search-views.tsx`
+- `frontend/src/routes/search/route.tsx`
+- `frontend/src/routes/$owner/$projectName/search/route.tsx`
+- `frontend/src/routes/organizations/$organizationName/search/route.tsx`
+- `frontend/src/api/search.ts`
+- `crates/server/src/routes/search.rs`
+- `crates/server/tests/search_contract.rs`
+- `crates/search/tests/search_result_legacy_contract.rs`
+- `frontend/src/search-i18n.spec.tsx`
+- `frontend/src/routes/notifications/route.tsx`
+- `frontend/src/routes/notification/route.tsx`
+- `frontend/src/api/notifications.ts`
+- `crates/server/src/routes/notifications.rs`
+- `crates/server/tests/notification_contract.rs`
+- `frontend/src/route-parity.spec.tsx`
+- `frontend/src/directory-home-user-files-notification-i18n.spec.tsx`
+- `.agent/legacy-html-page-audit/latest.json`
+- `output/playwright/visual-sweep/latest.json`
+- `docs/provenance/visual-parity-sweep-2026-06-25.md`
+
+## Route Inventory Summary
+
+Total rows: 23
+
+| status | count |
+| --- | ---: |
+| covered | 13 |
+| gap | 5 |
+| deviation | 1 |
+| deferred | 0 |
+| not-applicable | 1 |
+| weak evidence | 2 |
+| needs-parent-decision | 1 |
+
+## Result Inventory
+
+| path | legacy evidence | current evidence | status | proposed owner |
+| --- | --- | --- | --- | --- |
+| `/search?keyword=&searchType=` global scope | `SearchApp.searchInAll`, `search/result.scala.html`, `search/partial_search.scala.html` render site layout, category counts, and all-project readable results | `frontend/src/routes/search/route.tsx`, `SearchRoutePage`, `readGlobalSearch`, `crates/server/src/routes/search.rs::rest_search_global`, `crates/server/tests/search_contract.rs::global_search_returns_legacy_counts_auto_issue_and_snippet_metadata` | covered | none |
+| `/:owner/:project/search?keyword=&searchType=` project scope data | `SearchApp.searchInAProject`, `@IsAllowed(Operation.READ)`, project layout/menu, no project-result category, bad request for `searchType=project` | `frontend/src/routes/$owner/$projectName/search/route.tsx`, `require_project_read`, `scoped_search_rejects_invalid_project_type_and_returns_review_links`, `SearchCategories` hides project category | covered | none |
+| `/:owner/:project/search` project scope chrome | `result.scala.html` uses real `projectLayout`, `projectMenu(project, ...)`, and real project header/menu state | `projectSearchDetail()` in `-search-views.tsx` synthesizes a minimal `ProjectDetailViewModel` from the URL with blank overview/org and false capability flags | gap | `frontend/src/routes/-search-views.tsx`, project search route loader/API projection if needed |
+| `/organizations/:organizationName/search?keyword=&searchType=` organization scope data | `SearchApp.searchInAGroup`, organization header/menu, org-scoped counts/results, hide-project-listing guard | `frontend/src/routes/organizations/$organizationName/search/route.tsx`, `readOrganizationSearch`, `rest_search_organization`, organization scope contract tests for issues/posts/milestones/reviews | covered | none |
+| `/organizations/:organizationName/search` organization scope chrome | `result.scala.html` renders `organization.header(group)` and `organization.menu(group)` from the real org model | `organizationSearchDetail()` in `-search-views.tsx` synthesizes blank description and false capability flags | gap | `frontend/src/routes/-search-views.tsx`, organization search route loader/API projection if needed |
+| `/search`, scoped search with both `keyword` and `searchType` absent | `SearchApp.searchInAll/searchInAGroup/searchInAProject` returns `badRequest` when keyword or searchType is empty | `readSearchRouteQuery()` treats both absent as valid empty input and renders `.empty-result`; visual sweep includes `/search` as OK | needs-parent-decision | `frontend/src/routes/-search-views.tsx`, `crates/server/src/routes/search.rs`, focused route/status tests |
+| `searchType=project` under project scope and invalid search type | `SearchApp.searchInAProject` returns bad request for `SearchType.NA` or `SearchType.PROJECT` | `routeInvalid` maps project type to `BadRequestPage`; REST rejects project type/invalid type with `400`; `search_contract.rs` pins this | covered | none |
+| `#searchInnerForm`, category tabs, and badges | `partial_search.scala.html` has `#searchInnerForm`, hidden `searchType`, `#searchKeyword`, `data-toggle="search-category"`, `.num-badge`, active/empty classes | `SearchRoutePage`, `SearchCategories`, `SearchResultTitle`, `frontend/src/search-i18n.spec.tsx` | covered | none |
+| Issue and post result rows | `partial_issues.scala.html`, `partial_posts.scala.html`: `.search-list-item`, `#number`, `.title`, snippets, project meta when not project scope, author/date | Generic `SearchResultItem`, REST `issue`/`post` contracts cover href/title/snippets/ACL/ranking | covered | none |
+| User result rows | `partial_users.scala.html`: `.search-list-item.project`, `.avatar-wrap`, `.title.user-link`, visible `name (@loginId)`, `.infos` with `userinfo.since` | Generic `SearchResultItem` has no user avatar card, no `(@loginId)` title composition, no since row | gap | `frontend/src/routes/-search-views.tsx`, search DTO fields if missing |
+| Project result rows | `partial_projects.scala.html`: `.search-list-item.project`, project logo, `.title.project-link`, overview, created/code update meta, fork-original block | Generic `SearchResultItem` has no project logo/card class, no created/code-update dual meta, no fork-original block | gap | `frontend/src/routes/-search-views.tsx`, search repository DTO projection for logo/fork/update metadata |
+| Milestone result rows | `partial_milestones.scala.html`: title, snippets, project meta, due-date label with `getDueDateString` and `until` text | Generic milestone branch renders `label.dueDate` plus `updatedLabel`; no browser/DTO evidence for legacy due-date plus relative parenthetical | gap | `frontend/src/routes/-search-views.tsx`, search repository milestone DTO/date labels |
+| Issue-comment, post-comment, review result rows | comment partials use `Re)`, anchor fragments `#comment-id`, snippets; review partial uses `DiffRenderer.urlToCommentThread` | REST contracts cover comment/review scope/ACL and review href; generic renderer likely supports title/snippets/meta | weak evidence | `frontend/src/routes/-search-views.tsx`, focused render tests for issue_comment/post_comment/review item shapes |
+| Search snippets/highlighting | Legacy `SearchResult.makeSnippets(..., 40)` plus client `<strong class="keyword">` replacement | `yoram_search::make_snippets`, `HighlightedSnippet`, `crates/search/tests/search_result_legacy_contract.rs`, `frontend/src/search-i18n.spec.tsx` | covered | none |
+| ACL-filtered private absence | Legacy `Search.find*` receives current user and project/org scope; private data absent without read permission | `crates/server/tests/search_contract.rs` covers public/private/protected ACL for projects, issues, posts, comments, milestones, and reviews | covered | none |
+| Search empty state | Each legacy type partial renders `<div class="empty-result"></div>` for no rows | `SearchResults` renders `<div className="empty-result"></div>` for no input, loading, no response, or empty items | covered | none |
+| Search pagination | Legacy type partials render `<div id="pagination"></div>` and call `yobi.Pagination.update` for pages | `SearchPagination` renders `#pagination`, prev/next controls, page input, and empty `#pagination` when one page | covered | none |
+| `/notifications` welcome guide, tabs, empty state | `index/notifications.scala.html`, `common/mySeriesMenuTab.scala.html`, `notification.none`, guide table, `#setDefaultLoginPage` | `NotificationWelcomeGuide`, `MySeriesMenuTabs`, `NotificationRouteComponent`, `route-parity.spec.tsx`, `directory-home-user-files-notification-i18n.spec.tsx`, visual sweep `/notifications` | covered | none |
+| `#toggleIntro` persistence | Legacy toggles `.site-guide-outer.hide` and stores `localStorage["yobi-intro"]` | `NotificationWelcomeGuide` implements same key/class; evidence is source/static render only, no browser click/localStorage scenario | weak evidence | focused Playwright scenario for `frontend/src/routes/notification/route.tsx` |
+| Notification stream row expand/collapse | `partial_notifications.scala.html` toggles `.message-wrap.nowrap`, `.more`, ignores anchor/img clicks | `NotificationMessage`, `handleLearnMoreClick`, `ResizeObserver`, `event.target.closest("a, img")`, source tests in `route-parity.spec.tsx` | covered | none |
+| Notification load-more | Legacy `#notification-more` removes itself and GETs `/notification?from=from+size&limit=size`, appending only the next fragment chunk | React keeps one query at `from=0`, increases `size` by 20, and `#notification-more` is an anchor without `preventDefault`; this can refetch prior rows or navigate instead of append-next-chunk semantics | deviation | `frontend/src/routes/notification/route.tsx`, `frontend/src/api/notifications.ts`, notification list Playwright test |
+| `/notification?from=&limit=` JSON/API boundary | Legacy `NotificationApp.notifications` returns server-rendered HTML fragment `partial_notifications` | Rust direct route returns JSON for API-style requests and SPA shell for `Accept: text/html`; `notification_contract_direct_notification_route_returns_api_payload`, `notification_contract_direct_notification_html_accept_serves_spa_shell`, direct API sweep | covered | none |
+| Server-rendered notification fragment as React data source | Legacy app used HTML fragment append from `/notification` | Phase rule says converted fragments must stay API-return plus React render; keeping HTML injection as a runtime data source is explicitly out of scope | not-applicable | none |
+
+## Playwright Scenario Matrix
+
+| path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/search?keyword=yona&searchType=auto` | authenticated/global/populated | `.search-category-wrap`, `#searchInnerForm`, `Found <strong>...` | `.search-category-wrap`, `#searchInnerForm`, `SearchResultTitle` | submit search; click category tab changes `searchType` | React route calls `/api/v1/search` JSON | covered |
+| `/search` | anonymous or authenticated/missing params | legacy `badRequest(ErrorViews.BadRequest.render())` | current empty search page with `.empty-result` | direct navigation | React route without REST call | needs-parent-decision |
+| `/pilot/yona/search?keyword=yona&searchType=project` | project scope invalid type | bad request | `BadRequestPage`; REST `400` | direct navigation | React route + `/api/v1/projects/:owner/:project/search` guard | covered |
+| `/pilot/yona/search?keyword=yona&searchType=issue` | project scope/populated | real `projectLayout`, no project category | search page with synthesized project detail | render project header/menu and result list | React route + project search JSON | gap |
+| `/organizations/pilot/search?keyword=yona&searchType=post` | organization scope/populated | real `organization.header`, `organization.menu` | search page with synthesized organization detail | render org header/menu and category tab | React route + organization search JSON | gap |
+| `/search?keyword=NoSuchNeedle&searchType=issue` | empty result | `<div class="empty-result"></div>` | `<div class="empty-result"></div>` | direct navigation | `/api/v1/search` returns counts/items | covered |
+| `/search?keyword=Needle&searchType=user` | user result type | `.avatar-wrap`, `.title.user-link`, `(@loginId)`, `userinfo.since` | generic `.search-list-item` | direct navigation/result inspection | `/api/v1/search` user item | gap |
+| `/search?keyword=Needle&searchType=project` | project result type | project logo, overview, created/code update, fork-original block | generic `.search-list-item` | direct navigation/result inspection | `/api/v1/search` project item | gap |
+| `/search?keyword=Needle&searchType=milestone` | milestone result type | `.due-date`, `label.dueDate`, `getDueDateString`, `until` | milestone branch with `label.dueDate` and one label field | direct navigation/result inspection | `/api/v1/search` milestone item | gap |
+| `/notifications` | authenticated/empty inbox | `.site-guide-outer`, `#toggleIntro`, `.nav.nav-tabs`, `.warning-none`, `notification.none` | same guide/tabs/warning selectors and translated copy | click `#toggleIntro`, inspect localStorage and `.hide` | React route calls `/api/v1/notifications?from=0&size=20` | weak evidence |
+| `/notifications` | authenticated/populated inbox | `.notification-stream`, `.stream-type`, `.message-wrap.nowrap`, `.more`, avatar/author/date | same stream selectors via `NotificationRouteComponent` | click row; click link/img should not toggle; click `.more` expands | React route calls `/api/v1/notifications` JSON | covered |
+| `/notifications` | more than 20 notifications | `#notification-more` GETs `/notification?from=20&limit=20` and appends returned fragment | `#notification-more` increases `size` while querying from `0`, anchor may navigate | click More once and assert request params/new rows only | React route currently uses `/api/v1/notifications?from=0&size=N` | deviation |
+| `/notification?from=0&limit=20` | API/direct conversion | legacy server HTML fragment from `partial_notifications.scala.html` | JSON object with `hasMore`, `items`, `total`; HTML Accept serves SPA shell | direct fetch with API Accept and browser navigation with HTML Accept | direct compatibility boundary, not HTML injection | covered |
+
+## Notes
+
+- No raw visible i18n-key failure was found in the audited search/notification evidence. `frontend/src/search-i18n.spec.tsx`, `frontend/src/directory-home-user-files-notification-i18n.spec.tsx`, and the 2026-06-25 visual sweep raw-key scan are the strongest current evidence.
+- The notification direct route has two separate statuses by design: JSON/API-return plus React-render is covered, while retaining legacy server-rendered fragment injection as a runtime data source is not applicable under the phase rule.
+- The search scoped chrome gaps are separate from scoped search data correctness. REST scope, ACL, and count behavior have strong backend coverage; the visible header/menu detail is the weak area.

@@ -6065,7 +6065,7 @@ describe("file-route parity harness", () => {
     expect(html).not.toContain("No public projects found.");
   });
 
-  it("keeps the legacy project directory pageNum slice with pagination placeholder", () => {
+  it("keeps the legacy project directory pageNum slice with pagination controls", () => {
     const items = Array.from({ length: 11 }, (_, index) => ({
       createdLabel: `2026-06-${String(index + 1).padStart(2, "0")}`,
       lastPushedLabel: index === 10 ? "2026-06-30" : "",
@@ -6091,9 +6091,17 @@ describe("file-route parity harness", () => {
     expect(html).toContain("<strong>12</strong>");
     expect(html).not.toContain('<p class="name-tag">by owner</p>');
     expect(html).not.toContain('class="project-avatar"');
-    expect(html).toContain('id="pagination"');
+    expect(html).toContain('class="page-navigation-wrap" id="pagination"');
+    expect(html).toContain('href="/yona/projects?pageNum=1"');
+    expect(html).toContain('class="ico btn-pg-prev"');
+    expect(html).toContain('name="pageNum"');
+    expect(html).toContain('max="2"');
+    expect(html).toContain('value="2"');
+    expect(html).toContain('<li class="page-num delimiter">/</li>');
+    expect(html).toContain('<li class="page-num">2</li>');
+    expect(html).toContain('<span class="off">Next page</span>');
+    expect(html).toContain('class="ico btn-pg-next off"');
     expect(html).not.toContain('class="nav-pill active"');
-    expect(html).not.toContain("Next</span>");
   });
 
   it("keeps private project directory rows on the legacy lock scalar", () => {
@@ -6143,6 +6151,7 @@ describe("file-route parity harness", () => {
       {
         items: [
           {
+            createdLabel: "2026-06-01",
             description: "Web labs",
             logoUrl: "/yona/files/2",
             organizationName: "weblabs",
@@ -6158,8 +6167,30 @@ describe("file-route parity harness", () => {
     );
     expect(html).toContain('class="black" href="/yona/organizations/weblabs"');
     expect(html).toContain(">Web labs<");
+    expect(html).toContain('<p class="name-tag">created');
+    expect(html).toContain('title="2026-06-01">2026-06-01</strong>');
     expect(html).not.toContain('class="project-avatar"');
     expect(html).not.toContain('<img alt="" src="/yona/files/2"/>');
+  });
+
+  it("keeps the legacy organization directory pageNum slice with pagination controls", () => {
+    const items = Array.from({ length: 31 }, (_, index) => ({
+      createdLabel: `2026-06-${String(index + 1).padStart(2, "0")}`,
+      description: `Organization ${index + 1}`,
+      logoUrl: "",
+      organizationName: `org-${index + 1}`,
+    }));
+    const html = renderOrganizationDirectory({ items }, "/orgs?pageNum=2&filter=org");
+
+    expect(html).not.toContain('href="/yona/organizations/org-1"');
+    expect(html).toContain('href="/yona/organizations/org-31"');
+    expect(html).toContain('title="2026-06-31">2026-06-31</strong>');
+    expect(html).toContain('class="page-navigation-wrap" id="pagination"');
+    expect(html).toContain('href="/yona/orgs?pageNum=1&amp;filter=org"');
+    expect(html).toContain('name="pageNum"');
+    expect(html).toContain('max="2"');
+    expect(html).toContain('value="2"');
+    expect(html).toContain('<span class="off">Next page</span>');
   });
 
   it("keeps legacy guest-prohibited directory routes on the forbidden shell", () => {

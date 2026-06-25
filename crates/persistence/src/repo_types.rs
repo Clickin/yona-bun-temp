@@ -1013,6 +1013,7 @@ pub struct OrganizationRecord {
     pub id: i64,
     pub organization_name: String,
     pub description: Option<String>,
+    pub created_date: Option<DateTime>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

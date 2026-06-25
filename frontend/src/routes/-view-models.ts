@@ -554,6 +554,7 @@ export interface ProjectDirectoryViewModel {
 
 export interface OrganizationDirectoryViewModel {
   items: Array<{
+    createdLabel: string;
     description: string;
     logoUrl: string;
     organizationName: string;

@@ -1109,6 +1109,9 @@ async fn public_directory_lists_project_and_organization_logo_urls() {
         organizations_json["items"][0]["logoUrl"],
         format!("/yona/files/{}", organization_logo.id)
     );
+    assert!(organizations_json["items"][0]["createdLabel"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
 
     let guest_organizations = app
         .oneshot(

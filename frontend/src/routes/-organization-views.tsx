@@ -401,6 +401,7 @@ function OrganizationMembershipActions(props: {
         <div className={modalOpen ? "modal" : "modal hide"} id="alertLeave">
           <div className="modal-header">
             <button
+              aria-label={legacyMessage(props.messages, "button.close")}
               className="close"
               data-dismiss="modal"
               onClick={() => setModalOpen(false)}

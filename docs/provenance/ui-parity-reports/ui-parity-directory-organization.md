@@ -44,8 +44,8 @@ Current evidence:
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
 | `/projects` | Project directory has project/org tabs, `filter` search, empty state, project rows, pagination. | `ProjectDirectoryPage` keeps tabs/search/empty/list copy and client `pageNum` slice. | covered | none |
-| `/projects?pageNum>1` | Legacy renders pagination controls into `#pagination`. | Current slices page data but renders only empty `<div id="pagination">`. | gap | `frontend/src/routes/-directory-views.tsx`, focused directory pagination spec |
-| `/orgs` | Org directory has tabs, search, empty state, org rows, created timestamp, pagination. | `OrganizationDirectoryPage` keeps tabs/search/empty/list but omits created timestamp and renders empty `#pagination`. | gap | `frontend/src/routes/-directory-views.tsx`, org directory view model/API if `createdLabel` is missing |
+| `/projects?pageNum>1` | Legacy renders pagination controls into `#pagination`. | `ProjectDirectoryPage` now renders the legacy `.page-navigation-wrap` / `.page-nums` / prev-next/page-input shell from React while preserving client `pageNum` slicing and filter query links. | covered in follow-up | `frontend/src/routes/-directory-views.tsx`, `frontend/src/route-parity.spec.tsx` |
+| `/orgs` | Org directory has tabs, search, empty state, org rows, created timestamp, pagination. | `OrganizationDirectoryPage` now renders `created <strong title=...>` from REST `createdLabel` and the same legacy pagination shell as `/projects`. | covered in follow-up | `crates/server/src/routes/projects/organizations.rs`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-directory-views.tsx`, `frontend/src/route-parity.spec.tsx` |
 | `/projectform` | Legacy validates empty/invalid/reserved names, trims spaces to hyphens, hides protected scope for user owners, shows SVN warning, enforces code/PR/review coupling. | `ProjectNewPage` renders form and REST submit, but lacks those client state/validation behaviors. | gap | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-create-parity.spec.tsx` |
 | `/_import` | Empty URL shows `project.import.error.empty.url` before submit. | `ProjectImportPage` renders shell and REST submit, but client-side empty URL validation is absent. | gap | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-import-parity.spec.tsx` |
 | `/organizations/new` | Legacy validates org name and shows `organization.name.alert`. | `OrganizationNewPage` applies the same regex and warning span. | covered | none |
@@ -63,8 +63,8 @@ Current evidence:
 | path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
 | --- | --- | --- | --- | --- | --- | --- |
 | `/projects` | empty directory | `.error-wrap .ico-err1`, `project.is.empty`, `input[name=filter]` | same selectors/copy | submit no-match filter | projects REST list plus React filter | covered |
-| `/projects?pageNum=2` | more than one page | `#pagination` populated | empty `#pagination` only | click next/previous/page | React route `pageNum` | gap |
-| `/orgs` | listed orgs | org row includes created label and `#pagination` | row lacks created label; empty `#pagination` | inspect metadata and page controls | organizations REST list | gap |
+| `/projects?pageNum=2` | more than one page | `#pagination.page-navigation-wrap`, `.page-nums`, prev/next icons, `input[name=pageNum]` | same selectors rendered by React | click next/previous/page | React route `pageNum` | covered in follow-up |
+| `/orgs` | listed orgs | org row includes created label and `#pagination` | same created label and pagination selectors rendered by React | inspect metadata and page controls | organizations REST list with `createdLabel` | covered in follow-up |
 | `/projectform` | invalid project name | popover on `[name=name]` with legacy alert | no client validation before submit | submit empty/invalid/reserved; change owner; select SVN | create project REST | gap |
 | `/_import` | empty URL | popover with `project.import.error.empty.url` | no client validation before submit | submit empty URL | import REST | gap |
 | `/organizations/new` | invalid name | `span.msg.wrongName` | same warning | submit invalid | create org REST only after valid state | covered |

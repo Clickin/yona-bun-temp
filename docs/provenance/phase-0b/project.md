@@ -127,7 +127,7 @@
 ## R0-3 Delivery Note
 
 - `R0-3` now covers project create/detail/settings, visibility-aware read, guest-only enrollment request/cancel, member summary, and workspace favorite/recent linkage in `repo root`.
-- The Wave 0 route-foundation slice also mounts the public `/projects` directory in `frontend` through file routes under `src/routes/projects/**`, with route-parity tests for legacy fixed 10-item `pageNum` pagination and a shell-routing Playwright smoke pack.
+- The Wave 0 route-foundation slice also mounts the public `/projects` directory in `frontend` through file routes under `src/routes/projects/**`, with route-parity tests for legacy fixed 10-item `pageNum` slicing, React-rendered legacy `#pagination.page-navigation-wrap` controls, and a shell-routing Playwright smoke pack.
 - The project visibility closeout locks public/protected/private read behavior and site-admin read/update bypass in `crates/domain::org_project` tests; server routes consume the same `authorize_project_access` decision helper for project read/update gates.
 - Project detail read records recent visits for authenticated viewers, and `/me` now reflects favorite/recent project state through `GET /api/v1/workspace`.
 - The project watcher closeout adds an app REST watcher directory and legacy deep-link route for `/:owner/:project/watchers`; unreadable projects keep the project READ denial while readable projects list actual watcher users with legacy member-row class anchors.

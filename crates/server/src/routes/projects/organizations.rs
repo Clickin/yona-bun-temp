@@ -47,6 +47,7 @@ pub(crate) async fn organization_detail_read(
                 id: organization.id,
                 organization_name: organization.organization_name,
                 description: organization.description,
+                created_date: None,
             },
             false,
         )
@@ -112,6 +113,7 @@ pub(crate) async fn organization_create(
                 id: organization.id,
                 organization_name: organization.organization_name,
                 description: organization.description,
+                created_date: organization.created_date,
             },
             true,
         )
@@ -188,6 +190,7 @@ pub(crate) async fn organization_update(
                 id: updated.id,
                 organization_name: updated.organization_name,
                 description: updated.description,
+                created_date: updated.created_date,
             },
             true,
         )
@@ -857,6 +860,7 @@ pub(crate) async fn organization_list(
             items.push(OrganizationListItem {
                 organization_name: item.organization_name,
                 description: item.description.unwrap_or_default(),
+                created_label: format_project_date_label(item.created_date),
                 logo_url: organization_logo_url(repository, &service.base_path, item.id).await?,
                 ..Default::default()
             });

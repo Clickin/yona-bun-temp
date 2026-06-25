@@ -836,6 +836,7 @@ describe("auth and workspace views", () => {
       {
         items: [
           {
+            createdLabel: "2026-04-02",
             description: "web labs",
             logoUrl: "/yona/files/2",
             organizationName: "weblabs",

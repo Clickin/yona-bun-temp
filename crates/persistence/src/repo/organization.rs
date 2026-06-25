@@ -8,7 +8,7 @@ impl AppRepositoryImpl<'_> {
         let created = organization::ActiveModel {
             id: NotSet,
             name: Set(Some(input.organization_name.trim().to_string())),
-            created: Set(None),
+            created: Set(Some(current_datetime())),
             descr: Set(empty_to_none(input.description)),
         }
         .insert(&self.db)
