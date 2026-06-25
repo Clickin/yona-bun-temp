@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { TranslateOptions } from "../i18n";
+import { LEGACY_DEFAULT_LANGUAGE, lookupLegacyMessage, type TranslateOptions } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { WorkspaceOverviewViewModel } from "./-view-models";
 
@@ -39,7 +39,9 @@ function legacyMessage(
   key: string,
   fallback = key,
 ): string {
-  return messages ? messages(key, { fallback }) : fallback;
+  return messages
+    ? messages(key, { fallback })
+    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { fallback });
 }
 
 function UserProjectListEmpty({

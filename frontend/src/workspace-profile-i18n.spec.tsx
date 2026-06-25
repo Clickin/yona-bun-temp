@@ -101,36 +101,37 @@ function renderProfile(messages?: LegacyMessageLookup) {
 }
 
 describe("workspace/profile legacy i18n opt-in", () => {
-  it("keeps workspace and public profile tab fallback keys without a runtime provider", () => {
+  it("resolves workspace and public profile tab labels without a runtime provider", () => {
     const workspaceHtml = renderWorkspace();
     const profileHtml = renderProfile();
 
     for (const html of [workspaceHtml, profileHtml]) {
-      expect(html).toContain(">menu.issue <span");
-      expect(html).toContain(">menu.pullRequest <span");
-      expect(html).toContain(">project.projects <span");
-      expect(html).toContain("userinfo.editProfile");
-      expect(html).toContain("<strong>userinfo.since</strong>");
-      expect(html).toContain("<strong>user.connected.social.login</strong>");
-      expect(html).toContain(">userinfo.daysAgo.prefix</span>");
-      expect(html).toContain(">userinfo.daysAgo.suffix</span>");
+      expect(html).toContain(">Issue <span");
+      expect(html).toContain(">Pull request <span");
+      expect(html).toContain(">projects <span");
+      expect(html).toContain("Edit profile");
+      expect(html).toContain("<strong>Member since</strong>");
+      expect(html).toContain("<strong>Connected Social Login</strong>");
+      expect(html).toContain(">recently</span>");
+      expect(html).toContain(">days ago</span>");
+      expect(html).not.toContain(">menu.issue <span");
+      expect(html).not.toContain(">menu.pullRequest <span");
     }
-    expect(profileHtml).toContain('title="common.two.column.mode"');
-    expect(profileHtml).toContain('data-content="common.two.column.mode.desc"');
-    expect(profileHtml).toContain('aria-label="common.two.column.view"');
-    expect(profileHtml).toContain('class="two-column-mode-text">common.two.column.view</span>');
-    expect(profileHtml).toContain('title="common.show.subtasks"');
-    expect(profileHtml).toContain('data-content="common.show.subtasks.desc"');
-    expect(profileHtml).toContain('aria-label="common.show.subtasks"');
-    expect(profileHtml).toContain('class="show-subtasks-text">common.show.subtasks</span>');
-    expect(workspaceHtml).toContain(">button.setDefaultLoginPage</h2>");
-    expect(workspaceHtml).toContain(">button.setDefaultLoginPage.desc</span>");
-    expect(workspaceHtml).toContain(">title.favorite</h2>");
-    expect(workspaceHtml).toContain(">title.recently.visited</h2>");
-    expect(workspaceHtml).toContain(">title.no.results</div>");
+    expect(profileHtml).toContain('title="Two Column Mode"');
+    expect(profileHtml).toContain('data-content="Splits list and body into columns respectively"');
+    expect(profileHtml).toContain('aria-label="Column View"');
+    expect(profileHtml).toContain('class="two-column-mode-text">Column View</span>');
+    expect(profileHtml).toContain('title="Show subtask"');
+    expect(profileHtml).toContain('data-content="Show subtask always"');
+    expect(profileHtml).toContain('class="show-subtasks-text">Show subtask</span>');
+    expect(workspaceHtml).toContain(">Set to default page</h2>");
+    expect(workspaceHtml).toContain(">Make current page the index page when logged in</span>");
+    expect(workspaceHtml).toContain(">Favorite</h2>");
+    expect(workspaceHtml).toContain(">Recently visited</h2>");
+    expect(workspaceHtml).toContain(">No results</div>");
   });
 
-  it("keeps empty stream and missing author fallback keys without a runtime provider", () => {
+  it("resolves empty stream and missing author labels without a runtime provider", () => {
     const emptyOverview: WorkspaceOverviewViewModel = {
       ...overview,
       favoriteProjects: [],
@@ -165,11 +166,13 @@ describe("workspace/profile legacy i18n opt-in", () => {
     );
 
     for (const html of [emptyWorkspaceHtml, emptyProfileHtml]) {
-      expect(html).toContain(">userinfo.daysAgo.prefix issue.is.empty</p>");
-      expect(html).toContain(">userinfo.daysAgo.prefix pullRequest.is.empty</p>");
-      expect(html).toContain(">project.is.empty</p>");
+      expect(html).toContain(">recently No issue found</p>");
+      expect(html).toContain(">recently No pull requests have been received</p>");
+      expect(html).toContain(">Project is non existent</p>");
+      expect(html).not.toContain("userinfo.daysAgo.prefix");
     }
-    expect(missingAuthorHtml).toContain(">issue.noAuthor</span>");
+    expect(missingAuthorHtml).toContain(">No author</span>");
+    expect(missingAuthorHtml).not.toContain(">issue.noAuthor</span>");
   });
 
   it("uses provided English legacy messages for workspace and profile controls", () => {

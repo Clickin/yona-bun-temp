@@ -1820,6 +1820,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   text. Focused coverage: `frontend/src/project-home-tabs.spec.tsx`,
   `frontend/src/issue-detail-shell.spec.tsx`, and full
   `pnpm --dir frontend exec vitest run`.
+- 2026-06-25 workspace/profile provider-less i18n tightening:
+  `frontend/src/routes/-workspace-views.tsx` now resolves known legacy keys
+  through the default legacy message table even when direct-rendered without a
+  runtime provider, preventing raw workspace/profile tab, sidebar, empty-state,
+  and tooltip keys from being pinned as acceptable UI. Focused coverage:
+  `frontend/src/workspace-profile-i18n.spec.tsx` and full
+  `pnpm --dir frontend exec vitest run`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and
