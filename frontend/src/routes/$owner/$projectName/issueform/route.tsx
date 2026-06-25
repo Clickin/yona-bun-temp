@@ -19,6 +19,7 @@ import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
+  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../-shared";
@@ -150,7 +151,10 @@ function IssueCreateRouteComponent() {
           projectName,
           title,
         });
-        window.location.assign(`/${owner}/${projectName}/issue/${Number(issue.issueNumber)}`);
+        navigateToAppHref(
+          runtimeConfig.basePath,
+          `/${owner}/${projectName}/issue/${Number(issue.issueNumber)}`,
+        );
       }}
       initialParentIssueId={Number(
         new URLSearchParams(window.location.search).get("parentIssueId") ?? 0,

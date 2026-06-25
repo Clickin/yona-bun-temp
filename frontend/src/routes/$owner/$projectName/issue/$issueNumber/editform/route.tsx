@@ -25,6 +25,7 @@ import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
+  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../../../-shared";
@@ -172,7 +173,10 @@ function IssueEditRouteComponent() {
           projectName,
           title,
         });
-        window.location.assign(`/${owner}/${projectName}/issue/${Number(updated.issueNumber)}`);
+        navigateToAppHref(
+          runtimeConfig.basePath,
+          `/${owner}/${projectName}/issue/${Number(updated.issueNumber)}`,
+        );
       }}
       parentIssueOptions={parentIssueOptions}
       runtimeConfig={runtimeConfig}

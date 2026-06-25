@@ -34,6 +34,7 @@ import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
+  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../../-shared";
@@ -200,7 +201,7 @@ function IssueDetailRouteComponent() {
           ownerName: owner,
           projectName,
         });
-        window.location.assign(`/${owner}/${projectName}/issues`);
+        navigateToAppHref(runtimeConfig.basePath, `/${owner}/${projectName}/issues`);
       }}
       onFavoriteToggle={async () => {
         const nextIssue = await toggleFavoriteIssue(runtimeConfig, csrfToken, {
