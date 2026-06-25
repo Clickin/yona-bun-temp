@@ -11,6 +11,15 @@ const phasePlanPath = path.join(
   "2026-06-26-full-ui-parity-subagent-phase.md",
 );
 const reportsDir = path.join(repoRoot, "docs", "provenance", "ui-parity-reports");
+const inventoryStatuses = [
+  "covered",
+  "gap",
+  "deviation",
+  "deferred",
+  "not-applicable",
+  "weak evidence",
+  "needs-parent-decision",
+];
 const blockingStatuses = new Set(["gap", "deviation", "weak evidence", "needs-parent-decision"]);
 
 function readText(filePath) {
@@ -61,6 +70,48 @@ function blockerRows(reportSource) {
   }
 
   return rows;
+}
+
+function parseSummaryCounts(summarySection) {
+  const totalRows = Number(summarySection.match(/Total rows:\s+(\d+)/)?.[1]);
+  const counts = Object.fromEntries(inventoryStatuses.map((status) => [status, 0]));
+
+  for (const status of inventoryStatuses) {
+    const match = summarySection.match(new RegExp(`\\| ${status} \\| (\\d+) \\|`, "i"));
+    assert.ok(match, `summary must count ${status}`);
+    counts[status] = Number(match[1]);
+  }
+
+  return { counts, totalRows };
+}
+
+function parseInventoryCounts(resultInventorySection) {
+  const counts = Object.fromEntries(inventoryStatuses.map((status) => [status, 0]));
+
+  for (const line of resultInventorySection.split("\n")) {
+    if (!line.startsWith("|") || line.includes("---")) {
+      continue;
+    }
+    const columns = line
+      .split("|")
+      .slice(1, -1)
+      .map((column) => column.trim().replaceAll("`", "").toLowerCase());
+    const statusColumn = columns.find(
+      (column) =>
+        column === "covered" || inventoryStatuses.includes(column) || column.startsWith("covered "),
+    );
+
+    if (statusColumn === undefined) {
+      continue;
+    }
+    if (statusColumn.startsWith("covered")) {
+      counts.covered += 1;
+      continue;
+    }
+    counts[statusColumn] += 1;
+  }
+
+  return counts;
 }
 
 test("full UI parity Gate A keeps one report for every active packet", () => {
@@ -136,21 +187,48 @@ test("full UI parity Gate A reports keep the standard inventory sections", () =>
     const scenarioMatrix = section(reportSource, "Playwright Scenario Matrix");
 
     assert.match(summary, /Total rows:\s+\d+/, `${packet} must record total row count`);
-    for (const status of [
-      "covered",
-      "gap",
-      "deviation",
-      "deferred",
-      "not-applicable",
-      "weak evidence",
-      "needs-parent-decision",
-    ]) {
-      assert.match(summary, new RegExp(`\\| ${status} \\| \\d+ \\|`), `${packet} must count ${status}`);
+    for (const status of inventoryStatuses) {
+      assert.match(
+        summary,
+        new RegExp(`\\| ${status} \\| \\d+ \\|`),
+        `${packet} must count ${status}`,
+      );
     }
     assert.match(resultInventory, /\| (path|route\/state|surface) \|/i);
-    assert.match(resultInventory, /\| (legacy evidence|legacy source and behavior|legacy source) \|/i);
-    assert.match(resultInventory, /\| (current evidence|current source and evidence|current source) \|/i);
-    assert.match(scenarioMatrix, /\| path \| state \| legacy selector\/copy \| Rust selector\/copy \| interaction \| API\/direct boundary \| status \|/i);
+    assert.match(
+      resultInventory,
+      /\| (legacy evidence|legacy source and behavior|legacy source) \|/i,
+    );
+    assert.match(
+      resultInventory,
+      /\| (current evidence|current source and evidence|current source) \|/i,
+    );
+    assert.match(
+      scenarioMatrix,
+      /\| path \| state \| legacy selector\/copy \| Rust selector\/copy \| interaction \| API\/direct boundary \| status \|/i,
+    );
+  }
+});
+
+test("full UI parity Gate A report summaries match their inventory rows", () => {
+  const phasePlan = readText(phasePlanPath);
+
+  for (const packet of activePackets(phasePlan)) {
+    const reportPath = path.join(reportsDir, `${packet}.md`);
+    const reportSource = readText(reportPath);
+    const summaryCounts = parseSummaryCounts(section(reportSource, "Route Inventory Summary"));
+    const inventoryCounts = parseInventoryCounts(section(reportSource, "Result Inventory"));
+
+    assert.deepEqual(
+      summaryCounts.counts,
+      inventoryCounts,
+      `${packet} summary counts must match Result Inventory`,
+    );
+    assert.equal(
+      summaryCounts.totalRows,
+      Object.values(inventoryCounts).reduce((sum, count) => sum + count, 0),
+      `${packet} total rows must match counted inventory statuses`,
+    );
   }
 });
 
@@ -160,9 +238,9 @@ test("full UI parity phase records Gate A report closure evidence", () => {
 
   assert.match(gateStatus, /Current Gate A report status:/);
   assert.doesNotMatch(gateStatus, /report file is missing \| open/);
-  assert.match(gateStatus, /ui-parity-user-workspace-profile\.md` records 13 covered rows/);
-  assert.match(gateStatus, /ui-parity-user-account-settings\.md` records 12 covered rows/);
-  assert.match(gateStatus, /ui-parity-fragment-security-db\.md` records 11 covered rows/);
+  assert.match(gateStatus, /ui-parity-user-workspace-profile\.md` records 14 covered rows/);
+  assert.match(gateStatus, /ui-parity-user-account-settings\.md` records 13 covered rows/);
+  assert.match(gateStatus, /ui-parity-fragment-security-db\.md` records 12 covered rows/);
 });
 
 test("full UI parity Round 2 browser-visible gate is closed with explicit evidence", () => {
@@ -194,7 +272,10 @@ test("full UI parity Round 2 browser-visible gate is closed with explicit eviden
   assert.equal(statuses.get("r2-auth-setup-public-shell"), "covered in current follow-up");
   assert.equal(statuses.get("r2-workspace-settings-directory"), "covered in current follow-up");
   assert.equal(statuses.get("r2-project-issue-board-milestone"), "covered in current follow-up");
-  assert.equal(statuses.get("r2-code-pr-review-search-notification"), "covered in current follow-up");
+  assert.equal(
+    statuses.get("r2-code-pr-review-search-notification"),
+    "covered in current follow-up",
+  );
   assert.equal(statuses.get("r2-site-admin-security-db"), "covered in current follow-up");
   assert.deepEqual(
     packets.filter(({ status }) => blockingStatuses.has(status)),

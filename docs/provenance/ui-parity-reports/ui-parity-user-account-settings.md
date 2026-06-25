@@ -63,11 +63,11 @@ Current evidence:
 
 ## Route Inventory Summary
 
-Total rows: 12
+Total rows: 13
 
 | status | count |
 | --- | ---: |
-| covered | 12 |
+| covered | 13 |
 | gap | 0 |
 | deviation | 0 |
 | deferred | 0 |

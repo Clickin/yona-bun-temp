@@ -432,9 +432,9 @@ Current Gate A report status:
 
 | Packet/report | Status | Evidence |
 | --- | --- | --- |
-| `ui-parity-user-workspace-profile` report file | closed 2026-06-26 | `docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md` records 13 covered rows and no gap/deviation/weak-evidence/needs-parent-decision rows. |
-| `ui-parity-user-account-settings` report file | closed 2026-06-26 | `docs/provenance/ui-parity-reports/ui-parity-user-account-settings.md` records 12 covered rows and no gap/deviation/weak-evidence/needs-parent-decision rows. |
-| `ui-parity-fragment-security-db` report file | closed 2026-06-26 | `docs/provenance/ui-parity-reports/ui-parity-fragment-security-db.md` records 11 covered rows, 1 not-applicable row for issue-list PJAX fragment compatibility, and no gap/deviation/weak-evidence/needs-parent-decision rows. |
+| `ui-parity-user-workspace-profile` report file | closed 2026-06-26 | `docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md` records 14 covered rows and no gap/deviation/weak-evidence/needs-parent-decision rows. |
+| `ui-parity-user-account-settings` report file | closed 2026-06-26 | `docs/provenance/ui-parity-reports/ui-parity-user-account-settings.md` records 13 covered rows and no gap/deviation/weak-evidence/needs-parent-decision rows. |
+| `ui-parity-fragment-security-db` report file | closed 2026-06-26 | `docs/provenance/ui-parity-reports/ui-parity-fragment-security-db.md` records 12 covered rows, 1 not-applicable row for issue-list PJAX fragment compatibility, and no gap/deviation/weak-evidence/needs-parent-decision rows. |
 | `ui-parity-auth-public-entry` browser-proof depth | closed 2026-06-27 | `frontend/tests/auth-public-entry-parity.e2e.ts` passed 7 Playwright tests after adding first-run `/secret` admin setup form, REST payload, and restart redirect proof; the auth report still has no weak-evidence row. |
 
 1. Keep `docs/provenance/ui-parity-reports/*` as the route-family inventory
@@ -558,7 +558,8 @@ Before this phase can close:
 - 2026-06-26 Gate A report closure refresh: the missing
   `ui-parity-user-workspace-profile`,
   `ui-parity-user-account-settings`, and `ui-parity-fragment-security-db`
-  reports were added. The new report summaries contain no `gap`, `deviation`,
+  reports were added. Their current summaries record 14, 13, and 13 total rows
+  respectively and contain no `gap`, `deviation`,
   `weak evidence`, or `needs-parent-decision` rows; the only non-covered row is
   the existing `not-applicable` issue-list PJAX fragment compatibility decision.
 - 2026-06-26 root-shell browser proof refresh: `pnpm --dir frontend test:e2e

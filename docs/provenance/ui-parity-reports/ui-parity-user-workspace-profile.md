@@ -42,13 +42,13 @@ Current evidence:
 
 ## Route Inventory Summary
 
-Total rows: 13
+Total rows: 14
 
 No `gap`, `deviation`, `weak evidence`, or `needs-parent-decision` rows were found for this packet. The rows below are covered because the legacy view/controller behavior has matching REST JSON/API-return plus React render evidence, and the previously known follow-ups for editable `daysAgo`, public email visibility, profile actor links, workspace file location URLs, selected-tab query preservation, and guest stream hiding are now backed by focused source/tests.
 
 | Status | Count |
 | --- | ---: |
-| covered | 13 |
+| covered | 14 |
 | gap | 0 |
 | deviation | 0 |
 | deferred | 0 |
