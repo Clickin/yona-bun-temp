@@ -109,7 +109,9 @@
   the legacy `help/markdown.scala.html` examples where the list input displays
   `- Green.` while the rendered output omits the period, and the image input
   displays the `https://repo.yona.io/.../ico-like-small.png` URL while the
-  rendered output uses `/assets/images/ico-like-small.png`. Focused evidence:
+  rendered output uses `/assets/images/ico-like-small.png`; the checklist help
+  item also omits the runtime tasklist progress bar that belongs to rendered
+  issue/board/code bodies, not the static help panel. Focused evidence:
   `markdown-renderer.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,

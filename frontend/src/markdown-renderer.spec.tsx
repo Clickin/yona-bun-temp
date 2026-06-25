@@ -21,6 +21,8 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="markdown-help-wrap"');
     expect(html).toContain('class="markdown-help-item markdownHeaders"');
     expect(html).toContain('class="markdown-help-item markdownShortLinks"');
+    expect(html).toContain('class="markdown-help-item markdownTaskList"');
+    expect(html).not.toContain('class="tasklist task-show"');
     expect(html).toContain("Markdown Input");
     expect(html).toContain("Markdown Output");
     expect(html).toContain("- Green.");

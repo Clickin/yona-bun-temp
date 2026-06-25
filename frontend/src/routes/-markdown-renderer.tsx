@@ -6928,7 +6928,6 @@ export function LegacyMarkdownHelp(props: { messages?: LegacyMessageLookup } = {
                 <MarkdownRenderer
                   className="markdown-wrap"
                   markdown={section.outputMarkdown ?? section.input}
-                  showTasklistBar={section.target === "markdownTaskList"}
                 />
               </div>
             </div>
