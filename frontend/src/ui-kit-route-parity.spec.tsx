@@ -45,6 +45,9 @@ describe("legacy UIKit route parity", () => {
 
     expect(html).toContain('class="gnb-outer"');
     expect(html).toContain('class="subtitle">Yobi UI</span>');
+    expect(html).toContain('href="/yona/_UIKit"');
+    expect(html).toContain('href="/yona/_UIKit?tab=files"');
+    expect(html).not.toContain('href="/yona/ui-kit"');
     expect(html).toContain("<h3>Buttons</h3>");
     expect(html).toContain('class="ybtn ybtn-primary"');
     expect(html).toContain('class="nbtn medium white fake-file-wrap"');

@@ -16,7 +16,7 @@ const labelColors = ["#da5454", "#ff9933", "#ffcc33", "#22b4b9"] as const;
 const labelNames = ["Clean", "Fresh", "Modern", "Unique"] as const;
 
 export function UIKitPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const uiKitHref = prefixBasePath(runtimeConfig.basePath, "/ui-kit");
+  const uiKitHref = prefixBasePath(runtimeConfig.basePath, "/_UIKit");
   const defaultAvatarUrl = prefixBasePath(
     runtimeConfig.basePath,
     "/assets/images/default-avatar-128.png",

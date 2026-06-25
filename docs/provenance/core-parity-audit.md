@@ -1891,6 +1891,10 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   the legacy `app.welcome.*`, `app.restart.*`, and readonly `admin` account
   surface visible in route source evidence. Focused coverage:
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx`.
+- 2026-06-25 UIKit route href correction: React `/_UIKit` now keeps its sample
+  links on the legacy `/_UIKit` route instead of emitting the non-legacy
+  `/ui-kit` path. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/ui-kit-route-parity.spec.tsx`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and
