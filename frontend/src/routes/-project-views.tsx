@@ -1274,32 +1274,43 @@ export function ProjectImportPage(props: {
                   id="repoAuth"
                   style={{ display: repoAuthOpen ? undefined : "none" }}
                 >
-                  <input
-                    className="text"
-                    name="authId"
-                    placeholder={legacyMessage(messages, "user.loginId")}
-                    type="text"
-                    value={formState.authId}
-                    onChange={(event) =>
-                      setFormState((current) => ({
-                        ...current,
-                        authId: event.target.value,
-                      }))
-                    }
-                  />
-                  <input
-                    className="text"
-                    name="authPw"
-                    placeholder={legacyMessage(messages, "user.password")}
-                    type="password"
-                    value={formState.authPw}
-                    onChange={(event) =>
-                      setFormState((current) => ({
-                        ...current,
-                        authPw: event.target.value,
-                      }))
-                    }
-                  />
+                  <div className="row-fluid">
+                    <dl className="span6">
+                      <dt>{legacyMessage(messages, "project.import.auth.userid")}</dt>
+                      <dd>
+                        <input
+                          className="text"
+                          name="authId"
+                          placeholder={legacyMessage(messages, "project.import.auth.userid.desc")}
+                          type="text"
+                          value={formState.authId}
+                          onChange={(event) =>
+                            setFormState((current) => ({
+                              ...current,
+                              authId: event.target.value,
+                            }))
+                          }
+                        />
+                      </dd>
+                    </dl>
+                    <dl className="span6">
+                      <dt>{legacyMessage(messages, "project.import.auth.userpw")}</dt>
+                      <dd>
+                        <input
+                          className="text"
+                          name="authPw"
+                          type="password"
+                          value={formState.authPw}
+                          onChange={(event) =>
+                            setFormState((current) => ({
+                              ...current,
+                              authPw: event.target.value,
+                            }))
+                          }
+                        />
+                      </dd>
+                    </dl>
+                  </div>
                 </div>
               </dd>
               <dt>
@@ -1347,7 +1358,7 @@ export function ProjectImportPage(props: {
                   id="project-name"
                   maxLength={250}
                   name="name"
-                  placeholder={legacyMessage(messages, "project.name.placeholder")}
+                  placeholder={legacyMessage(messages, "project.name.alert")}
                   type="text"
                   value={formState.projectName}
                   onChange={(event) =>

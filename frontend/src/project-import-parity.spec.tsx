@@ -31,11 +31,20 @@ describe("project import parity", () => {
     expect(html).toContain('name="url"');
     expect(html).toContain('id="useRepoAuth"');
     expect(html).toContain('id="repoAuth"');
+    expect(html).toContain('class="row-fluid"');
+    expect(html).toContain('<dl class="span6"><dt>Access ID</dt><dd>');
     expect(html).toContain('name="authId"');
+    expect(html).toContain('placeholder="Entered information will not be stored anywhere."');
+    expect(html).toContain('<dl class="span6"><dt>Access Password</dt><dd>');
     expect(html).toContain('name="authPw"');
+    expect(html).not.toContain('placeholder="Login ID"');
+    expect(html).not.toContain('placeholder="Password"');
     expect(html).toContain('id="project-owner"');
     expect(html).toContain('value="weblabs" selected=""');
     expect(html).toContain('id="project-name"');
+    expect(html).toContain(
+      'placeholder="Enter name in alphabetnumerical or symbol characters(_-.)"',
+    );
     expect(html).toContain('id="description"');
     expect(html).toContain('class="unstyled project-scopes mt10"');
     expect(html).toContain('id="vcs"');
