@@ -1609,13 +1609,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   preserving readable source output. Focused coverage:
   `frontend/src/markdown-renderer.spec.tsx`.
 - 2026-06-25 home/directory i18n evidence tightening: the
-  directory/home/user-files/notification focused i18n fixture now uses the
-  exact Korean legacy values from `yona-original/conf/messages.ko-KR` for the
-  touched `app.welcome.*`, `button.*`, `site.features.*`, `title.*`, and
-  related keys instead of shortened explanatory placeholders. This keeps the
-  test evidence aligned with the "legacy key/value as source of truth" rule
-  while preserving the provider-less behavior that renders the raw legacy keys.
-  Focused coverage: `frontend/src/directory-home-user-files-notification-i18n.spec.tsx`.
+  directory/home/user-files/notification focused i18n test now drives the
+  provider-backed case through `createLegacyI18nRuntime(["en-US", "ko-KR"])`,
+  which parses `yona-original/conf/messages*` directly, instead of keeping a
+  hand-copied Korean fixture for the touched `app.welcome.*`, `button.*`,
+  `site.features.*`, `title.*`, and related keys. This keeps the test evidence
+  aligned with the "legacy key/value as source of truth" rule while preserving
+  the provider-less behavior that renders the raw legacy keys. Focused
+  coverage: `frontend/src/directory-home-user-files-notification-i18n.spec.tsx`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and
