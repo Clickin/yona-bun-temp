@@ -237,13 +237,12 @@ export function PublicUserProfilePage(props: {
                 <span>{daysAgoPrefixLabel}</span>
                 <input
                   className="input-mini-min"
+                  defaultValue={daysAgo}
                   id="daysAgoBtn"
                   max={99}
                   min={1}
                   name="daysAgo"
-                  readOnly
                   type="number"
-                  value={daysAgo}
                 />
                 <span>{daysAgoSuffixLabel}</span>
               </div>
@@ -901,13 +900,12 @@ export function WorkspacePage(props: {
                 <span>{daysAgoPrefixLabel}</span>
                 <input
                   className="input-mini-min"
+                  defaultValue={daysAgo}
                   id="daysAgoBtn"
                   max={99}
                   min={1}
                   name="daysAgo"
-                  readOnly
                   type="number"
-                  value={daysAgo}
                 />
                 <span>{daysAgoSuffixLabel}</span>
               </div>

@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/no-access-key -- legacy common/navbar.scala.html keeps accesskey=S */
 import * as React from "react";
 import { Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
 import { RestApiError } from "../api/rest-client";
@@ -141,6 +142,10 @@ function RootHeader() {
   const searchScope = rootSearchScopeFromPathname(pathname);
   const searchAction = rootSearchAction(runtimeConfig.basePath, searchScope);
   const showGlobalSearchScope = showProjectListing || !!currentSession?.isSiteAdmin;
+  const showOrganizationSearchScope =
+    searchScope.type === "organization" &&
+    (runtimeConfig.hideProjectListing || isGuest) &&
+    isKnownOrganizationParticipant(searchScope.organizationName, workspaceOverview);
 
   return (
     <header className={`gnb-outer${searchScope.type !== "global" ? " project-header" : ""}`}>
@@ -203,21 +208,27 @@ function RootHeader() {
                     )}
                   </button>
                   <ul className="dropdown-menu flat right">
-                    <li>
-                      <a data-action={searchAction} data-toggle="search-scope" href={searchAction}>
-                        {messages(
-                          searchScope.type === "project"
-                            ? "search.scope.project"
-                            : "search.scope.group",
-                          {
-                            fallback:
-                              searchScope.type === "project"
-                                ? "search.scope.project"
-                                : "search.scope.group",
-                          },
-                        )}
-                      </a>
-                    </li>
+                    {searchScope.type === "project" || showOrganizationSearchScope ? (
+                      <li>
+                        <a
+                          data-action={searchAction}
+                          data-toggle="search-scope"
+                          href={searchAction}
+                        >
+                          {messages(
+                            searchScope.type === "project"
+                              ? "search.scope.project"
+                              : "search.scope.group",
+                            {
+                              fallback:
+                                searchScope.type === "project"
+                                  ? "search.scope.project"
+                                  : "search.scope.group",
+                            },
+                          )}
+                        </a>
+                      </li>
+                    ) : null}
                     {showGlobalSearchScope ? (
                       <li>
                         <a
@@ -244,6 +255,20 @@ function RootHeader() {
         {currentSession && !currentSession.isAnonymous ? <RootUserMenu /> : <RootAnonymousMenu />}
       </div>
     </header>
+  );
+}
+
+function isKnownOrganizationParticipant(
+  organizationName: string,
+  workspaceOverview: WorkspaceOverviewViewModel | null,
+): boolean {
+  if (!workspaceOverview) {
+    return false;
+  }
+
+  return (
+    workspaceOverview.memberProjects?.some((project) => project.ownerName === organizationName) ??
+    false
   );
 }
 

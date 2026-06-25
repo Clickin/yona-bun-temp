@@ -107,6 +107,18 @@ function renderProfile(messages?: LegacyMessageLookup) {
 }
 
 describe("workspace/profile legacy i18n opt-in", () => {
+  it("keeps the legacy editable daysAgo number input", () => {
+    const workspaceHtml = renderWorkspace();
+    const profileHtml = renderProfile();
+
+    for (const html of [workspaceHtml, profileHtml]) {
+      expect(html).toMatch(
+        /<input[^>]*class="input-mini-min"[^>]*id="daysAgoBtn"[^>]*max="99"[^>]*min="1"[^>]*type="number"[^>]*name="daysAgo"[^>]*value="14"/u,
+      );
+      expect(html).not.toMatch(/<input[^>]*id="daysAgoBtn"[^>]*readonly/u);
+    }
+  });
+
   it("resolves workspace and public profile tab labels without a runtime provider", () => {
     const workspaceHtml = renderWorkspace();
     const profileHtml = renderProfile();

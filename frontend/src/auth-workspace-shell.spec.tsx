@@ -86,6 +86,8 @@ describe("auth and workspace views", () => {
     expect(source).toContain("search.scope.project");
     expect(source).toContain("search.scope.group");
     expect(source).toContain("search.scope.all");
+    expect(source).toContain("isKnownOrganizationParticipant");
+    expect(source).toContain("runtimeConfig.hideProjectListing || isGuest");
     expect(source).toContain("signInWithPassword");
     expect(source).toContain("resolvePostAuthHref(null, session.defaultLandingPath)");
     expect(source).toContain(
