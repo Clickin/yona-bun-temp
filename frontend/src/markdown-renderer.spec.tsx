@@ -206,6 +206,52 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('href="mailto:help@example.com"');
   });
 
+  it("opens external markdown-wrap links in a new window like legacy scripts.scala.html", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        className="content markdown-wrap"
+        markdown={
+          "[external](https://example.com/docs) [internal](/owner/project) [relative](./guide) [anchor](#toc) www.example.com help@example.com"
+        }
+      />,
+    );
+
+    expect(html).toContain('<a href="https://example.com/docs" target="_blank">external</a>');
+    expect(html).toContain('<a href="/owner/project">internal</a>');
+    expect(html).toContain('<a href="./guide">relative</a>');
+    expect(html).toContain('<a href="#toc">anchor</a>');
+    expect(html).toContain('<a href="http://www.example.com" target="_blank">www.example.com</a>');
+    expect(html).toContain(
+      '<a href="mailto:help@example.com" target="_blank">help@example.com</a>',
+    );
+  });
+
+  it("opens raw HTML links in markdown-wrap through the same legacy external-link policy", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        className="comment-body markdown-wrap"
+        markdown={
+          '<a href="https://example.com/raw">raw external</a> <a href="/owner/project">raw internal</a>'
+        }
+      />,
+    );
+    const blockHtml = renderToStaticMarkup(
+      <MarkdownRenderer
+        className="content markdown-wrap"
+        markdown={
+          '<div><a href="https://example.com/block">block external</a> <a href="/owner/project">block internal</a></div>'
+        }
+      />,
+    );
+
+    expect(html).toContain('<a href="https://example.com/raw" target="_blank">raw external</a>');
+    expect(html).toContain('<a href="/owner/project">raw internal</a>');
+    expect(blockHtml).toContain(
+      '<a href="https://example.com/block" target="_blank">block external</a>',
+    );
+    expect(blockHtml).toContain('<a href="/owner/project">block internal</a>');
+  });
+
   it("links only resolved legacy mentions when mention metadata is present", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

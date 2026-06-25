@@ -388,6 +388,13 @@
   still dropping unsafe `javascript:` media URLs and event handler attributes.
   Focused evidence: `markdown-renderer.spec.tsx` and
   `yona-original/app/utils/Markdown.java`.
+- 2026-06-25 markdown external-link target continuation: React Markdown
+  rendering mirrors `common/scripts.scala.html` external-link postprocessing
+  for legacy `.markdown-wrap` containers by adding `target="_blank"` to links
+  whose `href` does not start with `.`, `/`, or `#`, including generated
+  Markdown links, bare autolinks, inline raw HTML anchors, and raw HTML block
+  anchors, while leaving relative/internal anchors unchanged. Focused evidence:
+  `markdown-renderer.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks preserve only

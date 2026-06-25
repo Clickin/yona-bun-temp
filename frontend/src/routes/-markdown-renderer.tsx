@@ -118,6 +118,7 @@ type MarkdownContext = {
   commitReferenceMap?: Map<string, MarkdownCommitReference>;
   currentUserLabel?: string;
   currentUserLoginId?: string;
+  externalLinksInNewWindow?: boolean;
   suppressBareAutolinks?: boolean;
   suppressBareEmailAutolinks?: boolean;
   suppressProjectAutolinks?: boolean;
@@ -398,6 +399,13 @@ function isSafeRawHtmlUrl(value: string) {
 function isSafeMarkdownTarget(value: string) {
   const normalized = value.toLowerCase();
   return isSafeUrl(value) || normalized.startsWith("file:") || normalized.startsWith("zpl:");
+}
+
+function legacyMarkdownExternalLinkTarget(href: string | undefined) {
+  if (!href || !/^[^./#]/.test(href)) {
+    return undefined;
+  }
+  return "_blank";
 }
 
 function sanitizedMarkdownTarget(value: string): string | undefined {
@@ -1261,12 +1269,18 @@ function MarkdownInline(props: { context?: MarkdownContext; line: string }) {
       );
     }
     if (part.kind === "link") {
+      const href = part.target === undefined ? undefined : encodeMarkdownUrlTarget(part.target);
       return (
         <a
           className={part.className}
           data-issue-state={part.issueState}
-          href={part.target === undefined ? undefined : encodeMarkdownUrlTarget(part.target)}
+          href={href}
           key={part.key}
+          target={
+            props.context?.externalLinksInNewWindow
+              ? legacyMarkdownExternalLinkTarget(href)
+              : undefined
+          }
           title={part.title ? decodeMarkdownHtmlEntities(part.title) : undefined}
         >
           <MarkdownLinkLabel context={props.context} label={part.label} target={part.target} />
@@ -1301,7 +1315,14 @@ function MarkdownInline(props: { context?: MarkdownContext; line: string }) {
       return <React.Fragment key={part.key}>{part.value}</React.Fragment>;
     }
     if (part.kind === "rawHtml") {
-      return <MarkdownSanitizedRawHtml key={part.key} keyPrefix={part.key} source={part.value} />;
+      return (
+        <MarkdownSanitizedRawHtml
+          externalLinksInNewWindow={props.context?.externalLinksInNewWindow}
+          key={part.key}
+          keyPrefix={part.key}
+          source={part.value}
+        />
+      );
     }
     if (part.kind === "rawHtmlInlineSpan") {
       const childContext =
@@ -1322,11 +1343,10 @@ function MarkdownInline(props: { context?: MarkdownContext; line: string }) {
       if (!part.tag) {
         return <React.Fragment key={part.key}>{children}</React.Fragment>;
       }
-      return React.createElement(
-        part.tag,
-        { ...parseRawHtmlAttributes(part.tag, part.rawAttributes), key: part.key },
-        children,
-      );
+      const rawProps = parseRawHtmlAttributes(part.tag, part.rawAttributes, {
+        externalLinksInNewWindow: props.context?.externalLinksInNewWindow,
+      });
+      return React.createElement(part.tag, { ...rawProps, key: part.key }, children);
     }
     return (
       <React.Fragment key={part.key}>
@@ -3220,7 +3240,10 @@ function sanitizedRawHtmlToHast(source: string): HastNode[] {
   return parseSanitizedRawHtmlTree(source).children.flatMap(rawHtmlChildToHast);
 }
 
-function normalizeRawHtmlElementProperties(node: HastNode) {
+function normalizeRawHtmlElementProperties(
+  node: HastNode,
+  options?: { externalLinksInNewWindow?: boolean },
+) {
   if (!node.properties || !node.tagName) {
     return;
   }
@@ -3230,6 +3253,12 @@ function normalizeRawHtmlElementProperties(node: HastNode) {
     const compact = href.replace(/[^\w:]/g, "").toLowerCase();
     node.properties.href =
       compact.startsWith("javascript:") || sanitizedMarkdownTarget(href) === undefined ? "#" : href;
+    if (options?.externalLinksInNewWindow) {
+      const target = legacyMarkdownExternalLinkTarget(String(node.properties.href));
+      if (target) {
+        node.properties.target = target;
+      }
+    }
   }
 
   const src = node.properties.src;
@@ -3252,7 +3281,10 @@ function normalizeRawHtmlElementProperties(node: HastNode) {
   }
 }
 
-function rehypeYonaRawHtmlCompatibility(opaqueRawHtmlBlocks: Map<string, string>) {
+function rehypeYonaRawHtmlCompatibility(
+  opaqueRawHtmlBlocks: Map<string, string>,
+  options?: { externalLinksInNewWindow?: boolean },
+) {
   return function attacher() {
     return function transformYonaRawHtmlCompatibility(tree: unknown) {
       transformRawHtmlNode(tree as HastNode);
@@ -3293,11 +3325,14 @@ function rehypeYonaRawHtmlCompatibility(opaqueRawHtmlBlocks: Map<string, string>
       }
       node.children = children;
     }
-    normalizeRawHtmlElementProperties(node);
+    normalizeRawHtmlElementProperties(node, options);
   }
 }
 
-function rehypeYonaRenderedDomCompatibility(options?: { normalizeStrongEmphasisOrder?: boolean }) {
+function rehypeYonaRenderedDomCompatibility(options?: {
+  externalLinksInNewWindow?: boolean;
+  normalizeStrongEmphasisOrder?: boolean;
+}) {
   return function transformYonaRenderedDomCompatibility(tree: unknown) {
     transformRenderedDomNode(
       tree as {
@@ -3321,7 +3356,7 @@ function rehypeYonaRenderedDomCompatibility(options?: { normalizeStrongEmphasisO
     parentHasTaskListClass = false,
     parentTagName = "",
   ) {
-    normalizeRawHtmlElementProperties(node as HastNode);
+    normalizeRawHtmlElementProperties(node as HastNode, options);
     const nodeClassName = node.properties?.className;
     const nodeClasses = Array.isArray(nodeClassName)
       ? nodeClassName.filter((item): item is string => typeof item === "string")
@@ -3599,6 +3634,11 @@ function reactMarkdownComponents(context: MarkdownContext): Components {
     a(props) {
       const { children, className, href, node: _node, ...rest } = props;
       const transformedHref = href === undefined ? undefined : reactMarkdownUrlTransform(href);
+      const restTarget = typeof rest.target === "string" ? rest.target : undefined;
+      const target =
+        (context.externalLinksInNewWindow
+          ? legacyMarkdownExternalLinkTarget(transformedHref)
+          : undefined) ?? restTarget;
       return (
         <a
           className={reactMarkdownLinkClassName({
@@ -3609,6 +3649,7 @@ function reactMarkdownComponents(context: MarkdownContext): Components {
             href: transformedHref,
           })}
           href={transformedHref}
+          target={target}
           {...rest}
         >
           {children}
@@ -3755,10 +3796,23 @@ function ReactMarkdownCompatibleBlock(props: {
       ? [
           rehypeRaw,
           [rehypeSanitize, yonaMarkdownSanitizeSchema],
-          rehypeYonaRawHtmlCompatibility(preprocessed.opaqueRawHtmlBlocks),
-          rehypeYonaRenderedDomCompatibility,
+          rehypeYonaRawHtmlCompatibility(preprocessed.opaqueRawHtmlBlocks, {
+            externalLinksInNewWindow: props.context.externalLinksInNewWindow,
+          }),
+          [
+            rehypeYonaRenderedDomCompatibility,
+            { externalLinksInNewWindow: props.context.externalLinksInNewWindow },
+          ],
         ]
-      : [[rehypeYonaRenderedDomCompatibility, { normalizeStrongEmphasisOrder: true }]]
+      : [
+          [
+            rehypeYonaRenderedDomCompatibility,
+            {
+              externalLinksInNewWindow: props.context.externalLinksInNewWindow,
+              normalizeStrongEmphasisOrder: true,
+            },
+          ],
+        ]
   ) as React.ComponentProps<typeof ReactMarkdown>["rehypePlugins"];
   return (
     <ReactMarkdown
@@ -6108,7 +6162,11 @@ function rawHtmlStyleToCssText(style: React.CSSProperties) {
     .join(";");
 }
 
-function parseRawHtmlAttributes(tag: string, rawAttributes: string) {
+function parseRawHtmlAttributes(
+  tag: string,
+  rawAttributes: string,
+  options?: { externalLinksInNewWindow?: boolean },
+) {
   const props: Record<string, boolean | React.CSSProperties | string | number | undefined> = {};
   for (const match of rawAttributes.matchAll(
     /([A-Za-z_:][A-Za-z0-9_:.-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g,
@@ -6160,6 +6218,12 @@ function parseRawHtmlAttributes(tag: string, rawAttributes: string) {
         : isSafeRawHtmlUrl(value)
           ? value
           : undefined;
+      if (options?.externalLinksInNewWindow && typeof props.href === "string") {
+        const target = legacyMarkdownExternalLinkTarget(props.href);
+        if (target) {
+          props.target = target;
+        }
+      }
       continue;
     }
     if (tag === "img" && (name === "src" || name === "alt")) {
@@ -6219,7 +6283,10 @@ function renderRawHtmlChild(child: RawHtmlChild, key: string): React.ReactNode {
   );
 }
 
-function parseSanitizedRawHtmlTree(source: string) {
+function parseSanitizedRawHtmlTree(
+  source: string,
+  options?: { externalLinksInNewWindow?: boolean },
+) {
   const root: RawHtmlNode = { children: [], props: {}, tag: "fragment" };
   const stack = [root];
   const withoutDangerousBlocks = source
@@ -6260,7 +6327,7 @@ function parseSanitizedRawHtmlTree(source: string) {
       } else {
         const node = {
           children: [],
-          props: parseRawHtmlAttributes(tag, rawAttributes),
+          props: parseRawHtmlAttributes(tag, rawAttributes, options),
           tag,
         };
         stack[stack.length - 1]?.children.push(node);
@@ -6279,8 +6346,12 @@ function parseSanitizedRawHtmlTree(source: string) {
   return root;
 }
 
-function renderSanitizedRawHtml(source: string, keyPrefix: string) {
-  const root = parseSanitizedRawHtmlTree(source);
+function renderSanitizedRawHtml(
+  source: string,
+  keyPrefix: string,
+  options?: { externalLinksInNewWindow?: boolean },
+) {
+  const root = parseSanitizedRawHtmlTree(source, options);
   return (
     <>
       {root.children.map((child, childIndex) =>
@@ -6290,11 +6361,17 @@ function renderSanitizedRawHtml(source: string, keyPrefix: string) {
   );
 }
 
-function MarkdownSanitizedRawHtml(props: { keyPrefix: string; source: string }) {
-  return renderSanitizedRawHtml(props.source, props.keyPrefix);
+function MarkdownSanitizedRawHtml(props: {
+  externalLinksInNewWindow?: boolean;
+  keyPrefix: string;
+  source: string;
+}) {
+  return renderSanitizedRawHtml(props.source, props.keyPrefix, {
+    externalLinksInNewWindow: props.externalLinksInNewWindow,
+  });
 }
 
-function MarkdownRawHtmlBlock(props: { lines: MarkdownLineRecord[] }) {
+function MarkdownRawHtmlBlock(props: { context?: MarkdownContext; lines: MarkdownLineRecord[] }) {
   const source = props.lines.map((line) => line.text).join("\n");
   const keyPrefix = props.lines[0]?.key ?? "raw";
   const hasBlockTag =
@@ -6305,7 +6382,13 @@ function MarkdownRawHtmlBlock(props: { lines: MarkdownLineRecord[] }) {
     ).some((match) => rawHtmlBlockTags.has((match[1] ?? "").toLowerCase())) ||
     markdownLineStartsRawLineStartVoidBlock(props.lines[0]?.text ?? "") ||
     markdownLineIsStandaloneRawHtmlVoidBlock(props.lines[0]?.text ?? "");
-  const children = <MarkdownSanitizedRawHtml keyPrefix={keyPrefix} source={source} />;
+  const children = (
+    <MarkdownSanitizedRawHtml
+      externalLinksInNewWindow={props.context?.externalLinksInNewWindow}
+      keyPrefix={keyPrefix}
+      source={source}
+    />
+  );
   return hasBlockTag ? children : <p>{children}</p>;
 }
 
@@ -6695,7 +6778,7 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     );
   }
   if (markdownBlockContainsRawHtmlBlockTag(lines)) {
-    return <MarkdownRawHtmlBlock lines={lines} />;
+    return <MarkdownRawHtmlBlock context={props.context} lines={lines} />;
   }
   if (markdownBlockCanUseReactMarkdownMultilineRawInlineParagraph(lines, props.context)) {
     return (
@@ -6990,6 +7073,7 @@ export function MarkdownRenderer(props: {
     commitReferenceMap,
     currentUserLabel: props.currentUserLabel,
     currentUserLoginId: props.currentUserLoginId,
+    externalLinksInNewWindow: props.className?.split(/\s+/).includes("markdown-wrap"),
     headingSlugCounts: new Map<string, number>(),
     issueReferenceMap,
     mentionReferenceMap,
