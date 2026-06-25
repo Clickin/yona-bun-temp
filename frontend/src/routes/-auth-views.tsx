@@ -336,12 +336,16 @@ export function LegacyLoginDialog({
   authUiCapabilities,
   csrfToken,
   messages: messagesOverride,
+  open = false,
+  onClose,
   onSignIn,
   runtimeConfig,
 }: {
   authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
   csrfToken?: string;
   messages?: LegacyI18nContextValue["t"];
+  open?: boolean;
+  onClose?: () => void;
   onSignIn?: (input: { identifier: string; password: string; rememberMe: boolean }) => void;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -352,13 +356,19 @@ export function LegacyLoginDialog({
   const canRenderLocalForm = authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly;
 
   return (
-    <div className="modal hide loginDialog" id="loginDialog" role="dialog" tabIndex={-1}>
+    <div
+      className={open ? "modal loginDialog" : "modal hide loginDialog"}
+      id="loginDialog"
+      role="dialog"
+      tabIndex={-1}
+    >
       <div className="modal-body">
         <div className="pull-right">
           <button
             aria-label={messages.t("button.close", { fallback: "button.close" })}
             className="close mr10"
             data-dismiss="modal"
+            onClick={onClose}
             type="button"
           >
             &times;

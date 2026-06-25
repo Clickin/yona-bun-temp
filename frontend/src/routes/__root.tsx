@@ -22,17 +22,18 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
 
 function RootRouteComponent() {
   const { runtimeConfig } = Route.useRouteContext();
+  const [loginDialogOpen, setLoginDialogOpen] = React.useState(false);
 
   return (
     <YonaQueryProvider>
       <AppRuntimeProvider runtimeConfig={runtimeConfig}>
         <RuntimeErrorBanner />
         <SiteAdminLoggedInAffix />
-        <RootHeader />
+        <RootHeader onOpenLoginDialog={() => setLoginDialogOpen(true)} />
         <RootSidebar />
         <Outlet />
         <RootFooter />
-        <RootLoginDialog />
+        <RootLoginDialog open={loginDialogOpen} onClose={() => setLoginDialogOpen(false)} />
       </AppRuntimeProvider>
     </YonaQueryProvider>
   );
@@ -78,8 +79,10 @@ type RootSearchScope =
 
 function RootFooter() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const { runtimeConfig } = useAppRuntime();
+  const appPathname = stripRuntimeBasePath(pathname, runtimeConfig.basePath);
 
-  if (STANDALONE_FOOTER_PATHS.has(pathname)) {
+  if (STANDALONE_FOOTER_PATHS.has(appPathname)) {
     return null;
   }
 
@@ -136,12 +139,13 @@ function SiteAdminLoggedInAffix() {
   );
 }
 
-function RootHeader() {
+function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
   const { currentSession, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const appPathname = stripRuntimeBasePath(pathname, runtimeConfig.basePath);
   const isGuest = workspaceOverview?.profile?.isGuest ?? false;
   const showProjectListing = !runtimeConfig.hideProjectListing && !isGuest;
-  const searchScope = rootSearchScopeFromPathname(pathname);
+  const searchScope = rootSearchScopeFromPathname(appPathname);
   const searchAction = rootSearchAction(runtimeConfig.basePath, searchScope);
   const showGlobalSearchScope = showProjectListing || !!currentSession?.isSiteAdmin;
   const showOrganizationSearchScope =
@@ -281,10 +285,28 @@ function RootHeader() {
             </form>
           </li>
         </ul>
-        {currentSession && !currentSession.isAnonymous ? <RootUserMenu /> : <RootAnonymousMenu />}
+        {currentSession && !currentSession.isAnonymous ? (
+          <RootUserMenu />
+        ) : (
+          <RootAnonymousMenu onOpenLoginDialog={onOpenLoginDialog} />
+        )}
       </div>
     </header>
   );
+}
+
+function stripRuntimeBasePath(pathname: string, basePath: string): string {
+  const normalizedBasePath = basePath && basePath !== "/" ? basePath.replace(/\/+$/u, "") : "";
+  if (!normalizedBasePath) {
+    return pathname || "/";
+  }
+  if (pathname === normalizedBasePath) {
+    return "/";
+  }
+  if (pathname.startsWith(`${normalizedBasePath}/`)) {
+    return pathname.slice(normalizedBasePath.length) || "/";
+  }
+  return pathname || "/";
 }
 
 function isKnownOrganizationParticipant(
@@ -620,7 +642,7 @@ function RootUserMenu() {
   );
 }
 
-function RootAnonymousMenu() {
+function RootAnonymousMenu({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
   const { messages, runtimeConfig } = useAppRuntime();
 
   return (
@@ -630,6 +652,10 @@ function RootAnonymousMenu() {
           className="user-item-btn"
           data-login="required"
           href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}
+          onClick={(event) => {
+            event.preventDefault();
+            onOpenLoginDialog();
+          }}
         >
           {messages("button.login", { fallback: "button.login" })}
         </a>
@@ -647,7 +673,7 @@ function RootAnonymousMenu() {
   );
 }
 
-function RootLoginDialog() {
+function RootLoginDialog({ onClose, open }: { onClose: () => void; open: boolean }) {
   const {
     authUiCapabilities,
     csrfToken,
@@ -667,6 +693,8 @@ function RootLoginDialog() {
     <LegacyLoginDialog
       authUiCapabilities={authUiCapabilities}
       csrfToken={csrfToken}
+      open={open}
+      onClose={onClose}
       runtimeConfig={runtimeConfig}
       onSignIn={async (input) => {
         if (pending) {

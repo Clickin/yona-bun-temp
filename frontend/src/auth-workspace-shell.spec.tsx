@@ -98,7 +98,9 @@ describe("auth and workspace views", () => {
       'className={`search-box${searchScope.type !== "global" ? " select" : ""}`}',
     );
     expect(source).toContain('accessKey="S"');
-    expect(source).toContain("<RootAnonymousMenu />");
+    expect(source).toContain("onOpenLoginDialog");
+    expect(source).toContain("<RootAnonymousMenu onOpenLoginDialog={onOpenLoginDialog} />");
+    expect(source).toContain("onOpenLoginDialog();");
     expect(source).toContain('id="sidebar-open-btn"');
     expect(source).toContain("dropdwon-box-btn");
     expect(source).toContain('messages("issue.myIssue", { fallback: "issue.myIssue" })');
