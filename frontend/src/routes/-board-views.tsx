@@ -1337,6 +1337,7 @@ export function ProjectBoardDetailPage(props: {
                                         <div className="contents">
                                           <MarkdownRenderer
                                             basePath={props.runtimeConfig.basePath}
+                                            containerElement="fragment"
                                             issueReferences={childComment.issueReferences}
                                             markdown={
                                               translatedCommentMarkdownById[childComment.id] ??

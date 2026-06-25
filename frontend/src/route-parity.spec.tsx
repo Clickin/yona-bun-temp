@@ -2552,6 +2552,10 @@ describe("file-route parity harness", () => {
     expect(childCommentHtml).toContain('class="child-comments"');
     expect(childCommentHtml).toContain('class="one-line-comment"');
     expect(childCommentHtml).toContain("child reply");
+    expect(childCommentHtml).toContain('<div class="contents"><p>child reply</p><span');
+    expect(childCommentHtml).not.toContain(
+      '<div class="contents"><div><p>child reply</p></div><span',
+    );
     expect(childCommentHtml).toContain('class="subcomment-author hide"');
     expect(childCommentHtml).toContain('href="/yona/reply"');
     expect(childCommentHtml).toContain('aria-label="common.comment.edit"');

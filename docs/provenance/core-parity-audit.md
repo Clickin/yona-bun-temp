@@ -159,6 +159,14 @@
   not translated display Markdown. Focused evidence:
   `issue-detail-shell.spec.tsx`, `route-parity.spec.tsx`, and
   `pnpm --dir frontend check`.
+- 2026-06-25 child-comment Markdown wrapper continuation: issue and board
+  one-line child comments now render Markdown blocks directly inside
+  `.one-line-comment > .contents`, matching legacy `common/childComments.scala.html`
+  where `@Html(Markdown.render(...))` is immediately followed by the hidden
+  `.subcomment-author` span. This removes the extra React wrapper div only for
+  the child-comment surfaces. Focused evidence:
+  `markdown-renderer.spec.tsx`, `issue-detail-shell.spec.tsx`, and
+  `route-parity.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks are derived

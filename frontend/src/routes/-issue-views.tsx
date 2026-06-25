@@ -2185,6 +2185,7 @@ export function ProjectIssueDetailPage(props: {
                                         <div className="contents">
                                           <MarkdownRenderer
                                             basePath={props.runtimeConfig.basePath}
+                                            containerElement="fragment"
                                             markdown={childComment.contentsMarkdown}
                                             ownerName={detail.ownerName}
                                             projectName={detail.projectName}

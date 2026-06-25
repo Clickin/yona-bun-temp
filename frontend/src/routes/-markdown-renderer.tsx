@@ -6857,7 +6857,7 @@ export function MarkdownRenderer(props: {
   basePath?: string;
   className?: string;
   commitReferences?: MarkdownCommitReference[];
-  containerElement?: "div" | "span";
+  containerElement?: "div" | "fragment" | "span";
   "data-allowed-update"?: string;
   "data-via-email"?: string;
   id?: string;
@@ -6921,6 +6921,9 @@ export function MarkdownRenderer(props: {
   };
   const Container = props.containerElement ?? "div";
   if (blocks.length === 0) {
+    if (Container === "fragment") {
+      return null;
+    }
     return (
       <Container
         className={props.className}
@@ -6938,13 +6941,8 @@ export function MarkdownRenderer(props: {
   return (
     <>
       {taskStats ? <MarkdownTasklistBar stats={taskStats} /> : null}
-      <Container
-        className={props.className}
-        data-allowed-update={props["data-allowed-update"]}
-        data-via-email={props["data-via-email"]}
-        id={props.id}
-      >
-        {canRenderDocumentWithReactMarkdown ? (
+      {Container === "fragment" ? (
+        canRenderDocumentWithReactMarkdown ? (
           <ReactMarkdownCompatibleBlock
             allowRawHtml={documentNeedsReactMarkdownRawHtml}
             context={context}
@@ -6952,8 +6950,25 @@ export function MarkdownRenderer(props: {
           />
         ) : (
           blocks.map((block) => <MarkdownBlock block={block} context={context} key={block.key} />)
-        )}
-      </Container>
+        )
+      ) : (
+        <Container
+          className={props.className}
+          data-allowed-update={props["data-allowed-update"]}
+          data-via-email={props["data-via-email"]}
+          id={props.id}
+        >
+          {canRenderDocumentWithReactMarkdown ? (
+            <ReactMarkdownCompatibleBlock
+              allowRawHtml={documentNeedsReactMarkdownRawHtml}
+              context={context}
+              markdown={parsedMarkdown.markdown}
+            />
+          ) : (
+            blocks.map((block) => <MarkdownBlock block={block} context={context} key={block.key} />)
+          )}
+        </Container>
+      )}
     </>
   );
 }

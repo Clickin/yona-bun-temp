@@ -147,6 +147,14 @@ describe("MarkdownRenderer", () => {
     );
   });
 
+  it("can render Markdown blocks without a wrapper for legacy child comments", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer containerElement="fragment" markdown="Child reply" />,
+    );
+
+    expect(html).toBe("<p>Child reply</p>");
+  });
+
   it("renders legacy preview autolinks on the React side", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

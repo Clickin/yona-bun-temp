@@ -338,6 +338,8 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="child-comments"');
     expect(html).toContain('class="one-line-comment"');
     expect(html).toContain("Child reply");
+    expect(html).toContain('<div class="contents"><p>Child reply</p><span');
+    expect(html).not.toContain('<div class="contents"><div><p>Child reply</p></div><span');
     expect(html).toContain('class="subcomment-author hide"');
     expect(html).toContain('class="parentCommentId"');
     expect(html).toContain('name="parentCommentId"');
