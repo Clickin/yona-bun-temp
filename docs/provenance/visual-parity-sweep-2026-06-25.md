@@ -136,6 +136,40 @@ upstream fetches and lets Playwright render the legacy responses from `127.0.0.1
   being hidden behind the 0 comparison-failure count; they are currently
   homelab-reference non-OK or sample-data status differences such as legacy
   404/500/400 responses where the local seeded route renders successfully.
+
+### Recorded Status Deltas
+
+The 2026-06-25T13:13:10Z combined sweep recorded the following same-path HTTP
+status differences. These are not counted as local UX failures because the Rust
+target rendered successfully and the comparison found no not-found, forbidden,
+bad-request, raw legacy key, or local failure state. They remain explicit
+machine-readable deltas so a future sweep can distinguish reference-server or
+sample-data variance from a Rust regression.
+
+| Path | Legacy -> Rust status | Legacy ok | Rust ok | Classification |
+| --- | --- | --- | --- | --- |
+| `/admin/sample/issue/1` | `unknown -> 200` | `false` | `true` | homelab legacy reference timeout |
+| `/admin/sample/newPullRequestForm` | `400 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/post/1` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/post/1/editform` | `500 -> 200` | `false` | `true` | homelab legacy reference error |
+| `/admin/sample/milestone/1` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/milestone/1/editform` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/pullRequest/1` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/pullRequest/1/changes` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/pullRequest/1/changes/HEAD` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/pullRequest/1/editform` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/code/main` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/code/main/` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/code/main/README.md` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/commits` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/commits/` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/commits/main` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/commits/main/` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/commit/HEAD` | `404 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/compare/main...main` | `500 -> 200` | `false` | `true` | homelab legacy reference error |
+| `/admin/sample/branches` | `500 -> 200` | `false` | `true` | homelab legacy reference error |
+| `/admin/sample/search` | `400 -> 200` | `true` | `true` | sample-data status variance |
+
 - A rerun first exposed `/user/issues/new` as that exact class of failure:
   legacy rendered the normal `새 이슈 - admin/sample` form, while local rendered
   a not-found page because the sweep-created `admin/sample` project had not
