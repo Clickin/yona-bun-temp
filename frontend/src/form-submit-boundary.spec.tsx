@@ -486,6 +486,22 @@ describe("React form submit boundary", () => {
     }
   });
 
+  it("keeps project and organization enrollment clicks inside the React boundary", () => {
+    const expectations = [
+      { callback: "onEnrollProject", file: "routes/-project-views.tsx" },
+      { callback: "onEnrollOrganization", file: "routes/-organization-views.tsx" },
+    ];
+
+    for (const { callback, file } of expectations) {
+      const source = readRouteSource(file);
+      expect(source, file).toContain('id="enrollBtn"');
+      expect(source, file).toContain(
+        `event.preventDefault();\n                          const handler = detail.enrollmentRequested`,
+      );
+      expect(source, file).toContain(callback);
+    }
+  });
+
   it("keeps legacy data-request mutation markers inside React event handlers", () => {
     for (const element of requestMethodElements()) {
       if (element.tag === "button") {

@@ -1821,13 +1821,13 @@ export function ProjectDetailPage(props: {
                         href={enrollmentHref}
                         id="enrollBtn"
                         onClick={(event) => {
+                          event.preventDefault();
                           const handler = detail.enrollmentRequested
                             ? props.onCancelEnrollProject
                             : props.onEnrollProject;
                           if (!handler) {
                             return;
                           }
-                          event.preventDefault();
                           handler(detail.ownerName, detail.projectName);
                         }}
                       >

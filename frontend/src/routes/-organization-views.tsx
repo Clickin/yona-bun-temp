@@ -262,13 +262,13 @@ export function OrganizationHeader(props: {
                         href={enrollmentHref}
                         id="enrollBtn"
                         onClick={(event) => {
+                          event.preventDefault();
                           const handler = detail.enrollmentRequested
                             ? props.onCancelEnrollOrganization
                             : props.onEnrollOrganization;
                           if (!handler) {
                             return;
                           }
-                          event.preventDefault();
                           handler(detail.organizationName);
                         }}
                       >
