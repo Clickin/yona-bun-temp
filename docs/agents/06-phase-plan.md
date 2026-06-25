@@ -498,6 +498,18 @@
 - Profile/organization project-date scalar fix: `/me`, `/:user`, and organization home project rows now preserve legacy created/code-update date `title` attributes from `user/partial_projectlist.scala.html` and `organization/view.scala.html`.
 - Completion review active: `docs/provenance/first-priority-completion-review.md` now tracks remaining 1차 PoC closure evidence for settings migration, migration/adopt verification, Smart HTTP closure tests, single-binary frontend embedding smoke, Docker image viability, and full cargo/frontend gates.
 
+## Phase 7: Full UI Parity Subagent Sweep
+
+- Active plan: `docs/plans/2026-06-26-full-ui-parity-subagent-phase.md`.
+- Purpose: turn the RC UX checklist into a full user-visible UI parity audit
+  that can be split across subagents without changing the conversion goal.
+- Scope: public/auth/shell, directory/workspace/site-admin, project content, and
+  fragment/security/DB evidence packets.
+- Rule: subagents start read-only unless the parent assigns a disjoint write
+  scope; React screens remain REST JSON/API-return plus React render; Markdown
+  surfaces remain owned by `MarkdownRenderer` and its Yona compatibility
+  plugins.
+
 ## Phase Gate 규칙
 
 - phase 종료 기준은 UI completeness가 아니라 legacy parity와 provenance completeness다.
