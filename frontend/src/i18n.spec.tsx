@@ -329,6 +329,7 @@ describe("legacy i18n runtime", () => {
     const routeFiles = collectSourceFiles(new URL("./routes/", import.meta.url));
     const missingLookups: string[] = [];
     const staticLookupPatterns = [
+      /lookupLegacyMessage\([^,\n]+,\s*["']([^"']+)["']/gu,
       /legacyMessage\([^,\n]+,\s*["']([^"']+)["']/gu,
       /messages(?:\.t)?\(\s*["']([^"']+)["']/gu,
     ];
@@ -355,6 +356,7 @@ describe("legacy i18n runtime", () => {
     const implementationFiles = collectImplementationSourceFiles(new URL("./", import.meta.url));
     const missingKeys: string[] = [];
     const staticLookupPatterns = [
+      /lookupLegacyMessage\([^,\n]+,\s*["']([^"']+)["']/gu,
       /legacyMessage\([^,\n]+,\s*["']([^"']+)["']/gu,
       /messages(?:\.t)?\(\s*["']([^"']+)["']/gu,
     ];
