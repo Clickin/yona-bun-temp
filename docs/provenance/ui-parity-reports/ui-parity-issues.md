@@ -42,12 +42,12 @@ Current evidence:
 
 ## Route Inventory Summary
 
-Total rows: 21
+Total rows: 24
 
 | status | count |
 | --- | ---: |
 | covered | 20 |
-| gap | 0 |
+| gap | 3 |
 | deviation | 0 |
 | deferred | 0 |
 | not-applicable | 1 |
@@ -66,6 +66,9 @@ Total rows: 21
 | edit hidden `authorId` | `edit.scala.html` posts hidden `authorId`, `isDraft`, `isPublish`. | Edit mode renders hidden `authorId`, `isDraft`, `isPublish`. | covered | none |
 | create/edit milestone choices | Create lists open milestones only; edit groups open and closed milestones with optgroups. | Create filters out closed milestones before rendering; edit renders open/closed `<optgroup>` sections with legacy milestone state labels. | covered | none |
 | create/edit label selector copy | Legacy label selector uses legacy `label` / `button.edit` copy. | Form label selector heading uses `legacyMessage(messages, "label")` and `legacyMessage(messages, "button.edit")`. | covered | none |
+| `/:owner/:project/issue/labelsform` update permission gate | `IssueLabelApp.labelsForm` has `@IsAllowed(Operation.UPDATE)`, and `project/issuelabels.scala.html` renders create/copy management forms only when issue labels are creatable. | The React route loads project container, labels, and categories through read-level APIs and currently does not reject or hide management controls when `detail.viewerCanUpdate` is false. Existing browser proof only checks the admin path. | gap | `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx`, `crates/server/src/routes/issues/labels.rs`, focused label settings E2E/contract proof |
+| `/:owner/:project/issue/labelsform` category typeahead and new-category choice | `yobi.issue.LabelEditor.js` builds a category typeahead and opens a single/multiple confirmation when creating a label with a new category. | The React route renders `data-provider="typeahead"` but no visible dropdown behavior, and create submit calls `createProjectLabel` without a user-visible single/multiple category decision. | gap | `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx`, `frontend/src/auth-workspace-client.ts`, focused label settings E2E |
+| `/:owner/:project/issue/labelsform` edit modals | `partial_issuelabels_editlabel.scala.html` and `partial_issuelabels_editcategory.scala.html` define legacy `#editLabel` / `#editCategory` modals opened by label editor JavaScript. | The React route currently uses inline edit forms even though hidden modal shells exist later in the file; edit buttons do not open the legacy modal interaction. | gap | `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx`, focused label settings E2E |
 | parent/subtask selectors | Legacy parent selection and child issue rendering. | Form uses `parentIssueOptions`; list/detail render subtask summary and child issue lists. | covered | none |
 | issue detail header/actions | Legacy renders favorite, watch, share, vote/voters, weight, translate, edit/show-original, delete modal. | `ProjectIssueDetailPage` renders those action shells and wires REST mutations. | covered | none |
 | issue detail sidebar metadata | Legacy sidebar inline-updates assignee, milestone, due date, labels, and new-subtask link. | Detail renders `#issueUpdateForm`, hidden `issues[0].id`, assignee form, milestone select, due-date input, and label select; milestone/due-date/label changes post through single-issue REST mass-update and reload detail. | covered | none |

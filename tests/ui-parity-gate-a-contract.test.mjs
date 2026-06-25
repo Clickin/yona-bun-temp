@@ -72,6 +72,17 @@ function blockerRows(reportSource) {
   return rows;
 }
 
+function queuedPacketBlockers(phasePlan, packet) {
+  const queue = section(phasePlan, "Audit Result Queue");
+  return queue
+    .split("\n")
+    .filter((line) => line.startsWith("|") && !line.includes("---"))
+    .filter((line) => line.includes(packet))
+    .filter((line) =>
+      [...blockingStatuses].some((status) => line.toLowerCase().includes(`| \`${status}\` |`)),
+    );
+}
+
 function parseSummaryCounts(summarySection) {
   const totalRows = Number(summarySection.match(/Total rows:\s+(\d+)/)?.[1]);
   const counts = Object.fromEntries(inventoryStatuses.map((status) => [status, 0]));
@@ -176,15 +187,25 @@ test("full UI parity phase stays a separate inventory-before-worker gate", () =>
   assert.match(parallelization, /Gate B distributes only the concrete queued rows/);
 });
 
-test("full UI parity Gate A reports have no open blocker summary rows", () => {
+test("full UI parity Gate A reports have no unqueued blocker summary rows", () => {
   const phasePlan = readText(phasePlanPath);
 
   for (const packet of activePackets(phasePlan)) {
     const reportPath = path.join(reportsDir, `${packet}.md`);
-    assert.deepEqual(
-      blockerRows(readText(reportPath)),
+    const rows = blockerRows(readText(reportPath));
+    if (rows.length === 0) {
+      continue;
+    }
+
+    assert.match(
+      phasePlan,
+      /## Current Reopen Directive/,
+      `${packet} blockers require the active reopen directive`,
+    );
+    assert.notDeepEqual(
+      queuedPacketBlockers(phasePlan, packet),
       [],
-      `${packet} must not have open gap/deviation/weak-evidence/needs-parent-decision rows`,
+      `${packet} blockers must be mirrored in the Audit Result Queue`,
     );
   }
 });

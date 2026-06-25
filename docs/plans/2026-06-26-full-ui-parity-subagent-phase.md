@@ -27,6 +27,31 @@ The required order is:
 5. Close the parent integration gate only after the reports, browser-visible
    proof, contracts, and focused implementation checks are current.
 
+## Current Reopen Directive
+
+Recent Windows/browser smoke feedback showed that a nominally covered route can
+still fail as a replacement UX when the rendered page is visibly unstyled, a
+first-run administrator setup path is absent, legacy i18n keys leak as raw
+copy, or a React-visible form bypasses the canonical REST JSON boundary.
+
+The active directive is therefore:
+
+1. Treat this document as the UI-parity goal directive before assigning any
+   broad RC implementation work.
+2. Reopen the owning packet first when a user-visible diff is discovered.
+3. Record the diff as an Audit Result Queue row with legacy source, current
+   source, browser-visible risk, and bounded owner scope.
+4. Only then assign a worker subagent. The worker may close that row, but must
+   not independently broaden scope or redesign legacy UX.
+5. Keep forms consistent: React-visible signup, user, project, organization,
+   issue, board, milestone, PR, search, and site-admin flows submit through
+   REST JSON/API-return plus React render. Legacy form routes remain
+   compatibility adapters unless this phase records an explicit parent
+   decision.
+6. Keep fragment conversion consistent: Java endpoints that returned HTML
+   fragments are audited as API-return plus React-render conversions, not as a
+   reason to add new server-rendered HTML fragments.
+
 ## Source of Truth
 
 - Agent rules: `AGENTS.md`
@@ -258,6 +283,10 @@ Round 2 remaining subagent split:
 
 | Packet | Agent | Status | Notes |
 | --- | --- | --- | --- |
+| `reopen-auth-root-shell` | `019f0110-a749-7152-8c27-2e6d20f97501` (`Epicurus`) | completed | Reopened signup-confirm admin-contact interpolation, login-dialog rememberMe mutability, and public/root raw-key browser proof rows. |
+| `reopen-workspace-directory-org` | `019f0110-c007-7f20-b520-6c52835513dc` (`Sartre`) | completed | Reopened browser proof rows for directory pagination, project/import/org create validation/mutation, and workspace profile/avatar mutation depth. |
+| `reopen-project-content` | `019f0110-dab4-79c3-9b49-88762e323a62` (`Beauvoir`) | completed | Reopened issue label settings permission, category typeahead/new-category choice, and edit-modal parity rows. |
+| `reopen-code-pr-search-admin` | `019f0110-f697-7442-a786-4be9d65e5cb0` (`Mill`) | completed | Reopened commit watch/unwatch browser-click proof row; no additional PR/search/notification/site-admin/security/DB gaps found. |
 | `ui-parity-public-auth-shell` | `019eff61-971c-7903-aca3-b7f9b3cdc76d` (`Dewey`) | completed | Historical broad packet; split into the narrower packets below for the next sweep |
 | `ui-parity-directory-workspace-site-admin` | `019eff61-b850-7873-a81b-c6bae630a8a9` (`Locke`) | completed | Historical broad packet; split into workspace, organization, and site-admin packets below |
 | `ui-parity-project-content` | `019eff61-dd1d-7233-b182-10898e1735ee` (`Averroes`) | completed | Historical broad packet; split into project admin, issue, board/milestone, code/VCS, and PR/review packets below |
@@ -279,6 +308,15 @@ Round 2 remaining subagent split:
 
 | Item | Source packet | Status | Next owner scope |
 | --- | --- | --- | --- |
+| Signup confirmation description must interpolate the legacy obfuscated admin contact | `ui-parity-auth-public-entry` | `gap` | Backend auth capabilities/default-admin-contact projection plus React auth view interpolation; focused auth specs/e2e |
+| Login dialog remember-me checkbox must be user-toggleable and submit the chosen value | `ui-parity-root-navigation-shell` | `gap` | `frontend/src/routes/-auth-views.tsx`, `frontend/tests/root-shell-parity.e2e.ts` |
+| Public auth/root shell browser raw-key scans | `ui-parity-auth-public-entry`, `ui-parity-root-navigation-shell` | `weak evidence` | Add broad Playwright visible-text raw-key checks to `auth-public-entry-parity.e2e.ts` and `root-shell-parity.e2e.ts` |
+| Directory pagination and create/import/org browser interaction proof | `ui-parity-directory-organization` | `weak evidence` | Focused Playwright proof for `/projects`/`/orgs` pagination, `/projectform`, `/_import`, and `/organizations/new` validation/mutation |
+| Workspace profile/avatar settings browser mutation depth | `ui-parity-user-account-settings` | `weak evidence` | `frontend/tests/workspace-settings-parity.e2e.ts`; implementation only if proof fails in `frontend/src/routes/-workspace-settings-view.tsx` |
+| Issue label settings update permission gate | `ui-parity-issues` | `gap` | `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx`, `crates/server/src/routes/issues/labels.rs`, focused E2E/contract |
+| Issue label category typeahead and new-category single/multiple choice | `ui-parity-issues` | `gap` | `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx`, `frontend/src/auth-workspace-client.ts`, focused label settings E2E |
+| Issue label/category edit interactions must use legacy modal UX | `ui-parity-issues` | `gap` | `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx`, focused label settings E2E |
+| Commit detail watch/unwatch needs real browser click proof | `ui-parity-code-vcs` | `weak evidence` | `frontend/tests/project-code-comment-upload-parity.e2e.ts` or `legacy-rendered-page-audit.e2e.ts`; implementation only if proof fails |
 | `/admin/sample/postform?readme=true` legacy README preload/update semantics | `ui-parity-project-content` | `covered, committed 19b24182` | `frontend/src/routes/$owner/$projectName/postform/route.tsx`, `frontend/src/api/boards.ts`, `crates/server/src/routes/boards.rs`, focused board tests |
 | Query-string discovered links can be lost from generated coverage evidence (`postform?readme=true`, `postform?issueTemplate=true`, `issues?format=xls`, `reviews?format=xls`) | `ui-parity-project-content` | `covered` | `f4f33829`; `scripts/audit-legacy-html-pages.mjs`, `scripts/visual-parity-sweep.mjs`, `tests/rc-ux-checklist-contract.test.mjs` |
 | Sample-data status deltas such as `/admin/sample/newPullRequestForm`, `/admin/sample/post/1`, `/admin/sample/milestone/1`, `/admin/sample/pullRequest/1/**`, `/admin/sample/code/main/**`, `/admin/sample/commits/**`, `/admin/sample/search` | `ui-parity-project-content` | `covered by parent decision` | Documented as sample-data/reference-server status variance; local seeded-data success is acceptable when legacy homelab sample lacks the corresponding object/branch and route-specific functional tests cover normal UX |
@@ -465,6 +503,11 @@ has landed and the queue statuses are refreshed.
 
 | Wave | Worker packet | Owned scope | Queue rows |
 | --- | --- | --- | --- |
+| reopen-1 | `ui-worker-auth-root-gap` | `crates/server/src/routes/auth.rs`, `crates/server/src/api_types.rs`, `frontend/src/app-runtime-context.tsx`, `frontend/src/routes/-auth-views.tsx`, `frontend/tests/auth-public-entry-parity.e2e.ts`, `frontend/tests/root-shell-parity.e2e.ts` | Signup-confirm admin-contact interpolation, login-dialog rememberMe mutability, public/root raw-key browser scans |
+| reopen-1 | `ui-worker-directory-proof` | focused Playwright specs first; `frontend/src/routes/-directory-views.tsx`, `frontend/src/routes/-project-views.tsx`, `frontend/src/routes/-organization-views.tsx` only if proof fails | Directory pagination, `/projectform`, `/_import`, `/organizations/new` browser validation/mutation proof |
+| reopen-1 | `ui-worker-workspace-settings-proof` | `frontend/tests/workspace-settings-parity.e2e.ts`; `frontend/src/routes/-workspace-settings-view.tsx` only if proof fails | Workspace profile/avatar mutation browser depth |
+| reopen-1 | `ui-worker-code-watch-proof` | `frontend/tests/project-code-comment-upload-parity.e2e.ts` or `frontend/tests/legacy-rendered-page-audit.e2e.ts`; commit route/view/API files only if proof fails | Commit detail watch/unwatch browser click proof |
+| reopen-2 | `ui-worker-issue-label-settings` | `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx`, `frontend/src/auth-workspace-client.ts`, `crates/server/src/routes/issues/labels.rs`, focused label settings E2E/contracts | Issue label settings update permission gate, category typeahead/new-category choice, and edit modal UX |
 | 0 | `ui-worker-notification-load-more` | `frontend/src/routes/notification/route.tsx`, `frontend/src/route-parity.spec.tsx`, notification report/phase rows | Notification load-more semantics |
 | 1 | `ui-worker-auth-post-state` | `frontend/src/routes/-auth-views.tsx`, auth route files, auth focused specs, auth report rows | Signup confirm/email verification, reset/verify invalid post states |
 | 1 | `ui-worker-workspace-settings-proof` | focused Playwright/e2e specs plus `frontend/src/routes/-workspace-settings-view.tsx` only if a concrete diff appears | Closed in current follow-up: avatar invalid/crop UX and notification hash tab activation |

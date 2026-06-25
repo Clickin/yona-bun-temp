@@ -21,13 +21,13 @@ Date: 2026-06-26
 
 ## Route Inventory Summary
 
-Total rows: 3
+Total rows: 5
 
 | Status | Count |
 | --- | ---: |
 | covered | 3 |
-| weak evidence | 0 |
-| gap | 0 |
+| weak evidence | 1 |
+| gap | 1 |
 | deviation | 0 |
 | deferred | 0 |
 | not-applicable | 0 |
@@ -38,6 +38,8 @@ Total rows: 3
 | Route/state | Legacy source and behavior | Current source and evidence | Status | Owner |
 | --- | --- | --- | --- | --- |
 | Global navigation chrome on normal pages | `common/navbar.scala.html`, `common/usermenu.scala.html`, and `common/footer.scala.html` render `.gnb-outer`, logo, project list, feedback link, global search, authenticated user menu, sidebar entry, and footer except on standalone pages. | `frontend/src/routes/__root.tsx` renders the legacy shell; `auth-workspace-shell.spec.tsx`, `root-custom-navbar-link.spec.ts`, visual-sweep evidence, and core provenance pin the missing-CSS/root-shell regression fixes. | covered | none |
+| Login dialog remember-me toggle | `common/loginDialog.scala.html` renders a normal checked `rememberMe` checkbox that the user can uncheck before submitting the modal login form. | `LegacyLoginDialog` currently renders the modal checkbox as fixed checked/read-only, and `root-shell-parity.e2e.ts` does not uncheck it or assert the submitted `rememberMe` payload. | gap | `frontend/src/routes/-auth-views.tsx`, `frontend/tests/root-shell-parity.e2e.ts` |
+| Root shell browser raw-key absence proof | Legacy navbar, user menu, sidebar, footer, and login dialog resolve labels through `Messages(...)`. | Current structural/copy browser proof exists, but focused root-shell Playwright coverage does not broadly scan anonymous/authenticated/site-admin/guest shell states for visible raw legacy keys. | weak evidence | `frontend/tests/root-shell-parity.e2e.ts` |
 | Project and organization search-scope dropdown gating | Legacy root search exposes project/group scopes only when the route context and project/group membership conditions match `navbar.scala.html` and `project.hasGroup`. | `frontend/src/routes/__root.tsx` reads the route container context; `auth-workspace-shell.spec.tsx` pins organization scope suppression and project `organizationName`/`hasGroup` behavior. | covered | none |
 | Full browser-visible root-shell state matrix | Legacy shell behavior varies by anonymous/authenticated/site-admin/guest, `application.hide.project.listing`, feedback URL, login dialog error state, sidebar tab selection, standalone footer suppression, and project/org scoped search. | `frontend/tests/root-shell-parity.e2e.ts` now proves anonymous global nav, configured feedback link, login dialog open/submit/error/close, authenticated site-admin affix, user menu/sidebar tab content, guest project-list/org-create gating, standalone `/secret` root-footer suppression, and project route group/global search-scope actions under mounted `/yona` base path. `frontend/src/routes/__root.tsx` now strips the runtime base path before route-family classification so `/yona/secret` and `/yona/:owner/:project` match their legacy shell states. | covered in current follow-up | none |
 

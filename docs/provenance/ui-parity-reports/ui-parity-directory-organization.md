@@ -41,7 +41,7 @@ Current evidence:
 
 ## Route Inventory Summary
 
-Total rows: 14
+Total rows: 18
 
 | status | count |
 | --- | ---: |
@@ -50,7 +50,7 @@ Total rows: 14
 | deviation | 0 |
 | deferred | 0 |
 | not-applicable | 0 |
-| weak evidence | 0 |
+| weak evidence | 4 |
 | needs-parent-decision | 0 |
 
 ## Result Inventory
@@ -59,10 +59,14 @@ Total rows: 14
 | --- | --- | --- | --- | --- |
 | `/projects` | Project directory has project/org tabs, `filter` search, empty state, project rows, pagination. | `ProjectDirectoryPage` keeps tabs/search/empty/list copy and client `pageNum` slice. | covered | none |
 | `/projects?pageNum>1` | Legacy renders pagination controls into `#pagination`. | `ProjectDirectoryPage` now renders the legacy `.page-navigation-wrap` / `.page-nums` / prev-next/page-input shell from React while preserving client `pageNum` slicing and filter query links. | covered in follow-up | `frontend/src/routes/-directory-views.tsx`, `frontend/src/route-parity.spec.tsx` |
+| `/projects`, `/orgs` browser pagination controls | Legacy directory pages expose pagination controls that preserve query state beyond page 1. | Static/source proof exists, but Playwright currently checks page-1/shell paths and does not drive real browser pagination controls, query preservation, or mobile usability for `#pagination.page-navigation-wrap`. | weak evidence | `frontend/tests/organization-directory-admin-parity.e2e.ts`, `frontend/tests/legacy-rendered-page-audit.e2e.ts`, `frontend/src/routes/-directory-views.tsx` |
 | `/orgs` | Org directory has tabs, search, empty state, org rows, created timestamp, pagination. | `OrganizationDirectoryPage` now renders `created <strong title=...>` from REST `createdLabel` and the same legacy pagination shell as `/projects`. | covered in follow-up | `crates/server/src/routes/projects/organizations.rs`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-directory-views.tsx`, `frontend/src/route-parity.spec.tsx` |
 | `/projectform` | Legacy validates empty/invalid/reserved names, trims spaces to hyphens on `#project-name` focusout, hides protected scope for user owners, shows `#svn` warning for Subversion, hides/checks Pull Request menu for SVN, and enforces code/PR/review checkbox coupling in `yobi.project.New.js`. | `ProjectNewPage` now keeps the REST submit boundary while applying the same client validation/message keys, focusout normalization, owner/protected coupling, SVN warning/PR menu behavior, and code/PR/review checkbox coupling. Evidence: `frontend/src/routes/-project-views.tsx`, `frontend/src/project-create-parity.spec.tsx`. | covered in worker follow-up | none |
+| `/projectform` browser validation/mutation | `project/create.scala.html` and `yobi.project.New.js` show visible validation, owner/scope coupling, SVN/menu coupling, and submit to project creation. | Unit/static proof exists, but Playwright currently checks anchors only and does not drive invalid/reserved-name validation, owner/scope coupling, SVN/menu coupling, or successful REST create redirect. | weak evidence | `frontend/tests/legacy-rendered-page-audit.e2e.ts`, focused project create/import E2E, `frontend/src/routes/-project-views.tsx` |
 | `/_import` | Empty URL shows `project.import.error.empty.url` before submit via the same `yobi.project.New.js` module. | `ProjectImportPage` now runs the shared legacy validation before calling the import REST handler and renders the manual popover message for `[name=url]`; project-name focusout/validation and owner/menu coupling are shared with `/projectform`. Evidence: `frontend/src/routes/-project-views.tsx`, `frontend/src/project-import-parity.spec.tsx`. | covered in worker follow-up | none |
+| `/_import` browser validation/mutation | `project/importing.scala.html` and import controllers expose empty URL validation, repo-auth toggle fields, import payload, and redirect/error states. | Unit/static proof exists, but Playwright currently checks anchors only and does not drive empty URL popover, repo-auth toggle visibility, REST import payload, or redirect/error behavior. | weak evidence | `frontend/tests/legacy-rendered-page-audit.e2e.ts`, focused project create/import E2E, `frontend/src/routes/-project-views.tsx` |
 | `/organizations/new` | Legacy validates org name and shows `organization.name.alert`. | `OrganizationNewPage` applies the same regex and warning span. | covered | none |
+| `/organizations/new` browser validation/mutation | `organization/create.scala.html`, `yobi.organization.New.js`, and `OrganizationApp` expose visible invalid-name warning and create redirect. | Source/static proof exists, but Playwright currently checks anchors only and does not drive invalid-name warning, raw-key absence, REST create payload, or post-create redirect. | weak evidence | `frontend/tests/organization-directory-admin-parity.e2e.ts`, `frontend/tests/legacy-rendered-page-audit.e2e.ts`, `frontend/src/routes/-organization-views.tsx` |
 | `/organizations/:org` | Header/menu/enroll dropdown, home project list, side panes, create-project CTA to `/projectform?owner=:org`. | Header/menu/enroll/list/side panes render, and the CTA now points directly to `/projectform?owner=:org`. | covered in current follow-up | `frontend/src/organization-home-parity.spec.tsx` |
 | `/organizations/:org` project filter | Legacy `data-toggle="item-search"` filters project rows by `data-value`. | React state now filters visible project rows from the same project name/overview text. | covered in current follow-up | `frontend/src/routes/-organization-views.tsx`, `frontend/src/organization-home-parity.spec.tsx`; browser e2e remains useful but not required for the source-level closure |
 | `/organizations/:org` leave | Legacy `#groupLeaveBtn` opens `#alertLeave`; only `#leaveBtn` confirms DELETE. | `#groupLeaveBtn` now opens a React-controlled `#alertLeave` modal and only `#leaveBtn` calls the leave callback. | covered in current follow-up | `frontend/src/routes/-organization-views.tsx`, `frontend/src/organization-home-parity.spec.tsx` |

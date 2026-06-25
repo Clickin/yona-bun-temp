@@ -63,7 +63,7 @@ Current evidence:
 
 ## Route Inventory Summary
 
-Total rows: 13
+Total rows: 14
 
 | status | count |
 | --- | ---: |
@@ -72,13 +72,13 @@ Total rows: 13
 | deviation | 0 |
 | deferred | 0 |
 | not-applicable | 0 |
-| weak evidence | 0 |
+| weak evidence | 1 |
 | needs-parent-decision | 0 |
 
-No gap was found because every audited legacy settings tab has a React route
-that preserves the legacy visible selectors/copy and submits through REST JSON,
-with focused client/server evidence for mutation behavior and direct legacy
-alias compatibility.
+No implementation gap was found because every audited legacy settings tab has a
+React route that preserves the legacy visible selectors/copy and submits through
+REST JSON. The reopened row below tracks browser-visible proof depth for
+profile/avatar mutations that currently rely too much on unit/backend evidence.
 
 ## Result Inventory
 
@@ -87,6 +87,7 @@ alias compatibility.
 | `/user/editform` profile tab and tab chrome | `edit.scala.html` renders `siteLayout(..., MenuType.USER)`, `userinfo.accountSetting`, `partial_edit_tabmenu("profile")`, `#frmBasic`, readonly login ID, editable `name`/`email`, and `#frmAvatar`; `partial_edit_tabmenu.scala.html` defines profile/password/notifications/emails/token tabs. | `WorkspaceSettingsPage` renders the same `.site-breadcrumb-outer`, `.page-wrap-outer`, `.nav.nav-tabs.mt20`, tab hrefs, `#frmBasic`, `#frmAvatar`, `user.loginId`, `user.name`, `user.email`, and `userinfo.editProfile`; `workspace-settings-i18n.spec.tsx` pins default and Korean legacy copy without raw keys; `legacy-rendered-page-audit.e2e.ts` includes `/user/editform` anchors. | authenticated current user | initial render, tab active state, profile submit payload | React route plus `/api/v1/workspace/profile` REST JSON | covered | none |
 | Profile update success/error | `UserApp.editUserInfo()` handles `/user/edit`, updates current user profile, and redirects back to settings; legacy invalid form re-renders settings with error flash/message. | `user/editform/index.tsx` calls `updateProfile()` then syncs workspace overview and navigates to `/me`; errors call `setErrorMessage`. `frontend/src/api/workspace.ts` maps to `PATCH /workspace/profile`; `auth-workspace-client.spec.ts` pins REST path/body/CSRF; `rest_contract.rs::rest_workspace_routes_manage_overview_settings_and_recent_projects` verifies name/email mutation; `auth_workspace_contract.rs` verifies direct `/user/edit` alias redirects to `/user/editform` and mutates state. | authenticated current user | submit success and REST error envelope | React REST JSON; direct legacy form alias retained for compatibility | covered | none |
 | Avatar invalid, crop modal, upload, and profile attachment promotion | `edit.scala.html` renders `#avatarFile`, `.upload-progress.avatar`, `#avatarCropWrap.modal.hide[data-backdrop=static]`, cancel/save buttons, JCrop/canvas assets; `yobi.user.Setting.js` rejects non-images and oversized files with `user.avatar.onlyImage` / `user.avatar.fileSizeAlert`, opens crop modal for valid images, uploads cropped blob, and submits `avatarId`; `UserApp` uses a 1MB avatar limit. | `WorkspaceSettingsPage` preserves `#avatarFile`, `accept="image/*"`, `.upload-progress.avatar`, `#avatarCropWrap.modal.hide`, cancel/save `.btnSubmitCrop`, hidden canvas/range crop controls, non-image alert via `user.avatar.onlyImage`, and uploads cropped PNG through `uploadProfileAvatar()` to `/files` before `PATCH /workspace/profile`. `workspace-settings-parity.spec.tsx` and `workspace-settings-parity.e2e.ts` prove invalid file alert, hidden modal, valid image modal open, and cancel/save labels. `auth-workspace-client.spec.ts` proves cropped avatar upload parsing; `assets_contract.rs` proves avatar upload metadata/serving; `auth_workspace_contract.rs::update_profile_replaces_existing_avatar_attachment` proves invalid id, non-image, too-large, and successful promotion to `USER_AVATAR`. | authenticated current user | invalid file, crop modal open/cancel/save, upload success and backend validation errors | React REST JSON plus `/files` upload; direct avatar validation remains server-side in workspace profile update | covered | none |
+| `/user/editform` profile/avatar browser mutation depth | `edit.scala.html` and `yobi.user.Setting.js` cover avatar crop cancel/save, profile submit redirect, reset visited projects, and notification toggle mutation in user-visible settings flows. | Current Playwright checks labels/modal entry while backend/client/unit proof covers mutation behavior; browser-visible proof is still weak for crop Cancel closing, Save upload, hidden `avatarAttachmentId`, profile update redirect, reset visited projects, and notification toggle mutation. | authenticated current user | crop cancel/save, profile update, reset visited projects, notification toggle | React REST JSON plus `/files` upload | weak evidence | `frontend/tests/workspace-settings-parity.e2e.ts`, `frontend/src/routes/-workspace-settings-view.tsx`, `frontend/src/routes/user/editform/index.tsx` |
 | Reset visited project list | `edit.scala.html` includes `.reset-user-visited-list` form posting to `UserApp.resetUserVisitedList` with `userinfo.reset.visited.project.list`. | `WorkspaceSettingsPage` renders `.reset-user-visited-list` and calls `resetVisitedProjects()`. `frontend/src/api/workspace.ts` maps to `DELETE /workspace/recent-projects`; `auth-workspace-client.spec.ts` pins path/method/CSRF; `rest_contract.rs` verifies recent project reset; `auth_workspace_contract.rs` verifies direct legacy reset route redirect and empty body. | authenticated current user | submit reset and refreshed overview | React REST JSON; direct legacy form alias retained | covered | none |
 | `/user/editform/password` change password form and reset-password link | `edit_password.scala.html` renders `#frmPassword`, hidden `loginId`, `#oldPassword`, `#password`, `#retypedPassword`, `userinfo.changePassword`, and a `/lostPassword` button with `site.resetPasswordEmail.*` copy. | `WorkspaceSettingsPage` preserves `#frmPassword`, field IDs/names/autocomplete, submit text, and `/lostPassword` link; `workspace-settings-i18n.spec.tsx` pins default/Korean copy; `user/editform/password/route.tsx` requires auth and sets legacy account title. | authenticated current user | initial render and reset-password link | React route plus REST submit | covered | none |
 | Password change validation and logout-after-change | `UserApp.resetUserPassword` rejects wrong old password and password mismatch with legacy message keys, updates hash on success, and ends the current session. | `changePasswordRest()` posts to `/api/v1/workspace/password`; `auth-workspace-client.spec.ts` pins method/body/CSRF; `rest_contract.rs` verifies changed password returns anonymous session and new password can sign in; `auth_workspace_contract.rs` verifies `user.wrongPassword.alert`, `validation.passwordMismatch`, successful anonymous response, and sign-in with the new password. | authenticated current user | wrong current password, mismatched retype, success mutation and forced re-login | React REST JSON | covered | none |
