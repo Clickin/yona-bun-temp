@@ -1437,6 +1437,7 @@ H2는 Day-1 runtime dialect가 아니다. legacy 개발용 H2 DB가 필요한 �
 | `siteLayout.scala.html`         | 관리자 레이아웃   | 관리자 전용 사이드 메뉴 + 컨텐츠               |
 | `common/navbar.scala.html`      | 상단 네비게이션   | 프로젝트/조직/검색 + 사용자 메뉴               |
 | `common/usermenu.scala.html`    | 사용자 드롭다운   | 알림/설정/로그아웃                             |
+| `common/footer.scala.html`      | 하단 푸터         | `.page-footer-outer` / `.page-footer` provider copyright shell |
 | `sidebar.scala.html`            | 사용자 사이드바   | 프로필/프로젝트/조직 요약                      |
 
 ### 6.2 URL 경로 규칙

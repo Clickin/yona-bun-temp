@@ -95,6 +95,18 @@ describe("auth and workspace views", () => {
     expect(source).toContain(
       'messages("title.newOrganization", { fallback: "title.newOrganization" })',
     );
+    expect(source).toContain("<RootFooter />");
+    expect(source).toContain('className="page-footer-outer"');
+    expect(source).toContain('className="page-footer"');
+    expect(source).toContain('className="provider"');
+    expect(source).toContain("STANDALONE_FOOTER_PATHS");
+    expect(source).toContain('"/secret"');
+    expect(source).toContain('"/restart"');
+    expect(source).toContain('"/_UIKit"');
+    expect(source).toContain("Yona authors");
+    expect(source).toContain("NAVER Corp.");
+    expect(source).toContain("NAVER LABS");
+    expect(source).toContain("NAVER CLOUD PLATFORM");
     expect(source).not.toContain('<ul className="gnb-outer gnb-usermenu">');
     expect(source).not.toContain(">Profile</a>");
     expect(source).not.toContain(">Account</a>");

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
+import { Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
 import { AppRuntimeProvider, useAppRuntime } from "../app-runtime-context";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -25,9 +25,53 @@ function RootRouteComponent() {
         <RootHeader />
         <RootSidebar />
         <Outlet />
+        <RootFooter />
         <RootLoginDialog />
       </AppRuntimeProvider>
     </YonaQueryProvider>
+  );
+}
+
+const STANDALONE_FOOTER_PATHS = new Set(["/_UIKit", "/restart", "/secret"]);
+
+function RootFooter() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  if (STANDALONE_FOOTER_PATHS.has(pathname)) {
+    return null;
+  }
+
+  return (
+    <footer className="page-footer-outer">
+      <div className="page-footer">
+        <span className="provider">
+          Copyright{" "}
+          <a
+            className="yona-author"
+            href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
+            target="_blank"
+          >
+            Yona authors
+          </a>{" "}
+          &amp; ©{" "}
+          <a href="https://navercorp.com" target="_blank">
+            NAVER Corp.
+          </a>{" "}
+          &amp;{" "}
+          <a className="naver-labs" href="https://naverlabs.com/" target="_blank">
+            NAVER LABS
+          </a>{" "}
+          Supported by{" "}
+          <a
+            className="naver-cloud-platform"
+            href="https://www.ncloud.com/?referer=yona"
+            target="_blank"
+          >
+            NAVER CLOUD PLATFORM
+          </a>
+        </span>
+      </div>
+    </footer>
   );
 }
 
