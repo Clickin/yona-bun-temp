@@ -9,9 +9,7 @@ fn main() {
 
 fn generate_embedded_assets() -> std::io::Result<()> {
     let manifest_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").expect("manifest dir"));
-    let source_root = std::env::var("YONA_EMBED_ASSET_ROOT")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| manifest_dir.join("testdata").join("embed-assets"));
+    let source_root = embedded_asset_root(&manifest_dir);
     let source_root = source_root
         .canonicalize()
         .unwrap_or_else(|_| panic!("embedded asset root not found: {}", source_root.display()));
@@ -31,6 +29,26 @@ fn generate_embedded_assets() -> std::io::Result<()> {
     )?;
 
     Ok(())
+}
+
+fn embedded_asset_root(manifest_dir: &Path) -> PathBuf {
+    if let Ok(root) = std::env::var("YONA_EMBED_ASSET_ROOT") {
+        return PathBuf::from(root);
+    }
+
+    let repo_frontend_dist = manifest_dir
+        .parent()
+        .and_then(Path::parent)
+        .map(|repo_root| repo_root.join("frontend").join("dist"));
+
+    if let Some(frontend_dist) = repo_frontend_dist {
+        println!("cargo:rerun-if-changed={}", frontend_dist.display());
+        if frontend_dist.join("index.html").is_file() {
+            return frontend_dist;
+        }
+    }
+
+    manifest_dir.join("testdata").join("embed-assets")
 }
 
 fn copy_asset_tree(

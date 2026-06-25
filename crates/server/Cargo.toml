@@ -101,6 +101,10 @@ path = "tests/db_matrix_testcontainers.rs"
 required-features = ["db-matrix"]
 
 [[test]]
+name = "embedded_asset_build_script_contract"
+path = "tests/embedded_asset_build_script_contract.rs"
+
+[[test]]
 name = "issue_assignable_contract"
 path = "tests/issue_assignable_contract.rs"
 

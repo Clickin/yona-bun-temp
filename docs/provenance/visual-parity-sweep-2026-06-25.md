@@ -147,9 +147,9 @@ automatically browser-swept on both the legacy and local targets before a manual
 it.
 
 Asset note: the local browser sweep must run against a binary built with
-`YONA_EMBED_ASSET_ROOT="$PWD/frontend/dist"`. A debug binary built without that variable embeds the
-server test asset fixture and produces the same class of broken UI symptom reported in the Windows
-smoke test.
+`YONA_EMBED_ASSET_ROOT="$PWD/frontend/dist"` or with a current `frontend/dist` present before
+`cargo build`. Older debug binaries built without either condition embed the server test asset
+fixture and produce the same class of broken UI symptom reported in the Windows smoke test.
 
 2026-06-25 i18n rerun note: after tightening the visible i18n rule to keep
 legacy key names while requiring page chrome to render translated values, the

@@ -1648,7 +1648,7 @@ bind_addr = "127.0.0.1:8089"            # Rust listen address; legacy %prod.http
 database_url = "mysql://yona:password@127.0.0.1:3306/yona?charset=utf8mb4"
 schema_policy = "adopt"                 # 기존 DB 사용 시 adopt, 신규 DB 생성 시 up, 검증 전용은 validate_only
 use_embedded_assets = true              # single-binary/SFX에서 embedded frontend assets 사용
-# asset_root = "frontend/dist"           # filesystem asset serving 또는 build-time YONA_EMBED_ASSET_ROOT 기준
+# asset_root = "frontend/dist"           # filesystem asset serving 기준; embedded build는 YONA_EMBED_ASSET_ROOT 또는 frontend/dist 사용
 
 [site]
 name = "Yona"                           # application.siteName
