@@ -13,6 +13,16 @@ import type {
 
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
+export type MilestoneIssueMassUpdateInput = {
+  addLabelIds?: number[];
+  assigneeLoginId?: string;
+  assigneeUpdate?: boolean;
+  milestoneId?: number;
+  milestoneUpdate?: boolean;
+  removeLabelIds?: number[];
+  state?: string;
+};
+
 function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
   return messages
     ? messages(key, { fallback: key })
@@ -119,7 +129,9 @@ function LegacyMilestoneIssuePartialRow(props: {
   hidden?: boolean;
   issue: ProjectMilestoneIssueViewModel;
   messages?: LegacyMessageLookup;
+  onIssueSelectionChange?: (issueNumber: number, checked: boolean) => void;
   runtimeConfig: RuntimeConfig;
+  selectedIssueNumbers?: number[];
 }) {
   const { detail, issue, runtimeConfig } = props;
   const issueHref = buildProjectHref(
@@ -129,6 +141,7 @@ function LegacyMilestoneIssuePartialRow(props: {
     `issue/${issue.issueNumber}`,
   );
   const issueId = issue.id ?? issue.issueNumber;
+  const issueSelected = (props.selectedIssueNumbers ?? []).includes(issue.issueNumber);
   return (
     <li
       className="post-item title"
@@ -141,6 +154,7 @@ function LegacyMilestoneIssuePartialRow(props: {
         {issue.id ? (
           <label className="mass-update-check hide-in-mobile" htmlFor={`issue-${issueId}`}>
             <input
+              checked={issueSelected}
               data-issue-id={issue.id}
               data-issue-labels={issue.labels
                 .map((label) => `,${label.id},${label.name},,false|`)
@@ -148,6 +162,9 @@ function LegacyMilestoneIssuePartialRow(props: {
               data-toggle="issue-checkbox"
               id={`issue-${issueId}`}
               name="checked-issue"
+              onChange={(event) =>
+                props.onIssueSelectionChange?.(issue.issueNumber, event.currentTarget.checked)
+              }
               type="checkbox"
             />
             <span className="blind">{`#${issue.issueNumber}`}</span>
@@ -450,11 +467,113 @@ function LegacyMilestoneAttachmentList(props: {
   );
 }
 
+function LegacyMassUpdateDropdownButton(props: { disabled: boolean; label: string }) {
+  return (
+    <button
+      className="btn dropdown-toggle medium"
+      data-toggle="dropdown"
+      disabled={props.disabled}
+      type="button"
+    >
+      <span className="d-label">{props.label}</span>
+      <span className="d-caret">
+        <span className="caret" />
+      </span>
+    </button>
+  );
+}
+
+function LegacyMassUpdateLabelList(props: {
+  disabled: boolean;
+  groupedLabels: Array<{
+    categoryId: number | null;
+    categoryName: string;
+    labels: NonNullable<ProjectDetailViewModel["dashboard"]>["labels"];
+  }>;
+  mode: "attach" | "detach";
+  onMassUpdate?: (input: MilestoneIssueMassUpdateInput) => Promise<void>;
+}) {
+  return (
+    <>
+      {props.groupedLabels.flatMap((group) => [
+        <li
+          className="disabled"
+          data-category={group.categoryId ?? group.categoryName}
+          key={`category-${group.categoryId ?? group.categoryName}`}
+        >
+          <span>{group.categoryName}</span>
+        </li>,
+        ...group.labels.map((label) => (
+          <li
+            data-category={label.categoryId ?? label.categoryName}
+            data-value={label.id}
+            key={`label-${label.id}`}
+          >
+            <button
+              className="btn-transparent"
+              disabled={props.disabled}
+              onClick={() =>
+                void props.onMassUpdate?.(
+                  props.mode === "attach"
+                    ? { addLabelIds: [label.id] }
+                    : { removeLabelIds: [label.id] },
+                )
+              }
+              type="button"
+            >
+              <span
+                className="issue-label active list-label"
+                data-label-id={label.id}
+                style={{ backgroundColor: label.color || "#ddd" }}
+              >
+                {label.name}
+              </span>
+            </button>
+          </li>
+        )),
+        <li
+          className="divider"
+          data-category={group.categoryId ?? group.categoryName}
+          key={`divider-${group.categoryId ?? group.categoryName}`}
+        />,
+      ])}
+    </>
+  );
+}
+
 function LegacyMilestoneMassUpdateShell(props: {
   detail: ProjectDetailViewModel;
   messages?: LegacyMessageLookup;
+  onCheckAll?: (checked: boolean) => void;
+  onMassUpdate?: (input: MilestoneIssueMassUpdateInput) => Promise<void>;
   runtimeConfig: RuntimeConfig;
+  selectedCount?: number;
+  totalCount?: number;
 }) {
+  const assignees = props.detail.dashboard?.assignees ?? [];
+  const labels = props.detail.dashboard?.labels ?? [];
+  const milestones = props.detail.dashboard?.milestones ?? [];
+  const disabled = (props.selectedCount ?? 0) === 0 || !props.onMassUpdate;
+  const groupedLabels = labels.reduce<
+    Array<{
+      categoryId: number | null;
+      categoryName: string;
+      labels: typeof labels;
+    }>
+  >((groups, label) => {
+    const categoryName = label.categoryName || "";
+    const categoryId = label.categoryId ?? null;
+    const existing = groups.find(
+      (group) => group.categoryId === categoryId && group.categoryName === categoryName,
+    );
+    if (existing) {
+      existing.labels.push(label);
+      return groups;
+    }
+    groups.push({ categoryId, categoryName, labels: [label] });
+    return groups;
+  }, []);
+
   return (
     <div className="mass-update-wrap hide-in-mobile">
       <form
@@ -464,48 +583,169 @@ function LegacyMilestoneMassUpdateShell(props: {
       >
         <div className="btn-group check-all">
           <label aria-label={legacyMessage(props.messages, "button.selectAll")} htmlFor="check-all">
-            <input data-target="checked-issue" id="check-all" type="checkbox" />
+            <input
+              checked={(props.totalCount ?? 0) > 0 && props.selectedCount === props.totalCount}
+              data-selected-count={props.selectedCount ?? 0}
+              data-target="checked-issue"
+              id="check-all"
+              onChange={(event) => props.onCheckAll?.(event.currentTarget.checked)}
+              type="checkbox"
+            />
           </label>
         </div>
         <div className="btn-group" data-name="state" id="state">
-          <button
-            className="btn dropdown-toggle medium"
-            data-toggle="dropdown"
-            disabled
-            type="button"
-          >
-            <span className="d-label">{legacyMessage(props.messages, "issue.update.state")}</span>
-            <span className="d-caret">
-              <span className="caret" />
-            </span>
-          </button>
+          <LegacyMassUpdateDropdownButton
+            disabled={disabled}
+            label={legacyMessage(props.messages, "issue.update.state")}
+          />
           <ul className="dropdown-menu mass-update-list">
             <li data-value="OPEN">
-              <a
-                href={buildProjectHref(
-                  props.runtimeConfig,
-                  props.detail.ownerName,
-                  props.detail.projectName,
-                  "issues?state=open",
-                )}
+              <button
+                className="btn-transparent"
+                disabled={disabled}
+                onClick={() => void props.onMassUpdate?.({ state: "open" })}
+                type="button"
               >
                 {legacyMessage(props.messages, "issue.state.open")}
-              </a>
+              </button>
             </li>
             <li data-value="CLOSED">
-              <a
-                href={buildProjectHref(
-                  props.runtimeConfig,
-                  props.detail.ownerName,
-                  props.detail.projectName,
-                  "issues?state=closed",
-                )}
+              <button
+                className="btn-transparent"
+                disabled={disabled}
+                onClick={() => void props.onMassUpdate?.({ state: "closed" })}
+                type="button"
               >
                 {legacyMessage(props.messages, "issue.state.closed")}
-              </a>
+              </button>
             </li>
           </ul>
         </div>
+        <div className="btn-group" data-name="assignee.id" id="assignee">
+          <LegacyMassUpdateDropdownButton
+            disabled={disabled}
+            label={legacyMessage(props.messages, "issue.update.assignee.id")}
+          />
+          <ul className="dropdown-menu mass-update-list">
+            <li data-value="anonymous">
+              <button
+                className="btn-transparent"
+                disabled={disabled}
+                onClick={() =>
+                  void props.onMassUpdate?.({
+                    assigneeLoginId: "anonymous",
+                    assigneeUpdate: true,
+                  })
+                }
+                type="button"
+              >
+                {legacyMessage(props.messages, "issue.noAssignee")}
+              </button>
+            </li>
+            <li className="divider" />
+            {assignees.map((assignee) => (
+              <li data-value={assignee.userId} key={assignee.userId}>
+                <button
+                  className="btn-transparent usf-group"
+                  disabled={disabled}
+                  onClick={() =>
+                    void props.onMassUpdate?.({
+                      assigneeLoginId: assignee.loginId,
+                      assigneeUpdate: true,
+                    })
+                  }
+                  type="button"
+                >
+                  <span className="avatar-wrap smaller">
+                    {assignee.avatarUrl ? (
+                      <img alt="" height={20} src={assignee.avatarUrl} width={20} />
+                    ) : (
+                      <span>{(assignee.userLabel || assignee.loginId).slice(0, 1)}</span>
+                    )}
+                  </span>
+                  <strong className="name">{assignee.userLabel || assignee.loginId}</strong>
+                  <span className="loginid">
+                    {" "}
+                    <strong>@</strong>
+                    {assignee.loginId}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {milestones.length > 0 ? (
+          <div className="btn-group" data-name="milestone.id" id="milestone">
+            <LegacyMassUpdateDropdownButton
+              disabled={disabled}
+              label={legacyMessage(props.messages, "issue.update.milestone.id")}
+            />
+            <ul className="dropdown-menu mass-update-list">
+              <li data-value="0">
+                <button
+                  className="btn-transparent"
+                  disabled={disabled}
+                  onClick={() =>
+                    void props.onMassUpdate?.({ milestoneId: 0, milestoneUpdate: true })
+                  }
+                  type="button"
+                >
+                  {legacyMessage(props.messages, "issue.noMilestone")}
+                </button>
+              </li>
+              <li className="divider" />
+              {milestones.map((milestone) => (
+                <li data-value={milestone.id} key={milestone.id}>
+                  <button
+                    className="btn-transparent"
+                    disabled={disabled}
+                    onClick={() =>
+                      void props.onMassUpdate?.({
+                        milestoneId: milestone.id,
+                        milestoneUpdate: true,
+                      })
+                    }
+                    type="button"
+                  >
+                    {milestone.title}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {labels.length > 0 ? (
+          <>
+            <div className="btn-group" data-name="attachingLabelIds" id="attaching-label">
+              <LegacyMassUpdateDropdownButton
+                disabled={disabled}
+                label={legacyMessage(props.messages, "issue.update.attachLabel")}
+              />
+              <ul className="dropdown-menu mass-update-list" id="attach-label-list">
+                <LegacyMassUpdateLabelList
+                  disabled={disabled}
+                  groupedLabels={groupedLabels}
+                  mode="attach"
+                  onMassUpdate={props.onMassUpdate}
+                />
+              </ul>
+            </div>
+            <div className="btn-group" data-name="detachingLabelIds" id="detaching-label">
+              <LegacyMassUpdateDropdownButton
+                disabled={disabled}
+                label={legacyMessage(props.messages, "issue.update.detachLabel")}
+              />
+              <ul className="dropdown-menu mass-update-list" id="delete-label-list">
+                <LegacyMassUpdateLabelList
+                  disabled={disabled}
+                  groupedLabels={groupedLabels}
+                  mode="detach"
+                  onMassUpdate={props.onMassUpdate}
+                />
+              </ul>
+            </div>
+          </>
+        ) : null}
       </form>
     </div>
   );
@@ -723,6 +963,9 @@ export function ProjectMilestoneDetailPage(props: {
   milestone: ProjectMilestoneViewModel | null;
   onClose?: () => Promise<void>;
   onDelete?: () => Promise<void>;
+  onMassUpdate?: (
+    input: MilestoneIssueMassUpdateInput & { issueNumbers: number[] },
+  ) => Promise<void>;
   onOpen?: () => Promise<void>;
   owner: string;
   projectName: string;
@@ -733,13 +976,55 @@ export function ProjectMilestoneDetailPage(props: {
   const issueState = ["open", "closed", "all"].includes(props.issueState)
     ? props.issueState
     : "open";
-  const issues =
-    issueState === "closed"
-      ? (milestone?.closedIssues ?? [])
-      : issueState === "all"
-        ? [...(milestone?.openIssues ?? []), ...(milestone?.closedIssues ?? [])]
-        : (milestone?.openIssues ?? []);
+  const issues = React.useMemo(() => {
+    if (issueState === "closed") {
+      return milestone?.closedIssues ?? [];
+    }
+    if (issueState === "all") {
+      return [...(milestone?.openIssues ?? []), ...(milestone?.closedIssues ?? [])];
+    }
+    return milestone?.openIssues ?? [];
+  }, [issueState, milestone?.closedIssues, milestone?.openIssues]);
   const [filter, setFilter] = React.useState("");
+  const [selectedIssueNumbers, setSelectedIssueNumbers] = React.useState<number[]>([]);
+  const visibleIssueNumbers = React.useMemo(() => {
+    const issueNumbers: number[] = [];
+    for (const issue of issues) {
+      if (!milestoneIssueHidden(issue, filter)) {
+        issueNumbers.push(issue.issueNumber);
+      }
+    }
+    return issueNumbers;
+  }, [filter, issues]);
+  const toggleIssueSelection = React.useCallback((issueNumber: number, checked: boolean) => {
+    setSelectedIssueNumbers((current) => {
+      if (checked) {
+        return current.includes(issueNumber) ? current : [...current, issueNumber];
+      }
+      return current.filter((selectedIssueNumber) => selectedIssueNumber !== issueNumber);
+    });
+  }, []);
+  const setAllVisibleIssueSelection = React.useCallback(
+    (checked: boolean) => {
+      setSelectedIssueNumbers((current) => {
+        if (!checked) {
+          return current.filter((issueNumber) => !visibleIssueNumbers.includes(issueNumber));
+        }
+        return [...new Set([...current, ...visibleIssueNumbers])];
+      });
+    },
+    [visibleIssueNumbers],
+  );
+  const submitMassUpdate = React.useCallback(
+    async (input: MilestoneIssueMassUpdateInput) => {
+      if (selectedIssueNumbers.length === 0 || !props.onMassUpdate) {
+        return;
+      }
+      await props.onMassUpdate({ ...input, issueNumbers: selectedIssueNumbers });
+      setSelectedIssueNumbers([]);
+    },
+    [props, selectedIssueNumbers],
+  );
 
   return (
     <main className="app-shell">
@@ -923,7 +1208,15 @@ export function ProjectMilestoneDetailPage(props: {
                       <LegacyMilestoneMassUpdateShell
                         detail={detail}
                         messages={props.messages}
+                        onCheckAll={setAllVisibleIssueSelection}
+                        onMassUpdate={submitMassUpdate}
                         runtimeConfig={props.runtimeConfig}
+                        selectedCount={
+                          selectedIssueNumbers.filter((issueNumber) =>
+                            visibleIssueNumbers.includes(issueNumber),
+                          ).length
+                        }
+                        totalCount={visibleIssueNumbers.length}
                       />
                       <div className="pull-right search search-bar">
                         <input
@@ -949,7 +1242,9 @@ export function ProjectMilestoneDetailPage(props: {
                           issue={issue}
                           key={`${issue.state}-${issue.issueNumber}`}
                           messages={props.messages}
+                          onIssueSelectionChange={toggleIssueSelection}
                           runtimeConfig={props.runtimeConfig}
+                          selectedIssueNumbers={selectedIssueNumbers}
                         />
                       ))}
                     </ul>

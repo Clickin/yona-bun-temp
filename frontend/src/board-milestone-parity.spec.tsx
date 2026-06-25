@@ -14,6 +14,37 @@ import type { ProjectDetailViewModel } from "./routes/-view-models";
 const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
 
 const detail: ProjectDetailViewModel = {
+  dashboard: {
+    assignees: [
+      {
+        avatarUrl: "/avatar/owner.png",
+        loginId: "owner",
+        openIssueCount: 1,
+        userId: 1,
+        userLabel: "Owner",
+      },
+    ],
+    labels: [
+      {
+        categoryId: 3,
+        categoryIsExclusive: false,
+        categoryName: "kind",
+        color: "#abc",
+        id: 7,
+        name: "guide",
+        openIssueCount: 1,
+      },
+    ],
+    milestones: [
+      {
+        closedIssueCount: 0,
+        completionPercent: 10,
+        id: 5,
+        openIssueCount: 1,
+        title: "M1",
+      },
+    ],
+  },
   enrollmentRequested: false,
   isFavorited: false,
   organizationName: "",
@@ -227,6 +258,10 @@ describe("board/milestone UI parity closure", () => {
       />,
     );
     const source = fs.readFileSync(path.resolve(__dirname, "routes/-milestone-views.tsx"), "utf8");
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/milestone/$milestoneId/route.tsx"),
+      "utf8",
+    );
 
     expect(formHtml).toContain('class="upload-wrap content-footer"');
     expect(formHtml).toContain('data-resource-type="MILESTONE"');
@@ -234,6 +269,28 @@ describe("board/milestone UI parity closure", () => {
       'data-attachments="[{&quot;fileHref&quot;:&quot;/yona/files/901&quot;',
     );
     expect(detailHtml).toContain('class="mass-update-wrap hide-in-mobile"');
+    expect(detailHtml).toContain('id="mass-update-form"');
+    expect(detailHtml).toContain('id="check-all"');
+    expect(detailHtml).toContain('id="state"');
+    expect(detailHtml).toContain('data-name="state"');
+    expect(detailHtml).toContain('data-value="OPEN"');
+    expect(detailHtml).toContain('data-value="CLOSED"');
+    expect(detailHtml).toContain('id="assignee"');
+    expect(detailHtml).toContain('data-name="assignee.id"');
+    expect(detailHtml).toContain('data-value="anonymous"');
+    expect(detailHtml).toContain('class="avatar-wrap smaller"');
+    expect(detailHtml).toContain("<strong>@</strong>owner");
+    expect(detailHtml).toContain('id="milestone"');
+    expect(detailHtml).toContain('data-name="milestone.id"');
+    expect(detailHtml).toContain('data-value="5"');
+    expect(detailHtml).toContain('id="attaching-label"');
+    expect(detailHtml).toContain('data-name="attachingLabelIds"');
+    expect(detailHtml).toContain('id="attach-label-list"');
+    expect(detailHtml).toContain('id="detaching-label"');
+    expect(detailHtml).toContain('data-name="detachingLabelIds"');
+    expect(detailHtml).toContain('id="delete-label-list"');
+    expect(detailHtml).toContain('class="disabled" data-category="3"');
+    expect(detailHtml).toContain('data-label-id="7"');
     expect(detailHtml).toContain('data-toggle="item-search"');
     expect(detailHtml).toContain('class="post-list-wrap row-fluid"');
     expect(detailHtml).toContain('class="post-item title"');
@@ -242,6 +299,11 @@ describe("board/milestone UI parity closure", () => {
     expect(detailHtml).toContain("Overdue");
     expect(source).toContain('validationMessage?.field === "title" ? " error"');
     expect(source).toContain('<div className="message">');
+    expect(source).toContain(
+      "await props.onMassUpdate({ ...input, issueNumbers: selectedIssueNumbers })",
+    );
+    expect(routeSource).toContain("massUpdateIssues");
+    expect(routeSource).toContain("issueNumbers: input.issueNumbers.map");
     expect(source).not.toContain('className="alert alert-error"');
   });
 });

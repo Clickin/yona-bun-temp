@@ -42,7 +42,18 @@
 - `cargo test -p yoram-server --test rest_contract rest_project_routes_cover_directory_views_and_mutations`
 - `pnpm --dir frontend build`
 - `pnpm --dir frontend check`
+- `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`
 - `pnpm --dir frontend test:e2e -- tests/shell-routing-smoke.e2e.ts -g "project milestone .*image uploads|project milestone edit editor submits pasted image uploads"`
+
+## UI Parity Closeouts
+
+- 2026-06-26 milestone detail mass-update follow-up: `ProjectMilestoneDetailPage`
+  now restores the legacy `issue.partial_massupdate.scala.html` option
+  population for `#state`, `#assignee`, `#milestone`, `#attaching-label`, and
+  `#detaching-label`, keeps checkbox selection in React, and calls the shared
+  issue mass-update REST client from the milestone route before reloading
+  milestone detail data. Focused coverage:
+  `frontend/src/board-milestone-parity.spec.tsx`.
 
 ## Remaining Follow-ups
 

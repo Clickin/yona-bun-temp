@@ -3,6 +3,7 @@ import { Outlet, createFileRoute } from "@tanstack/react-router";
 import {
   closeProjectMilestone,
   deleteProjectMilestone,
+  massUpdateIssues,
   openProjectMilestone,
   readProjectContainer,
   readProjectMilestone,
@@ -13,6 +14,7 @@ import {
   toProjectMilestoneDetailView,
 } from "../../../../../app-view-models";
 import { ProjectMilestoneDetailPage } from "../../../../-milestone-views";
+import type { MilestoneIssueMassUpdateInput } from "../../../../-milestone-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
@@ -116,6 +118,15 @@ function ProjectMilestoneDetailRouteComponent() {
           projectName,
         });
         navigateToAppHref(runtimeConfig.basePath, `/${owner}/${projectName}/milestones`);
+      }}
+      onMassUpdate={async (input: MilestoneIssueMassUpdateInput & { issueNumbers: number[] }) => {
+        await massUpdateIssues(runtimeConfig, csrfToken, {
+          ...input,
+          issueNumbers: input.issueNumbers.map((issueNumber) => BigInt(issueNumber)),
+          ownerName: owner,
+          projectName,
+        });
+        reload();
       }}
       onOpen={async () => {
         const response = await openProjectMilestone(runtimeConfig, csrfToken, {

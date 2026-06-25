@@ -32,9 +32,11 @@ Worker update, 2026-06-26:
   references, and open/closed `ProjectIssueListItem` rows. React milestone
   detail renders those linked issues with the legacy `issue.partial_list`
   `post-list-wrap` / `post-item` / checkbox / author / count / assignee /
-  due-date selectors. Exact legacy mass-update dropdown option population and
-  mutation behavior remains a narrowed shared issue-list/mass-update follow-up;
-  the milestone-owned REST projection gap is closed.
+  due-date selectors. Current follow-up restores the legacy milestone detail
+  mass-update dropdown option population for state, assignee, milestone,
+  attach-label, and detach-label controls, keeps the linked issue checkbox
+  selection behavior in React, and routes dropdown mutations through the shared
+  issue mass-update REST boundary before reloading milestone detail data.
 
 ## Evidence Checked
 
@@ -83,7 +85,7 @@ Current evidence:
 | milestone form attachments | Legacy uses `common.fileUploader(ResourceType.MILESTONE, ...)`. | `ProjectMilestoneFormPage` renders `.upload-wrap.content-footer[data-resource-type="MILESTONE"]` while preserving REST upload insertion. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 | milestone detail actions/delete modal | Legacy list/edit/delete/open/close plus `#deleteConfirm` modal. | Current renders action links and delete modal with legacy request attrs. | covered | none |
 | milestone detail attachments | Legacy `.attachments` carries serialized attachment data. | Project milestone REST/RPC carries milestone attachments in the richer detail/list projection; React serializes them into `.attachments[data-attachments]` and visible `.attached-file` rows. | covered | `crates/server/src/routes/projects/milestones.rs`, `crates/server/src/api_types.rs`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-milestone-views.tsx`, `crates/server/tests/rest_contract.rs`, `frontend/src/board-milestone-parity.spec.tsx` |
-| milestone linked issue tabs/list | Legacy uses issue tabs, mass update, and `issue.partial_list` rows. | Project milestone REST/RPC carries open/closed `ProjectIssueListItem` rows, and React renders legacy `issue.partial_list` selectors (`.post-list-wrap`, `.post-item`, mass-update checkboxes, author/count/assignee/due-date cells) with client search. Exact mass-update dropdown option population and mutation remains a narrowed shared issue-list follow-up. | covered, narrowed follow-up | next shared owner for remaining mass-update option/mutation behavior |
+| milestone linked issue tabs/list | Legacy uses issue tabs, mass update, and `issue.partial_list` rows. | Project milestone REST/RPC carries open/closed `ProjectIssueListItem` rows, and React renders legacy `issue.partial_list` selectors (`.post-list-wrap`, `.post-item`, mass-update checkboxes, author/count/assignee/due-date cells) with client search. Milestone detail now also renders the legacy state/assignee/milestone/attach-label/detach-label mass-update dropdown options and wires checkbox-selected mutations through the shared issue mass-update REST client. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 | milestone issue search | Legacy `data-toggle="item-search"` filters `.issue-item`. | `ProjectMilestoneDetailPage` now filters rendered issue links through React state from the legacy search input. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 
 ## Playwright Scenario Rows
@@ -101,4 +103,4 @@ Current evidence:
 | `/:owner/:project/milestones` | search | `.textbox` keyup filters rows | React keyup/change filters non-matching `.issue-link` rows | type title | client-only behavior | covered |
 | `/:owner/:project/newMilestoneForm` | invalid submit | field-level `.error` and `.message` | field-adjacent `.error` and `.message` source/rendering | submit invalid | React validation before REST POST | covered |
 | `/:owner/:project/milestone/:id` | actions | `.actrow .ybtn`, `#deleteConfirm`, open/close | same selectors | modal, close/reopen | REST state/delete callbacks | covered |
-| `/:owner/:project/milestone/:id#issues` | linked issues | tabs plus mass update and issue partial list rows | tabs, search, mass-update shell, and legacy partial-list row selectors render from REST detail issue arrays; exact mass-update option/mutation behavior remains narrowed shared follow-up | switch tabs/search | REST detail issue arrays | covered, narrowed follow-up |
+| `/:owner/:project/milestone/:id#issues` | linked issues | tabs plus mass update and issue partial list rows | tabs, search, mass-update shell, legacy partial-list row selectors, populated mass-update dropdown options, and checkbox-selected mutation wiring render from REST detail/project container data | switch tabs/search/select issues/apply dropdown | REST detail issue arrays plus shared issue mass-update REST mutation | covered |
