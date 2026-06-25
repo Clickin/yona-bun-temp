@@ -1,8 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
+import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { createLegacyI18nRuntime } from "./i18n";
 import { renderWorkspaceSettings, testRuntimeConfig } from "./auth-workspace-shell.test-helpers";
+import { WorkspaceSettingsPage } from "./routes/-workspace-settings-view";
 import type { WorkspaceOverviewViewModel } from "./routes/-view-models";
 
 const overview: WorkspaceOverviewViewModel = {
@@ -66,6 +69,24 @@ describe("workspace settings legacy i18n opt-in", () => {
     expect(tokenHtml).toContain("<h3>User Token</h3>");
     expect(tokenHtml).toContain(">Recreate User Token</button>");
     expect(passwordHtml).toContain(">New password</dt>");
+  });
+
+  it("resolves legacy default messages without helper-injected messages", () => {
+    const html = renderToStaticMarkup(
+      <WorkspaceSettingsPage
+        routeHref="/user/editform"
+        runtimeConfig={testRuntimeConfig}
+        section="profile"
+        workspaceOverview={overview}
+      />,
+    );
+
+    expect(html).toContain("<h3>Account</h3>");
+    expect(html).toContain(">Edit profile</button>");
+    expect(html).toContain(">Login ID</dt>");
+    expect(html).toContain(">Change avatar");
+    expect(html).not.toContain("userinfo.accountSetting");
+    expect(html).not.toContain("user.loginId");
   });
 
   it("uses Korean legacy messages for user settings controls when lookup is provided", () => {

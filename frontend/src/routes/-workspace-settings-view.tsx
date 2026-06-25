@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { LegacyI18nContextValue } from "../i18n";
+import { LEGACY_DEFAULT_LANGUAGE, lookupLegacyMessage, type LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { WorkspaceOverviewViewModel } from "./-view-models";
 import { resolveWorkspaceAvatarUrl } from "./-workspace-views";
@@ -147,7 +147,9 @@ function appHref(runtimeConfig: RuntimeConfig, href: string): string {
 }
 
 function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
-  return messages ? messages(key, { fallback: key }) : key;
+  return messages
+    ? messages(key, { fallback: key })
+    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { fallback: key });
 }
 
 export function WorkspaceSettingsPage(props: {
