@@ -78,8 +78,14 @@ function NewPullRequestFormRouteComponent() {
       );
     },
   });
-  const error = containerQuery.error ?? formOptionsQuery.error;
-  const failureKind = classifyConnectFailure(error);
+  const containerFailureKind = classifyConnectFailure(containerQuery.error);
+  const formOptionsFailureKind = classifyConnectFailure(formOptionsQuery.error);
+  const formOptionsErrorMessage = formOptionsQuery.error
+    ? messages("pullRequest.error.newPullRequestForm", {
+        args: [owner, projectName],
+        fallback: "pullRequest.error.newPullRequestForm",
+      })
+    : null;
 
   useDocumentTitle("title.newPullRequest");
 
@@ -90,20 +96,27 @@ function NewPullRequestFormRouteComponent() {
       </main>
     );
   }
-  if (failureKind === "forbidden") {
+  if (containerFailureKind === "forbidden") {
     return <ForbiddenPage href={`/${owner}/${projectName}/newPullRequestForm`} />;
   }
-  if (failureKind === "not-found") {
+  if (containerFailureKind === "not-found") {
     return <NotFoundPage href={`/${owner}/${projectName}/newPullRequestForm`} />;
   }
-  if (error) {
+  if (containerQuery.error) {
     return <BadRequestPage href={`/${owner}/${projectName}/newPullRequestForm`} />;
+  }
+  if (formOptionsFailureKind === "forbidden" && !containerQuery.data) {
+    return <ForbiddenPage href={`/${owner}/${projectName}/newPullRequestForm`} />;
+  }
+  if (formOptionsFailureKind === "not-found" && !containerQuery.data) {
+    return <NotFoundPage href={`/${owner}/${projectName}/newPullRequestForm`} />;
   }
 
   return (
     <ProjectPullRequestFormPage
       csrfToken={csrfToken}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      errorMessage={formOptionsErrorMessage}
       formOptions={formOptionsQuery.data}
       messages={messages}
       mode="create"

@@ -1204,9 +1204,26 @@ export function OrganizationPullRequestListPage(props: {
   );
 }
 
+function splitLegacyHtmlBreaks(value: string): Array<{
+  key: string;
+  prefixBreak: boolean;
+  text: string;
+}> {
+  const parts: Array<{ key: string; prefixBreak: boolean; text: string }> = [];
+  let cursor = 0;
+  for (const text of value.split(/<br\s*\/?>/iu)) {
+    const start = cursor;
+    const end = start + text.length;
+    parts.push({ key: `${start}:${end}:${text}`, prefixBreak: start > 0, text });
+    cursor = end + 1;
+  }
+  return parts;
+}
+
 export function ProjectPullRequestFormPage(props: {
   csrfToken?: string;
   detail: ProjectDetailViewModel | null;
+  errorMessage?: string | null;
   formOptions: PullRequestFormOptionsResponse | undefined;
   messages?: LegacyMessageLookup;
   mode: "create" | "edit";
@@ -1268,6 +1285,7 @@ export function ProjectPullRequestFormPage(props: {
       ? `pullRequest/${initialPullRequest.pullRequestNumber}`
       : "pullRequests",
   );
+  const errorMessageParts = props.errorMessage ? splitLegacyHtmlBreaks(props.errorMessage) : [];
 
   return (
     <main className="app-shell pull-request-page">
@@ -1288,6 +1306,16 @@ export function ProjectPullRequestFormPage(props: {
                   ) : null}
                 </div>
               </header>
+              {props.errorMessage ? (
+                <div className="alert alert-error" role="alert">
+                  {errorMessageParts.map((part) => (
+                    <React.Fragment key={part.key}>
+                      {part.prefixBreak ? <br /> : null}
+                      {part.text}
+                    </React.Fragment>
+                  ))}
+                </div>
+              ) : null}
               <form
                 className="board-form pull-request-form"
                 onSubmit={(event) => {

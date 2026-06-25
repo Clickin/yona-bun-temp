@@ -1,4 +1,9 @@
 import * as React from "react";
+import legacyMessagesEn from "../../yona-original/conf/messages?raw";
+import legacyMessagesJa from "../../yona-original/conf/messages.ja-JP?raw";
+import legacyMessagesKo from "../../yona-original/conf/messages.ko-KR?raw";
+import legacyMessagesRu from "../../yona-original/conf/messages.ru-RU?raw";
+import legacyMessagesUz from "../../yona-original/conf/messages.uz-UZ?raw";
 
 export const LEGACY_DEFAULT_LANGUAGE = "en-US";
 
@@ -19,6 +24,30 @@ export interface LegacyI18nContextValue {
   supportedLanguages: LegacyLanguageCode[];
   t: (key: string, options?: TranslateOptions) => string;
 }
+
+function parseLegacyMessages(source: string): LegacyMessageDictionary {
+  const messages: LegacyMessageDictionary = {};
+  for (const line of source.split(/\r?\n/u)) {
+    const trimmed = line.trim();
+    if (trimmed === "" || trimmed.startsWith("#")) {
+      continue;
+    }
+    const messageMatch = /^([^=]+)=(.*)$/u.exec(trimmed);
+    if (!messageMatch) {
+      continue;
+    }
+    messages[messageMatch[1].trim()] = messageMatch[2].trim();
+  }
+  return messages;
+}
+
+const LEGACY_SOURCE_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
+  "en-US": parseLegacyMessages(legacyMessagesEn),
+  "ja-JP": parseLegacyMessages(legacyMessagesJa),
+  "ko-KR": parseLegacyMessages(legacyMessagesKo),
+  "ru-RU": parseLegacyMessages(legacyMessagesRu),
+  "uz-UZ": parseLegacyMessages(legacyMessagesUz),
+};
 
 const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
   "en-US": {
@@ -1811,7 +1840,11 @@ export function lookupLegacyMessage(
   key: string,
   options: TranslateOptions = {},
 ): string {
-  const raw = LEGACY_MESSAGES[language][key] ?? options.fallback ?? key;
+  const raw =
+    LEGACY_SOURCE_MESSAGES[language][key] ??
+    LEGACY_MESSAGES[language][key] ??
+    options.fallback ??
+    key;
   return formatLegacyMessage(raw, options.args);
 }
 

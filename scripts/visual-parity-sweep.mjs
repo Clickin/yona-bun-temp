@@ -149,6 +149,7 @@ const rootNames = new Set([
   "users",
   "verify",
 ]);
+const userProfileRootNames = new Set(["admin"]);
 
 function samplePathFromRoutePath(routePath) {
   if (Object.hasOwn(routeTreeSampleAliases, routePath)) {
@@ -311,7 +312,10 @@ async function discoverProjectPaths(page, baseUrl) {
         .filter(Boolean)
         .map((path) => path.split("?")[0].split("/").filter(Boolean))
         .filter(
-          (parts) => parts.length >= 2 && !rootNames.has(parts[0]) && !parts[0].startsWith("-"),
+          (parts) =>
+            parts.length >= 2 &&
+            (!rootNames.has(parts[0]) || userProfileRootNames.has(parts[0])) &&
+            !parts[0].startsWith("-"),
         )
         .map((parts) => `/${parts[0]}/${parts[1]}`),
     ),
@@ -593,6 +597,10 @@ const summary = {
 writeFileSync(resolve(outputDir, "latest.json"), `${JSON.stringify(summary, null, 2)}\n`);
 console.log(JSON.stringify(summary, null, 2));
 const comparisonFailures = comparison.filter((result) => result.diffErrors.length > 0);
-if ((local?.failed ?? 0) > 0 || (legacy?.failed ?? 0) > 0 || comparisonFailures.length > 0) {
+if (
+  (local?.failed ?? 0) > 0 ||
+  (sweepTarget === "legacy" && (legacy?.failed ?? 0) > 0) ||
+  comparisonFailures.length > 0
+) {
   process.exitCode = 1;
 }

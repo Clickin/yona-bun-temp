@@ -4,9 +4,9 @@ Status: current audit evidence.
 
 ## Scope
 
-- Local target: `http://127.0.0.1:18101/yona`
+- Local target: `http://127.0.0.1:18111/yona`
 - Legacy source target: `http://192.168.45.10:9000`
-- Legacy Playwright target: `http://127.0.0.1:19000`, a temporary localhost
+- Legacy Playwright target: `http://127.0.0.1:19100`, a temporary localhost
   proxy that fetches upstream with host `curl`
 - Browser: Playwright Chromium API using the system `msedge` channel, `1366x900`
 - Local runtime: embedded assets, in-memory SQLite, `YONA_SEED_PILOT=1`
@@ -22,9 +22,11 @@ Status: current audit evidence.
   project links. Each route is inspected in an isolated Playwright page so one navigation failure
   cannot cascade into later false failures.
 - Legacy route corpus: explicit legacy base pages plus any project links
-  discovered from `/projects`. Local-only route-tree samples are not forced
-  onto the legacy sample, because the seeded local `pilot/yona` routes are not
-  legacy homelab URLs.
+  discovered from `/projects`. The discovery filter treats `/admin/sample` as
+  a project route even though `/admin` is also a legacy user-profile root, so
+  sample project pages are not silently skipped. Local-only route-tree samples
+  are not forced onto the legacy sample, because the seeded local `pilot/yona`
+  routes are not legacy homelab URLs.
 - Render criterion: Playwright waits past transient `common.loading` / `불러오는 중` shells before
   judging final visible screen metrics.
 - Diff criterion: when both targets render the same path, the sweep fails if
@@ -37,7 +39,7 @@ Status: current audit evidence.
 
 ```sh
 YONA_BASE_PATH=/yona \
-YONA_BIND_ADDR=127.0.0.1:18101 \
+YONA_BIND_ADDR=127.0.0.1:18111 \
 YONA_DATABASE_URL=sqlite::memory: \
 YONA_SCHEMA_POLICY=up \
 YONA_SEED_PILOT=1 \
@@ -48,7 +50,7 @@ YONA_USE_EMBEDDED_ASSETS=1 \
 ```sh
 pnpm --dir frontend build
 YONA_EMBED_ASSET_ROOT="$PWD/frontend/dist" pnpm agent:cargo -- --outside-sandbox build -p yoram-server --bin yoram
-YONA_LEGACY_BASE_URL=http://127.0.0.1:19000 YORAM_SWEEP_TARGET=both node scripts/visual-parity-sweep.mjs
+YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_SWEEP_TARGET=both node scripts/visual-parity-sweep.mjs
 node scripts/audit-legacy-html-pages.mjs
 ```
 
@@ -67,9 +69,11 @@ Playwright render the legacy responses from `127.0.0.1`.
 - Legacy HTML anchor audit: 57 checked, 57 passed, 0 failed, 0 discovered links unaudited.
 - Legacy route/spec/anchor/render coverage smokes: 57 routed, 57 with spec evidence, 104/104
   curl-observed anchors with Rust evidence, 57/57 with rendered e2e signal evidence.
-- Legacy Playwright visual sweep through the curl proxy: 32 checked, 32 passed, 0 failed,
-  authenticated session confirmed.
-- Local Playwright visual sweep: 107 checked, 107 passed, 0 failed, authenticated session confirmed.
+- Legacy Playwright visual sweep through the curl proxy: 56 checked, 54 passed, 2 failed,
+  authenticated session confirmed. The remaining failures are legacy reference behavior:
+  `/admin/sample/issue/1` timed out waiting for `networkidle`, and `/admin/sample/branches`
+  returned HTTP 500 from the homelab sample.
+- Local Playwright visual sweep: 131 checked, 131 passed, 0 failed, authenticated session confirmed.
 - Cross-target comparison failures: 0. The harness now catches the class of issue where legacy
   renders a normal page and local renders a not-found/forbidden/bad-request page.
 - A rerun first exposed `/user/issues/new` as that exact class of failure:
@@ -80,6 +84,12 @@ Playwright render the legacy responses from `127.0.0.1`.
   legacy `newDirectIssueForm` behavior.
 - Local discovered project route root: `/pilot/yona`.
 - Legacy discovered project route root: `/admin/sample`.
+- Legacy i18n keys are now loaded directly from `yona-original/conf/messages*` before the local
+  fallback dictionary, so visible legacy keys such as `user.role.owner` fail only when they are
+  absent from the original message bundle.
+- `/admin/sample/newPullRequestForm` now preserves the project pull-request page shell when the
+  form-options endpoint reports the legacy `pullRequest.error.newPullRequestForm` condition,
+  matching the legacy rendered page instead of replacing it with a generic bad-request screen.
 
 The earlier 56-route local sweep was too narrow because it only covered hand-listed pages plus
 links discovered from `/projects`. The current sweep also expands `frontend/src/routeTree.gen.ts`
@@ -93,19 +103,24 @@ smoke test.
 
 ## Failures
 
-None in the stabilized 32-route legacy rendered-screen sweep, 107-route local rendered-screen sweep,
-or same-path comparison.
+None in the stabilized 131-route local rendered-screen sweep or same-path comparison.
+
+The latest combined run records two legacy-reference failures, but they are not Yoram blockers
+because the Rust target renders the corresponding same-path comparison without local errors and
+the failures originate from the homelab legacy server itself. Running `YORAM_SWEEP_TARGET=legacy`
+continues to fail on legacy failures so legacy-only audits do not mask reference-server regressions.
 
 The local sweep also fails if seeded fixture copy such as `browser-safe route tree` or an unbased
 `localhost:3001/yo` clone URL becomes visible in rendered UI.
 
 ## Follow-Up
 
-- Raw i18n key visibility is currently clear in the 107-route local sweep.
+- Raw i18n key visibility is currently clear in the 131-route local sweep.
 - `/sites/diagnostic` browser GET now serves the React shell even when the viewer is not a site
   admin; `/api/v1/site/diagnostics` remains the site-admin-only JSON data endpoint. This prevents
   raw JSON forbidden responses from becoming the user-visible page.
 - `/changeVCS`, `/transfer`, and `/webhooks` now reach the React SPA on GET; the legacy direct
   mutation handlers still own POST/PUT/DELETE.
 - Re-run the combined legacy/local Playwright sweep after each repair batch; current success
-  criterion is legacy 32/32, local 107/107, and 0 comparison failures.
+  criterion is local 131/131 and 0 comparison failures. Legacy-reference failures must remain
+  recorded with path/status/error details.
