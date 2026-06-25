@@ -10,6 +10,7 @@ const apiV1Route = (path: string) => `**/api/v1${path}`;
 type AuthCapabilities = {
   emailVerificationEnabled?: boolean;
   enabledSocialProviders?: string[];
+  secretSetupRequired?: boolean;
   signupRequireConfirm?: boolean;
   socialLoginOnly?: boolean;
 };
@@ -63,6 +64,7 @@ async function installAuthEntryMocks(
       body: JSON.stringify({
         emailVerificationEnabled: capabilities.emailVerificationEnabled ?? false,
         enabledSocialProviders: capabilities.enabledSocialProviders ?? [],
+        secretSetupRequired: capabilities.secretSetupRequired ?? false,
         signupRequireConfirm: capabilities.signupRequireConfirm ?? false,
         socialLoginOnly: capabilities.socialLoginOnly ?? false,
       }),
@@ -115,6 +117,67 @@ function signedInSession() {
     userLabel: "Administrator",
   };
 }
+
+test("first-run secret admin setup keeps the legacy form shell and REST submit boundary", async ({
+  page,
+}) => {
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page, { secretSetupRequired: true });
+  let submittedBody: Record<string, unknown> | null = null;
+
+  await page.route(apiV1Route("/auth/secret"), async (route) => {
+    submittedBody = route.request().postDataJSON() as Record<string, unknown>;
+    await route.fulfill({
+      body: JSON.stringify({ restartPath: "/restart" }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/secret");
+
+  await expect(page).toHaveTitle("Tada! Welcome to Yona!");
+  await expect(page.locator(".secret-page .secret-wrap .logo")).toContainText("Yona");
+  await expect(page.locator(".secret-page .secret-wrap .logo")).toHaveAttribute(
+    "href",
+    /\/yona\/?$/,
+  );
+  await expect(page.locator(".secret-page .secret-wrap h3")).toContainText(
+    "Tada! Welcome to Yona!",
+  );
+  await expect(page.locator(".secret-page .alert.alert-block.secret-box")).toContainText(
+    "Create website-admin account",
+  );
+  await expect(page.locator(".secret-page .alert.alert-block.secret-box")).toContainText(
+    "Caution: Password MUST be kept secret.",
+  );
+  await expect(page.locator(".secret-page .signup-form-wrap.frm-wrap form")).toHaveAttribute(
+    "class",
+    "input-append",
+  );
+  await expect(page.locator("#loginId")).toHaveValue("admin");
+  await expect(page.locator("#loginId")).toHaveAttribute("readonly", "");
+  await expect(page.locator("label[for='uname']")).toContainText("Name");
+  await expect(page.locator("label[for='email']")).toContainText("Email");
+  await expect(page.locator("label[for='password']")).toContainText("Password");
+  await expect(page.locator("label[for='retypedPassword']")).toContainText("Password confirmation");
+  await expect(page.locator(".secret-page form")).not.toHaveAttribute("method", /post/i);
+  await expect(page.locator(".secret-page form")).not.toHaveAttribute("action", /\/secret/);
+
+  await page.locator("#uname").fill("Administrator");
+  await page.locator("#email").fill("admin@example.com");
+  await page.locator("#password").fill("admin-secret");
+  await page.locator("#retypedPassword").fill("admin-secret");
+  await page.locator(".secret-page button[type='submit']").click();
+
+  await expect(page).toHaveURL(/\/yona\/restart$/);
+  expect(submittedBody).toMatchObject({
+    emailAddress: "admin@example.com",
+    name: "Administrator",
+    password: "admin-secret",
+    retypedPassword: "admin-secret",
+  });
+});
 
 test("login form preserves redirectUrl and rememberMe through the REST JSON boundary", async ({
   page,
