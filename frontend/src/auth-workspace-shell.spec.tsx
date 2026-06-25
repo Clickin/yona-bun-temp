@@ -1141,6 +1141,13 @@ describe("auth and workspace views", () => {
     expect(html).not.toContain('src=""');
     expect(html).not.toContain("userinfo.changeAvatar");
     expect(html).not.toContain("Crop Avatar");
+
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "routes/-workspace-settings-view.tsx"),
+      "utf8",
+    );
+    expect(source).toContain('id="frmAvatar"');
+    expect(source).toContain("event.preventDefault();");
   });
 
   it("uses legacy message keys for user-profile workspace avatar upload validation errors", () => {

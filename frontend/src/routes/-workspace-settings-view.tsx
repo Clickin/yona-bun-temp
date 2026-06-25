@@ -339,6 +339,9 @@ export function WorkspaceSettingsPage(props: {
             className="pull-left"
             id="frmAvatar"
             method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+            }}
             style={{ borderLeft: "1px solid #ddd", marginLeft: "50px", paddingLeft: "50px" }}
           >
             <input name="name" type="hidden" value={session.userLabel} />
