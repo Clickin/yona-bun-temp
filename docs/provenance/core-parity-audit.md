@@ -403,6 +403,13 @@
   Markdown preview source-return checks. The direct sweep fails on HTML fragment
   responses, non-JSON content types, wrong JSON kind, or missing required array
   item keys.
+- 2026-06-25 auth REST boundary note: React-owned signup/login screens submit
+  through `/api/v1/auth/register` and `/api/v1/auth/sign-in` REST JSON. The
+  legacy `/users/signup` and `/users/login` form POST routes remain only as
+  direct compatibility adapters for legacy clients and redirects, not as the SPA
+  primary path. Focused evidence: `frontend/src/form-submit-boundary.spec.tsx`,
+  `tests/server-spa-rest-boundary-contract.test.mjs`, and
+  `auth_workspace_contract::direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate`.
 - 2026-06-20 runtime DI note: app route assembly now receives an explicit `RuntimeRegistry` built from the initialized `AppRuntimeConfig` snapshot, so route registration reads mail/update/auth/translation/site-name/default-scope/upload-size runtime config from one injected registry instead of threading those config fragments as separate function parameters. This is behavior-neutral plumbing toward per-test runtime config isolation without process-global env locks.
 - 2026-06-20 runtime DI note: project direct aliases for watch/unwatch, enroll/cancel-enroll, changeVCS, member CRUD, webhook CRUD, overview update, and clone now reuse the app-scoped `PilotServiceImpl` registered by `routes::projects` instead of rebuilding service/runtime config from process env in each handler. Existing project member, webhook, changeVCS, rest watch/enroll, and project overview/clone contract coverage remains the behavior evidence.
 - 2026-06-20 runtime DI note: legacy direct auth login/signup routes now receive the app-scoped `PilotServiceImpl` from auth route registration instead of rebuilding auth UI and SMTP runtime config from process env. The direct legacy login/signup contract now uses the explicit default `AppRuntimeConfig` helper without process-env mutation for the default auth UI path.
