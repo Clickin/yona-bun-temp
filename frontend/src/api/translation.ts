@@ -1,10 +1,6 @@
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
-export type LegacyTranslationResourceType =
-  | "issue"
-  | "issue-comment"
-  | "posting"
-  | "post-comment";
+export type LegacyTranslationResourceType = "issue" | "issue-comment" | "posting" | "post-comment";
 
 export interface LegacyTranslationRequest {
   number: number;
@@ -48,5 +44,8 @@ export async function translateLegacyResource(
   }
 
   const payload = JSON.parse(text) as LegacyTranslationResponse;
-  return payload.translatedMarkdown ?? payload.translated;
+  if (typeof payload.translatedMarkdown !== "string") {
+    throw new Error("Translation response did not include Markdown source.");
+  }
+  return payload.translatedMarkdown;
 }

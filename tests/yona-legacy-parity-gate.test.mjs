@@ -201,6 +201,7 @@ test("maps frontend REST API wrapper changes to the API query boundary slice", (
     "frontend/src/api/types.ts",
     "frontend/src/api/milestones.ts",
     "frontend/src/api/session.ts",
+    "frontend/src/api/translation.ts",
     "frontend/src/api-query.spec.ts",
     "docs/provenance/core-parity-audit.md",
   ]);

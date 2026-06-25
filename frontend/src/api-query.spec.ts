@@ -66,6 +66,26 @@ describe("api query keys", () => {
     });
   });
 
+  it("requires translated Markdown source instead of consuming legacy HTML fragments", async () => {
+    await expect(
+      translateLegacyResource(
+        { apiBaseUrl: "/yona/api", basePath: "/yona" },
+        "csrf-token",
+        {
+          number: 1,
+          owner: "owner",
+          projectName: "projectYobi",
+          type: "issue",
+        },
+        async () =>
+          new Response(JSON.stringify({ translated: "<p>server html</p>" }), {
+            headers: { "Content-Type": "application/json" },
+            status: 200,
+          }),
+      ),
+    ).rejects.toThrow("Translation response did not include Markdown source.");
+  });
+
   it("sends legacy board child-comment parent ids in comment create requests", async () => {
     const calls: Array<{
       body: string | null;
