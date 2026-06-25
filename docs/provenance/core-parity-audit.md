@@ -1402,6 +1402,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `frontend/src/markdown-renderer.spec.tsx`,
   `frontend/src/workspace-profile-i18n.spec.tsx`, and
   `frontend/src/organization-shell-i18n.spec.tsx`.
+- 2026-06-25 RC Markdown long-codeblock safety keeps fenced-code rendering on
+  the React path but bypasses syntax tokenization once code exceeds
+  `MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH`, rendering the original fenced source as
+  `<pre><code class="...">...` without `syntax-token` spans. This covers the
+  legacy OOM-risk class reported for very long SQL Markdown codeblocks while
+  preserving readable source output. Focused coverage:
+  `frontend/src/markdown-renderer.spec.tsx`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and

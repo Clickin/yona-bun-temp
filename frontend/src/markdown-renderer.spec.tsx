@@ -6,6 +6,7 @@ import {
   LegacyMarkdownHelp,
   MarkdownRenderer,
 } from "./routes/-markdown-renderer";
+import { MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH } from "./routes/-syntax-highlighting";
 
 describe("MarkdownRenderer", () => {
   it("renders the legacy embedded Markdown help shell used by common.editor", () => {
@@ -1093,9 +1094,10 @@ describe("MarkdownRenderer", () => {
   });
 
   it("renders very long SQL fenced blocks as plain source without syntax highlighting", () => {
-    const longSql = Array.from({ length: 2_200 }, (_, index) => {
-      return `SELECT ${index} AS value FROM release_candidate_table WHERE body LIKE '%markdown%';`;
-    }).join("\n");
+    const sqlLine = "SELECT body FROM release_candidate_table WHERE body LIKE '%markdown%';";
+    const longSql = `${sqlLine}\n`
+      .repeat(Math.ceil((MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH + 1) / sqlLine.length))
+      .trimEnd();
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={`\`\`\`sql\n${longSql}\n\`\`\``} />,
     );
@@ -1106,15 +1108,16 @@ describe("MarkdownRenderer", () => {
   });
 
   it("renders any very long fenced block as plain source without syntax highlighting", () => {
-    const longRust = Array.from({ length: 2_200 }, (_, index) => {
-      return `fn release_candidate_${index}() { return; }`;
-    }).join("\n");
+    const rustLine = "fn release_candidate() { return; }";
+    const longRust = `${`${rustLine}\n`.repeat(
+      Math.ceil((MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH + 1) / rustLine.length),
+    )}fn release_candidate_tail() { return; }`;
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={`\`\`\`rust\n${longRust}\n\`\`\``} />,
     );
 
     expect(html).toContain('class="rust"');
-    expect(html).toContain("release_candidate_2199");
+    expect(html).toContain("release_candidate_tail");
     expect(html).not.toContain("syntax-token");
   });
 

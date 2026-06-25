@@ -1,7 +1,7 @@
 /* eslint-disable no-useless-escape */
 import * as React from "react";
 
-const maxHighlightedCodeBlockLength = 65_536;
+export const MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH = 65_536;
 
 const commonKeywords = new Set([
   "break",
@@ -1784,7 +1784,7 @@ const clojureKeywords = new Set([
 ]);
 
 export function highlightCodeBlock(code: string, language: string | undefined) {
-  if (code.length > maxHighlightedCodeBlockLength) {
+  if (code.length > MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH) {
     return code;
   }
 
