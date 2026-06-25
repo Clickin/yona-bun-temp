@@ -3428,6 +3428,7 @@ async fn direct_legacy_usermenu_tab_content_list_returns_workspace_api_payload()
             Request::builder()
                 .method(Method::GET)
                 .uri("/yona/user/usermenuTabContentList")
+                .header(http::header::ACCEPT, "text/html")
                 .header(http::header::COOKIE, &cookie_header)
                 .body(Body::empty())
                 .unwrap(),
@@ -3522,6 +3523,7 @@ async fn direct_legacy_user_sidebar_returns_api_payload() {
             Request::builder()
                 .method(Method::GET)
                 .uri("/yona/user/sidebar?path=%2Fdoor%2FprojectYobi%2Fissue%2F1&hash=comment-7")
+                .header(http::header::ACCEPT, "text/html")
                 .header(http::header::COOKIE, &cookie_header)
                 .body(Body::empty())
                 .unwrap(),
