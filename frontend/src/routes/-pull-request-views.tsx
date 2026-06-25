@@ -2446,6 +2446,7 @@ function ReviewThreadItem(props: {
   pullRequest?: PullRequestDetailResponse;
   runtimeConfig?: RuntimeConfig;
   thread: ReviewThread;
+  canComment?: boolean;
   viewerLabel?: string;
   viewerLoginId?: string;
   onCommentDelete?: (commentId: number) => Promise<void>;
@@ -2480,9 +2481,12 @@ function ReviewThreadItem(props: {
   }
 
   async function submitEdit(event: React.FormEvent<HTMLFormElement>) {
+    if (!props.onCommentUpdate) {
+      return;
+    }
     event.preventDefault();
     const contentsMarkdown = editText.trim();
-    if (!editingCommentId || !contentsMarkdown || !props.onCommentUpdate) {
+    if (!editingCommentId || !contentsMarkdown) {
       return;
     }
     await props.onCommentUpdate(editingCommentId, contentsMarkdown, editAttachmentIds);
@@ -2492,9 +2496,12 @@ function ReviewThreadItem(props: {
   }
 
   async function submitReply(event: React.FormEvent<HTMLFormElement>) {
+    if (!props.onThreadCommentSubmit) {
+      return;
+    }
     event.preventDefault();
     const contentsMarkdown = replyText.trim();
-    if (!contentsMarkdown || !props.onThreadCommentSubmit) {
+    if (!contentsMarkdown) {
       return;
     }
     await props.onThreadCommentSubmit(props.thread.id, contentsMarkdown, replyAttachmentIds);
@@ -2755,10 +2762,16 @@ function ReviewThreadItem(props: {
           );
         })}
       </ul>
-      {props.pullRequest && props.runtimeConfig && props.onThreadCommentSubmit ? (
+      {props.pullRequest && props.runtimeConfig && props.canComment ? (
         <div className="write-comment-form">
           <form
-            action={pullRequestApiHref(props.runtimeConfig, props.pullRequest, "/comments")}
+            action={prHref(
+              props.runtimeConfig,
+              props.pullRequest.ownerName,
+              props.pullRequest.projectName,
+              props.pullRequest.pullRequestNumber,
+              "comments",
+            )}
             className="review-form"
             encType="multipart/form-data"
             method="post"
@@ -3073,7 +3086,13 @@ function PullRequestBlockReviewForm(props: {
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
-  const action = pullRequestApiHref(props.runtimeConfig, props.pullRequest, "/comments");
+  const action = prHref(
+    props.runtimeConfig,
+    props.pullRequest.ownerName,
+    props.pullRequest.projectName,
+    props.pullRequest.pullRequestNumber,
+    "comments",
+  );
   const authorLabel =
     props.pullRequest.contributor.userLabel || props.pullRequest.contributor.loginId;
   async function submitBlockReview(event: React.FormEvent<HTMLFormElement>) {
@@ -3288,9 +3307,12 @@ export function PullRequestChangesPage(props: {
   }
 
   async function submitInlineComment(event: React.FormEvent<HTMLFormElement>) {
+    if (!props.onInlineCommentSubmit) {
+      return;
+    }
     event.preventDefault();
     const contentsMarkdown = inlineCommentText.trim();
-    if (!contentsMarkdown || !inlineDraft || !pr || !props.onInlineCommentSubmit) {
+    if (!contentsMarkdown || !inlineDraft || !pr) {
       return;
     }
     await props.onInlineCommentSubmit({
@@ -3310,9 +3332,12 @@ export function PullRequestChangesPage(props: {
   }
 
   async function submitNonRangedComment(event: React.FormEvent<HTMLFormElement>) {
+    if (!props.onCommentSubmit) {
+      return;
+    }
     event.preventDefault();
     const contentsMarkdown = commentDraft.trim();
-    if (!contentsMarkdown || !props.onCommentSubmit) {
+    if (!contentsMarkdown) {
       return;
     }
     await props.onCommentSubmit(contentsMarkdown, commentAttachmentIds);
@@ -3324,6 +3349,7 @@ export function PullRequestChangesPage(props: {
     return (
       <ReviewThreadItem
         key={thread.id}
+        canComment={canComment}
         currentUser={props.currentUser}
         messages={props.messages}
         pullRequest={pr}
@@ -3413,7 +3439,13 @@ export function PullRequestChangesPage(props: {
                     >
                       <td colSpan={3}>
                         <form
-                          action={pullRequestApiHref(props.runtimeConfig, pr, "/comments")}
+                          action={prHref(
+                            props.runtimeConfig,
+                            pr.ownerName,
+                            pr.projectName,
+                            pr.pullRequestNumber,
+                            "comments",
+                          )}
                           className="review-form code-review-form inline-review-form"
                           method="post"
                           onSubmit={(event) => void submitInlineComment(event)}
@@ -3657,7 +3689,15 @@ export function PullRequestChangesPage(props: {
                   {canComment ? (
                     <form
                       action={
-                        pr ? pullRequestApiHref(props.runtimeConfig, pr, "/comments") : undefined
+                        pr
+                          ? prHref(
+                              props.runtimeConfig,
+                              pr.ownerName,
+                              pr.projectName,
+                              pr.pullRequestNumber,
+                              "comments",
+                            )
+                          : undefined
                       }
                       className="board-comment-form"
                       encType="multipart/form-data"

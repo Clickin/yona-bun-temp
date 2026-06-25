@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, Query},
+    extract::{Form, Path, Query},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::{delete, get, post},
@@ -25,9 +25,10 @@ use crate::{
 mod review_comments;
 
 use review_comments::{
-    direct_update_review_thread_state, rest_create_pull_request_comment,
-    rest_delete_pull_request_comment, rest_update_pull_request_comment,
-    rest_update_pull_request_thread_state, RestPullRequestCommentBody,
+    direct_create_pull_request_comment, direct_update_review_thread_state,
+    rest_create_pull_request_comment, rest_delete_pull_request_comment,
+    rest_update_pull_request_comment, rest_update_pull_request_thread_state,
+    RestPullRequestCommentBody,
 };
 
 #[derive(Clone, Copy)]
@@ -529,6 +530,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let pull_request_accept_service = service.clone();
     let pull_request_delete_source_branch_service = service.clone();
     let pull_request_restore_source_branch_service = service.clone();
+    let pull_request_comment_create_service = service.clone();
     let pull_request_state_service = service;
 
     Router::new()
@@ -559,6 +561,30 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                     .await
                 }
             }),
+        )
+        .route(
+            "/{owner}/{project}/pullRequest/{pull_request_number}/comments",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>,
+                      Form(form): Form<HashMap<String, String>>| {
+                    async move {
+                        direct_create_pull_request_comment(
+                            headers,
+                            owner,
+                            project,
+                            pull_request_number,
+                            form,
+                            pull_request_comment_create_service.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
         )
         .route(
             "/{owner}/{project}/pullRequest/{pull_request_number}/accept",
@@ -1862,8 +1888,8 @@ fn rest_pull_request_branch_options(
     selected_branch: &str,
 ) -> Result<(Vec<RestPullRequestBranchOption>, String), RestRouteError> {
     let repo_path = yoram_vcs::repository_path(&service.data_root, project.id);
-    let branches = yoram_vcs::list_repository_branches(&repo_path)
-        .map_err(rest_pull_request_branch_error)?;
+    let branches =
+        yoram_vcs::list_repository_branches(&repo_path).map_err(rest_pull_request_branch_error)?;
     if branches.is_empty() {
         return Err(RestRouteError::bad_request(
             "pull request repository is empty",
@@ -2475,8 +2501,7 @@ async fn accept_pull_request_for_actor(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
     let source_repo_path = yoram_vcs::repository_path(&service.data_root, from_project.id);
-    let target_repo_path =
-        yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let target_repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
     let merge = yoram_vcs::merge_pull_request(
         &source_repo_path,
         &target_repo_path,
@@ -2629,8 +2654,7 @@ pub(crate) async fn rest_restore_pull_request_source_branch(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
     let source_repo_path = yoram_vcs::repository_path(&service.data_root, source_project.id);
-    let target_repo_path =
-        yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let target_repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
     yoram_vcs::restore_branch_from_merge(
         &source_repo_path,
         &target_repo_path,

@@ -1564,6 +1564,62 @@ describe("CodeCommitDetailPage", () => {
     expect(html).not.toContain(">button.comment.new</button>");
   });
 
+  it("preserves commit discussion direct form fallbacks when React handlers are absent", () => {
+    const html = renderToStaticMarkup(
+      <CodeCommitDetailPage
+        commitDetail={{
+          ...commitDetail,
+          threads: [
+            {
+              authorId: 1,
+              authorLabel: "Author",
+              authorLoginId: "author",
+              comments: [
+                {
+                  authorId: 1,
+                  authorLabel: "Author",
+                  authorLoginId: "author",
+                  canDelete: true,
+                  contentsHtml: "",
+                  contentsMarkdown: "Thread comment",
+                  createdLabel: "now",
+                  id: 12,
+                  threadId: 7,
+                  viaEmail: false,
+                },
+              ],
+              commitId: "be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2",
+              createdLabel: "now",
+              endLine: 2,
+              id: 7,
+              path: "src/main.rs",
+              prevCommitId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              startLine: 2,
+              state: "open",
+            },
+          ],
+        }}
+        detail={projectDetail}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(html).toContain('class="review-form board-comment-form"');
+    expect(html).toContain(
+      'action="/yona/owner/projectYobi/commit/be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2/comments"',
+    );
+    expect(html).toContain('class="review-form thread-comment-form"');
+    expect(html).toContain('type="hidden" name="threadId" value="7"');
+    expect(html).not.toContain(">Edit</button>");
+    expect(codeViewsSource).toContain("commitDiscussionDirectHref");
+    expect(codeViewsSource).toContain(
+      "if (!props.onCreateComment) {\n      return;\n    }\n    event.preventDefault();",
+    );
+    expect(codeViewsSource).toContain(
+      "if (!props.onUpdateComment) {\n      return;\n    }\n    event.preventDefault();",
+    );
+  });
+
   it("keeps state-driven commit discussion editors in legacy common.editor shells", () => {
     expect(codeViewsSource).toContain("<LegacyMarkdownEditorShell");
     expect(codeViewsSource).toContain('editorMode="code-review-body"');

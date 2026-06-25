@@ -610,6 +610,20 @@ function commitDiscussionApiHref(
   )}${suffix}`;
 }
 
+function commitDiscussionDirectHref(
+  runtimeConfig: RuntimeConfig,
+  commitDetail: CodeCommitDetailViewModel,
+  suffix = "",
+) {
+  const normalizedSuffix = suffix === "" ? "" : `/${suffix.replace(/^\/+/, "")}`;
+  return buildProjectHref(
+    runtimeConfig,
+    commitDetail.ownerName,
+    commitDetail.projectName,
+    `commit/${encodeURIComponent(commitDetail.commit?.commitId ?? "")}${normalizedSuffix}`,
+  );
+}
+
 function commitDiscussionMarkdownCommitReferences(commitDetail: CodeCommitDetailViewModel) {
   const references: Array<{
     commitId: string;
@@ -1267,9 +1281,12 @@ function CodeCommitDiffView(props: {
   const canComment = commitDetail?.permissions.canComment ?? false;
 
   async function submitComment(event: React.FormEvent<HTMLFormElement>) {
+    if (!props.onCreateComment) {
+      return;
+    }
     event.preventDefault();
     const contentsMarkdown = commentText.trim();
-    if (!contentsMarkdown || !props.onCreateComment) {
+    if (!contentsMarkdown) {
       return;
     }
     await props.onCreateComment({ attachmentIds: commentAttachmentIds, contentsMarkdown });
@@ -1298,9 +1315,12 @@ function CodeCommitDiffView(props: {
   }
 
   async function submitInlineComment(event: React.FormEvent<HTMLFormElement>) {
+    if (!props.onCreateComment) {
+      return;
+    }
     event.preventDefault();
     const contentsMarkdown = inlineCommentText.trim();
-    if (!contentsMarkdown || !inlineComment || !props.onCreateComment) {
+    if (!contentsMarkdown || !inlineComment) {
       return;
     }
     await props.onCreateComment({
@@ -1429,7 +1449,7 @@ function CodeCommitDiffView(props: {
                             >
                               <td colSpan={3}>
                                 <form
-                                  action={commitDiscussionApiHref(
+                                  action={commitDiscussionDirectHref(
                                     props.runtimeConfig,
                                     commitDetail,
                                     "/comments",
@@ -1548,7 +1568,7 @@ function CodeCommitDiffView(props: {
           <form
             action={
               commitDetail
-                ? commitDiscussionApiHref(props.runtimeConfig, commitDetail, "/comments")
+                ? commitDiscussionDirectHref(props.runtimeConfig, commitDetail, "/comments")
                 : "#"
             }
             className="review-form board-comment-form"
@@ -1682,9 +1702,12 @@ function CommitDiscussionThread(props: {
   }
 
   async function submitEdit(event: React.FormEvent<HTMLFormElement>) {
+    if (!props.onUpdateComment) {
+      return;
+    }
     event.preventDefault();
     const contentsMarkdown = editText.trim();
-    if (!editingCommentId || !contentsMarkdown || !props.onUpdateComment) {
+    if (!editingCommentId || !contentsMarkdown) {
       return;
     }
     await props.onUpdateComment(editingCommentId, contentsMarkdown, editAttachmentIds);
@@ -1694,9 +1717,12 @@ function CommitDiscussionThread(props: {
   }
 
   async function submitReply(event: React.FormEvent<HTMLFormElement>) {
+    if (!props.onCreateComment) {
+      return;
+    }
     event.preventDefault();
     const contentsMarkdown = replyText.trim();
-    if (!contentsMarkdown || !props.onCreateComment) {
+    if (!contentsMarkdown) {
       return;
     }
     await props.onCreateComment({
@@ -1895,7 +1921,7 @@ function CommitDiscussionThread(props: {
         </button>
       </div>
       <form
-        action={commitDiscussionApiHref(props.runtimeConfig, props.commitDetail, "/comments")}
+        action={commitDiscussionDirectHref(props.runtimeConfig, props.commitDetail, "/comments")}
         className="review-form thread-comment-form"
         method="post"
         onSubmit={(event) => {

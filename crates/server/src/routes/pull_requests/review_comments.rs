@@ -1,16 +1,17 @@
 use axum::{
     http::{HeaderMap, StatusCode},
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Redirect, Response},
     Json,
 };
 use serde::Deserialize;
+use std::collections::HashMap;
 
 use crate::{
-    dispatch_pull_request_webhooks, internal_error, normalize_identifier, persistence,
-    require_authenticated_user, require_project_resource_create, require_session,
-    require_valid_csrf, rest_repository, rest_require_project_code_read,
-    rest_update_commit_discussion_thread_state, ConnectError, PilotBackend, PilotServiceImpl,
-    ProjectCreatableResource, RestRouteError,
+    base_path_href, dispatch_pull_request_webhooks, form_value, internal_error,
+    normalize_identifier, parse_attachment_ids, persistence, require_authenticated_user,
+    require_project_resource_create, require_session, require_valid_csrf, rest_repository,
+    rest_require_project_code_read, rest_update_commit_discussion_thread_state, ConnectError,
+    PilotBackend, PilotServiceImpl, ProjectCreatableResource, RestRouteError,
 };
 
 use super::{
@@ -33,6 +34,91 @@ pub(super) struct RestPullRequestCommentBody {
     start_line: Option<i32>,
     start_side: Option<String>,
     thread_id: Option<i64>,
+}
+
+fn direct_pull_request_comment_body(form: &HashMap<String, String>) -> RestPullRequestCommentBody {
+    RestPullRequestCommentBody {
+        attachment_ids: parse_attachment_ids(form_value(
+            form,
+            &["attachmentIds", "attachment_ids", "temporaryUploadFiles"],
+        )),
+        commit_id: Some(
+            form_value(form, &["commitId", "commit_id"])
+                .trim()
+                .to_string(),
+        )
+        .filter(|value| !value.is_empty()),
+        contents_markdown: form_value(form, &["contents", "contentsMarkdown"])
+            .trim()
+            .to_string(),
+        end_line: form_value(form, &["endLine", "end_line"]).parse().ok(),
+        end_side: Some(
+            form_value(form, &["endSide", "end_side"])
+                .trim()
+                .to_string(),
+        )
+        .filter(|value| !value.is_empty()),
+        path: Some(form_value(form, &["path"]).trim().to_string())
+            .filter(|value| !value.is_empty()),
+        prev_commit_id: Some(
+            form_value(form, &["prevCommitId", "prev_commit_id"])
+                .trim()
+                .to_string(),
+        )
+        .filter(|value| !value.is_empty()),
+        start_line: form_value(form, &["startLine", "start_line"]).parse().ok(),
+        start_side: Some(
+            form_value(form, &["startSide", "start_side"])
+                .trim()
+                .to_string(),
+        )
+        .filter(|value| !value.is_empty()),
+        thread_id: form_value(form, &["thread.id", "threadId", "thread_id"])
+            .parse()
+            .ok(),
+    }
+}
+
+fn direct_pull_request_redirect(
+    base_path: &str,
+    owner: &str,
+    project: &str,
+    pull_request_number: i64,
+) -> Response {
+    Redirect::to(&base_path_href(
+        base_path,
+        &format!("/{owner}/{project}/pullRequest/{pull_request_number}"),
+    ))
+    .into_response()
+}
+
+pub(super) async fn direct_create_pull_request_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    form: HashMap<String, String>,
+    service: PilotServiceImpl,
+) -> Response {
+    let base_path = service.base_path.clone();
+    match rest_create_pull_request_comment(
+        headers,
+        owner_name.clone(),
+        project_name.clone(),
+        pull_request_number,
+        direct_pull_request_comment_body(&form),
+        service,
+    )
+    .await
+    {
+        Ok(_) => direct_pull_request_redirect(
+            &base_path,
+            &owner_name,
+            &project_name,
+            pull_request_number,
+        ),
+        Err(error) => error.into_response(),
+    }
 }
 
 pub(super) async fn direct_update_review_thread_state(

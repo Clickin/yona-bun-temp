@@ -14,11 +14,9 @@ use tower::ServiceExt;
 use yoram_integrations::{
     clear_test_webhook_outbox, queue_test_webhook_response, snapshot_test_webhook_outbox,
 };
-use yoram_persistence::{webhook_thread, AppRepository};
 use yoram_migration::Migrator;
-use yoram_server::{
-    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
-};
+use yoram_persistence::{webhook_thread, AppRepository};
+use yoram_server::{create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig};
 
 mod rest_test_support;
 
@@ -206,6 +204,32 @@ async fn rest_json(
         builder = builder.header("x-csrf-token", csrf);
     }
     app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
+        .await
+        .unwrap()
+}
+
+async fn direct_post_form(
+    app: axum::Router,
+    path: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    body: &str,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::POST)
+        .uri(format!("/yona{path}"))
+        .header(
+            http::header::CONTENT_TYPE,
+            "application/x-www-form-urlencoded",
+        );
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+
+    app.oneshot(builder.body(Body::from(body.to_string())).unwrap())
         .await
         .unwrap()
 }
@@ -1406,6 +1430,41 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert!(commented_text.contains("/yona/owner/projectYobi/pullRequest/1#comment-"));
     assert!(commented_text.contains("|#1: Updated interaction parity"));
 
+    let direct_created = direct_post_form(
+        app.clone(),
+        "/owner/projectYobi/pullRequest/1/comments",
+        Some(&reviewer_cookie),
+        Some(&reviewer_csrf),
+        &format!("contents=Legacy+direct+PR+reply&thread.id={thread_id}"),
+    )
+    .await;
+    assert_eq!(direct_created.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_created
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/owner/projectYobi/pullRequest/1")
+    );
+    let after_direct_comment = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1",
+            Some(&reviewer_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert!(
+        after_direct_comment["threads"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|thread| thread["comments"].as_array().unwrap().iter())
+            .any(|comment| comment["contentsMarkdown"] == "Legacy direct PR reply"),
+        "direct legacy PR comment should be visible through the REST read surface"
+    );
+
     let direct_close = app
         .clone()
         .oneshot(
@@ -1487,7 +1546,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     let review_export_text = String::from_utf8(review_export_body.to_vec()).unwrap();
     assert!(review_export_text.starts_with('\u{feff}'));
     assert!(review_export_text.contains("Thread\tState\tAuthor\tPath"));
-    assert!(review_export_text.contains("Review comment body"));
+    assert!(review_export_text.contains("Legacy direct PR reply"));
     assert!(review_export_text.contains("topic-head"));
 
     let ranged_commented = response_json(
@@ -1538,11 +1597,11 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     );
     assert_eq!(
         count_rows(&db, "pull_request_event", "NEW_REVIEW_COMMENT").await,
-        2
+        3
     );
     let deliveries = snapshot_test_webhook_outbox();
-    assert_eq!(deliveries.len(), 5);
-    assert_eq!(deliveries[4].event_type, "NEW_REVIEW_COMMENT");
+    assert_eq!(deliveries.len(), 6);
+    assert_eq!(deliveries[5].event_type, "NEW_REVIEW_COMMENT");
 
     let ranged_comment_id = ranged_thread["comments"][0]["id"].as_i64().unwrap();
     let forbidden_ranged_edit = rest_json(
@@ -1594,9 +1653,9 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     );
     assert_eq!(
         count_rows(&db, "pull_request_event", "NEW_REVIEW_COMMENT").await,
-        2
+        3
     );
-    assert_eq!(snapshot_test_webhook_outbox().len(), 5);
+    assert_eq!(snapshot_test_webhook_outbox().len(), 6);
 
     let forbidden_ranged_delete = rest_json(
         app.clone(),
@@ -1749,7 +1808,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         count_rows(&db, "pull_request_event", "REVIEW_THREAD_STATE_CHANGED").await,
         6
     );
-    assert_eq!(snapshot_test_webhook_outbox().len(), 5);
+    assert_eq!(snapshot_test_webhook_outbox().len(), 6);
 
     let forbidden_accept = rest_json(
         app.clone(),
@@ -1781,7 +1840,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         count_rows(&db, "pull_request_event", "PULL_REQUEST_MERGED").await,
         0
     );
-    assert_eq!(snapshot_test_webhook_outbox().len(), 5);
+    assert_eq!(snapshot_test_webhook_outbox().len(), 6);
 
     let reviewed_for_merge = response_json(
         rest_json(
@@ -1797,9 +1856,9 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     .await;
     assert_eq!(reviewed_for_merge["reviewed"], true);
     let deliveries = snapshot_test_webhook_outbox();
-    assert_eq!(deliveries.len(), 6);
+    assert_eq!(deliveries.len(), 7);
     assert_eq!(
-        deliveries[5].event_type,
+        deliveries[6].event_type,
         "PULL_REQUEST_REVIEW_STATE_CHANGED"
     );
 
@@ -1843,10 +1902,10 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         "topic\n"
     );
     let deliveries = snapshot_test_webhook_outbox();
-    assert_eq!(deliveries.len(), 7);
-    assert_eq!(deliveries[6].event_type, "PULL_REQUEST_MERGED");
+    assert_eq!(deliveries.len(), 8);
+    assert_eq!(deliveries[7].event_type, "PULL_REQUEST_MERGED");
     let merged_payload: Value =
-        serde_json::from_str(&deliveries[6].body).expect("merged webhook payload");
+        serde_json::from_str(&deliveries[7].body).expect("merged webhook payload");
     let merged_text = merged_payload["text"].as_str().unwrap_or_default();
     assert!(merged_text.contains("pullRequest.event.message.merged"));
     assert!(merged_text

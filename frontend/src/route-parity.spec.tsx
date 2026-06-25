@@ -3786,9 +3786,7 @@ describe("file-route parity harness", () => {
     expect(html).toContain('<div class="non-ranged-threads-wrap">');
     expect(html).toContain('class="board-comment-form"');
     expect(html).toContain('id="comment-form"');
-    expect(html).toContain(
-      'action="/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/comments"',
-    );
+    expect(html).toContain('action="/yona/owner/projectYobi/pullRequest/1/comments"');
     expect(html).toContain('encType="multipart/form-data"');
     expect(html).toContain('<div class="write-comment-box">');
     expect(html).toContain('<div class="write-comment-wrap">');
@@ -4752,6 +4750,18 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain('id="review-form"');
     expect(pullRequestViewsSource).toContain("submitBlockReview");
     expect(pullRequestViewsSource).toContain("props.onInlineCommentSubmit");
+    expect(pullRequestViewsSource).toContain(
+      "if (!props.onCommentSubmit) {\n      return;\n    }\n    event.preventDefault();",
+    );
+    expect(pullRequestViewsSource).toContain(
+      "if (!props.onThreadCommentSubmit) {\n      return;\n    }\n    event.preventDefault();",
+    );
+    expect(pullRequestViewsSource).toContain(
+      "if (!props.onCommentUpdate) {\n      return;\n    }\n    event.preventDefault();",
+    );
+    expect(pullRequestViewsSource).toContain(
+      "props.pullRequest && props.runtimeConfig && props.canComment",
+    );
     expect(pullRequestViewsSource).toContain("LegacyMarkdownHelp");
     expect(pullRequestViewsSource).toContain('data-toggle="close"');
     expect(pullRequestViewsSource).toContain("code-review-body");
