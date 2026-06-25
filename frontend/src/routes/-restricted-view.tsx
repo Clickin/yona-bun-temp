@@ -15,7 +15,7 @@ export function RestrictedPage(props: {
           frameBorder={0}
           height={315}
           src="https://www.youtube.com/embed/9bZkp7q19f0"
-          title="restricted.video"
+          title="Gangnam Style"
           width={560}
         ></iframe>
       </p>

@@ -244,7 +244,9 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain("button.newSubtask");
     expect(html).toContain('class="issue-weight"');
     expect(html).toContain('id="upvote-issue-weight"');
+    expect(html).toContain('title="issue.weight: Upvote"');
     expect(html).toContain('id="down-vote-issue-weight"');
+    expect(html).toContain('title="issue.weight: Down vote"');
     expect(html).toContain('class="weight-number"');
     expect(html).toContain(">3</span>");
     expect(html).toContain('id="translate"');

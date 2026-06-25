@@ -130,6 +130,54 @@ function renderIssueBoardPrMilestoneControls(messages?: LegacyMessageLookup) {
   );
 }
 
+function renderProjectPullRequestListWithReviewMetrics(messages?: LegacyMessageLookup) {
+  return renderToStaticMarkup(
+    <ProjectPullRequestListPage
+      category="open"
+      detail={{ ...detail, isForked: false, showPullRequest: true }}
+      list={{
+        acceptedCount: 0,
+        category: "open",
+        closedCount: 0,
+        contributors: [],
+        items: [
+          {
+            closedCommentThreadCount: 1,
+            commentThreadCount: 2,
+            conflict: false,
+            contributorLabel: "Owner",
+            contributorLoginId: "owner",
+            createdLabel: "now",
+            fromBranch: "feature",
+            fromOwnerName: "yobi",
+            fromProjectName: "yona",
+            id: 1,
+            ownerName: "yobi",
+            projectName: "yona",
+            pullRequestNumber: 7,
+            receiverLabel: "Reviewer",
+            receiverLoginId: "reviewer",
+            reviewerCount: 1,
+            state: "open",
+            title: "Review metrics",
+            toBranch: "main",
+            updatedLabel: "later",
+          },
+        ],
+        openCount: 1,
+        pageNum: 1,
+        pageSize: 15,
+        recentlyPushedBranches: [],
+        sentCount: 0,
+        totalCount: 1,
+      }}
+      messages={messages}
+      query={{ category: "open", contributorId: 0, filter: "", pageNum: 1 }}
+      runtimeConfig={testRuntimeConfig}
+    />,
+  );
+}
+
 function renderBoardDetailCommentHelpers(messages?: LegacyMessageLookup) {
   return renderToStaticMarkup(
     <ProjectBoardDetailPage
@@ -259,10 +307,19 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     expect(html).toContain(">pullRequest.state.open");
     expect(html).toContain(">pullRequest.sent");
     expect(html).toContain(">pullRequest.is.empty</p>");
+    expect(html).toContain('title="common.two.column.mode"');
+    expect(html).toContain('data-content="common.two.column.mode.desc"');
+    expect(html).toContain('class="two-column-mode-text">common.two.column.view</span>');
     expect(html).toContain(">milestone.menu.new</a>");
     expect(html).toContain(">milestone.is.empty</p>");
     expect(html).toContain(">milestone.form.state</dt>");
     expect(html).toContain(">button.save</button>");
+
+    const reviewMetricsHtml = renderProjectPullRequestListWithReviewMetrics();
+    expect(reviewMetricsHtml).toContain(
+      'title="pullRequest.review.closed / pullRequest.review.total"',
+    );
+    expect(reviewMetricsHtml).not.toContain("pullRequest.reviewers");
   });
 
   it("uses the legacy loading fallback and Korean runtime for the board detail loading shell", () => {
@@ -293,6 +350,9 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     expect(html).toContain(">등록된 게시물이 없습니다.</p>");
     expect(html).toContain(">보낸 코드");
     expect(html).toContain(">등록된 코드 주고 받기가 없습니다.</p>");
+    expect(html).toContain('title="투 컬럼 모드"');
+    expect(html).toContain('data-content="리스트와 본문을 각각 컬럼으로 분할해서 보여줍니다"');
+    expect(html).toContain('class="two-column-mode-text">2단 보기</span>');
     expect(html).toContain(">새 마일스톤</a>");
     expect(html).toContain(">등록된 마일스톤이 없습니다</p>");
     expect(html).toContain(">마일스톤 상태</dt>");
@@ -300,6 +360,11 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
     expect(html).not.toContain(">issue.menu.new</a>");
     expect(html).not.toContain(">post.write</a>");
     expect(html).not.toContain(">milestone.menu.new</a>");
+
+    const reviewMetricsHtml = renderProjectPullRequestListWithReviewMetrics(runtime.t);
+    expect(reviewMetricsHtml).toContain('title="닫힌 리뷰 / 전체 리뷰"');
+    expect(reviewMetricsHtml).not.toContain("pullRequest.review.closed / pullRequest.review.total");
+    expect(reviewMetricsHtml).not.toContain("pullRequest.reviewers");
   });
 
   it("opts board detail auxiliary comment controls into legacy messages", () => {

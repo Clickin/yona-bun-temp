@@ -1170,7 +1170,7 @@ function ProjectIssueRows(props: {
                       className="weight-up-arrow"
                       data-placement="right"
                       data-toggle="tooltip"
-                      title={`issue.weight ${weight}`}
+                      title={`${legacyMessage(props.messages, "issue.weight")} ${weight}`}
                     >
                       <i className="yobicon-angle-circled-up" />
                     </span>
@@ -1180,7 +1180,7 @@ function ProjectIssueRows(props: {
                       className="weight-down-arrow"
                       data-placement="right"
                       data-toggle="tooltip"
-                      title={`issue.weight ${weight}`}
+                      title={`${legacyMessage(props.messages, "issue.weight")} ${weight}`}
                     >
                       <i className="yobicon-angle-circled-down" />
                     </span>
@@ -1819,7 +1819,7 @@ export function ProjectIssueDetailPage(props: {
                           onClick={() => {
                             void props.onIssueWeightChange?.(1);
                           }}
-                          title="issue.weight: Upvote"
+                          title={`${legacyMessage(messages, "issue.weight")}: Upvote`}
                           type="button"
                         >
                           <i className="yobicon-arrow-up-alt"></i>
@@ -1831,7 +1831,7 @@ export function ProjectIssueDetailPage(props: {
                           onClick={() => {
                             void props.onIssueWeightChange?.(-1);
                           }}
-                          title="issue.weight: Down vote"
+                          title={`${legacyMessage(messages, "issue.weight")}: Down vote`}
                           type="button"
                         >
                           <i className="yobicon-arrow-down-alt"></i>
@@ -2947,7 +2947,7 @@ export function UserIssueListPage(props: {
                                     className="weight-up-arrow"
                                     data-placement="right"
                                     data-toggle="tooltip"
-                                    title={`issue.weight ${weight}`}
+                                    title={`${legacyMessage(messages, "issue.weight")} ${weight}`}
                                   >
                                     <i className="yobicon-angle-circled-up" />
                                   </span>
@@ -2957,7 +2957,7 @@ export function UserIssueListPage(props: {
                                     className="weight-down-arrow"
                                     data-placement="right"
                                     data-toggle="tooltip"
-                                    title={`issue.weight ${weight}`}
+                                    title={`${legacyMessage(messages, "issue.weight")} ${weight}`}
                                   >
                                     <i className="yobicon-angle-circled-down" />
                                   </span>

@@ -70,6 +70,29 @@ function fallbackOrganizationDetail(organizationName = ""): OrganizationDetailVi
   };
 }
 
+function LegacyTwoColumnModeCheckboxArea(props: { messages?: LegacyMessageLookup } = {}) {
+  return (
+    <div
+      className="two-column-icon mr10 hide-in-mobile"
+      data-content={legacyMessage(props.messages, "common.two.column.mode.desc")}
+      id="two-column-mode-checkbox"
+      title={legacyMessage(props.messages, "common.two.column.mode")}
+    >
+      <label
+        className="checkbox"
+        aria-label={legacyMessage(props.messages, "common.two.column.view")}
+      >
+        <div className="two-column-icon-border">
+          <input id="two-column-mode" type="checkbox" />
+          <span className="two-column-mode-text">
+            {legacyMessage(props.messages, "common.two.column.view")}
+          </span>
+        </div>
+      </label>
+    </div>
+  );
+}
+
 function prHref(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
@@ -542,9 +565,7 @@ function PullRequestTabs(props: {
         </li>
       ))}
       <li>
-        <label className="two-column-mode">
-          <input id="two-column-mode-checkbox" type="checkbox" /> twoColumnMode
-        </label>
+        <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
       </li>
     </ul>
   );
@@ -754,7 +775,10 @@ function PullRequestListRows(props: {
                         item.pullRequestNumber,
                         "changes",
                       )}
-                      title="pullRequest.review.closed / pullRequest.review.total"
+                      title={`${legacyMessage(
+                        props.messages,
+                        "pullRequest.review.closed",
+                      )} / ${legacyMessage(props.messages, "pullRequest.review.total")}`}
                     >
                       <span>{item.closedCommentThreadCount}</span>
                       <span className="gray-txt">/</span>
@@ -765,11 +789,7 @@ function PullRequestListRows(props: {
                 {item.reviewerCount > 0 && !props.showProjectName ? (
                   <div className="infos-item" style={{ marginTop: -1 }}>
                     <i className="infos-icon yobicon-preview vmiddle"></i>
-                    <a
-                      data-toggle="tooltip"
-                      href={`${href}#reviewers`}
-                      title="pullRequest.reviewers"
-                    >
+                    <a data-toggle="tooltip" href={`${href}#reviewers`}>
                       <span className="vmiddle">{item.reviewerCount}</span>
                     </a>
                   </div>

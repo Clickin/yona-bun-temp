@@ -1637,6 +1637,24 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `frontend/src/markdown-renderer.spec.tsx`,
   `frontend/src/workspace-profile-i18n.spec.tsx`, and
   `frontend/src/organization-shell-i18n.spec.tsx`.
+- 2026-06-25 i18n key cleanup keeps PR list, issue weight, and restricted
+  sample route copy aligned with legacy message evidence. Project PR list
+  `common.two.column.*` and `pullRequest.review.closed` /
+  `pullRequest.review.total` now resolve through the legacy message lookup
+  instead of rendering raw temporary strings, the nonexistent
+  `pullRequest.reviewers` key is not emitted, issue weight titles resolve the
+  legacy `issue.weight` key before appending the legacy `Upvote` / `Down vote`
+  suffix, and the restricted sample iframe no longer uses nonexistent
+  `restricted.video` as if it were a legacy key. Evidence read:
+  `yona-original/app/views/common/twoColumnModeCheckboxArea.scala.html`,
+  `yona-original/app/views/git/partial_list.scala.html`,
+  `yona-original/app/views/issue/view.scala.html`,
+  `yona-original/app/views/restricted.scala.html`, and
+  `yona-original/conf/messages*`. Focused coverage:
+  `frontend/src/issue-board-pr-milestone-i18n.spec.tsx`,
+  `frontend/src/issue-detail-shell.spec.tsx`,
+  `frontend/src/restricted-route-parity.spec.tsx`, and
+  `frontend/src/route-parity.spec.tsx`.
 - 2026-06-25 RC Markdown long-codeblock safety keeps fenced-code rendering on
   the React path but bypasses syntax tokenization once code exceeds
   `MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH`, rendering the original fenced source as

@@ -47,6 +47,7 @@ describe("legacy restricted route parity", () => {
     expect(html).toContain('width="560"');
     expect(html).toContain('height="315"');
     expect(html).toContain('src="https://www.youtube.com/embed/9bZkp7q19f0"');
+    expect(html).not.toContain("restricted.video");
     expect(html).toContain("Your name is Site Admin and your email address is admin@example.com");
     expect(html).toContain("<i>(verified)</i>!");
     expect(html).toContain(
