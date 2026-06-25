@@ -2143,7 +2143,7 @@ export function ProjectIssueDetailPage(props: {
                                   >
                                     <i className="yobicon-lang"></i>
                                   </button>
-                                  {comment.viewerCanUpdate && props.onCommentUpdate ? (
+                                  {comment.viewerCanUpdate ? (
                                     <button
                                       className="btn-transparent-with-fontsize-lineheight ml10"
                                       data-comment-id={comment.id}
@@ -2175,7 +2175,7 @@ export function ProjectIssueDetailPage(props: {
                                   ) : null}
                                 </span>
                               </div>
-                              {comment.viewerCanUpdate && props.onCommentUpdate ? (
+                              {comment.viewerCanUpdate ? (
                                 <div hidden={!commentIsEditing}>
                                   <IssueCommentEditForm
                                     action={commentEditAction}
@@ -2311,7 +2311,7 @@ export function ProjectIssueDetailPage(props: {
                                   },
                                 )}
                               </div>
-                              {issue?.viewerCanComment && props.onCommentSubmit ? (
+                              {issue?.viewerCanComment ? (
                                 <div className="child-comment-input-form">
                                   <form
                                     action={buildProjectHref(
@@ -2323,6 +2323,9 @@ export function ProjectIssueDetailPage(props: {
                                     encType="multipart/form-data"
                                     method="post"
                                     onSubmit={(event) => {
+                                      if (!props.onCommentSubmit) {
+                                        return;
+                                      }
                                       event.preventDefault();
                                       const contents = (
                                         childCommentDrafts[comment.id] ?? ""
@@ -2331,7 +2334,7 @@ export function ProjectIssueDetailPage(props: {
                                         return;
                                       }
                                       void props
-                                        .onCommentSubmit?.(contents, [], comment.id)
+                                        .onCommentSubmit(contents, [], comment.id)
                                         .then(() =>
                                           setChildCommentDrafts((current) => ({
                                             ...current,
@@ -2397,7 +2400,7 @@ export function ProjectIssueDetailPage(props: {
                     </ul>
                   </div>
                 </div>
-                {issue?.viewerCanComment && props.onCommentSubmit ? (
+                {issue?.viewerCanComment ? (
                   <IssueCommentForm
                     action={buildProjectHref(
                       props.runtimeConfig,
@@ -3994,7 +3997,7 @@ function IssueCommentForm(props: {
     query: string,
     context: IssueMentionUserSearchContext,
   ) => Promise<IssueMentionUsersResponse>;
-  onSubmit: (contentsMarkdown: string, attachmentIds?: number[]) => Promise<void>;
+  onSubmit?: (contentsMarkdown: string, attachmentIds?: number[]) => Promise<void>;
   runtimeConfig: RuntimeConfig;
 }) {
   const [contentsMarkdown, setContentsMarkdown] = React.useState("");
@@ -4007,6 +4010,9 @@ function IssueCommentForm(props: {
       id="comment-form"
       method="post"
       onSubmit={(event) => {
+        if (!props.onSubmit) {
+          return;
+        }
         event.preventDefault();
         const nextContents = contentsMarkdown.trim();
         if (!nextContents) {
@@ -4152,7 +4158,7 @@ function IssueCommentEditForm(props: {
     query: string,
     context: IssueMentionUserSearchContext,
   ) => Promise<IssueMentionUsersResponse>;
-  onSubmit: (
+  onSubmit?: (
     commentId: number,
     contentsMarkdown: string,
     attachmentIds?: number[],
@@ -4168,6 +4174,9 @@ function IssueCommentEditForm(props: {
         encType="multipart/form-data"
         method="post"
         onSubmit={(event) => {
+          if (!props.onSubmit) {
+            return;
+          }
           event.preventDefault();
           const nextContents = contentsMarkdown.trim();
           if (!nextContents) {

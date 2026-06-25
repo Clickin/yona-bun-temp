@@ -1,4 +1,6 @@
 import React from "react";
+import fs from "node:fs";
+import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -663,6 +665,47 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(writableHtml).toContain("Add a comment");
     expect(writableHtml).not.toContain("Leave a comment");
     expect(writableHtml).not.toContain(">Comment</button>");
+
+    const directFallbackHtml = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          commentCount: 1,
+          timeline: [
+            {
+              comment: {
+                authorLabel: "Owner User",
+                authorLoginId: "owner",
+                contentsHtml: "",
+                contentsMarkdown: "editable comment",
+                createdLabel: "now",
+                id: 56,
+                viewerCanDelete: false,
+                viewerCanUpdate: true,
+                viewerHasVoted: false,
+                voterCount: 0,
+                voters: [],
+              },
+              createdLabel: "now",
+              id: 56,
+              kind: "comment",
+            },
+          ],
+          viewerCanComment: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+    expect(directFallbackHtml).toContain('id="comment-form"');
+    expect(directFallbackHtml).toContain('action="/yona/owner/projectYobi/issue/1/comments"');
+    expect(directFallbackHtml).toContain('data-toggle="comment-edit"');
+    expect(directFallbackHtml).toContain('id="comment-editform-56"');
+    expect(directFallbackHtml).toContain('action="/yona/owner/projectYobi/issue/1/comments/56"');
+
+    const source = fs.readFileSync(path.resolve(__dirname, "routes/-issue-views.tsx"), "utf8");
+    expect(source).toContain("if (!props.onSubmit) {");
+    expect(source).toContain("if (!props.onCommentSubmit) {");
 
     const disabledHtml = renderToStaticMarkup(
       <ProjectIssueDetailPage
