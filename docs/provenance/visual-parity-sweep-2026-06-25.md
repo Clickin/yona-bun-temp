@@ -17,7 +17,9 @@ Status: current audit evidence.
   `/user/issues/new/mine` compare against the same project shape as the homelab
   legacy sample. It also records `admin/sample` as the local recent project,
   matching legacy `IssueApp.newDirectIssueForm`, which selects the current
-  user's most recent visited project for `/user/issues/new`.
+  user's most recent visited project for `/user/issues/new`. The sweep also
+  creates `admin/sample#1` when absent so legacy issue detail/edit screens are
+  compared against a real issue instead of a local fixture gap.
 - Local route corpus: explicit legacy base pages, route-tree sample expansion, and discovered seeded
   project links. Each route is inspected in an isolated Playwright page so one navigation failure
   cannot cascade into later false failures.
@@ -33,7 +35,8 @@ Status: current audit evidence.
   legacy renders a normal page but local renders an error page. Legacy
   server-returned fragments such as `/notification?from=...` are classified as
   fragments for the legacy target, while local browser navigation must render
-  the React shell.
+  the React shell. Error-page detection includes both body text and document
+  title so legacy 404/500 pages are not misclassified as normal pages.
 
 ## Commands
 
@@ -69,11 +72,12 @@ Playwright render the legacy responses from `127.0.0.1`.
 - Legacy HTML anchor audit: 57 checked, 57 passed, 0 failed, 0 discovered links unaudited.
 - Legacy route/spec/anchor/render coverage smokes: 57 routed, 57 with spec evidence, 104/104
   curl-observed anchors with Rust evidence, 57/57 with rendered e2e signal evidence.
-- Legacy Playwright visual sweep through the curl proxy: 56 checked, 54 passed, 2 failed,
+- Legacy Playwright visual sweep through the curl proxy: 77 checked, 73 passed, 4 failed,
   authenticated session confirmed. The remaining failures are legacy reference behavior:
-  `/admin/sample/issue/1` timed out waiting for `networkidle`, and `/admin/sample/branches`
-  returned HTTP 500 from the homelab sample.
-- Local Playwright visual sweep: 131 checked, 131 passed, 0 failed, authenticated session confirmed.
+  `/admin/sample/issue/1` timed out waiting for `networkidle`, while
+  `/admin/sample/post/1/editform`, `/admin/sample/compare/main...main`, and
+  `/admin/sample/branches` returned HTTP 500 from the homelab sample.
+- Local Playwright visual sweep: 152 checked, 152 passed, 0 failed, authenticated session confirmed.
 - Cross-target comparison failures: 0. The harness now catches the class of issue where legacy
   renders a normal page and local renders a not-found/forbidden/bad-request page.
 - A rerun first exposed `/user/issues/new` as that exact class of failure:
@@ -96,6 +100,10 @@ links discovered from `/projects`. The current sweep also expands `frontend/src/
 with stable sample parameters, so route-only pages are included before a user smoke test reaches
 them manually.
 
+The project discovery sweep now also applies detail/edit/code/compare suffixes to discovered
+legacy project roots such as `/admin/sample`, instead of checking those screens only on the
+local `pilot/yona` route-tree sample.
+
 Asset note: the local browser sweep must run against a binary built with
 `YONA_EMBED_ASSET_ROOT="$PWD/frontend/dist"`. A debug binary built without that variable embeds the
 server test asset fixture and produces the same class of broken UI symptom reported in the Windows
@@ -103,9 +111,9 @@ smoke test.
 
 ## Failures
 
-None in the stabilized 131-route local rendered-screen sweep or same-path comparison.
+None in the stabilized 152-route local rendered-screen sweep or same-path comparison.
 
-The latest combined run records two legacy-reference failures, but they are not Yoram blockers
+The latest combined run records four legacy-reference failures, but they are not Yoram blockers
 because the Rust target renders the corresponding same-path comparison without local errors and
 the failures originate from the homelab legacy server itself. Running `YORAM_SWEEP_TARGET=legacy`
 continues to fail on legacy failures so legacy-only audits do not mask reference-server regressions.
@@ -115,12 +123,12 @@ The local sweep also fails if seeded fixture copy such as `browser-safe route tr
 
 ## Follow-Up
 
-- Raw i18n key visibility is currently clear in the 131-route local sweep.
+- Raw i18n key visibility is currently clear in the 152-route local sweep.
 - `/sites/diagnostic` browser GET now serves the React shell even when the viewer is not a site
   admin; `/api/v1/site/diagnostics` remains the site-admin-only JSON data endpoint. This prevents
   raw JSON forbidden responses from becoming the user-visible page.
 - `/changeVCS`, `/transfer`, and `/webhooks` now reach the React SPA on GET; the legacy direct
   mutation handlers still own POST/PUT/DELETE.
 - Re-run the combined legacy/local Playwright sweep after each repair batch; current success
-  criterion is local 131/131 and 0 comparison failures. Legacy-reference failures must remain
+  criterion is local 152/152 and 0 comparison failures. Legacy-reference failures must remain
   recorded with path/status/error details.

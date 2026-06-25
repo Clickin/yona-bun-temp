@@ -59,18 +59,39 @@ const projectSuffixes = [
   "",
   "/issues",
   "/issue/1",
+  "/issue/1/editform",
   "/issue/labelsform",
   "/issueform",
   "/posts",
+  "/post/1",
+  "/post/1/editform",
   "/postform",
   "/milestones",
+  "/milestone/1",
+  "/milestone/1/editform",
   "/newMilestoneForm",
   "/pullRequests",
+  "/closedPullRequests",
+  "/sentPullRequests",
+  "/pullRequest/1",
+  "/pullRequest/1/changes",
+  "/pullRequest/1/changes/HEAD",
+  "/pullRequest/1/editform",
   "/newPullRequestForm",
   "/reviews",
   "/code",
+  "/code/",
+  "/code/main",
+  "/code/main/",
+  "/code/main/README.md",
   "/commits",
+  "/commits/",
+  "/commits/main",
+  "/commits/main/",
+  "/commit/HEAD",
+  "/compare/main...main",
   "/branches",
+  "/search",
   "/members",
   "/watchers",
   "/settingform",
@@ -244,6 +265,26 @@ async function apiLogin(page, baseUrl) {
         "x-csrf-token": csrfToken,
       },
     });
+    const issueResponse = await page.request.get(
+      `${baseUrl}/api/v1/projects/admin/sample/issues/1`,
+    );
+    if (!issueResponse.ok()) {
+      await page.request.post(`${baseUrl}/api/v1/projects/admin/sample/issues`, {
+        data: {
+          assigneeLoginId: "",
+          attachmentIds: [],
+          bodyMarkdown: "Sample issue body",
+          dueDate: "",
+          isDraft: false,
+          isPublish: false,
+          labelIds: [],
+          title: "Sample issue",
+        },
+        headers: {
+          "x-csrf-token": csrfToken,
+        },
+      });
+    }
     await page.request.post(`${baseUrl}/api/v1/workspace/recent-projects`, {
       data: {
         ownerName: "admin",
@@ -433,10 +474,18 @@ async function inspectPage(page, baseUrl, path, label) {
       pageWrap: selectorState(".page-wrap-outer, .project-page-wrap"),
       loginDialog: selectorState("#loginDialog, .loginDialog"),
       userProfile: selectorState(".user-profile-page"),
-      isErrorPage:
-        body.innerText.includes("페이지를 찾을 수 없습니다") ||
-        body.innerText.includes("권한이 없습니다") ||
-        body.innerText.includes("잘못된 요청입니다"),
+      isErrorPage: [document.title, body.innerText].some(
+        (text) =>
+          text.includes("페이지를 찾을 수 없습니다") ||
+          text.includes("권한이 없습니다") ||
+          text.includes("잘못된 요청입니다") ||
+          text.includes("서버 오류가 발생") ||
+          text.includes("Page not found") ||
+          text.includes("Forbidden") ||
+          text.includes("Bad Request") ||
+          text.includes("Internal Server Error") ||
+          /error\.notfound\./u.test(text),
+      ),
     };
   });
   const isProjectPage = /^\/[^/?#]+\/[^/?#]+/u.test(path) && !rootNames.has(path.split("/")[1]);
@@ -457,7 +506,7 @@ async function inspectPage(page, baseUrl, path, label) {
   if (metrics.scrollWidth > metrics.viewportWidth * 1.8) {
     errors.push(`horizontal overflow ${metrics.scrollWidth}/${metrics.viewportWidth}`);
   }
-  if (hasRawI18n(`${metrics.title}\n${metrics.text}`)) {
+  if (label === "local" && hasRawI18n(`${metrics.title}\n${metrics.text}`)) {
     errors.push(
       `raw i18n key visible: ${rawI18nKeys(`${metrics.title}\n${metrics.text}`).join(", ")}`,
     );
