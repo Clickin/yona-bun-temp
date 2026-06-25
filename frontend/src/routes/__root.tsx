@@ -97,29 +97,37 @@ function RootSidebar() {
       <div className="span5 right-menu span-hard-wrap">
         <div className="row-fluid user-menu-wrap">
           <span className="user-menu">
-            <a href={profileHref}>Profile</a>
+            <a href={profileHref}>
+              {messages("userinfo.profile", { fallback: "userinfo.profile" })}
+            </a>
           </span>
           <span className="user-menu">
-            <a href={accountHref}>Account</a>
+            <a href={accountHref}>
+              {messages("userinfo.accountSetting", { fallback: "userinfo.accountSetting" })}
+            </a>
           </span>
           <a href={logoutHref}>
-            <span className="user-menu logout label">Log out</span>
+            <span className="user-menu logout label">
+              {messages("title.logout", { fallback: "title.logout" })}
+            </span>
           </a>
         </div>
         <ul className="nav nav-tabs nm">
           <li className="myOrganizationList active">
             <a data-toggle="tab" href="#myOrganizationList">
-              Favorite
+              {messages("title.favorite", { fallback: "title.favorite" })}
             </a>
           </li>
           <li className="myProjectList">
             <a data-toggle="tab" href="#myProjectList">
-              Project
+              {messages("title.project", { fallback: "title.project" })}
             </a>
           </li>
           <li className="myRecentIssueList">
             <a data-toggle="tab" href="#myRecentIssueList">
-              Recent History
+              {messages("title.recently.visited.issue", {
+                fallback: "title.recently.visited.issue",
+              })}
             </a>
           </li>
         </ul>
@@ -246,29 +254,20 @@ function SidebarIssueList({
 }
 
 function RootUserMenu() {
-  const { currentSession, runtimeConfig } = useAppRuntime();
+  const { currentSession, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
 
   if (!currentSession || currentSession.isAnonymous) {
     return null;
   }
 
   const customLinkName = runtimeConfig.navbarCustomLinkName?.trim();
-  if (!customLinkName && !currentSession.isSiteAdmin) {
-    return null;
-  }
+  const avatarUrl =
+    workspaceOverview?.profile?.avatarUrl ||
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-64.png");
+  const isGuest = workspaceOverview?.profile?.isGuest ?? false;
 
   return (
     <ul className="gnb-usermenu">
-      {currentSession.isSiteAdmin ? (
-        <li className="gnb-usermenu-item admin-logged-in-affix">
-          <a
-            className="user-item-btn loggged-in"
-            href={prefixBasePath(runtimeConfig.basePath, "/sites/userList")}
-          >
-            <i className="yobicon-wrench"></i>
-          </a>
-        </li>
-      ) : null}
       {customLinkName ? (
         <li className="gnb-usermenu-item">
           <a
@@ -279,6 +278,90 @@ function RootUserMenu() {
           </a>
         </li>
       ) : null}
+      <li
+        className="gnb-usermenu-item"
+        data-placement="bottom"
+        data-toggle="tooltip"
+        title={`${messages("title.shortcut", { fallback: "title.shortcut" })} (A)`}
+      >
+        <a
+          className="user-item-btn loggged-in"
+          href={prefixBasePath(runtimeConfig.basePath, "/user/issues")}
+        >
+          {messages("issue.myIssue", { fallback: "issue.myIssue" })}
+        </a>
+      </li>
+      <li className="divider"></li>
+      {currentSession.isSiteAdmin ? (
+        <li className="gnb-usermenu-item">
+          <a
+            className="usermenu-icon-button show-progress-bar"
+            data-placement="bottom"
+            data-toggle="tooltip"
+            href={prefixBasePath(runtimeConfig.basePath, "/sites/userList")}
+            title={messages("menu.siteAdmin", { fallback: "menu.siteAdmin" })}
+          >
+            <i className="yobicon-wrench"></i>
+          </a>
+        </li>
+      ) : null}
+      {currentSession.isSiteAdmin ? <li className="divider"></li> : null}
+      <li className="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
+        <a
+          className="gnb-dropdown-toggle"
+          data-placement="bottom"
+          data-toggle="tooltip"
+          href="#mySidenav"
+          title={`${messages("user.menu", { fallback: "user.menu" })}, ${messages(
+            "title.shortcut",
+            {
+              fallback: "title.shortcut",
+            },
+          )} (F)`}
+        >
+          <span className="avatar-wrap smaller">
+            <img alt={currentSession.userLabel || currentSession.loginId} src={avatarUrl} />
+          </span>
+          <span className="caret"></span>
+        </a>
+      </li>
+      <li className="gnb-usermenu-dropdown">
+        <a
+          className="gnb-dropdown-toggle dropdwon-box-btn"
+          data-toggle="dropdown"
+          href="#gnb-create-menu"
+        >
+          <i className="yobicon-plus"></i>
+          <span className="caret"></span>
+        </a>
+        <ul className="dropdown-menu flat right" id="gnb-create-menu">
+          <li>
+            <a href={prefixBasePath(runtimeConfig.basePath, "/user/issues/new")}>
+              {messages("issue.menu.new", { fallback: "issue.menu.new" })}
+            </a>
+          </li>
+          <li>
+            <a href={prefixBasePath(runtimeConfig.basePath, "/user/issues/new/mine")}>
+              {messages("issue.menu.new.mine", { fallback: "issue.menu.new.mine" })}
+            </a>
+          </li>
+          <li>
+            <hr className="no-margin" />
+          </li>
+          <li>
+            <a href={prefixBasePath(runtimeConfig.basePath, "/projects/new")}>
+              {messages("button.newProject", { fallback: "button.newProject" })}
+            </a>
+          </li>
+          {!isGuest ? (
+            <li>
+              <a href={prefixBasePath(runtimeConfig.basePath, "/organizations/new")}>
+                {messages("title.newOrganization", { fallback: "title.newOrganization" })}
+              </a>
+            </li>
+          ) : null}
+        </ul>
+      </li>
     </ul>
   );
 }

@@ -63,7 +63,29 @@ describe("auth and workspace views", () => {
       'messages("title.yobi.feedback", { fallback: "title.yobi.feedback" })',
     );
     expect(source).toContain("<RootAnonymousMenu />");
+    expect(source).toContain('id="sidebar-open-btn"');
+    expect(source).toContain("dropdwon-box-btn");
+    expect(source).toContain('messages("issue.myIssue", { fallback: "issue.myIssue" })');
+    expect(source).toContain('messages("userinfo.profile", { fallback: "userinfo.profile" })');
+    expect(source).toContain(
+      'messages("userinfo.accountSetting", { fallback: "userinfo.accountSetting" })',
+    );
+    expect(source).toContain('messages("title.logout", { fallback: "title.logout" })');
+    expect(source).toContain('messages("title.favorite", { fallback: "title.favorite" })');
+    expect(source).toContain('messages("title.project", { fallback: "title.project" })');
+    expect(source).toContain("title.recently.visited.issue");
+    expect(source).toContain('messages("issue.menu.new", { fallback: "issue.menu.new" })');
+    expect(source).toContain(
+      'messages("issue.menu.new.mine", { fallback: "issue.menu.new.mine" })',
+    );
+    expect(source).toContain('messages("button.newProject", { fallback: "button.newProject" })');
+    expect(source).toContain(
+      'messages("title.newOrganization", { fallback: "title.newOrganization" })',
+    );
     expect(source).not.toContain('<ul className="gnb-outer gnb-usermenu">');
+    expect(source).not.toContain(">Profile</a>");
+    expect(source).not.toContain(">Account</a>");
+    expect(source).not.toContain(">Log out</span>");
   });
 
   it("renders the canonical login shell with legacy field names and recovery link", () => {

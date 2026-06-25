@@ -9,7 +9,11 @@ describe("root custom navbar link parity", () => {
     expect(source).toContain("navbarCustomLinkUrl");
     expect(source).toContain("gnb-usermenu");
     expect(source).toContain('className="user-item-btn loggged-in"');
-    expect(source).toContain("admin-logged-in-affix");
+    expect(source).toContain('className="usermenu-icon-button show-progress-bar"');
+    expect(source).toContain("sidebar-open-btn");
+    expect(source).toContain("dropdwon-box-btn");
+    expect(source).toContain("issue.myIssue");
+    expect(source).toContain("issue.menu.new.mine");
     expect(source).toContain("currentSession.isSiteAdmin");
     expect(source).toContain('prefixBasePath(runtimeConfig.basePath, "/sites/userList")');
     expect(source).toContain("currentSession.isAnonymous");
