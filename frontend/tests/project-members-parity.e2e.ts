@@ -193,11 +193,11 @@ test("project members route renders and mutates the legacy member management sur
   await expect(page.locator("#addNewMember")).toBeVisible();
   await expect(page.locator("#loginId")).toHaveAttribute("placeholder", "Add new member ID.");
   await expect(page.locator("ul.members.project.row-fluid")).toBeVisible();
-  await expect(page.locator(".label.owner")).toContainText("user.role.owner");
+  await expect(page.locator(".label.owner")).toContainText("Project owner");
   await expect(page.locator('[data-name="roleof-member"]')).toBeVisible();
   await expect(
     page.locator('[data-action="apply"][data-href="/owner/projectYobi/member/2/edit"]', {
-      hasText: "user.role.manager",
+      hasText: "Manager",
     }),
   ).toBeVisible();
   await expect(
@@ -211,12 +211,10 @@ test("project members route renders and mutates the legacy member management sur
 
   await page
     .locator('[data-action="apply"][data-href="/owner/projectYobi/member/2/edit"]', {
-      hasText: "user.role.manager",
+      hasText: "Manager",
     })
     .click();
-  await expect(page.locator('[data-name="roleof-member"] .d-label')).toContainText(
-    "user.role.manager",
-  );
+  await expect(page.locator('[data-name="roleof-member"] .d-label')).toContainText("Manager");
 
   await page.locator(".enrollAcceptBtn").click();
   await expect(page.getByText("Sign-up request")).toHaveCount(0);

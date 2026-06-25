@@ -137,9 +137,7 @@ test("site admin project list preserves legacy shell and delete modal", async ({
   await expect(page).toHaveTitle("Site Admin");
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText(
-    "site.sidebar.projectList",
-  );
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Projects");
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
   await expect(page.locator("input[name='filter']")).toHaveValue("alpha");
   await expect(page.locator(".project-list-wrap .listitem")).toHaveCount(1);
@@ -151,7 +149,7 @@ test("site admin project list preserves legacy shell and delete modal", async ({
   );
   await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
-  await expect(page.locator("#pagination")).toContainText("button.nextPage");
+  await expect(page.locator("#pagination")).toContainText("Next page");
   await expect(page.locator("#pagination a:has(.btn-pg-next)")).toHaveAttribute(
     "href",
     "/yona/sites/projectList?filter=alpha&pageNum=2",

@@ -728,19 +728,19 @@ test("shell routing smoke covers home, auth, public directories, and deep placeh
   await expect(page.getByText("Just focus on what you have to do")).toBeVisible();
 
   await page.goto("/yona/users/loginform");
-  await expect(page).toHaveTitle("Login");
-  await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
+  await expect(page).toHaveTitle("Log in");
+  await expect(page.getByRole("heading", { name: "Log in to Yona" })).toBeVisible();
 
   await page.goto("/yona/projects?filter=yobi&pageNum=1");
-  await expect(page).toHaveTitle("Project List");
+  await expect(page).toHaveTitle("Project list");
   await expect(page.getByText("projectYobi")).toBeVisible();
 
   await page.goto("/yona/orgs?filter=lab&pageNum=1");
-  await expect(page).toHaveTitle("Organization List");
+  await expect(page).toHaveTitle("Group List");
   await expect(page.getByText("weblabs")).toBeVisible();
 
   await page.goto("/yona/admin/projectYobi/issues?pageNum=2");
-  await expect(page).toHaveTitle("Issues");
+  await expect(page).toHaveTitle("Issue");
   await expect(page.locator(".row-fluid.issue-list-wrap")).toBeVisible();
   await expect(page.locator(".post-list-wrap.row-fluid")).toBeVisible();
 });
@@ -866,7 +866,7 @@ test("programmatic internal navigation keeps browser URL in sync under the mount
   await page.goto("/yona/me");
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/yona\/users\/loginform$/);
-  await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Log in to Yona" })).toBeVisible();
 });
 
 test("canonical user settings path stays mounted under the base path", async ({ page }) => {
@@ -874,7 +874,7 @@ test("canonical user settings path stays mounted under the base path", async ({ 
   await expect(page).toHaveURL(
     /\/yona\/users\/loginform\?redirectUrl=%2Fuser%2Feditform%2Fpassword$/,
   );
-  await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Log in to Yona" })).toBeVisible();
 });
 
 test("organization admin routes redirect anonymous viewers to login with a return path", async ({
@@ -884,13 +884,13 @@ test("organization admin routes redirect anonymous viewers to login with a retur
   await expect(page).toHaveURL(
     /\/yona\/users\/loginform\?redirectUrl=%2Forganizations%2Fweblabs%2Fmembers$/,
   );
-  await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Log in to Yona" })).toBeVisible();
 
   await page.goto("/yona/organizations/weblabs/deleteForm");
   await expect(page).toHaveURL(
     /\/yona\/users\/loginform\?redirectUrl=%2Forganizations%2Fweblabs%2FdeleteForm$/,
   );
-  await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Log in to Yona" })).toBeVisible();
 });
 
 test("organization admin routes render forbidden and not-found shells for authenticated viewers", async ({
@@ -953,13 +953,17 @@ test("organization admin routes render forbidden and not-found shells for authen
 
   await page.goto("/yona/organizations/weblabs/members");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
-  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.forbidden");
-  await expect(page.locator(".error-wrap > p.hide")).toHaveText("/organizations/weblabs/members");
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
+  await expect(page.locator(".error-wrap a.ybtn")).toHaveAttribute(
+    "href",
+    "/organizations/weblabs/members",
+  );
 
   await page.goto("/yona/organizations/missinglabs/deleteForm");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
-  await expect(page.locator(".error-wrap > p").first()).toHaveText("error.notfound");
-  await expect(page.locator(".error-wrap > p.hide")).toHaveText(
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("Page not found");
+  await expect(page.locator(".error-wrap a.ybtn")).toHaveAttribute(
+    "href",
     "/organizations/missinglabs/deleteForm",
   );
 });
@@ -1039,7 +1043,7 @@ test("project issue routes render data-backed issue list filters and detail scre
   await expect(page.locator("#issue-item-101")).toHaveAttribute("data-value", "nori 1 Pilot issue");
   await expect(page.locator("#issue-101")).toHaveAttribute("data-issue-id", "101");
   await expect(page.locator('.issue-item-row[data-for="issue-101"]')).toBeAttached();
-  await expect(page.locator(".weight-up-arrow")).toHaveAttribute("title", "issue.weight 2");
+  await expect(page.locator(".weight-up-arrow")).toHaveAttribute("title", "Issue weight 2");
   await expect(page.locator('.avatar-wrap.assinee img[alt="Door"]')).toHaveAttribute(
     "src",
     "/avatars/door.png",
@@ -1080,8 +1084,8 @@ test("project issue routes render data-backed issue list filters and detail scre
   await expect(page.locator(".board-body.row-fluid .span3.right-menu")).toBeVisible();
   await expect(page.locator(".board-actrow.right-txt")).toBeVisible();
   await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "false");
-  await expect(page.locator("#watch-button")).toContainText("issue.watch");
-  await expect(page.locator("#issue-share-button")).toContainText("button.share.issue");
+  await expect(page.locator("#watch-button")).toContainText("Subscribe");
+  await expect(page.locator("#issue-share-button")).toContainText("Issue Sharing");
   await expect(page.locator(".project-btn-item.show-in-mobile-inline a")).toHaveAttribute(
     "href",
     /parentIssueId=/,
@@ -1092,9 +1096,9 @@ test("project issue routes render data-backed issue list filters and detail scre
   await expect(page.getByText("Voters: 0")).toHaveCount(0);
   await expect(page.locator(".watcher-list")).toBeAttached();
   await expect(page.getByText("Watchers: 0")).toHaveCount(0);
-  await expect(page.locator("#event-54 .state.closed")).toContainText("issue.state.closed");
+  await expect(page.locator("#event-54 .state.closed")).toContainText("Closed");
   await expect(page.locator('#event-54 .date a[href="#event-54"]')).toContainText("1 minute ago");
-  await expect(page.locator("#event-54 .user-link")).toHaveAttribute("href", "/yona/nori");
+  await expect(page.locator('#event-54 a[href="/yona/nori"]').first()).toBeVisible();
   await expect(page.locator(".posting-history a")).toHaveAttribute(
     "href",
     "#-yona-posting-history",
@@ -1176,7 +1180,7 @@ test("project issue routes render data-backed issue list filters and detail scre
   await page.locator('#comment-55 [data-toggle="comment-delete"]').click();
   await expect(page.locator("#comment-delete-modal.modal.hide.fade.in")).toBeVisible();
   await expect(page.locator("#comment-delete-modal")).toContainText(
-    "common.comment.delete.confirm",
+    "Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?",
   );
   await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
     "data-request-method",
@@ -1246,7 +1250,7 @@ test("project issue routes render direct issue form from comment for authenticat
   });
 
   await page.goto("/yona/user/issues/new?commentId=55");
-  await expect(page.getByRole("heading", { name: "button.newIssue" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "New issue" })).toBeVisible();
   await expect(page.locator('input[name="referCommentId"]')).toHaveValue("55");
   await expect(page.locator('textarea[name="body"]')).toHaveValue(/First issue comment/);
   await expect(page.locator('textarea[name="body"]')).toHaveValue(/Originally posted by @nori/);
@@ -1364,7 +1368,7 @@ test("project issue routes render direct my-issue form for authenticated users",
   });
 
   await page.goto("/yona/user/issues/new/mine");
-  await expect(page.getByRole("heading", { name: "button.newIssue" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "New issue" })).toBeVisible();
   await expect(page.locator('input[name="referCommentId"]')).toHaveValue("");
   await expect(page.locator('textarea[name="body"]')).toHaveValue("");
   await page.locator('input[name="title"]').fill("My issue");
@@ -1807,8 +1811,10 @@ test("project issue label management route renders the legacy label editor shell
 
 test("project watchers route renders the legacy watcher directory shell", async ({ page }) => {
   await page.goto("/yona/admin/projectYobi/watchers");
-  await expect(page.getByText("project.watcher.title")).toBeVisible();
-  await expect(page.getByText("project.watcher.description")).toBeVisible();
+  await expect(page.getByText("This project's watcher list.")).toBeVisible();
+  await expect(
+    page.getByText("* This list contains only those who can access this project."),
+  ).toBeVisible();
   await expect(page.locator(".page-wrap-outer .project-page-wrap")).toBeVisible();
   await expect(page.locator("ul.members.project.row-fluid")).toBeVisible();
   await expect(page.locator("li.member.span6.span-hard-wrap")).toHaveCount(2);
@@ -1852,7 +1858,7 @@ test("project milestone routes render list detail and form shells", async ({ pag
   await expect(page.locator(".milestone-form-page #milestone-form")).toBeVisible();
   await expect(page.locator('#milestone-form input[name="title"]')).toHaveAttribute(
     "placeholder",
-    "title.text",
+    "Title",
   );
   await expect(page.locator('#milestone-form textarea[name="contents"]')).toBeVisible();
   await expect(page.locator("#milestone-open")).toBeChecked();

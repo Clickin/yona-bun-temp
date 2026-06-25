@@ -141,13 +141,13 @@ test("site admin issue list preserves legacy state tabs and read-only anchors", 
   await expect(page).toHaveTitle("Site Admin");
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("site.sidebar.issueList");
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Issues");
   await expect(page.locator(".site-setting-wrap .span10 > .nav.nav-tabs li.active a")).toHaveText(
-    "issue.state.open",
+    "Open",
   );
   await expect(
     page.locator(".nav.nav-tabs a[href='/yona/sites/issueList?state=closed']"),
-  ).toHaveText("issue.state.closed");
+  ).toHaveText("Closed");
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
   await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
 
@@ -173,7 +173,7 @@ test("site admin issue list preserves legacy state tabs and read-only anchors", 
   await expect(row.locator(".post-comments")).toContainText("4");
   await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
-  await expect(page.locator("#pagination")).toContainText("button.nextPage");
+  await expect(page.locator("#pagination")).toContainText("Next page");
   await expect(page.locator("#pagination a:has(.btn-pg-next)")).toHaveAttribute(
     "href",
     "/yona/sites/issueList?state=open&pageNum=2",

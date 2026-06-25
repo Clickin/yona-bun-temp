@@ -415,7 +415,7 @@ describe("file-route parity harness", () => {
         "Edit Pull Request",
       ],
       ["routes/projects/route.tsx", "title.projectList", "Project List"],
-      ["routes/orgs/route.tsx", "title.projectList", "Organization List"],
+      ["routes/orgs/route.tsx", "title.organization.list", "Organization List"],
       ["routes/users/loginform/route.tsx", "title.login", "Login"],
       ["routes/users/signupform/route.tsx", "title.signup", "Sign Up"],
       ["routes/-search-views.tsx", "title.search", "Search"],

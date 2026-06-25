@@ -77,10 +77,10 @@ test("site admin update preserves legacy shell without placeholder fallback", as
   await expect(page).toHaveTitle("Site Admin");
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Update");
-  await expect(page.locator(".title_area h2.pull-left")).toHaveText("Update");
-  await expect(page.getByText("site.update.currentVersion 1.0.0")).toBeVisible();
-  await expect(page.getByText("site.update.isNotNecessary")).toBeVisible();
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Software Update");
+  await expect(page.locator(".title_area h2.pull-left")).toHaveText("Software Update");
+  await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
+  await expect(page.getByText("You are using the latest version")).toBeVisible();
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
 });
 
@@ -103,10 +103,10 @@ test("site admin update renders the legacy download branch when a version is ava
 
   await page.goto("/yona/sites/update");
 
-  await expect(page.getByText("site.update.isAvailable 1.1.0")).toBeVisible();
-  await expect(page.getByText("site.update.currentVersion 1.0.0")).toBeVisible();
-  await expect(page.getByText("site.update.isNotNecessary")).toHaveCount(0);
+  await expect(page.getByText("Yona 1.1.0 is available")).toBeVisible();
+  await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
+  await expect(page.getByText("You are using the latest version")).toHaveCount(0);
   await expect(
     page.locator('a.ybtn.ybtn-success[href="/yona/sites/update/download-file"]'),
-  ).toHaveText("site.update.download");
+  ).toHaveText("Download");
 });

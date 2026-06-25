@@ -20,8 +20,10 @@ export const Route = createFileRoute("/orgs")({
 function OrganizationsRouteComponent() {
   const { runtimeConfig } = useAppRuntime();
   const currentHref = useCurrentHref();
-  useDocumentTitle("title.projectList");
-  const [organizationDirectory, setOrganizationDirectory] = React.useState<ReturnType<typeof toOrganizationDirectoryView> | null>(null);
+  useDocumentTitle("title.organization.list");
+  const [organizationDirectory, setOrganizationDirectory] = React.useState<ReturnType<
+    typeof toOrganizationDirectoryView
+  > | null>(null);
   const [failureKind, setFailureKind] = React.useState<null | RouteFailureKind>(null);
 
   React.useEffect(() => {
