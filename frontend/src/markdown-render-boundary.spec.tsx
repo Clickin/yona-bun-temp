@@ -192,4 +192,21 @@ describe("Markdown render boundary", () => {
       ).toBe(true);
     }
   });
+
+  it("keeps ReactMarkdown wired through the Yona legacy compatibility plugins", () => {
+    const source = readSource("routes/-markdown-renderer.tsx");
+
+    expect(source).toContain("function remarkYonaAutolinks(context: MarkdownContext)");
+    expect(source).toContain("function rehypeYonaRawHtmlCompatibility(");
+    expect(source).toContain("function rehypeYonaRenderedDomCompatibility(");
+    expect(source).toContain("const yonaMarkdownSanitizeSchema");
+    expect(source).toContain("urlTransform={reactMarkdownUrlTransform}");
+    expect(source).toContain("components={reactMarkdownComponents(props.context)}");
+    expect(source).toContain("remarkYonaAutolinks(props.context)");
+    expect(source).toContain("rehypeYonaRawHtmlCompatibility(preprocessed.opaqueRawHtmlBlocks");
+    expect(source).toContain("rehypeYonaRenderedDomCompatibility");
+    expect(source).toContain("toggleLegacyTasklistMarkdownItem(");
+    expect(source).toContain("highlightCodeBlock(code, language)");
+    expect(source).toContain('parseTextWithAutolinks(value, "react-markdown", context)');
+  });
 });
