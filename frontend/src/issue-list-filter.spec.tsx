@@ -195,7 +195,7 @@ describe("project issue list filters", () => {
     );
     expect(html).not.toContain("Yona Rust Project");
     expect(html).not.toContain("Author:");
-    expect(html).not.toContain("Assignee:");
+    expect(html).not.toContain("issue.assignee:");
     expect(html).not.toContain("Comments:");
   });
 });

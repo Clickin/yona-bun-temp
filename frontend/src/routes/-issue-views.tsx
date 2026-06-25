@@ -1296,7 +1296,9 @@ function ProjectIssueRows(props: {
                     data-placement="top"
                     data-toggle="tooltip"
                     href={issueHref}
-                    title={`issue.assignee: ${item.assigneeLabel}`}
+                    title={`${legacyMessage(props.messages, "issue.assignee")}: ${
+                      item.assigneeLabel
+                    }`}
                   >
                     {item.assigneeAvatarUrl ? (
                       <img
@@ -3075,7 +3077,9 @@ export function UserIssueListPage(props: {
                                     data-placement="bottom"
                                     data-toggle="tooltip"
                                     href={issueHref}
-                                    title={`issue.assignee: ${item.assigneeLabel}`}
+                                    title={`${legacyMessage(messages, "issue.assignee")}: ${
+                                      item.assigneeLabel
+                                    }`}
                                   >
                                     {item.assigneeAvatarUrl ? (
                                       <img

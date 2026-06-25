@@ -1778,6 +1778,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `frontend/src/project-members-parity.spec.tsx`,
   `frontend/src/project-reviews-export.spec.tsx`, and
   `frontend/src/i18n.spec.tsx`.
+- 2026-06-25 route-parity direct-render i18n completion: the broad route
+  parity harness now expects default English legacy message output for known
+  keys across issue, code, board, milestone, pull-request, review, settings,
+  public profile, directory, and common error shells while preserving source
+  assertions that implementation still calls the legacy key names. The same
+  pass fixed project/user issue assignee tooltip rendering to resolve
+  `issue.assignee` through the legacy message table instead of exposing a raw
+  key. Focused coverage: `frontend/src/route-parity.spec.tsx`,
+  `frontend/src/issue-list-filter.spec.tsx`, and full
+  `pnpm --dir frontend exec vitest run`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and
