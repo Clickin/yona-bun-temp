@@ -380,6 +380,10 @@ Before this phase can close:
   the phase status cleanup, covering the RC checklist contract, visual
   comparison, legacy HTML page audit, legacy route coverage, REST/HTML boundary
   guards, and cargo harness contracts.
+- 2026-06-26 parent gate refresh: `pnpm test:dev-scripts` passed 67 tests after
+  the `/reviews` row-fidelity closure and report-summary reconciliation, with no
+  remaining documented `gap`, `deviation`, or `weak evidence` count in the UI
+  parity reports.
 
 ## Initial Delegation Prompts
 
