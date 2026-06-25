@@ -117,13 +117,15 @@ describe("workspace/profile legacy i18n opt-in", () => {
       expect(html).not.toContain(">menu.issue <span");
       expect(html).not.toContain(">menu.pullRequest <span");
     }
-    expect(profileHtml).toContain('title="Two Column Mode"');
-    expect(profileHtml).toContain('data-content="Splits list and body into columns respectively"');
-    expect(profileHtml).toContain('aria-label="Column View"');
-    expect(profileHtml).toContain('class="two-column-mode-text">Column View</span>');
-    expect(profileHtml).toContain('title="Show subtask"');
-    expect(profileHtml).toContain('data-content="Show subtask always"');
-    expect(profileHtml).toContain('class="show-subtasks-text">Show subtask</span>');
+    for (const html of [workspaceHtml, profileHtml]) {
+      expect(html).toContain('title="Two Column Mode"');
+      expect(html).toContain('data-content="Splits list and body into columns respectively"');
+      expect(html).toContain('aria-label="Column View"');
+      expect(html).toContain('class="two-column-mode-text">Column View</span>');
+      expect(html).toContain('title="Show subtask"');
+      expect(html).toContain('data-content="Show subtask always"');
+      expect(html).toContain('class="show-subtasks-text">Show subtask</span>');
+    }
     expect(workspaceHtml).not.toContain(">Set to default page</h2>");
     expect(workspaceHtml).not.toContain(">Make current page the index page when logged in</span>");
     expect(workspaceHtml).not.toContain(">Favorite</h2>");
@@ -191,13 +193,15 @@ describe("workspace/profile legacy i18n opt-in", () => {
       expect(html).not.toContain(">menu.issue <span");
       expect(html).not.toContain(">menu.pullRequest <span");
     }
-    expect(profileHtml).toContain('title="Two Column Mode"');
-    expect(profileHtml).toContain('data-content="Splits list and body into columns respectively"');
-    expect(profileHtml).toContain('aria-label="Column View"');
-    expect(profileHtml).toContain('class="two-column-mode-text">Column View</span>');
-    expect(profileHtml).toContain('title="Show subtask"');
-    expect(profileHtml).toContain('data-content="Show subtask always"');
-    expect(profileHtml).toContain('class="show-subtasks-text">Show subtask</span>');
+    for (const html of [workspaceHtml, profileHtml]) {
+      expect(html).toContain('title="Two Column Mode"');
+      expect(html).toContain('data-content="Splits list and body into columns respectively"');
+      expect(html).toContain('aria-label="Column View"');
+      expect(html).toContain('class="two-column-mode-text">Column View</span>');
+      expect(html).toContain('title="Show subtask"');
+      expect(html).toContain('data-content="Show subtask always"');
+      expect(html).toContain('class="show-subtasks-text">Show subtask</span>');
+    }
     expect(workspaceHtml).not.toContain(">Set to default page</h2>");
     expect(workspaceHtml).not.toContain(">Make current page the index page when logged in</span>");
     expect(workspaceHtml).not.toContain(">Favorite</h2>");
@@ -221,11 +225,13 @@ describe("workspace/profile legacy i18n opt-in", () => {
       expect(html).toContain(">일</span>");
       expect(html).not.toContain(">Issue <span");
     }
-    expect(profileHtml).toContain('title="투 컬럼 모드"');
-    expect(profileHtml).toContain('aria-label="2단 보기"');
-    expect(profileHtml).toContain('class="two-column-mode-text">2단 보기</span>');
-    expect(profileHtml).toContain('title="자식이슈 펼쳐보기"');
-    expect(profileHtml).toContain('class="show-subtasks-text">자식이슈 펼쳐보기</span>');
+    for (const html of [workspaceHtml, profileHtml]) {
+      expect(html).toContain('title="투 컬럼 모드"');
+      expect(html).toContain('aria-label="2단 보기"');
+      expect(html).toContain('class="two-column-mode-text">2단 보기</span>');
+      expect(html).toContain('title="자식이슈 펼쳐보기"');
+      expect(html).toContain('class="show-subtasks-text">자식이슈 펼쳐보기</span>');
+    }
     expect(workspaceHtml).not.toContain(">기본 페이지로 지정</h2>");
     expect(workspaceHtml).not.toContain(
       ">현재 페이지를 로그인 후 표시되는 기본 인덱스 페이지로 지정합니다</span>",

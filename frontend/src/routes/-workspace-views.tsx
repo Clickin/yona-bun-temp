@@ -765,6 +765,11 @@ export function WorkspacePage(props: {
   const projectCodeUpdateLabel = legacyMessage(props.messages, "project.codeUpdate");
   const openIssueStateLabel = legacyMessage(props.messages, "issue.state.open");
   const closedIssueStateLabel = legacyMessage(props.messages, "issue.state.closed");
+  const twoColumnModeLabel = legacyMessage(props.messages, "common.two.column.mode");
+  const twoColumnModeDescription = legacyMessage(props.messages, "common.two.column.mode.desc");
+  const twoColumnViewLabel = legacyMessage(props.messages, "common.two.column.view");
+  const showSubtasksLabel = legacyMessage(props.messages, "common.show.subtasks");
+  const showSubtasksDescription = legacyMessage(props.messages, "common.show.subtasks.desc");
   const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(profile.avatarUrl, headlineName);
   const profileEmailAddress = profile.primaryEmailAddress || session.emailAddress;
   const showUserEmail = props.runtimeConfig.showUserEmail !== false;
@@ -889,6 +894,21 @@ export function WorkspacePage(props: {
                     <span className="num-badge">{memberProjects.length}</span>
                   </a>
                 </li>
+                <li>
+                  <div
+                    className="two-column-icon mr10 hide-in-mobile"
+                    data-content={twoColumnModeDescription}
+                    id="two-column-mode-checkbox"
+                    title={twoColumnModeLabel}
+                  >
+                    <label className="checkbox" aria-label={twoColumnViewLabel}>
+                      <div className="two-column-icon-border">
+                        <input id="two-column-mode" type="checkbox" />
+                        <span className="two-column-mode-text">{twoColumnViewLabel}</span>
+                      </div>
+                    </label>
+                  </div>
+                </li>
               </ul>
               <div className="tab-content">
                 <div
@@ -923,10 +943,23 @@ export function WorkspacePage(props: {
                         <span className="num-badge">{closedIssues.length}</span>
                       </a>
                     </li>
-                    <li>
-                      <span className="show-subtasks">
-                        <input id="show-subtasks" type="checkbox" />
-                      </span>
+                    <li className="show-subtasks-li">
+                      <div
+                        className="show-subtasks mr10"
+                        data-content={showSubtasksDescription}
+                        data-placement="top"
+                        data-toggle="popover"
+                        data-trigger="hover"
+                        id="two-column-mode-checkbox"
+                        title={showSubtasksLabel}
+                      >
+                        <label className="checkbox" aria-label={showSubtasksLabel}>
+                          <div className="show-subtasks-button-border">
+                            <input id="toggle-show-subtasks" type="checkbox" />
+                            <span className="show-subtasks-text">{showSubtasksLabel}</span>
+                          </div>
+                        </label>
+                      </div>
                     </li>
                   </ul>
                   <div className="tab-content">

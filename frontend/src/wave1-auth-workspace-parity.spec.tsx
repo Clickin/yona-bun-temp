@@ -261,6 +261,12 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).toContain("Connected Social Login");
     expect(html).toContain("recently");
     expect(html).toContain("days ago");
+    expect(html).toContain('id="two-column-mode"');
+    expect(html).toContain('class="two-column-mode-text">Column View</span>');
+    expect(html).toContain('class="show-subtasks-li"');
+    expect(html).toContain('id="toggle-show-subtasks"');
+    expect(html).toContain('class="show-subtasks-text">Show subtask</span>');
+    expect(html).not.toContain('id="show-subtasks"');
     expect(html).not.toContain("userinfo.editProfile");
     expect(html).not.toContain(">Since</strong>");
     expect(html).not.toContain("user.connected.social.login");
