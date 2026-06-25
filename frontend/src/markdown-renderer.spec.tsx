@@ -1931,6 +1931,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">module</span>');
   });
 
+  it("keeps legacy Highlight.js Haskell inline block comments opaque in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```haskell",
+          "value = {- legacy inline comment -} 42",
+          "nextValue = 43",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="haskell">');
+    expect(html).toContain('class="syntax-token syntax-identifier">value</span>');
+    expect(html).toContain(
+      'class="syntax-token syntax-comment">{- legacy inline comment -}</span>',
+    );
+    expect(html).toContain('class="syntax-token syntax-number">42</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">nextValue</span>');
+  });
+
   it("recognizes legacy Highlight.js Lua language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

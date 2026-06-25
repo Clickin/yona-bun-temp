@@ -1935,29 +1935,68 @@ function highlightHaskellCodeLine(
     lineIndex: number;
   },
 ) {
-  const startsStandaloneBlockComment = /^\s*\{-(?!#)/.test(line);
-  if (state.blockCommentDepth > 0 || startsStandaloneBlockComment) {
-    const opens = countHaskellBlockCommentOpeners(line);
-    const closes = countHaskellBlockCommentClosers(line);
-    const nextBlockCommentDepth = Math.max(0, state.blockCommentDepth + opens - closes);
-    return {
-      blockCommentDepth: nextBlockCommentDepth,
-      nodes: [
-        <span className="syntax-token syntax-comment" key={`haskell-comment-${state.lineIndex}`}>
-          {line.length > 0 ? line : "\u00a0"}
-        </span>,
-      ],
-    };
+  const nodes: React.ReactNode[] = [];
+  let cursor = 0;
+  let blockCommentDepth = state.blockCommentDepth;
+
+  while (cursor < line.length) {
+    if (blockCommentDepth === 0) {
+      const commentStart = findHaskellBlockCommentStart(line, cursor);
+      if (commentStart === -1) {
+        nodes.push(...highlightCodeLine(line.slice(cursor), language));
+        cursor = line.length;
+        break;
+      }
+      if (commentStart > cursor) {
+        nodes.push(...highlightCodeLine(line.slice(cursor, commentStart), language));
+      }
+      cursor = commentStart;
+      blockCommentDepth = 1;
+    }
+
+    const segmentStart = cursor;
+    while (cursor < line.length && blockCommentDepth > 0) {
+      const nextOpen = findHaskellBlockCommentStart(line, cursor + 2);
+      const nextClose = findHaskellBlockCommentEnd(line, cursor);
+      if (nextClose === -1) {
+        cursor = line.length;
+        break;
+      }
+      if (nextOpen !== -1 && nextOpen < nextClose) {
+        blockCommentDepth += 1;
+        cursor = nextOpen;
+        continue;
+      }
+      blockCommentDepth = Math.max(0, blockCommentDepth - 1);
+      cursor = nextClose + 2;
+    }
+    const comment = line.slice(segmentStart, cursor);
+    nodes.push(
+      <span
+        className="syntax-token syntax-comment"
+        key={`haskell-comment-${state.lineIndex}-${segmentStart}`}
+      >
+        {comment.length > 0 ? comment : "\u00a0"}
+      </span>,
+    );
   }
-  return { blockCommentDepth: state.blockCommentDepth, nodes: highlightCodeLine(line, language) };
+
+  return {
+    blockCommentDepth,
+    nodes: nodes.length > 0 ? nodes : ["\u00a0"],
+  };
 }
 
-function countHaskellBlockCommentOpeners(line: string) {
-  return Array.from(line.matchAll(/\{-(?!#)/g)).length;
+function findHaskellBlockCommentStart(line: string, cursor: number) {
+  const match = /\{-(?!#)/g;
+  match.lastIndex = cursor;
+  return match.exec(line)?.index ?? -1;
 }
 
-function countHaskellBlockCommentClosers(line: string) {
-  return Array.from(line.matchAll(/-\}/g)).length;
+function findHaskellBlockCommentEnd(line: string, cursor: number) {
+  const match = /-\}/g;
+  match.lastIndex = cursor;
+  return match.exec(line)?.index ?? -1;
 }
 
 function highlightYamlCodeLine(
