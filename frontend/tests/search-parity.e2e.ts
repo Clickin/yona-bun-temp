@@ -708,6 +708,115 @@ test("persists the notification welcome guide toggle with the legacy localStorag
     .toBe("true");
 });
 
+test("notification load more appends REST rows without using legacy HTML fragments", async ({
+  page,
+}) => {
+  await page.route(apiV1Route("/session"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        actorId: "1",
+        defaultLandingPath: "/",
+        emailAddress: "owner@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "owner",
+        userLabel: "Owner",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/workspace"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/",
+        emails: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        profile: {
+          avatarUrl: "",
+          connectedSocialProviders: [],
+          displayName: "Owner",
+          englishName: "",
+          isBlocked: false,
+          isSiteAdmin: false,
+          loginId: "owner",
+          primaryEmailAddress: "owner@example.com",
+          sinceLabel: "2026-05-01",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  const notificationItem = (id: number) => ({
+    actor: {
+      avatarUrl: "",
+      displayName: `Sender ${id}`,
+      loginId: `sender-${id}`,
+    },
+    createdAt: `2026-06-26T00:${String(id).padStart(2, "0")}:00Z`,
+    createdLabel: `${id} minutes ago`,
+    eventType: "ISSUE_BODY_CHANGED",
+    id: String(id),
+    message: `Notification message ${id}`,
+    targetHref: `/yona/owner/projectYobi/issue/${id}`,
+    targetTitle: `Issue ${id}`,
+    typeIcon: "issue",
+  });
+  const notificationApiCalls: string[] = [];
+
+  await page.route(/\/api\/v1\/notifications\?(?:from|size)=/, async (route) => {
+    const url = new URL(route.request().url());
+    notificationApiCalls.push(`${url.searchParams.get("from")}:${url.searchParams.get("size")}`);
+    const from = Number(url.searchParams.get("from") ?? "0");
+    if (from === 0) {
+      await route.fulfill({
+        body: JSON.stringify({
+          hasMore: true,
+          items: Array.from({ length: 20 }, (_, index) => notificationItem(index + 1)),
+          total: 21,
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+      return;
+    }
+    await route.fulfill({
+      body: JSON.stringify({
+        hasMore: false,
+        items: [notificationItem(21)],
+        total: 21,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/notifications");
+
+  await expect(page.locator(".notification-stream")).toHaveCount(20);
+  await expect(page.locator(".notification-stream").first()).toContainText(
+    "Notification message 1",
+  );
+  await expect(page.locator("#notification-more")).toHaveAttribute("href", "/yona/notifications");
+  await page.locator("#notification-more").click();
+
+  await expect(page).toHaveURL(/\/yona\/notifications$/);
+  await expect(page.locator(".notification-stream")).toHaveCount(21);
+  await expect(page.locator(".notification-stream").last()).toContainText(
+    "Notification message 21",
+  );
+  await expect(page.locator("#notification-more")).toHaveCount(0);
+  expect(notificationApiCalls).toEqual(["0:20", "20:20"]);
+});
+
 test("notification page keeps the legacy guide shell on a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ height: 844, width: 390 });
   await page.route(apiV1Route("/session"), async (route) => {
