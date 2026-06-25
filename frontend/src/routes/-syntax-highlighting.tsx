@@ -2,6 +2,7 @@
 import * as React from "react";
 
 export const MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH = 65_536;
+export const MAX_HIGHLIGHTED_CODE_BLOCK_LINES = 2_048;
 
 const commonKeywords = new Set([
   "break",
@@ -1789,6 +1790,10 @@ export function highlightCodeBlock(code: string, language: string | undefined) {
   }
 
   const lines = code.split("\n");
+  if (lines.length > MAX_HIGHLIGHTED_CODE_BLOCK_LINES) {
+    return code;
+  }
+
   const normalizedLanguage = normalizeCodeLanguage(language ?? "");
   if (normalizedLanguage === "asciidoc") {
     let inCommentBlock = false;

@@ -7,7 +7,10 @@ import {
   MarkdownRenderer,
   toggleLegacyTasklistMarkdownItem,
 } from "./routes/-markdown-renderer";
-import { MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH } from "./routes/-syntax-highlighting";
+import {
+  MAX_HIGHLIGHTED_CODE_BLOCK_LENGTH,
+  MAX_HIGHLIGHTED_CODE_BLOCK_LINES,
+} from "./routes/-syntax-highlighting";
 
 describe("MarkdownRenderer", () => {
   it("renders the legacy embedded Markdown help shell used by common.editor", () => {
@@ -1241,6 +1244,20 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain('class="rust"');
     expect(html).toContain("release_candidate_tail");
+    expect(html).not.toContain("syntax-token");
+  });
+
+  it("renders very high-line-count SQL fenced blocks as plain source without syntax highlighting", () => {
+    const manyShortSqlLines = Array.from(
+      { length: MAX_HIGHLIGHTED_CODE_BLOCK_LINES + 1 },
+      (_, index) => `SELECT ${index};`,
+    ).join("\n");
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={`\`\`\`sql\n${manyShortSqlLines}\n\`\`\``} />,
+    );
+
+    expect(html).toContain('class="sql"');
+    expect(html).toContain(`SELECT ${MAX_HIGHLIGHTED_CODE_BLOCK_LINES};`);
     expect(html).not.toContain("syntax-token");
   });
 
