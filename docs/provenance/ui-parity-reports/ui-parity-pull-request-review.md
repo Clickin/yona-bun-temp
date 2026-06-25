@@ -58,6 +58,8 @@ Current evidence checked:
 
 ## Route Inventory Summary
 
+Total rows: 22
+
 | status | count |
 | --- | ---: |
 | covered | 20 |
@@ -68,7 +70,7 @@ Current evidence checked:
 | weak evidence | 0 |
 | needs-parent-decision | 0 |
 
-## Result Table
+## Result Inventory
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
@@ -95,7 +97,7 @@ Current evidence checked:
 | E2E expectation copy drift | Legacy English keys are `pullRequest.is.safe = This pull request can be merged safely.`, `pullRequest.review = Approve`, `pullRequest.merge = Merge`; Korean differs as expected by message files | Wave 3 classifies this as stale test drift and updates the interaction e2e to legacy copy/selectors: safe merge text, `Approve`, `Merge`, reviewer shortage tooltip, and no `.reviewer-status` dependency. | covered | none |
 | Review-thread list row visual fidelity | `reviewthread/partial_list.scala.html` renders `.post-list-wrap > .post-item`, `.avatar-wrap.mlarge.hide-in-mobile`, `.title-wrap`, `.post-id`, `a.title`, `.infos`, `.infos-item.item-count-groups`; `_page.less` applies nowrap ellipsis to `.post-item .title-wrap`; `ReviewSearchCondition` includes project comment threads without restricting to pull requests | `/reviews` rows now keep legacy nowrap ellipsis through `.review-list-wrap .post-item .title-wrap`, and REST `/reviews` includes non-PR commit review threads by querying project comment threads without `PullRequestId.is_not_null()`. Focused backend contract asserts a non-PR commit review item with null `pullRequestNumber`; route/export specs remain green. | covered in current follow-up | none |
 
-## Playwright Scenario Table
+## Playwright Scenario Matrix
 
 | path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
 | --- | --- | --- | --- | --- | --- | --- |

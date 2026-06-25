@@ -44,6 +44,8 @@ Current evidence inspected:
 
 ## Route Inventory Summary
 
+Total rows: 20
+
 | status | count |
 | --- | ---: |
 | covered | 18 |
@@ -54,7 +56,7 @@ Current evidence inspected:
 | weak evidence | 0 |
 | needs-parent-decision | 0 |
 
-## Result Table
+## Result Inventory
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
@@ -79,7 +81,7 @@ Current evidence inspected:
 | legacy `code/!` ajax JSON route | `conf/routes` `CodeApp.ajaxRequest*`, `code.Browser` metadata loader | `direct_code_ajax_compat` returns legacy-shaped JSON; app runtime uses REST + React | not-applicable | Compatibility route only; no React implementation owner |
 | raw visible i18n/message keys | all inspected templates use `Messages(...)`, hardcoded `Raw`/`Edit`, or model fields whose values are populated from `Messages.get(...)`; raw keys/model expressions should not be visible | frontend specs check absence of key strings for code controls; commit anonymous fallback now renders `user.notExists.name` (`User exists not`) rather than the raw model expression `User.anonymous.name` | covered | none |
 
-## Playwright Scenario Table
+## Playwright Scenario Matrix
 
 | path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
 | --- | --- | --- | --- | --- | --- | --- |

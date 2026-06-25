@@ -63,7 +63,21 @@ Current evidence:
 - `frontend/tests/board-posting-parity.e2e.ts`
 - `frontend/tests/shell-routing-smoke.e2e.ts`
 
-## Result Table
+## Route Inventory Summary
+
+Total rows: 20
+
+| status | count |
+| --- | ---: |
+| covered | 19 |
+| gap | 0 |
+| deviation | 0 |
+| deferred | 0 |
+| not-applicable | 1 |
+| weak evidence | 0 |
+| needs-parent-decision | 0 |
+
+## Result Inventory
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
@@ -88,7 +102,7 @@ Current evidence:
 | milestone linked issue tabs/list | Legacy uses issue tabs, mass update, and `issue.partial_list` rows. | Project milestone REST/RPC carries open/closed `ProjectIssueListItem` rows, and React renders legacy `issue.partial_list` selectors (`.post-list-wrap`, `.post-item`, mass-update checkboxes, author/count/assignee/due-date cells) with client search. Milestone detail now also renders the legacy state/assignee/milestone/attach-label/detach-label mass-update dropdown options and wires checkbox-selected mutations through the shared issue mass-update REST client. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 | milestone issue search | Legacy `data-toggle="item-search"` filters `.issue-item`. | `ProjectMilestoneDetailPage` now filters rendered issue links through React state from the legacy search input. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 
-## Playwright Scenario Rows
+## Playwright Scenario Matrix
 
 | path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
 | --- | --- | --- | --- | --- | --- | --- |

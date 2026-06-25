@@ -61,7 +61,7 @@ Current evidence:
 - `crates/server/tests/assets_contract.rs`
 - `crates/server/tests/notification_contract.rs`
 
-## Summary
+## Route Inventory Summary
 
 Total rows: 12
 
@@ -80,7 +80,7 @@ that preserves the legacy visible selectors/copy and submits through REST JSON,
 with focused client/server evidence for mutation behavior and direct legacy
 alias compatibility.
 
-## Rows
+## Result Inventory
 
 | route/state | legacy evidence | current evidence | user state | interaction state | boundary | status | proposed owner |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -97,6 +97,17 @@ alias compatibility.
 | `/user/editform/token` API token display and reset | `edit_token.scala.html` renders token page title `userinfo.token`, `partial_edit_tabmenu("token")`, `.token-generate`, `#frmBasic`, readonly token input with click-to-select, and `userinfo.recreateToken`; `GET/POST /user/editform/token_reset` regenerates token; `UserApi.newToken()` supports legacy external `/-_-api/v1/users/token`. | `WorkspaceSettingsPage` renders `<h3>User Token</h3>` for token section, `.token-generate`, `#frmBasic`, readonly size-45 input with select-on-click, and reset button; `resetApiTokenRest()` posts `/api/v1/workspace/api-token/reset`. `workspace-settings-i18n.spec.tsx` pins copy; `auth-workspace-client.spec.ts` pins REST path/CSRF; `rest_contract.rs` verifies reset API token and token-auth usage; `auth_workspace_contract.rs` verifies direct legacy token reset route rotates and redirects; `users.rs` retains legacy external token JSON path. | authenticated current user | initial render, input select, reset submit, token-auth use after reset | React REST JSON; direct legacy token-reset and external token API retained | covered | none |
 | `/me/settings/**` aliases | Legacy account settings canonical routes are `/user/editform`, `/user/editform/password`, `/user/editform/notifications`, `/user/editform/emails`, and `/user/editform/token`; there is no legacy `/me/settings/**` route. | `frontend/src/routes/me/settings/{profile,password,notifications,emails,token}/route.tsx` redirects each alias to the matching `/user/editform/**` path using `RedirectPage` and `runtimeConfig.basePath`; React screen remains the canonical legacy route after redirect. | authenticated current user | direct alias navigation | React redirect alias to canonical route | covered | none |
 | Auth gate and loading state for account settings | Legacy `UserApp.editUserInfoForm` / `editUserInfoByTabForm` are user settings routes and require a current user. | Each `/user/editform/**` route calls `useRequireAuthenticatedRoute(...)`; bootstrapping renders the bounded legacy loading key. `workspace-settings-i18n.spec.tsx` confirms settings route fallback keys are legacy lookup calls, and existing auth shell tests cover authenticated route gating patterns. | anonymous and authenticated current user | anonymous guard, bootstrapping loading shell, authenticated render | React route guard plus session REST | covered | none |
+
+## Playwright Scenario Matrix
+
+| path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/user/editform` | profile tab | `#frmBasic`, `#frmAvatar`, account tabs | same settings shell and avatar controls | invalid avatar, valid image crop modal open/cancel/save | profile REST plus `/files` upload | covered |
+| `/user/editform/password` | password tab | `#frmPassword`, old/new/retype fields, lost-password link | same form fields and copy | wrong password, mismatch, success mutation | `/api/v1/workspace/password` REST JSON | covered |
+| `/user/editform/notifications#2` | watched project hash activation | `#notification-projects a[href="#2"]`, active tab pane | same active watched-project tab | direct hash navigation and toggle | `/api/v1/workspace/notifications` REST JSON | covered |
+| `/user/editform/emails` | email management | main/sub-email rows, delete, set-main, send-validation buttons | same rows and legacy `data-request-uri` attrs | add/delete/send-validation/set-main | `/api/v1/workspace/emails/**` REST JSON | covered |
+| `/user/editform/token` | API token reset | `.token-generate`, readonly token input, reset button | same token shell and reset control | click reset and assert changed token | `/api/v1/workspace/api-token/reset` REST JSON | covered |
+| `/me/settings/**` | alias routes | no legacy page; aliases should redirect to `/user/editform/**` | same redirect to canonical legacy route | direct alias navigation | React redirect alias only | covered |
 
 ## Notes
 

@@ -40,7 +40,21 @@ Current evidence:
 - `frontend/src/api/issue-meta.ts`
 - `crates/server/src/routes/issues.rs`
 
-## Result Rows
+## Route Inventory Summary
+
+Total rows: 21
+
+| status | count |
+| --- | ---: |
+| covered | 20 |
+| gap | 0 |
+| deviation | 0 |
+| deferred | 0 |
+| not-applicable | 1 |
+| weak evidence | 0 |
+| needs-parent-decision | 0 |
+
+## Result Inventory
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
@@ -66,7 +80,7 @@ Current evidence:
 | REST submit boundaries | Legacy forms post to controllers; Rust target remains REST JSON from React. | Routes submit create/update/comment/watch/vote/favorite/share/delete through REST helpers. | covered | none |
 | legacy PJAX/timeline HTML fragments | Legacy issue list/timeline can return server-rendered fragments. | App-runtime uses React plus REST JSON for list/detail timeline. | not-applicable | none |
 
-## Playwright Scenario Rows
+## Playwright Scenario Matrix
 
 | path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
 | --- | --- | --- | --- | --- | --- | --- |

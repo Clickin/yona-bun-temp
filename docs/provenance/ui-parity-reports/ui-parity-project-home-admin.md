@@ -51,7 +51,21 @@ Mode: read-only audit, no files edited by the explorer
 - `crates/server/tests/project_delete_contract.rs`
 - `crates/server/tests/project_change_vcs_contract.rs`
 
-## Result Rows
+## Route Inventory Summary
+
+Total rows: 17
+
+| status | count |
+| --- | ---: |
+| covered | 17 |
+| gap | 0 |
+| deviation | 0 |
+| deferred | 0 |
+| not-applicable | 0 |
+| weak evidence | 0 |
+| needs-parent-decision | 0 |
+
+## Result Inventory
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
@@ -73,7 +87,7 @@ Mode: read-only audit, no files edited by the explorer
 | `/:owner/:project/deleteform` | `delete.scala.html` checkbox-gates delete modal and confirmation. | `ProjectDeletePage` preserves checkbox alert, modal IDs/copy, REST mutation, redirect. | covered | none |
 | `/:owner/:project/statistics` | `statistics.scala.html` renders only `<h1>Under Construction</h1>`. | `ProjectStatisticsPage` renders the same under-construction shell with project header/menu. | covered | none |
 
-## Playwright Scenario Rows
+## Playwright Scenario Matrix
 
 | path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
 | --- | --- | --- | --- | --- | --- | --- |

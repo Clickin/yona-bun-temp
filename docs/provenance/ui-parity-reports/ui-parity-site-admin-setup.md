@@ -62,6 +62,8 @@ Current evidence:
 
 ## Route Inventory Summary
 
+Total rows: 17
+
 | status | count |
 | --- | ---: |
 | covered | 15 |
@@ -72,7 +74,7 @@ Current evidence:
 | weak evidence | 0 |
 | needs-parent-decision | 0 |
 
-## Result Table
+## Result Inventory
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
@@ -94,7 +96,7 @@ Current evidence:
 | `/_import` Git project import | `project/importing.scala.html`: `#importGit`, `#url`, `#useRepoAuth`, `#repoAuth` with `project.import.auth.userid`/`project.import.auth.userpw` labels and `project.import.auth.userid.desc` placeholder, `project-name` placeholder `project.name.alert`, menu checkboxes | `ProjectImportPage` preserves route/form shell and REST `importProjectRest`, and now renders the legacy `#repoAuth .row-fluid` / `dl.span6` labels/placeholders plus `project.name.alert` placeholder. | covered in follow-up | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-import-parity.spec.tsx` |
 | `/migration` | `conf/routes:19-26`, `migration/home.scala.html`, `yona.Migration.js`; legacy UI is outbound "Yona to Github" and gated by `github.allow.migration=false` by default | `frontend/src/routes/migration/route.tsx` renders disabled shell with source/destination panels; `docs/provenance/github-migration-decision.md` and `migration-tool-api-decision.md` classify as deferred/operator scope | deferred | `docs/provenance/github-migration-decision.md`, `crates/migration`, external operator tooling if parent reopens |
 
-## Playwright Scenario Table
+## Playwright Scenario Matrix
 
 | path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
 | --- | --- | --- | --- | --- | --- | --- |

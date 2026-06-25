@@ -125,6 +125,35 @@ test("full UI parity Gate A reports have no open blocker summary rows", () => {
   }
 });
 
+test("full UI parity Gate A reports keep the standard inventory sections", () => {
+  const phasePlan = readText(phasePlanPath);
+
+  for (const packet of activePackets(phasePlan)) {
+    const reportPath = path.join(reportsDir, `${packet}.md`);
+    const reportSource = readText(reportPath);
+    const summary = section(reportSource, "Route Inventory Summary");
+    const resultInventory = section(reportSource, "Result Inventory");
+    const scenarioMatrix = section(reportSource, "Playwright Scenario Matrix");
+
+    assert.match(summary, /Total rows:\s+\d+/, `${packet} must record total row count`);
+    for (const status of [
+      "covered",
+      "gap",
+      "deviation",
+      "deferred",
+      "not-applicable",
+      "weak evidence",
+      "needs-parent-decision",
+    ]) {
+      assert.match(summary, new RegExp(`\\| ${status} \\| \\d+ \\|`), `${packet} must count ${status}`);
+    }
+    assert.match(resultInventory, /\| (path|route\/state|surface) \|/i);
+    assert.match(resultInventory, /\| (legacy evidence|legacy source and behavior|legacy source) \|/i);
+    assert.match(resultInventory, /\| (current evidence|current source and evidence|current source) \|/i);
+    assert.match(scenarioMatrix, /\| path \| state \| legacy selector\/copy \| Rust selector\/copy \| interaction \| API\/direct boundary \| status \|/i);
+  }
+});
+
 test("full UI parity phase records Gate A report closure evidence", () => {
   const phasePlan = readText(phasePlanPath);
   const gateStatus = section(phasePlan, "Parallelization Plan");

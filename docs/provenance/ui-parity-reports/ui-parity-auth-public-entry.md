@@ -27,16 +27,21 @@ Date: 2026-06-26
   `frontend/src/wave1-auth-workspace-parity.spec.tsx`,
   `frontend/tests/auth-public-entry-parity.e2e.ts`
 
-## Summary
+## Route Inventory Summary
+
+Total rows: 6
 
 | Status | Count |
 | --- | ---: |
 | covered | 5 |
 | weak evidence | 0 |
 | gap | 0 |
+| deviation | 0 |
+| deferred | 0 |
 | not-applicable | 1 |
+| needs-parent-decision | 0 |
 
-## Rows
+## Result Inventory
 
 | Route/state | Legacy source and behavior | Current source and evidence | Status | Owner |
 | --- | --- | --- | --- | --- |
@@ -46,3 +51,13 @@ Date: 2026-06-26
 | `/resetPassword` invalid submit | `PasswordResetApp.resetPassword()` returns `400` `ErrorViews.BadRequest.render("site.resetPasswordEmail.wrongUrl")`, which uses `badrequest_default.scala.html`. | `ResetPasswordPage` now renders the same bad-request wrapper and `site.resetPasswordEmail.wrongUrl` message for `/resetPassword?error=invalid` instead of keeping the reset form visible; focused render spec pins `.page-wrap-outer`, `.project-page-wrap`, `.error-wrap`, `.ico-404`, Home link, and absence of `name="passwordReset"`. | covered | none |
 | `/verify/:loginId/:verificationCode` invalid verification | `UserApp.verifyUser()` returns `404` plain body `Invalid verification`. | `frontend/src/routes/verify/$loginId/$verificationCode/route.tsx` now keeps a pending state until REST verification resolves, and `VerifyUserPage` renders plain `Invalid verification` without the SPA error shell when REST `/api/v1/auth/verify` rejects. The browser HTTP status for a React deep link remains SPA fallback behavior; REST verify already carries not-found status. | not-applicable | Exact deep-link HTTP status would need server direct-route/fallback ownership, not React auth view scope. |
 | Public auth browser-proof checklist depth | Legacy public entry includes `/`, first-run `/secret` admin setup, login form with `rememberMe` and `redirectUrl`, signup, lost/reset password valid/invalid states, verify success/invalid states, auth aliases, and optional OAuth/social-login-only variants. | `frontend/tests/auth-public-entry-parity.e2e.ts` now proves browser-visible first-run `/secret` admin setup through REST JSON with restart redirect, login submit with `rememberMe=false` and `redirectUrl`, signup-confirm redirect and flash, auth aliases including `/reset-password?s=...` query preservation, social-login-only GitHub/Google controls, OAuth unsupported/denied alerts, lost/reset valid and invalid states, and verify success/invalid states. `frontend/vite.config.ts` no longer proxies the React-owned `/resetPassword` page path to the backend during dev, so mounted-base-path deep links render the React route. Verification: `pnpm --dir frontend test:e2e -- auth-public-entry-parity.e2e.ts` passed 7 Playwright tests on 2026-06-27. | covered | none |
+
+## Playwright Scenario Matrix
+
+| path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/secret` | first-run/no-admin setup | `#frmSignUp`, admin login/password/email fields, restart redirect after setup | same form shell and submit controls in `auth-public-entry-parity.e2e.ts` | fill admin fields, submit, assert restart redirect | React submits `/api/v1/auth/secret` REST JSON | covered |
+| `/users/loginform` | anonymous login | login form fields, `rememberMe`, `redirectUrl`, legacy error alert | same selectors and error copy | submit failure and preserve redirect | React submits `/api/v1/auth/login` REST JSON | covered |
+| `/users/signupform` | signup confirmation | signup form redirects to index flash when confirmation/email verification is required | same redirect and notification shell | submit valid signup | React submits `/api/v1/auth/register` REST JSON | covered |
+| `/lostPassword`, `/resetPassword` | valid/invalid reset | lost/reset form copy, invalid reset bad-request shell, valid reset login flash | same document titles, bad-request shell, and login flash | submit/reset route states | React password reset REST boundary | covered |
+| `/verify/:loginId/:verificationCode` | success/invalid verification | verified shell or plain `Invalid verification` | same visible success/invalid copy after REST resolution | direct deep link | REST verify owns status; React renders result | covered |

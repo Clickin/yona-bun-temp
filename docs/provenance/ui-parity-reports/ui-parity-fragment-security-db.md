@@ -53,7 +53,7 @@ Current evidence:
 - `tests/server-spa-rest-boundary-contract.test.mjs`
 - `tests/rc-ux-checklist-contract.test.mjs`
 
-## Summary
+## Route Inventory Summary
 
 Total rows: 12
 
@@ -67,7 +67,7 @@ Total rows: 12
 | weak evidence | 0 |
 | needs-parent-decision | 0 |
 
-## Rows
+## Result Inventory
 
 | surface | legacy source | current source | user state | interaction state | boundary | status | proposed owner scope |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -84,6 +84,17 @@ Total rows: 12
 | Legacy MariaDB in-place adopt smoke | Legacy DB shape from ignored `.agent/legacy-dumps/yona-dump.sql` and legacy MariaDB runtime | `scripts/smoke-legacy-mariadb-dump.mjs`, checklist row `rc-ux-db-migration-smoke`; smoke imports MariaDB 10.3 dump, validates/adopts schema, and reads `/api/v1/users/:loginId/profile` | migrated non-anonymous legacy user | validate-only startup, adopt startup, migrated profile API read | Adopted data is exposed through REST API and React-owned profile surfaces, not legacy server templates | covered | none |
 | Env-backed DB matrix | Legacy app expected production DB portability around MariaDB/MySQL-like storage; Rust supports SQLite/PostgreSQL/MySQL/MariaDB matrix | `crates/server/tests/db_matrix_env.rs`, checklist row `rc-ux-db-migration-smoke` | seeded project/user/issue repository state | runtime migration, seed, issue read/update | Repository and REST-backed app data path works on SQLite plus configured external PostgreSQL/MySQL/MariaDB URLs | covered | none |
 | Live DB-native search matrix | Legacy search behavior must remain user-visible while Rust uses DB-native search per supported dialect | `crates/server/tests/db_matrix_testcontainers.rs`, `crates/persistence/src/repo/search.rs` SQLite FTS5, PostgreSQL `to_tsvector`, MariaDB `MATCH ... AGAINST` paths | seeded project issue search data on SQLite/PostgreSQL/MariaDB | runtime schema creation, idempotent migration, seeded issue search | DB-native search paths preserve REST search behavior across supported DBs | covered | none |
+
+## Playwright Scenario Matrix
+
+| path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/:owner/:project/issue/:number` | timeline/comment render | legacy issue detail timeline/comment anchors | React detail renders timeline/comment anchors from REST `comments` and `timeline` | direct issue detail render and comment refresh evidence | REST JSON detail plus React render | covered |
+| `/notifications` | incremental notifications | `#notification-more` appends the next fragment chunk | React click keeps URL stable, fetches REST `from=20&size=20`, appends row, removes button | click `#notification-more` | REST JSON plus React append render | covered |
+| `/notification?from=0&limit=20` | direct compatibility URL | legacy returned notification HTML fragment | API request returns JSON; HTML Accept serves SPA shell | direct fetch and browser navigation | direct compatibility boundary, not HTML injection | covered |
+| `/search?keyword=<hostile>&searchType=issue` | hostile search result text | legacy user text is rendered safely in result rows | hostile text remains inert in React result rows | direct search render | REST search JSON plus React render | covered |
+| `/:owner/:project/issue/:number` | pathological long SQL fenced Markdown | legacy Markdown surface accepts complex fenced blocks | issue detail renders >65KB SQL fenced block as plain source without syntax-token expansion | browser-visible issue detail render | React `MarkdownRenderer` boundary | covered |
+| visual sweep corpus | route-entry status/raw-key scan | legacy route corpus from generated audit | current sweep has documented status deltas and no unclassified raw-key local failures | Playwright route-entry sweep | SPA shell plus REST route data | covered |
 
 ## Notes
 

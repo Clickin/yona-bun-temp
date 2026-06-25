@@ -40,7 +40,9 @@ Current evidence:
 - `frontend/src/auth-workspace-client.spec.ts`
 - `frontend/tests/user-profile-parity.e2e.ts`
 
-## Summary
+## Route Inventory Summary
+
+Total rows: 13
 
 No `gap`, `deviation`, `weak evidence`, or `needs-parent-decision` rows were found for this packet. The rows below are covered because the legacy view/controller behavior has matching REST JSON/API-return plus React render evidence, and the previously known follow-ups for editable `daysAgo`, public email visibility, profile actor links, workspace file location URLs, selected-tab query preservation, and guest stream hiding are now backed by focused source/tests.
 
@@ -54,7 +56,7 @@ No `gap`, `deviation`, `weak evidence`, or `needs-parent-decision` rows were fou
 | weak evidence | 0 |
 | needs-parent-decision | 0 |
 
-## Rows
+## Result Inventory
 
 | Route/state | Legacy source and behavior | Current source and evidence | User/interaction/boundary | Status | Owner |
 | --- | --- | --- | --- | --- | --- |
@@ -72,3 +74,14 @@ No `gap`, `deviation`, `weak evidence`, or `needs-parent-decision` rows were fou
 | `/user/issues` current-user issue list | Legacy `/user/issues` serves the current user's issue list with side filters, search/filter/order/page query, default-login-page control, and `/user/issues/new` entry points; `/user/issues` requires an authenticated user. | `frontend/src/routes/user/issues/route.tsx` requires auth, reads query params, calls `listUserIssues`, renders `UserIssueListPage`, and can call `setDefaultLandingPathRest`; `frontend/src/route-parity.spec.tsx` pins route tree, title, default-page UI, list shell, and rows; `frontend/src/auth-workspace-client.spec.ts` pins `/api/v1/user/issues?...` query shape; `crates/server/tests/user_issue_favorite_contract.rs` pins REST filter counts/items. | authenticated user; filtered/searched/paginated issue list, empty/populated states through shared issue-list renderer; REST JSON plus React render. | covered | none |
 | `/user/files` shell, search, empty/populated file list | Legacy `userFiles.scala.html` requires current user, renders `mySeriesMenuTab`, search form, `.attachment-files` header, file rows, hover styling, and `#pagination`; empty results keep the same shell/header. | `frontend/src/routes/user/files/route.tsx` requires auth, calls `listWorkspaceFilesRest`, renders `UserFilesPage`; `frontend/src/user-files-parity.spec.tsx` pins route/source selectors, search form, header, populated rows, icons, pagination, and no non-legacy rel/action changes. | authenticated current user, empty/populated files, filter/pageNum; `/api/v1/workspace/files` JSON plus React render. | covered | none |
 | `/user/files` preview/download/location links | Legacy `userFiles.scala.html` uses `AttachmentApp.getFile` for preview/download and `RouteUtil.getUrl(containerType, containerId)` for Location links. | `crates/server/src/routes/workspace.rs` resolves workspace file `locationHref`/`locationLabel`; `crates/server/tests/assets_contract.rs::workspace_files_list_returns_current_users_legacy_attachment_rows` proves auth requirement, filter/page JSON, file URLs, download URLs, preview URLs, and ISSUE_POST location `/door/projectYobi/issue/1`; `frontend/src/user-files-parity.spec.tsx` proves rendered preview/download/location anchors. | authenticated current user, image/non-image files, issue attachment location; REST JSON/API-return plus React render. | covered | none |
+
+## Playwright Scenario Matrix
+
+| path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/me` | authenticated current user profile | `.user-info-box`, edit link, daysAgo, issue/PR/project tabs | same profile shell and tabs in `user-profile-parity.e2e.ts` | click selected tabs and inspect profile controls | `/api/v1/workspace` profile JSON plus React render | covered |
+| `/:user` | anonymous public profile | public profile card, no current-user edit controls | same public shell without current-user controls | direct navigation under `/yona` | `/api/v1/users/:loginId/profile` JSON plus React render | covered |
+| `/:user?daysAgo=7&selected=projects` | selected tab query | `selected` tab starts active and client tabs switch panes | same active tab and URL/query preservation | click PR/Issue/Project tabs | REST profile query plus React tab state | covered |
+| `/:user` organization name | legacy redirects org-owned segment to organization page | same redirect to `/organizations/:loginId` | direct navigation | profile REST redirect JSON plus React navigation | covered |
+| `/user/issues` | current-user issue list | user issue tabs, search/filter, default landing control | same issue list shell and base-path links | inspect list shell on mobile and desktop evidence | `/api/v1/user/issues` JSON plus React render | covered |
+| `/user/files` | current-user file list | search form, `.attachment-files`, preview/download/location links | same file list shell and links | inspect list shell on mobile and populated file rows | `/api/v1/workspace/files` JSON plus React render | covered |

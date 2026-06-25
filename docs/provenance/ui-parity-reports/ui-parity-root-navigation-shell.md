@@ -19,7 +19,9 @@ Date: 2026-06-26
   `frontend/tests/search-parity.e2e.ts`,
   `output/playwright/visual-sweep/latest.json`
 
-## Summary
+## Route Inventory Summary
+
+Total rows: 3
 
 | Status | Count |
 | --- | ---: |
@@ -27,8 +29,11 @@ Date: 2026-06-26
 | weak evidence | 0 |
 | gap | 0 |
 | deviation | 0 |
+| deferred | 0 |
+| not-applicable | 0 |
+| needs-parent-decision | 0 |
 
-## Rows
+## Result Inventory
 
 | Route/state | Legacy source and behavior | Current source and evidence | Status | Owner |
 | --- | --- | --- | --- | --- |

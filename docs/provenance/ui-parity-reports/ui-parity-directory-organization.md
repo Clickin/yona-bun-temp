@@ -39,7 +39,21 @@ Current evidence:
 - `crates/server/tests/rest_contract.rs`
 - `output/playwright/visual-sweep/latest.json`
 
-## Result Rows
+## Route Inventory Summary
+
+Total rows: 14
+
+| status | count |
+| --- | ---: |
+| covered | 14 |
+| gap | 0 |
+| deviation | 0 |
+| deferred | 0 |
+| not-applicable | 0 |
+| weak evidence | 0 |
+| needs-parent-decision | 0 |
+
+## Result Inventory
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
@@ -58,7 +72,7 @@ Current evidence:
 | `/organizations/:org/members` delete cancel | Legacy Bootstrap modal closes on `data-dismiss`. | Close and No buttons now clear the React `deleteTarget` state while keeping legacy modal IDs/copy. | covered in current follow-up | `frontend/src/routes/-organization-views.tsx`, `frontend/src/organization-home-parity.spec.tsx` |
 | `/organizations/:org/deleteForm` | Delete button opens `#alertDeletion`; Yes deletes and redirects, No closes. | `OrganizationDeletePage` renders confirm modal and REST delete redirect. | covered | none |
 
-## Playwright Scenario Rows
+## Playwright Scenario Matrix
 
 | path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
 | --- | --- | --- | --- | --- | --- | --- |
