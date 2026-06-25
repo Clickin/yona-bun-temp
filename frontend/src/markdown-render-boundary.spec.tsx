@@ -11,6 +11,25 @@ const responseTextReadPattern = /\bresponse\.text\(/;
 const markdownWrapClassPattern = /\bmarkdown-wrap\b/;
 const reactMarkdownDirectUsePattern =
   /from\s+["']react-markdown["']|require\(\s*["']react-markdown["']\s*\)|<ReactMarkdown\b/;
+const markdownPipelineDirectUsePattern =
+  /from\s+["'](?:react-markdown|rehype-raw|rehype-sanitize|remark-breaks|remark-gfm|unified|remark-parse|rehype-stringify|marked|markdown-it|micromark|showdown|commonmark)["']|require\(\s*["'](?:react-markdown|rehype-raw|rehype-sanitize|remark-breaks|remark-gfm|unified|remark-parse|rehype-stringify|marked|markdown-it|micromark|showdown|commonmark)["']\s*\)|<ReactMarkdown\b/;
+const forbiddenMarkdownRuntimeDependencies = [
+  "marked",
+  "markdown-it",
+  "micromark",
+  "showdown",
+  "commonmark",
+  "unified",
+  "remark-parse",
+  "rehype-stringify",
+];
+const allowedMarkdownRuntimeDependencies = [
+  "react-markdown",
+  "rehype-raw",
+  "rehype-sanitize",
+  "remark-breaks",
+  "remark-gfm",
+];
 const serverRenderedHtmlCompatibilityFiles = new Set([
   "api/boards.ts",
   "api/code-commits.ts",
@@ -205,6 +224,33 @@ describe("Markdown render boundary", () => {
       actual,
       "Legacy markdown content must go through MarkdownRenderer so the Yona compatibility plugins and sanitizer cannot be bypassed.",
     ).toEqual(Array.from(allowedReactMarkdownDirectUseFiles).sort());
+  });
+
+  it("keeps Markdown parser and sanitizer package usage owned by the renderer boundary", () => {
+    const actual = listRenderSurfaceFiles()
+      .filter((file) => markdownPipelineDirectUsePattern.test(readSource(file)))
+      .sort();
+
+    expect(
+      actual,
+      "Markdown parser/sanitizer packages must stay behind MarkdownRenderer so route surfaces cannot build a second markdown pipeline.",
+    ).toEqual(Array.from(allowedReactMarkdownDirectUseFiles).sort());
+  });
+
+  it("keeps alternate Markdown renderers out of frontend runtime dependencies", () => {
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, "..", "package.json"), "utf8"),
+    ) as { dependencies?: Record<string, string> };
+    const dependencies = packageJson.dependencies ?? {};
+
+    expect(
+      Object.keys(dependencies).filter((name) =>
+        forbiddenMarkdownRuntimeDependencies.includes(name),
+      ),
+    ).toEqual([]);
+    for (const dependency of allowedMarkdownRuntimeDependencies) {
+      expect(dependencies).toHaveProperty(dependency);
+    }
   });
 
   it("keeps ReactMarkdown wired through the Yona legacy compatibility plugins", () => {
