@@ -90,6 +90,13 @@
   evidence: `auth-workspace-shell.spec.tsx`, `workspace-settings-i18n.spec.tsx`,
   `code-views.spec.tsx`, `project-code-browser-routing.spec.ts`,
   `i18n.spec.tsx`, and `pnpm --dir frontend check`.
+- 2026-06-25 root search form continuation: root navigation preserves the
+  legacy `common/navbar.scala.html` global search anchors:
+  `name="gnb-search-form"`, hidden `searchType=auto`, `keyword`, and
+  `accesskey=S`. i18n stays bounded to the legacy keyspace: new visible labels
+  must reuse keys present in `yona-original/conf/messages*` instead of creating
+  React-only message names. Focused evidence: `auth-workspace-shell.spec.tsx`
+  and `i18n.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks are derived

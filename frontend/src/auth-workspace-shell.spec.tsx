@@ -62,6 +62,9 @@ describe("auth and workspace views", () => {
     expect(source).toContain(
       'messages("title.yobi.feedback", { fallback: "title.yobi.feedback" })',
     );
+    expect(source).toContain('name="gnb-search-form"');
+    expect(source).toContain('name="searchType"');
+    expect(source).toContain('accessKey="S"');
     expect(source).toContain("<RootAnonymousMenu />");
     expect(source).toContain('id="sidebar-open-btn"');
     expect(source).toContain("dropdwon-box-btn");

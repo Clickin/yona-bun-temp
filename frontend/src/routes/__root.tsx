@@ -64,10 +64,11 @@ function RootHeader() {
             <form
               action={prefixBasePath(runtimeConfig.basePath, "/search")}
               className="input-prepend gnb-search-form"
+              name="gnb-search-form"
             >
               <input name="searchType" type="hidden" value="auto" />
               <div className="search-box">
-                <input autoComplete="off" name="keyword" type="text" />
+                <input accessKey="S" autoComplete="off" name="keyword" type="text" />
                 <button type="submit">
                   <i className="yobicon-search"></i>
                 </button>
