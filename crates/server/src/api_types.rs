@@ -356,15 +356,15 @@ pub struct OrganizationProjectCard {
     #[serde(default)]
     pub member_count: u32,
     #[serde(default)]
+    pub origin_owner_name: String,
+    #[serde(default)]
+    pub origin_project_name: String,
+    #[serde(default)]
     pub watch_count: u32,
     #[serde(default)]
     pub is_watching: bool,
     #[serde(default)]
     pub logo_url: String,
-    #[serde(default)]
-    pub origin_owner_name: String,
-    #[serde(default)]
-    pub origin_project_name: String,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
@@ -743,6 +743,10 @@ pub struct WorkspaceMemberProjectItem {
     pub last_pushed_label: String,
     #[serde(default)]
     pub member_count: u32,
+    #[serde(default)]
+    pub origin_owner_name: String,
+    #[serde(default)]
+    pub origin_project_name: String,
     #[serde(default)]
     pub watch_count: u32,
 }

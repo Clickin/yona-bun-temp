@@ -77,6 +77,8 @@ async fn workspace_member_project_item_from_record(
         last_pushed_label: item.last_pushed_label.clone(),
         logo_url: project_logo_url(repository, base_path, item.project_id).await?,
         member_count: item.member_count,
+        origin_owner_name: item.origin_owner_name.clone(),
+        origin_project_name: item.origin_project_name.clone(),
         owner_name: item.owner_name.clone(),
         project_name: item.project_name.clone(),
         overview: item.overview.clone(),

@@ -34,6 +34,8 @@ const overview: WorkspaceOverviewViewModel = {
       lastPushedLabel: "",
       logoUrl: "/yona/files/202",
       memberCount: 2,
+      originOwnerName: "naver",
+      originProjectName: "legacyYobi",
       ownerName: "yona",
       overview: "Project overview",
       projectName: "projectYobi",
@@ -118,6 +120,10 @@ describe("workspace/profile legacy i18n opt-in", () => {
       expect(html).toContain(
         'class="avatar-wrap small" href="/yona/yona/projectYobi"><img alt="projectYobi" src="/yona/files/202"',
       );
+      expect(html).toContain('class="yobicon-split yobicon-white vmiddle"');
+      expect(html).toContain('href="/yona/naver/legacyYobi"');
+      expect(html).toContain("naver");
+      expect(html).toContain("legacyYobi");
       expect(html).toContain('style="margin-left:10px"');
       expect(html).not.toContain(">menu.issue <span");
       expect(html).not.toContain(">menu.pullRequest <span");

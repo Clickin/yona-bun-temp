@@ -475,11 +475,27 @@ impl AppRepositoryImpl<'_> {
                     .filter(watch::Column::ResourceId.eq(Some(project_model.id.to_string())))
                     .count(&self.db)
                     .await? as u32;
+                let (origin_owner_name, origin_project_name) =
+                    match project_model.original_project_id {
+                        Some(original_project_id) => match self
+                            .read_project_by_id(original_project_id)
+                            .await?
+                        {
+                            Some(origin_project) => (
+                                origin_project.owner_name,
+                                origin_project.project_name,
+                            ),
+                            None => (String::new(), String::new()),
+                        },
+                        None => (String::new(), String::new()),
+                    };
 
                 projects.push(WorkspaceMemberProjectRecord {
                     created_label: format_workspace_date_label(project_model.created_date),
                     last_pushed_label: format_workspace_date_label(project_model.last_pushed_date),
                     member_count,
+                    origin_owner_name,
+                    origin_project_name,
                     owner_name: record.owner_name,
                     overview: record.overview.unwrap_or_default(),
                     project_id: project_model.id,

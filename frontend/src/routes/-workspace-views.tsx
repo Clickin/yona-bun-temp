@@ -556,6 +556,25 @@ export function PublicUserProfilePage(props: {
                               >
                                 {project.projectName}
                               </a>
+                              {project.originOwnerName && project.originProjectName ? (
+                                <>
+                                  <i className="yobicon-split yobicon-white vmiddle" />
+                                  <span>
+                                    {" "}
+                                    <a
+                                      href={appHref(
+                                        props.runtimeConfig,
+                                        projectHref(
+                                          project.originOwnerName,
+                                          project.originProjectName,
+                                        ),
+                                      )}
+                                    >
+                                      {project.originOwnerName}/{project.originProjectName}
+                                    </a>
+                                  </span>
+                                </>
+                              ) : null}
                               {project.projectScope === "private" ? (
                                 <i className="yobicon-lock yobicon-small" />
                               ) : null}
@@ -1164,6 +1183,25 @@ export function WorkspacePage(props: {
                               >
                                 {project.projectName}
                               </a>
+                              {project.originOwnerName && project.originProjectName ? (
+                                <>
+                                  <i className="yobicon-split yobicon-white vmiddle" />
+                                  <span>
+                                    {" "}
+                                    <a
+                                      href={appHref(
+                                        props.runtimeConfig,
+                                        projectHref(
+                                          project.originOwnerName,
+                                          project.originProjectName,
+                                        ),
+                                      )}
+                                    >
+                                      {project.originOwnerName}/{project.originProjectName}
+                                    </a>
+                                  </span>
+                                </>
+                              ) : null}
                               {project.projectScope === "private" ? (
                                 <i className="yobicon-lock yobicon-small" />
                               ) : null}

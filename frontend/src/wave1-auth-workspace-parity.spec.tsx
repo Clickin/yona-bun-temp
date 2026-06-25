@@ -203,6 +203,8 @@ describe("wave 1 auth and workspace parity", () => {
           lastPushedLabel: "2026-04-10",
           logoUrl: "/yona/files/101",
           memberCount: 4,
+          originOwnerName: "naver",
+          originProjectName: "legacyYobi",
           ownerName: "admin",
           overview: "Yona project",
           projectName: "projectYobi",
@@ -317,6 +319,10 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).toContain(
       'class="avatar-wrap small" href="/yona/admin/projectYobi"><img alt="projectYobi" src="/yona/files/101"',
     );
+    expect(html).toContain('class="yobicon-split yobicon-white vmiddle"');
+    expect(html).toContain('href="/yona/naver/legacyYobi"');
+    expect(html).toContain("naver");
+    expect(html).toContain("legacyYobi");
     expect(html).toContain('style="margin-left:10px"');
     expect(html).toContain('class="yobicon-friends yobicon-middle"');
     expect(html).toContain("<strong>4</strong>");

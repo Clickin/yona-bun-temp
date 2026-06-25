@@ -1877,6 +1877,8 @@ pub struct WorkspaceMemberProjectRecord {
     pub created_label: String,
     pub last_pushed_label: String,
     pub member_count: u32,
+    pub origin_owner_name: String,
+    pub origin_project_name: String,
     pub owner_name: String,
     pub overview: String,
     pub project_id: i64,

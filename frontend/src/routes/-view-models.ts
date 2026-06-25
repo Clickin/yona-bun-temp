@@ -22,6 +22,8 @@ export interface WorkspaceOverviewViewModel {
     lastPushedLabel: string;
     logoUrl?: string;
     memberCount: number;
+    originOwnerName?: string;
+    originProjectName?: string;
     ownerName: string;
     overview: string;
     projectName: string;

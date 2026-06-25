@@ -65,6 +65,8 @@ function toPublicProfileOverview(
       lastPushedLabel: project.lastPushedLabel,
       logoUrl: project.logoUrl ?? "",
       memberCount: project.memberCount,
+      originOwnerName: project.originOwnerName ?? "",
+      originProjectName: project.originProjectName ?? "",
       ownerName: project.ownerName,
       overview: project.overview,
       projectName: project.projectName,
