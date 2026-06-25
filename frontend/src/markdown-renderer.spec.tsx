@@ -439,6 +439,28 @@ describe("MarkdownRenderer", () => {
     );
   });
 
+  it("keeps raw HTML name and target attributes on legacy-allowed elements only", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '<div name="not-legacy" target="_blank">panel</div>\n\n<span target="_blank">label</span>\n\n<a href="/docs" name="legacy-anchor" target="_blank">link</a>\n\n<video target="_blank"><source src="zpl:movie" target="_blank" type="video/mp4"></video>'
+        }
+      />,
+    );
+
+    expect(html).toContain("<div>panel</div>");
+    expect(html).toContain("<span>label</span>");
+    expect(html).toContain('<a href="/docs" target="_blank" name="legacy-anchor">link</a>');
+    expect(html).toContain(
+      '<video><source src="zpl:movie" target="_blank" type="video/mp4"/></video>',
+    );
+    expect(html).not.toContain('name="not-legacy"');
+    expect(html).not.toContain("<div name=");
+    expect(html).not.toContain("<div target=");
+    expect(html).not.toContain("<span target=");
+    expect(html).not.toContain("<video target=");
+  });
+
   it("drops unsafe raw HTML media URLs", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

@@ -3097,6 +3097,7 @@ const yonaMarkdownSanitizeSchema = {
       "dataIssueState",
       "data-issue-state",
       "href",
+      "target",
       "title",
     ],
     code: [...(defaultSchema.attributes?.code ?? []), "className"],
@@ -6181,8 +6182,16 @@ function parseRawHtmlAttributes(
       props.style = parseRawHtmlStyle(value);
       continue;
     }
-    if (name === "id" || name === "title" || name === "name" || name === "target") {
+    if (name === "id" || name === "title") {
       props[name] = value;
+      continue;
+    }
+    if (tag === "a" && name === "name") {
+      props.name = value;
+      continue;
+    }
+    if ((tag === "a" || tag === "source") && name === "target") {
+      props.target = value;
       continue;
     }
     if (/^data-[a-z0-9_.:-]+$/.test(name)) {
