@@ -12,7 +12,7 @@ export interface RuntimeConfig {
   supportedLanguages?: string[];
 }
 
-type RuntimeConfigInput = Omit<
+export type RuntimeConfigInput = Omit<
   Partial<RuntimeConfig>,
   | "navbarCustomLinkName"
   | "navbarCustomLinkUrl"

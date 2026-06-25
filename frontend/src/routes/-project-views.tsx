@@ -1513,6 +1513,7 @@ export function ProjectDetailPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
   readmePost?: BoardPostDetail | null;
   routeHref?: string;
+  messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   onEnrollProject?: (ownerName: string, projectName: string) => void;
   onCancelEnrollProject?: (ownerName: string, projectName: string) => void;
@@ -1521,7 +1522,8 @@ export function ProjectDetailPage(props: {
   onToggleProjectWatch?: (ownerName: string, projectName: string, watching: boolean) => void;
   onUpdateProjectOverview?: (ownerName: string, projectName: string, overview: string) => void;
 }) {
-  const { t: messages } = useLegacyMessages();
+  const { t: defaultMessages } = useLegacyMessages();
+  const messages = props.messages ?? defaultMessages;
   const detail = React.useMemo(
     () =>
       props.detail ?? {

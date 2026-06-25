@@ -690,6 +690,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
           timeline: [
             {
               comment: {
+                authorAvatarUrl: "",
                 authorLabel: "Owner User",
                 authorLoginId: "owner",
                 contentsHtml: "",
@@ -703,8 +704,12 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
                 voters: [],
               },
               createdLabel: "now",
+              eventType: "COMMENTED",
               id: 56,
               kind: "comment",
+              newValue: "",
+              oldValue: "",
+              senderLoginId: "owner",
             },
           ],
           viewerCanComment: true,

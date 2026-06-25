@@ -1506,11 +1506,13 @@ export function ProjectIssueDetailPage(props: {
   onVoteToggle?: () => Promise<void>;
   onWatchToggle?: () => Promise<void>;
   csrfToken?: string;
+  messages?: LegacyI18nContextValue["t"];
   runtimeConfig: RuntimeConfig;
   viewerLabel?: string;
   viewerLoginId?: string;
 }) {
-  const { t: messages } = useLegacyMessages();
+  const { t: defaultMessages } = useLegacyMessages();
+  const messages = props.messages ?? defaultMessages;
   const detail = props.detail ?? fallbackProjectDetail();
   const issue = props.issue;
   const onDeleteIssue = props.onDeleteIssue;

@@ -1,5 +1,9 @@
 import * as React from "react";
-import { renderLegacyHighlightedMessage, useLegacyMessages } from "../i18n";
+import {
+  renderLegacyHighlightedMessage,
+  useLegacyMessages,
+  type LegacyI18nContextValue,
+} from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { AuthUiCapabilitiesViewModel } from "./-view-models";
 
@@ -332,15 +336,20 @@ export function LoginPage({
 export function LegacyLoginDialog({
   authUiCapabilities,
   csrfToken,
+  messages: messagesOverride,
   onSignIn,
   runtimeConfig,
 }: {
   authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
   csrfToken?: string;
+  messages?: LegacyI18nContextValue["t"];
   onSignIn?: (input: { identifier: string; password: string; rememberMe: boolean }) => void;
   runtimeConfig: RuntimeConfig;
 }) {
-  const messages = useLegacyMessages();
+  const legacyMessages = useLegacyMessages();
+  const messages = messagesOverride
+    ? { t: messagesOverride, language: legacyMessages.language }
+    : legacyMessages;
   const canRenderLocalForm = authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly;
 
   return (

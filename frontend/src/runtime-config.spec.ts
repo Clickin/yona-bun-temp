@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { readRuntimeConfig, type RuntimeConfig } from "./runtime-config";
+import { readRuntimeConfig, type RuntimeConfigInput } from "./runtime-config";
 
 const originalImportMetaEnv = { ...(import.meta as { env?: Record<string, string> }).env };
 const originalProcessEnv = { ...process.env };
@@ -32,7 +32,7 @@ describe("readRuntimeConfig", () => {
   it("normalizes a mounted base path and derived endpoints", () => {
     globalThis.window = {} as Window & typeof globalThis;
     const browserWindow = window as Window & {
-      __YONA_RUNTIME_CONFIG__?: Partial<RuntimeConfig>;
+      __YONA_RUNTIME_CONFIG__?: RuntimeConfigInput;
     };
     browserWindow.__YONA_RUNTIME_CONFIG__ = {
       apiBaseUrl: "/yona/api",
