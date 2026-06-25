@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 
 type AllowedFormPost = {
   file: string;
+  handler?: string;
   marker: string;
+  primaryRestMarker: string;
   reason: string;
 };
 
@@ -12,11 +14,14 @@ const allowedFormPosts: AllowedFormPost[] = [
   {
     file: "routes/-project-views.tsx",
     marker: 'id="importGit"',
+    primaryRestMarker: "props.onImportProject",
     reason: "project Git import keeps the legacy direct form action as a fallback",
   },
   {
     file: "routes/sites/$pageName/route.tsx",
+    handler: "handleImportSubmit",
     marker: 'action={appHref(runtimeConfig, "/sites/import")}',
+    primaryRestMarker: "onImportSiteData",
     reason: "site data import keeps the legacy direct multipart action as a fallback",
   },
 ];
@@ -302,6 +307,15 @@ describe("React form submit boundary", () => {
       const markerIndex = beforeMarker.length;
       const window = source.slice(Math.max(0, markerIndex - 700), markerIndex + 900);
       expect(window, allowed.reason).toMatch(formPostPattern);
+      expect(window, allowed.reason).toContain("onSubmit=");
+      if (allowed.handler) {
+        const bodies = functionBodies(source, allowed.handler);
+        expect(bodies, allowed.reason).not.toHaveLength(0);
+        expect(bodies.join("\n"), allowed.reason).toContain("event.preventDefault()");
+      } else {
+        expect(window, allowed.reason).toContain("event.preventDefault()");
+      }
+      expect(source, allowed.reason).toContain(allowed.primaryRestMarker);
     }
   });
 
