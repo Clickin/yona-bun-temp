@@ -245,6 +245,11 @@ const rawHtmlVideoLegacyAttributes = new Set([
 const legacyTasklistTemplate = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
 const legacyTaskCheckboxLinePattern = /^([ ]*[-+*] \[[ xX]?])([ ]?.+)$/gm;
 
+type LegacyTaskCheckboxMatch = {
+  indent: number;
+  index: number;
+};
+
 export function insertLegacyTasklistTemplate(value: string, cursorIndex: number) {
   let cursor = Math.max(0, Math.min(cursorIndex, value.length));
   if (cursor === 0 && value.length > 0) {
@@ -261,9 +266,30 @@ export function toggleLegacyTasklistMarkdownItem(
   checkboxIndex: number,
   checked: boolean,
 ) {
+  const matches: LegacyTaskCheckboxMatch[] = Array.from(
+    value.matchAll(legacyTaskCheckboxLinePattern),
+    (match, index) => ({
+      checkbox: match[1] ?? "",
+      indent: /^ */u.exec(match[1] ?? "")?.[0].length ?? 0,
+      index,
+    }),
+  );
+  const target = matches[checkboxIndex];
+  if (!target) {
+    return value;
+  }
+
+  const indexesToToggle = new Set<number>([target.index]);
+  for (const match of matches.slice(checkboxIndex + 1)) {
+    if (match.indent <= target.indent) {
+      break;
+    }
+    indexesToToggle.add(match.index);
+  }
+
   let counter = 0;
   return value.replace(legacyTaskCheckboxLinePattern, (match, checkbox: string, text: string) => {
-    if (counter !== checkboxIndex) {
+    if (!indexesToToggle.has(counter)) {
       counter += 1;
       return match;
     }

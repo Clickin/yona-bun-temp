@@ -144,6 +144,12 @@
   was corrected to the legacy external route. Focused evidence:
   `markdown-renderer.spec.tsx`, `issue-detail-shell.spec.tsx`,
   `route-parity.spec.tsx`, and `pnpm --dir frontend check`.
+- 2026-06-25 markdown tasklist nested-click continuation: the React
+  source-update helper now mirrors `yona.Tasklist.js` `checkTask` child
+  recursion for nested unordered checklist items. Clicking a parent updates
+  deeper `-`/`+`/`*` task rows until the next same-or-shallower task row, while
+  still leaving ordered task rows outside the legacy update regex. Focused
+  evidence: `markdown-renderer.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks are derived

@@ -109,6 +109,44 @@ describe("MarkdownRenderer", () => {
     expect(toggleLegacyTasklistMarkdownItem(markdown, 5, true)).toContain("1. [ ] Ordered item");
   });
 
+  it("toggles nested unordered checklist children like yona.Tasklist.js checkTask recursion", () => {
+    const markdown = [
+      "- [ ] Parent",
+      "  - [ ] Child A",
+      "    - [x] Grandchild",
+      "  - [x] Child B",
+      "- [ ] Sibling",
+    ].join("\n");
+
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 0, true)).toBe(
+      [
+        "- [x] Parent",
+        "  - [x] Child A",
+        "    - [x] Grandchild",
+        "  - [x] Child B",
+        "- [ ] Sibling",
+      ].join("\n"),
+    );
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 1, false)).toBe(
+      [
+        "- [ ] Parent",
+        "  - [ ] Child A",
+        "    - [ ] Grandchild",
+        "  - [x] Child B",
+        "- [ ] Sibling",
+      ].join("\n"),
+    );
+    expect(toggleLegacyTasklistMarkdownItem(markdown, 3, false)).toBe(
+      [
+        "- [ ] Parent",
+        "  - [ ] Child A",
+        "    - [x] Grandchild",
+        "  - [ ] Child B",
+        "- [ ] Sibling",
+      ].join("\n"),
+    );
+  });
+
   it("renders legacy preview autolinks on the React side", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
