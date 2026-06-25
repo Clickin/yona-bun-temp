@@ -21,7 +21,7 @@ const allowedFormPosts: AllowedFormPost[] = [
   },
 ];
 
-const formPostPattern = /(?:^|\s)method="post"/g;
+const formPostPattern = /(?:^|\s)method\s*=\s*(?:"post"|'post'|\{\s*["']post["']\s*\})/gi;
 const forbiddenReactOwnedLegacyActions = [
   "/users/login",
   "/users/signup",
