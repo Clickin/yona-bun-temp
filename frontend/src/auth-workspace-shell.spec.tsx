@@ -86,6 +86,8 @@ describe("auth and workspace views", () => {
     expect(source).toContain("search.scope.project");
     expect(source).toContain("search.scope.group");
     expect(source).toContain("search.scope.all");
+    expect(source).toContain("signInWithPassword");
+    expect(source).toContain("resolvePostAuthHref(null, session.defaultLandingPath)");
     expect(source).toContain(
       'className={`search-box${searchScope.type !== "global" ? " select" : ""}`}',
     );
@@ -217,6 +219,12 @@ describe("auth and workspace views", () => {
     expect(html).toContain(">Sign up<");
     expect(html).not.toContain(">title.forgotpassword<");
     expect(html).not.toContain("oauth-login-btn");
+
+    const source = fs.readFileSync(path.resolve(__dirname, "routes/-auth-views.tsx"), "utf8");
+    expect(source).toContain("onSignIn?: (input:");
+    expect(source).toContain('formData.get("loginIdOrEmail")');
+    expect(source).toContain('formData.get("password")');
+    expect(source).toContain('formData.has("rememberMe")');
   });
 
   it("renders configured OAuth provider buttons on the login page", () => {

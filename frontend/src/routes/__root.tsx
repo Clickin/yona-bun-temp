@@ -1,9 +1,12 @@
 import * as React from "react";
 import { Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
+import { RestApiError } from "../api/rest-client";
+import { signInWithPassword } from "../auth-workspace-client";
 import { AppRuntimeProvider, useAppRuntime } from "../app-runtime-context";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { LegacyLoginDialog } from "./-auth-views";
+import { LegacyLoginDialog, resolvePostAuthHref } from "./-auth-views";
+import { navigateToAppHref } from "./-shared";
 import type { WorkspaceOverviewViewModel } from "./-view-models";
 
 export interface AppRouterContext {
@@ -591,7 +594,16 @@ function RootAnonymousMenu() {
 }
 
 function RootLoginDialog() {
-  const { authUiCapabilities, csrfToken, currentSession, runtimeConfig } = useAppRuntime();
+  const {
+    authUiCapabilities,
+    csrfToken,
+    currentSession,
+    refreshWorkspace,
+    runtimeConfig,
+    setCurrentSession,
+    setErrorMessage,
+  } = useAppRuntime();
+  const [pending, setPending] = React.useState(false);
 
   if (currentSession && !currentSession.isAnonymous) {
     return null;
@@ -602,8 +614,50 @@ function RootLoginDialog() {
       authUiCapabilities={authUiCapabilities}
       csrfToken={csrfToken}
       runtimeConfig={runtimeConfig}
+      onSignIn={async (input) => {
+        if (pending) {
+          return;
+        }
+        setPending(true);
+        setErrorMessage(null);
+        try {
+          const session = await signInWithPassword(runtimeConfig, csrfToken, input);
+          setCurrentSession(session);
+          await refreshWorkspace(session);
+          navigateToAppHref(
+            runtimeConfig.basePath,
+            resolvePostAuthHref(null, session.defaultLandingPath),
+          );
+        } catch (error) {
+          setErrorMessage(legacyLoginFailureMessage(error));
+        } finally {
+          setPending(false);
+        }
+      }}
     />
   );
+}
+
+function legacyLoginFailureMessage(error: unknown): string {
+  if (error instanceof TypeError) {
+    return "user.login.failed.network";
+  }
+  if (error instanceof RestApiError) {
+    if (error.code !== "http_error" && error.message) {
+      return error.message;
+    }
+    if (error.status >= 400 && error.status < 500) {
+      return "user.login.failed.client";
+    }
+    if (error.status >= 500 && error.status < 600) {
+      return "user.login.failed.server";
+    }
+    return "user.login.failed";
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return "user.login.failed";
 }
 
 function RuntimeErrorBanner() {

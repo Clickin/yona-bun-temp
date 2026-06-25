@@ -333,10 +333,12 @@ export function LoginPage({
 export function LegacyLoginDialog({
   authUiCapabilities,
   csrfToken,
+  onSignIn,
   runtimeConfig,
 }: {
   authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
   csrfToken?: string;
+  onSignIn?: (input: { identifier: string; password: string; rememberMe: boolean }) => void;
   runtimeConfig: RuntimeConfig;
 }) {
   const messages = useLegacyMessages();
@@ -359,6 +361,18 @@ export function LegacyLoginDialog({
           action={appHref(runtimeConfig, "/users/login")}
           className="frm-wrap login-form-wrap"
           method="post"
+          onSubmit={(event) => {
+            if (!onSignIn) {
+              return;
+            }
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            onSignIn({
+              identifier: String(formData.get("loginIdOrEmail") ?? ""),
+              password: String(formData.get("password") ?? ""),
+              rememberMe: formData.has("rememberMe"),
+            });
+          }}
         >
           <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
           {authUiCapabilities?.socialLoginOnly ? (
