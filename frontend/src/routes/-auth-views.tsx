@@ -227,14 +227,10 @@ export function LoginPage({
             </div>
           ) : null}
           <form
-            action={appHref(runtimeConfig, "/users/login")}
             method="post"
             onSubmit={(event) => {
-              if (!onSignIn) {
-                return;
-              }
               event.preventDefault();
-              onSignIn(formState);
+              onSignIn?.(formState);
             }}
           >
             <input name="redirectUrl" type="hidden" value={redirectUrl ?? ""} />
@@ -361,16 +357,12 @@ export function LegacyLoginDialog({
           </button>
         </div>
         <form
-          action={appHref(runtimeConfig, "/users/login")}
           className="frm-wrap login-form-wrap"
           method="post"
           onSubmit={(event) => {
-            if (!onSignIn) {
-              return;
-            }
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
-            onSignIn({
+            onSignIn?.({
               identifier: String(formData.get("loginIdOrEmail") ?? ""),
               password: String(formData.get("password") ?? ""),
               rememberMe: formData.has("rememberMe"),
@@ -709,14 +701,10 @@ export function LostPasswordPage({
             </div>
           ) : null}
           <form
-            action={appHref(runtimeConfig, "/lostPassword")}
             method="post"
             onSubmit={(event) => {
-              if (!onRequestReset) {
-                return;
-              }
               event.preventDefault();
-              onRequestReset(formState);
+              onRequestReset?.(formState);
             }}
           >
             <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
@@ -806,15 +794,11 @@ export function ResetPasswordPage({
             <div className="alert alert-error">{messages.t(message, { fallback: message })}</div>
           ) : null}
           <form
-            action={appHref(runtimeConfig, "/resetPassword")}
             method="post"
             name="passwordReset"
             onSubmit={(event) => {
-              if (!onResetPassword) {
-                return;
-              }
               event.preventDefault();
-              onResetPassword({
+              onResetPassword?.({
                 hashString,
                 password: formState.password,
                 retypedPassword: formState.retypedPassword,

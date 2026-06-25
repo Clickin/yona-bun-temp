@@ -12,7 +12,7 @@ import {
 describe("wave 1 auth and workspace parity", () => {
   it("renders legacy auth links and password-reset request fields", () => {
     const loginHtml = renderLogin({ routeHref: "/users/loginform" });
-    expect(loginHtml).toContain('action="/yona/users/login"');
+    expect(loginHtml).not.toContain('action="/yona/users/login"');
     expect(loginHtml).toContain('href="/yona/lostPassword"');
     expect(loginHtml).toContain('Log in to <span class="highlight">Yona</span>');
     expect(loginHtml).not.toContain(">title.loginFor<");
@@ -43,7 +43,7 @@ describe("wave 1 auth and workspace parity", () => {
     expect(registerHtml).not.toContain(">user.signupBtn<");
 
     const lostPasswordHtml = renderLostPassword("/lostPassword");
-    expect(lostPasswordHtml).toContain('action="/yona/lostPassword"');
+    expect(lostPasswordHtml).not.toContain('action="/yona/lostPassword"');
     expect(lostPasswordHtml).toContain('name="loginId"');
     expect(lostPasswordHtml).toContain('name="emailAddress"');
     expect(lostPasswordHtml).toContain('Reset password for <span class="highlight">Yona</span>');
@@ -52,7 +52,7 @@ describe("wave 1 auth and workspace parity", () => {
     expect(lostPasswordHtml).not.toContain(">button.confirm<");
 
     const resetPasswordHtml = renderResetPassword("/resetPassword");
-    expect(resetPasswordHtml).toContain('action="/yona/resetPassword"');
+    expect(resetPasswordHtml).not.toContain('action="/yona/resetPassword"');
     expect(resetPasswordHtml).toContain('name="hashString"');
     expect(resetPasswordHtml).toContain('Reset password for <span class="highlight">Yona</span>');
     expect(resetPasswordHtml).not.toContain(">title.resetPasswordFor<");

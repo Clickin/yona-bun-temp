@@ -153,7 +153,7 @@ describe("auth and workspace views", () => {
     expect(html).toContain('class="remember-me-wrap pull-left"');
     expect(html).toContain('class="links-wrap pull-right"');
     expect(html).toContain('method="post"');
-    expect(html).toContain('action="/yona/users/login"');
+    expect(html).not.toContain('action="/yona/users/login"');
     expect(html).toContain('name="redirectUrl"');
     expect(html).toContain('value="/admin/projectYobi/issue/1"');
     expect(html).toContain(">Log in<");
@@ -200,7 +200,7 @@ describe("auth and workspace views", () => {
     expect(html).toContain('id="loginDialog"');
     expect(html).toContain('class="modal hide loginDialog"');
     expect(html).toContain('class="frm-wrap login-form-wrap"');
-    expect(html).toContain('action="/yona/users/login"');
+    expect(html).not.toContain('action="/yona/users/login"');
     expect(html).toContain('name="csrfToken"');
     expect(html).toContain('value="csrf-1"');
     expect(html).toContain('id="loginIdOrEmailD"');
@@ -567,7 +567,7 @@ describe("auth and workspace views", () => {
     expect(lostPasswordHtml).not.toContain(">title.resetPasswordFor<");
     expect(lostPasswordHtml).toContain('class="center-wrap tag-line-wrap reset-password"');
     expect(lostPasswordHtml).toContain('class="login-form-wrap frm-wrap"');
-    expect(lostPasswordHtml).toContain('action="/yona/lostPassword"');
+    expect(lostPasswordHtml).not.toContain('action="/yona/lostPassword"');
     expect(lostPasswordHtml).toContain('id="loginId"');
     expect(lostPasswordHtml).toContain('name="loginId"');
     expect(lostPasswordHtml).toContain('placeholder="Login ID"');
@@ -584,7 +584,7 @@ describe("auth and workspace views", () => {
     expect(resetPasswordHtml).toContain('class="center-wrap tag-line-wrap reset-password"');
     expect(resetPasswordHtml).toContain('class="login-form-wrap frm-wrap"');
     expect(resetPasswordHtml).toContain('name="passwordReset"');
-    expect(resetPasswordHtml).toContain('action="/yona/resetPassword"');
+    expect(resetPasswordHtml).not.toContain('action="/yona/resetPassword"');
     expect(resetPasswordHtml).toContain('name="hashString"');
     expect(resetPasswordHtml).toContain('id="password"');
     expect(resetPasswordHtml).toContain('name="password"');
@@ -599,14 +599,19 @@ describe("auth and workspace views", () => {
     expect(resetPasswordHtml).not.toContain('placeholder="Retype password"');
   });
 
-  it("keeps REST auth submit handlers primary while leaving only explicit legacy fallbacks", () => {
+  it("keeps REST auth submit handlers primary without rendered legacy form actions", () => {
     const source = fs.readFileSync(path.resolve(__dirname, "routes/-auth-views.tsx"), "utf8");
 
-    expect(source.match(/if \(!onSignIn\) \{/g)).toHaveLength(2);
-    expect(source).not.toContain("if (!onRegister) {");
+    expect(source).not.toContain('action={appHref(runtimeConfig, "/users/login")}');
+    expect(source).not.toContain('action={appHref(runtimeConfig, "/users/signup")}');
+    expect(source).not.toContain('action={appHref(runtimeConfig, "/lostPassword")}');
+    expect(source).not.toContain('action={appHref(runtimeConfig, "/resetPassword")}');
+    expect(source).toContain("event.preventDefault();");
+    expect(source).toContain("onSignIn?.(formState)");
+    expect(source).toContain("onSignIn?.({");
     expect(source).toContain("onRegister?.(formState)");
-    expect(source).toContain("if (!onRequestReset) {\n                return;\n              }");
-    expect(source).toContain("if (!onResetPassword) {\n                return;\n              }");
+    expect(source).toContain("onRequestReset?.(formState)");
+    expect(source).toContain("onResetPassword?.({");
   });
 
   it("renders auth capability help copy when email verification or signup confirmation is enabled", () => {
