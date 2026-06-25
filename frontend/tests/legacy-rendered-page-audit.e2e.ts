@@ -565,6 +565,27 @@ test("renders legacy audited anchors for /sites/data", async ({ page }) => {
   await expectLegacySignals(page, ["site-breadcrumb-outer", "data"]);
 });
 
+test("renders broad site-admin pages on a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+
+  const routes: Array<[string, string[]]> = [
+    ["/yona/sites/projectList", ["site-breadcrumb-outer", "project-list-wrap"]],
+    ["/yona/sites/postList", ["site-breadcrumb-outer", "post-list-wrap"]],
+    ["/yona/sites/issueList", ["site-breadcrumb-outer", "post-list-wrap"]],
+    ["/yona/sites/mail", ["site-breadcrumb-outer", "mailForm"]],
+    ["/yona/sites/massmail", ["site-breadcrumb-outer", "mailtoAll", "write-email"]],
+    ["/yona/sites/update", ["site-breadcrumb-outer", "title_area"]],
+    ["/yona/sites/data", ["site-breadcrumb-outer", "data"]],
+  ];
+
+  for (const [route, anchors] of routes) {
+    await page.goto(route);
+    await expectLegacySignals(page, anchors);
+    await expect(page.locator(".site-setting-wrap")).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("File-based route placeholder");
+  }
+});
+
 test("renders legacy audited anchors for /sites/mail", async ({ page }) => {
   await page.goto("/yona/sites/mail");
   await expectLegacySignals(page, ["site-breadcrumb-outer", "mail"], ["site-breadcrumb-outer"]);
