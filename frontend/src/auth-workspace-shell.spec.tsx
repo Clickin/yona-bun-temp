@@ -1227,6 +1227,7 @@ describe("auth and workspace views", () => {
     expect(source).not.toContain(
       'action={appHref(props.runtimeConfig, "/user/editform/token_reset")}',
     );
+    expect(source).not.toMatch(/\n\s+method="post"/);
     expect(source).not.toContain("if (!props.onUpdateProfile) {");
     expect(source).not.toContain("if (!props.onResetVisitedProjects) {");
     expect(source).not.toContain("if (!props.onChangePassword) {");

@@ -293,7 +293,6 @@ export function WorkspaceSettingsPage(props: {
           <form
             className="pull-left"
             id="frmBasic"
-            method="post"
             onSubmit={(event) => {
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
@@ -336,7 +335,6 @@ export function WorkspaceSettingsPage(props: {
           <form
             className="pull-left"
             id="frmAvatar"
-            method="post"
             onSubmit={(event) => {
               event.preventDefault();
             }}
@@ -370,7 +368,6 @@ export function WorkspaceSettingsPage(props: {
           <div className="reset-user-visited-list">
             <hr />
             <form
-              method="post"
               onSubmit={(event) => {
                 event.preventDefault();
                 props.onResetVisitedProjects?.();
@@ -491,7 +488,6 @@ export function WorkspaceSettingsPage(props: {
         <>
           <form
             id="frmPassword"
-            method="post"
             onSubmit={(event) => {
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
@@ -602,7 +598,6 @@ export function WorkspaceSettingsPage(props: {
         <>
           <form
             className="form-inline inner-bubble"
-            method="post"
             onSubmit={(event) => {
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
@@ -709,7 +704,6 @@ export function WorkspaceSettingsPage(props: {
           <form
             className="pull-left"
             id="frmBasic"
-            method="post"
             onSubmit={(event) => {
               event.preventDefault();
               props.onResetApiToken?.();
