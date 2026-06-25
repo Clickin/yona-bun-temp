@@ -1,0 +1,109 @@
+# UI Parity Report: User Account Settings
+
+Status: explorer report only
+Packet: `ui-parity-user-account-settings`
+Date: 2026-06-26
+
+Scope audited: `/user/editform/**`, `/me/settings/**`, avatar, password,
+notification, email, API token settings, and legacy anchors/aliases. This
+report does not edit implementation code and treats `yona-original/` as the
+only legacy UI/UX source of truth.
+
+## Sources
+
+Legacy evidence:
+
+- `yona-original/conf/routes`: `GET /user/editform`,
+  `GET/POST /user/editform/:tabId`, `POST /user/edit`,
+  `POST /user/email`, `DELETE /user/email/delete/:emailId`,
+  `PUT /user/email/setAsMain/:emailId`,
+  `POST /user/email/sendValidationEmail/:emailId`,
+  `GET /user/email/confirm/:emailId/:token`,
+  `POST /-_-api/v1/users/token`
+- `yona-original/app/controllers/UserApp.java`
+- `yona-original/app/controllers/api/UserApi.java`
+- `yona-original/app/views/user/edit.scala.html`
+- `yona-original/app/views/user/edit_password.scala.html`
+- `yona-original/app/views/user/edit_notifications.scala.html`
+- `yona-original/app/views/user/edit_emails.scala.html`
+- `yona-original/app/views/user/edit_token.scala.html`
+- `yona-original/app/views/user/partial_edit_tabmenu.scala.html`
+- `yona-original/public/javascripts/service/yobi.user.Setting.js`
+- `yona-original/conf/messages`, especially `userinfo.*`, `user.avatar.*`,
+  `emails.*`, `validation.passwordMismatch`, and `user.wrongPassword.alert`
+
+Current evidence:
+
+- `frontend/src/routes/-workspace-settings-view.tsx`
+- `frontend/src/routes/user/editform/index.tsx`
+- `frontend/src/routes/user/editform/password/route.tsx`
+- `frontend/src/routes/user/editform/notifications/route.tsx`
+- `frontend/src/routes/user/editform/emails/route.tsx`
+- `frontend/src/routes/user/editform/token/route.tsx`
+- `frontend/src/routes/me/settings/profile/route.tsx`
+- `frontend/src/routes/me/settings/password/route.tsx`
+- `frontend/src/routes/me/settings/notifications/route.tsx`
+- `frontend/src/routes/me/settings/emails/route.tsx`
+- `frontend/src/routes/me/settings/token/route.tsx`
+- `frontend/src/api/workspace.ts`
+- `frontend/src/auth-workspace-client.ts`
+- `crates/server/src/routes/workspace.rs`
+- `crates/server/src/routes/auth.rs`
+- `crates/server/src/routes/users.rs`
+- `crates/server/src/routes/files.rs`
+- `frontend/src/workspace-settings-i18n.spec.tsx`
+- `frontend/src/workspace-settings-parity.spec.tsx`
+- `frontend/src/auth-workspace-client.spec.ts`
+- `frontend/tests/workspace-settings-parity.e2e.ts`
+- `frontend/tests/legacy-rendered-page-audit.e2e.ts`
+- `crates/server/tests/rest_contract.rs`
+- `crates/server/tests/auth_workspace_contract.rs`
+- `crates/server/tests/assets_contract.rs`
+- `crates/server/tests/notification_contract.rs`
+
+## Summary
+
+Total rows: 12
+
+| status | count |
+| --- | ---: |
+| covered | 12 |
+| gap | 0 |
+| deviation | 0 |
+| deferred | 0 |
+| not-applicable | 0 |
+| weak evidence | 0 |
+| needs-parent-decision | 0 |
+
+No gap was found because every audited legacy settings tab has a React route
+that preserves the legacy visible selectors/copy and submits through REST JSON,
+with focused client/server evidence for mutation behavior and direct legacy
+alias compatibility.
+
+## Rows
+
+| route/state | legacy evidence | current evidence | user state | interaction state | boundary | status | proposed owner |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `/user/editform` profile tab and tab chrome | `edit.scala.html` renders `siteLayout(..., MenuType.USER)`, `userinfo.accountSetting`, `partial_edit_tabmenu("profile")`, `#frmBasic`, readonly login ID, editable `name`/`email`, and `#frmAvatar`; `partial_edit_tabmenu.scala.html` defines profile/password/notifications/emails/token tabs. | `WorkspaceSettingsPage` renders the same `.site-breadcrumb-outer`, `.page-wrap-outer`, `.nav.nav-tabs.mt20`, tab hrefs, `#frmBasic`, `#frmAvatar`, `user.loginId`, `user.name`, `user.email`, and `userinfo.editProfile`; `workspace-settings-i18n.spec.tsx` pins default and Korean legacy copy without raw keys; `legacy-rendered-page-audit.e2e.ts` includes `/user/editform` anchors. | authenticated current user | initial render, tab active state, profile submit payload | React route plus `/api/v1/workspace/profile` REST JSON | covered | none |
+| Profile update success/error | `UserApp.editUserInfo()` handles `/user/edit`, updates current user profile, and redirects back to settings; legacy invalid form re-renders settings with error flash/message. | `user/editform/index.tsx` calls `updateProfile()` then syncs workspace overview and navigates to `/me`; errors call `setErrorMessage`. `frontend/src/api/workspace.ts` maps to `PATCH /workspace/profile`; `auth-workspace-client.spec.ts` pins REST path/body/CSRF; `rest_contract.rs::rest_workspace_routes_manage_overview_settings_and_recent_projects` verifies name/email mutation; `auth_workspace_contract.rs` verifies direct `/user/edit` alias redirects to `/user/editform` and mutates state. | authenticated current user | submit success and REST error envelope | React REST JSON; direct legacy form alias retained for compatibility | covered | none |
+| Avatar invalid, crop modal, upload, and profile attachment promotion | `edit.scala.html` renders `#avatarFile`, `.upload-progress.avatar`, `#avatarCropWrap.modal.hide[data-backdrop=static]`, cancel/save buttons, JCrop/canvas assets; `yobi.user.Setting.js` rejects non-images and oversized files with `user.avatar.onlyImage` / `user.avatar.fileSizeAlert`, opens crop modal for valid images, uploads cropped blob, and submits `avatarId`; `UserApp` uses a 1MB avatar limit. | `WorkspaceSettingsPage` preserves `#avatarFile`, `accept="image/*"`, `.upload-progress.avatar`, `#avatarCropWrap.modal.hide`, cancel/save `.btnSubmitCrop`, hidden canvas/range crop controls, non-image alert via `user.avatar.onlyImage`, and uploads cropped PNG through `uploadProfileAvatar()` to `/files` before `PATCH /workspace/profile`. `workspace-settings-parity.spec.tsx` and `workspace-settings-parity.e2e.ts` prove invalid file alert, hidden modal, valid image modal open, and cancel/save labels. `auth-workspace-client.spec.ts` proves cropped avatar upload parsing; `assets_contract.rs` proves avatar upload metadata/serving; `auth_workspace_contract.rs::update_profile_replaces_existing_avatar_attachment` proves invalid id, non-image, too-large, and successful promotion to `USER_AVATAR`. | authenticated current user | invalid file, crop modal open/cancel/save, upload success and backend validation errors | React REST JSON plus `/files` upload; direct avatar validation remains server-side in workspace profile update | covered | none |
+| Reset visited project list | `edit.scala.html` includes `.reset-user-visited-list` form posting to `UserApp.resetUserVisitedList` with `userinfo.reset.visited.project.list`. | `WorkspaceSettingsPage` renders `.reset-user-visited-list` and calls `resetVisitedProjects()`. `frontend/src/api/workspace.ts` maps to `DELETE /workspace/recent-projects`; `auth-workspace-client.spec.ts` pins path/method/CSRF; `rest_contract.rs` verifies recent project reset; `auth_workspace_contract.rs` verifies direct legacy reset route redirect and empty body. | authenticated current user | submit reset and refreshed overview | React REST JSON; direct legacy form alias retained | covered | none |
+| `/user/editform/password` change password form and reset-password link | `edit_password.scala.html` renders `#frmPassword`, hidden `loginId`, `#oldPassword`, `#password`, `#retypedPassword`, `userinfo.changePassword`, and a `/lostPassword` button with `site.resetPasswordEmail.*` copy. | `WorkspaceSettingsPage` preserves `#frmPassword`, field IDs/names/autocomplete, submit text, and `/lostPassword` link; `workspace-settings-i18n.spec.tsx` pins default/Korean copy; `user/editform/password/route.tsx` requires auth and sets legacy account title. | authenticated current user | initial render and reset-password link | React route plus REST submit | covered | none |
+| Password change validation and logout-after-change | `UserApp.resetUserPassword` rejects wrong old password and password mismatch with legacy message keys, updates hash on success, and ends the current session. | `changePasswordRest()` posts to `/api/v1/workspace/password`; `auth-workspace-client.spec.ts` pins method/body/CSRF; `rest_contract.rs` verifies changed password returns anonymous session and new password can sign in; `auth_workspace_contract.rs` verifies `user.wrongPassword.alert`, `validation.passwordMismatch`, successful anonymous response, and sign-in with the new password. | authenticated current user | wrong current password, mismatched retype, success mutation and forced re-login | React REST JSON | covered | none |
+| `/user/editform/notifications` watched-project tabs and hash activation | `edit_notifications.scala.html` lists watched projects in `#notification-projects`, gives each anchor `href="#project.id" data-toggle="tab"`, marks the first row active, and renders matching `.tab-pane` tables. Project headers link to this route with `#project.id` anchors from `project/header.scala.html`. | `WorkspaceSettingsPage` renders `#notification-projects`, `data-toggle="tab"` anchors, matching `.tab-pane` IDs, and uses `workspaceNotificationActiveProjectId(routeHref, watchedProjects, window.location.hash)` to honor a project hash. `workspace-settings-parity.spec.tsx` and `workspace-settings-parity.e2e.ts` prove `/user/editform/notifications#2` activates project `2`; `legacy-rendered-page-audit.e2e.ts` includes `/user/editform/notifications`. | authenticated current user watching one or more projects | initial render, hash-selected tab, fallback to first watched project | React route plus workspace overview JSON | covered | none |
+| Notification toggles and direct `/noti/toggle` compatibility | `edit_notifications.scala.html` renders each event type row with `.switch[data-on-label=On][data-off-label=Off]`, `.notiUpdate`, `data-href="@routes.WatchProjectApp.toggle(project.id, notiType.name())"`, `data-toggle="switch"`, and checked state from `UserProjectNotification`. | `WorkspaceSettingsPage` renders `.switch`, `.notiUpdate`, `data-href="/noti/toggle/:projectId/:eventType"`, `data-toggle="switch"`, and checked state from `watchedProjects.notifications`; `toggleWorkspaceNotificationRest()` posts to `/api/v1/workspace/notifications`. `auth-workspace-client.spec.ts` pins REST body/CSRF; `rest_contract.rs` verifies REST toggle and direct `/noti/toggle/:id/:eventType` empty-200 compatibility; `notification_contract.rs` also verifies direct toggle behavior; `auth_workspace_contract.rs` verifies missing, forbidden, and unwatched statuses. | authenticated watcher; private/unwatched states covered by backend contracts | toggle on/off, direct legacy alias, error statuses | React REST JSON; direct legacy empty response retained | covered | none |
+| `/user/editform/emails` email list and add form | `edit_emails.scala.html` renders add form `action=/user/email`, placeholder `user.email.new`, main-email description, current main email row with avatar and `emails.main.email`, and sub-email rows with gravatar. | `WorkspaceSettingsPage` renders `.form-inline.inner-bubble`, `.text.uname`, placeholder, descriptions, main row, sub-email rows, and gravatar-style fallback via `resolveWorkspaceAvatarUrl`. `workspace-settings-i18n.spec.tsx` pins copy; `legacy-rendered-page-audit.e2e.ts` includes `/user/editform/emails`. `addWorkspaceEmailRest()` posts `/api/v1/workspace/emails`; `rest_contract.rs` verifies sub-email creation; `auth_workspace_contract.rs` verifies direct `/user/email` redirect and DB row. | authenticated current user with empty and populated secondary emails | initial render and add email submit | React REST JSON; direct legacy form alias retained | covered | none |
+| Email delete, set main, validation mail, and validation route | `edit_emails.scala.html` renders delete buttons with `data-request-method="delete" data-request-uri`, valid sub-email `setAsMain`, invalid sub-email `sendValidationEmail` with `yobicon-error2`; `UserApp.deleteEmail`, `setAsMainEmail`, `sendValidationEmail`, and `confirmEmail` own mutations. | `WorkspaceSettingsPage` preserves delete/set-main/send-validation buttons, request method/URI attributes, fixed width, and icon class; `frontend/src/api/workspace.ts` maps delete, validation, and main to REST workspace endpoints; `auth-workspace-client.spec.ts` pins paths/methods/CSRF; `rest_contract.rs` verifies validation send, set main, and delete; `auth_workspace_contract.rs` verifies direct delete/set-main aliases and `send_workspace_email_validation_mail`/confirmation URL behavior. | authenticated current user with valid and invalid secondary emails | delete, set-as-main, send validation, validation confirmation backend | React REST JSON; direct legacy aliases retained | covered | none |
+| `/user/editform/token` API token display and reset | `edit_token.scala.html` renders token page title `userinfo.token`, `partial_edit_tabmenu("token")`, `.token-generate`, `#frmBasic`, readonly token input with click-to-select, and `userinfo.recreateToken`; `GET/POST /user/editform/token_reset` regenerates token; `UserApi.newToken()` supports legacy external `/-_-api/v1/users/token`. | `WorkspaceSettingsPage` renders `<h3>User Token</h3>` for token section, `.token-generate`, `#frmBasic`, readonly size-45 input with select-on-click, and reset button; `resetApiTokenRest()` posts `/api/v1/workspace/api-token/reset`. `workspace-settings-i18n.spec.tsx` pins copy; `auth-workspace-client.spec.ts` pins REST path/CSRF; `rest_contract.rs` verifies reset API token and token-auth usage; `auth_workspace_contract.rs` verifies direct legacy token reset route rotates and redirects; `users.rs` retains legacy external token JSON path. | authenticated current user | initial render, input select, reset submit, token-auth use after reset | React REST JSON; direct legacy token-reset and external token API retained | covered | none |
+| `/me/settings/**` aliases | Legacy account settings canonical routes are `/user/editform`, `/user/editform/password`, `/user/editform/notifications`, `/user/editform/emails`, and `/user/editform/token`; there is no legacy `/me/settings/**` route. | `frontend/src/routes/me/settings/{profile,password,notifications,emails,token}/route.tsx` redirects each alias to the matching `/user/editform/**` path using `RedirectPage` and `runtimeConfig.basePath`; React screen remains the canonical legacy route after redirect. | authenticated current user | direct alias navigation | React redirect alias to canonical route | covered | none |
+| Auth gate and loading state for account settings | Legacy `UserApp.editUserInfoForm` / `editUserInfoByTabForm` are user settings routes and require a current user. | Each `/user/editform/**` route calls `useRequireAuthenticatedRoute(...)`; bootstrapping renders the bounded legacy loading key. `workspace-settings-i18n.spec.tsx` confirms settings route fallback keys are legacy lookup calls, and existing auth shell tests cover authenticated route gating patterns. | anonymous and authenticated current user | anonymous guard, bootstrapping loading shell, authenticated render | React route guard plus session REST | covered | none |
+
+## Notes
+
+- The report found no `gap`, `deviation`, `weak evidence`, or
+  `needs-parent-decision` rows. The strongest browser-visible evidence is
+  `frontend/tests/workspace-settings-parity.e2e.ts` for the two historically
+  fragile states: notification hash activation and avatar invalid/crop modal.
+- Direct legacy form/action routes are compatibility evidence only. The React
+  settings screens submit through REST JSON and render in React, matching the
+  phase rule against server-rendered HTML fragment data sources.

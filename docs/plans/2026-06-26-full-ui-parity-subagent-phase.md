@@ -150,11 +150,11 @@ as `covered` inside the report.
 | `ui-parity-public-auth-shell` | `019eff61-971c-7903-aca3-b7f9b3cdc76d` (`Dewey`) | completed | Historical broad packet; split into the narrower packets below for the next sweep |
 | `ui-parity-directory-workspace-site-admin` | `019eff61-b850-7873-a81b-c6bae630a8a9` (`Locke`) | completed | Historical broad packet; split into workspace, organization, and site-admin packets below |
 | `ui-parity-project-content` | `019eff61-dd1d-7233-b182-10898e1735ee` (`Averroes`) | completed | Historical broad packet; split into project admin, issue, board/milestone, code/VCS, and PR/review packets below |
-| `ui-parity-fragment-security-db` | `019eff61-fd34-7df2-bdd5-12a76a596ecb` (`Kuhn`) | completed | Historical evidence packet; remains active as a cross-cutting guard packet |
+| `ui-parity-fragment-security-db` | `019eff61-fd34-7df2-bdd5-12a76a596ecb` (`Kuhn`) | completed | Report file added; fragment conversion, security, visual sweep, DB/migration smoke rows have no gap/deviation/weak-evidence rows |
 | `ui-parity-auth-public-entry` | `019eff8b-88b5-7d53-b04c-421676320d9f` (`Laplace`) | completed | Signup flash-to-index and reset/verify post-state follow-ups are covered; browser-proof checklist depth remains tracked in the auth report if reopened |
 | `ui-parity-root-navigation-shell` | `019eff8b-a5cf-7343-8b07-4875c99d806a` (`Dirac`) | completed | Report file added; organization search-scope, project `hasGroup` scope, mounted base-path classification, and browser-visible shell state matrix are covered |
-| `ui-parity-user-workspace-profile` | `019eff8b-cb85-7862-9cc5-4bb6a0632452` (`Arendt`) | completed | DaysAgo editability, public email, PR receiver, user-file location, and selected-tab browser proof closed in follow-ups |
-| `ui-parity-user-account-settings` | `019eff8b-ec3b-7d72-b5b4-4f4a9c183bf2` (`Herschel`) | completed | Broadly mapped; avatar invalid/crop UX and notification hash activation closed by `ui-worker-workspace-settings-proof` |
+| `ui-parity-user-workspace-profile` | `019eff8b-cb85-7862-9cc5-4bb6a0632452` (`Arendt`) | completed | Report file added; daysAgo editability, public email, PR receiver, user-file location, selected-tab browser proof, and guest stream hiding have no gap/deviation/weak-evidence rows |
+| `ui-parity-user-account-settings` | `019eff8b-ec3b-7d72-b5b4-4f4a9c183bf2` (`Herschel`) | completed | Report file added; profile/password/notification/email/token settings, avatar invalid/crop UX, and notification hash activation have no gap/deviation/weak-evidence rows |
 | `ui-parity-directory-organization` | `019effaa-2dc0-7231-8af5-8804caf07703` (`Godel`) | completed | Report reconciled; queue rows below are covered or classified |
 | `ui-parity-project-home-admin` | `019effaa-4c2c-7a91-8845-ea0edd3d5d48` (`Socrates`) | completed | Report reconciled; queue rows below are covered or classified |
 | `ui-parity-issues` | `019effaa-67d8-7581-860a-b08920fd073e` (`Linnaeus`) | completed | Report reconciled; queue rows below are covered or classified |
@@ -297,13 +297,13 @@ while any report records `gap`, `deviation`, `weak evidence`, or
 already recorded queue rows; newly discovered pages or states must return to
 Gate A before implementation.
 
-Current Gate A blockers:
+Current Gate A report status:
 
-| Blocker | Status | Next action |
+| Packet/report | Status | Evidence |
 | --- | --- | --- |
-| `ui-parity-user-workspace-profile` report file is missing | open | Assign an explorer to write `docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md` before declaring inventory closure. |
-| `ui-parity-user-account-settings` report file is missing | open | Assign an explorer to write `docs/provenance/ui-parity-reports/ui-parity-user-account-settings.md` before declaring inventory closure. |
-| `ui-parity-fragment-security-db` report file is missing | open | Assign an explorer to write `docs/provenance/ui-parity-reports/ui-parity-fragment-security-db.md` before declaring inventory closure. |
+| `ui-parity-user-workspace-profile` report file | closed 2026-06-26 | `docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md` records 13 covered rows and no gap/deviation/weak-evidence/needs-parent-decision rows. |
+| `ui-parity-user-account-settings` report file | closed 2026-06-26 | `docs/provenance/ui-parity-reports/ui-parity-user-account-settings.md` records 12 covered rows and no gap/deviation/weak-evidence/needs-parent-decision rows. |
+| `ui-parity-fragment-security-db` report file | closed 2026-06-26 | `docs/provenance/ui-parity-reports/ui-parity-fragment-security-db.md` records 11 covered rows, 1 not-applicable row for issue-list PJAX fragment compatibility, and no gap/deviation/weak-evidence/needs-parent-decision rows. |
 | `ui-parity-auth-public-entry` browser-proof depth | closed 2026-06-26 | `frontend/tests/auth-public-entry-parity.e2e.ts` passed 6 Playwright tests and the auth report now has no weak-evidence row. |
 
 1. Keep `docs/provenance/ui-parity-reports/*` as the route-family inventory
@@ -403,10 +403,13 @@ Before this phase can close:
 - 2026-06-26 auth public-entry browser proof refresh: `pnpm --dir frontend
   test:e2e -- auth-public-entry-parity.e2e.ts` passed 6 Playwright tests after
   adding login submit, signup confirmation, alias, social-login-only/OAuth
-  alert, lost/reset password, and verify route coverage. Current Gate A still
-  remains open because `ui-parity-user-workspace-profile`,
-  `ui-parity-user-account-settings`, and `ui-parity-fragment-security-db` report
-  files are missing.
+  alert, lost/reset password, and verify route coverage.
+- 2026-06-26 Gate A report closure refresh: the missing
+  `ui-parity-user-workspace-profile`,
+  `ui-parity-user-account-settings`, and `ui-parity-fragment-security-db`
+  reports were added. The new report summaries contain no `gap`, `deviation`,
+  `weak evidence`, or `needs-parent-decision` rows; the only non-covered row is
+  the existing `not-applicable` issue-list PJAX fragment compatibility decision.
 - 2026-06-26 root-shell browser proof refresh: `pnpm --dir frontend test:e2e
   -- root-shell-parity.e2e.ts` passed 5 Playwright tests after adding
   anonymous/authenticated/site-admin/guest shell coverage, login dialog
