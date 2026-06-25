@@ -1,9 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   buildVisualComparison,
   summarizeVisualComparison,
 } from "./visual-parity-comparison.mjs";
+
+const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 
 test("buildVisualComparison flags legacy-normal to local-error pages", () => {
   const comparison = buildVisualComparison({
@@ -76,4 +80,21 @@ test("summarizeVisualComparison records status deltas without treating legacy-mi
     legacyOk: true,
     localOk: true,
   });
+});
+
+test("visual sweep scans chrome text and attributes for visible raw legacy keys", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /cloneChromeWithoutUserMarkdown/u);
+  assert.match(source, /\.markdown-wrap/u);
+  assert.match(source, /textarea/u);
+  assert.match(
+    source,
+    /const names = \["aria-label", "data-content", "data-original-title", "placeholder", "title"\]/u,
+  );
+  assert.match(
+    source,
+    /const i18nScanText = `\$\{metrics\.title\}\\n\$\{metrics\.chromeText\}\\n\$\{metrics\.chromeAttributes\}`/u,
+  );
+  assert.match(source, /raw i18n key visible/u);
 });
