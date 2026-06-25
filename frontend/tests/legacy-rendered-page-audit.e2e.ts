@@ -684,6 +684,27 @@ test("does not execute XSS payloads rendered through legacy issue detail surface
     .toBe(false);
 });
 
+test("renders pathological long SQL fenced blocks on the issue detail surface as plain source", async ({
+  page,
+}) => {
+  await page.unroute("**/api/v1/**");
+  const sqlLine = "SELECT body FROM invalid_article_table WHERE body LIKE '%markdown%';";
+  const longSql = Array.from({ length: 1100 }, (_, index) => `${sqlLine} -- ${index}`).join("\n");
+  await routeAuditApis(page, {
+    issueBodyMarkdown: `\`\`\`sql\n${longSql}\n\`\`\``,
+    issueTitle: "Long SQL fenced block",
+  });
+
+  await page.goto("/yona/admin/sample/issue/1");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  const codeBlock = page.locator("#issue-body-1 .content.markdown-wrap pre code.sql").first();
+  await expect(codeBlock).toBeVisible();
+  await expect(codeBlock).toContainText("invalid_article_table");
+  await expect(codeBlock).toContainText("SELECT body");
+  await expect(codeBlock.locator(".syntax-token")).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText("common.loading");
+});
+
 test("renders legacy audited anchors for project issue labels", async ({ page }) => {
   await page.goto("/yona/admin/sample/issue/labelsform");
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);

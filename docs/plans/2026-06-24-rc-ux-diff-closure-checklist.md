@@ -506,6 +506,12 @@ src/markdown-renderer.spec.tsx` passed with 429 tests
 tests/search-parity.e2e.ts tests/legacy-rendered-page-audit.e2e.ts -g "hostile
 search|XSS payloads"` executed outside the sandbox and passed 49 tests,
   including hostile search result text inertness and issue detail XSS inertness.
+- Rendered pathological Markdown verification: `pnpm --dir frontend test:e2e
+  -- --grep "renders pathological long SQL fenced blocks"
+  legacy-rendered-page-audit.e2e.ts` executed outside the sandbox and passed the
+  49-test legacy-rendered page audit suite, including issue detail rendering of
+  a >65KB SQL fenced block as plain source under `.markdown-wrap` without
+  syntax-token expansion.
 - Backend verification: `pnpm agent:cargo-test -- --outside-sandbox -p
 yoram-server --test search_contract
 global_search_treats_sql_injection_probe_as_plain_keyword -- --nocapture`
