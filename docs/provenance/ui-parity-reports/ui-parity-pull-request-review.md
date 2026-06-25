@@ -60,12 +60,12 @@ Current evidence checked:
 
 | status | count |
 | --- | ---: |
-| covered | 18 |
-| gap | 0 |
+| covered | 19 |
+| gap | 1 |
 | deviation | 0 |
 | deferred | 0 |
 | not-applicable | 2 |
-| weak evidence | 2 |
+| weak evidence | 0 |
 | needs-parent-decision | 0 |
 
 ## Result Table
@@ -90,10 +90,10 @@ Current evidence checked:
 | PR changes general comments, inline comments, thread replies, edit/delete | `viewChanges.scala.html` renders `.non-ranged-threads-wrap`, `common.commentForm`, `common.reviewForm`; review thread partials use `.comment-thread-wrap`, delete modal, close/open thread controls | `PullRequestChangesPage`, `ReviewThreadItem`, `PullRequestBlockReviewForm`, route mutations; interaction e2e covers general comment, inline comment, thread reply, edit, delete, close/open | covered | none |
 | PR review cards | `viewChanges.scala.html` renders `.review-wrap`, `#reviewcards-open`, `#reviewcards-closed`; `partial_reviewlist.scala.html` renders `.review-card`, `.outdated-label` | `ReviewThreadCards`, `ReviewThreadCard`, render/e2e specs cover open/closed/outdated cards | covered | none |
 | Project review-thread list filters/export | `reviewthread/list.scala.html` renders all/participant/author filters, hidden `#search` fields, state tabs, date sort, `format=xls` export | `ProjectReviewsPage`, `projectReviewExcelExportHref`, `project-reviews-export.spec.tsx`, render/e2e specs cover filters, state tabs, pagination and Excel link | covered | none |
-| Browser proof for legacy-vs-current interaction parity | Legacy visual artifacts exist for route entry pages; current Playwright e2e uses mocked REST APIs and selectors | Wave 3 adds current mocked-browser proof for contributor special option, selector semantics, stale copy, and event interpolation. Live side-by-side legacy proof remains weak for review-list row truncation/project target variants. | weak evidence | focused Playwright selector audit for `/reviews` row variants only |
+| Browser proof for legacy-vs-current interaction parity | Legacy visual artifacts exist for route entry pages; current Playwright e2e uses mocked REST APIs and selectors | Wave 3 adds current mocked-browser proof for contributor special option, selector semantics, stale copy, event interpolation, and PR/commit href variants. The concrete `/reviews` row differences are tracked as the row-fidelity gap below rather than broad weak evidence. | covered | none |
 | Direct legacy form/fragment routes | Legacy create/edit/comment/review routes are form/fragment-compatible server endpoints | Current app runtime is React SPA with REST JSON/API-return plus React render; direct legacy HTML fragments are compatibility evidence, not a new frontend data source | not-applicable | none |
 | E2E expectation copy drift | Legacy English keys are `pullRequest.is.safe = This pull request can be merged safely.`, `pullRequest.review = Approve`, `pullRequest.merge = Merge`; Korean differs as expected by message files | Wave 3 classifies this as stale test drift and updates the interaction e2e to legacy copy/selectors: safe merge text, `Approve`, `Merge`, reviewer shortage tooltip, and no `.reviewer-status` dependency. | covered | none |
-| Review-thread list row visual fidelity | `reviewthread/partial_list.scala.html` row details need exact comparison for author avatar, state, project/PR target and snippet truncation | Current `ProjectReviewListRows` covers title, author, date, reply count and target href, but evidence is mostly static render plus mocked e2e; no live legacy selector comparison for row truncation/project target variants | weak evidence | focused Playwright selector audit for `/reviews` states; implementation owner only if a concrete diff appears |
+| Review-thread list row visual fidelity | `reviewthread/partial_list.scala.html` renders `.post-list-wrap > .post-item`, `.avatar-wrap.mlarge.hide-in-mobile`, `.title-wrap`, `.post-id`, `a.title`, `.infos`, `.infos-item.item-count-groups`; `_page.less` applies nowrap ellipsis to `.post-item .title-wrap`; `ReviewSearchCondition` includes project comment threads without restricting to pull requests | Current `ProjectReviewListRows` covers base selectors and mocked PR/commit href variants, but `.title-wrap` wraps via current CSS and real REST `/reviews` filters `PullRequestId.is_not_null()`, excluding legacy non-PR commit review threads. | gap | `frontend/src/app.css`, `crates/persistence/src/repo/pull_request_review.rs`, `frontend/src/route-parity.spec.tsx`, `frontend/src/project-reviews-export.spec.tsx`, `frontend/tests/pull-request-review-read-parity.e2e.ts`, `crates/server/tests/pull_request_read_contract.rs` |
 
 ## Playwright Scenario Table
 
@@ -120,9 +120,9 @@ Current evidence checked:
 | `/:owner/:project/pullRequest/:n/changes` | thread reply/edit/delete/open/close | legacy comment thread controls, `commentThread.close/open`, `data-toggle=comment-delete` | same controls; e2e covers reply, edit, delete, close/open | click controls and submit forms | REST comments PATCH/DELETE and thread open/close + React render | covered |
 | `/:owner/:project/pullRequest/:n/changes` | review cards | `.review-wrap`, `#reviewcards-open`, `#reviewcards-closed`, `.review-card`, `review.outdated` | same selectors and copy | show/hide side cards, tab selection | REST changes + React render | covered |
 | `/:owner/:project/reviews?state=open` | filters/search/export | `.lst-stacked`, `review.allReview`, `review.involvingYou`, `review.createdByYou`, hidden form fields, state tabs, `issue.downloadAsExcel` | same selectors/copy, Excel href includes `format=xls` | click filters, sort, state, export | REST reviews list/export compatibility + React render | covered |
-| `/:owner/:project/reviews?state=open` | row variants | `reviewthread/partial_list.scala.html` row target via `DiffRenderer.urlToCommentThread` | `ProjectReviewListRows` creates PR changes and commit anchors | initial render with PR and commit threads | REST reviews + React render | weak evidence |
+| `/:owner/:project/reviews?state=open` | row variants | `reviewthread/partial_list.scala.html` row target via `DiffRenderer.urlToCommentThread`, including non-PR commit threads, with nowrap title truncation | `ProjectReviewListRows` can create PR changes and commit anchors in mocked proof, but real REST excludes non-PR commit rows and CSS wraps title text | initial render with PR and commit threads | REST reviews + React render | gap |
 
 ## Follow-Up Queue Proposal
 
-1. Live side-by-side legacy proof remains useful for `/reviews` row truncation/project target variants.
+1. Implement the confirmed `/reviews` row gap: legacy nowrap ellipsis plus non-PR commit review-thread rows from real REST data.
 2. If exact legacy timeline author labels are required beyond login id text, add a focused sender display-name/avatar projection to the PR event DTO.
