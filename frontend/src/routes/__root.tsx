@@ -33,6 +33,42 @@ function RootRouteComponent() {
 }
 
 const STANDALONE_FOOTER_PATHS = new Set(["/_UIKit", "/restart", "/secret"]);
+const NON_PROJECT_TOP_LEVEL_PATHS = new Set([
+  "_UIKit",
+  "_import",
+  "admin",
+  "api",
+  "assets",
+  "authenticate",
+  "files",
+  "forgot-password",
+  "images",
+  "login",
+  "lostPassword",
+  "me",
+  "migration",
+  "notification",
+  "notifications",
+  "organizations",
+  "projectform",
+  "projects",
+  "register",
+  "reset-password",
+  "resetPassword",
+  "restart",
+  "restricted",
+  "search",
+  "secret",
+  "sites",
+  "user",
+  "users",
+  "verify",
+]);
+
+type RootSearchScope =
+  | { type: "global" }
+  | { organizationName: string; type: "organization" }
+  | { ownerName: string; projectName: string; type: "project" };
 
 function RootFooter() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -96,8 +132,12 @@ function SiteAdminLoggedInAffix() {
 
 function RootHeader() {
   const { currentSession, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isGuest = workspaceOverview?.profile?.isGuest ?? false;
   const showProjectListing = !runtimeConfig.hideProjectListing && !isGuest;
+  const searchScope = rootSearchScopeFromPathname(pathname);
+  const searchAction = rootSearchAction(runtimeConfig.basePath, searchScope);
+  const showGlobalSearchScope = showProjectListing || !!currentSession?.isSiteAdmin;
 
   return (
     <header className="gnb-outer">
@@ -134,12 +174,62 @@ function RootHeader() {
           ) : null}
           <li>
             <form
-              action={prefixBasePath(runtimeConfig.basePath, "/search")}
+              action={searchAction}
               className="input-prepend gnb-search-form"
               name="gnb-search-form"
             >
               <input name="searchType" type="hidden" value="auto" />
-              <div className="search-box">
+              {searchScope.type !== "global" ? (
+                <div className="btn-group">
+                  <button
+                    className="ybtn dropdown-toggle"
+                    data-toggle="dropdown"
+                    id="gnb-search-scope-title"
+                    type="button"
+                  >
+                    {messages(
+                      searchScope.type === "project"
+                        ? "search.scope.project"
+                        : "search.scope.group",
+                      {
+                        fallback:
+                          searchScope.type === "project"
+                            ? "search.scope.project"
+                            : "search.scope.group",
+                      },
+                    )}
+                  </button>
+                  <ul className="dropdown-menu flat right">
+                    <li>
+                      <a data-action={searchAction} data-toggle="search-scope" href={searchAction}>
+                        {messages(
+                          searchScope.type === "project"
+                            ? "search.scope.project"
+                            : "search.scope.group",
+                          {
+                            fallback:
+                              searchScope.type === "project"
+                                ? "search.scope.project"
+                                : "search.scope.group",
+                          },
+                        )}
+                      </a>
+                    </li>
+                    {showGlobalSearchScope ? (
+                      <li>
+                        <a
+                          data-action={prefixBasePath(runtimeConfig.basePath, "/search")}
+                          data-toggle="search-scope"
+                          href={prefixBasePath(runtimeConfig.basePath, "/search")}
+                        >
+                          {messages("search.scope.all", { fallback: "search.scope.all" })}
+                        </a>
+                      </li>
+                    ) : null}
+                  </ul>
+                </div>
+              ) : null}
+              <div className={`search-box${searchScope.type !== "global" ? " select" : ""}`}>
                 <input accessKey="S" autoComplete="off" name="keyword" type="text" />
                 <button type="submit">
                   <i className="yobicon-search"></i>
@@ -152,6 +242,40 @@ function RootHeader() {
       </div>
     </header>
   );
+}
+
+function rootSearchScopeFromPathname(pathname: string): RootSearchScope {
+  const segments = pathname.split("/").flatMap((segment) => {
+    const trimmed = segment.trim();
+    return trimmed ? [trimmed] : [];
+  });
+
+  if (segments[0] === "organizations" && segments[1]) {
+    return { organizationName: segments[1], type: "organization" };
+  }
+
+  if (
+    segments.length >= 2 &&
+    segments[0] &&
+    segments[1] &&
+    !NON_PROJECT_TOP_LEVEL_PATHS.has(segments[0])
+  ) {
+    return { ownerName: segments[0], projectName: segments[1], type: "project" };
+  }
+
+  return { type: "global" };
+}
+
+function rootSearchAction(basePath: string, scope: RootSearchScope): string {
+  if (scope.type === "project") {
+    return prefixBasePath(basePath, `/${scope.ownerName}/${scope.projectName}/search`);
+  }
+
+  if (scope.type === "organization") {
+    return prefixBasePath(basePath, `/organizations/${scope.organizationName}/search`);
+  }
+
+  return prefixBasePath(basePath, "/search");
 }
 
 function RootSidebar() {

@@ -75,8 +75,18 @@ describe("auth and workspace views", () => {
     );
     expect(source).toContain("runtimeConfig.feedbackUrl");
     expect(source).not.toContain("https://github.com/yona-projects/yona/issues");
+    expect(source).toContain("rootSearchScopeFromPathname");
+    expect(source).toContain("rootSearchAction");
     expect(source).toContain('name="gnb-search-form"');
     expect(source).toContain('name="searchType"');
+    expect(source).toContain('id="gnb-search-scope-title"');
+    expect(source).toContain('data-toggle="search-scope"');
+    expect(source).toContain("search.scope.project");
+    expect(source).toContain("search.scope.group");
+    expect(source).toContain("search.scope.all");
+    expect(source).toContain(
+      'className={`search-box${searchScope.type !== "global" ? " select" : ""}`}',
+    );
     expect(source).toContain('accessKey="S"');
     expect(source).toContain("<RootAnonymousMenu />");
     expect(source).toContain('id="sidebar-open-btn"');
