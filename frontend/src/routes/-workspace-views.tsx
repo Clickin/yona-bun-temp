@@ -366,13 +366,12 @@ export function PublicUserProfilePage(props: {
                         <div className="error-wrap">
                           <p>{noIssueLabel}</p>
                         </div>
-                      ) : (
-                        <PublicProfileIssueItems
-                          items={openIssues}
-                          messages={props.messages}
-                          runtimeConfig={props.runtimeConfig}
-                        />
-                      )}
+                      ) : null}
+                      <PublicProfileIssueItems
+                        items={openIssues}
+                        messages={props.messages}
+                        runtimeConfig={props.runtimeConfig}
+                      />
                     </div>
                     <div
                       className={`tab-pane ${activeIssueTab === "closed" ? "active" : ""}`}
@@ -383,13 +382,12 @@ export function PublicUserProfilePage(props: {
                         <div className="error-wrap">
                           <p>{noIssueLabel}</p>
                         </div>
-                      ) : (
-                        <PublicProfileIssueItems
-                          items={closedIssues}
-                          messages={props.messages}
-                          runtimeConfig={props.runtimeConfig}
-                        />
-                      )}
+                      ) : null}
+                      <PublicProfileIssueItems
+                        items={closedIssues}
+                        messages={props.messages}
+                        runtimeConfig={props.runtimeConfig}
+                      />
                     </div>
                   </div>
                 </div>
@@ -403,118 +401,117 @@ export function PublicUserProfilePage(props: {
                     <div className="error-wrap">
                       <p>{noPullRequestLabel}</p>
                     </div>
-                  ) : (
-                    <ul className="post-list-wrap row-fluid">
-                      {pullRequestItems.map((pullRequest) => (
-                        <li
-                          className="post-item"
-                          key={`${pullRequest.ownerName}/${pullRequest.projectName}/${pullRequest.pullRequestNumber}`}
-                        >
-                          <div className="span10">
+                  ) : null}
+                  <ul className="post-list-wrap row-fluid">
+                    {pullRequestItems.map((pullRequest) => (
+                      <li
+                        className="post-item"
+                        key={`${pullRequest.ownerName}/${pullRequest.projectName}/${pullRequest.pullRequestNumber}`}
+                      >
+                        <div className="span10">
+                          <a
+                            className="avatar-wrap mlarge"
+                            href={appHref(
+                              props.runtimeConfig,
+                              projectHref(pullRequest.ownerName, pullRequest.projectName),
+                            )}
+                          >
+                            <img
+                              alt={`${pullRequest.ownerName} / ${pullRequest.projectName}`}
+                              src={resolveWorkspaceAvatarUrl("", pullRequest.projectName)}
+                            />
+                          </a>
+                          <div className="title-wrap">
                             <a
-                              className="avatar-wrap mlarge"
+                              className="title project"
                               href={appHref(
                                 props.runtimeConfig,
                                 projectHref(pullRequest.ownerName, pullRequest.projectName),
                               )}
                             >
-                              <img
-                                alt={`${pullRequest.ownerName} / ${pullRequest.projectName}`}
-                                src={resolveWorkspaceAvatarUrl("", pullRequest.projectName)}
-                              />
+                              {pullRequest.projectName}
                             </a>
-                            <div className="title-wrap">
-                              <a
-                                className="title project"
-                                href={appHref(
-                                  props.runtimeConfig,
-                                  projectHref(pullRequest.ownerName, pullRequest.projectName),
-                                )}
+                            <span className="post-id">{pullRequest.pullRequestNumber}</span>
+                            <a
+                              className="title"
+                              href={appHref(
+                                props.runtimeConfig,
+                                pullRequestHref(
+                                  pullRequest.ownerName,
+                                  pullRequest.projectName,
+                                  pullRequest.pullRequestNumber,
+                                ),
+                              )}
+                            >
+                              {pullRequest.title}
+                            </a>
+                          </div>
+                          <div className="infos">
+                            {pullRequest.contributorLabel ? (
+                              <span
+                                className="infos-item infos-link-item"
+                                data-placement="top"
+                                data-toggle="tooltip"
+                                title={pullRequest.contributorLabel}
                               >
-                                {pullRequest.projectName}
-                              </a>
-                              <span className="post-id">{pullRequest.pullRequestNumber}</span>
+                                {pullRequest.contributorLabel}
+                              </span>
+                            ) : (
+                              <span className="infos-item">{noAuthorLabel}</span>
+                            )}
+                            <span className="infos-item" title={pullRequest.updatedLabel}>
+                              {pullRequest.updatedLabel}
+                            </span>
+                            {pullRequest.commentCount > 0 ? (
                               <a
-                                className="title"
+                                className="infos-item infos-icon-link"
                                 href={appHref(
                                   props.runtimeConfig,
-                                  pullRequestHref(
+                                  `${pullRequestHref(
                                     pullRequest.ownerName,
                                     pullRequest.projectName,
                                     pullRequest.pullRequestNumber,
-                                  ),
+                                  )}#comments`,
                                 )}
                               >
-                                {pullRequest.title}
+                                <i className="yobicon-comments"></i>
+                                <span className="size">{pullRequest.commentCount}</span>
                               </a>
-                            </div>
-                            <div className="infos">
-                              {pullRequest.contributorLabel ? (
-                                <span
-                                  className="infos-item infos-link-item"
-                                  data-placement="top"
-                                  data-toggle="tooltip"
-                                  title={pullRequest.contributorLabel}
-                                >
-                                  {pullRequest.contributorLabel}
-                                </span>
-                              ) : (
-                                <span className="infos-item">{noAuthorLabel}</span>
-                              )}
-                              <span className="infos-item" title={pullRequest.updatedLabel}>
-                                {pullRequest.updatedLabel}
-                              </span>
-                              {pullRequest.commentCount > 0 ? (
-                                <a
-                                  className="infos-item infos-icon-link"
-                                  href={appHref(
-                                    props.runtimeConfig,
-                                    `${pullRequestHref(
-                                      pullRequest.ownerName,
-                                      pullRequest.projectName,
-                                      pullRequest.pullRequestNumber,
-                                    )}#comments`,
-                                  )}
-                                >
-                                  <i className="yobicon-comments"></i>
-                                  <span className="size">{pullRequest.commentCount}</span>
-                                </a>
-                              ) : null}
-                            </div>
+                            ) : null}
                           </div>
-                          <div className="span2">
-                            <div className="mt5 pull-right">
-                              {pullRequest.receiverLabel ? (
-                                <a
-                                  className="avatar-wrap assinee"
-                                  data-placement="top"
-                                  data-original-title={pullRequest.receiverLabel}
-                                  data-toggle="tooltip"
-                                  href={prefixBasePath(props.runtimeConfig.basePath, "/")}
-                                  title=""
-                                >
-                                  <img
-                                    alt={pullRequest.receiverLabel}
-                                    height={32}
-                                    src={resolveWorkspaceAvatarUrl("", pullRequest.receiverLabel)}
-                                    width={32}
-                                  />
-                                </a>
-                              ) : (
-                                <div className="empty-avatar-wrap">&nbsp;</div>
-                              )}
-                            </div>
-                            <div className={`state ${pullRequest.state} pull-right`}>
-                              {legacyMessage(
-                                props.messages,
-                                `pullRequest.state.${pullRequest.state}`,
-                              )}
-                            </div>
+                        </div>
+                        <div className="span2">
+                          <div className="mt5 pull-right">
+                            {pullRequest.receiverLabel ? (
+                              <a
+                                className="avatar-wrap assinee"
+                                data-placement="top"
+                                data-original-title={pullRequest.receiverLabel}
+                                data-toggle="tooltip"
+                                href={prefixBasePath(props.runtimeConfig.basePath, "/")}
+                                title=""
+                              >
+                                <img
+                                  alt={pullRequest.receiverLabel}
+                                  height={32}
+                                  src={resolveWorkspaceAvatarUrl("", pullRequest.receiverLabel)}
+                                  width={32}
+                                />
+                              </a>
+                            ) : (
+                              <div className="empty-avatar-wrap">&nbsp;</div>
+                            )}
                           </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                          <div className={`state ${pullRequest.state} pull-right`}>
+                            {legacyMessage(
+                              props.messages,
+                              `pullRequest.state.${pullRequest.state}`,
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 <div
@@ -526,68 +523,67 @@ export function PublicUserProfilePage(props: {
                     <div className="error-wrap">
                       <p>{legacyMessage(props.messages, "project.is.empty")}</p>
                     </div>
-                  ) : (
-                    <ul className="user-streams all-projects">
-                      {memberProjects.map((project) => (
-                        <li className="project" key={`${project.ownerName}/${project.projectName}`}>
-                          <div className="info-wrap">
-                            <div className="pull-left">
+                  ) : null}
+                  <ul className="user-streams all-projects">
+                    {memberProjects.map((project) => (
+                      <li className="project" key={`${project.ownerName}/${project.projectName}`}>
+                        <div className="info-wrap">
+                          <div className="pull-left">
+                            <a
+                              className="avatar-wrap small"
+                              href={appHref(
+                                props.runtimeConfig,
+                                projectHref(project.ownerName, project.projectName),
+                              )}
+                            >
+                              {project.projectName.slice(0, 1).toUpperCase()}
+                            </a>
+                          </div>
+                          <div className="pull-left">
+                            <div className="header">
                               <a
-                                className="avatar-wrap small"
+                                className="project-name"
                                 href={appHref(
                                   props.runtimeConfig,
                                   projectHref(project.ownerName, project.projectName),
                                 )}
                               >
-                                {project.projectName.slice(0, 1).toUpperCase()}
+                                {project.projectName}
                               </a>
+                              {project.projectScope === "private" ? (
+                                <i className="yobicon-lock yobicon-small" />
+                              ) : null}
                             </div>
-                            <div className="pull-left">
-                              <div className="header">
-                                <a
-                                  className="project-name"
-                                  href={appHref(
-                                    props.runtimeConfig,
-                                    projectHref(project.ownerName, project.projectName),
-                                  )}
-                                >
-                                  {project.projectName}
-                                </a>
-                                {project.projectScope === "private" ? (
-                                  <i className="yobicon-lock yobicon-small" />
-                                ) : null}
-                              </div>
-                              <div className="desc">{project.overview}</div>
-                              <div className="name-tag">
-                                <i className="yobicon-friends yobicon-middle" />
-                                <strong>{project.memberCount}</strong>{" "}
-                                <a
-                                  className="owner-name-small"
-                                  href={appHref(props.runtimeConfig, `/${project.ownerName}`)}
-                                >
-                                  {project.ownerName}
-                                </a>{" "}
-                                <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
-                                {project.lastPushedLabel ? (
-                                  <>
-                                    <span>, {projectCodeUpdateLabel} </span>
-                                    <span title={project.lastPushedLabel}>
-                                      {project.lastPushedLabel}
-                                    </span>
-                                  </>
-                                ) : null}
-                              </div>
+                            <div className="desc">{project.overview}</div>
+                            <div className="name-tag">
+                              <i className="yobicon-friends yobicon-middle" />
+                              <strong>{project.memberCount}</strong>{" "}
+                              <a
+                                className="owner-name-small"
+                                href={appHref(props.runtimeConfig, `/${project.ownerName}`)}
+                              >
+                                {project.ownerName}
+                              </a>{" "}
+                              <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
+                              {project.lastPushedLabel ? (
+                                <>
+                                  <span>, {projectCodeUpdateLabel} </span>
+                                  <span title={project.lastPushedLabel}>
+                                    {project.lastPushedLabel}
+                                  </span>
+                                </>
+                              ) : null}
                             </div>
                           </div>
-                          <div className="stats-wrap pull-right">
-                            <div className="stats">
-                              <span className="num-badge">{project.watchCount}</span>
-                            </div>
+                        </div>
+                        <div className="stats-wrap pull-right">
+                          <div className="stats">
+                            <span className="num-badge">{project.watchCount}</span>
                           </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             </div>
@@ -972,13 +968,12 @@ export function WorkspacePage(props: {
                         <div className="error-wrap">
                           <p>{noIssueLabel}</p>
                         </div>
-                      ) : (
-                        <PublicProfileIssueItems
-                          items={openIssues}
-                          messages={props.messages}
-                          runtimeConfig={props.runtimeConfig}
-                        />
-                      )}
+                      ) : null}
+                      <PublicProfileIssueItems
+                        items={openIssues}
+                        messages={props.messages}
+                        runtimeConfig={props.runtimeConfig}
+                      />
                     </div>
                     <div
                       className={`tab-pane ${activeIssueTab === "closed" ? "active" : ""}`}
@@ -989,13 +984,12 @@ export function WorkspacePage(props: {
                         <div className="error-wrap">
                           <p>{noIssueLabel}</p>
                         </div>
-                      ) : (
-                        <PublicProfileIssueItems
-                          items={closedIssues}
-                          messages={props.messages}
-                          runtimeConfig={props.runtimeConfig}
-                        />
-                      )}
+                      ) : null}
+                      <PublicProfileIssueItems
+                        items={closedIssues}
+                        messages={props.messages}
+                        runtimeConfig={props.runtimeConfig}
+                      />
                     </div>
                   </div>
                 </div>
@@ -1009,118 +1003,117 @@ export function WorkspacePage(props: {
                     <div className="error-wrap">
                       <p>{noPullRequestLabel}</p>
                     </div>
-                  ) : (
-                    <ul className="post-list-wrap row-fluid">
-                      {pullRequestItems.map((pullRequest) => (
-                        <li
-                          className="post-item"
-                          key={`${pullRequest.ownerName}/${pullRequest.projectName}/${pullRequest.pullRequestNumber}`}
-                        >
-                          <div className="span10">
+                  ) : null}
+                  <ul className="post-list-wrap row-fluid">
+                    {pullRequestItems.map((pullRequest) => (
+                      <li
+                        className="post-item"
+                        key={`${pullRequest.ownerName}/${pullRequest.projectName}/${pullRequest.pullRequestNumber}`}
+                      >
+                        <div className="span10">
+                          <a
+                            className="avatar-wrap mlarge"
+                            href={appHref(
+                              props.runtimeConfig,
+                              projectHref(pullRequest.ownerName, pullRequest.projectName),
+                            )}
+                          >
+                            <img
+                              alt={`${pullRequest.ownerName} / ${pullRequest.projectName}`}
+                              src={resolveWorkspaceAvatarUrl("", pullRequest.projectName)}
+                            />
+                          </a>
+                          <div className="title-wrap">
                             <a
-                              className="avatar-wrap mlarge"
+                              className="title project"
                               href={appHref(
                                 props.runtimeConfig,
                                 projectHref(pullRequest.ownerName, pullRequest.projectName),
                               )}
                             >
-                              <img
-                                alt={`${pullRequest.ownerName} / ${pullRequest.projectName}`}
-                                src={resolveWorkspaceAvatarUrl("", pullRequest.projectName)}
-                              />
+                              {pullRequest.projectName}
                             </a>
-                            <div className="title-wrap">
-                              <a
-                                className="title project"
-                                href={appHref(
-                                  props.runtimeConfig,
-                                  projectHref(pullRequest.ownerName, pullRequest.projectName),
-                                )}
+                            <span className="post-id">{pullRequest.pullRequestNumber}</span>
+                            <a
+                              className="title"
+                              href={appHref(
+                                props.runtimeConfig,
+                                pullRequestHref(
+                                  pullRequest.ownerName,
+                                  pullRequest.projectName,
+                                  pullRequest.pullRequestNumber,
+                                ),
+                              )}
+                            >
+                              {pullRequest.title}
+                            </a>
+                          </div>
+                          <div className="infos">
+                            {pullRequest.contributorLabel ? (
+                              <span
+                                className="infos-item infos-link-item"
+                                data-placement="top"
+                                data-toggle="tooltip"
+                                title={pullRequest.contributorLabel}
                               >
-                                {pullRequest.projectName}
-                              </a>
-                              <span className="post-id">{pullRequest.pullRequestNumber}</span>
+                                {pullRequest.contributorLabel}
+                              </span>
+                            ) : (
+                              <span className="infos-item">{noAuthorLabel}</span>
+                            )}
+                            <span className="infos-item" title={pullRequest.updatedLabel}>
+                              {pullRequest.updatedLabel}
+                            </span>
+                            {pullRequest.commentCount > 0 ? (
                               <a
-                                className="title"
+                                className="infos-item infos-icon-link"
                                 href={appHref(
                                   props.runtimeConfig,
-                                  pullRequestHref(
+                                  `${pullRequestHref(
                                     pullRequest.ownerName,
                                     pullRequest.projectName,
                                     pullRequest.pullRequestNumber,
-                                  ),
+                                  )}#comments`,
                                 )}
                               >
-                                {pullRequest.title}
+                                <i className="yobicon-comments"></i>
+                                <span className="size">{pullRequest.commentCount}</span>
                               </a>
-                            </div>
-                            <div className="infos">
-                              {pullRequest.contributorLabel ? (
-                                <span
-                                  className="infos-item infos-link-item"
-                                  data-placement="top"
-                                  data-toggle="tooltip"
-                                  title={pullRequest.contributorLabel}
-                                >
-                                  {pullRequest.contributorLabel}
-                                </span>
-                              ) : (
-                                <span className="infos-item">{noAuthorLabel}</span>
-                              )}
-                              <span className="infos-item" title={pullRequest.updatedLabel}>
-                                {pullRequest.updatedLabel}
-                              </span>
-                              {pullRequest.commentCount > 0 ? (
-                                <a
-                                  className="infos-item infos-icon-link"
-                                  href={appHref(
-                                    props.runtimeConfig,
-                                    `${pullRequestHref(
-                                      pullRequest.ownerName,
-                                      pullRequest.projectName,
-                                      pullRequest.pullRequestNumber,
-                                    )}#comments`,
-                                  )}
-                                >
-                                  <i className="yobicon-comments"></i>
-                                  <span className="size">{pullRequest.commentCount}</span>
-                                </a>
-                              ) : null}
-                            </div>
+                            ) : null}
                           </div>
-                          <div className="span2">
-                            <div className="mt5 pull-right">
-                              {pullRequest.receiverLabel ? (
-                                <a
-                                  className="avatar-wrap assinee"
-                                  data-placement="top"
-                                  data-original-title={pullRequest.receiverLabel}
-                                  data-toggle="tooltip"
-                                  href={prefixBasePath(props.runtimeConfig.basePath, "/")}
-                                  title=""
-                                >
-                                  <img
-                                    alt={pullRequest.receiverLabel}
-                                    height={32}
-                                    src={resolveWorkspaceAvatarUrl("", pullRequest.receiverLabel)}
-                                    width={32}
-                                  />
-                                </a>
-                              ) : (
-                                <div className="empty-avatar-wrap">&nbsp;</div>
-                              )}
-                            </div>
-                            <div className={`state ${pullRequest.state} pull-right`}>
-                              {legacyMessage(
-                                props.messages,
-                                `pullRequest.state.${pullRequest.state}`,
-                              )}
-                            </div>
+                        </div>
+                        <div className="span2">
+                          <div className="mt5 pull-right">
+                            {pullRequest.receiverLabel ? (
+                              <a
+                                className="avatar-wrap assinee"
+                                data-placement="top"
+                                data-original-title={pullRequest.receiverLabel}
+                                data-toggle="tooltip"
+                                href={prefixBasePath(props.runtimeConfig.basePath, "/")}
+                                title=""
+                              >
+                                <img
+                                  alt={pullRequest.receiverLabel}
+                                  height={32}
+                                  src={resolveWorkspaceAvatarUrl("", pullRequest.receiverLabel)}
+                                  width={32}
+                                />
+                              </a>
+                            ) : (
+                              <div className="empty-avatar-wrap">&nbsp;</div>
+                            )}
                           </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                          <div className={`state ${pullRequest.state} pull-right`}>
+                            {legacyMessage(
+                              props.messages,
+                              `pullRequest.state.${pullRequest.state}`,
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 <div
@@ -1132,52 +1125,51 @@ export function WorkspacePage(props: {
                     <div className="error-wrap">
                       <p>{legacyMessage(props.messages, "project.is.empty")}</p>
                     </div>
-                  ) : (
-                    <ul className="user-streams all-projects">
-                      {memberProjects.map((project) => (
-                        <li className="project" key={`${project.ownerName}/${project.projectName}`}>
-                          <div className="info-wrap">
-                            <div className="header">
-                              <a
-                                className="project-name"
-                                href={appHref(
-                                  props.runtimeConfig,
-                                  projectHref(project.ownerName, project.projectName),
-                                )}
-                              >
-                                {project.projectName}
-                              </a>
-                            </div>
-                            <div className="desc">{project.overview}</div>
-                            <div className="name-tag">
-                              <i className="yobicon-friends yobicon-middle" />
-                              <strong>{project.memberCount}</strong>{" "}
-                              <a
-                                className="owner-name-small"
-                                href={appHref(props.runtimeConfig, `/${project.ownerName}`)}
-                              >
-                                {project.ownerName}
-                              </a>{" "}
-                              <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
-                              {project.lastPushedLabel ? (
-                                <>
-                                  <span>, {projectCodeUpdateLabel} </span>
-                                  <span title={project.lastPushedLabel}>
-                                    {project.lastPushedLabel}
-                                  </span>
-                                </>
-                              ) : null}
-                            </div>
-                            <div className="stats-wrap pull-right">
-                              <div className="stats">
-                                <span className="num-badge">{project.watchCount}</span>
-                              </div>
+                  ) : null}
+                  <ul className="user-streams all-projects">
+                    {memberProjects.map((project) => (
+                      <li className="project" key={`${project.ownerName}/${project.projectName}`}>
+                        <div className="info-wrap">
+                          <div className="header">
+                            <a
+                              className="project-name"
+                              href={appHref(
+                                props.runtimeConfig,
+                                projectHref(project.ownerName, project.projectName),
+                              )}
+                            >
+                              {project.projectName}
+                            </a>
+                          </div>
+                          <div className="desc">{project.overview}</div>
+                          <div className="name-tag">
+                            <i className="yobicon-friends yobicon-middle" />
+                            <strong>{project.memberCount}</strong>{" "}
+                            <a
+                              className="owner-name-small"
+                              href={appHref(props.runtimeConfig, `/${project.ownerName}`)}
+                            >
+                              {project.ownerName}
+                            </a>{" "}
+                            <span title={project.createdLabel}>{project.createdLabel}</span>{" "}
+                            {project.lastPushedLabel ? (
+                              <>
+                                <span>, {projectCodeUpdateLabel} </span>
+                                <span title={project.lastPushedLabel}>
+                                  {project.lastPushedLabel}
+                                </span>
+                              </>
+                            ) : null}
+                          </div>
+                          <div className="stats-wrap pull-right">
+                            <div className="stats">
+                              <span className="num-badge">{project.watchCount}</span>
                             </div>
                           </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             </div>

@@ -170,6 +170,9 @@ describe("workspace/profile legacy i18n opt-in", () => {
       expect(html).toContain(">recently No issue found</p>");
       expect(html).toContain(">recently No pull requests have been received</p>");
       expect(html).toContain(">Project is non existent</p>");
+      expect(html).toContain('class="post-list-wrap my-issues row-fluid"');
+      expect(html).toContain('class="post-list-wrap row-fluid"');
+      expect(html).toContain('class="user-streams all-projects"');
       expect(html).not.toContain("userinfo.daysAgo.prefix");
     }
     expect(missingAuthorHtml).toContain(">No author</span>");

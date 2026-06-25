@@ -16,6 +16,12 @@
   and the frontend login/dialog shell no longer renders non-legacy provider
   buttons or React-only `auth.socialLogin.*` warning keys from stale capability
   state.
+- 2026-06-25 signup submit boundary correction: this is not OAuth/LDAP deferred
+  scope. The React `/users/signupform` screen keeps the legacy signup shell,
+  labels, and field names, but no longer exposes `action="/users/signup"` from
+  the SPA-rendered form. Client submission is fixed to the REST JSON
+  `/api/v1/auth/register` path; direct `POST /users/signup` remains only as the
+  legacy/deep-link compatibility adapter.
 
 ## Current App-Owned Scope
 

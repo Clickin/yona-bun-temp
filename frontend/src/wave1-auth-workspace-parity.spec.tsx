@@ -31,7 +31,7 @@ describe("wave 1 auth and workspace parity", () => {
         socialLoginOnly: false,
       },
     });
-    expect(registerHtml).toContain('action="/yona/users/signup"');
+    expect(registerHtml).not.toContain('action="/yona/users/signup"');
     expect(registerHtml).toContain('href="/yona/users/loginform"');
     expect(registerHtml).toContain('Sign up for <span class="highlight">Yona</span>');
     expect(registerHtml).not.toContain(">title.signupFor<");
@@ -404,6 +404,9 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).toContain("recently No issue found");
     expect(html).toContain("recently No pull requests have been received");
     expect(html).toContain(">Project is non existent<");
+    expect(html).toContain('class="post-list-wrap my-issues row-fluid"');
+    expect(html).toContain('class="post-list-wrap row-fluid"');
+    expect(html).toContain('class="user-streams all-projects"');
     expect(html).not.toContain('id="watching"');
     expect(html).not.toContain('id="recentlyVisited"');
     expect(html).not.toContain('class="no-result tab-pane user-ul"');

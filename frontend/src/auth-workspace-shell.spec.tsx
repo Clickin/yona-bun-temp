@@ -553,7 +553,7 @@ describe("auth and workspace views", () => {
     expect(html).toContain('name="retypedPassword"');
     expect(html).toContain('class="text password"');
     expect(html).toContain('method="post"');
-    expect(html).toContain('action="/yona/users/signup"');
+    expect(html).not.toContain('action="/yona/users/signup"');
     expect(html).toContain(">Sign up<");
     expect(html).not.toContain(">user.signupBtn<");
     expect(html).toContain("Already signed up?");
@@ -599,11 +599,12 @@ describe("auth and workspace views", () => {
     expect(resetPasswordHtml).not.toContain('placeholder="Retype password"');
   });
 
-  it("keeps REST auth submit handlers primary without swallowing legacy direct form fallbacks", () => {
+  it("keeps REST auth submit handlers primary while leaving only explicit legacy fallbacks", () => {
     const source = fs.readFileSync(path.resolve(__dirname, "routes/-auth-views.tsx"), "utf8");
 
     expect(source.match(/if \(!onSignIn\) \{/g)).toHaveLength(2);
-    expect(source).toContain("if (!onRegister) {\n                return;\n              }");
+    expect(source).not.toContain("if (!onRegister) {");
+    expect(source).toContain("onRegister?.(formState)");
     expect(source).toContain("if (!onRequestReset) {\n                return;\n              }");
     expect(source).toContain("if (!onResetPassword) {\n                return;\n              }");
   });

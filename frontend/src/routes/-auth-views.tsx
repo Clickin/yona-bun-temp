@@ -504,15 +504,11 @@ export function RegisterPage({
         ) : null}
         <div className="signup-form-wrap frm-wrap">
           <form
-            action={appHref(runtimeConfig, "/users/signup")}
             method="post"
             name="signup"
             onSubmit={(event) => {
-              if (!onRegister) {
-                return;
-              }
               event.preventDefault();
-              onRegister(formState);
+              onRegister?.(formState);
             }}
           >
             <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
