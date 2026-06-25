@@ -1090,9 +1090,10 @@ async fn issue_core_contract_enqueues_legacy_deleted_webhook_payload() {
 
 #[tokio::test]
 async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
-    // Guards issue route-owned detail/state helpers, detail projections, REST
-    // response DTOs, mutation, issues/comments.rs, issues/legacy_external.rs
-    // split, and the service-snapshot legacy external auth helper.
+    // Guards issue route-owned detail/state helpers, detail/timeline/list
+    // projections, REST response DTOs, mutation, issues/comments.rs,
+    // issues/legacy_external.rs split, and the service-snapshot legacy
+    // external auth helper.
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "reviewer").await;
@@ -1212,6 +1213,27 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         commented["comments"][0]["contentsMarkdown"],
         "A [safe](https://example.com) comment"
     );
+    let detail_with_timeline = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        detail_with_timeline["comments"][0]["contentsMarkdown"],
+        "A [safe](https://example.com) comment"
+    );
+    assert_eq!(detail_with_timeline["timeline"][0]["kind"], "comment");
+    assert_eq!(
+        detail_with_timeline["timeline"][0]["comment"]["contentsMarkdown"],
+        "A [safe](https://example.com) comment"
+    );
 
     let direct_updated_comment = app
         .clone()
@@ -1309,6 +1331,29 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     assert_eq!(listed["items"][0]["issueNumber"], 1);
     assert_eq!(listed["items"][0]["state"], "closed");
     assert_eq!(listed["items"][0]["commentCount"], 1);
+    let pjax_requested_list = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/projects/owner/projectYobi/issues?state=closed&pageNum=1")
+                .header("X-Requested-With", "XMLHttpRequest")
+                .header("X-PJAX", "true")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(pjax_requested_list.status(), StatusCode::OK);
+    assert!(pjax_requested_list
+        .headers()
+        .get(http::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.starts_with("application/json")));
+    let pjax_requested_list = response_json(pjax_requested_list).await;
+    assert_eq!(pjax_requested_list["items"].as_array().unwrap().len(), 1);
+    assert_eq!(pjax_requested_list["items"][0]["issueNumber"], 1);
+    assert_eq!(pjax_requested_list["items"][0]["commentCount"], 1);
 
     let deleted_comment = response_json(
         rest(

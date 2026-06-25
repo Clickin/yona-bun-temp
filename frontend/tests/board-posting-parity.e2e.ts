@@ -163,24 +163,41 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-  await page.route(apiV1Route("/projects/admin/projectYobi/posts/form-options"), async (route) => {
-    await route.fulfill({
-      body: JSON.stringify({
-        canAttachFiles: true,
-        canMarkNotice: true,
-        canMarkReadme: true,
-        defaultPermissions: {
+  await page.route(
+    /\/api\/v1\/projects\/admin\/projectYobi\/posts\/form-options(?:\?.*)?$/,
+    async (route) => {
+      const url = new URL(route.request().url());
+      const readme = url.searchParams.has("readme");
+
+      await route.fulfill({
+        body: JSON.stringify({
           canAttachFiles: true,
-          canCreate: true,
           canMarkNotice: true,
           canMarkReadme: true,
-        },
-        labels: [boardLabel],
-      }),
-      headers: restJsonHeaders,
-      status: 200,
-    });
-  });
+          defaultPermissions: {
+            canAttachFiles: true,
+            canCreate: true,
+            canMarkNotice: true,
+            canMarkReadme: true,
+          },
+          labels: [boardLabel],
+          onlineCommit: readme
+            ? {
+                branch: "",
+                edit: false,
+                issueTemplate: false,
+                path: "",
+                preparedBodyMarkdown: "# Existing README\n",
+                title: "Update README.md",
+              }
+            : undefined,
+          readme,
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
 
   let boardPost = boardDetail();
   let createdPost = boardDetail({
@@ -664,6 +681,31 @@ test("project board create edit and delete flows send CSRF REST mutations", asyn
   await page.locator(".board-view .board-actions").getByRole("button", { name: "Delete" }).click();
   expect((await deletePostRequest).headers()["x-csrf-token"]).toBe("csrf-123");
   await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/posts$/);
+});
+
+test("README postform query preloads legacy title body and checked marker", async ({ page }) => {
+  await page.goto("/yona/admin/projectYobi/postform?readme=true");
+
+  await expect(page.locator("#title")).toHaveValue("Update README.md");
+  await expect(page.locator("#editor-body-content-body")).toHaveValue("# Existing README\n");
+  await expect(page.locator("#readme")).toBeChecked();
+  await expect(page.locator("#path")).toHaveValue("");
+
+  const createRequest = page.waitForRequest(
+    (request) => request.url().endsWith("/posts") && request.method() === "POST",
+  );
+  await page.locator(".board-actions").getByRole("button", { name: "Save" }).click();
+  const submitted = (await createRequest).postDataJSON() as {
+    bodyMarkdown?: string;
+    readme?: boolean;
+    title?: string;
+  };
+
+  expect(submitted).toMatchObject({
+    bodyMarkdown: "# Existing README\n",
+    readme: true,
+    title: "Update README.md",
+  });
 });
 
 test("organization board route renders cross-project posts and project filters", async ({

@@ -13,11 +13,11 @@ use tempfile::tempdir;
 use tokio::sync::Barrier;
 use tower::ServiceExt;
 use yoram_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
+use yoram_migration::Migrator;
 use yoram_persistence::{
     original_email, AppRepository, CreateOrganizationInput, CreatePostingInput, CreateProjectInput,
     PostingMutationInput,
 };
-use yoram_migration::Migrator;
 use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
     AppRuntimeConfig, RuntimeConfig,
@@ -652,6 +652,30 @@ async fn board_readme_posting_commits_git_readme_file() {
         ),
         "Updated Git README"
     );
+
+    let readme_form_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/posts/form-options?readme=true",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(readme_form_options["readme"], true);
+    assert_eq!(readme_form_options["onlineCommit"]["path"], "");
+    assert_eq!(
+        readme_form_options["onlineCommit"]["title"],
+        "Update README.md"
+    );
+    assert_eq!(
+        readme_form_options["onlineCommit"]["preparedBodyMarkdown"],
+        "Updated Git README"
+    );
+
     assert_eq!(
         run_git_output(
             &[

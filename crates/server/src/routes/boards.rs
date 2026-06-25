@@ -114,6 +114,7 @@ struct RestPostFormOptionsQuery {
     edit: bool,
     issue_template: bool,
     path: Option<String>,
+    readme: bool,
 }
 
 impl RestPostFormOptionsQuery {
@@ -133,6 +134,7 @@ impl RestPostFormOptionsQuery {
                     query.issue_template = true;
                 }
                 "path" => query.path = Some(value),
+                "readme" => query.readme = true,
                 _ => {}
             }
         }
@@ -283,6 +285,7 @@ struct RestProjectPostFormOptionsResponse {
     default_permissions: RestPostDefaultPermissions,
     online_commit: RestPostOnlineCommitOptions,
     labels: Vec<RestBoardLabel>,
+    readme: bool,
 }
 
 #[derive(Default, Serialize)]
@@ -1351,6 +1354,7 @@ async fn rest_project_post_form_options(
         },
         online_commit,
         labels: labels.iter().map(rest_board_label_from_record).collect(),
+        readme: query.readme,
     }))
 }
 
@@ -2148,6 +2152,23 @@ fn rest_post_online_commit_options(
         return Ok(RestPostOnlineCommitOptions::default());
     }
     let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    if query.readme {
+        let prepared_body_markdown =
+            match yoram_vcs::read_code_browser(&repo_path, None, "README.md") {
+                Ok(snapshot) => snapshot
+                    .file
+                    .filter(|file| !file.is_binary && !file.is_too_large)
+                    .map(|file| file.text)
+                    .unwrap_or_default(),
+                Err(VcsError::NotFound) => String::new(),
+                Err(error) => return Err(code_browser_error(error)),
+            };
+        return Ok(RestPostOnlineCommitOptions {
+            prepared_body_markdown,
+            title: "Update README.md".to_string(),
+            ..RestPostOnlineCommitOptions::default()
+        });
+    }
     let issue_template = query.issue_template;
     let path = if issue_template {
         "ISSUE_TEMPLATE.md".to_string()

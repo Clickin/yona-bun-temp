@@ -98,6 +98,7 @@ export type BoardPostFormOptions = {
   defaultPermissions: BoardDefaultPermissions;
   labels: BoardLabel[];
   onlineCommit: BoardOnlineCommitOptions;
+  readme: boolean;
 };
 
 export type BoardOnlineCommitOptions = {
@@ -460,6 +461,7 @@ function normalizePostFormOptions(response: Partial<BoardPostFormOptions>): Boar
       preparedBodyMarkdown: response.onlineCommit?.preparedBodyMarkdown ?? "",
       title: response.onlineCommit?.title ?? "",
     },
+    readme: response.readme ?? false,
   };
 }
 
@@ -527,6 +529,7 @@ export function readProjectPostFormOptionsRest(
     ownerName: string;
     path?: string;
     projectName: string;
+    readme?: boolean;
   },
   fetchImpl: typeof fetch = fetch,
 ): Promise<BoardPostFormOptions> {
@@ -537,6 +540,7 @@ export function readProjectPostFormOptionsRest(
       edit: input.edit ? "true" : undefined,
       issueTemplate: input.issueTemplate ? "true" : undefined,
       path: input.path,
+      readme: input.readme ? "true" : undefined,
     })}`,
     { fetchImpl },
   ).then(normalizePostFormOptions);

@@ -439,6 +439,19 @@ change)"` executed the audit file outside the sandbox and passed all 43 tests,
   rendered by React from REST/API data. Legacy Java fragment routes remain only
   compatibility/direct-route evidence, not frontend data sources for the normal
   app screens.
+- Issue timeline closure: legacy `GET
+  /:user/:project/issue/:number/timeline` returned
+  `issue/partial_comments.scala.html`. Rust closes this as API-return plus React
+  render: `/api/v1/projects/:owner/:project/issues/:number` returns the
+  `comments` and `timeline` arrays, `frontend/src/app-view-models.ts` maps that
+  timeline into the issue detail view model, and the issue detail React shell
+  renders the legacy comment/event anchors instead of fetching a server HTML
+  fragment.
+- Project issue-list XHR/PJAX closure: legacy `IssueApp.issues` switched XHR
+  requests to `json` or `pjax`. Rust keeps the app-runtime UX on the React issue
+  list route plus `/api/v1/projects/:owner/:project/issues` JSON. The PJAX HTML
+  fragment path is not retained as a frontend data source; XHR/PJAX headers
+  against the REST endpoint still return JSON for React rendering.
 - Existing provenance: `docs/provenance/core-parity-audit.md` records the
   authenticated root sidebar as React-rendered from API data while treating
   legacy user-menu/sidebar fragment views as provenance references; the
@@ -464,6 +477,10 @@ tests/legacy-rendered-page-audit.e2e.ts -g "logged-in /|/notifications|/notifica
   `notification_contract::notification_contract_lists_current_user_notifications_with_paging`,
   and
   `notification_contract::notification_contract_direct_notification_route_returns_api_payload`.
+- Issue fragment/list verification: `issue_core_contract_creates_reads_updates_and_deletes_over_rest`
+  covers the REST issue detail `timeline` payload after comment creation and
+  verifies XHR/PJAX headers on `/api/v1/projects/:owner/:project/issues` still
+  return JSON list data.
 
 ### `rc-ux-security-stability`
 

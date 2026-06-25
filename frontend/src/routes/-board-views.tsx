@@ -1663,6 +1663,7 @@ export function ProjectPostFormPage(props: {
   };
   ownerName: string;
   projectName: string;
+  readme?: boolean;
   runtimeConfig: RuntimeConfig;
   onSubmit: (input: {
     bodyMarkdown: string;
@@ -1684,7 +1685,7 @@ export function ProjectPostFormPage(props: {
   const [newFileName, setNewFileName] = React.useState("");
   const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   const [notice, setNotice] = React.useState(props.initialPost?.notice ?? false);
-  const [readme, setReadme] = React.useState(props.initialPost?.readme ?? false);
+  const [readme, setReadme] = React.useState(props.initialPost?.readme ?? props.readme ?? false);
   const [selectedLabelIds, setSelectedLabelIds] = React.useState(
     () => new Set((props.initialPost?.labels ?? []).map((label) => label.id)),
   );
@@ -1696,10 +1697,10 @@ export function ProjectPostFormPage(props: {
     setNewFileName("");
     setAttachmentIds([]);
     setNotice(props.initialPost?.notice ?? false);
-    setReadme(props.initialPost?.readme ?? false);
+    setReadme(props.initialPost?.readme ?? props.readme ?? false);
     setSelectedLabelIds(new Set((props.initialPost?.labels ?? []).map((label) => label.id)));
     setValidationMessage(null);
-  }, [props.initialPost, onlineCommit?.preparedBodyMarkdown, onlineCommit?.title]);
+  }, [props.initialPost, props.readme, onlineCommit?.preparedBodyMarkdown, onlineCommit?.title]);
 
   const shellDetail = boardProjectShellDetail({
     ownerName: props.ownerName,

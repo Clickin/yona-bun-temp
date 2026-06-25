@@ -38,6 +38,7 @@ function PostCreateRouteComponent() {
     edit: searchParams.has("edit"),
     issueTemplate: searchParams.has("issueTemplate"),
     path: searchParams.get("path") ?? undefined,
+    readme: searchParams.has("readme"),
   };
   const formOptionsQuery = useQuery({
     ...readProjectPostFormOptionsQueryOptions(runtimeConfig, {
@@ -89,6 +90,7 @@ function PostCreateRouteComponent() {
       onlineCommit={formOptionsQuery.data?.onlineCommit}
       ownerName={owner}
       projectName={projectName}
+      readme={formOptionsQuery.data?.readme ?? false}
       runtimeConfig={runtimeConfig}
       onSubmit={async (input) => {
         try {
