@@ -116,7 +116,7 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain('class="project-header-outer"');
     expect(html).toContain('class="project-menu-outer"');
     expect(html).toContain(
-      '<li class="code-menu active"><a href="/yona/owner/projectYobi/code"><span class="menu-name">menu.code</span>',
+      '<li class="code-menu active"><a href="/yona/owner/projectYobi/code"><span class="menu-name">Code</span>',
     );
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="project-page-wrap"');
@@ -148,13 +148,13 @@ describe("CodeCommitDetailPage", () => {
     expect(html).not.toContain('<label for="branches">Branch</label>');
     expect(html).toContain('id="new-file-link"');
     expect(html).toContain(
-      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/code/main/download">code.download</a></div>',
+      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/code/main/download">Download as .zip file</a></div>',
     );
     expect(html).toContain(
-      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/postform?path=src%2F&amp;branch=main" id="new-file-link">code.new.file</a></div>',
+      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/postform?path=src%2F&amp;branch=main" id="new-file-link">New file</a></div>',
     );
     expect(html).toContain('href="/yona/owner/projectYobi/postform?path=src%2F&amp;branch=main"');
-    expect(html).toContain(">code.new.file</a>");
+    expect(html).toContain(">New file</a>");
     expect(html).toContain('id="fileInfo"');
     expect(html).toContain('id="commiter"');
     expect(html).toContain('class="commiter"');
@@ -175,7 +175,9 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain('class="commitMsg"');
     expect(html).toContain(">Update file</span>");
     expect(html).toContain(">UNIX</span>");
-    expect(html).toContain('data-content="code.open.desc"');
+    expect(html).toContain(
+      'data-content="Browser will parse and show this file. It is useful when you want to serve a static content file."',
+    );
     expect(html).toContain('class="yobicon-download-alt yobicon-white vmiddle"');
     expect(html).toContain(
       'href="/yona/owner/projectYobi/rawcode/be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2/src/main.rs"',
@@ -185,9 +187,9 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain(
       'href="/yona/owner/projectYobi/postform?path=src%2Fmain.rs&amp;branch=main&amp;edit=true"',
     );
-    expect(html).toContain(">button.edit</a>");
-    expect(html).toContain("code.open</a>");
-    expect(html).toContain(">code.history</a>");
+    expect(html).toContain(">Edit</a>");
+    expect(html).toContain("Open in browser</a>");
+    expect(html).toContain(">Change history</a>");
     expect(html).toContain('class="syntax-token syntax-keyword">fn</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">let</span>');
     expect(html).toContain('class="syntax-token syntax-number">1</span>');
@@ -1262,10 +1264,10 @@ describe("CodeCommitDetailPage", () => {
       '<option value="/yona/owner/projectYobi/code/main" selected="">main</option>',
     );
     expect(rootHtml).toContain(
-      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/code/main/download">code.download</a></div>',
+      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/code/main/download">Download as .zip file</a></div>',
     );
     expect(rootHtml).toContain(
-      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/postform?path=&amp;branch=main" id="new-file-link">code.new.file</a></div>',
+      '<div class="pull-right"><a class="ybtn" href="/yona/owner/projectYobi/postform?path=&amp;branch=main" id="new-file-link">New file</a></div>',
     );
     expect(rootHtml).toContain('class="code-viewer-wrap"');
     expect(rootHtml).toContain('id="spin"');
@@ -1273,11 +1275,11 @@ describe("CodeCommitDetailPage", () => {
       '<div aria-label="Breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left" id="breadcrumbs"',
     );
     expect(rootHtml).toContain('aria-label="Code tabs"');
-    expect(rootHtml).toContain(">code.files</a>");
-    expect(rootHtml).toContain(">code.commits</a>");
-    expect(rootHtml).toContain(">title.branches</a>");
+    expect(rootHtml).toContain(">Files</a>");
+    expect(rootHtml).toContain(">Commit</a>");
+    expect(rootHtml).toContain(">Branches</a>");
     expect(rootHtml).toContain('href="/yona/owner/projectYobi/postform?path=&amp;branch=main"');
-    expect(rootHtml).toContain(">code.new.file</a>");
+    expect(rootHtml).toContain(">New file</a>");
 
     const nestedFolderHtml = renderToStaticMarkup(
       <CodeBrowserPage
@@ -1329,10 +1331,10 @@ describe("CodeCommitDetailPage", () => {
     expect(binaryHtml).toContain(
       'href="/yona/owner/projectYobi/rawcode/be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2/artifact.bin"',
     );
-    expect(binaryHtml).toContain("button.download</a>");
-    expect(binaryHtml).toContain("code.open</a>");
-    expect(binaryHtml).toContain(">code.history</a>");
-    expect(binaryHtml).not.toContain(">Download</a>");
+    expect(binaryHtml).toContain("Download a file</a>");
+    expect(binaryHtml).toContain("Open in browser</a>");
+    expect(binaryHtml).toContain(">Change history</a>");
+    expect(binaryHtml).not.toContain(">button.download</a>");
     expect(binaryHtml).not.toContain(">Open</a>");
     expect(binaryHtml).not.toContain(
       'class="filehref ybtn" href="/yona/owner/projectYobi/files/main/artifact.bin"',
@@ -1358,11 +1360,11 @@ describe("CodeCommitDetailPage", () => {
         runtimeConfig={runtimeConfig}
       />,
     );
-    expect(tooLargeHtml).toContain("code.tooBigFileForCodeBrowser");
-    expect(tooLargeHtml).toContain(">code.viewRaw</a>");
+    expect(tooLargeHtml).toContain("Sorry, we cannot show a file larger than");
+    expect(tooLargeHtml).toContain(">View Raw</a>");
     expect(tooLargeHtml).toContain(">UNDEFINED</span>");
-    expect(tooLargeHtml).not.toContain("Sorry, we cannot show a file larger than");
-    expect(tooLargeHtml).not.toContain(">View Raw</a>");
+    expect(tooLargeHtml).not.toContain("code.tooBigFileForCodeBrowser");
+    expect(tooLargeHtml).not.toContain(">code.viewRaw</a>");
     expect(tooLargeHtml).not.toContain("&amp;edit=true");
 
     const imageHtml = renderToStaticMarkup(
@@ -1398,18 +1400,18 @@ describe("CodeCommitDetailPage", () => {
       />,
     );
 
-    expect(html).toContain("code.nohead");
-    expect(html).toContain("code.nohead.clone");
+    expect(html).toContain("The repository is empty!");
+    expect(html).toContain("Create a new local repository by cloning");
     expect(html).toContain("git clone http://example.test/owner/projectYobi.git projectYobi");
     expect(html).toContain("git commit -m &quot;Hello Legacy Yona&quot;");
-    expect(html).toContain("code.nohead.init");
-    expect(html).toContain("code.nohead.remote");
+    expect(html).toContain("Or, create a new local repository");
+    expect(html).toContain("If you have already created a local git repository");
     expect(html).toContain("git remote add origin http://example.test/owner/projectYobi.git");
-    expect(html).toContain("code.nohead.pull.push");
+    expect(html).toContain("You can keep updating your code");
     expect(html).not.toContain("code.nohead.clone Legacy Yona");
     expect(html).not.toContain("code.nohead.init Legacy Yona");
     expect(html).not.toContain("code.nohead.remote Legacy Yona");
-    expect(html).not.toContain("The repository is empty!");
+    expect(html).not.toContain("code.nohead");
     expect(html).not.toContain("Clone URL:");
   });
 
@@ -1426,13 +1428,13 @@ describe("CodeCommitDetailPage", () => {
       />,
     );
 
-    expect(html).toContain("code.nohead");
-    expect(html).toContain("code.nohead.svn.clone");
+    expect(html).toContain("The repository is empty!");
+    expect(html).toContain("You can commit your code to this repository.");
     expect(html).toContain("svn co http://example.test/svn/owner/projectYobi");
     expect(html).toContain("echo &quot;# projectYobi&quot; &gt; README.md");
     expect(html).not.toContain("code.nohead.svn.clone Legacy Yona");
     expect(html).not.toContain("code.nohead.clone");
-    expect(html).not.toContain("The repository is empty!");
+    expect(html).not.toContain("code.nohead");
   });
 
   it("renders legacy commit diff file stats and inline comment anchors", () => {
@@ -1446,7 +1448,7 @@ describe("CodeCommitDetailPage", () => {
 
     expect(html).toContain("src/main.rs");
     expect(html).toContain(
-      '<li class="code-menu active"><a href="/yona/owner/projectYobi/code"><span class="menu-name">menu.code</span>',
+      '<li class="code-menu active"><a href="/yona/owner/projectYobi/code"><span class="menu-name">Code</span>',
     );
     expect(html).toContain('class="diff-stats"');
     expect(html).toContain('class="num-added">+2</span>');
@@ -1521,20 +1523,20 @@ describe("CodeCommitDetailPage", () => {
     );
 
     expect(html).toContain("<strong>User.anonymous.name</strong>");
-    expect(html).toContain(">notification.watch</button>");
-    expect(html).toContain(">button.list</a>");
+    expect(html).toContain(">Watch</button>");
+    expect(html).toContain(">List</a>");
     expect(html).toContain('class="yobicon-post2"');
-    expect(html).toContain(">button.edit</button>");
-    expect(html).toContain('title="common.comment.delete"');
+    expect(html).toContain(">Edit</button>");
+    expect(html).toContain('title="Delete comment"');
     expect(html).toContain('class="yobicon-trash"');
     expect(html).toContain('class="yobicon-restore"');
     expect(html).toContain('class="ybtn ybtn-default btn-show-reviewcards"');
     expect(html).toContain('class="ybtn ybtn-default btn-hide-reviewcards"');
     expect(html).toContain('data-toggle="tab" href="#reviewcards-open"');
-    expect(html).toContain(">issue.state.open 1</a>");
+    expect(html).toContain(">Open 1</a>");
     expect(html).toContain('data-toggle="tab" href="#reviewcards-closed"');
-    expect(html).toContain(">issue.state.closed 0</a>");
-    expect(html).toContain(">issue.state.closed 0</span>");
+    expect(html).toContain(">Closed 0</a>");
+    expect(html).toContain(">Closed 0</span>");
     expect(html).toContain('class="review-form board-comment-form"');
     expect(html).toContain('href="#edit-commit-comment"');
     expect(html).toContain('href="#preview-commit-comment"');
@@ -1545,21 +1547,21 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain('href="#preview-thread-comment-7"');
     expect(html).toContain('data-editor-mode="code-review-body"');
     expect(html).toContain('class="markdown-preview markdown-wrap code-review-body"');
-    expect(html).toContain(">commentThread.close</button>");
-    expect(html).toContain(">button.comment.new</button>");
+    expect(html).toContain(">Close</button>");
+    expect(html).toContain(">Add a comment</button>");
     expect(html).not.toContain("<strong>Anonymous</strong>");
-    expect(html).not.toContain(">Watch</button>");
-    expect(html).not.toContain(">List</a>");
+    expect(html).not.toContain(">notification.watch</button>");
+    expect(html).not.toContain(">button.list</a>");
     expect(html).not.toContain(">Comments</button>");
     expect(html).not.toContain("Review cards");
     expect(html).not.toContain("Hide review cards");
-    expect(html).not.toContain(">Open 1</a>");
-    expect(html).not.toContain(">Closed 0</a>");
-    expect(html).not.toContain(">Closed 0</span>");
-    expect(html).not.toContain(">Edit</button>");
-    expect(html).not.toContain(">Delete</button>");
-    expect(html).not.toContain(">Close</button>");
-    expect(html).not.toContain(">Comment</button>");
+    expect(html).not.toContain(">issue.state.open 1</a>");
+    expect(html).not.toContain(">issue.state.closed 0</a>");
+    expect(html).not.toContain(">issue.state.closed 0</span>");
+    expect(html).not.toContain(">button.edit</button>");
+    expect(html).not.toContain(">button.delete</button>");
+    expect(html).not.toContain(">commentThread.close</button>");
+    expect(html).not.toContain(">button.comment.new</button>");
   });
 
   it("keeps state-driven commit discussion editors in legacy common.editor shells", () => {

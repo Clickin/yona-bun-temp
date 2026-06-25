@@ -157,7 +157,10 @@
 - 2026-06-25 project/menu/code/organization i18n continuation: shared
   project, code, and organization view helpers now use the same legacy default
   lookup when no runtime provider is supplied. Keymap direct-render assertions
-  were moved from raw key strings to the legacy default visible labels.
+  were moved from raw key strings to the legacy default visible labels. Code
+  browser and commit-diff direct-render assertions now follow the same default
+  visible-label policy for code navigation, file actions, no-head guidance, and
+  commit discussion controls.
 - 2026-06-25 root search form continuation: root navigation preserves the
   legacy `common/navbar.scala.html` global search anchors:
   `name="gnb-search-form"`, hidden `searchType=auto`, `keyword`, and
