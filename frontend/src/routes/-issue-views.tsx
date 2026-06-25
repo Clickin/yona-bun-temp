@@ -1870,9 +1870,10 @@ export function ProjectIssueDetailPage(props: {
                           event.preventDefault();
                           void props.onVoteToggle?.();
                         }}
-                        title={
-                          issue.hasVoted ? "issue.unvote.description" : "issue.vote.description"
-                        }
+                        title={legacyMessage(
+                          messages,
+                          issue.hasVoted ? "issue.unvote.description" : "issue.vote.description",
+                        )}
                       >
                         <span className="heart">
                           <i className="yobicon-hearts"></i>

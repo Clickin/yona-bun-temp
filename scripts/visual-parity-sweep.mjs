@@ -539,7 +539,7 @@ async function inspectPage(page, baseUrl, path, label) {
     .catch(() => {});
 
   const metrics = await page.evaluate(() => {
-    const visibleTextWithoutUserMarkdown = () => {
+    const cloneChromeWithoutUserMarkdown = () => {
       const clone = document.body.cloneNode(true);
       for (const element of clone.querySelectorAll(
         [
@@ -557,7 +557,23 @@ async function inspectPage(page, baseUrl, path, label) {
       )) {
         element.remove();
       }
+      return clone;
+    };
+    const visibleTextWithoutUserMarkdown = () => {
+      const clone = cloneChromeWithoutUserMarkdown();
       return clone.innerText.slice(0, 5000);
+    };
+    const visibleAttributesWithoutUserMarkdown = () => {
+      const clone = cloneChromeWithoutUserMarkdown();
+      const names = ["aria-label", "data-content", "data-original-title", "placeholder", "title"];
+      return [...clone.querySelectorAll("*")]
+        .flatMap((element) =>
+          names
+            .map((name) => element.getAttribute(name))
+            .filter((value) => value !== null && value.trim() !== ""),
+        )
+        .join("\n")
+        .slice(0, 5000);
     };
     const body = document.body;
     const html = document.documentElement;
@@ -588,6 +604,7 @@ async function inspectPage(page, baseUrl, path, label) {
       title: document.title,
       text: body.innerText.slice(0, 5000),
       chromeText: visibleTextWithoutUserMarkdown(),
+      chromeAttributes: visibleAttributesWithoutUserMarkdown(),
       bodyTextLength: body.innerText.trim().length,
       scrollWidth: Math.round(Math.max(body.scrollWidth, html.scrollWidth)),
       viewportWidth: window.innerWidth,
@@ -632,7 +649,7 @@ async function inspectPage(page, baseUrl, path, label) {
   if (metrics.scrollWidth > metrics.viewportWidth * 1.8) {
     errors.push(`horizontal overflow ${metrics.scrollWidth}/${metrics.viewportWidth}`);
   }
-  const i18nScanText = `${metrics.title}\n${metrics.chromeText}`;
+  const i18nScanText = `${metrics.title}\n${metrics.chromeText}\n${metrics.chromeAttributes}`;
   if (label === "local" && hasRawLegacyI18nKey(i18nScanText)) {
     errors.push(
       `raw i18n key visible: ${rawLegacyI18nKeys(i18nScanText).join(", ")}`,

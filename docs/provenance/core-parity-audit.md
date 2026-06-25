@@ -85,6 +85,12 @@
   `fork` with legacy-key lookups. The raw-key detector now scans page chrome
   separately from user-authored Markdown/help examples so legacy keys can still
   be used as content without masking UI key leaks.
+- 2026-06-25 visible-attribute i18n sweep continuation: the Playwright sweep
+  now also scans page-chrome `title`, `placeholder`, `aria-label`,
+  `data-content`, and `data-original-title` attributes for unresolved legacy
+  keys. It caught and closed `issue.vote.description` vote tooltip leaks and
+  board form `title` / `code.commitMsg` placeholder leaks; the strengthened
+  embedded sweep passed local 152/152 and direct API fragment conversion 4/4.
 - 2026-06-25 legacy default-message fallback continuation: provider-backed React i18n now follows the Play/Yona message fallback chain by checking the selected legacy language file first, then default `conf/messages`, then the explicit caller fallback/key. This prevents raw-key leakage for keys missing in a localized file but present in the default file, such as `project.webhook.includeGitPush` and `title.pullrequest`, while preserving raw-key output when no i18n provider is mounted. Focused evidence: `frontend/src/i18n.spec.tsx` and `frontend/src/project-settings-parity.spec.tsx`.
 - 2026-06-25 legacy MessageFormat escaping continuation: React i18n now
   unescapes doubled apostrophes from `yona-original/conf/messages*`, matching

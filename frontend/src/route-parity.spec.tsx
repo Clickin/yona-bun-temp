@@ -2714,7 +2714,7 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('class="zen-mode text title"');
     expect(createHtml).toContain('maxLength="250"');
     expect(createHtml).toContain('tabindex="1"');
-    expect(createHtml).toContain('placeholder="title"');
+    expect(createHtml).toContain('placeholder="Title"');
     expect(createHtml).toContain('id="editor-body-content-body"');
     expect(createHtml).toContain('name="body"');
     expect(createHtml).not.toContain('name="bodyMarkdown"');
@@ -2848,7 +2848,7 @@ describe("file-route parity harness", () => {
         onSubmit={noopSubmit}
       />,
     );
-    expect(onlineCommitHtml).toContain('placeholder="code.commitMsg"');
+    expect(onlineCommitHtml).toContain('placeholder="Commit message"');
     expect(onlineCommitHtml).toContain('class="file-path-wrap"');
     expect(onlineCommitHtml).toContain('class="help file-path"');
     expect(onlineCommitHtml).toContain("main: /docs/");

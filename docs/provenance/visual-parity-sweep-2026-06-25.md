@@ -126,6 +126,13 @@ local embedded sweep passed 152/152 and direct API fragment conversion passed
 matching, but still scans document titles and page chrome for unresolved legacy
 message keys.
 
+2026-06-25 visible-attribute rerun note: the sweep now includes page-chrome
+`title`, `placeholder`, `aria-label`, `data-content`, and `data-original-title`
+attributes in the raw legacy-key scan. The first attribute-aware run exposed
+vote tooltip and board form placeholder leaks; after replacing those with
+legacy message lookup output, the embedded local sweep passed 152/152 and direct
+API fragment conversion passed 4/4.
+
 ## Failures
 
 None in the stabilized 152-route local rendered-screen sweep or same-path comparison.

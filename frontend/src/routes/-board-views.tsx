@@ -1717,7 +1717,7 @@ export function ProjectPostFormPage(props: {
     projectName: props.projectName,
     viewerCanUpdate: props.mode === "edit" ? props.initialPost?.permissions.canUpdate : true,
   });
-  const titlePlaceholder = isOnlineCommit ? "code.commitMsg" : "title";
+  const titlePlaceholder = legacyMessage(messages, isOnlineCommit ? "code.commitMsg" : "title");
 
   return (
     <main className="app-shell board-page">
