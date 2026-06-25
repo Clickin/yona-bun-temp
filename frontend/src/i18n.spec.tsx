@@ -44,6 +44,12 @@ function collectSourceFiles(path: URL): URL[] {
   });
 }
 
+function collectImplementationSourceFiles(path: URL): URL[] {
+  return collectSourceFiles(path).filter(
+    (sourceFile) => !/\.(?:spec|test)\.[cm]?[tj]sx?$/u.test(sourceFile.pathname),
+  );
+}
+
 describe("legacy i18n runtime", () => {
   it("does not keep a local fallback dictionary outside legacy message files", () => {
     const source = readFileSync(new URL("./i18n.tsx", import.meta.url), "utf8");
@@ -337,6 +343,38 @@ describe("legacy i18n runtime", () => {
     }
 
     expect(missingLookups).toEqual([]);
+  });
+
+  it("keeps frontend implementation fallbacks and static lookups inside the legacy keyspace", () => {
+    const legacyKeys = parseLegacyMessageKeys(
+      readFileSync(new URL("../../yona-original/conf/messages", import.meta.url), "utf8"),
+    );
+    const implementationFiles = collectImplementationSourceFiles(new URL("./", import.meta.url));
+    const missingKeys: string[] = [];
+    const staticLookupPatterns = [
+      /legacyMessage\([^,\n]+,\s*["']([^"']+)["']/gu,
+      /messages(?:\.t)?\(\s*["']([^"']+)["']/gu,
+    ];
+
+    for (const sourceFile of implementationFiles) {
+      const source = readFileSync(sourceFile, "utf8");
+      for (const match of source.matchAll(/fallback:\s*["']([^"']+)["']/gu)) {
+        const fallbackKey = match[1];
+        if (!legacyKeys.has(fallbackKey)) {
+          missingKeys.push(`${sourceFile.pathname}: fallback ${fallbackKey}`);
+        }
+      }
+      for (const pattern of staticLookupPatterns) {
+        for (const match of source.matchAll(pattern)) {
+          const key = match[1];
+          if (/\./u.test(key) && !legacyKeys.has(key)) {
+            missingKeys.push(`${sourceFile.pathname}: lookup ${key}`);
+          }
+        }
+      }
+    }
+
+    expect(missingKeys).toEqual([]);
   });
 
   it("does not keep route-local i18n fallback dictionaries", () => {
