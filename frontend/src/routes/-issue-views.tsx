@@ -2341,12 +2341,11 @@ export function ProjectIssueDetailPage(props: {
                                       `issue/${issueNumber}/comments`,
                                     )}
                                     encType="multipart/form-data"
-                                    method="post"
                                     onSubmit={(event) => {
+                                      event.preventDefault();
                                       if (!props.onCommentSubmit) {
                                         return;
                                       }
-                                      event.preventDefault();
                                       const contents = (
                                         childCommentDrafts[comment.id] ?? ""
                                       ).trim();
@@ -4028,12 +4027,11 @@ function IssueCommentForm(props: {
       action={props.action}
       encType="multipart/form-data"
       id="comment-form"
-      method="post"
       onSubmit={(event) => {
+        event.preventDefault();
         if (!props.onSubmit) {
           return;
         }
-        event.preventDefault();
         const nextContents = contentsMarkdown.trim();
         if (!nextContents) {
           return;
@@ -4192,12 +4190,11 @@ function IssueCommentEditForm(props: {
       <form
         action={props.action}
         encType="multipart/form-data"
-        method="post"
         onSubmit={(event) => {
+          event.preventDefault();
           if (!props.onSubmit) {
             return;
           }
-          event.preventDefault();
           const nextContents = contentsMarkdown.trim();
           if (!nextContents) {
             return;

@@ -1281,10 +1281,10 @@ function CodeCommitDiffView(props: {
   const canComment = commitDetail?.permissions.canComment ?? false;
 
   async function submitComment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!props.onCreateComment) {
       return;
     }
-    event.preventDefault();
     const contentsMarkdown = commentText.trim();
     if (!contentsMarkdown) {
       return;
@@ -1315,10 +1315,10 @@ function CodeCommitDiffView(props: {
   }
 
   async function submitInlineComment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!props.onCreateComment) {
       return;
     }
-    event.preventDefault();
     const contentsMarkdown = inlineCommentText.trim();
     if (!contentsMarkdown || !inlineComment) {
       return;
@@ -1455,7 +1455,6 @@ function CodeCommitDiffView(props: {
                                     "/comments",
                                   )}
                                   className="review-form code-review-form"
-                                  method="post"
                                   onSubmit={(event) => {
                                     void submitInlineComment(event);
                                   }}
@@ -1572,7 +1571,6 @@ function CodeCommitDiffView(props: {
                 : "#"
             }
             className="review-form board-comment-form"
-            method="post"
             onSubmit={(event) => {
               void submitComment(event);
             }}
@@ -1702,10 +1700,10 @@ function CommitDiscussionThread(props: {
   }
 
   async function submitEdit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!props.onUpdateComment) {
       return;
     }
-    event.preventDefault();
     const contentsMarkdown = editText.trim();
     if (!editingCommentId || !contentsMarkdown) {
       return;
@@ -1717,10 +1715,10 @@ function CommitDiscussionThread(props: {
   }
 
   async function submitReply(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!props.onCreateComment) {
       return;
     }
-    event.preventDefault();
     const contentsMarkdown = replyText.trim();
     if (!contentsMarkdown) {
       return;
@@ -1839,7 +1837,6 @@ function CommitDiscussionThread(props: {
                   )}
                   className="review-form review-comment-edit-form comment-update-form"
                   id={`comment-editform-${comment.id}`}
-                  method="post"
                   onSubmit={(event) => {
                     void submitEdit(event);
                   }}
@@ -1923,7 +1920,6 @@ function CommitDiscussionThread(props: {
       <form
         action={commitDiscussionDirectHref(props.runtimeConfig, props.commitDetail, "/comments")}
         className="review-form thread-comment-form"
-        method="post"
         onSubmit={(event) => {
           void submitReply(event);
         }}

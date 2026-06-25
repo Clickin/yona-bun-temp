@@ -4761,13 +4761,13 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("submitBlockReview");
     expect(pullRequestViewsSource).toContain("props.onInlineCommentSubmit");
     expect(pullRequestViewsSource).toContain(
-      "if (!props.onCommentSubmit) {\n      return;\n    }\n    event.preventDefault();",
+      "event.preventDefault();\n    if (!props.onCommentSubmit) {\n      return;\n    }",
     );
     expect(pullRequestViewsSource).toContain(
-      "if (!props.onThreadCommentSubmit) {\n      return;\n    }\n    event.preventDefault();",
+      "event.preventDefault();\n    if (!props.onThreadCommentSubmit) {\n      return;\n    }",
     );
     expect(pullRequestViewsSource).toContain(
-      "if (!props.onCommentUpdate) {\n      return;\n    }\n    event.preventDefault();",
+      "event.preventDefault();\n    if (!props.onCommentUpdate) {\n      return;\n    }",
     );
     expect(pullRequestViewsSource).toContain(
       "props.pullRequest && props.runtimeConfig && props.canComment",

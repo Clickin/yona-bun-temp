@@ -19,87 +19,6 @@ const allowedFormPosts: AllowedFormPost[] = [
     marker: 'action={appHref(runtimeConfig, "/sites/import")}',
     reason: "site data import still uses the direct multipart import route",
   },
-  {
-    file: "routes/-board-views.tsx",
-    marker: "id={`comment-editform-${comment.id}`}",
-    reason: "board comment edit keeps direct fallback when the optional REST callback is absent",
-  },
-  {
-    file: "routes/-board-views.tsx",
-    marker: 'className="child-comment-input-form"',
-    reason: "board child comment keeps direct fallback when the optional REST callback is absent",
-  },
-  {
-    file: "routes/-board-views.tsx",
-    marker: 'id="comment-form"',
-    reason: "board root comment keeps direct fallback when the optional REST callback is absent",
-  },
-  {
-    file: "routes/-issue-views.tsx",
-    marker: 'className="child-comment-input-form"',
-    reason: "issue child comment keeps direct fallback when the optional REST callback is absent",
-  },
-  {
-    file: "routes/-issue-views.tsx",
-    marker: 'id="comment-form"',
-    reason: "issue root comment keeps direct fallback when the optional REST callback is absent",
-  },
-  {
-    file: "routes/-issue-views.tsx",
-    marker: "id={`comment-editform-${props.commentId}`}",
-    reason: "issue comment edit keeps direct fallback when the optional REST callback is absent",
-  },
-  {
-    file: "routes/-pull-request-views.tsx",
-    marker: "id={`comment-editform-${comment.id}`}",
-    reason:
-      "pull request review comment edit keeps direct fallback when the optional callback is absent",
-  },
-  {
-    file: "routes/-pull-request-views.tsx",
-    marker: 'className="write-comment-form"',
-    reason: "pull request thread reply keeps direct fallback when the optional callback is absent",
-  },
-  {
-    file: "routes/-pull-request-views.tsx",
-    marker: 'id="review-form"',
-    reason:
-      "pull request block review form keeps direct fallback when the optional callback is absent",
-  },
-  {
-    file: "routes/-pull-request-views.tsx",
-    marker: 'className="review-form code-review-form inline-review-form"',
-    reason:
-      "pull request inline review form keeps direct fallback when the optional callback is absent",
-  },
-  {
-    file: "routes/-pull-request-views.tsx",
-    marker: 'id="comment-form"',
-    reason:
-      "pull request non-ranged comment keeps direct fallback when the optional callback is absent",
-  },
-  {
-    file: "routes/-code-views.tsx",
-    marker: 'className="review-form code-review-form"',
-    reason: "commit inline discussion keeps direct fallback when the optional callback is absent",
-  },
-  {
-    file: "routes/-code-views.tsx",
-    marker: 'className="review-form board-comment-form"',
-    reason:
-      "commit non-ranged discussion keeps direct fallback when the optional callback is absent",
-  },
-  {
-    file: "routes/-code-views.tsx",
-    marker: "id={`comment-editform-${comment.id}`}",
-    reason: "commit discussion edit keeps direct fallback when the optional callback is absent",
-  },
-  {
-    file: "routes/-code-views.tsx",
-    marker: 'className="review-form thread-comment-form"',
-    reason:
-      "commit discussion thread reply keeps direct fallback when the optional callback is absent",
-  },
 ];
 
 const formPostPattern = /(?:^|\s)method="post"/g;
@@ -126,7 +45,7 @@ function lineNumberForIndex(source: string, index: number) {
 }
 
 describe("React form submit boundary", () => {
-  it("allows native POST only for documented direct import and optional comment fallback forms", () => {
+  it("allows native POST only for documented direct multipart import forms", () => {
     const actual = listRouteFiles().flatMap((file) => {
       const source = readRouteSource(file);
       return Array.from(source.matchAll(formPostPattern), (match) => ({
@@ -155,7 +74,11 @@ describe("React form submit boundary", () => {
   it("keeps REST-owned create/settings/member/milestone forms free of native POST fallback", () => {
     const restOwnedFiles = [
       "routes/-auth-views.tsx",
+      "routes/-board-views.tsx",
+      "routes/-code-views.tsx",
+      "routes/-issue-views.tsx",
       "routes/-organization-views.tsx",
+      "routes/-pull-request-views.tsx",
       "routes/-workspace-settings-view.tsx",
       "routes/-milestone-views.tsx",
       "routes/$owner/$projectName/issue/labelsform/route.tsx",

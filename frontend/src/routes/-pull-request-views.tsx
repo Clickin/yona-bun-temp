@@ -2481,10 +2481,10 @@ function ReviewThreadItem(props: {
   }
 
   async function submitEdit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!props.onCommentUpdate) {
       return;
     }
-    event.preventDefault();
     const contentsMarkdown = editText.trim();
     if (!editingCommentId || !contentsMarkdown) {
       return;
@@ -2496,10 +2496,10 @@ function ReviewThreadItem(props: {
   }
 
   async function submitReply(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!props.onThreadCommentSubmit) {
       return;
     }
-    event.preventDefault();
     const contentsMarkdown = replyText.trim();
     if (!contentsMarkdown) {
       return;
@@ -2671,7 +2671,6 @@ function ReviewThreadItem(props: {
                         `/comments/${comment.id}`,
                       )}
                       encType="multipart/form-data"
-                      method="post"
                       onSubmit={(event) => void submitEdit(event)}
                     >
                       <input name="_method" type="hidden" value="patch" />
@@ -2774,7 +2773,6 @@ function ReviewThreadItem(props: {
             )}
             className="review-form"
             encType="multipart/form-data"
-            method="post"
             onSubmit={(event) => void submitReply(event)}
             style={{ display: "block" }}
           >
@@ -3096,10 +3094,10 @@ function PullRequestBlockReviewForm(props: {
   const authorLabel =
     props.pullRequest.contributor.userLabel || props.pullRequest.contributor.loginId;
   async function submitBlockReview(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!props.onSubmit) {
       return;
     }
-    event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const contentsMarkdown = String(formData.get("contents") ?? "").trim();
     const draft = props.draft;
@@ -3122,12 +3120,7 @@ function PullRequestBlockReviewForm(props: {
 
   return (
     <div className="review-form" id="review-form" style={{ display: "none" }}>
-      <form
-        action={action}
-        encType="multipart/form-data"
-        method="post"
-        onSubmit={submitBlockReview}
-      >
+      <form action={action} encType="multipart/form-data" onSubmit={submitBlockReview}>
         <input name="commitId" type="hidden" value={props.pullRequest.mergedCommitIdTo} />
         <input name="prevCommitId" type="hidden" value={props.pullRequest.mergedCommitIdFrom} />
         <input name="path" type="hidden" value={props.draft?.path ?? ""} />
@@ -3307,10 +3300,10 @@ export function PullRequestChangesPage(props: {
   }
 
   async function submitInlineComment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!props.onInlineCommentSubmit) {
       return;
     }
-    event.preventDefault();
     const contentsMarkdown = inlineCommentText.trim();
     if (!contentsMarkdown || !inlineDraft || !pr) {
       return;
@@ -3332,10 +3325,10 @@ export function PullRequestChangesPage(props: {
   }
 
   async function submitNonRangedComment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!props.onCommentSubmit) {
       return;
     }
-    event.preventDefault();
     const contentsMarkdown = commentDraft.trim();
     if (!contentsMarkdown) {
       return;
@@ -3447,7 +3440,6 @@ export function PullRequestChangesPage(props: {
                             "comments",
                           )}
                           className="review-form code-review-form inline-review-form"
-                          method="post"
                           onSubmit={(event) => void submitInlineComment(event)}
                         >
                           <input name="commitId" type="hidden" value={pr.mergedCommitIdTo} />
@@ -3702,7 +3694,6 @@ export function PullRequestChangesPage(props: {
                       className="board-comment-form"
                       encType="multipart/form-data"
                       id="comment-form"
-                      method="post"
                       onSubmit={(event) => void submitNonRangedComment(event)}
                     >
                       <div className="write-comment-box">

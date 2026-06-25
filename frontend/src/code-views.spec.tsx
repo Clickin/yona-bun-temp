@@ -1564,7 +1564,7 @@ describe("CodeCommitDetailPage", () => {
     expect(html).not.toContain(">button.comment.new</button>");
   });
 
-  it("preserves commit discussion direct form fallbacks when React handlers are absent", () => {
+  it("keeps commit discussion forms on React submit while retaining legacy route anchors", () => {
     const html = renderToStaticMarkup(
       <CodeCommitDetailPage
         commitDetail={{
@@ -1610,13 +1610,14 @@ describe("CodeCommitDetailPage", () => {
     );
     expect(html).toContain('class="review-form thread-comment-form"');
     expect(html).toContain('type="hidden" name="threadId" value="7"');
+    expect(html).not.toMatch(/<form[^>]*method="post"/);
     expect(html).not.toContain(">Edit</button>");
     expect(codeViewsSource).toContain("commitDiscussionDirectHref");
     expect(codeViewsSource).toContain(
-      "if (!props.onCreateComment) {\n      return;\n    }\n    event.preventDefault();",
+      "event.preventDefault();\n    if (!props.onCreateComment) {\n      return;\n    }",
     );
     expect(codeViewsSource).toContain(
-      "if (!props.onUpdateComment) {\n      return;\n    }\n    event.preventDefault();",
+      "event.preventDefault();\n    if (!props.onUpdateComment) {\n      return;\n    }",
     );
   });
 

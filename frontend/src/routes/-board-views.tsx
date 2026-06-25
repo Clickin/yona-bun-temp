@@ -1225,12 +1225,11 @@ export function ProjectBoardDetailPage(props: {
                                 <form
                                   action={commentAction}
                                   encType="multipart/form-data"
-                                  method="post"
                                   onSubmit={(event) => {
+                                    event.preventDefault();
                                     if (!props.onCommentUpdate) {
                                       return;
                                     }
-                                    event.preventDefault();
                                     const contents = editingCommentDraft.trim();
                                     if (!contents) {
                                       return;
@@ -1435,12 +1434,11 @@ export function ProjectBoardDetailPage(props: {
                                         post.postNumber,
                                       )}
                                       encType="multipart/form-data"
-                                      method="post"
                                       onSubmit={(event) => {
+                                        event.preventDefault();
                                         if (!props.onCommentSubmit) {
                                           return;
                                         }
-                                        event.preventDefault();
                                         const contents = (
                                           childCommentDrafts[comment.id] ?? ""
                                         ).trim();
@@ -1529,12 +1527,11 @@ export function ProjectBoardDetailPage(props: {
                     className="board-comment-form"
                     encType="multipart/form-data"
                     id="comment-form"
-                    method="post"
                     onSubmit={(event) => {
+                      event.preventDefault();
                       if (!props.onCommentSubmit) {
                         return;
                       }
-                      event.preventDefault();
                       const contents = commentDraft.trim();
                       if (!contents) {
                         return;
