@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const serverRenderedHtmlFieldAccessPattern =
-  /\.(?:bodyHtml|contentsHtml|historyHtml|descriptionHtml|renderedHtml|markdownHtml)\b/;
+  /(?:\.(?:bodyHtml|contentsHtml|historyHtml|descriptionHtml|renderedHtml|markdownHtml)\b|\[\s*["'](?:bodyHtml|contentsHtml|historyHtml|descriptionHtml|renderedHtml|markdownHtml)["']\s*\]|\{[^}\n]*\b(?:bodyHtml|contentsHtml|historyHtml|descriptionHtml|renderedHtml|markdownHtml)\b[^}\n]*\})/;
 const htmlFragmentDomApiPattern =
   /\b(?:DOMParser|insertAdjacentHTML|createContextualFragment|innerHTML|outerHTML)\b|dangerouslySetInnerHTML/;
 const routeHtmlFragmentFetchPattern = /\bresponse\.text\(|\btext\/html\b/;
