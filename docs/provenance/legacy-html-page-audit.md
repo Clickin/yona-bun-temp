@@ -15,6 +15,13 @@ resolution failure. Because legacy Yona is server-rendered Play templates, curl
 HTML is a valid first-pass source for legacy page anchors while browser routing
 is blocked.
 
+The rendered-screen path now uses a separate workaround: a temporary localhost
+proxy fetches upstream legacy responses with host `curl`, and Playwright renders
+that localhost origin. This does not make direct browser access to
+`192.168.45.10:9000` work, but it gives current browser evidence for the
+representative legacy page corpus recorded in
+`docs/provenance/visual-parity-sweep-2026-06-25.md`.
+
 `pnpm smoke:legacy-html-pages` logs in with `admin` / `admin` by default and
 checks representative public, authenticated workspace, user, search, and
 site-admin pages for HTTP 200 plus legacy DOM/message-key anchors. The output is
