@@ -127,6 +127,15 @@ upstream fetches and lets Playwright render the legacy responses from `127.0.0.1
   legacy 73/77 with the same four homelab-reference failures, local 154/154,
   direct API 13/13, imported legacy audit page coverage 49/49 on both targets,
   and 0 same-path comparison failures.
+- 2026-06-25T13:13:10Z combined rerun records the same legacy 73/77,
+  local 154/154, direct API 13/13, and imported legacy-audit coverage 49/49 on
+  both targets. `output/playwright/visual-sweep/latest.json` now includes
+  `comparisonSummary`: 154 total local entries, 77 same-path comparisons,
+  77 local-only legacy-missing entries, 0 diff failures, 0 local failures, and
+  21 explicit status deltas. Those deltas are machine-readable instead of
+  being hidden behind the 0 comparison-failure count; they are currently
+  homelab-reference non-OK or sample-data status differences such as legacy
+  404/500/400 responses where the local seeded route renders successfully.
 - A rerun first exposed `/user/issues/new` as that exact class of failure:
   legacy rendered the normal `새 이슈 - admin/sample` form, while local rendered
   a not-found page because the sweep-created `admin/sample` project had not

@@ -2,6 +2,10 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { hasRawLegacyI18nKey, rawLegacyI18nKeys } from "./legacy-i18n-key-detector.mjs";
+import {
+  buildVisualComparison,
+  summarizeVisualComparison,
+} from "./visual-parity-comparison.mjs";
 import { buildLegacyAuditCorpus } from "./visual-parity-sweep-corpus.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
@@ -960,33 +964,16 @@ async function runTargetSafely(label, baseUrl) {
 
 const legacy = sweepTarget === "local" ? null : await runTargetSafely("legacy", legacyBaseUrl);
 const local = sweepTarget === "legacy" ? null : await runTargetSafely("local", localBaseUrl);
-const byPath = new Map((legacy?.results ?? []).map((result) => [result.path, result]));
-const comparison = (local?.results ?? []).map((localResult) => {
-  const legacyResult = byPath.get(localResult.path);
-  const legacyIsErrorPage = legacyResult?.metrics?.isErrorPage ?? null;
-  const localIsErrorPage = localResult.metrics?.isErrorPage ?? null;
-  const diffErrors = [];
-  if (legacyResult && legacyIsErrorPage === false && localIsErrorPage === true) {
-    diffErrors.push("legacy renders a normal page but local renders an error page");
-  }
-  return {
-    path: localResult.path,
-    legacyOk: legacyResult?.ok ?? null,
-    localOk: localResult.ok,
-    localErrors: localResult.errors,
-    diffErrors,
-    statusDelta: legacyResult ? `${legacyResult.status}->${localResult.status}` : "legacy-missing",
-    textLengthDelta: legacyResult
-      ? (localResult.metrics?.bodyTextLength ?? 0) - (legacyResult.metrics?.bodyTextLength ?? 0)
-      : null,
-    localStylesheetRules: localResult.metrics?.stylesheetRules ?? null,
-  };
+const comparison = buildVisualComparison({
+  legacyResults: legacy?.results ?? [],
+  localResults: local?.results ?? [],
 });
 const summary = {
   checkedAt: new Date().toISOString(),
   legacy,
   local,
   comparison,
+  comparisonSummary: summarizeVisualComparison(comparison),
 };
 writeFileSync(resolve(outputDir, "latest.json"), `${JSON.stringify(summary, null, 2)}\n`);
 console.log(JSON.stringify(summary, null, 2));
