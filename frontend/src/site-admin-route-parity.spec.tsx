@@ -738,7 +738,9 @@ describe("site-admin route parity harness", () => {
     expect(mailHtml).toContain("smtp.host");
     expect(mailHtml).toContain(">Mail has been sent.<");
     expect(mailHtml).toContain(">From<");
-    expect(mailHtml).toContain('action="/yona/sites/mail"');
+    expect(mailHtml).toContain('id="mailForm"');
+    expect(mailHtml).not.toContain('action="/yona/sites/mail"');
+    expect(mailHtml).not.toContain('method="post"');
     expect(mailHtml).toContain('placeholder="sender@mail.com"');
     expect(mailHtml).toContain(">To<");
     expect(mailHtml).toContain('placeholder="receipient@mail.com"');

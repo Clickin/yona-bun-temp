@@ -1409,13 +1409,7 @@ export function SiteAdminMailPage({
                   {legacySiteAdminMessage(messages, "site.mail.sended")}
                 </div>
               ) : null}
-              <form
-                action={appHref(runtimeConfig, "/sites/mail")}
-                className="form-horizontal"
-                id="mailForm"
-                method="post"
-                onSubmit={handleSubmit}
-              >
+              <form className="form-horizontal" id="mailForm" onSubmit={handleSubmit}>
                 <div className="control-group">
                   <label
                     className="control-label span3"
