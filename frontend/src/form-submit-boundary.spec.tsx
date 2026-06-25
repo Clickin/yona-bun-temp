@@ -22,6 +22,17 @@ const allowedFormPosts: AllowedFormPost[] = [
 ];
 
 const formPostPattern = /(?:^|\s)method="post"/g;
+const forbiddenReactOwnedLegacyActions = [
+  "/users/login",
+  "/users/signup",
+  "/lostPassword",
+  "/resetPassword",
+  "/user/edit",
+  "/user/resetVisitedList",
+  "/user/resetPassword",
+  "/user/email",
+  "/user/editform/token_reset",
+];
 
 function readRouteSource(relativePath: string) {
   return fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
@@ -87,6 +98,40 @@ describe("React form submit boundary", () => {
     for (const file of restOwnedFiles) {
       const source = readRouteSource(file);
       expect(source, file).not.toMatch(formPostPattern);
+    }
+  });
+
+  it("keeps auth and user settings forms inside the React REST JSON boundary", () => {
+    const formComponentFiles = ["routes/-auth-views.tsx", "routes/-workspace-settings-view.tsx"];
+    const sourceByFile = [
+      ...formComponentFiles,
+      "routes/users/loginform/route.tsx",
+      "routes/users/signupform/route.tsx",
+      "routes/lostPassword/route.tsx",
+      "routes/resetPassword/route.tsx",
+      "routes/user/editform/index.tsx",
+      "routes/user/editform/password/route.tsx",
+      "routes/user/editform/emails/route.tsx",
+      "routes/user/editform/token/route.tsx",
+      "routes/user/editform/notifications/route.tsx",
+    ].map((file) => [file, readRouteSource(file)] as const);
+
+    for (const file of formComponentFiles) {
+      expect(readRouteSource(file), file).toContain("event.preventDefault()");
+    }
+
+    for (const [file, source] of sourceByFile) {
+      for (const action of forbiddenReactOwnedLegacyActions) {
+        expect(source, `${file} must not render legacy direct form action ${action}`).not.toContain(
+          `action={appHref(runtimeConfig, "${action}")}`,
+        );
+        expect(source, `${file} must not render legacy direct form action ${action}`).not.toContain(
+          `action={appHref(props.runtimeConfig, "${action}")}`,
+        );
+        expect(source, `${file} must not render legacy direct form action ${action}`).not.toContain(
+          `action="${action}"`,
+        );
+      }
     }
   });
 });
