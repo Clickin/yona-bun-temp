@@ -230,8 +230,11 @@ export function LoginPage({
             action={appHref(runtimeConfig, "/users/login")}
             method="post"
             onSubmit={(event) => {
+              if (!onSignIn) {
+                return;
+              }
               event.preventDefault();
-              onSignIn?.(formState);
+              onSignIn(formState);
             }}
           >
             <input name="redirectUrl" type="hidden" value={redirectUrl ?? ""} />

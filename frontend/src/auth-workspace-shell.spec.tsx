@@ -601,7 +601,7 @@ describe("auth and workspace views", () => {
   it("keeps REST auth submit handlers primary without swallowing legacy direct form fallbacks", () => {
     const source = fs.readFileSync(path.resolve(__dirname, "routes/-auth-views.tsx"), "utf8");
 
-    expect(source).toContain("if (!onSignIn) {\n              return;\n            }");
+    expect(source.match(/if \(!onSignIn\) \{/g)).toHaveLength(2);
     expect(source).toContain("if (!onRegister) {\n                return;\n              }");
     expect(source).toContain("if (!onRequestReset) {\n                return;\n              }");
     expect(source).toContain("if (!onResetPassword) {\n                return;\n              }");
