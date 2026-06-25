@@ -122,6 +122,9 @@ test("RC security row keeps concrete XSS, SQLi, and Markdown stability evidence"
   assert.match(section, /docs\/provenance\/legacy-html-page-audit\.md/u);
   assert.match(section, /frontend\/tests\/legacy-rendered-page-audit\.e2e\.ts/u);
   assert.match(section, /frontend\/src\/markdown-renderer\.spec\.tsx/u);
+  assert.match(section, /frontend\/src\/markdown-render-boundary\.spec\.tsx/u);
+  assert.match(section, /ReactMarkdown path[\s\S]*Yona legacy compatibility plugins/u);
+  assert.match(section, /server-rendered HTML fragments/u);
   assert.match(section, /tests\/search-parity\.e2e\.ts/u);
   assert.match(section, /search_contract[\s\S]*global_search_treats_sql_injection_probe_as_plain_keyword/u);
   assert.match(section, /very long fenced[\s\S]*plain source without syntax highlighting/u);

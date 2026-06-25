@@ -464,6 +464,11 @@ src/markdown-renderer.spec.tsx` passed with 429 tests
   script/style stripping, unsafe `javascript:` URL stripping, very long fenced
   blocks rendered as plain source without syntax highlighting, EOF/tilde fenced
   block recovery, and raw/invalid Markdown sanitizer cases.
+- Markdown render-boundary verification:
+  `frontend/src/markdown-render-boundary.spec.tsx` keeps route components from
+  fetching server-rendered HTML fragments, rejects `dangerouslySetInnerHTML` and
+  route-level DOM fragment insertion, and requires the ReactMarkdown path to stay
+  wired through the Yona legacy compatibility plugins.
 - Rendered e2e verification: `pnpm --dir frontend test:e2e --
 tests/search-parity.e2e.ts tests/legacy-rendered-page-audit.e2e.ts -g "hostile
 search|XSS payloads"` executed outside the sandbox and passed 49 tests,
