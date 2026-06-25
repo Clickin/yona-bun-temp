@@ -4907,6 +4907,10 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("ProjectMembersPage");
     expect(viewSource).toContain("<ProjectHeader");
     expect(viewSource).toContain('id="addNewMember"');
+    expect(viewSource).not.toContain(
+      "action={prefixBasePath(props.runtimeConfig.basePath, memberPath)}",
+    );
+    expect(viewSource).not.toContain('id="addNewMember"\n              method="post"');
     expect(viewSource).toContain("if (!props.onAddMember) {");
     expect(viewSource).toContain("props.onAddMember(loginId);");
     expect(viewSource).toContain('className="members project row-fluid"');
@@ -4999,6 +5003,8 @@ describe("file-route parity harness", () => {
     );
     expect(viewSource).toContain("OrganizationMembersPage");
     expect(viewSource).toContain('id="addNewMember"');
+    expect(viewSource).not.toContain("action={memberPath}");
+    expect(viewSource).not.toContain('id="addNewMember"\n              method="post"');
     expect(viewSource).toContain("if (!props.onAddMember) {");
     expect(viewSource).toContain("props.onAddMember(detail.organizationName, loginId);");
     expect(viewSource).toContain('className="members project row-fluid"');

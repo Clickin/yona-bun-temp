@@ -2022,7 +2022,6 @@ export function ProjectMembersPage(props: {
     viewerCanUpdate: false,
   };
   const [loginId, setLoginId] = React.useState("");
-  const memberPath = `/${detail.ownerName}/${detail.projectName}/members`;
   const shellDetail = projectShellDetail({
     ownerName: detail.ownerName,
     projectName: detail.projectName,
@@ -2041,15 +2040,13 @@ export function ProjectMembersPage(props: {
         <div className="project-page-wrap">
           <div className="inner-bubble">
             <form
-              action={prefixBasePath(props.runtimeConfig.basePath, memberPath)}
               className="nm"
               id="addNewMember"
-              method="post"
               onSubmit={(event) => {
+                event.preventDefault();
                 if (!props.onAddMember) {
                   return;
                 }
-                event.preventDefault();
                 props.onAddMember(loginId);
               }}
             >

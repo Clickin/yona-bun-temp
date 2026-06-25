@@ -1405,7 +1405,6 @@ export function OrganizationMembersPage(props: {
   };
   const [loginId, setLoginId] = React.useState("");
   const [deleteTarget, setDeleteTarget] = React.useState<null | string>(null);
-  const memberPath = buildOrganizationHref(props.runtimeConfig, detail.organizationName, "members");
   const organizationDetail = {
     description: "",
     organizationName: detail.organizationName,
@@ -1435,15 +1434,13 @@ export function OrganizationMembersPage(props: {
 
           <div className="inner-bubble">
             <form
-              action={memberPath}
               className="nm"
               id="addNewMember"
-              method="post"
               onSubmit={(event) => {
+                event.preventDefault();
                 if (!props.onAddMember) {
                   return;
                 }
-                event.preventDefault();
                 props.onAddMember(detail.organizationName, loginId);
               }}
             >
