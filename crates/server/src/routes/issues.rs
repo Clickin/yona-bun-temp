@@ -1189,6 +1189,28 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/content",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Json(body): Json<serde_json::Value>| {
+                    let service = service.clone();
+                    async move {
+                        legacy_external_update_issue_content(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
             "/owners/{owner_name}/projects/{project_name}/assignable-users",
             get({
                 let service = service.clone();

@@ -1749,6 +1749,23 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         "legacy external content update"
     );
 
+    let rest_content_updated = response_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/content",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            Some(json!({
+                "content": "rest content update",
+                "original": "legacy external content update"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(rest_content_updated["body"], "rest content update");
+
     let legacy_detect_change = response_json(
         rest(
             app.clone(),
@@ -1779,10 +1796,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         .await,
     )
     .await;
-    assert_eq!(
-        legacy_read["result"]["body"],
-        "legacy external content update"
-    );
+    assert_eq!(legacy_read["result"]["body"], "rest content update");
     assert_eq!(legacy_read["result"]["number"], 1);
 
     let legacy_updated = response_json(

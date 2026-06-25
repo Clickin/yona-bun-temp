@@ -340,7 +340,7 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
 
     let updated = ok_json(
         rest(
-            app,
+            app.clone(),
             Method::PATCH,
             "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/content",
             Some(&owner_cookie),
@@ -357,6 +357,26 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
     assert_eq!(updated["title"], "legacy board title");
     assert_eq!(updated["body"], "legacy board body updated");
     assert_eq!(updated["type"], "BOARD_POST");
+
+    let rest_updated = ok_json(
+        rest(
+            app,
+            Method::PATCH,
+            "/yona/api/v1/projects/owner/projectYobi/posts/77/content",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "content": "rest board body updated",
+                "original": "legacy board body updated"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(rest_updated["number"], 77);
+    assert_eq!(rest_updated["title"], "legacy board title");
+    assert_eq!(rest_updated["body"], "rest board body updated");
+    assert_eq!(rest_updated["type"], "BOARD_POST");
 }
 
 #[tokio::test]

@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { ReadIssueDetailResponse } from "./types";
-import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import type { RuntimeConfig } from "../runtime-config";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
@@ -130,31 +130,6 @@ function issuePath(input: IssueScopeInput, suffix = ""): string {
 
 function issueCommentPath(input: IssueCommentScopeInput, suffix = ""): string {
   return `${issuePath(input)}/comments/${toInt64Number(input.commentId)}${suffix}`;
-}
-
-function legacyExternalIssueContentPath(input: IssueContentUpdateInput): string {
-  return `/-_-api/v1/owners/${encodeURIComponent(input.ownerName)}/projects/${encodeURIComponent(
-    input.projectName,
-  )}/issues/${toInt64Number(input.issueNumber)}/content`;
-}
-
-async function parseLegacyJson(response: Response): Promise<unknown> {
-  const text = await response.text();
-  if (text.trim() === "") {
-    return undefined;
-  }
-  return JSON.parse(text) as unknown;
-}
-
-function legacyContentUpdateError(response: Response, payload: unknown): Error {
-  const message =
-    payload &&
-    typeof payload === "object" &&
-    "message" in payload &&
-    typeof payload.message === "string"
-      ? payload.message
-      : `REST request failed with ${response.status}.`;
-  return new Error(message);
 }
 
 function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIssueDetailResponse {
@@ -410,27 +385,15 @@ export async function updateIssueContentRest(
   input: IssueContentUpdateInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<unknown> {
-  const response = await fetchImpl(
-    prefixBasePath(runtimeConfig.basePath, legacyExternalIssueContentPath(input)),
-    {
-      body: JSON.stringify({
-        content: input.content,
-        original: input.original,
-      }),
-      credentials: "same-origin",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-      },
-      method: "PATCH",
+  return restFetch<unknown>(runtimeConfig, `${issuePath(input)}/content`, {
+    body: {
+      content: input.content,
+      original: input.original,
     },
-  );
-  const payload = await parseLegacyJson(response);
-  if (!response.ok) {
-    throw legacyContentUpdateError(response, payload);
-  }
-  return payload;
+    csrfToken,
+    fetchImpl,
+    method: "PATCH",
+  });
 }
 
 export function searchIssueAssignableUsersRest(

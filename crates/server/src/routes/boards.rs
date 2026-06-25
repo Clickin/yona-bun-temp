@@ -468,6 +468,28 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/projects/{owner_name}/{project_name}/posts/{post_number}/content",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, post_number)): Path<(String, String, i64)>,
+                      Json(body): Json<serde_json::Value>| {
+                    let service = service.clone();
+                    async move {
+                        legacy_external_update_board_posting_content(
+                            headers,
+                            owner_name,
+                            project_name,
+                            post_number,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
             "/projects/{owner_name}/{project_name}/posts/{post_number}/comments/{comment_id}",
             patch({
                 let service = service.clone();

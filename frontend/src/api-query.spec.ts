@@ -2,13 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   createPostCommentRest,
   updatePostCommentRest,
+  updateProjectPostContentRest,
   updateProjectPostRest,
   listOrganizationBoardsQueryOptions,
   listProjectPostsQueryOptions,
   readProjectPostFormOptionsQueryOptions,
   readProjectPostQueryOptions,
 } from "./api/boards";
-import { projectIssueReferencesQueryOptions } from "./api/issue-meta";
+import { projectIssueReferencesQueryOptions, updateIssueContentRest } from "./api/issue-meta";
 import {
   projectPullRequestListQueryOptions,
   pullRequestDetailQueryOptions,
@@ -41,7 +42,10 @@ describe("api query keys", () => {
           url: String(url),
         });
         return new Response(
-          JSON.stringify({ translated: "<p>server html</p>", translatedMarkdown: "**translated**" }),
+          JSON.stringify({
+            translated: "<p>server html</p>",
+            translatedMarkdown: "**translated**",
+          }),
           {
             headers: { "Content-Type": "application/json" },
             status: 200,
@@ -63,8 +67,12 @@ describe("api query keys", () => {
   });
 
   it("sends legacy board child-comment parent ids in comment create requests", async () => {
-    const calls: Array<{ body: string | null; headers: Headers; method: string | undefined; url: string }> =
-      [];
+    const calls: Array<{
+      body: string | null;
+      headers: Headers;
+      method: string | undefined;
+      url: string;
+    }> = [];
     await createPostCommentRest(
       { apiBaseUrl: "/yona/api", basePath: "/yona" },
       "csrf-token",
@@ -99,6 +107,65 @@ describe("api query keys", () => {
       contentsMarkdown: "child reply",
       parentCommentId: "9",
     });
+  });
+
+  it("updates issue and board tasklist content through canonical REST routes", async () => {
+    const calls: Array<{
+      body: string | null;
+      headers: Headers;
+      method: string | undefined;
+      url: string;
+    }> = [];
+    const fetchImpl = async (url: string | URL | Request, init?: RequestInit) => {
+      calls.push({
+        body: String(init?.body ?? ""),
+        headers: init?.headers as Headers,
+        method: init?.method,
+        url: String(url),
+      });
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    };
+
+    await updateIssueContentRest(
+      { apiBaseUrl: "/yona/api", basePath: "/yona" },
+      "csrf-token",
+      {
+        content: "- [x] done",
+        issueNumber: 7,
+        original: "- [ ] done",
+        ownerName: "owner",
+        projectName: "projectYobi",
+      },
+      fetchImpl,
+    );
+    await updateProjectPostContentRest(
+      { apiBaseUrl: "/yona/api", basePath: "/yona" },
+      "csrf-token",
+      {
+        content: "- [x] done",
+        original: "- [ ] done",
+        ownerName: "owner",
+        postNumber: 16,
+        projectName: "projectYobi",
+      },
+      fetchImpl,
+    );
+
+    expect(calls).toHaveLength(2);
+    expect(calls[0].url).toBe("/yona/api/v1/owners/owner/projects/projectYobi/issues/7/content");
+    expect(calls[1].url).toBe("/yona/api/v1/projects/owner/projectYobi/posts/16/content");
+    for (const call of calls) {
+      expect(call.method).toBe("PATCH");
+      expect(call.headers.get("x-csrf-token")).toBe("csrf-token");
+      expect(call.headers.get("Accept")).toBe("application/json");
+      expect(JSON.parse(call.body ?? "{}")).toEqual({
+        content: "- [x] done",
+        original: "- [ ] done",
+      });
+    }
   });
 
   it("includes owner, project, and query in project issue-reference keys", () => {
