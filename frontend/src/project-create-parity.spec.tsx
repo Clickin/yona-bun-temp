@@ -84,7 +84,7 @@ describe("project create parity", () => {
     expect(routeSource).toContain("to={`/projectform${query}`}");
   });
 
-  it("keeps project creation mutation fallback on a legacy message key", () => {
+  it("keeps project creation on the REST submit boundary with legacy error key fallback", () => {
     const routeSource = readFileSync(
       join(process.cwd(), "src/routes/projectform/route.tsx"),
       "utf8",
@@ -92,7 +92,9 @@ describe("project create parity", () => {
     const viewSource = readFileSync(join(process.cwd(), "src/routes/-project-views.tsx"), "utf8");
 
     expect(routeSource).toContain("basePath={runtimeConfig.basePath}");
-    expect(viewSource).toContain('prefixBasePath(props.basePath ?? "", "/projects")');
+    expect(viewSource).not.toContain("action={createAction}");
+    expect(viewSource).not.toContain('id="newProjectForm"\n            method="post"');
+    expect(viewSource).toContain("event.preventDefault();");
     expect(viewSource).toContain("if (!props.onCreateProject) {");
     expect(routeSource).not.toContain("Create project failed.");
     expect(routeSource).toContain('messages("error.badrequest", { fallback: "error.badrequest" })');
