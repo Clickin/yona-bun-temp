@@ -1565,7 +1565,8 @@ describe("auth and workspace views", () => {
     expect(html).toContain('id="dynamic-comment-btn"');
     expect(html).toContain("Add a comment");
     expect(html).not.toContain("Leave a comment");
-    expect(html).not.toContain('href="/yona/owner/projectYobi/issue/1/editform"');
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/1/editform"');
+    expect(html).toContain('title="See text"');
     expect(html).not.toContain(">Close<");
     expect(html).not.toContain(">Assign<");
     expect(html).not.toContain(">Delete<");

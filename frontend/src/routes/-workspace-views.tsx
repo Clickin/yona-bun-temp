@@ -753,7 +753,6 @@ export function WorkspacePage(props: {
     userLabel: "User.anonymous.name",
   };
   const daysAgo = props.workspaceOverview?.daysAgo ?? 14;
-  const emails = props.workspaceOverview?.emails ?? [];
   const defaultLandingPath = props.workspaceOverview?.defaultLandingPath ?? "/me";
   const favoriteProjects = props.workspaceOverview?.favoriteProjects ?? [];
   const issueItems = props.workspaceOverview?.issueItems ?? [];
@@ -772,7 +771,6 @@ export function WorkspacePage(props: {
   };
   const pullRequestItems = props.workspaceOverview?.pullRequestItems ?? [];
   const recentProjects = props.workspaceOverview?.recentProjects ?? [];
-  const watchedProjects = props.workspaceOverview?.watchedProjects ?? [];
   const openIssues = issueItems.filter((item) => item.state === "open");
   const closedIssues = issueItems.filter((item) => item.state !== "open");
   const profileDisplayName = profile.displayName.trim();
@@ -1184,25 +1182,6 @@ export function WorkspacePage(props: {
               </div>
             </div>
           </section>
-
-          <dl className="runtime-grid">
-            <div>
-              <dt>default landing</dt>
-              <dd>{defaultLandingPath}</dd>
-            </div>
-            <div>
-              <dt>basePath</dt>
-              <dd>{props.runtimeConfig.basePath}</dd>
-            </div>
-            <div>
-              <dt>linked emails</dt>
-              <dd>{emails.length}</dd>
-            </div>
-            <div>
-              <dt>watched projects</dt>
-              <dd>{watchedProjects.length}</dd>
-            </div>
-          </dl>
         </div>
       </div>
       <Section title={legacyMessage(props.messages, "button.setDefaultLoginPage")}>

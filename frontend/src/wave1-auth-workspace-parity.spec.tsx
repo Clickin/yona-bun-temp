@@ -405,6 +405,10 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).toContain("Recently visited");
     expect(html).toContain("Log out");
     expect(html).not.toContain("Default landing");
+    expect(html).not.toContain("default landing");
+    expect(html).not.toContain("basePath");
+    expect(html).not.toContain("linked emails");
+    expect(html).not.toContain("watched projects");
     expect(html).not.toContain("Save default landing");
     expect(html).not.toContain("Favorite projects");
     expect(html).not.toContain("Recent projects");
