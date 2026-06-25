@@ -223,6 +223,27 @@ function routeTreeSamplePaths() {
   return paths.sort();
 }
 
+function legacyAuditDiscoveredPageLinks() {
+  try {
+    const source = readFileSync(
+      resolve(repoRoot, ".agent/legacy-html-page-audit/latest.json"),
+      "utf8",
+    );
+    const audit = JSON.parse(source);
+    const links = Array.isArray(audit.discoveredPageLinks) ? audit.discoveredPageLinks : [];
+    return [
+      ...new Set(
+        links
+          .filter((path) => typeof path === "string" && path.startsWith("/"))
+          .map((path) => normalizePath("http://legacy-audit.local", path))
+          .filter(Boolean),
+      ),
+    ].sort();
+  } catch {
+    return [];
+  }
+}
+
 function urlFor(baseUrl, path) {
   return `${baseUrl}${path === "/" ? "/" : path}`;
 }
@@ -734,8 +755,11 @@ async function runTarget(label, baseUrl) {
   const directApiSurfaces =
     label === "local" && loggedIn ? await inspectLocalDirectApiSurfaces(page, baseUrl) : null;
   const discoveredProjectPages = loggedIn ? await discoverProjectPaths(page, baseUrl) : [];
+  const legacyAuditPages = legacyAuditDiscoveredPageLinks();
   const routeSamples = label === "legacy" ? [] : routeTreeSamplePaths();
-  const paths = [...new Set([...basePages, ...routeSamples, ...discoveredProjectPages])];
+  const paths = [
+    ...new Set([...basePages, ...legacyAuditPages, ...routeSamples, ...discoveredProjectPages]),
+  ];
   const results = [];
   for (const path of paths) {
     const routePage = await context.newPage();
@@ -755,6 +779,7 @@ async function runTarget(label, baseUrl) {
     passed: results.filter((result) => result.ok).length,
     failed: results.filter((result) => !result.ok).length,
     directApiSurfaces,
+    legacyAuditPages,
     discoveredProjectPages,
     results,
   };

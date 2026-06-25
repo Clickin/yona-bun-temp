@@ -20,15 +20,17 @@ Status: current audit evidence.
   user's most recent visited project for `/user/issues/new`. The sweep also
   creates `admin/sample#1` when absent so legacy issue detail/edit screens are
   compared against a real issue instead of a local fixture gap.
-- Local route corpus: explicit legacy base pages, route-tree sample expansion, and discovered seeded
-  project links. Each route is inspected in an isolated Playwright page so one navigation failure
-  cannot cascade into later false failures.
-- Legacy route corpus: explicit legacy base pages plus any project links
-  discovered from `/projects`. The discovery filter treats `/admin/sample` as
-  a project route even though `/admin` is also a legacy user-profile root, so
-  sample project pages are not silently skipped. Local-only route-tree samples
-  are not forced onto the legacy sample, because the seeded local `pilot/yona`
-  routes are not legacy homelab URLs.
+- Local route corpus: explicit legacy base pages, the latest legacy HTML audit
+  `discoveredPageLinks`, route-tree sample expansion, and discovered seeded
+  project links. Each route is inspected in an isolated Playwright page so one
+  navigation failure cannot cascade into later false failures.
+- Legacy route corpus: explicit legacy base pages, the latest legacy HTML audit
+  `discoveredPageLinks`, plus any project links discovered from `/projects`.
+  The discovery filter treats `/admin/sample` as a project route even though
+  `/admin` is also a legacy user-profile root, so sample project pages are not
+  silently skipped. Local-only route-tree samples are not forced onto the legacy
+  sample, because the seeded local `pilot/yona` routes are not legacy homelab
+  URLs.
 - Render criterion: Playwright waits past transient `common.loading` / `불러오는 중` shells before
   judging final visible screen metrics.
 - Diff criterion: when both targets render the same path, the sweep fails if
@@ -78,6 +80,9 @@ Playwright render the legacy responses from `127.0.0.1`.
 ## Results
 
 - Legacy HTML anchor audit: 57 checked, 57 passed, 0 failed, 0 discovered links unaudited.
+- The visual sweep now imports the latest legacy HTML audit's 49
+  `discoveredPageLinks` into each target corpus and records the normalized list
+  as `legacyAuditPages` in `output/playwright/visual-sweep/latest.json`.
 - Legacy route/spec/anchor/render coverage smokes: 57 routed, 57 with spec evidence, 104/104
   curl-observed anchors with Rust evidence, 57/57 with rendered e2e signal evidence.
 - Legacy Playwright visual sweep through the curl proxy: 77 checked, 73 passed, 4 failed,
@@ -113,6 +118,11 @@ them manually.
 The project discovery sweep now also applies detail/edit/code/compare suffixes to discovered
 legacy project roots such as `/admin/sample`, instead of checking those screens only on the
 local `pilot/yona` route-tree sample.
+
+The sweep also consumes `.agent/legacy-html-page-audit/latest.json` when present. This keeps the
+rendered-screen corpus coupled to the HTML-link audit: any newly discovered legacy page link is
+automatically browser-swept on both the legacy and local targets before a manual smoke test reaches
+it.
 
 Asset note: the local browser sweep must run against a binary built with
 `YONA_EMBED_ASSET_ROOT="$PWD/frontend/dist"`. A debug binary built without that variable embeds the
