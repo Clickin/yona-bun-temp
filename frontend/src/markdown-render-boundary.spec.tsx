@@ -7,6 +7,7 @@ const serverRenderedHtmlFieldAccessPattern =
 const htmlFragmentDomApiPattern =
   /\b(?:DOMParser|insertAdjacentHTML|createContextualFragment|innerHTML|outerHTML)\b|dangerouslySetInnerHTML/;
 const routeHtmlFragmentFetchPattern = /\bresponse\.text\(|\btext\/html\b/;
+const responseTextReadPattern = /\bresponse\.text\(/;
 const markdownWrapClassPattern = /\bmarkdown-wrap\b/;
 const serverRenderedHtmlCompatibilityFiles = new Set([
   "api/boards.ts",
@@ -16,6 +17,7 @@ const serverRenderedHtmlCompatibilityFiles = new Set([
   "api/pull-requests.ts",
   "app-view-models.ts",
 ]);
+const allowedResponseTextReaders = new Set(["api/rest-client.ts", "api/translation.ts"]);
 const allowedMarkdownRendererCallsWithoutMarkdownWrap = [
   {
     file: "routes/-board-views.tsx",
@@ -136,6 +138,24 @@ describe("Markdown render boundary", () => {
     for (const file of listSourceFiles(path.resolve(__dirname, "routes"))) {
       expect(readSource(file), file).not.toMatch(routeHtmlFragmentFetchPattern);
     }
+  });
+
+  it("keeps response text reads limited to JSON/source compatibility helpers", () => {
+    const actual = listSourceFiles()
+      .filter(
+        (file) =>
+          !file.endsWith(".spec.ts") &&
+          !file.endsWith(".spec.tsx") &&
+          !file.endsWith(".test.ts") &&
+          !file.endsWith(".test.tsx") &&
+          responseTextReadPattern.test(readSource(file)),
+      )
+      .sort();
+
+    expect(
+      actual,
+      "New response.text() readers can reintroduce legacy HTML-fragment fetch paths; keep them in explicit JSON/source compatibility helpers only.",
+    ).toEqual(Array.from(allowedResponseTextReaders).sort());
   });
 
   it("keeps server HTML compatibility fields in API/view-model mapping only", () => {
