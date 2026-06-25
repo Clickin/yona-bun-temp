@@ -145,11 +145,12 @@ export function formatLegacyMessage(
   template: string,
   args: readonly (number | string)[] | undefined,
 ): string {
+  const message = template.replace(/''/g, "'");
   if (!args || args.length === 0) {
-    return template;
+    return message;
   }
 
-  return template.replace(/\{(\d+)}/g, (placeholder, index) => {
+  return message.replace(/\{(\d+)}/g, (placeholder, index) => {
     const value = args[Number(index)];
     return value === undefined ? placeholder : String(value);
   });

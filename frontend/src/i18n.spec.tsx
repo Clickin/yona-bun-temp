@@ -245,4 +245,16 @@ describe("legacy i18n runtime", () => {
       lookupLegacyMessage("ko-KR", "missing.legacy.key", { fallback: "missing.legacy.key" }),
     ).toBe("missing.legacy.key");
   });
+
+  it("uses legacy MessageFormat apostrophe escaping", () => {
+    expect(lookupLegacyMessage("en-US", "common.comment.delete.confirm")).toContain("won't");
+    expect(lookupLegacyMessage("ko-KR", "project.webhook.help")).toContain(
+      "'Authorizatoin: token 입력한 값'",
+    );
+    expect(
+      lookupLegacyMessage("ko-KR", "git.error.permission", {
+        args: ["alice", "owner", "repo"],
+      }),
+    ).toBe("'alice'님은 'owner/repo' 프로젝트에 대한 권한이 없습니다.");
+  });
 });
