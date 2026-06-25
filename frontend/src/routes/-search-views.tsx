@@ -142,11 +142,7 @@ function searchResultTitleNodes(
   category: string,
 ) {
   if (!messages) {
-    return (
-      <>
-        search.result.title <strong>{count}</strong> {category}
-      </>
-    );
+    return "search.result.title";
   }
 
   const message = messages("search.result.title", { args: [count, category] });

@@ -156,6 +156,15 @@
   organization name as a legacy message argument. Focused evidence:
   `organization-shell-i18n.spec.tsx`, `organization-home-parity.spec.tsx`, and
   `i18n.spec.tsx`.
+- 2026-06-25 search/site-admin fallback-key continuation: provider-less search
+  result titles and site-admin diagnostic/update status labels no longer
+  compose argument-bearing fallback strings such as
+  `search.result.title <count> <category>` or `site.update.currentVersion {0}`.
+  Missing-provider output keeps only the legacy key, while provider-backed
+  rendering still passes counts, categories, and versions as legacy message
+  arguments. Focused evidence: `search-i18n.spec.tsx`,
+  `site-admin-route-parity.spec.tsx`, `route-parity.spec.tsx`, and
+  `i18n.spec.tsx`.
 - 2026-06-25 legacy mention highlight continuation: board, issue, and pull
   request review comment rendering now reproduces the legacy
   `board/view.scala.html`, `issue/view.scala.html`, and `git/view.scala.html`

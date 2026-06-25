@@ -104,7 +104,8 @@ describe("search legacy i18n opt-in", () => {
     expect(html).toContain(">search.menu.projects<span");
     expect(html).toContain(">search.menu.boards<span");
     expect(html).toContain(">search.menu.issue.comments<span");
-    expect(html).toContain("search.result.title <strong>7</strong> search.menu.issues");
+    expect(html).toContain("search.result.title");
+    expect(html).not.toContain("search.result.title <strong>7</strong> search.menu.issues");
     expect(html).toContain(">issue.noAuthor</span>");
     expect(html).toContain(">button.nextPage</span>");
   });
