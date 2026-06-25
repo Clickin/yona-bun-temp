@@ -9,9 +9,15 @@ import {
   normalizeLegacyLanguageCode,
   normalizeSupportedLanguages,
   resolveInitialLanguage,
+  useLegacyMessages,
 } from "./i18n";
 import { LoginPage } from "./routes/-auth-views";
 import { BadRequestPage, ForbiddenPage, NotFoundPage } from "./routes/-shared";
+
+function LegacyMessageProbe({ messageKey }: { messageKey: string }) {
+  const { t } = useLegacyMessages();
+  return <span>{t(messageKey, { fallback: messageKey })}</span>;
+}
 
 describe("legacy i18n runtime", () => {
   it("does not keep a local fallback dictionary outside legacy message files", () => {
@@ -130,6 +136,17 @@ describe("legacy i18n runtime", () => {
     expect(html).toContain(">로그인<");
     expect(html).toContain('placeholder="아이디 또는 이메일"');
     expect(html).not.toContain(">button.login<");
+  });
+
+  it("falls back through default legacy messages inside the React provider", () => {
+    const html = renderToStaticMarkup(
+      <LegacyI18nProvider supportedLanguages={["ko-KR", "en-US"]}>
+        <LegacyMessageProbe messageKey="project.webhook.includeGitPush" />
+      </LegacyI18nProvider>,
+    );
+
+    expect(html).toContain(">Include git push events</span>");
+    expect(html).not.toContain("project.webhook.includeGitPush");
   });
 
   it("keeps legacy keys outside an i18n provider", () => {
