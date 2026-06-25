@@ -12,7 +12,7 @@ use sea_orm::{
 use serde_json::json;
 use std::collections::BTreeMap;
 use std::sync::{Mutex, OnceLock};
-use std::time::SystemTime;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
 use yoram_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yoram_persistence::{
@@ -23,9 +23,9 @@ use yoram_persistence::{
 use yoram_migration::Migrator;
 use yoram_server::runtime_config::load_startup_config;
 use yoram_server::{
-    create_router_with_app_repository, deliver_due_notification_mails,
-    deliver_due_notification_mails_with_config, deliver_notification_mail_scheduler_tick,
-    notification_mail_add_noreferrer_to_external_links,
+    create_router_with_app_repository, create_router_with_repository_and_filesystem_assets,
+    deliver_due_notification_mails, deliver_due_notification_mails_with_config,
+    deliver_notification_mail_scheduler_tick, notification_mail_add_noreferrer_to_external_links,
     notification_mail_apply_legacy_html_postprocessing,
     notification_mail_scheduler_config_from_startup, NotificationMailDeliveryConfig,
     NotificationMailSchedulerConfig, RuntimeConfig,
@@ -763,6 +763,58 @@ async fn notification_contract_direct_notification_route_returns_api_payload() {
     assert!(items[0]["createdLabel"]
         .as_str()
         .is_some_and(|value| !value.is_empty()));
+}
+
+#[tokio::test]
+async fn notification_contract_direct_notification_html_accept_serves_spa_shell() {
+    // Guards the legacy notification fragment URL as a React-rendered page for browser navigation.
+    let (_api_app, repo, _db) = build_app_with_repository().await;
+    let asset_root = std::env::temp_dir().join(format!(
+        "yoram-notification-assets-{}",
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock")
+            .as_nanos()
+    ));
+    std::fs::create_dir_all(&asset_root).expect("asset root");
+    std::fs::write(
+        asset_root.join("index.html"),
+        "<!doctype html><html><head></head><body><main id=\"root\">notification shell</main></body></html>",
+    )
+    .expect("index html");
+    let app = create_router_with_repository_and_filesystem_assets(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        repo,
+        asset_root,
+    );
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/notification?from=0&limit=1")
+                .header(http::header::ACCEPT, "text/html")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let content_type = response
+        .headers()
+        .get(http::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
+    assert!(content_type.starts_with("text/html"));
+    let html = response_text(response).await;
+    assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
+    assert!(!html.contains("notification.none"));
 }
 
 #[tokio::test]

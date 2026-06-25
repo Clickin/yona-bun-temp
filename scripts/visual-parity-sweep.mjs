@@ -83,20 +83,20 @@ const projectSuffixes = [
 ];
 
 const routeSampleValues = {
-  "$branch": "main",
-  "$commitId": "HEAD",
-  "$issueNumber": "1",
-  "$loginId": "admin",
-  "$milestoneId": "1",
-  "$organizationName": "pilot",
-  "$owner": "pilot",
-  "$pageName": "userList",
-  "$postNumber": "1",
-  "$projectName": "yona",
-  "$pullRequestNumber": "1",
-  "$revisionRange": "main...main",
-  "$user": "admin",
-  "$verificationCode": "invalid",
+  $branch: "main",
+  $commitId: "HEAD",
+  $issueNumber: "1",
+  $loginId: "admin",
+  $milestoneId: "1",
+  $organizationName: "pilot",
+  $owner: "pilot",
+  $pageName: "userList",
+  $postNumber: "1",
+  $projectName: "yona",
+  $pullRequestNumber: "1",
+  $revisionRange: "main...main",
+  $user: "admin",
+  $verificationCode: "invalid",
 };
 
 const routeTreeSampleAliases = {
@@ -215,10 +215,7 @@ async function login(page, baseUrl) {
   await passwordField.fill(password);
   const loginForm = page.locator('form[action$="/users/login"]').first();
   const submitButton = loginForm.locator('button[type="submit"], input[type="submit"]').first();
-  await Promise.all([
-    page.waitForLoadState("networkidle").catch(() => {}),
-    submitButton.click(),
-  ]);
+  await Promise.all([page.waitForLoadState("networkidle").catch(() => {}), submitButton.click()]);
   return true;
 }
 
@@ -228,6 +225,25 @@ async function apiLogin(page, baseUrl) {
   if (!sessionResponse.ok() || !csrfToken) {
     return false;
   }
+  const ensureSampleProject = async () => {
+    await page.request.post(`${baseUrl}/api/v1/owners/admin/projects`, {
+      data: {
+        board: true,
+        code: true,
+        issue: true,
+        milestone: true,
+        overview: "Sample project",
+        projectName: "sample",
+        projectScope: "public",
+        pullRequest: true,
+        review: true,
+        vcs: "git",
+      },
+      headers: {
+        "x-csrf-token": csrfToken,
+      },
+    });
+  };
   const adminRegisterResponse = await page.request.post(`${baseUrl}/api/v1/auth/register`, {
     data: {
       emailAddress: "admin@example.com",
@@ -241,6 +257,7 @@ async function apiLogin(page, baseUrl) {
     },
   });
   if (adminRegisterResponse.ok()) {
+    await ensureSampleProject();
     return true;
   }
   const adminSignInResponse = await page.request.post(`${baseUrl}/api/v1/auth/sign-in`, {
@@ -254,6 +271,7 @@ async function apiLogin(page, baseUrl) {
     },
   });
   if (adminSignInResponse.ok()) {
+    await ensureSampleProject();
     return true;
   }
   const suffix = Date.now().toString(36);
@@ -274,16 +292,18 @@ async function apiLogin(page, baseUrl) {
 
 async function discoverProjectPaths(page, baseUrl) {
   await page.goto(urlFor(baseUrl, "/projects"), { waitUntil: "networkidle" });
-  const hrefs = await page.locator("a[href]").evaluateAll((anchors) =>
-    anchors.map((anchor) => anchor.getAttribute("href") ?? ""),
-  );
+  const hrefs = await page
+    .locator("a[href]")
+    .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href") ?? ""));
   const projectRoots = [
     ...new Set(
       hrefs
         .map((href) => normalizePath(baseUrl, href))
         .filter(Boolean)
         .map((path) => path.split("?")[0].split("/").filter(Boolean))
-        .filter((parts) => parts.length >= 2 && !rootNames.has(parts[0]) && !parts[0].startsWith("-"))
+        .filter(
+          (parts) => parts.length >= 2 && !rootNames.has(parts[0]) && !parts[0].startsWith("-"),
+        )
         .map((parts) => `/${parts[0]}/${parts[1]}`),
     ),
   ].sort();
@@ -299,8 +319,9 @@ function hasRawI18n(text) {
 function rawI18nKeys(text) {
   return [
     ...new Set(
-      text.match(/(?<![a-z0-9_.-])(?:button|code|error|issue|label|menu|message|milestone|notification|post|project|search|title|user|userinfo)\.[A-Za-z0-9_.-]+\b/gu) ??
-        [],
+      text.match(
+        /(?<![a-z0-9_.-])(?:button|code|error|issue|label|menu|message|milestone|notification|post|project|search|title|user|userinfo)\.[A-Za-z0-9_.-]+\b/gu,
+      ) ?? [],
     ),
   ].sort();
 }
@@ -333,7 +354,10 @@ async function inspectPage(page, baseUrl, path, label) {
   page.on("requestfailed", onRequestFailed);
   let response = null;
   try {
-    response = await page.goto(urlFor(baseUrl, path), { waitUntil: "networkidle", timeout: 20_000 });
+    response = await page.goto(urlFor(baseUrl, path), {
+      waitUntil: "networkidle",
+      timeout: 20_000,
+    });
   } catch (error) {
     page.off("console", onConsole);
     page.off("requestfailed", onRequestFailed);
@@ -403,22 +427,27 @@ async function inspectPage(page, baseUrl, path, label) {
     };
   });
   const isProjectPage = /^\/[^/?#]+\/[^/?#]+/u.test(path) && !rootNames.has(path.split("/")[1]);
+  const isLegacyFragment = label === "legacy" && path.startsWith("/notification?");
   const errors = [];
   const status = response?.status() ?? 0;
   if (status >= 500) {
     errors.push(`HTTP ${status}`);
   }
-  if (metrics.stylesheetCount === 0 || metrics.stylesheetRules < 20) {
-    errors.push(`stylesheet not applied: ${metrics.stylesheetCount} sheets, ${metrics.stylesheetRules} rules`);
+  if (!isLegacyFragment && (metrics.stylesheetCount === 0 || metrics.stylesheetRules < 20)) {
+    errors.push(
+      `stylesheet not applied: ${metrics.stylesheetCount} sheets, ${metrics.stylesheetRules} rules`,
+    );
   }
-  if (metrics.bodyTextLength < 20 && status === 200) {
+  if (!isLegacyFragment && metrics.bodyTextLength < 20 && status === 200) {
     errors.push("nearly blank page");
   }
   if (metrics.scrollWidth > metrics.viewportWidth * 1.8) {
     errors.push(`horizontal overflow ${metrics.scrollWidth}/${metrics.viewportWidth}`);
   }
   if (hasRawI18n(`${metrics.title}\n${metrics.text}`)) {
-    errors.push(`raw i18n key visible: ${rawI18nKeys(`${metrics.title}\n${metrics.text}`).join(", ")}`);
+    errors.push(
+      `raw i18n key visible: ${rawI18nKeys(`${metrics.title}\n${metrics.text}`).join(", ")}`,
+    );
   }
   if (/browser-safe route tree|localhost:3001\/(?!yona(?:\/|$))yo/u.test(metrics.text)) {
     errors.push("implementation fixture copy visible");
@@ -426,10 +455,18 @@ async function inspectPage(page, baseUrl, path, label) {
   if (metrics.title === "Yona Rust Frontend") {
     errors.push("non-legacy default document title visible");
   }
-  if (!metrics.isErrorPage && (!metrics.gnb || metrics.gnb.width < metrics.viewportWidth * 0.8)) {
+  if (
+    !isLegacyFragment &&
+    !metrics.isErrorPage &&
+    (!metrics.gnb || metrics.gnb.width < metrics.viewportWidth * 0.8)
+  ) {
     errors.push("missing global navigation");
   }
-  if (path === "/" && metrics.loginDialog && metrics.loginDialog.width > metrics.viewportWidth * 0.8) {
+  if (
+    path === "/" &&
+    metrics.loginDialog &&
+    metrics.loginDialog.width > metrics.viewportWidth * 0.8
+  ) {
     errors.push("login dialog width looks unstyled");
   }
   if (isProjectPage && !metrics.isErrorPage && !metrics.projectHeader) {
@@ -438,7 +475,7 @@ async function inspectPage(page, baseUrl, path, label) {
   if (isProjectPage && !metrics.isErrorPage && !metrics.projectMenu) {
     errors.push("missing project menu");
   }
-  if (path === "/admin" && !metrics.userProfile) {
+  if (label === "local" && path === "/admin" && !metrics.userProfile) {
     errors.push("missing public user profile");
   }
   if (consoleErrors.length > 0) {
@@ -475,17 +512,22 @@ async function inspectPage(page, baseUrl, path, label) {
       pageWrap: metrics.pageWrap,
       loginDialog: metrics.loginDialog,
       userProfile: metrics.userProfile,
+      isErrorPage: metrics.isErrorPage,
     },
   };
 }
 
 async function runTarget(label, baseUrl) {
-  const browser = await chromium.launch({ channel: process.env.PW_CHANNEL ?? "msedge", headless: true });
+  const browser = await chromium.launch({
+    channel: process.env.PW_CHANNEL ?? "msedge",
+    headless: true,
+  });
   const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
   const page = await context.newPage();
   const loggedIn = label === "local" ? await apiLogin(page, baseUrl) : await login(page, baseUrl);
   const discoveredProjectPages = loggedIn ? await discoverProjectPaths(page, baseUrl) : [];
-  const paths = [...new Set([...basePages, ...routeTreeSamplePaths(), ...discoveredProjectPages])];
+  const routeSamples = label === "legacy" ? [] : routeTreeSamplePaths();
+  const paths = [...new Set([...basePages, ...routeSamples, ...discoveredProjectPages])];
   const results = [];
   for (const path of paths) {
     const routePage = await context.newPage();
@@ -514,11 +556,18 @@ const local = sweepTarget === "legacy" ? null : await runTarget("local", localBa
 const byPath = new Map((legacy?.results ?? []).map((result) => [result.path, result]));
 const comparison = (local?.results ?? []).map((localResult) => {
   const legacyResult = byPath.get(localResult.path);
+  const legacyIsErrorPage = legacyResult?.metrics?.isErrorPage ?? null;
+  const localIsErrorPage = localResult.metrics?.isErrorPage ?? null;
+  const diffErrors = [];
+  if (legacyResult && legacyIsErrorPage === false && localIsErrorPage === true) {
+    diffErrors.push("legacy renders a normal page but local renders an error page");
+  }
   return {
     path: localResult.path,
     legacyOk: legacyResult?.ok ?? null,
     localOk: localResult.ok,
     localErrors: localResult.errors,
+    diffErrors,
     statusDelta: legacyResult ? `${legacyResult.status}->${localResult.status}` : "legacy-missing",
     textLengthDelta: legacyResult
       ? (localResult.metrics?.bodyTextLength ?? 0) - (legacyResult.metrics?.bodyTextLength ?? 0)
@@ -534,6 +583,7 @@ const summary = {
 };
 writeFileSync(resolve(outputDir, "latest.json"), `${JSON.stringify(summary, null, 2)}\n`);
 console.log(JSON.stringify(summary, null, 2));
-if ((local?.failed ?? 0) > 0 || (legacy?.failed ?? 0) > 0) {
+const comparisonFailures = comparison.filter((result) => result.diffErrors.length > 0);
+if ((local?.failed ?? 0) > 0 || (legacy?.failed ?? 0) > 0 || comparisonFailures.length > 0) {
   process.exitCode = 1;
 }
