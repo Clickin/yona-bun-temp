@@ -7,12 +7,15 @@ Date: 2026-06-26
 
 - Legacy routes: `yona-original/conf/routes` `GET /users/loginform`,
   `GET /users/signupform`, `POST /users/signup`, `GET/POST /lostPassword`,
-  `GET/POST /resetPassword`, `GET /verify/:loginId/:verificationCode`
+  `GET/POST /resetPassword`, `GET /verify/:loginId/:verificationCode`,
+  `GET /_help`
 - Legacy controllers: `yona-original/app/controllers/UserApp.java`,
-  `yona-original/app/controllers/PasswordResetApp.java`
+  `yona-original/app/controllers/PasswordResetApp.java`,
+  `yona-original/app/controllers/HelpApp.java`
 - Legacy templates: `yona-original/app/views/user/login.scala.html`,
   `signup.scala.html`, `resetPassword.scala.html`, `verified.scala.html`,
   `yona-original/app/views/site/lostPassword.scala.html`,
+  `yona-original/app/views/help/toc.scala.html`,
   `yona-original/app/views/error/badrequest_default.scala.html`,
   `yona-original/app/views/common/scripts.scala.html`
 - Current React/API: `frontend/src/routes/-auth-views.tsx`,
@@ -20,20 +23,26 @@ Date: 2026-06-26
   `frontend/src/routes/lostPassword/route.tsx`,
   `frontend/src/routes/resetPassword/route.tsx`,
   `frontend/src/routes/(legacy-auth)/reset-password/route.tsx`,
+  `frontend/src/routes/login/route.tsx`,
+  `frontend/src/routes/register/route.tsx`,
+  `frontend/src/routes/forgot-password/route.tsx`,
   `frontend/src/routes/verify/$loginId/$verificationCode/route.tsx`,
+  `frontend/src/routes/[_]help/route.tsx`,
+  `frontend/src/routes/-help-views.tsx`,
   `frontend/src/api/auth.ts`, `frontend/src/auth-workspace-client.ts`,
   `frontend/vite.config.ts`
 - Focused specs: `frontend/src/auth-workspace-shell.spec.tsx`,
   `frontend/src/wave1-auth-workspace-parity.spec.tsx`,
+  `frontend/src/help-route-parity.spec.tsx`,
   `frontend/tests/auth-public-entry-parity.e2e.ts`
 
 ## Route Inventory Summary
 
-Total rows: 6
+Total rows: 8
 
 | Status | Count |
 | --- | ---: |
-| covered | 5 |
+| covered | 7 |
 | weak evidence | 0 |
 | gap | 0 |
 | deviation | 0 |
@@ -51,6 +60,8 @@ Total rows: 6
 | `/resetPassword` invalid submit | `PasswordResetApp.resetPassword()` returns `400` `ErrorViews.BadRequest.render("site.resetPasswordEmail.wrongUrl")`, which uses `badrequest_default.scala.html`. | `ResetPasswordPage` now renders the same bad-request wrapper and `site.resetPasswordEmail.wrongUrl` message for `/resetPassword?error=invalid` instead of keeping the reset form visible; focused render spec pins `.page-wrap-outer`, `.project-page-wrap`, `.error-wrap`, `.ico-404`, Home link, and absence of `name="passwordReset"`. | covered | none |
 | `/verify/:loginId/:verificationCode` invalid verification | `UserApp.verifyUser()` returns `404` plain body `Invalid verification`. | `frontend/src/routes/verify/$loginId/$verificationCode/route.tsx` now keeps a pending state until REST verification resolves, and `VerifyUserPage` renders plain `Invalid verification` without the SPA error shell when REST `/api/v1/auth/verify` rejects. The browser HTTP status for a React deep link remains SPA fallback behavior; REST verify already carries not-found status. | not-applicable | Exact deep-link HTTP status would need server direct-route/fallback ownership, not React auth view scope. |
 | Public auth browser-proof checklist depth | Legacy public entry includes `/`, first-run `/secret` admin setup, login form with `rememberMe` and `redirectUrl`, signup, lost/reset password valid/invalid states, verify success/invalid states, auth aliases, and optional OAuth/social-login-only variants. | `frontend/tests/auth-public-entry-parity.e2e.ts` now proves browser-visible first-run `/secret` admin setup through REST JSON with restart redirect, login submit with `rememberMe=false` and `redirectUrl`, signup-confirm redirect and flash, auth aliases including `/reset-password?s=...` query preservation, social-login-only GitHub/Google controls, OAuth unsupported/denied alerts, lost/reset valid and invalid states, and verify success/invalid states. `frontend/vite.config.ts` no longer proxies the React-owned `/resetPassword` page path to the backend during dev, so mounted-base-path deep links render the React route. Verification: `pnpm --dir frontend test:e2e -- auth-public-entry-parity.e2e.ts` passed 7 Playwright tests on 2026-06-27. | covered | none |
+| `/login`, `/register`, `/forgot-password`, `/reset-password` auth aliases | Legacy canonical public routes are `/users/loginform`, `/users/signupform`, `/lostPassword`, and `/resetPassword`; aliases are app-runtime convenience routes and must not introduce a divergent UI shell. | `frontend/src/routes/login/route.tsx`, `register/route.tsx`, `forgot-password/route.tsx`, and `(legacy-auth)/reset-password/route.tsx` redirect to the canonical legacy paths through `RedirectPage`, preserving base path and query where required. `frontend/tests/auth-public-entry-parity.e2e.ts` proves alias navigation including `/reset-password?s=...` query preservation. | covered | none |
+| `/_help` anonymous help/FAQ page | `conf/routes` maps `GET /_help` to anonymous `HelpApp.help()` and `help/toc.scala.html`, whose FAQ rows toggle by clicking `.qas > .qa`. | `frontend/src/routes/[_]help/route.tsx` mounts the anonymous React route, sets `title.help`, and renders `HelpTocPage`; `frontend/src/help-route-parity.spec.tsx` proves route mounting, legacy FAQ selectors/copy, runtime `app.name` substitution, and item-wide toggle wiring. | covered | none |
 
 ## Playwright Scenario Matrix
 
@@ -61,3 +72,5 @@ Total rows: 6
 | `/users/signupform` | signup confirmation | signup form redirects to index flash when confirmation/email verification is required | same redirect and notification shell | submit valid signup | React submits `/api/v1/auth/register` REST JSON | covered |
 | `/lostPassword`, `/resetPassword` | valid/invalid reset | lost/reset form copy, invalid reset bad-request shell, valid reset login flash | same document titles, bad-request shell, and login flash | submit/reset route states | React password reset REST boundary | covered |
 | `/verify/:loginId/:verificationCode` | success/invalid verification | verified shell or plain `Invalid verification` | same visible success/invalid copy after REST resolution | direct deep link | REST verify owns status; React renders result | covered |
+| `/login`, `/register`, `/forgot-password`, `/reset-password` | auth aliases | canonical legacy public forms remain `/users/loginform`, `/users/signupform`, `/lostPassword`, `/resetPassword` | aliases redirect to canonical legacy route shells with base-path/query preservation | direct alias navigation | React `RedirectPage`; canonical screens keep REST JSON submit boundaries | covered |
+| `/_help` | anonymous help page | `HelpApp.help()` and `help/toc.scala.html`, `.qas > .qa` FAQ toggle | `HelpTocPage` legacy FAQ shell, anchors, runtime app-name copy, and item-wide toggle | render help and click FAQ row | anonymous React page, no REST mutation | covered |

@@ -240,7 +240,7 @@ Round 2 remaining subagent split:
 
 | Packet | Scope | Initial owner mode | Output |
 | --- | --- | --- | --- |
-| `ui-parity-auth-public-entry` | `/`, `/users/loginform`, `/users/signupform`, `/lostPassword`, `/resetPassword`, `/verify/**`, auth aliases | explorer | Auth route/form/copy/redirect/error-state evidence and REST submit-boundary findings |
+| `ui-parity-auth-public-entry` | `/`, `/users/loginform`, `/users/signupform`, `/lostPassword`, `/resetPassword`, `/verify/**`, `/_help`, auth aliases | explorer | Auth/help route, form, copy, redirect, error-state evidence and REST submit-boundary findings |
 | `ui-parity-root-navigation-shell` | global nav, feedback/project-list gating, login dialog, authenticated user menu, sidebar, footer suppression | explorer | Shell state matrix across anonymous/authenticated/site-admin/guest and fragment-conversion findings |
 | `ui-parity-user-workspace-profile` | `/me`, `/:user`, `/user/issues`, `/user/files`, profile issue/PR/project tabs | explorer | Workspace/profile/list empty/populated/permission-state findings |
 | `ui-parity-user-account-settings` | `/user/editform/**`, `/me/settings/**`, avatar/password/notification/email/token settings | explorer | Settings form, validation, modal, upload, notification-toggle, and direct-anchor findings |

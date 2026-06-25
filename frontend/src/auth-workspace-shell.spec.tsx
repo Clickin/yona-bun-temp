@@ -999,6 +999,8 @@ describe("auth and workspace views", () => {
     expect(html).toContain('data-action="delete"');
     expect(html).toContain('data-href="/yona/organizations/weblabs/member/7/delete"');
     expect(html).toContain('id="alertDeletion"');
+    expect(html).toContain('class="modal hide"');
+    expect(html).not.toContain('class="modal hide fade"');
     expect(html).toContain("Are you sure this user should leave this group?");
     expect(html).toContain('id="deleteBtn"');
     expect(html).toContain("Sign-up request (1)");
@@ -1035,6 +1037,7 @@ describe("auth and workspace views", () => {
     expect(html).toContain("Delete This Group");
     expect(html).toContain('id="alertDeletion"');
     expect(html).toContain('class="modal hide"');
+    expect(html).not.toContain('class="modal hide fade"');
     expect(html).toContain("Do you want to delete this group?");
     expect(html).toContain("Are you sure you want to delete this group?");
     expect(html).toContain('id="btnDeleteExec"');

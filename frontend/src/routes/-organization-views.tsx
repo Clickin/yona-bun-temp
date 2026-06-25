@@ -1690,7 +1690,7 @@ export function OrganizationMembersPage(props: {
 
           <div
             aria-hidden={deleteTarget ? "false" : "true"}
-            className={`modal hide fade${deleteTarget ? " in" : ""}`}
+            className={`modal hide${deleteTarget ? " in" : ""}`}
             id="alertDeletion"
             style={deleteTarget ? { display: "block" } : undefined}
           >
@@ -1844,7 +1844,7 @@ export function OrganizationDeletePage(props: {
 
           <div
             aria-hidden={modalOpen ? "false" : "true"}
-            className={`modal hide fade${modalOpen ? " in" : ""}`}
+            className={`modal hide${modalOpen ? " in" : ""}`}
             id="alertDeletion"
             style={modalOpen ? { display: "block" } : undefined}
           >
