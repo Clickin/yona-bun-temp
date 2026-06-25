@@ -298,6 +298,10 @@ type ProjectScopeInput = {
   projectName: string;
 };
 
+export type ProjectPushedBranchDeleteInput = ProjectScopeInput & {
+  pushedBranchId: number;
+};
+
 type PullRequestScopeInput = ProjectScopeInput & {
   pullRequestNumber: bigint | number;
 };
@@ -909,6 +913,19 @@ export function restorePullRequestSourceBranchRest(
     pullRequestPath(input, "/source-branch"),
     { csrfToken, fetchImpl, method: "POST" },
   ).then(normalizeDetail);
+}
+
+export function deleteProjectPushedBranchRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectPushedBranchDeleteInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  return restFetch<unknown>(
+    runtimeConfig,
+    `${projectPath(input)}/pushed-branches/${input.pushedBranchId}`,
+    { csrfToken, fetchImpl, method: "DELETE" },
+  ).then(() => undefined);
 }
 
 export function reviewPullRequestRest(

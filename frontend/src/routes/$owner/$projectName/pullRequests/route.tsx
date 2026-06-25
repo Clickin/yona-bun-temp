@@ -1,7 +1,11 @@
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { projectPullRequestListQueryOptions } from "../../../../api/pull-requests";
+import { apiQueryKeys } from "../../../../api/query-keys";
+import {
+  deleteProjectPushedBranchRest,
+  projectPullRequestListQueryOptions,
+} from "../../../../api/pull-requests";
 import { readProjectContainer } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
@@ -20,11 +24,18 @@ export const Route = createFileRoute("/$owner/$projectName/pullRequests")({
 
 function ProjectPullRequestsRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const queryClient = useQueryClient();
   const searchParams = new URLSearchParams(window.location.search);
   const filter = searchParams.get("filter") ?? "";
   const pageNum = Number(searchParams.get("pageNum") || "1");
   const contributorId = Number(searchParams.get("contributorId") || "0");
+  const listQueryKey = apiQueryKeys.project.pullRequestList(owner, projectName, {
+    category: "open",
+    contributorId,
+    filter,
+    pageNum,
+  });
   const containerQuery = useQuery({
     queryFn: () => readProjectContainer(runtimeConfig, owner, projectName),
     queryKey: ["api", "v1", "owners", owner, "projects", projectName, "container"],
@@ -39,6 +50,20 @@ function ProjectPullRequestsRouteComponent() {
       projectName,
     }),
   );
+  const deletePushedBranchMutation = useMutation({
+    mutationFn: (pushedBranchId: number) =>
+      deleteProjectPushedBranchRest(runtimeConfig, csrfToken, {
+        ownerName: owner,
+        projectName,
+        pushedBranchId,
+      }),
+    onError: (error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : "error.internalServerError");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: listQueryKey });
+    },
+  });
   const error = containerQuery.error ?? listQuery.error;
   const failureKind = error ? (classifyConnectFailure(error) ?? "bad-request") : null;
 
@@ -67,6 +92,7 @@ function ProjectPullRequestsRouteComponent() {
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       list={listQuery.data}
       messages={messages}
+      onDeletePushedBranch={(branch) => deletePushedBranchMutation.mutate(branch.id)}
       query={{ category: "open", contributorId, filter, pageNum }}
       runtimeConfig={runtimeConfig}
     />

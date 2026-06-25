@@ -410,6 +410,16 @@
   primary path. Focused evidence: `frontend/src/form-submit-boundary.spec.tsx`,
   `tests/server-spa-rest-boundary-contract.test.mjs`, and
   `auth_workspace_contract::direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate`.
+- 2026-06-25 pushed-branch dismissal REST boundary note: the pull-request list
+  recent pushed-branch close control keeps the legacy `data-request-method` /
+  `data-request-uri` attributes for markup parity, but React now intercepts the
+  click and calls `/api/v1/owners/{owner}/projects/{project}/pushed-branches/{id}`
+  DELETE. The legacy `/{owner}/{project}/pushedBranch/{id}/delete` route remains
+  a direct compatibility adapter. Focused evidence:
+  `frontend/src/form-submit-boundary.spec.tsx`,
+  `frontend/src/route-parity.spec.tsx`,
+  `tests/server-spa-rest-boundary-contract.test.mjs`, and
+  `cargo check -p yoram-server`.
 - 2026-06-20 runtime DI note: app route assembly now receives an explicit `RuntimeRegistry` built from the initialized `AppRuntimeConfig` snapshot, so route registration reads mail/update/auth/translation/site-name/default-scope/upload-size runtime config from one injected registry instead of threading those config fragments as separate function parameters. This is behavior-neutral plumbing toward per-test runtime config isolation without process-global env locks.
 - 2026-06-20 runtime DI note: project direct aliases for watch/unwatch, enroll/cancel-enroll, changeVCS, member CRUD, webhook CRUD, overview update, and clone now reuse the app-scoped `PilotServiceImpl` registered by `routes::projects` instead of rebuilding service/runtime config from process env in each handler. Existing project member, webhook, changeVCS, rest watch/enroll, and project overview/clone contract coverage remains the behavior evidence.
 - 2026-06-20 runtime DI note: legacy direct auth login/signup routes now receive the app-scoped `PilotServiceImpl` from auth route registration instead of rebuilding auth UI and SMTP runtime config from process env. The direct legacy login/signup contract now uses the explicit default `AppRuntimeConfig` helper without process-env mutation for the default auth UI path.

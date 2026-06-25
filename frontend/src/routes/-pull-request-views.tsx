@@ -931,6 +931,7 @@ function ProjectRecentlyPushedBranches(props: {
   branches: PullRequestPushedBranch[];
   messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
+  onDeletePushedBranch?: (branch: PullRequestPushedBranch) => void;
 }) {
   if (props.branches.length === 0) {
     return null;
@@ -977,6 +978,10 @@ function ProjectRecentlyPushedBranches(props: {
                   branch.projectName,
                   `pushedBranch/${branch.id}/delete`,
                 )}
+                onClick={(event) => {
+                  event.preventDefault();
+                  props.onDeletePushedBranch?.(branch);
+                }}
               >
                 ×
               </a>
@@ -995,6 +1000,7 @@ export function ProjectPullRequestListPage(props: {
   messages?: LegacyMessageLookup;
   query: PullRequestListQuery;
   runtimeConfig: RuntimeConfig;
+  onDeletePushedBranch?: (branch: PullRequestPushedBranch) => void;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const list = props.list;
@@ -1023,6 +1029,7 @@ export function ProjectPullRequestListPage(props: {
               <ProjectRecentlyPushedBranches
                 branches={list?.recentlyPushedBranches ?? []}
                 messages={props.messages}
+                onDeletePushedBranch={props.onDeletePushedBranch}
                 runtimeConfig={props.runtimeConfig}
               />
               <div className="pull-right">

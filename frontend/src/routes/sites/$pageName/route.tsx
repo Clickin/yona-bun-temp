@@ -1503,7 +1503,8 @@ export function SiteAdminMassMailPage({
   const [mode, setMode] = React.useState<"all" | "projects">("all");
   const [projectInput, setProjectInput] = React.useState("");
   const [selectedProjects, setSelectedProjects] = React.useState<string[]>([]);
-  const addProject = () => {
+  const addProject = (event?: React.MouseEvent<HTMLButtonElement>) => {
+    event?.preventDefault();
     const project = projectInput.trim();
     if (project === "") {
       return;
@@ -1511,7 +1512,8 @@ export function SiteAdminMassMailPage({
     setSelectedProjects((current) => (current.includes(project) ? current : [...current, project]));
     setProjectInput("");
   };
-  const resolveRecipients = () => {
+  const resolveRecipients = (event?: React.MouseEvent<HTMLButtonElement>) => {
+    event?.preventDefault();
     onResolveRecipients({
       all: mode === "all",
       projects: mode === "all" ? [] : selectedProjects,
@@ -1586,7 +1588,7 @@ export function SiteAdminMassMailPage({
                       className="ybtn"
                       data-loading-text={legacyMessage(messages, "site.massMail.loading")}
                       id="select-project"
-                      type="submit"
+                      type="button"
                       onClick={addProject}
                     >
                       <strong>{legacyMessage(messages, "button.add")}</strong>
@@ -1607,7 +1609,7 @@ export function SiteAdminMassMailPage({
                     data-request-uri={apiSiteMailListUri(runtimeConfig)}
                     disabled={pending}
                     id="write-email"
-                    type="submit"
+                    type="button"
                     onClick={resolveRecipients}
                   >
                     <strong>{legacyMessage(messages, "site.mail.write")}</strong>

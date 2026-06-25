@@ -57,3 +57,12 @@ test("auth signup and login keep REST JSON as the primary React boundary", () =>
   );
 });
 
+test("React-owned pushed-branch dismissal has a REST JSON mutation route", () => {
+  const source = readFileSync(path.join(ROUTES_DIR, "projects.rs"), "utf8");
+
+  assert.match(
+    source,
+    /"\x2fowners\x2f\{owner_name\}\x2fprojects\x2f\{project_name\}\x2fpushed-branches\x2f\{pushed_branch_id\}"[\s\S]*?rest_delete_project_pushed_branch/,
+  );
+  assert.match(source, /Json\(RestProjectPushedBranchDeleteResponse \{ deleted: true \}\)/);
+});

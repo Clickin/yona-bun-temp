@@ -63,6 +63,25 @@ function lineNumberForIndex(source: string, index: number) {
   return source.slice(0, index).split("\n").length;
 }
 
+function requestMethodElements() {
+  return listRouteFiles().flatMap((file) => {
+    const source = readRouteSource(file);
+    return Array.from(source.matchAll(/data-request-method=/g), (match) => {
+      const index = match.index ?? 0;
+      const anchorStart = source.lastIndexOf("<a", index);
+      const buttonStart = source.lastIndexOf("<button", index);
+      const start = Math.max(anchorStart, buttonStart);
+      const tag = start === anchorStart ? "a" : "button";
+      return {
+        file,
+        line: lineNumberForIndex(source, index),
+        snippet: source.slice(start, index + 900),
+        tag,
+      };
+    });
+  });
+}
+
 describe("React form submit boundary", () => {
   it("allows native POST only for documented direct multipart import forms", () => {
     const actual = listRouteFiles().flatMap((file) => {
@@ -196,6 +215,18 @@ describe("React form submit boundary", () => {
       const source = readRouteSource(file);
       expect(source, file).toContain("event.preventDefault()");
       expect(source, file).not.toMatch(clickMutationFallbackPattern);
+    }
+  });
+
+  it("keeps legacy data-request-method mutation markers inside React event handlers", () => {
+    for (const element of requestMethodElements()) {
+      if (element.tag === "button") {
+        expect(element.snippet, `${element.file}:${element.line}`).toContain('type="button"');
+        continue;
+      }
+      expect(element.snippet, `${element.file}:${element.line}`).toContain(
+        "event.preventDefault()",
+      );
     }
   });
 });
