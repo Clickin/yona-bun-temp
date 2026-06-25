@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   LegacyI18nProvider,
   createLegacyI18nRuntime,
+  lookupLegacyDefaultMessage,
   lookupLegacyMessage,
   normalizeLegacyLanguageCode,
   normalizeSupportedLanguages,
@@ -152,6 +153,30 @@ describe("legacy i18n runtime", () => {
     expect(runtime.language).toBe("ko-KR");
     expect(runtime.t("missing.legacy.key", { fallback: "missing.legacy.key" })).toBe(
       "missing.legacy.key",
+    );
+  });
+
+  it("uses legacy default messages for auth title fallbacks without hardcoded templates", () => {
+    expect(lookupLegacyDefaultMessage("title.loginFor")).toBe(
+      'Log in to <span class="highlight">{0}</span>',
+    );
+    expect(lookupLegacyDefaultMessage("title.signupFor")).toBe(
+      'Sign up for <span class="highlight">{0}</span>',
+    );
+    expect(lookupLegacyDefaultMessage("title.resetPasswordFor")).toBe(
+      'Reset password for <span class="highlight">{0}</span>',
+    );
+
+    const authSource = readFileSync(`${__dirname}/routes/-auth-views.tsx`, "utf8");
+    expect(authSource).toContain('lookupLegacyDefaultMessage("title.loginFor")');
+    expect(authSource).toContain('lookupLegacyDefaultMessage("title.signupFor")');
+    expect(authSource).toContain('lookupLegacyDefaultMessage("title.resetPasswordFor")');
+    expect(authSource).not.toContain("fallback: 'Log in to <span class=\"highlight\">{0}</span>'");
+    expect(authSource).not.toContain(
+      "fallback: 'Sign up for <span class=\"highlight\">{0}</span>'",
+    );
+    expect(authSource).not.toContain(
+      "fallback: 'Reset password for <span class=\"highlight\">{0}</span>'",
     );
   });
 

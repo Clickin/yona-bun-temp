@@ -1836,6 +1836,14 @@ export function lookupLegacyMessage(
   return formatLegacyMessage(raw, options.args);
 }
 
+export function lookupLegacyDefaultMessage(key: string): string {
+  return (
+    LEGACY_SOURCE_MESSAGES[LEGACY_DEFAULT_LANGUAGE][key] ??
+    LEGACY_MESSAGES[LEGACY_DEFAULT_LANGUAGE][key] ??
+    key
+  );
+}
+
 export function createLegacyI18nRuntime(
   supportedLanguages: readonly string[] | null | undefined,
   preferredLanguages: readonly string[] | null | undefined = [],

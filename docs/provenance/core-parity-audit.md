@@ -81,6 +81,13 @@
   evidence: `auth-workspace-shell.spec.tsx`, `workspace-settings-i18n.spec.tsx`,
   `code-views.spec.tsx`, `project-code-browser-routing.spec.ts`,
   `i18n.spec.tsx`, and `pnpm --dir frontend check`.
+- 2026-06-25 auth-title fallback continuation: provider-less auth renders no
+  longer carry hardcoded English title templates for `title.loginFor`,
+  `title.signupFor`, or `title.resetPasswordFor`; those fallbacks are derived
+  from the checked-in legacy default message dictionary via
+  `lookupLegacyDefaultMessage(...)`. Focused evidence: `i18n.spec.tsx`,
+  `auth-workspace-shell.spec.tsx`, `wave1-auth-workspace-parity.spec.tsx`, and
+  `pnpm --dir frontend check`.
 - 2026-06-25 pilot seed copy note: the seeded `pilot/yona` project no longer exposes the internal "browser-safe route tree" implementation note in project home/directory views; the visual sweep now fails if that fixture copy or the unbased `localhost:3001/yo` clone URL leaks into rendered UI.
 - 2026-06-25 project settings sweep note: legacy project admin GET pages for `/changeVCS`, `/transfer`, and `/webhooks` now fall through to the React SPA shell while preserving their legacy direct mutation methods; the non-legacy webhook delivery-history block was removed from the React settings page. The local rendered-screen Playwright sweep now waits past transient loading shells and passes the expanded route corpus. `/sites/diagnostic` browser GET also serves the React shell on forbidden viewers instead of exposing raw JSON, while `/api/v1/site/diagnostics` remains site-admin-only. Focused evidence: project settings/route parity specs, cargo build, and `docs/provenance/visual-parity-sweep-2026-06-25.md`.
 - 2026-06-25 combined visual sweep note: direct Playwright browser access to the homelab legacy IP still fails, but a localhost proxy that fetches upstream with host `curl` lets Playwright render the legacy pages. The combined sweep now records legacy 73/77, local 152/152, and 0 same-path comparison failures; the four legacy failures are homelab reference timeout/500 responses, not Rust-rendered local failures. The sweep fails when legacy renders a normal page but local renders an error page, applies detail/edit/code/compare suffixes to discovered legacy project roots such as `/admin/sample`, and treats legacy `/notification?from=...` as a fragment while requiring the Rust port to render the React shell for browser navigation. Focused evidence: `scripts/visual-parity-sweep.mjs`, `notification_contract::notification_contract_direct_notification_html_accept_serves_spa_shell`, and `docs/provenance/visual-parity-sweep-2026-06-25.md`.
