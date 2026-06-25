@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { hasRawLegacyI18nKey, rawLegacyI18nKeys } from "./legacy-i18n-key-detector.mjs";
+import { buildLegacyAuditCorpus } from "./visual-parity-sweep-corpus.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const require = createRequire(new URL("../frontend/package.json", import.meta.url));
@@ -274,6 +275,7 @@ const rootNames = new Set([
   "verify",
 ]);
 const userProfileRootNames = new Set(["admin"]);
+let cachedLegacyAuditCorpus = null;
 
 function samplePathFromRoutePath(routePath) {
   if (Object.hasOwn(routeTreeSampleAliases, routePath)) {
@@ -298,24 +300,19 @@ function routeTreeSamplePaths() {
 }
 
 function legacyAuditDiscoveredPageLinks() {
-  try {
-    const source = readFileSync(
-      resolve(repoRoot, ".agent/legacy-html-page-audit/latest.json"),
-      "utf8",
-    );
-    const audit = JSON.parse(source);
-    const links = Array.isArray(audit.discoveredPageLinks) ? audit.discoveredPageLinks : [];
-    return [
-      ...new Set(
-        links
-          .filter((path) => typeof path === "string" && path.startsWith("/"))
-          .map((path) => normalizePath("http://legacy-audit.local", path))
-          .filter(Boolean),
-      ),
-    ].sort();
-  } catch {
-    return [];
-  }
+  cachedLegacyAuditCorpus ??= buildLegacyAuditCorpus({ normalizePath, repoRoot });
+  return cachedLegacyAuditCorpus.pages;
+}
+
+function legacyAuditCorpusSummary() {
+  cachedLegacyAuditCorpus ??= buildLegacyAuditCorpus({ normalizePath, repoRoot });
+  return {
+    checkedAt: cachedLegacyAuditCorpus.checkedAt ?? null,
+    error: cachedLegacyAuditCorpus.error,
+    pages: cachedLegacyAuditCorpus.pages,
+    path: cachedLegacyAuditCorpus.path,
+    status: cachedLegacyAuditCorpus.status,
+  };
 }
 
 function urlFor(baseUrl, path) {
@@ -888,6 +885,7 @@ function failedTargetResult(label, baseUrl, error) {
     failed: 1,
     directApiSurfaces: null,
     legacyAuditPages: legacyAuditDiscoveredPageLinks(),
+    legacyAuditCorpus: legacyAuditCorpusSummary(),
     legacyAuditPagesCovered: 0,
     missingLegacyAuditPages: [],
     discoveredProjectPages: [],
@@ -941,6 +939,7 @@ async function runTarget(label, baseUrl) {
       failed: results.filter((result) => !result.ok).length,
       directApiSurfaces,
       legacyAuditPages,
+      legacyAuditCorpus: legacyAuditCorpusSummary(),
       legacyAuditPagesCovered: legacyAuditPages.length - missingLegacyAuditPages.length,
       missingLegacyAuditPages,
       discoveredProjectPages,
@@ -995,12 +994,14 @@ const comparisonFailures = comparison.filter((result) => result.diffErrors.lengt
 const missingLegacyAuditPages = [legacy, local].flatMap((target) =>
   (target?.missingLegacyAuditPages ?? []).map((path) => `${target.label}:${path}`),
 );
+const unusableLegacyAuditCorpus = legacyAuditCorpusSummary().error !== null;
 if (
   (legacy?.status !== "ok" && sweepTarget !== "local") ||
   (local?.status !== "ok" && sweepTarget !== "legacy") ||
   (local?.failed ?? 0) > 0 ||
   (local?.directApiSurfaces?.failed ?? 0) > 0 ||
   (sweepTarget === "legacy" && (legacy?.failed ?? 0) > 0) ||
+  unusableLegacyAuditCorpus ||
   missingLegacyAuditPages.length > 0 ||
   comparisonFailures.length > 0
 ) {
