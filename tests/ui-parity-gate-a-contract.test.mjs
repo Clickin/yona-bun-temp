@@ -114,6 +114,19 @@ function parseInventoryCounts(resultInventorySection) {
   return counts;
 }
 
+function parseScenarioRows(scenarioMatrixSection) {
+  return scenarioMatrixSection
+    .split("\n")
+    .filter((line) => line.startsWith("|") && !line.includes("---"))
+    .slice(1)
+    .map((line) =>
+      line
+        .split("|")
+        .slice(1, -1)
+        .map((column) => column.trim().replaceAll("`", "").toLowerCase()),
+    );
+}
+
 test("full UI parity Gate A keeps one report for every active packet", () => {
   const phasePlan = readText(phasePlanPath);
   const packets = activePackets(phasePlan);
@@ -229,6 +242,37 @@ test("full UI parity Gate A report summaries match their inventory rows", () => 
       Object.values(inventoryCounts).reduce((sum, count) => sum + count, 0),
       `${packet} total rows must match counted inventory statuses`,
     );
+  }
+});
+
+test("full UI parity Playwright scenario matrices keep nonblocking concrete rows", () => {
+  const phasePlan = readText(phasePlanPath);
+  const allowedScenarioStatuses = new Set(["covered", "deferred", "not-applicable"]);
+
+  for (const packet of activePackets(phasePlan)) {
+    const reportPath = path.join(reportsDir, `${packet}.md`);
+    const scenarioRows = parseScenarioRows(
+      section(readText(reportPath), "Playwright Scenario Matrix"),
+    );
+
+    assert.ok(scenarioRows.length > 0, `${packet} must have at least one scenario row`);
+    for (const [index, columns] of scenarioRows.entries()) {
+      assert.equal(columns.length, 7, `${packet} scenario row ${index + 1} must have 7 columns`);
+      columns.slice(0, 6).forEach((column, columnIndex) => {
+        assert.notEqual(
+          column,
+          "",
+          `${packet} scenario row ${index + 1} column ${columnIndex + 1} must not be empty`,
+        );
+      });
+      const status = columns[6];
+      const normalizedStatus = status.startsWith("covered ") ? "covered" : status;
+      assert.equal(
+        allowedScenarioStatuses.has(normalizedStatus),
+        true,
+        `${packet} scenario row ${index + 1} has non-closed status: ${status}`,
+      );
+    }
   }
 });
 

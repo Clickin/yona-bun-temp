@@ -84,7 +84,7 @@ Total rows: 21
 
 | path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/:owner/:project/issues` | open/closed list | `.nav-tabs a[state=open|closed]`, `#two-column-mode`, `#toggle-show-subtasks` | same selectors rendered by `ProjectIssueListPage` | click state tab, toggle two-column/subtasks | `GET /api/v1/projects/:owner/:project/issues` | covered |
+| `/:owner/:project/issues` | open/closed list | `.nav-tabs` links for `state=open` or `state=closed`, `#two-column-mode`, `#toggle-show-subtasks` | same selectors rendered by `ProjectIssueListPage` | click state tab, toggle two-column/subtasks | `GET /api/v1/projects/:owner/:project/issues` | covered |
 | `/:owner/:project/issues` | advanced filters | `input[name=filter]`, `select#authorId`, `select#assigneeId`, `select#milestoneId`, `input[name=dueDate]`, sort anchors | controls render and route/client/backend preserve/apply filter, due-date, commenter, order, state, author/assignee, milestone, and labels | submit filter/sort/due date | `GET /api/v1/projects/:owner/:project/issues` | covered |
 | `/:owner/:project/issues` | mass update | `#mass-update-form`, `#check-all`, `#state`, `#assignee`, `#milestone`, `#attaching-label`, `#detaching-label` | same selectors render and post selected rows through REST JSON mass update | select rows and change state/assignee/labels | `POST /api/v1/projects/:owner/:project/issues/mass-update` | covered |
 | `/:owner/:project/issueform` | create | `#title`, editor textarea, `#assignee`, `#milestoneId`, `#issueDueDate`, `#labelIds`, `#draft-save-btn` | same core controls rendered | save and draft submit | REST create issue | covered |
