@@ -24,6 +24,12 @@ Status: current audit evidence.
   `discoveredPageLinks`, route-tree sample expansion, and discovered seeded
   project links. Each route is inspected in an isolated Playwright page so one
   navigation failure cannot cascade into later false failures.
+- Legacy-link coverage criterion: every normalized path imported from the
+  latest legacy HTML audit `discoveredPageLinks` must appear in the rendered
+  Playwright result set for each target being swept. The result JSON records
+  `legacyAuditPagesCovered` and `missingLegacyAuditPages`, and any missing
+  imported legacy page fails the sweep instead of being left as an implicit
+  corpus-construction assumption.
 - Legacy route corpus: explicit legacy base pages, the latest legacy HTML audit
   `discoveredPageLinks`, plus any project links discovered from `/projects`.
   The discovery filter treats `/admin/sample` as a project route even though
@@ -84,6 +90,8 @@ Playwright render the legacy responses from `127.0.0.1`.
 - The visual sweep now imports the latest legacy HTML audit's 49
   `discoveredPageLinks` into each target corpus and records the normalized list
   as `legacyAuditPages` in `output/playwright/visual-sweep/latest.json`.
+  The sweep also records explicit coverage for that imported link set; the
+  stabilized local run covers 49/49 with `missingLegacyAuditPages: []`.
 - Legacy route/spec/anchor/render coverage smokes: 57 routed, 57 with spec evidence, 104/104
   curl-observed anchors with Rust evidence, 57/57 with rendered e2e signal evidence.
 - Legacy Playwright visual sweep through the curl proxy: 77 checked, 73 passed, 4 failed,

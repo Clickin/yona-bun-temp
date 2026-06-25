@@ -835,6 +835,8 @@ async function runTarget(label, baseUrl) {
       await routePage.close().catch(() => {});
     }
   }
+  const resultPaths = new Set(results.map((result) => result.path));
+  const missingLegacyAuditPages = legacyAuditPages.filter((path) => !resultPaths.has(path));
   await page.close().catch(() => {});
   await browser.close();
   return {
@@ -846,6 +848,8 @@ async function runTarget(label, baseUrl) {
     failed: results.filter((result) => !result.ok).length,
     directApiSurfaces,
     legacyAuditPages,
+    legacyAuditPagesCovered: legacyAuditPages.length - missingLegacyAuditPages.length,
+    missingLegacyAuditPages,
     discoveredProjectPages,
     results,
   };
@@ -884,10 +888,14 @@ const summary = {
 writeFileSync(resolve(outputDir, "latest.json"), `${JSON.stringify(summary, null, 2)}\n`);
 console.log(JSON.stringify(summary, null, 2));
 const comparisonFailures = comparison.filter((result) => result.diffErrors.length > 0);
+const missingLegacyAuditPages = [legacy, local].flatMap((target) =>
+  (target?.missingLegacyAuditPages ?? []).map((path) => `${target.label}:${path}`),
+);
 if (
   (local?.failed ?? 0) > 0 ||
   (local?.directApiSurfaces?.failed ?? 0) > 0 ||
   (sweepTarget === "legacy" && (legacy?.failed ?? 0) > 0) ||
+  missingLegacyAuditPages.length > 0 ||
   comparisonFailures.length > 0
 ) {
   process.exitCode = 1;
