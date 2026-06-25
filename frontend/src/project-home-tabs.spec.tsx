@@ -139,6 +139,25 @@ describe("project home tab parity", () => {
     expect(cancelHtml).toContain('class="yobicon-removefriend"');
   });
 
+  it("renders project watch as the legacy direct watch anchor", () => {
+    const watchHtml = renderProjectHome("/yona/yona/projectYobi", {
+      viewerCanWatch: true,
+    });
+    expect(watchHtml).toContain(
+      'class="ybtn ybtn-watching watchBtn" href="/yona/yona/projectYobi/watch"',
+    );
+    expect(watchHtml).toContain('class="yobicon-eye"');
+
+    const unwatchHtml = renderProjectHome("/yona/yona/projectYobi", {
+      isWatching: true,
+      viewerCanWatch: true,
+    });
+    expect(unwatchHtml).toContain(
+      'class="ybtn ybtn-watching watchBtn" href="/yona/yona/projectYobi/unwatch"',
+    );
+    expect(unwatchHtml).toContain('class="yobicon-eye-off"');
+  });
+
   it("keeps project overview mentions plain like legacy Markdown.render(String)", () => {
     const html = renderProjectHome("/yona/yona/projectYobi", {
       overview: "Project **home** @admin @yona/projectYobi",

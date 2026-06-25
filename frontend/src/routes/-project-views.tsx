@@ -1554,6 +1554,12 @@ export function ProjectDetailPage(props: {
     detail.projectName,
     detail.enrollmentRequested ? "cancel/enroll" : "enroll",
   );
+  const watchHref = buildProjectHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    detail.isWatching ? "unwatch" : "watch",
+  );
   const isGitProject = !detail.vcs || detail.vcs.toLowerCase() === "git";
 
   return (
@@ -1785,21 +1791,27 @@ export function ProjectDetailPage(props: {
                       </i>
                     </button>
                     {detail.viewerCanWatch ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          props.onToggleProjectWatch?.(
+                      <a
+                        className="ybtn ybtn-watching watchBtn"
+                        href={watchHref}
+                        onClick={(event) => {
+                          if (!props.onToggleProjectWatch) {
+                            return;
+                          }
+                          event.preventDefault();
+                          props.onToggleProjectWatch(
                             detail.ownerName,
                             detail.projectName,
                             !detail.isWatching,
-                          )
-                        }
+                          );
+                        }}
                       >
+                        <i className={detail.isWatching ? "yobicon-eye-off" : "yobicon-eye"} />{" "}
                         {legacyMessage(
                           messages,
                           detail.isWatching ? "project.unwatch" : "project.watch",
                         )}
-                      </button>
+                      </a>
                     ) : null}
                     {detail.viewerCanEnroll ? (
                       <a
