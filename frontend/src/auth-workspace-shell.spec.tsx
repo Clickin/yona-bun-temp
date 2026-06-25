@@ -152,7 +152,7 @@ describe("auth and workspace views", () => {
     expect(html).toContain('id="remember-me"');
     expect(html).toContain('class="remember-me-wrap pull-left"');
     expect(html).toContain('class="links-wrap pull-right"');
-    expect(html).toContain('method="post"');
+    expect(html).not.toContain('method="post"');
     expect(html).not.toContain('action="/yona/users/login"');
     expect(html).toContain('name="redirectUrl"');
     expect(html).toContain('value="/admin/projectYobi/issue/1"');
@@ -552,7 +552,7 @@ describe("auth and workspace views", () => {
     expect(html).toContain(">Password confirmation<");
     expect(html).toContain('name="retypedPassword"');
     expect(html).toContain('class="text password"');
-    expect(html).toContain('method="post"');
+    expect(html).not.toContain('method="post"');
     expect(html).not.toContain('action="/yona/users/signup"');
     expect(html).toContain(">Sign up<");
     expect(html).not.toContain(">user.signupBtn<");
@@ -606,6 +606,7 @@ describe("auth and workspace views", () => {
     expect(source).not.toContain('action={appHref(runtimeConfig, "/users/signup")}');
     expect(source).not.toContain('action={appHref(runtimeConfig, "/lostPassword")}');
     expect(source).not.toContain('action={appHref(runtimeConfig, "/resetPassword")}');
+    expect(source).not.toContain('method="post"');
     expect(source).toContain("event.preventDefault();");
     expect(source).toContain("onSignIn?.(formState)");
     expect(source).toContain("onSignIn?.({");

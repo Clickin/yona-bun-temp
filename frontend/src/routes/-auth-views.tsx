@@ -231,7 +231,6 @@ export function LoginPage({
             </div>
           ) : null}
           <form
-            method="post"
             onSubmit={(event) => {
               event.preventDefault();
               onSignIn?.(formState);
@@ -367,7 +366,6 @@ export function LegacyLoginDialog({
         </div>
         <form
           className="frm-wrap login-form-wrap"
-          method="post"
           onSubmit={(event) => {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
@@ -505,7 +503,6 @@ export function RegisterPage({
         ) : null}
         <div className="signup-form-wrap frm-wrap">
           <form
-            method="post"
             name="signup"
             onSubmit={(event) => {
               event.preventDefault();
@@ -710,7 +707,6 @@ export function LostPasswordPage({
             </div>
           ) : null}
           <form
-            method="post"
             onSubmit={(event) => {
               event.preventDefault();
               onRequestReset?.(formState);
@@ -803,7 +799,6 @@ export function ResetPasswordPage({
             <div className="alert alert-error">{messages.t(message, { fallback: message })}</div>
           ) : null}
           <form
-            method="post"
             name="passwordReset"
             onSubmit={(event) => {
               event.preventDefault();

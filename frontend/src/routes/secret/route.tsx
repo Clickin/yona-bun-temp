@@ -50,7 +50,6 @@ function SecretAdminSetupRouteComponent() {
             <div className="signup-form-wrap frm-wrap">
               <form
                 className="input-append"
-                method="post"
                 onSubmit={async (event) => {
                   event.preventDefault();
                   setPending(true);
