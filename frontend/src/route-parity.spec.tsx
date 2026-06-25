@@ -4734,6 +4734,8 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("review-form");
     expect(pullRequestViewsSource).toContain("board-comment-form");
     expect(pullRequestViewsSource).toContain('id="review-form"');
+    expect(pullRequestViewsSource).toContain("submitBlockReview");
+    expect(pullRequestViewsSource).toContain("props.onInlineCommentSubmit");
     expect(pullRequestViewsSource).toContain("LegacyMarkdownHelp");
     expect(pullRequestViewsSource).toContain('data-toggle="close"');
     expect(pullRequestViewsSource).toContain("code-review-body");

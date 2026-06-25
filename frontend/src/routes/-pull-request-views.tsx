@@ -3069,15 +3069,46 @@ function PullRequestBlockReviewForm(props: {
   csrfToken?: string;
   draft: InlineReviewDraft | null;
   messages?: LegacyMessageLookup;
+  onSubmit?: (input: PullRequestInlineCommentSubmitInput) => Promise<void>;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
   const action = pullRequestApiHref(props.runtimeConfig, props.pullRequest, "/comments");
   const authorLabel =
     props.pullRequest.contributor.userLabel || props.pullRequest.contributor.loginId;
+  async function submitBlockReview(event: React.FormEvent<HTMLFormElement>) {
+    if (!props.onSubmit) {
+      return;
+    }
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const contentsMarkdown = String(formData.get("contents") ?? "").trim();
+    const draft = props.draft;
+    if (!contentsMarkdown || !draft) {
+      return;
+    }
+    await props.onSubmit({
+      attachmentIds: [],
+      commitId: props.pullRequest.mergedCommitIdTo,
+      contentsMarkdown,
+      endLine: draft.endLine,
+      endSide: draft.endSide,
+      path: draft.path,
+      prevCommitId: props.pullRequest.mergedCommitIdFrom,
+      startLine: draft.startLine,
+      startSide: draft.startSide,
+    });
+    event.currentTarget.reset();
+  }
+
   return (
     <div className="review-form" id="review-form" style={{ display: "none" }}>
-      <form action={action} encType="multipart/form-data" method="post">
+      <form
+        action={action}
+        encType="multipart/form-data"
+        method="post"
+        onSubmit={submitBlockReview}
+      >
         <input name="commitId" type="hidden" value={props.pullRequest.mergedCommitIdTo} />
         <input name="prevCommitId" type="hidden" value={props.pullRequest.mergedCommitIdFrom} />
         <input name="path" type="hidden" value={props.draft?.path ?? ""} />
@@ -3667,6 +3698,7 @@ export function PullRequestChangesPage(props: {
                     csrfToken={props.csrfToken}
                     draft={inlineDraft}
                     messages={props.messages}
+                    onSubmit={props.onInlineCommentSubmit}
                     pullRequest={pr}
                     runtimeConfig={props.runtimeConfig}
                   />
