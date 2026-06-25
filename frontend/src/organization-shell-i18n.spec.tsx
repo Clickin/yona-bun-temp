@@ -178,24 +178,25 @@ function renderOrganizationMembers(messages?: LegacyMessageLookup) {
 }
 
 describe("organization shell legacy i18n opt-in", () => {
-  it("keeps organization menu/header fallback keys without a runtime provider", () => {
+  it("uses default legacy messages for organization menu/header labels without a runtime provider", () => {
     const homeHtml = renderOrganizationHome();
     const settingsHtml = renderOrganizationSettings();
 
-    expect(homeHtml).toContain(">title.organizationHome<");
-    expect(homeHtml).toContain(">menu.issue<");
-    expect(homeHtml).toContain(">menu.board<");
-    expect(homeHtml).toContain(">menu.pullRequest<");
-    expect(homeHtml).toContain(" organization.member.enrollment.title</button>");
-    expect(homeHtml).toContain(">organization.you.may.want.to.be.a.member<");
-    expect(homeHtml).toContain(">organization.member.enrollment.help.before<");
-    expect(homeHtml).toContain(" button.new.enrollment</a>");
-    expect(settingsHtml).toContain(">organization.settingFrom<");
-    expect(settingsHtml).toContain(">organization.member<");
-    expect(settingsHtml).toContain(">organization.delete<");
+    expect(homeHtml).toContain(">Group Home<");
+    expect(homeHtml).toContain(">Issue<");
+    expect(homeHtml).toContain(">Board<");
+    expect(homeHtml).toContain(">Pull request<");
+    expect(homeHtml).toContain(" Member enrollment request</button>");
+    expect(homeHtml).toContain(">You may want to be a member of yona-org group.<");
+    expect(homeHtml).toContain(">Admins of this group can check your enrollment request.<");
+    expect(homeHtml).toContain(" Send sign-up request</a>");
+    expect(settingsHtml).toContain(">Setting<");
+    expect(settingsHtml).toContain(">Group member<");
+    expect(settingsHtml).toContain(">Group Delete<");
+    expect(homeHtml).not.toContain(">title.organizationHome<");
   });
 
-  it("keeps known organization auxiliary fallback keys without a runtime provider", () => {
+  it("uses default legacy messages for known organization auxiliary labels without a runtime provider", () => {
     const homeHtml = renderToStaticMarkup(
       <OrganizationDetailPage
         detail={{
@@ -240,20 +241,20 @@ describe("organization shell legacy i18n opt-in", () => {
     const issueHtml = renderEmptyOrganizationIssues();
     const memberHtml = renderOrganizationMembers();
 
-    expect(homeHtml).toContain('placeholder="title.type.name"');
-    expect(homeHtml).toContain(">button.newProject<");
-    expect(homeHtml).toContain(", project.codeUpdate ");
+    expect(homeHtml).toContain('placeholder="Type name"');
+    expect(homeHtml).toContain(">Create new project<");
+    expect(homeHtml).toContain(", Latest code update ");
     expect(homeHtml).toContain('title="project.you.are.not.watching"');
-    expect(homeHtml).toContain(">organization.member.leave<");
-    expect(homeHtml).toContain(">user.role.org_admin<");
-    expect(homeHtml).toContain(">user.role.org_member<");
-    expect(issueHtml).toContain('title="common.two.column.mode"');
-    expect(issueHtml).toContain('data-content="common.two.column.mode.desc"');
-    expect(issueHtml).toContain(">common.two.column.view<");
-    expect(issueHtml).toContain(">issue.is.empty<");
-    expect(memberHtml).toContain('title="user.wrongloginId.alert"');
-    expect(memberHtml).toContain(">user.role.org_admin<");
-    expect(memberHtml).toContain(">user.role.org_member<");
+    expect(homeHtml).toContain(">Leave the group<");
+    expect(homeHtml).toContain(">Group Manager<");
+    expect(homeHtml).toContain(">Group Member<");
+    expect(issueHtml).toContain('title="Two Column Mode"');
+    expect(issueHtml).toContain('data-content="Splits list and body into columns respectively"');
+    expect(issueHtml).toContain(">Column View<");
+    expect(issueHtml).toContain(">No issue found<");
+    expect(memberHtml).toContain('title="Enter Valid ID"');
+    expect(memberHtml).toContain(">Group Manager<");
+    expect(memberHtml).toContain(">Group Member<");
   });
 
   it("uses default English legacy messages for organization shell labels", () => {

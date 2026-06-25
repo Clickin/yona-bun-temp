@@ -50,7 +50,7 @@ describe("wave 2A container parity", () => {
 
     expect(html).toContain("Web labs");
     expect(html).toContain('id="mylist-filter"');
-    expect(html).toContain(">button.newProject<");
+    expect(html).toContain(">Create new project<");
     expect(html).toContain("projectYobi");
     expect(html).toContain("Wave 2A parity home");
     expect(html).toContain('class="yobicon-friends yobicon-middle"');
@@ -60,8 +60,8 @@ describe("wave 2A container parity", () => {
     expect(html).not.toContain("project.onmember 4");
     expect(html).not.toContain("project.onwatching 3");
     expect(html).toContain("naver<!-- --> / <!-- -->legacyYobi");
-    expect(html).toContain("user.role.org_admin");
-    expect(html).toContain("user.role.org_member");
+    expect(html).toContain("Group Manager");
+    expect(html).toContain("Group Member");
     expect(html).toContain('href="/yona/organizations/weblabs/settingform"');
   });
 
@@ -76,9 +76,9 @@ describe("wave 2A container parity", () => {
       visibleProjects: [],
     } as never);
 
-    expect(html).not.toContain(">button.newProject<");
-    expect(html).not.toContain("user.role.org_admin");
-    expect(html).not.toContain("user.role.org_member");
+    expect(html).not.toContain(">Create new project<");
+    expect(html).not.toContain("Group Manager");
+    expect(html).not.toContain("Group Member");
     expect(html).not.toContain("/settingform");
   });
 
@@ -132,40 +132,40 @@ describe("wave 2A container parity", () => {
 
     expect(html).toContain("weblabs / projectYobi");
     expect(html).toContain("Original project: naver / legacyYobi");
-    expect(html).toContain("project.watcher.title");
-    expect(html).toContain("project.unwatch");
+    expect(html).toContain("This project&#x27;s watcher list.");
+    expect(html).toContain("Unwatch");
     expect(html).not.toContain("Unwatch project");
-    expect(html).toContain('aria-label="code.copyUrl"');
-    expect(html).toContain('title="code.copyUrl"');
+    expect(html).toContain('aria-label="Copy URL"');
+    expect(html).toContain('title="Copy URL"');
     expect(html).not.toContain("Clone URL");
     expect(html).toContain("Wave 2A parity home");
-    expect(html).toContain('aria-label="button.edit"');
-    expect(html).toContain('title="button.edit"');
+    expect(html).toContain('aria-label="Edit"');
+    expect(html).toContain('title="Edit"');
     expect(html).not.toContain("Edit overview");
-    expect(html).toContain("project.dashboard");
+    expect(html).toContain("Dashboard");
     expect(html).toContain(">README<");
-    expect(html).toContain(">project.history.recent<");
-    expect(html).not.toContain(">Recent history<");
-    expect(html).not.toContain(">Dashboard<");
+    expect(html).toContain(">History<");
+    expect(html).not.toContain(">project.history.recent<");
+    expect(html).not.toContain(">project.dashboard<");
     expect(html).toContain('href="#helpKeys"');
     expect(html).toContain('class="modal hide fade keymap-help"');
-    expect(html).toContain(">title.keymap</a>");
-    expect(html).toContain("<h5>project.projects</h5>");
-    expect(html).toContain('<span class="help-inline">menu.home</span>');
-    expect(html).toContain('<span class="help-inline">menu.board</span>');
-    expect(html).toContain('<span class="help-inline">menu.issue</span>');
-    expect(html).toContain('<span class="help-inline">menu.code</span>');
-    expect(html).toContain('<span class="help-inline">menu.pullRequest</span>');
-    expect(html).toContain('<span class="help-inline">project.setting</span>');
-    expect(html).toContain('<span class="help-inline">site.search</span>');
-    expect(html).toContain('<span class="help-inline">button.submitForm</span>');
-    expect(html).toContain('<span class="menu-name">menu.issue</span>');
+    expect(html).toContain(">Keyboard shortcuts</a>");
+    expect(html).toContain("<h5>projects</h5>");
+    expect(html).toContain('<span class="help-inline">Home</span>');
+    expect(html).toContain('<span class="help-inline">Board</span>');
+    expect(html).toContain('<span class="help-inline">Issue</span>');
+    expect(html).toContain('<span class="help-inline">Code</span>');
+    expect(html).toContain('<span class="help-inline">Pull request</span>');
+    expect(html).toContain('<span class="help-inline">Settings</span>');
+    expect(html).toContain('<span class="help-inline">Site search</span>');
+    expect(html).toContain('<span class="help-inline">Submit form</span>');
+    expect(html).toContain('<span class="menu-name">Issue</span>');
     expect(html).toContain('<span class="project-menu-count">12</span>');
-    expect(html).toContain('<span class="menu-name">menu.pullRequest</span>');
+    expect(html).toContain('<span class="menu-name">Pull request</span>');
     expect(html).toContain('<span class="project-menu-count">5</span>');
-    expect(html).toContain('<span class="menu-name">menu.review</span>');
+    expect(html).toContain('<span class="menu-name">Review</span>');
     expect(html).toContain('<span class="project-menu-count">3</span>');
-    expect(html).toContain('<span class="menu-name">menu.board</span>');
+    expect(html).toContain('<span class="menu-name">Board</span>');
     expect(html).toContain('<span class="project-menu-count">7</span>');
     expect(html).not.toContain('title="Issues 12"');
     expect(html).not.toContain('title="Pull requests 5"');
@@ -176,14 +176,14 @@ describe("wave 2A container parity", () => {
       'class="title" href="/yona/weblabs/projectYobi/milestone/9">Wave 2A</a>',
     );
     expect(html).toContain('class="progress progress-success nm"');
-    expect(html).toContain("label.dueDate");
+    expect(html).toContain("Due Date");
     expect(html).toContain("2 / 6");
     expect(html).not.toContain("Current milestone");
     expect(html).not.toContain("Open issues:");
     expect(html).not.toContain("Closed issues:");
     expect(html).not.toContain("Progress:");
     expect(html).toContain("Wave 2A");
-    expect(html).toContain("project.members");
+    expect(html).toContain("Project members");
     expect(html).toContain('href="/yona/weblabs/projectYobi/settingform"');
   });
 
@@ -220,7 +220,7 @@ describe("wave 2A container parity", () => {
     const organizationNewHtml = renderOrganizationNew();
     expect(organizationNewHtml).toContain('class="form-wrap new-project"');
     expect(organizationNewHtml).toContain('name="new-org"');
-    expect(organizationNewHtml).toContain(">title.newOrganization<");
+    expect(organizationNewHtml).toContain(">New Group<");
     expect(organizationNewHtml).toContain('id="name"');
     expect(organizationNewHtml).toContain('name="name"');
     expect(organizationNewHtml).toContain('id="descr"');
@@ -247,17 +247,17 @@ describe("wave 2A container parity", () => {
     expect(organizationSettingsHtml).toContain('name="descr"');
     expect(organizationSettingsHtml).toContain('id="save"');
     expect(organizationSettingsHtml).toContain('class="project-menu-nav project-menu-gruop"');
-    expect(organizationSettingsHtml).toContain(">title.organizationHome</a>");
-    expect(organizationSettingsHtml).toContain(">menu.issue</a>");
-    expect(organizationSettingsHtml).toContain(">menu.board</a>");
-    expect(organizationSettingsHtml).toContain(">menu.pullRequest</a>");
+    expect(organizationSettingsHtml).toContain(">Group Home</a>");
+    expect(organizationSettingsHtml).toContain(">Issue</a>");
+    expect(organizationSettingsHtml).toContain(">Board</a>");
+    expect(organizationSettingsHtml).toContain(">Pull request</a>");
     expect(organizationSettingsHtml).toContain('class="project-setting"');
     expect(organizationSettingsHtml).toContain('class="yobicon-cog"');
     expect(organizationSettingsHtml).toContain(
       '<li class="active"><a href="/yona/organizations/weblabs/settingform"><i class="yobicon-cog"></i>',
     );
-    expect(organizationSettingsHtml).toContain('<span class="blind">menu.admin</span>');
-    expect(organizationSettingsHtml).not.toContain(">Group Home<");
+    expect(organizationSettingsHtml).toContain('<span class="blind">Project configuration</span>');
+    expect(organizationSettingsHtml).not.toContain(">title.organizationHome<");
     expect(organizationSettingsHtml).not.toContain(">Settings<");
 
     const projectSettingsHtml = renderProjectSettings({

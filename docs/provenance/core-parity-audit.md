@@ -1722,6 +1722,19 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   aligned with the "legacy key/value as source of truth" rule while preserving
   the provider-less behavior that renders the raw legacy keys. Focused
   coverage: `frontend/src/directory-home-user-files-notification-i18n.spec.tsx`.
+- 2026-06-25 direct-render i18n expectation tightening: direct React parity
+  renders now keep the same legacy key call sites while resolving available
+  legacy keys through `yona-original/conf/messages*` even without an explicit
+  test runtime provider. The organization shell/home and Wave 2A container
+  tests now assert user-visible legacy default English copy for known keys
+  such as `title.organizationHome`, `button.newProject`, `project.watcher.title`,
+  `code.copyUrl`, `button.edit`, `title.keymap`, and `menu.admin`, while still
+  allowing raw output only where a key is absent or a component intentionally
+  passes the key through non-message attributes. Focused coverage:
+  `frontend/src/organization-home-parity.spec.tsx`,
+  `frontend/src/organization-shell-i18n.spec.tsx`,
+  `frontend/src/wave2a-container-parity.spec.tsx`, and
+  `frontend/src/i18n.spec.tsx`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and

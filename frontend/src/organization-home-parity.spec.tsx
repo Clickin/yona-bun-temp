@@ -63,17 +63,17 @@ describe("organization home parity", () => {
     expect(html).toContain('class="project-util-wrap"');
     expect(html).toContain('class="project-util"');
     expect(html).toContain('data-toggle="dropdown" type="button"');
-    expect(html).toContain("organization.member.enrollment.title");
+    expect(html).toContain("Member enrollment request");
     expect(html).toContain('class="dropdown-menu flat right title"');
-    expect(html).toContain("organization.you.may.want.to.be.a.member");
-    expect(html).toContain("organization.member.enrollment.help.before");
+    expect(html).toContain("You may want to be a member of weblabs group.");
+    expect(html).toContain("Admins of this group can check your enrollment request.");
     expect(html).toContain(
       'class="ybtn ybtn-info enrollBtn" href="/yona/organizations/weblabs/enroll" id="enrollBtn"',
     );
-    expect(html).toContain("button.new.enrollment");
+    expect(html).toContain("Send sign-up request");
     expect(html).toContain('class="project-menu-nav project-menu-gruop"');
     expect(html).toContain(
-      '<li class="active"><a href="/yona/organizations/weblabs">title.organizationHome</a>',
+      '<li class="active"><a href="/yona/organizations/weblabs">Group Home</a>',
     );
     expect(html).toContain('href="/yona/organizations/weblabs/issues"');
     expect(html).toContain('href="/yona/organizations/weblabs/boards"');
@@ -116,7 +116,7 @@ describe("organization home parity", () => {
   it("keeps legacy organization submit copy while mutations are pending", () => {
     const newHtml = renderToStaticMarkup(<OrganizationNewPage pending />);
     expect(newHtml).toContain('<button class="ybtn ybtn-success" disabled="" type="submit">');
-    expect(newHtml).toContain("organization.create");
+    expect(newHtml).toContain("Create Group");
     expect(newHtml).not.toContain("organization.creating");
 
     const settingsHtml = renderToStaticMarkup(
@@ -135,7 +135,7 @@ describe("organization home parity", () => {
       />,
     );
     expect(settingsHtml).toContain('id="save" type="submit"');
-    expect(settingsHtml).toContain("button.save");
+    expect(settingsHtml).toContain("Save");
     expect(settingsHtml).not.toContain("button.saving");
   });
 });
