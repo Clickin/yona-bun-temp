@@ -247,6 +247,10 @@ describe("wave 1 auth and workspace parity", () => {
     });
 
     expect(html).toContain("whoami-wrap");
+    expect(html).toContain('class="user-info-box"');
+    expect(html).toContain('class="whoami usf-group"');
+    expect(html).not.toContain("user-info-box runtime-grid");
+    expect(html).not.toContain('class="lede"');
     expect(html).toContain('class="guest-user"');
     expect(html).toContain('<span class="left-mark">OUR GUEST</span>');
     expect(html).toContain("Door English");

@@ -747,7 +747,6 @@ export function WorkspacePage(props: {
   const profileEnglishName = profile.englishName.trim();
   const headlineName =
     profileEnglishName || profileDisplayName || session.userLabel || session.loginId;
-  const showDisplayName = profileDisplayName !== "" && profileDisplayName !== headlineName;
   const [activeIssueTab, setActiveIssueTab] = React.useState<"closed" | "open">("open");
   const [activeTab, setActiveTab] = React.useState<"issues" | "projects" | "pullRequests">(
     "issues",
@@ -780,7 +779,7 @@ export function WorkspacePage(props: {
       <div className="page-wrap-outer">
         <div className="page-wrap">
           <section className="user-box">
-            <div className="user-info-box runtime-grid">
+            <div className="user-info-box">
               <div
                 className="whoami-wrap"
                 style={{ backgroundImage: `url('${resolvedAvatarUrl}')` }}
@@ -791,22 +790,21 @@ export function WorkspacePage(props: {
                   </div>
                 ) : null}
               </div>
-              <div className="whoami">
+              <div className="whoami usf-group">
                 <span className="name">{headlineName}</span>
-                {showDisplayName ? <span className="lede">{profile.displayName}</span> : null}
                 <span className="loginid">{`@${profile.loginId || session.loginId}`}</span>
                 {showUserEmail && profileEmailAddress ? (
                   <span className="email">{profileEmailAddress}</span>
                 ) : null}
-              </div>
-              <div className="edit">
-                <a
-                  className="ybtn ybtn-default ybtn-mini"
-                  href={appHref(props.runtimeConfig, "/user/editform")}
-                >
-                  <i className="yobicon-edit"></i>{" "}
-                  {legacyMessage(props.messages, "userinfo.editProfile")}
-                </a>
+                <div className="edit">
+                  <a
+                    className="ybtn ybtn-default ybtn-mini"
+                    href={appHref(props.runtimeConfig, "/user/editform")}
+                  >
+                    <i className="yobicon-edit"></i>{" "}
+                    {legacyMessage(props.messages, "userinfo.editProfile")}
+                  </a>
+                </div>
               </div>
               <div className="user-status">
                 {profile.isSiteAdmin ? (
