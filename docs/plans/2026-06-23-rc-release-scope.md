@@ -13,7 +13,7 @@ guards that prevent legacy failure modes from taking the service down.
 
 | Scope                         | RC rule                                                                                                                                        | Evidence                                                                               |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Legacy MariaDB in-place adopt | Existing legacy MariaDB data must pass `validate_only`, then `adopt`, without treating validation as a write path.                             | `pnpm smoke:legacy-mariadb-dump`; `.agent/legacy-dumps/yona-dump.sql` remains ignored. |
+| Legacy MariaDB in-place adopt | Existing legacy MariaDB data must pass `validate_only`, then `adopt`, without treating validation as a write path, and an adopted user-visible API must return migrated data. | `pnpm smoke:legacy-mariadb-dump`; `.agent/legacy-dumps/yona-dump.sql` remains ignored. |
 | Supported DB matrix           | SQLite, PostgreSQL, and MariaDB/MySQL migration/search smoke must stay green.                                                                  | `db_matrix_env` / `db_matrix_testcontainers` with `--features db-matrix`.              |
 | Release packaging             | Single binary and Docker image must serve the embedded frontend and REST API.                                                                  | `pnpm smoke:embedded-assets`; `pnpm smoke:docker`.                                     |
 | Markdown stability            | Pathological Markdown must not crash the app. Very long fenced code blocks render as escaped plain source instead of syntax-highlighted spans. | `frontend/src/markdown-renderer.spec.tsx` long fenced-block regressions.               |
@@ -25,7 +25,8 @@ guards that prevent legacy failure modes from taking the service down.
 2026-06-24 current-HEAD refresh:
 
 - `pnpm smoke:legacy-mariadb-dump` passed against the ignored
-  `.agent/legacy-dumps/yona-dump.sql` baseline.
+  `.agent/legacy-dumps/yona-dump.sql` baseline, including the adopted
+  `/api/v1/users/admin/profile` migrated profile assertion.
 - `pnpm agent:cargo-test -- --outside-sandbox -p yoram-server --test
 db_matrix_env --features db-matrix -- --nocapture` passed.
 - `pnpm agent:cargo-test -- --outside-sandbox -p yoram-server --test

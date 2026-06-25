@@ -97,6 +97,88 @@ async function waitForHttp(url, timeoutMs = 45_000) {
   throw lastError ?? new Error(`timed out waiting for ${url}`);
 }
 
+async function fetchJson(url) {
+  const response = await fetch(url, { headers: { accept: "application/json" } });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`${url} returned ${response.status}\n${text}`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(`${url} returned invalid JSON: ${error.message}\n${text}`);
+  }
+}
+
+async function readMigratedUserProbe(containerId) {
+  const raw = await waitForSql(
+    containerId,
+    `SELECT JSON_OBJECT(
+       'id', u.id,
+       'loginId', u.login_id,
+       'displayName', COALESCE(u.name, ''),
+       'englishName', COALESCE(u.english_name, '')
+     )
+       FROM n4user u
+      WHERE u.login_id IS NOT NULL
+        AND u.login_id <> ''
+        AND LOWER(u.login_id) <> 'anonymous'
+        AND NOT EXISTS (
+          SELECT 1 FROM organization o WHERE o.name = u.login_id
+        )
+      ORDER BY u.id
+      LIMIT 1;`,
+  );
+  if (!raw) {
+    throw new Error("legacy MariaDB dump has no non-anonymous user row for profile smoke");
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    throw new Error(`failed to parse migrated user probe JSON: ${error.message}\n${raw}`);
+  }
+}
+
+async function assertMigratedUserProfile(origin, migratedUser) {
+  const profileUrl = `${origin}/api/v1/users/${encodeURIComponent(migratedUser.loginId)}/profile`;
+  const payload = await fetchJson(profileUrl);
+  const profile = payload.profile;
+  if (!profile) {
+    throw new Error(`${profileUrl} did not return a profile: ${JSON.stringify(payload)}`);
+  }
+
+  const expected = {
+    displayName: migratedUser.displayName ?? "",
+    englishName: migratedUser.englishName ?? "",
+    loginId: migratedUser.loginId,
+  };
+  const actual = {
+    displayName: profile.displayName ?? "",
+    englishName: profile.englishName ?? "",
+    loginId: profile.loginId,
+  };
+  if (
+    actual.loginId !== expected.loginId ||
+    actual.displayName !== expected.displayName ||
+    actual.englishName !== expected.englishName
+  ) {
+    throw new Error(
+      `migrated profile API mismatch: ${JSON.stringify({
+        expected,
+        actual,
+        profileUrl,
+      })}`,
+    );
+  }
+
+  return {
+    api: `/api/v1/users/${migratedUser.loginId}/profile`,
+    display_name: actual.displayName,
+    english_name: actual.englishName,
+    login_id: actual.loginId,
+  };
+}
+
 async function startServer(policy, databaseUrl) {
   const port = await getFreePort();
   const origin = `http://127.0.0.1:${port}`;
@@ -171,6 +253,7 @@ try {
   }
 
   const userCount = await waitForSql(containerId, "SELECT COUNT(*) FROM n4user;");
+  const migratedUser = await readMigratedUserProbe(containerId);
   const databaseUrl = `mysql://root@127.0.0.1:${mariadbPort}/yona`;
 
   const validateOnly = await startServer("validate_only", databaseUrl);
@@ -181,6 +264,7 @@ try {
   );
 
   const adopt = await startServer("adopt", databaseUrl);
+  const migratedProfile = await assertMigratedUserProfile(adopt.origin, migratedUser);
   await stopServer(adopt);
   const adoptedVersion = await waitForSql(containerId, "SELECT version FROM seaql_migrations LIMIT 1;");
 
@@ -191,6 +275,7 @@ try {
     users: Number(userCount),
     validate_only_left_migration_table_absent: migrationsAfterValidate === "0",
     adopted_version: adoptedVersion,
+    migrated_profile: migratedProfile,
   };
   if (!result.validate_only_left_migration_table_absent || !result.adopted_version) {
     throw new Error(`legacy MariaDB dump smoke failed: ${JSON.stringify(result)}`);
