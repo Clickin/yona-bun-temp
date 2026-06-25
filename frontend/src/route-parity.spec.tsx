@@ -1369,15 +1369,14 @@ describe("file-route parity harness", () => {
     expect(paginationHtml).toContain('<ul class="page-nums">');
     expect(paginationHtml).toContain('name="pageNum"');
     expect(paginationHtml).toContain('value="2"');
-    expect(paginationHtml).toContain("button.prevPage");
-    expect(paginationHtml).toContain("button.nextPage");
+    expect(paginationHtml).toContain("Previous page");
+    expect(paginationHtml).toContain("Next page");
     expect(paginationHtml).toContain(
       'href="/yona/search?keyword=Needle&amp;searchType=issue&amp;pageNum=1"',
     );
     expect(paginationHtml).toContain(
       'href="/yona/search?keyword=Needle&amp;searchType=issue&amp;pageNum=3"',
     );
-    expect(paginationHtml).not.toContain("Previous");
     expect(paginationHtml).not.toContain("Page 2 of 3");
 
     const resultsHtml = renderToStaticMarkup(
@@ -1449,7 +1448,8 @@ describe("file-route parity harness", () => {
       '<span class="meta-item" title="May 18, 2026">May 18, 2026</span>',
     );
     expect(resultsHtml).toContain(">No author search issue</a>");
-    expect(resultsHtml).toContain(">issue.noAuthor</span>");
+    expect(resultsHtml).toContain(">No author</span>");
+    expect(resultsHtml).not.toContain(">issue.noAuthor</span>");
     expect(resultsHtml).not.toContain('href="/yona/users/door"');
     expect(resultsHtml).not.toContain('title="issue.noAuthor"');
     expect(resultsHtml).not.toContain('href="/yona/issue.noAuthor"');
@@ -1506,8 +1506,9 @@ describe("file-route parity harness", () => {
       'class="project-link meta-item" href="/yona/owner/projectYobi"',
     );
     expect(milestoneResultsHtml).toContain(
-      '<span class="due-date meta-item">label.dueDate <strong>2026-05-18</strong></span>',
+      '<span class="due-date meta-item">Due Date <strong>2026-05-18</strong></span>',
     );
+    expect(milestoneResultsHtml).not.toContain("label.dueDate");
     expect(milestoneResultsHtml).not.toContain(">issue.noAuthor</span>");
     expect(milestoneResultsHtml).not.toContain('<span class="meta-item">open</span>');
   });

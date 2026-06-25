@@ -1834,6 +1834,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   and action buttons no longer accept raw key text as parity output. Focused
   coverage: `frontend/src/issue-label-settings-i18n.spec.tsx` and full
   `pnpm --dir frontend exec vitest run`.
+- 2026-06-25 search provider-less i18n tightening:
+  `frontend/src/routes/-search-views.tsx` now resolves search category labels,
+  result titles, milestone due-date labels, author fallbacks, and pagination
+  controls through the default legacy message table even without a runtime
+  provider. Focused coverage: `frontend/src/search-i18n.spec.tsx`,
+  `frontend/src/route-parity.spec.tsx`, and full
+  `pnpm --dir frontend exec vitest run`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and

@@ -96,18 +96,19 @@ function renderSearchShell(messages?: LegacyMessageLookup) {
 }
 
 describe("search legacy i18n opt-in", () => {
-  it("keeps search tab and shell fallback keys without a runtime provider", () => {
+  it("resolves search tab and shell labels without a runtime provider", () => {
     const html = renderSearchShell();
 
-    expect(html).toContain(">search.menu.issues<span");
-    expect(html).toContain(">search.menu.users<span");
-    expect(html).toContain(">search.menu.projects<span");
-    expect(html).toContain(">search.menu.boards<span");
-    expect(html).toContain(">search.menu.issue.comments<span");
-    expect(html).toContain("search.result.title");
+    expect(html).toContain(">Issues<span");
+    expect(html).toContain(">Users<span");
+    expect(html).toContain(">Projects<span");
+    expect(html).toContain(">Posts<span");
+    expect(html).toContain(">Issue Comments<span");
+    expect(html).toContain("Found <strong>7</strong> result(s) in Issues");
     expect(html).not.toContain("search.result.title <strong>7</strong> search.menu.issues");
-    expect(html).toContain(">issue.noAuthor</span>");
-    expect(html).toContain(">button.nextPage</span>");
+    expect(html).toContain(">No author</span>");
+    expect(html).toContain(">Next page</span>");
+    expect(html).not.toContain(">search.menu.issues<span");
   });
 
   it("uses default English legacy messages for search tabs and shell labels", () => {

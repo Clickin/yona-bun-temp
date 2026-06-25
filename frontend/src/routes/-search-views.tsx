@@ -15,7 +15,12 @@ import {
   readProjectSearch,
 } from "../api/search";
 import { apiQueryKeys } from "../api/query-keys";
-import type { LegacyI18nContextValue, TranslateOptions } from "../i18n";
+import {
+  LEGACY_DEFAULT_LANGUAGE,
+  lookupLegacyMessage,
+  type LegacyI18nContextValue,
+  type TranslateOptions,
+} from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { useAppRuntime } from "../app-runtime-context";
 import {
@@ -127,7 +132,10 @@ function legacySearchMessage(
   key: string,
   options?: TranslateOptions,
 ) {
-  return messages ? messages(key, options) : (options?.fallback ?? key);
+  const fallback = options?.fallback ?? key;
+  return messages
+    ? messages(key, { ...options, fallback })
+    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { ...options, fallback });
 }
 
 function categoryLabel(type: SearchType, messages?: LegacyMessageLookup) {
@@ -141,11 +149,9 @@ function searchResultTitleNodes(
   count: number,
   category: string,
 ) {
-  if (!messages) {
-    return "search.result.title";
-  }
-
-  const message = messages("search.result.title", { args: [count, category] });
+  const message = legacySearchMessage(messages, "search.result.title", {
+    args: [count, category],
+  });
   const match = /^(.*)<strong>([\s\S]*)<\/\s*strong>(.*)$/.exec(message);
   if (!match) {
     return message;
