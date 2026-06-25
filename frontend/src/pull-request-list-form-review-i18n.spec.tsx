@@ -163,24 +163,24 @@ describe("PR list/form/review-list legacy i18n opt-in", () => {
     ).toBe("Invalid project or branch<br>({0} {1})");
   });
 
-  it("keeps literal key fallbacks without runtime messages", () => {
+  it("uses default legacy messages without runtime messages", () => {
     const html = renderRemainingPullRequestControls();
 
-    expect(html).toContain(">pullRequest.pushed.branches.title</h5>");
-    expect(html).toContain(">pullRequest</a>");
-    expect(html).toContain(">pullRequest.from");
-    expect(html).toContain(">pullRequest.select.branch");
-    expect(html).toContain(">title");
-    expect(html).toContain(" pullRequest.menu.commit</span>");
-    expect(html).toContain(">pullRequest.send</button>");
-    expect(html).toContain(">button.cancel</a>");
-    expect(html).toContain(">review.allReview");
-    expect(html).toContain(">review.involvingYou");
-    expect(html).toContain(">review.createdByYou");
-    expect(html).toContain(">common.order.date</a>");
-    expect(html).toContain(">issue.state.open");
-    expect(html).toContain(">review.is.empty</p>");
-    expect(html).toContain("issue.downloadAsExcel");
+    expect(html).toContain(">Recently pushed branch</h5>");
+    expect(html).toContain(">Pull request</a>");
+    expect(html).toContain(">From");
+    expect(html).toContain(">Select branch");
+    expect(html).toContain(">Title");
+    expect(html).toContain(" Commits</span>");
+    expect(html).toContain(">Send pull request</button>");
+    expect(html).toContain(">Cancel</a>");
+    expect(html).toContain(">All reviews");
+    expect(html).toContain(">Participated.");
+    expect(html).toContain(">Created");
+    expect(html).toContain(">Created</a>");
+    expect(html).toContain(">Open");
+    expect(html).toContain(">No review has been added.</p>");
+    expect(html).toContain("Download as Excel file");
   });
 
   it("uses Korean legacy messages for the remaining controls when provided", () => {

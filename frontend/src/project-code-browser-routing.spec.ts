@@ -251,7 +251,7 @@ describe("project code browser routing", () => {
     expect(textHtml).toContain('id="open-in-browser"');
     expect(textHtml).toContain('href="/yona/owner/projectYobi/files/main/src/main.rs"');
     expect(textHtml).toContain("</i> Raw</a>");
-    expect(textHtml).toContain("</i> code.open</a>");
+    expect(textHtml).toContain("</i> Open in browser</a>");
     expect(textHtml).toContain('data-language="rust"');
     expect(textHtml).toContain('data-mime-type="text/x-rust"');
     expect(textHtml).toContain('data-line-number="1"');
@@ -291,7 +291,7 @@ describe("project code browser routing", () => {
     expect(binaryHtml).toContain(
       'class="filehref ybtn" href="/yona/owner/projectYobi/rawcode/abcdef1234567890abcdef1234567890abcdef12/bin/archive.bin"',
     );
-    expect(binaryHtml).toContain("</i> button.download</a>");
+    expect(binaryHtml).toContain("</i> Download a file</a>");
   });
 
   it("uses Korean legacy messages for code browser and review controls when provided", () => {
@@ -504,8 +504,8 @@ describe("project code browser routing", () => {
       'href="/yona/owner/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12?branch=main&amp;path=src%2Fmain.rs#src-main-rs"',
     );
     expect(pathHtml).toContain('href="/yona/owner/projectYobi/code/abcdef1/src/main.rs"');
-    expect(pathHtml).toContain(">code.showCode</a>");
-    expect(pathHtml).toContain(">code.older</a>");
+    expect(pathHtml).toContain(">Browse code</a>");
+    expect(pathHtml).toContain(">Older</a>");
     expect(pathHtml).toContain('class="commitMsg short"');
     expect(pathHtml).toContain(
       'class="avatar-wrap" data-placement="top" data-toggle="tooltip" title="second@example.com"',
@@ -539,7 +539,7 @@ describe("project code browser routing", () => {
       projectName: "projectYobi",
       selectedBranch: "main",
     });
-    expect(emptyMessageHtml).toContain(">code.commitMsg.empty</a>");
+    expect(emptyMessageHtml).toContain(">No commit message</a>");
   });
 
   it("renders legacy commit detail diff anchors and review placeholders", () => {
@@ -671,9 +671,9 @@ describe("project code browser routing", () => {
     expect(detailHtml).not.toContain('aria-label="Commit comment" disabled=""');
     expect(detailHtml).toContain('class="review-wrap span-hard-wrap"');
     expect(detailHtml).toContain('id="reviewcards-open"');
-    expect(detailHtml).toContain("issue.state.open 1");
+    expect(detailHtml).toContain("Open 1");
     expect(detailHtml).toContain('id="reviewcards-closed"');
-    expect(detailHtml).toContain("issue.state.closed 1");
+    expect(detailHtml).toContain("Closed 1");
     expect(detailHtml).toContain('href="#thread-7"');
     expect(detailHtml).toContain(
       'data-request-uri="/yona/api/v1/projects/owner/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12/threads/7/close"',
@@ -745,7 +745,7 @@ describe("project code browser routing", () => {
       revB: "abcdef1",
     });
     expect(emptyCompareHtml).toContain('class="alert"');
-    expect(emptyCompareHtml).toContain("code.noChanges");
+    expect(emptyCompareHtml).toContain("No changes");
   });
 
   it("renders legacy branch list table and mutation anchors", () => {

@@ -87,16 +87,16 @@ function renderPullRequestDetail(messages?: ReturnType<typeof createLegacyI18nRu
 }
 
 describe("pull request review legacy i18n opt-in", () => {
-  it("keeps literal key fallbacks without runtime messages", () => {
+  it("uses default legacy messages without runtime messages", () => {
     const html = renderPullRequestDetail();
 
-    expect(html).toContain("pullRequest.review.participants");
+    expect(html).toContain("&lt;strong&gt;0&lt;/strong&gt; participants");
     expect(html).not.toContain("pullRequest.review.participants 0");
-    expect(html).toContain(">pullRequest.review</button>");
-    expect(html).toContain(">pullRequest.merge</a>");
-    expect(html).toContain("<span>pullRequest.is.safe</span>");
-    expect(html).toContain(">button.edit</a>");
-    expect(html).toContain(">pullRequest.close</a>");
+    expect(html).toContain(">Approve</button>");
+    expect(html).toContain(">Merge</a>");
+    expect(html).toContain("<span>This pull request can be merged safely.</span>");
+    expect(html).toContain(">Edit</a>");
+    expect(html).toContain(">Close</a>");
   });
 
   it("uses Korean legacy messages for review controls when provided", () => {

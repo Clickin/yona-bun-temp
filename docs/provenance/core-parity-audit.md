@@ -1762,6 +1762,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   still passes legacy keys directly, such as autocomplete no-result and
   selected subtask parent-state markers. Focused coverage:
   `frontend/src/issue-detail-shell.spec.tsx` and `frontend/src/i18n.spec.tsx`.
+- 2026-06-25 code and pull-request direct-render i18n expectation
+  continuation: code browser/history/commit/compare and PR detail/list/form/
+  review-list parity tests now assert default English legacy message output for
+  known keys while keeping the same legacy key lookup calls in implementation.
+  Focused coverage: `frontend/src/project-code-browser-routing.spec.ts`,
+  `frontend/src/pull-request-review-i18n.spec.tsx`,
+  `frontend/src/pull-request-list-form-review-i18n.spec.tsx`, and
+  `frontend/src/i18n.spec.tsx`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and
