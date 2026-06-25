@@ -8,12 +8,22 @@ const restJsonHeaders = {
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 
 type AuthCapabilities = {
+  defaultAdminContact?: string;
   emailVerificationEnabled?: boolean;
   enabledSocialProviders?: string[];
   secretSetupRequired?: boolean;
   signupRequireConfirm?: boolean;
   socialLoginOnly?: boolean;
 };
+
+async function expectNoVisibleRawLegacyKeys(page: Page): Promise<void> {
+  const bodyText = await page.locator("body").innerText();
+  const rawKeys =
+    bodyText.match(
+      /\b(?:app|button|error|notification|site|title|user|validation)\.[A-Za-z0-9_.-]+/g,
+    ) ?? [];
+  expect(rawKeys, `visible raw legacy message keys in:\n${bodyText}`).toEqual([]);
+}
 
 async function installRuntimeConfig(page: Page): Promise<void> {
   await page.addInitScript(() => {
@@ -62,6 +72,7 @@ async function installAuthEntryMocks(
   await page.route(apiV1Route("/auth/capabilities"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
+        defaultAdminContact: capabilities.defaultAdminContact ?? "moc.elpmaxe@nimda",
         emailVerificationEnabled: capabilities.emailVerificationEnabled ?? false,
         enabledSocialProviders: capabilities.enabledSocialProviders ?? [],
         secretSetupRequired: capabilities.secretSetupRequired ?? false,
@@ -135,6 +146,7 @@ test("first-run secret admin setup keeps the legacy form shell and REST submit b
   });
 
   await page.goto("/yona/secret");
+  await expectNoVisibleRawLegacyKeys(page);
 
   await expect(page).toHaveTitle("Tada! Welcome to Yona!");
   await expect(page.locator(".secret-page .secret-wrap .logo")).toContainText("Yona");
@@ -196,6 +208,7 @@ test("login form preserves redirectUrl and rememberMe through the REST JSON boun
   });
 
   await page.goto("/yona/users/loginform?redirectUrl=/admin/sample");
+  await expectNoVisibleRawLegacyKeys(page);
 
   const loginForm = page.locator("main .login-form-wrap.frm-wrap form").first();
   await expect(loginForm).toBeVisible();
@@ -221,18 +234,22 @@ test("auth aliases redirect to the legacy public entry routes", async ({ page })
 
   await page.goto("/yona/login");
   await expect(page).toHaveURL(/\/yona\/users\/loginform$/);
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator("main .login-form-wrap.frm-wrap form").first()).toBeVisible();
 
   await page.goto("/yona/register");
   await expect(page).toHaveURL(/\/yona\/users\/signupform$/);
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator("form[name='signup']")).toBeVisible();
 
   await page.goto("/yona/forgot-password");
   await expect(page).toHaveURL(/\/yona\/lostPassword$/);
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator("#emailAddress")).toBeVisible();
 
   await page.goto("/yona/reset-password?s=hash-123");
   await expect(page).toHaveURL(/\/yona\/resetPassword\?s=hash-123$/);
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator("form[name='passwordReset']")).toBeVisible();
 });
 
@@ -241,6 +258,7 @@ test("anonymous help page keeps the legacy FAQ shell and item-wide toggle", asyn
   await installAuthEntryMocks(page);
 
   await page.goto("/yona/_help");
+  await expectNoVisibleRawLegacyKeys(page);
 
   await expect(page).toHaveTitle("Help");
   await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("Help");
@@ -284,8 +302,13 @@ test("signup confirmation redirects to the legacy home flash target", async ({ p
   });
 
   await page.goto("/yona/users/signupform");
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator(".center-txt")).toContainText(
     "Administrator admission is required for activation.",
+  );
+  await expect(page.locator(".center-txt .obfuscate")).toHaveText("moc.elpmaxe@nimda");
+  await expect(page.locator(".center-txt")).toContainText(
+    "If needed, please contact moc.elpmaxe@nimda",
   );
 
   await page.locator("#loginId").fill("newuser");
@@ -318,6 +341,7 @@ test("social-login-only and OAuth error states render legacy public auth copy", 
   });
 
   await page.goto("/yona/users/loginform");
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator("main .login-form-wrap.frm-wrap")).toContainText(
     "Only allow sign-in via social login",
   );
@@ -330,11 +354,13 @@ test("social-login-only and OAuth error states render legacy public auth copy", 
   ).toBeVisible();
 
   await page.goto("/yona/users/loginform?error=unsupported&provider=github");
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator(".alert.alert-error")).toContainText(
     "The request cannot be fulfilled due to bad syntax",
   );
 
   await page.goto("/yona/users/loginform?error=oauthDenied&provider=github");
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator(".alert.alert-error")).toContainText(
     "Request forbidden or not allowed",
   );
@@ -366,6 +392,7 @@ test("lost and reset password browser states preserve legacy copy and redirects"
   });
 
   await page.goto("/yona/lostPassword");
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page).toHaveTitle("Password reset request");
   await page.locator("#loginId").fill("door");
   await page.locator("#emailAddress").fill("door@example.com");
@@ -378,9 +405,11 @@ test("lost and reset password browser states preserve legacy copy and redirects"
   });
 
   await page.goto("/yona/lostPassword?error=invalid");
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator(".alert.alert-error")).toContainText("Invalid password reset request");
 
   await page.goto("/yona/resetPassword?s=hash-123");
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page).toHaveTitle("Reset password");
   await page.locator("#password").fill("new-secret");
   await page.locator("#retypedPassword").fill("new-secret");
@@ -396,6 +425,7 @@ test("lost and reset password browser states preserve legacy copy and redirects"
   });
 
   await page.goto("/yona/resetPassword?error=invalid&s=bad-hash");
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator(".error-wrap")).toContainText("Wrong url to reset password.");
   await expect(page.locator("form[name='passwordReset']")).toHaveCount(0);
 });
@@ -422,6 +452,7 @@ test("verify route renders success and invalid legacy public states", async ({ p
   });
 
   await page.goto("/yona/verify/door/ok-code");
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator(".tag-line-wrap.reset-password")).toContainText("Verified User");
   await expect(page.locator(".tag-line-wrap.reset-password")).toContainText("door");
   await expect(page.locator(".tag-line-wrap.reset-password")).toContainText(
@@ -429,6 +460,7 @@ test("verify route renders success and invalid legacy public states", async ({ p
   );
 
   await page.goto("/yona/verify/door/bad-code");
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator("body")).toContainText("Invalid verification");
   await expect(page.locator(".error-wrap")).toHaveCount(0);
 });

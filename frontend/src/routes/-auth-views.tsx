@@ -30,6 +30,16 @@ function readEnabledSocialProviders(
   });
 }
 
+function readDefaultAdminContact(
+  authUiCapabilities: AuthUiCapabilitiesViewModel | null | undefined,
+): string {
+  const capabilities = authUiCapabilities as
+    | (AuthUiCapabilitiesViewModel & { defaultAdminContact?: string })
+    | null
+    | undefined;
+  return capabilities?.defaultAdminContact ?? "";
+}
+
 function ProviderLogo({
   provider,
   runtimeConfig,
@@ -94,6 +104,21 @@ function ResetPasswordForTitle({ runtimeConfig }: { runtimeConfig: RuntimeConfig
       args: [siteNameForTitle(runtimeConfig)],
       fallback: "title.resetPasswordFor",
     }),
+  );
+}
+
+function LegacyObfuscatedMessage({ message }: { message: string }) {
+  const match = /^(.*)<span class="obfuscate">([\s\S]*)<\/span>(.*)$/.exec(message);
+  if (!match) {
+    return message;
+  }
+
+  return (
+    <>
+      {match[1]}
+      <span className="obfuscate">{match[2]}</span>
+      {match[3]}
+    </>
   );
 }
 
@@ -438,11 +463,10 @@ export function LegacyLoginDialog({
               <div className="act-row right-txt mt20">
                 <div className="pull-left">
                   <input
-                    checked
+                    defaultChecked
                     className="checkbox"
                     id="remember-meD"
                     name="rememberMe"
-                    readOnly
                     type="checkbox"
                   />
                   <label className="bg-checkbox" htmlFor="remember-meD">
@@ -507,7 +531,12 @@ export function RegisterPage({
           <div className="center-txt">
             <p>{messages.t("title.signupConfirmDesc", { fallback: "title.signupConfirmDesc" })}</p>
             <p>
-              {messages.t("title.signupConfirmDesc2", { fallback: "title.signupConfirmDesc2" })}
+              <LegacyObfuscatedMessage
+                message={messages.t("title.signupConfirmDesc2", {
+                  args: [readDefaultAdminContact(authUiCapabilities)],
+                  fallback: "title.signupConfirmDesc2",
+                })}
+              />
             </p>
           </div>
         ) : null}

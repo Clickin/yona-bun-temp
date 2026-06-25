@@ -4,7 +4,6 @@ import {
   copyProjectLabels,
   createProjectLabel,
   deleteProjectLabel,
-  deleteProjectLabelCategory,
   listProjectLabelCategories,
   listProjectLabels,
   readProjectContainer,
@@ -139,6 +138,7 @@ function IssueLabelsFormRouteComponent() {
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
+  const [loaded, setLoaded] = React.useState(false);
 
   useDocumentTitle("label");
 
@@ -156,9 +156,13 @@ function IssueLabelsFormRouteComponent() {
   React.useEffect(() => {
     let cancelled = false;
     setFailureKind(null);
+    setLoaded(false);
     void (async () => {
       try {
         await reload();
+        if (!cancelled) {
+          setLoaded(true);
+        }
       } catch (error) {
         if (cancelled) {
           return;
@@ -191,6 +195,16 @@ function IssueLabelsFormRouteComponent() {
   }
   if (failureKind === "bad-request") {
     return <BadRequestPage href={routeHref} />;
+  }
+  if (!loaded || detail === null) {
+    return (
+      <main className="app-shell">
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
+      </main>
+    );
+  }
+  if (!detail.viewerCanUpdate) {
+    return <ForbiddenPage href={routeHref} />;
   }
 
   return (
@@ -257,6 +271,8 @@ export function IssueLabelsFormPage(props: {
   const [deleteErrorMessage, setDeleteErrorMessage] = React.useState<LegacyLabelFormMessage | null>(
     null,
   );
+  const [editingLabel, setEditingLabel] = React.useState<LabelView | null>(null);
+  const [editingCategory, setEditingCategory] = React.useState<LabelGroup | null>(null);
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
@@ -318,7 +334,14 @@ export function IssueLabelsFormPage(props: {
                                 : legacyMessage(props.messages, "label.category.option.multiple")
                             }`}
                           />
-                          <IssueCategoryEditForm category={group} {...props} />
+                          <IssueCategoryEditButton
+                            category={group}
+                            messages={props.messages}
+                            onEdit={setEditingCategory}
+                            owner={props.owner}
+                            projectName={props.projectName}
+                            runtimeConfig={props.runtimeConfig}
+                          />
                         </p>
                       </h5>
                     </div>
@@ -373,7 +396,14 @@ export function IssueLabelsFormPage(props: {
                                 >
                                   {legacyMessage(props.messages, "button.delete")}
                                 </button>
-                                <IssueLabelEditForm label={label} {...props} />
+                                <IssueLabelEditButton
+                                  label={label}
+                                  messages={props.messages}
+                                  onEdit={setEditingLabel}
+                                  owner={props.owner}
+                                  projectName={props.projectName}
+                                  runtimeConfig={props.runtimeConfig}
+                                />
                               </td>
                             </tr>
                           ))}
@@ -398,8 +428,28 @@ export function IssueLabelsFormPage(props: {
         </div>
       </div>
 
-      <IssueLabelEditModal categories={props.categories} messages={props.messages} />
-      <IssueCategoryEditModal messages={props.messages} />
+      <IssueLabelEditModal
+        categories={props.categories}
+        csrfToken={props.csrfToken}
+        label={editingLabel}
+        labels={props.labels}
+        messages={props.messages}
+        onChanged={props.onChanged}
+        onClose={() => setEditingLabel(null)}
+        owner={props.owner}
+        projectName={props.projectName}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <IssueCategoryEditModal
+        category={editingCategory}
+        csrfToken={props.csrfToken}
+        messages={props.messages}
+        onChanged={props.onChanged}
+        onClose={() => setEditingCategory(null)}
+        owner={props.owner}
+        projectName={props.projectName}
+        runtimeConfig={props.runtimeConfig}
+      />
     </main>
   );
 }
@@ -468,6 +518,7 @@ function IssueLabelCopyForm(props: {
 }
 
 function IssueLabelCreateForm(props: {
+  categories: CategoryView[];
   csrfToken: string;
   labels: LabelView[];
   messages?: LegacyMessageLookup;
@@ -480,363 +531,304 @@ function IssueLabelCreateForm(props: {
   const [labelName, setLabelName] = React.useState("");
   const [labelColor, setLabelColor] = React.useState("#f44336");
   const [errorMessage, setErrorMessage] = React.useState<LegacyLabelFormMessage | null>(null);
-  return (
-    <form
-      className="new-label-wrap"
-      id="frmNewLabel"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const requestCategoryName = categoryName.trim();
-        const requestLabelName = labelName.trim();
-        const requestLabelColor = labelColor.trim();
-        if (
-          requestCategoryName.length === 0 ||
-          requestLabelName.length === 0 ||
-          requestLabelColor.length === 0
-        ) {
-          setErrorMessage({
-            args: [{ key: "label.add" }],
-            detail: { key: "label.error.empty" },
-            key: "label.failedTo",
-          });
-          return;
-        }
-        if (!isValidLegacyLabelColor(requestLabelColor)) {
-          setErrorMessage({
-            args: [{ key: "label.add" }],
-            detail: { args: [requestLabelColor], key: "label.error.color" },
-            key: "label.failedTo",
-          });
-          return;
-        }
-        if (isLabelNameInCategory(props.labels, requestCategoryName, requestLabelName)) {
-          setErrorMessage({ key: "label.error.duplicated" });
-          return;
-        }
-        setErrorMessage(null);
-        void createProjectLabel(props.runtimeConfig, props.csrfToken, {
-          categoryName: requestCategoryName,
-          labelColor: requestLabelColor,
-          labelName: requestLabelName,
-          ownerName: props.owner,
-          projectName: props.projectName,
-        })
-          .then(props.onChanged)
-          .catch((error: unknown) =>
-            setErrorMessage(formatLegacyLabelRequestFailure(error, "label.add")),
-          );
-      }}
-    >
-      <strong className="form-legend">{legacyMessage(props.messages, "label.new")}</strong>
-      {errorMessage ? (
-        <div className="alert alert-error" role="alert">
-          {legacyLabelFormMessage(props.messages, errorMessage)}
-        </div>
-      ) : null}
-      <div className="form-wrap">
-        <div>
-          <input
-            autoComplete="off"
-            className="input-label mr5"
-            data-provider="typeahead"
-            maxLength={250}
-            name="category"
-            onChange={(event) => setCategoryName(event.currentTarget.value)}
-            placeholder={legacyMessage(props.messages, "label.category")}
-            type="text"
-            value={categoryName}
-          />
-          <input
-            autoComplete="off"
-            className="input-label"
-            maxLength={250}
-            name="name"
-            onChange={(event) => setLabelName(event.currentTarget.value)}
-            placeholder={legacyMessage(props.messages, "label.name")}
-            type="text"
-            value={labelName}
-          />
-        </div>
-        <div className="label-preset-colors">
-          {NEW_LABEL_PRESET_COLORS.map((color) => (
-            <button
-              className="issue-label btn-preset-color"
-              key={color}
-              onClick={() => setLabelColor(color)}
-              style={{ backgroundColor: color }}
-              type="button"
-            />
-          ))}
-          <input
-            className="input-small input-label-color"
-            name="color"
-            onChange={(event) => setLabelColor(event.currentTarget.value)}
-            placeholder={legacyMessage(props.messages, "label.customColor")}
-            type="text"
-            value={labelColor}
-          />
-        </div>
-      </div>
-      <button className="ybtn ybtn-primary btn-submit" type="submit">
-        {legacyMessage(props.messages, "label.add")}
-      </button>
-    </form>
+  const [categoryFocused, setCategoryFocused] = React.useState(false);
+  const [pendingCreate, setPendingCreate] = React.useState<null | {
+    categoryName: string;
+    labelColor: string;
+    labelName: string;
+  }>(null);
+  const matchingCategories = props.categories.filter((category) =>
+    category.name.toLowerCase().includes(categoryName.trim().toLowerCase()),
   );
-}
-
-function IssueLabelEditForm(props: {
-  categories: CategoryView[];
-  csrfToken: string;
-  label: LabelView;
-  labels: LabelView[];
-  messages?: LegacyMessageLookup;
-  onChanged: () => Promise<void>;
-  owner: string;
-  projectName: string;
-  runtimeConfig: RuntimeConfig;
-}) {
-  const [editing, setEditing] = React.useState(false);
-  const [categoryId, setCategoryId] = React.useState(props.label.categoryId);
-  const [labelName, setLabelName] = React.useState(props.label.name);
-  const [labelColor, setLabelColor] = React.useState(props.label.color);
-  const [errorMessage, setErrorMessage] = React.useState<LegacyLabelFormMessage | null>(null);
-  if (!editing) {
-    return (
-      <button
-        className="ybtn ybtn-small"
-        data-category-id={props.label.categoryId}
-        data-label-color={props.label.color}
-        data-label-name={props.label.name}
-        data-update-uri={buildProjectHref(
-          props.runtimeConfig,
-          props.owner,
-          props.projectName,
-          `issue/labels/${props.label.id}`,
-        )}
-        onClick={() => setEditing(true)}
-        type="button"
-      >
-        {legacyMessage(props.messages, "button.edit")}
-      </button>
-    );
-  }
-  return (
-    <form
-      className="inline-label-edit-form"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const requestLabelName = labelName.trim();
-        const requestLabelColor = labelColor.trim();
-        const categoryName =
-          props.categories.find((category) => category.id === categoryId)?.name ??
-          props.label.categoryName;
-        const isLabelNameChanged = requestLabelName !== props.label.name;
-        if (
-          isLabelNameChanged &&
-          isLabelNameInCategory(props.labels, categoryName, requestLabelName)
-        ) {
-          setErrorMessage({
-            args: [categoryName],
-            key: "label.error.duplicated.in.category",
-          });
-          return;
-        }
-        if (!isValidLegacyLabelColor(requestLabelColor)) {
-          setErrorMessage({ args: [requestLabelColor], key: "label.error.color" });
-          return;
-        }
-        setErrorMessage(null);
-        void updateProjectLabel(props.runtimeConfig, props.csrfToken, {
-          categoryId: BigInt(categoryId),
-          labelColor: requestLabelColor,
-          labelId: BigInt(props.label.id),
-          labelName: requestLabelName,
-          ownerName: props.owner,
-          projectName: props.projectName,
+  const submitCreate = React.useCallback(
+    (request: {
+      categoryIsExclusive?: boolean;
+      categoryName: string;
+      labelColor: string;
+      labelName: string;
+    }) => {
+      setErrorMessage(null);
+      void createProjectLabel(props.runtimeConfig, props.csrfToken, {
+        categoryIsExclusive: request.categoryIsExclusive,
+        categoryName: request.categoryName,
+        labelColor: request.labelColor,
+        labelName: request.labelName,
+        ownerName: props.owner,
+        projectName: props.projectName,
+      })
+        .then(async () => {
+          setLabelName("");
+          setPendingCreate(null);
+          await props.onChanged();
         })
-          .then(async () => {
-            setEditing(false);
-            await props.onChanged();
-          })
-          .catch((error: unknown) =>
-            setErrorMessage(formatLegacyLabelRequestFailure(error, "label.edit")),
-          );
-      }}
-    >
-      {errorMessage ? (
-        <div className="alert alert-error" role="alert">
-          {legacyLabelFormMessage(props.messages, errorMessage)}
-        </div>
-      ) : null}
-      <select
-        data-toggle="select2"
-        name="category.id"
-        onChange={(event) => setCategoryId(Number(event.currentTarget.value))}
-        value={categoryId}
-      >
-        {props.categories.map((category) => (
-          <option key={category.id} value={category.id}>
-            {category.name}
-          </option>
-        ))}
-      </select>
-      <input
-        className="text input-label-name"
-        maxLength={250}
-        name="name"
-        onChange={(event) => setLabelName(event.currentTarget.value)}
-        placeholder={legacyMessage(props.messages, "label.name")}
-        type="text"
-        value={labelName}
-      />
-      <input
-        className="input-small input-label-color"
-        name="color"
-        onChange={(event) => setLabelColor(event.currentTarget.value)}
-        placeholder={legacyMessage(props.messages, "label.customColor")}
-        type="text"
-        value={labelColor}
-      />
-      <button className="ybtn ybtn-info btnSubmit" type="submit">
-        {legacyMessage(props.messages, "button.save")}
-      </button>
-      <button className="ybtn ybtn-default" onClick={() => setEditing(false)} type="button">
-        {legacyMessage(props.messages, "button.cancel")}
-      </button>
-    </form>
+        .catch((error: unknown) =>
+          setErrorMessage(formatLegacyLabelRequestFailure(error, "label.add")),
+        );
+    },
+    [props],
   );
-}
-
-function IssueCategoryEditForm(props: {
-  category: LabelGroup;
-  csrfToken: string;
-  messages?: LegacyMessageLookup;
-  onChanged: () => Promise<void>;
-  owner: string;
-  projectName: string;
-  runtimeConfig: RuntimeConfig;
-}) {
-  const [editing, setEditing] = React.useState(false);
-  const [categoryName, setCategoryName] = React.useState(props.category.categoryName);
-  const [isExclusive, setIsExclusive] = React.useState(props.category.categoryIsExclusive);
-  const [errorMessage, setErrorMessage] = React.useState<LegacyLabelFormMessage | null>(null);
-  if (!editing) {
-    return (
-      <button
-        className="ybtn ybtn-mini"
-        data-category-id={props.category.categoryId}
-        data-category-is-exclusive={props.category.categoryIsExclusive}
-        data-category-name={props.category.categoryName}
-        data-category-update-uri={buildProjectHref(
-          props.runtimeConfig,
-          props.owner,
-          props.projectName,
-          `issue/labelCategories/${props.category.categoryId}`,
-        )}
-        onClick={() => setEditing(true)}
-        type="button"
-      >
-        {legacyMessage(props.messages, "label.category.edit")}
-      </button>
-    );
-  }
   return (
-    <form
-      className="inline-category-edit-form"
-      onSubmit={(event) => {
-        event.preventDefault();
-        setErrorMessage(null);
-        void updateProjectLabelCategory(props.runtimeConfig, props.csrfToken, {
-          categoryId: BigInt(props.category.categoryId),
-          categoryIsExclusive: isExclusive,
-          categoryName: categoryName.trim(),
-          ownerName: props.owner,
-          projectName: props.projectName,
-        })
-          .then(async () => {
-            setEditing(false);
-            await props.onChanged();
-          })
-          .catch((error: unknown) =>
-            setErrorMessage(formatLegacyLabelRequestFailure(error, "label.category.edit")),
-          );
-      }}
-    >
-      {errorMessage ? (
-        <div className="alert alert-error" role="alert">
-          {legacyLabelFormMessage(props.messages, errorMessage)}
-        </div>
-      ) : null}
-      <input
-        className="text category-name"
-        name="name"
-        onChange={(event) => setCategoryName(event.currentTarget.value)}
-        placeholder={legacyMessage(props.messages, "label.category")}
-        type="text"
-        value={categoryName}
-      />
-      <select
-        data-dropdown-css-class="select2-without-searchbox"
-        data-toggle="select2"
-        name="isExclusive"
-        onChange={(event) => setIsExclusive(event.currentTarget.value === "true")}
-        value={String(isExclusive)}
-      >
-        <option value="false">
-          {legacyMessage(props.messages, "label.category.option.multiple")}
-        </option>
-        <option value="true">
-          {legacyMessage(props.messages, "label.category.option.single")}
-        </option>
-      </select>
-      <button className="ybtn ybtn-info btnSubmit" type="submit">
-        {legacyMessage(props.messages, "button.save")}
-      </button>
-      <button className="ybtn ybtn-default" onClick={() => setEditing(false)} type="button">
-        {legacyMessage(props.messages, "button.cancel")}
-      </button>
-      <button
-        className="ybtn ybtn-danger"
-        onClick={() => {
-          setErrorMessage(null);
-          void deleteProjectLabelCategory(props.runtimeConfig, props.csrfToken, {
-            categoryId: BigInt(props.category.categoryId),
-            ownerName: props.owner,
-            projectName: props.projectName,
-          })
-            .then(props.onChanged)
-            .catch((error: unknown) =>
-              setErrorMessage(formatLegacyLabelRequestFailure(error, "label.category.delete")),
-            );
+    <>
+      <form
+        className="new-label-wrap"
+        id="frmNewLabel"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const requestCategoryName = categoryName.trim();
+          const requestLabelName = labelName.trim();
+          const requestLabelColor = labelColor.trim();
+          if (
+            requestCategoryName.length === 0 ||
+            requestLabelName.length === 0 ||
+            requestLabelColor.length === 0
+          ) {
+            setErrorMessage({
+              args: [{ key: "label.add" }],
+              detail: { key: "label.error.empty" },
+              key: "label.failedTo",
+            });
+            return;
+          }
+          if (!isValidLegacyLabelColor(requestLabelColor)) {
+            setErrorMessage({
+              args: [{ key: "label.add" }],
+              detail: { args: [requestLabelColor], key: "label.error.color" },
+              key: "label.failedTo",
+            });
+            return;
+          }
+          if (isLabelNameInCategory(props.labels, requestCategoryName, requestLabelName)) {
+            setErrorMessage({ key: "label.error.duplicated" });
+            return;
+          }
+          const request = {
+            categoryName: requestCategoryName,
+            labelColor: requestLabelColor,
+            labelName: requestLabelName,
+          };
+          if (!isKnownCategory(props.categories, requestCategoryName)) {
+            setPendingCreate(request);
+            return;
+          }
+          submitCreate(request);
         }}
-        type="button"
       >
-        {legacyMessage(props.messages, "button.delete")}
-      </button>
-    </form>
+        <strong className="form-legend">{legacyMessage(props.messages, "label.new")}</strong>
+        {errorMessage ? (
+          <div className="alert alert-error" role="alert">
+            {legacyLabelFormMessage(props.messages, errorMessage)}
+          </div>
+        ) : null}
+        <div className="form-wrap">
+          <div>
+            <span className="typeahead-wrap">
+              <input
+                autoComplete="off"
+                className="input-label mr5"
+                data-provider="typeahead"
+                maxLength={250}
+                name="category"
+                onBlur={() => setCategoryFocused(false)}
+                onChange={(event) => setCategoryName(event.currentTarget.value)}
+                onFocus={() => setCategoryFocused(true)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                  }
+                }}
+                placeholder={legacyMessage(props.messages, "label.category")}
+                type="text"
+                value={categoryName}
+              />
+              {categoryFocused && matchingCategories.length > 0 ? (
+                <ul className="typeahead dropdown-menu" style={{ display: "block" }}>
+                  {matchingCategories.map((category) => (
+                    <li key={category.id}>
+                      <button
+                        className="dropdown-item"
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          setCategoryName(category.name);
+                          setCategoryFocused(false);
+                        }}
+                        type="button"
+                      >
+                        {category.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </span>
+            <input
+              autoComplete="off"
+              className="input-label"
+              maxLength={250}
+              name="name"
+              onChange={(event) => setLabelName(event.currentTarget.value)}
+              onFocus={() => {
+                if (labelColor.length === 0) {
+                  setLabelColor(firstColorForCategory(props.labels, categoryName) ?? "#f44336");
+                }
+              }}
+              placeholder={legacyMessage(props.messages, "label.name")}
+              type="text"
+              value={labelName}
+            />
+          </div>
+          <div className="label-preset-colors">
+            {NEW_LABEL_PRESET_COLORS.map((color) => (
+              <button
+                className="issue-label btn-preset-color"
+                key={color}
+                onClick={() => setLabelColor(color)}
+                style={{ backgroundColor: color }}
+                type="button"
+              />
+            ))}
+            <input
+              className="input-small input-label-color"
+              name="color"
+              onChange={(event) => setLabelColor(event.currentTarget.value)}
+              placeholder={legacyMessage(props.messages, "label.customColor")}
+              type="text"
+              value={labelColor}
+            />
+          </div>
+        </div>
+        <button className="ybtn ybtn-primary btn-submit" type="submit">
+          {legacyMessage(props.messages, "label.add")}
+        </button>
+      </form>
+      <NewCategoryOptionModal
+        messages={props.messages}
+        onChoose={(categoryIsExclusive) => {
+          if (!pendingCreate) {
+            return;
+          }
+          submitCreate({ ...pendingCreate, categoryIsExclusive });
+        }}
+        onClose={() => setPendingCreate(null)}
+        pending={pendingCreate}
+      />
+    </>
+  );
+}
+
+function IssueLabelEditButton(props: {
+  label: LabelView;
+  messages?: LegacyMessageLookup;
+  onEdit: (label: LabelView) => void;
+  owner: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <button
+      className="ybtn ybtn-small"
+      data-category-id={props.label.categoryId}
+      data-label-color={props.label.color}
+      data-label-name={props.label.name}
+      data-update-uri={buildProjectHref(
+        props.runtimeConfig,
+        props.owner,
+        props.projectName,
+        `issue/labels/${props.label.id}`,
+      )}
+      onClick={() => props.onEdit(props.label)}
+      type="button"
+    >
+      {legacyMessage(props.messages, "button.edit")}
+    </button>
+  );
+}
+
+function IssueCategoryEditButton(props: {
+  category: LabelGroup;
+  messages?: LegacyMessageLookup;
+  onEdit: (category: LabelGroup) => void;
+  owner: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <button
+      className="ybtn ybtn-mini"
+      data-category-id={props.category.categoryId}
+      data-category-is-exclusive={props.category.categoryIsExclusive}
+      data-category-name={props.category.categoryName}
+      data-category-update-uri={buildProjectHref(
+        props.runtimeConfig,
+        props.owner,
+        props.projectName,
+        `issue/labelCategories/${props.category.categoryId}`,
+      )}
+      onClick={() => props.onEdit(props.category)}
+      type="button"
+    >
+      {legacyMessage(props.messages, "label.category.edit")}
+    </button>
   );
 }
 
 function IssueLabelEditModal(props: {
   categories: CategoryView[];
+  csrfToken: string;
+  label: LabelView | null;
+  labels: LabelView[];
   messages?: LegacyMessageLookup;
+  onChanged: () => Promise<void>;
+  onClose: () => void;
+  owner: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
 }) {
+  const [categoryId, setCategoryId] = React.useState(0);
+  const [labelName, setLabelName] = React.useState("");
+  const [labelColor, setLabelColor] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState<LegacyLabelFormMessage | null>(null);
+  React.useEffect(() => {
+    if (!props.label) {
+      return;
+    }
+    setCategoryId(props.label.categoryId);
+    setLabelName(props.label.name);
+    setLabelColor(props.label.color);
+    setErrorMessage(null);
+  }, [props.label]);
+  const visible = props.label !== null;
   return (
     <div
-      aria-hidden="true"
+      aria-hidden={!visible}
       className="modal hide yobiDialog"
       id="editLabel"
       role="dialog"
+      style={visible ? { display: "block" } : undefined}
       tabIndex={-1}
     >
       <div className="btn-dismiss">
-        <button className="btn-transparent" data-dismiss="modal" type="button">
+        <button
+          className="btn-transparent"
+          data-dismiss="modal"
+          onClick={props.onClose}
+          type="button"
+        >
           &times;
         </button>
       </div>
       <div className="message edit-label-form">
+        {errorMessage ? (
+          <div className="alert alert-error" role="alert">
+            {legacyLabelFormMessage(props.messages, errorMessage)}
+          </div>
+        ) : null}
         <div className="center-txt">
-          <select data-toggle="select2" name="category.id">
+          <select
+            data-toggle="select2"
+            name="category.id"
+            onChange={(event) => setCategoryId(Number(event.currentTarget.value))}
+            value={categoryId}
+          >
             {props.categories.flatMap((category) =>
               category.name.length > 0
                 ? [
@@ -851,14 +843,17 @@ function IssueLabelEditModal(props: {
             className="text input-label-name"
             maxLength={250}
             name="name"
+            onChange={(event) => setLabelName(event.currentTarget.value)}
             placeholder={legacyMessage(props.messages, "label.name")}
             type="text"
+            value={labelName}
           />
           <div className="label-preset-colors edit">
             {EDIT_LABEL_PRESET_COLORS.map((color) => (
               <button
                 className="issue-label btn-preset-color"
                 key={color}
+                onClick={() => setLabelColor(color)}
                 style={{ backgroundColor: color }}
                 type="button"
               />
@@ -866,16 +861,67 @@ function IssueLabelEditModal(props: {
             <input
               className="input-small input-label-color"
               name="color"
+              onChange={(event) => setLabelColor(event.currentTarget.value)}
               placeholder={legacyMessage(props.messages, "label.customColor")}
               type="text"
+              value={labelColor}
             />
           </div>
         </div>
         <div className="center-txt buttons mt20 mb20">
-          <button className="ybtn ybtn-info btnSubmit" type="button">
+          <button
+            className="ybtn ybtn-info btnSubmit"
+            onClick={() => {
+              if (!props.label) {
+                return;
+              }
+              const requestLabelName = labelName.trim();
+              const requestLabelColor = labelColor.trim();
+              const categoryName =
+                props.categories.find((category) => category.id === categoryId)?.name ??
+                props.label.categoryName;
+              const isLabelNameChanged = requestLabelName !== props.label.name;
+              if (
+                isLabelNameChanged &&
+                isLabelNameInCategory(props.labels, categoryName, requestLabelName)
+              ) {
+                setErrorMessage({
+                  args: [categoryName],
+                  key: "label.error.duplicated.in.category",
+                });
+                return;
+              }
+              if (!isValidLegacyLabelColor(requestLabelColor)) {
+                setErrorMessage({ args: [requestLabelColor], key: "label.error.color" });
+                return;
+              }
+              setErrorMessage(null);
+              void updateProjectLabel(props.runtimeConfig, props.csrfToken, {
+                categoryId: BigInt(categoryId),
+                labelColor: requestLabelColor,
+                labelId: BigInt(props.label.id),
+                labelName: requestLabelName,
+                ownerName: props.owner,
+                projectName: props.projectName,
+              })
+                .then(async () => {
+                  props.onClose();
+                  await props.onChanged();
+                })
+                .catch((error: unknown) =>
+                  setErrorMessage(formatLegacyLabelRequestFailure(error, "label.edit")),
+                );
+            }}
+            type="button"
+          >
             {legacyMessage(props.messages, "button.save")}
           </button>
-          <button className="ybtn ybtn-default" data-dismiss="modal" type="button">
+          <button
+            className="ybtn ybtn-default"
+            data-dismiss="modal"
+            onClick={props.onClose}
+            type="button"
+          >
             {legacyMessage(props.messages, "button.cancel")}
           </button>
         </div>
@@ -884,27 +930,61 @@ function IssueLabelEditModal(props: {
   );
 }
 
-function IssueCategoryEditModal(props: { messages?: LegacyMessageLookup }) {
+function IssueCategoryEditModal(props: {
+  category: LabelGroup | null;
+  csrfToken: string;
+  messages?: LegacyMessageLookup;
+  onChanged: () => Promise<void>;
+  onClose: () => void;
+  owner: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const [categoryName, setCategoryName] = React.useState("");
+  const [isExclusive, setIsExclusive] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState<LegacyLabelFormMessage | null>(null);
+  React.useEffect(() => {
+    if (!props.category) {
+      return;
+    }
+    setCategoryName(props.category.categoryName);
+    setIsExclusive(props.category.categoryIsExclusive);
+    setErrorMessage(null);
+  }, [props.category]);
+  const visible = props.category !== null;
   return (
     <div
-      aria-hidden="true"
+      aria-hidden={!visible}
       className="modal hide yobiDialog"
       id="editCategory"
       role="dialog"
+      style={visible ? { display: "block" } : undefined}
       tabIndex={-1}
     >
       <div className="btn-dismiss">
-        <button className="btn-transparent" data-dismiss="modal" type="button">
+        <button
+          className="btn-transparent"
+          data-dismiss="modal"
+          onClick={props.onClose}
+          type="button"
+        >
           &times;
         </button>
       </div>
       <div className="message edit-label-category-form">
+        {errorMessage ? (
+          <div className="alert alert-error" role="alert">
+            {legacyLabelFormMessage(props.messages, errorMessage)}
+          </div>
+        ) : null}
         <div className="center-txt">
           <input
             className="text category-name"
             name="name"
+            onChange={(event) => setCategoryName(event.currentTarget.value)}
             placeholder={legacyMessage(props.messages, "label.category")}
             type="text"
+            value={categoryName}
           />
           <div className="desc">
             {legacyMessage(props.messages, "label.category.option")}
@@ -912,6 +992,8 @@ function IssueCategoryEditModal(props: { messages?: LegacyMessageLookup }) {
               data-dropdown-css-class="select2-without-searchbox"
               data-toggle="select2"
               name="isExclusive"
+              onChange={(event) => setIsExclusive(event.currentTarget.value === "true")}
+              value={String(isExclusive)}
             >
               <option value="false">
                 {legacyMessage(props.messages, "label.category.option.multiple")}
@@ -923,10 +1005,94 @@ function IssueCategoryEditModal(props: { messages?: LegacyMessageLookup }) {
           </div>
         </div>
         <div className="center-txt buttons mt20 mb20">
-          <button className="ybtn ybtn-info btnSubmit" type="button">
+          <button
+            className="ybtn ybtn-info btnSubmit"
+            onClick={() => {
+              if (!props.category) {
+                return;
+              }
+              setErrorMessage(null);
+              void updateProjectLabelCategory(props.runtimeConfig, props.csrfToken, {
+                categoryId: BigInt(props.category.categoryId),
+                categoryIsExclusive: isExclusive,
+                categoryName: categoryName.trim(),
+                ownerName: props.owner,
+                projectName: props.projectName,
+              })
+                .then(async () => {
+                  props.onClose();
+                  await props.onChanged();
+                })
+                .catch((error: unknown) =>
+                  setErrorMessage(formatLegacyLabelRequestFailure(error, "label.category.edit")),
+                );
+            }}
+            type="button"
+          >
             {legacyMessage(props.messages, "button.save")}
           </button>
-          <button className="ybtn ybtn-default" data-dismiss="modal" type="button">
+          <button
+            className="ybtn ybtn-default"
+            data-dismiss="modal"
+            onClick={props.onClose}
+            type="button"
+          >
+            {legacyMessage(props.messages, "button.cancel")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NewCategoryOptionModal(props: {
+  messages?: LegacyMessageLookup;
+  onChoose: (categoryIsExclusive: boolean) => void;
+  onClose: () => void;
+  pending: null | { categoryName: string };
+}) {
+  const visible = props.pending !== null;
+  return (
+    <div
+      aria-hidden={!visible}
+      className="modal hide yobiDialog"
+      id="newCategoryOption"
+      role="dialog"
+      style={visible ? { display: "block" } : undefined}
+      tabIndex={-1}
+    >
+      <div className="btn-dismiss">
+        <button
+          className="btn-transparent"
+          data-dismiss="modal"
+          onClick={props.onClose}
+          type="button"
+        >
+          &times;
+        </button>
+      </div>
+      <div className="message">
+        <p className="center-txt">
+          {legacyMessage(props.messages, "label.category.new.confirm", {
+            args: [props.pending?.categoryName ?? ""],
+          })}
+        </p>
+        <div className="center-txt buttons mt20 mb20">
+          <button
+            className="ybtn ybtn-info confirm-button-vertical"
+            onClick={() => props.onChoose(false)}
+            type="button"
+          >
+            {legacyMessage(props.messages, "label.category.option.multiple")}
+          </button>
+          <button
+            className="ybtn ybtn-info confirm-button-vertical"
+            onClick={() => props.onChoose(true)}
+            type="button"
+          >
+            {legacyMessage(props.messages, "label.category.option.single")}
+          </button>
+          <button className="ybtn ybtn-default" onClick={props.onClose} type="button">
             {legacyMessage(props.messages, "button.cancel")}
           </button>
         </div>
@@ -961,6 +1127,14 @@ function groupLabels(labels: LabelView[]): LabelGroup[] {
 
 function isLabelNameInCategory(labels: LabelView[], categoryName: string, labelName: string) {
   return labels.some((label) => label.categoryName === categoryName && label.name === labelName);
+}
+
+function isKnownCategory(categories: CategoryView[], categoryName: string) {
+  return categories.some((category) => category.name === categoryName);
+}
+
+function firstColorForCategory(labels: LabelView[], categoryName: string) {
+  return labels.find((label) => label.categoryName === categoryName)?.color;
 }
 
 function isValidLegacyLabelColor(color: string) {

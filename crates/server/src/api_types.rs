@@ -284,6 +284,8 @@ pub struct ReadCurrentSessionResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ReadAuthUiCapabilitiesResponse {
     #[serde(default)]
+    pub default_admin_contact: String,
+    #[serde(default)]
     pub email_verification_enabled: bool,
     #[serde(default)]
     pub enabled_social_providers: Vec<String>,

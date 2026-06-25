@@ -39,6 +39,22 @@ function hrefWithPageNum(href: string, pageNum: number): string {
   return `${url.pathname}${url.search}`;
 }
 
+function stripBasePath(href: string, basePath: string): string {
+  const normalizedBasePath = basePath === "/" ? "" : basePath.replace(/\/+$/, "");
+  if (normalizedBasePath === "") {
+    return href;
+  }
+
+  const url = new URL(href, "http://yona.local");
+  if (url.pathname === normalizedBasePath) {
+    return `/${url.search}`;
+  }
+  if (url.pathname.startsWith(`${normalizedBasePath}/`)) {
+    return `${url.pathname.slice(normalizedBasePath.length)}${url.search}`;
+  }
+  return href;
+}
+
 function DirectoryPagination({
   currentPageNum,
   href,
@@ -60,6 +76,7 @@ function DirectoryPagination({
   const nextLabel = legacyMessage(messages, "button.nextPage");
   const hasPrev = currentPageNum > 1;
   const hasNext = currentPageNum < totalPageCount;
+  const unprefixedHref = stripBasePath(href, runtimeConfig.basePath);
 
   return (
     <div className="page-navigation-wrap" id="pagination">
@@ -67,7 +84,7 @@ function DirectoryPagination({
         <li className="page-num ikon">
           {hasPrev ? (
             <a
-              href={appHref(runtimeConfig, hrefWithPageNum(href, currentPageNum - 1))}
+              href={appHref(runtimeConfig, hrefWithPageNum(unprefixedHref, currentPageNum - 1))}
               {...legacyPjaxPageAttribute}
             >
               <i className="ico btn-pg-prev"></i>
@@ -96,7 +113,7 @@ function DirectoryPagination({
         <li className="page-num ikon">
           {hasNext ? (
             <a
-              href={appHref(runtimeConfig, hrefWithPageNum(href, currentPageNum + 1))}
+              href={appHref(runtimeConfig, hrefWithPageNum(unprefixedHref, currentPageNum + 1))}
               {...legacyPjaxPageAttribute}
             >
               <span>{nextLabel}</span>

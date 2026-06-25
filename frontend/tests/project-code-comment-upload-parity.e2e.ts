@@ -8,7 +8,7 @@ const restJsonHeaders = {
 const commitId = "abcdef1234567890abcdef1234567890abcdef12";
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 
-function commitDetailPayload(threads: unknown[] = []) {
+function commitDetailPayload(threads: unknown[] = [], isWatching = false) {
   return {
     branches: [{ name: "main" }],
     breadcrumbs: [],
@@ -29,6 +29,7 @@ function commitDetailPayload(threads: unknown[] = []) {
         path: "src/main.rs",
       },
     ],
+    isWatching,
     noHead: false,
     ownerName: "admin",
     parentCommit: null,
@@ -130,6 +131,96 @@ async function routeRuntimeShell(page: Page) {
 
 test.beforeEach(async ({ page }) => {
   await routeRuntimeShell(page);
+});
+
+test("commit detail watch button toggles through REST with CSRF and preserves query", async ({
+  page,
+}) => {
+  let isWatching = false;
+  const watchRequests: Array<{ csrfToken: string; method: string; url: string }> = [];
+
+  await page.route(
+    new RegExp(`/api/v1/projects/admin/projectYobi/commit/${commitId}(?:\\?.*)?$`),
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify(commitDetailPayload([], isWatching)),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+  await page.route(
+    new RegExp(`/api/v1/projects/admin/projectYobi/commit/${commitId}/watch(?:\\?.*)?$`),
+    async (route) => {
+      watchRequests.push({
+        csrfToken: route.request().headers()["x-csrf-token"] ?? "",
+        method: route.request().method(),
+        url: route.request().url(),
+      });
+      isWatching = route.request().method() === "POST";
+      await route.fulfill({
+        body: JSON.stringify(commitDetailPayload([], isWatching)),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
+  await page.goto(`/yona/admin/projectYobi/commit/${commitId}?branch=main&path=src/main.rs`);
+
+  const watchButton = page.locator("#watch-button");
+  await expect(watchButton).toBeVisible();
+  await expect(watchButton).not.toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  await expect(watchButton).not.toHaveClass(/(?:^|\s)ybtn-watching(?:\s|$)/);
+
+  const watchRequest = page.waitForRequest(
+    (request) => request.url().includes(`/commit/${commitId}/watch`) && request.method() === "POST",
+  );
+  await watchButton.click();
+  const postRequest = await watchRequest;
+
+  expect(new URL(postRequest.url()).pathname).toBe(
+    `/yona/api/v1/projects/admin/projectYobi/commit/${commitId}/watch`,
+  );
+  expect(new URL(postRequest.url()).searchParams.get("branch")).toBe("main");
+  expect(new URL(postRequest.url()).searchParams.get("path")).toBe("src/main.rs");
+  expect(postRequest.headers()["x-csrf-token"]).toBe("csrf-123");
+  await expect(watchButton).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  await expect(watchButton).toHaveClass(/(?:^|\s)ybtn-watching(?:\s|$)/);
+  expect(new URL(page.url()).pathname).toBe(`/yona/admin/projectYobi/commit/${commitId}`);
+  expect(new URL(page.url()).searchParams.get("branch")).toBe("main");
+  expect(new URL(page.url()).searchParams.get("path")).toBe("src/main.rs");
+
+  const unwatchRequest = page.waitForRequest(
+    (request) =>
+      request.url().includes(`/commit/${commitId}/watch`) && request.method() === "DELETE",
+  );
+  await watchButton.click();
+  const deleteRequest = await unwatchRequest;
+
+  expect(new URL(deleteRequest.url()).pathname).toBe(
+    `/yona/api/v1/projects/admin/projectYobi/commit/${commitId}/watch`,
+  );
+  expect(new URL(deleteRequest.url()).searchParams.get("branch")).toBe("main");
+  expect(new URL(deleteRequest.url()).searchParams.get("path")).toBe("src/main.rs");
+  expect(deleteRequest.headers()["x-csrf-token"]).toBe("csrf-123");
+  await expect(watchButton).not.toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  await expect(watchButton).not.toHaveClass(/(?:^|\s)ybtn-watching(?:\s|$)/);
+  expect(new URL(page.url()).pathname).toBe(`/yona/admin/projectYobi/commit/${commitId}`);
+  expect(new URL(page.url()).searchParams.get("branch")).toBe("main");
+  expect(new URL(page.url()).searchParams.get("path")).toBe("src/main.rs");
+  expect(watchRequests).toEqual([
+    {
+      csrfToken: "csrf-123",
+      method: "POST",
+      url: postRequest.url(),
+    },
+    {
+      csrfToken: "csrf-123",
+      method: "DELETE",
+      url: deleteRequest.url(),
+    },
+  ]);
 });
 
 test("commit comment editor inserts pasted and dropped image uploads", async ({ page }) => {

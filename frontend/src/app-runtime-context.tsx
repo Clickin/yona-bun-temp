@@ -105,7 +105,8 @@ function toWorkspaceOverview(
 function toAuthUiCapabilitiesView(
   response: Awaited<ReturnType<typeof readAuthUiCapabilities>>,
 ): AuthUiCapabilitiesViewModel {
-  return {
+  const view = {
+    defaultAdminContact: String(response.defaultAdminContact ?? ""),
     emailVerificationEnabled: response.emailVerificationEnabled,
     enabledSocialProviders: response.enabledSocialProviders,
     loginIdPlaceholder: response.loginIdPlaceholder,
@@ -114,6 +115,7 @@ function toAuthUiCapabilitiesView(
     signupRequireConfirm: response.signupRequireConfirm,
     socialLoginOnly: response.socialLoginOnly,
   };
+  return view;
 }
 
 interface AppRuntimeContextValue {

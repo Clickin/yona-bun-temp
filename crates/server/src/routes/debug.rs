@@ -6,6 +6,8 @@ use crate::{
     PilotServiceImpl, RestRouteError,
 };
 
+use super::auth::{legacy_obfuscated_default_admin_contact, secret_admin_setup_required};
+
 #[cfg(debug_assertions)]
 pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     Router::new().route(
@@ -52,8 +54,14 @@ pub(crate) async fn rest_debug_method(
                 serde_json::from_value(payload).map_err(|error| {
                     RestRouteError::bad_request(format!("invalid debug method request: {error}"))
                 })?;
+            let mut response = auth_ui_capabilities_from_config(&service.auth_ui);
+            response.default_admin_contact =
+                legacy_obfuscated_default_admin_contact(&service).await?;
+            response.secret_setup_required = secret_admin_setup_required(&service)
+                .await
+                .map_err(RestRouteError::from_connect_error)?;
             Ok(rest_json_response(
-                auth_ui_capabilities_from_config(&service.auth_ui),
+                response,
                 Context::new(headers),
             ))
         }

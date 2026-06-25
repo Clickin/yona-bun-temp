@@ -1,12 +1,12 @@
 use crate::api_types::OwnedView;
 use axum::{
-    Json, Router,
     extract::{Form, Path, Query},
     http::{HeaderMap, Method, StatusCode},
     response::{IntoResponse, Redirect, Response},
     routing::{get, post},
+    Json, Router,
 };
-use bcrypt::{DEFAULT_COST, hash, verify};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -14,21 +14,20 @@ use std::collections::HashMap;
 use crate::api_types::*;
 use crate::assets::serve_frontend_page;
 use crate::ldap::{
-    LdapConnectorError, RealLdapDirectoryConnector, authenticate_with_real_ldap_connector,
-    fixture_ldap_authenticate,
+    authenticate_with_real_ldap_connector, fixture_ldap_authenticate, LdapConnectorError,
+    RealLdapDirectoryConnector,
 };
 use crate::persistence::{AppUserRecord, CreateUserInput, OAuthUserInput};
 #[cfg(debug_assertions)]
 use crate::resolve_current_session_response;
 use crate::{
-    AssetMode, AuthUiConfig, BrowserRuntimeConfig, ConnectError, Context, ErrorCode,
-    LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
-    LdapFixtureUser, LdapRuntimeConfig, PilotBackend, PilotRepository, PilotServiceImpl,
-    RestRouteError, anonymous_current_session_response, append_response_headers,
-    attach_session_headers, auth_ui_capabilities_from_config, base_path_href,
-    headers_with_form_csrf, normalize_identifier, percent_encode_uri_component, require_session,
-    require_valid_csrf, rest_json_response, rest_owned_view, rest_read_current_session,
-    send_password_reset_mail,
+    anonymous_current_session_response, append_response_headers, attach_session_headers,
+    auth_ui_capabilities_from_config, base_path_href, headers_with_form_csrf, normalize_identifier,
+    percent_encode_uri_component, require_session, require_valid_csrf, rest_json_response,
+    rest_owned_view, rest_read_current_session, send_password_reset_mail, AssetMode, AuthUiConfig,
+    BrowserRuntimeConfig, ConnectError, Context, ErrorCode, LdapFixtureUser, LdapRuntimeConfig,
+    PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError, LEGACY_LOGIN_INVALID_MESSAGE,
+    LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::send_signup_verification_mail;
@@ -183,10 +182,28 @@ pub(crate) async fn rest_read_auth_ui_capabilities(
     let request = ReadAuthUiCapabilitiesRequest::default();
     let _request = rest_owned_view::<ReadAuthUiCapabilitiesRequestView<'static>>(&request)?;
     let mut payload = auth_ui_capabilities_from_config(&service.auth_ui);
+    payload.default_admin_contact = legacy_obfuscated_default_admin_contact(&service).await?;
     payload.secret_setup_required = secret_admin_setup_required(&service)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, Context::new(headers)))
+}
+
+pub(crate) async fn legacy_obfuscated_default_admin_contact(
+    service: &PilotServiceImpl,
+) -> Result<String, RestRouteError> {
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Ok(String::new());
+    };
+    let Some(admin) = repository
+        .find_user_by_login_id("admin")
+        .await
+        .map_err(crate::internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+    else {
+        return Ok(String::new());
+    };
+    Ok(admin.email_address.chars().rev().collect())
 }
 
 pub(crate) async fn rest_sign_in_with_password(
@@ -1796,7 +1813,9 @@ async fn direct_secret_page(
     }
 }
 
-async fn secret_admin_setup_required(service: &PilotServiceImpl) -> Result<bool, ConnectError> {
+pub(crate) async fn secret_admin_setup_required(
+    service: &PilotServiceImpl,
+) -> Result<bool, ConnectError> {
     let PilotBackend::Repository(repository) = &service.backend else {
         return Ok(false);
     };

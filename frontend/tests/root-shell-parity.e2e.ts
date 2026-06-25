@@ -21,6 +21,15 @@ type WorkspaceState = {
   recentProjects?: Array<{ ownerName: string; projectName: string }>;
 };
 
+async function expectNoVisibleRawLegacyKeys(page: Page): Promise<void> {
+  const bodyText = await page.locator("body").innerText();
+  const rawKeys =
+    bodyText.match(
+      /\b(?:app|button|error|menu|notification|search|site|title|user|validation)\.[A-Za-z0-9_.-]+/g,
+    ) ?? [];
+  expect(rawKeys, `visible raw legacy message keys in:\n${bodyText}`).toEqual([]);
+}
+
 async function installRuntimeConfig(
   page: Page,
   overrides: Record<string, unknown> = {},
@@ -82,6 +91,7 @@ async function installCommonApiMocks(
   await page.route(apiV1Route("/auth/capabilities"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
+        defaultAdminContact: "moc.elpmaxe@nimda",
         emailVerificationEnabled: false,
         enabledSocialProviders: [],
         signupRequireConfirm: false,
@@ -153,7 +163,9 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
 }) => {
   await installRuntimeConfig(page, { feedbackUrl: "https://feedback.example.test" });
   await installCommonApiMocks(page, { session: { isAnonymous: true } });
+  let submittedBody: Record<string, unknown> | null = null;
   await page.route(apiV1Route("/auth/sign-in"), async (route) => {
+    submittedBody = route.request().postDataJSON() as Record<string, unknown>;
     await route.fulfill({
       body: JSON.stringify({ message: "user.login.failed.client" }),
       headers: restJsonHeaders,
@@ -162,6 +174,7 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
   });
 
   await page.goto("/yona/");
+  await expectNoVisibleRawLegacyKeys(page);
 
   await expect(page.locator(".gnb-outer .gnb-inner")).toBeVisible();
   await expect(page.locator('a.logo.logo-letter[href="/yona"]')).toBeVisible();
@@ -178,14 +191,23 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
 
   await page.locator("#required-logged-in a[data-login='required']").click();
   await expect(page.locator("#loginDialog.modal.loginDialog")).toBeVisible();
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator("#loginDialog")).toHaveCSS("position", "fixed");
   await expect(page.locator("#loginDialog")).toHaveCSS("width", "460px");
+  await expect(page.locator("#remember-meD")).toBeChecked();
   await page.locator("#loginDialog input[name='loginIdOrEmail']").fill("admin");
   await page.locator("#loginDialog input[name='password']").fill("wrong-password");
+  await page.locator("#remember-meD").uncheck();
   await page.locator("#loginDialog button[type='submit']").click();
   await expect(page.locator(".runtime-error-banner")).toContainText(
     "Failed to log in. The request is invalid.",
   );
+  expect(submittedBody).toMatchObject({
+    identifier: "admin",
+    password: "wrong-password",
+    rememberMe: false,
+  });
+  await expectNoVisibleRawLegacyKeys(page);
   await page.locator("#loginDialog button.close").click();
   await expect(page.locator("#loginDialog.modal.hide.loginDialog")).toHaveCount(1);
 });
@@ -198,11 +220,13 @@ test("anonymous root shell keeps the legacy login dialog usable on a mobile view
   await installCommonApiMocks(page, { session: { isAnonymous: true } });
 
   await page.goto("/yona/");
+  await expectNoVisibleRawLegacyKeys(page);
 
   await expect(page.locator(".gnb-outer .gnb-inner")).toBeVisible();
   await expect(page.locator("#required-logged-in a[data-login='required']")).toBeVisible();
   await page.locator("#required-logged-in a[data-login='required']").click();
   await expect(page.locator("#loginDialog.modal.loginDialog")).toBeVisible();
+  await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator("#loginDialog")).toHaveCSS("position", "fixed");
   await expect(page.locator("#loginDialog")).toHaveCSS("width", "390px");
   await expect(page.locator("#loginDialog input[name='loginIdOrEmail']")).toBeVisible();
@@ -218,6 +242,7 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   });
 
   await page.goto("/yona/me");
+  await expectNoVisibleRawLegacyKeys(page);
 
   await expect(page.locator(".admin-logged-in-affix")).toBeVisible();
   await expect(page.locator(".gnb-usermenu a[href='/yona/user/issues']")).toBeVisible();
@@ -248,6 +273,7 @@ test("guest root shell hides project listing and organization creation like lega
   });
 
   await page.goto("/yona/me");
+  await expectNoVisibleRawLegacyKeys(page);
 
   await expect(page.locator('a[href="/yona/projects"]')).toHaveCount(0);
   await expect(page.locator("#gnb-create-menu a[href='/yona/projects/new']")).toBeVisible();
@@ -260,6 +286,7 @@ test("standalone legacy pages suppress the root footer", async ({ page }) => {
   await installCommonApiMocks(page, { session: { isAnonymous: true } });
 
   await page.goto("/yona/secret");
+  await expectNoVisibleRawLegacyKeys(page);
 
   await expect(page).toHaveTitle("Tada! Welcome to Yona!");
   await expect(page.locator(".gnb-outer .gnb-inner")).toBeVisible();
@@ -332,6 +359,7 @@ test("project route search scope exposes project, group, and global actions from
   });
 
   await page.goto("/yona/org/projectYobi");
+  await expectNoVisibleRawLegacyKeys(page);
 
   await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
   await expect(page.locator("#gnb-search-scope-title")).toContainText("Project");
