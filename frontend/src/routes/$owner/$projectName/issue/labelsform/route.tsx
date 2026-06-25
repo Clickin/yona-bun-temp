@@ -13,7 +13,11 @@ import {
 } from "../../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../app-view-models";
-import type { LegacyI18nContextValue } from "../../../../../i18n";
+import {
+  LEGACY_DEFAULT_LANGUAGE,
+  lookupLegacyMessage,
+  type LegacyI18nContextValue,
+} from "../../../../../i18n";
 import {
   buildProjectHref,
   ProjectHeader,
@@ -63,7 +67,9 @@ function legacyMessage(
   options: { args?: Array<number | string>; fallback?: string } = {},
 ) {
   const fallback = options.fallback ?? key;
-  return messages ? messages(key, { ...options, fallback }) : fallback;
+  return messages
+    ? messages(key, { ...options, fallback })
+    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { ...options, fallback });
 }
 
 function legacyLabelFormMessage(

@@ -60,24 +60,31 @@ describe("project issue label settings legacy i18n opt-in", () => {
     expect(source).not.toContain("error.failedTo");
   });
 
-  it("keeps legacy key fallbacks when rendered without AppRuntimeContext messages", () => {
+  it("resolves legacy label controls without AppRuntimeContext messages", () => {
     const html = renderIssueLabelSettings();
 
-    expect(html).toContain(">label.copy.append</strong>");
-    expect(html).toContain('placeholder="project.owner"');
-    expect(html).toContain('placeholder="project.name"');
-    expect(html).toContain(">label.copy</button>");
-    expect(html).toContain(">label.copy.description</div>");
-    expect(html).toContain(">label.new</strong>");
-    expect(html).toContain('placeholder="label.category"');
-    expect(html).toContain('placeholder="label.name"');
-    expect(html).toContain('placeholder="label.customColor"');
-    expect(html).toContain(">label.add</button>");
-    expect(html).toContain(">label.category</strong>");
-    expect(html).toContain(">label.name</strong>");
-    expect(html).toContain("label.category.option&lt;br&gt;label.category.option.single");
-    expect(html).toContain(">button.delete</button>");
-    expect(html).toContain(">button.edit</button>");
+    expect(html).toContain(
+      ">Copy all labels from a project and append to current project</strong>",
+    );
+    expect(html).toContain('placeholder="Owner Name"');
+    expect(html).toContain('placeholder="Project name"');
+    expect(html).toContain(">Copy labels</button>");
+    expect(html).toContain(
+      ">If project path is &#x27;naver/yobi&#x27;, then owner name is &#x27;naver&#x27; and project name is &#x27;yobi&#x27;. Character case is ignored.</div>",
+    );
+    expect(html).toContain(">Add new label</strong>");
+    expect(html).toContain('placeholder="Category"');
+    expect(html).toContain('placeholder="Name"');
+    expect(html).toContain('placeholder="Label Color"');
+    expect(html).toContain(">Add label</button>");
+    expect(html).toContain(">Category</strong>");
+    expect(html).toContain(">Name</strong>");
+    expect(html).toContain("In this category, you can choose&lt;br&gt;only a single label");
+    expect(html).toContain(">Delete</button>");
+    expect(html).toContain(">Edit</button>");
+    expect(html).not.toContain(">label.copy</button>");
+    expect(html).not.toContain('placeholder="project.owner"');
+    expect(html).not.toContain(">button.delete</button>");
   });
 
   it("uses Korean legacy messages for label and category settings controls", () => {

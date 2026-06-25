@@ -264,3 +264,10 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   now resolve them through the legacy message table instead of rendering raw
   keys such as `issue.state.open` into the visible page. Focused coverage:
   `frontend/src/issue-detail-shell.spec.tsx` and `frontend/src/i18n.spec.tsx`.
+- 2026-06-25 issue label settings provider-less i18n tightening: the issue
+  label settings React route keeps the legacy label/settings key names but now
+  resolves known keys through the default legacy message table when rendered
+  without an app runtime provider, preventing raw placeholders and action copy
+  such as `project.owner`, `label.add`, or `button.delete` from being accepted
+  as visible UI. Focused coverage:
+  `frontend/src/issue-label-settings-i18n.spec.tsx`.

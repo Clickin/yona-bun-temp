@@ -1827,6 +1827,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   and tooltip keys from being pinned as acceptable UI. Focused coverage:
   `frontend/src/workspace-profile-i18n.spec.tsx` and full
   `pnpm --dir frontend exec vitest run`.
+- 2026-06-25 issue label settings provider-less i18n tightening:
+  `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx` now
+  resolves known legacy label/settings keys through the default legacy message
+  table even without a runtime provider, so rendered placeholders, tooltips,
+  and action buttons no longer accept raw key text as parity output. Focused
+  coverage: `frontend/src/issue-label-settings-i18n.spec.tsx` and full
+  `pnpm --dir frontend exec vitest run`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and
