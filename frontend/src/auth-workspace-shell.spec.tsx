@@ -598,6 +598,15 @@ describe("auth and workspace views", () => {
     expect(resetPasswordHtml).not.toContain('placeholder="Retype password"');
   });
 
+  it("keeps REST auth submit handlers primary without swallowing legacy direct form fallbacks", () => {
+    const source = fs.readFileSync(path.resolve(__dirname, "routes/-auth-views.tsx"), "utf8");
+
+    expect(source).toContain("if (!onSignIn) {\n              return;\n            }");
+    expect(source).toContain("if (!onRegister) {\n                return;\n              }");
+    expect(source).toContain("if (!onRequestReset) {\n                return;\n              }");
+    expect(source).toContain("if (!onResetPassword) {\n                return;\n              }");
+  });
+
   it("renders auth capability help copy when email verification or signup confirmation is enabled", () => {
     const loginHtml = renderLogin({
       authUiCapabilities: {

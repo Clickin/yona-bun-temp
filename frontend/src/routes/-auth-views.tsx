@@ -505,8 +505,11 @@ export function RegisterPage({
             method="post"
             name="signup"
             onSubmit={(event) => {
+              if (!onRegister) {
+                return;
+              }
               event.preventDefault();
-              onRegister?.(formState);
+              onRegister(formState);
             }}
           >
             <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
@@ -710,8 +713,11 @@ export function LostPasswordPage({
             action={appHref(runtimeConfig, "/lostPassword")}
             method="post"
             onSubmit={(event) => {
+              if (!onRequestReset) {
+                return;
+              }
               event.preventDefault();
-              onRequestReset?.(formState);
+              onRequestReset(formState);
             }}
           >
             <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
@@ -805,8 +811,11 @@ export function ResetPasswordPage({
             method="post"
             name="passwordReset"
             onSubmit={(event) => {
+              if (!onResetPassword) {
+                return;
+              }
               event.preventDefault();
-              onResetPassword?.({
+              onResetPassword({
                 hashString,
                 password: formState.password,
                 retypedPassword: formState.retypedPassword,
