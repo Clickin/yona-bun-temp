@@ -1,12 +1,12 @@
 use crate::api_types::OwnedView;
 use axum::{
+    Json, Router,
     extract::{Form, Path, Query},
-    http::{HeaderMap, Method},
+    http::{HeaderMap, Method, StatusCode},
     response::{IntoResponse, Redirect, Response},
     routing::{get, post},
-    Json, Router,
 };
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{DEFAULT_COST, hash, verify};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -14,20 +14,21 @@ use std::collections::HashMap;
 use crate::api_types::*;
 use crate::assets::serve_frontend_page;
 use crate::ldap::{
-    authenticate_with_real_ldap_connector, fixture_ldap_authenticate, LdapConnectorError,
-    RealLdapDirectoryConnector,
+    LdapConnectorError, RealLdapDirectoryConnector, authenticate_with_real_ldap_connector,
+    fixture_ldap_authenticate,
 };
 use crate::persistence::{AppUserRecord, CreateUserInput, OAuthUserInput};
 #[cfg(debug_assertions)]
 use crate::resolve_current_session_response;
 use crate::{
-    anonymous_current_session_response, append_response_headers, attach_session_headers,
-    auth_ui_capabilities_from_config, base_path_href, headers_with_form_csrf, normalize_identifier,
-    percent_encode_uri_component, require_session, require_valid_csrf, rest_json_response,
-    rest_owned_view, rest_read_current_session, send_password_reset_mail, AssetMode, AuthUiConfig,
-    BrowserRuntimeConfig, ConnectError, Context, ErrorCode, LdapFixtureUser, LdapRuntimeConfig,
-    PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError, LEGACY_LOGIN_INVALID_MESSAGE,
-    LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
+    AssetMode, AuthUiConfig, BrowserRuntimeConfig, ConnectError, Context, ErrorCode,
+    LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
+    LdapFixtureUser, LdapRuntimeConfig, PilotBackend, PilotRepository, PilotServiceImpl,
+    RestRouteError, anonymous_current_session_response, append_response_headers,
+    attach_session_headers, auth_ui_capabilities_from_config, base_path_href,
+    headers_with_form_csrf, normalize_identifier, percent_encode_uri_component, require_session,
+    require_valid_csrf, rest_json_response, rest_owned_view, rest_read_current_session,
+    send_password_reset_mail,
 };
 
 use super::send_signup_verification_mail;
@@ -181,7 +182,10 @@ pub(crate) async fn rest_read_auth_ui_capabilities(
 ) -> Result<Response, RestRouteError> {
     let request = ReadAuthUiCapabilitiesRequest::default();
     let _request = rest_owned_view::<ReadAuthUiCapabilitiesRequestView<'static>>(&request)?;
-    let payload = auth_ui_capabilities_from_config(&service.auth_ui);
+    let mut payload = auth_ui_capabilities_from_config(&service.auth_ui);
+    payload.secret_setup_required = secret_admin_setup_required(&service)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, Context::new(headers)))
 }
 
@@ -292,6 +296,12 @@ pub(crate) async fn rest_secret_admin_setup(
         .map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&service.session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
+    if !secret_admin_setup_required(&service)
+        .await
+        .map_err(RestRouteError::from_connect_error)?
+    {
+        return Err(RestRouteError::not_found("secret setup is not required"));
+    }
     update_legacy_default_site_admin(
         &service,
         &input.name,
@@ -1621,6 +1631,7 @@ pub(crate) fn routes(
     let legacy_lost_password_page_browser_runtime = browser_runtime.clone();
     let legacy_reset_password_page_assets = assets.clone();
     let legacy_reset_password_page_browser_runtime = browser_runtime.clone();
+    let direct_secret_page_service = service.clone();
     let legacy_secret_page_assets = assets.clone();
     let legacy_secret_page_browser_runtime = browser_runtime.clone();
     let legacy_restart_page_assets = assets;
@@ -1705,9 +1716,10 @@ pub(crate) fn routes(
         .route(
             "/secret",
             get(move || {
+                let service = direct_secret_page_service.clone();
                 let assets = legacy_secret_page_assets.clone();
                 let browser_runtime = legacy_secret_page_browser_runtime.clone();
-                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+                async move { direct_secret_page(service, assets, browser_runtime).await }
             }),
         )
         .route(
@@ -1770,6 +1782,29 @@ pub(crate) fn routes(
                 },
             ),
         )
+}
+
+async fn direct_secret_page(
+    service: PilotServiceImpl,
+    assets: AssetMode,
+    browser_runtime: BrowserRuntimeConfig,
+) -> Response {
+    match secret_admin_setup_required(&service).await {
+        Ok(true) => serve_frontend_page(assets, Method::GET, browser_runtime).await,
+        Ok(false) => StatusCode::NOT_FOUND.into_response(),
+        Err(error) => RestRouteError::from_connect_error(error).into_response(),
+    }
+}
+
+async fn secret_admin_setup_required(service: &PilotServiceImpl) -> Result<bool, ConnectError> {
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Ok(false);
+    };
+    let admin = repository
+        .find_user_by_login_id("admin")
+        .await
+        .map_err(crate::internal_error)?;
+    Ok(!admin.is_some_and(|admin| admin.is_site_admin))
 }
 
 async fn session_bootstrap(headers: HeaderMap, service: PilotServiceImpl) -> Response {

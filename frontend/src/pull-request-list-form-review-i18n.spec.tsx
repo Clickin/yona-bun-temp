@@ -170,7 +170,11 @@ describe("PR list/form/review-list legacy i18n opt-in", () => {
     expect(html).toContain(">Pull request</a>");
     expect(html).toContain(">From");
     expect(html).toContain(">Select branch");
+    expect(html).toContain('id="pullRequestState" hidden=""');
+    expect(html).toContain('<div class="alert mt20 mb20" id="status">');
     expect(html).toContain(">Title");
+    expect(html).toContain('id="title" name="title"');
+    expect(html).toContain('id="editor-body-content-body" name="body"');
     expect(html).toContain(" Commits</span>");
     expect(html).toContain(">Send pull request</button>");
     expect(html).toContain(">Cancel</a>");

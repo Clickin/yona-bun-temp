@@ -8,12 +8,12 @@ use sea_orm::{
 use serde_json::json;
 use std::time::{Duration, SystemTime};
 use tower::ServiceExt;
+use yoram_migration::Migrator;
 use yoram_persistence::{
     attachment, comment_thread, original_email, project_pushed_branch, pull_request,
     pull_request_commit, pull_request_event, pull_request_reviewers, review_comment, watch,
     AppRepository,
 };
-use yoram_migration::Migrator;
 use yoram_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
@@ -902,6 +902,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     .await;
     assert_eq!(open_list["category"], "open");
     assert_eq!(open_list["pageSize"], 15);
+    assert_eq!(open_list["currentUserId"], reviewer_id);
     assert_eq!(open_list["totalCount"], 2);
     assert_eq!(open_list["openCount"], 2);
     assert_eq!(open_list["closedCount"], 2);

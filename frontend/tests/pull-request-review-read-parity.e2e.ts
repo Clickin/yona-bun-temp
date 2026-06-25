@@ -112,9 +112,9 @@ const pullRequestDetail = {
     {
       commits: [],
       createdLabel: "2026-05-01",
-      eventType: "NEW_PULL_REQUEST",
+      eventType: "PULL_REQUEST_STATE_CHANGED",
       id: 9,
-      newValue: "PR detail title",
+      newValue: "OPEN",
       oldValue: "",
       senderLoginId: "nori",
     },
@@ -296,6 +296,7 @@ test.beforeEach(async ({ page }) => {
           acceptedCount: 1,
           category,
           closedCount: 1,
+          currentUserId: 1,
           contributors: [{ loginId: "nori", userId: 1, userLabel: "Nori" }],
           items: [item],
           openCount: 31,
@@ -384,6 +385,7 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
   await expect(page.locator(".pullrequeset-tab-menu")).toContainText("Open");
   await expect(page.locator("#search .search-btn .yobicon-search")).toHaveCount(1);
   await expect(page.locator("#advanced-search-form #contributors")).toBeVisible();
+  await expect(page.locator("#advanced-search-form #contributors")).toContainText("Sent by me");
   await expect(page.locator(".post-list-wrap")).toContainText("Open read surface");
   await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
@@ -402,7 +404,8 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
 
   await page.goto("/yona/admin/projectYobi/pullRequest/3");
   await expect(page.locator(".pullRequest-branchInfo")).toContainText("topic/pr-3");
-  await expect(page.locator("ul#comments")).toContainText("pullRequest.event.message");
+  await expect(page.locator("ul#comments")).toContainText("nori opened this pull request.");
+  await expect(page.locator("ul#comments")).not.toContainText("pullRequest.event.message");
   await expect(page.locator(".review-card")).toHaveCount(0);
   await expect(
     page.locator(".pull-request-overview-tabs a", { hasText: "Code review" }),

@@ -110,6 +110,7 @@ function toAuthUiCapabilitiesView(
     enabledSocialProviders: response.enabledSocialProviders,
     loginIdPlaceholder: response.loginIdPlaceholder,
     passwordPlaceholder: response.passwordPlaceholder,
+    secretSetupRequired: response.secretSetupRequired,
     signupRequireConfirm: response.signupRequireConfirm,
     socialLoginOnly: response.socialLoginOnly,
   };

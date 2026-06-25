@@ -27,7 +27,13 @@ function legacyMessage(
   return lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { args, fallback: fallbackText });
 }
 
-const LEGACY_ANONYMOUS_USER_NAME = "User.anonymous.name";
+const LEGACY_ANONYMOUS_USER_NAME_FALLBACK = "User exists not";
+
+function legacyAnonymousUserName(messages?: LegacyMessageLookup) {
+  return legacyMessage(messages, "user.notExists.name", {
+    fallback: LEGACY_ANONYMOUS_USER_NAME_FALLBACK,
+  });
+}
 
 const MARKDOWN_CODE_EXTENSIONS = new Set([
   "license",
@@ -70,6 +76,7 @@ export interface CodeCommitDetailViewModel {
   breadcrumbs: Array<{ name: string; path: string }>;
   commit: CodeHistoryViewModel["commits"][number] | null;
   files: Array<{ path: string; patch: string }>;
+  isWatching?: boolean;
   noHead: boolean;
   ownerName: string;
   parentCommit: { commitId: string; commitShortId: string } | null;
@@ -855,6 +862,7 @@ export function CodeCommitDetailPage(props: {
   onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
   onDeleteComment?: (commentId: number) => Promise<void> | void;
   onOpenThread?: (threadId: number) => Promise<void> | void;
+  onToggleCommitWatch?: (watching: boolean) => Promise<void> | void;
   onUpdateComment?: (
     commentId: number,
     contentsMarkdown: string,
@@ -934,15 +942,59 @@ export function CodeCommitDetailPage(props: {
               />
             )}
           </div>
-          <button className="pull-left ybtn" id="watch-button" type="button">
-            {legacyMessage(props.messages, "notification.watch")}
-          </button>
+          <CommitWatchButton
+            isWatching={commitDetail?.isWatching === true}
+            messages={props.messages}
+            onToggleCommitWatch={props.onToggleCommitWatch}
+          />
           <a className="ybtn pull-right" href={listHref}>
             {legacyMessage(props.messages, "button.list")}
           </a>
         </div>
       </div>
     </main>
+  );
+}
+
+function CommitWatchButton(props: {
+  isWatching: boolean;
+  messages?: LegacyMessageLookup;
+  onToggleCommitWatch?: (watching: boolean) => Promise<void> | void;
+}) {
+  const [isWatching, setIsWatching] = React.useState(props.isWatching);
+  const [watchRequestInFlight, setWatchRequestInFlight] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsWatching(props.isWatching);
+  }, [props.isWatching]);
+
+  async function toggleWatch() {
+    if (!props.onToggleCommitWatch || watchRequestInFlight) {
+      return;
+    }
+    const nextWatching = !isWatching;
+    setWatchRequestInFlight(true);
+    try {
+      await props.onToggleCommitWatch(nextWatching);
+      setIsWatching(nextWatching);
+    } finally {
+      setWatchRequestInFlight(false);
+    }
+  }
+
+  return (
+    <button
+      className={`pull-left ybtn${isWatching ? " active ybtn-watching" : ""}`}
+      data-toggle="button"
+      disabled={watchRequestInFlight}
+      id="watch-button"
+      onClick={() => {
+        void toggleWatch();
+      }}
+      type="button"
+    >
+      {legacyMessage(props.messages, "notification.watch")}
+    </button>
   );
 }
 
@@ -1343,7 +1395,7 @@ function CodeCommitDiffView(props: {
       <div className="diffs-wrap">
         <div className="commitInfo">
           <div className="commitAuthor">
-            <strong>{commit?.authorName || LEGACY_ANONYMOUS_USER_NAME}</strong>
+            <strong>{commit?.authorName || legacyAnonymousUserName(props.messages)}</strong>
             {commit?.authorEmail ? <span>{` <${commit.authorEmail}>`}</span> : null}
             {commit?.authorDate ? (
               <span className="ago" title={commit.authorDate}>
@@ -2681,7 +2733,7 @@ function CodeFileHeader(props: {
             </a>
           ) : null}
           <a className="ml5" href={codeAuthorHref(props.runtimeConfig, props.file.authorLoginId)}>
-            {props.file.authorLabel || LEGACY_ANONYMOUS_USER_NAME}
+            {props.file.authorLabel || legacyAnonymousUserName(props.messages)}
           </a>
         </span>
         <span id="commitDate" className="commitDate">
@@ -2798,7 +2850,7 @@ function CodeHistoryAuthorCell(props: {
   if (commit.authorName) {
     return <span>{commit.authorName}</span>;
   }
-  return <span>{LEGACY_ANONYMOUS_USER_NAME}</span>;
+  return <span>{legacyAnonymousUserName(props.messages)}</span>;
 }
 
 function codeAuthorHref(runtimeConfig: RuntimeConfig | undefined, loginId: string | undefined) {

@@ -536,6 +536,7 @@ export interface AuthUiCapabilitiesViewModel {
   enabled_social_providers?: string[];
   loginIdPlaceholder?: string;
   passwordPlaceholder?: string;
+  secretSetupRequired?: boolean;
   signupRequireConfirm: boolean;
   socialLoginOnly: boolean;
 }

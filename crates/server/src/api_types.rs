@@ -279,6 +279,8 @@ pub struct ReadAuthUiCapabilitiesResponse {
     pub login_id_placeholder: String,
     #[serde(default)]
     pub password_placeholder: String,
+    #[serde(default)]
+    pub secret_setup_required: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]

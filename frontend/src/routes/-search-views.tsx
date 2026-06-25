@@ -14,7 +14,9 @@ import {
   readOrganizationSearch,
   readProjectSearch,
 } from "../api/search";
+import { readOrganizationContainerRest, readProjectContainerRest } from "../api/org-project";
 import { apiQueryKeys } from "../api/query-keys";
+import { toOrganizationContainerView, toProjectContainerView } from "../app-view-models";
 import {
   LEGACY_DEFAULT_LANGUAGE,
   lookupLegacyMessage,
@@ -69,9 +71,6 @@ function readSearchRouteQuery(): SearchRouteQuery {
   const params = readSearchParams();
   const keyword = (params.get("keyword") ?? "").trim();
   const searchType = (params.get("searchType") ?? "").trim();
-  if (!keyword && !searchType) {
-    return { input: null, invalid: false };
-  }
   if (!keyword || !isSearchType(searchType)) {
     return { input: null, invalid: true };
   }
@@ -313,6 +312,89 @@ function SearchResultItem(props: {
     `${item.type}-${item.id}-${snippet.text}-${snippet.highlights
       .map((highlight) => `${highlight.start}-${highlight.end}`)
       .join("|")}`;
+  if (item.type === "user") {
+    const loginLabel = item.authorLoginId ? ` (@${item.authorLoginId})` : "";
+    return (
+      <li className="search-list-item project">
+        <a
+          className="avatar-wrap"
+          data-placement="top"
+          data-toggle="tooltip"
+          href={prefixBasePath(props.runtimeConfig.basePath, item.href)}
+          title={item.authorLoginId}
+        >
+          <img
+            alt=""
+            height={32}
+            src={prefixBasePath(
+              props.runtimeConfig.basePath,
+              "/assets/images/default-avatar-64.png",
+            )}
+            width={32}
+          />
+        </a>
+        <div className="title-wrap">
+          <a
+            className="title user-link"
+            href={prefixBasePath(props.runtimeConfig.basePath, item.href)}
+          >
+            {item.title || item.authorLabel || item.authorLoginId}
+            {loginLabel}
+          </a>
+        </div>
+        <div className="infos nm">
+          <span className="infos-item">
+            {legacySearchMessage(props.messages, "userinfo.since")} {item.createdLabel}
+          </span>
+        </div>
+      </li>
+    );
+  }
+  if (item.type === "project") {
+    return (
+      <li className="search-list-item project">
+        <a className="avatar-wrap" href={prefixBasePath(props.runtimeConfig.basePath, item.href)}>
+          <img
+            alt=""
+            src={prefixBasePath(
+              props.runtimeConfig.basePath,
+              "/assets/images/project_default_logo.png",
+            )}
+          />
+        </a>
+        <div className="title-wrap">
+          <a
+            className="title project-link"
+            href={prefixBasePath(props.runtimeConfig.basePath, item.href)}
+          >
+            {item.ownerName}/{item.projectName}
+          </a>
+        </div>
+        <div className="search-content np">
+          {item.snippets.map((snippet) => (
+            <p className="search-content-body" key={snippetKey(snippet)}>
+              <HighlightedSnippet snippet={snippet} />
+              {snippet.truncated ? " ....." : null}
+            </p>
+          ))}
+        </div>
+        <div className="search-meta-info np">
+          {item.createdLabel ? (
+            <span className="meta-info">
+              {legacySearchMessage(props.messages, "project.create")}{" "}
+              <strong title={item.createdLabel}>{item.createdLabel}</strong>
+            </span>
+          ) : null}
+          {item.updatedLabel ? (
+            <span className="meta-info">
+              {legacySearchMessage(props.messages, "project.codeUpdate")}{" "}
+              <strong title={item.updatedLabel}>{item.updatedLabel}</strong>
+            </span>
+          ) : null}
+        </div>
+      </li>
+    );
+  }
   return (
     <li className="search-list-item">
       <div className="title-wrap">
@@ -456,37 +538,24 @@ export function SearchPagination(props: {
   );
 }
 
-function projectSearchDetail(scope: SearchRouteScope): ProjectDetailViewModel | null {
+function projectSearchDetail(
+  scope: SearchRouteScope,
+  detail: ProjectDetailViewModel | null | undefined,
+): ProjectDetailViewModel | null {
   if (scope.type !== "project") {
     return null;
   }
-  return {
-    enrollmentRequested: false,
-    isFavorited: false,
-    organizationName: "",
-    overview: "",
-    ownerName: scope.ownerName,
-    projectName: scope.projectName,
-    projectScope: "public",
-    showCode: true,
-    viewerCanEnroll: false,
-    viewerCanUpdate: false,
-  };
+  return detail ?? null;
 }
 
-function organizationSearchDetail(scope: SearchRouteScope): OrganizationDetailViewModel | null {
+function organizationSearchDetail(
+  scope: SearchRouteScope,
+  detail: OrganizationDetailViewModel | null | undefined,
+): OrganizationDetailViewModel | null {
   if (scope.type !== "organization") {
     return null;
   }
-  return {
-    description: "",
-    enrollmentRequested: false,
-    organizationName: scope.organizationName,
-    viewerCanCreateProject: false,
-    viewerCanEnroll: false,
-    viewerCanLeave: false,
-    viewerCanUpdate: false,
-  };
+  return detail ?? null;
 }
 
 export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
@@ -532,27 +601,59 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
     },
     queryKey,
   });
+  const projectChromeQuery = useQuery<ProjectDetailViewModel>({
+    enabled: !bootstrapping && scope.type === "project" && !routeInvalid,
+    queryFn: async () => {
+      if (scope.type !== "project") {
+        throw new Error("project chrome query requires project scope");
+      }
+      return toProjectContainerView(
+        await readProjectContainerRest(runtimeConfig, scope.ownerName, scope.projectName),
+      );
+    },
+    queryKey:
+      scope.type === "project"
+        ? apiQueryKeys.project.container(scope.ownerName, scope.projectName)
+        : ["api", "v1", "owners", "", "projects", "", "container"],
+  });
+  const organizationChromeQuery = useQuery<OrganizationDetailViewModel>({
+    enabled: !bootstrapping && scope.type === "organization" && !routeInvalid,
+    queryFn: async () => {
+      if (scope.type !== "organization") {
+        throw new Error("organization chrome query requires organization scope");
+      }
+      return toOrganizationContainerView(
+        await readOrganizationContainerRest(runtimeConfig, scope.organizationName),
+      );
+    },
+    queryKey:
+      scope.type === "organization"
+        ? [...apiQueryKeys.organization.base(scope.organizationName), "container"]
+        : ["api", "v1", "organizations", "", "container"],
+  });
   const response = searchQuery.data;
   const activeType =
     response?.searchType ?? (input?.searchType === "auto" ? "issue" : input?.searchType) ?? "issue";
   const counts = response?.counts ?? emptyCounts();
   const activeCategory = SEARCH_CATEGORIES.find((category) => category.type === activeType);
   const activeCount = activeCategory ? counts[activeCategory.countKey] : 0;
-  const projectDetail = projectSearchDetail(scope);
-  const organizationDetail = organizationSearchDetail(scope);
+  const projectDetail = projectSearchDetail(scope, projectChromeQuery.data);
+  const organizationDetail = organizationSearchDetail(scope, organizationChromeQuery.data);
   useDocumentTitle("title.search");
 
   React.useEffect(() => {
-    if (!searchQuery.error) {
+    const routeError =
+      searchQuery.error ?? projectChromeQuery.error ?? organizationChromeQuery.error;
+    if (!routeError) {
       return;
     }
-    const nextFailureKind = classifyConnectFailure(searchQuery.error);
+    const nextFailureKind = classifyConnectFailure(routeError);
     if (nextFailureKind) {
       setFailureKind(nextFailureKind);
       return;
     }
     setFailureKind("bad-request");
-  }, [searchQuery.error]);
+  }, [organizationChromeQuery.error, projectChromeQuery.error, searchQuery.error]);
 
   if (bootstrapping) {
     return (

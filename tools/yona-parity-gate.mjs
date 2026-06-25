@@ -327,6 +327,8 @@ const DOMAIN_BUCKETS = [
       "docs/provenance/phase-0b/legacy-test-inventory.md",
       "docs/provenance/auth-deferred-oauth-ldap.md",
       "docs/plans/2026-06-21-deferred-parity-goal-directive.md",
+      "docs/provenance/ui-parity-reports/ui-parity-site-admin-setup.md",
+      "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
     ],
   },
   {
@@ -381,6 +383,8 @@ const DOMAIN_BUCKETS = [
       "docs/provenance/phase-0b/pull-request-review.md",
       "docs/provenance/core-parity-audit.md",
       "docs/plans/2026-06-24-rc-ux-diff-closure-checklist.md",
+      "docs/provenance/ui-parity-reports/ui-parity-pull-request-review.md",
+      "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
     ],
   },
   {

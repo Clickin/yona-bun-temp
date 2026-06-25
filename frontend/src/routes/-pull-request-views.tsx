@@ -579,6 +579,11 @@ function ProjectPullRequestSearchForm(props: {
   query: PullRequestListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
+  const selectedContributorId = props.query.contributorId ?? 0;
+  const currentUserContributor =
+    props.list?.contributors.find(
+      (contributor) => contributor.userId > 0 && contributor.userId === props.list?.currentUserId,
+    ) ?? null;
   return (
     <form
       action={projectCategoryHref(props.runtimeConfig, props.detail, props.category)}
@@ -604,17 +609,20 @@ function ProjectPullRequestSearchForm(props: {
           <dl className="issue-option">
             <dt>{legacyMessage(props.messages, "pullRequest.sender")}</dt>
             <dd>
-              <select
-                data-format="user"
-                defaultValue={props.query.contributorId ? String(props.query.contributorId) : ""}
-                id="contributors"
-                name="contributorId"
-              >
-                <option value="">{legacyMessage(props.messages, "common.order.all")}</option>
+              <select data-format="user" id="contributors" name="contributorId">
+                <option selected={selectedContributorId === 0} value="">
+                  {legacyMessage(props.messages, "common.order.all")}
+                </option>
+                {currentUserContributor ? (
+                  <option value={currentUserContributor.userId}>
+                    {legacyMessage(props.messages, "pullRequest.sentByMe")}
+                  </option>
+                ) : null}
                 {props.list?.contributors.map((contributor) => (
                   <option
                     data-login-id={contributor.loginId}
                     key={contributor.userId}
+                    selected={selectedContributorId === contributor.userId}
                     value={contributor.userId}
                   >
                     {contributor.userLabel || contributor.loginId}
@@ -1387,6 +1395,10 @@ export function ProjectPullRequestFormPage(props: {
                     setValidationMessage("pullRequest.toBranch.required");
                     return;
                   }
+                  if (bodyMarkdown.trim().length === 0) {
+                    setValidationMessage("pullRequest.body.required");
+                    return;
+                  }
                   setValidationMessage(null);
                   setSubmitting(true);
                   void props
@@ -1474,10 +1486,18 @@ export function ProjectPullRequestFormPage(props: {
                     </select>
                   </label>
                 </div>
-                <label htmlFor="pullRequestState">
+                <span
+                  data-value={initialPullRequest?.state ?? "open"}
+                  id="pullRequestState"
+                  hidden
+                ></span>
+                <div className="alert mt20 mb20" id="status">
+                  {legacyMessage(props.messages, "pullRequest.is.merging")}
+                </div>
+                <label htmlFor="title">
                   {legacyMessage(props.messages, "title")}
                   <input
-                    id="pullRequestState"
+                    id="title"
                     name="title"
                     onChange={(event) => {
                       setValidationMessage(null);
@@ -1486,7 +1506,7 @@ export function ProjectPullRequestFormPage(props: {
                     value={title}
                   />
                 </label>
-                <label htmlFor="status">
+                <label htmlFor="editor-body-content-body">
                   body
                   <LegacyMarkdownEditorShell
                     editId="edit-content-body"
@@ -1497,7 +1517,7 @@ export function ProjectPullRequestFormPage(props: {
                       className="editorSeries content comment nm"
                       csrfToken={props.csrfToken}
                       editorMode="content-body"
-                      id="status"
+                      id="editor-body-content-body"
                       name="body"
                       onAttachmentUpload={(attachment) =>
                         setAttachmentIds((current) => [...current, attachment.id])
@@ -2145,11 +2165,64 @@ function pullRequestEventMessage(event: PullRequestEvent) {
   return state ? `pullRequest.event.message.${state}` : eventType;
 }
 
+function pullRequestEventSenderLabel(event: PullRequestEvent) {
+  return event.senderLoginId || LEGACY_ANONYMOUS_USER_NAME;
+}
+
 function pullRequestEventHasMergedCommit(event: PullRequestEvent) {
   return (
     event.eventType === "PULL_REQUEST_MERGED" ||
     (event.eventType === "PULL_REQUEST_STATE_CHANGED" &&
       event.newValue.trim().toUpperCase() === "MERGED")
+  );
+}
+
+function pullRequestEventCommitHref(
+  runtimeConfig: RuntimeConfig,
+  pullRequest: PullRequestDetailResponse,
+  commitId: string,
+) {
+  return buildProjectHref(
+    runtimeConfig,
+    pullRequest.ownerName,
+    pullRequest.projectName,
+    `commit/${encodeURIComponent(commitId)}`,
+  );
+}
+
+function PullRequestMergedEventMessage(props: {
+  event: PullRequestEvent;
+  messages?: LegacyMessageLookup;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const mergedCommitId = props.pullRequest.mergedCommitIdTo.trim();
+  const commitShortId = pullRequestCommitShortId(mergedCommitId);
+  const messageKey = pullRequestEventMessage(props.event);
+  const commitMarker = "__PULL_REQUEST_MERGED_COMMIT__";
+  const interpolatedMessage = legacyMessage(props.messages, messageKey, [
+    pullRequestEventSenderLabel(props.event),
+    commitMarker,
+  ]);
+  const parts = interpolatedMessage.split(commitMarker);
+
+  return (
+    <span>
+      {" "}
+      {parts[0]}
+      {mergedCommitId ? (
+        <a
+          className="link"
+          href={pullRequestEventCommitHref(props.runtimeConfig, props.pullRequest, mergedCommitId)}
+          title={legacyMessage(props.messages, "code.showCommit")}
+        >
+          {commitShortId}
+        </a>
+      ) : (
+        commitShortId
+      )}
+      {parts.slice(1).join(commitMarker)}
+    </span>
   );
 }
 
@@ -2167,7 +2240,7 @@ function PullRequestEventTimeline(props: {
       <ul className="comments" id="comments">
         {props.events.map((event) => {
           const eventStateClass = pullRequestEventStateClass(event);
-          const mergedCommitId = props.pullRequest.mergedCommitIdTo.trim();
+          const eventHasMergedCommit = pullRequestEventHasMergedCommit(event);
           return (
             <li className="event" id={`comment-${event.id}`} key={event.id}>
               <span className={`state ${eventStateClass}`}>
@@ -2186,30 +2259,21 @@ function PullRequestEventTimeline(props: {
                   </span>
                 </a>
               ) : null}
-              <a
-                className="usf-group user-link"
-                data-placement="top"
-                data-toggle="tooltip"
-                href={`${props.runtimeConfig.basePath}/${encodeURIComponent(event.senderLoginId)}`}
-                title={event.senderLoginId}
-              >
-                <strong>{event.senderLoginId || LEGACY_ANONYMOUS_USER_NAME}</strong>
-              </a>
-              <span>{` ${legacyMessage(props.messages, pullRequestEventMessage(event))}`}</span>
-              {pullRequestEventHasMergedCommit(event) && mergedCommitId ? (
-                <a
-                  className="link"
-                  href={buildProjectHref(
-                    props.runtimeConfig,
-                    props.pullRequest.ownerName,
-                    props.pullRequest.projectName,
-                    `commit/${encodeURIComponent(mergedCommitId)}`,
-                  )}
-                  title={legacyMessage(props.messages, "code.showCommit")}
-                >
-                  {pullRequestCommitShortId(mergedCommitId)}
-                </a>
-              ) : null}
+              {eventHasMergedCommit ? (
+                <PullRequestMergedEventMessage
+                  event={event}
+                  messages={props.messages}
+                  pullRequest={props.pullRequest}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              ) : (
+                <span>
+                  {" "}
+                  {legacyMessage(props.messages, pullRequestEventMessage(event), [
+                    pullRequestEventSenderLabel(event),
+                  ])}
+                </span>
+              )}
               {event.eventType === "PULL_REQUEST_COMMIT_CHANGED" && event.oldValue ? (
                 <a
                   className="ybtn ybtn-mini"

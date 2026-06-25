@@ -1172,6 +1172,22 @@ async fn secret_admin_setup_rest_updates_legacy_default_admin_and_form_post_is_n
     let (app, _repo, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
+    let capabilities_before_setup = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/auth/capabilities")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(capabilities_before_setup.status(), StatusCode::OK);
+    let capabilities_before_setup_json: serde_json::Value =
+        serde_json::from_str(&response_text(capabilities_before_setup).await).unwrap();
+    assert_eq!(capabilities_before_setup_json["secretSetupRequired"], true);
+
     let rest_response = app
         .clone()
         .oneshot(
@@ -1250,6 +1266,53 @@ async fn secret_admin_setup_rest_updates_legacy_default_admin_and_form_post_is_n
         )
         .unwrap()
     );
+
+    let capabilities_after_setup = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/auth/capabilities")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(capabilities_after_setup.status(), StatusCode::OK);
+    let capabilities_after_setup_json: serde_json::Value =
+        serde_json::from_str(&response_text(capabilities_after_setup).await).unwrap();
+    assert_eq!(capabilities_after_setup_json["secretSetupRequired"], false);
+
+    let configured_secret_get = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/secret")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(configured_secret_get.status(), StatusCode::NOT_FOUND);
+
+    let configured_rest_retry = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/secret")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"name\":\"Other Admin\",\"emailAddress\":\"other@example.com\",\"password\":\"otherpass1\",\"retypedPassword\":\"otherpass1\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(configured_rest_retry.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

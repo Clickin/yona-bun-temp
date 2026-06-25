@@ -6,8 +6,10 @@ import { describe, expect, it } from "vitest";
 
 import { resolveRuntimeConfig } from "./runtime-config";
 import {
+  CodeBranchListPage,
   CodeBrowserPage,
   CodeCommitDetailPage,
+  type CodeBranchListViewModel,
   type CodeCommitDetailViewModel,
 } from "./routes/-code-views";
 import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./routes/-view-models";
@@ -76,6 +78,44 @@ const commitDetail: CodeCommitDetailViewModel = {
   projectName: "projectYobi",
   selectedBranch: "main",
   threads: [],
+};
+
+const branchList: CodeBranchListViewModel = {
+  branches: [
+    {
+      commitDate: "2026-05-25",
+      commitId: "be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2",
+      commitMessage: "Default branch",
+      commitShortId: "be6a8cc",
+      isDefault: true,
+      name: "main",
+      pullRequest: null,
+      shortName: "main",
+    },
+    {
+      commitDate: "2026-05-26",
+      commitId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      commitMessage: "Feature branch",
+      commitShortId: "aaaaaaa",
+      isDefault: false,
+      name: "topic/default",
+      pullRequest: {
+        ownerName: "owner",
+        projectName: "projectYobi",
+        pullRequestNumber: 7,
+        state: "open",
+      },
+      shortName: "topic/default",
+    },
+  ],
+  defaultBranch: "main",
+  noHead: false,
+  ownerName: "owner",
+  permissions: {
+    canDelete: true,
+    canUpdate: true,
+  },
+  projectName: "projectYobi",
 };
 
 const codeBrowser: CodeBrowserViewModel = {
@@ -1453,8 +1493,35 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain('class="diff-stats"');
     expect(html).toContain('class="num-added">+2</span>');
     expect(html).toContain('class="num-deleted">-1</span>');
+    expect(html).toContain('class="diff-file diff-container"');
+    expect(html).toContain('class="diff-code diff-table"');
+    expect(html).toContain('class="remove"');
+    expect(html).toContain('class="add"');
+    expect(html).toContain('class="context"');
+    expect(html).toContain('class="hunk"');
+    expect(html).toContain('class="linenum"');
+    expect(html).toContain('class="line-number" data-line-num="2"');
+    expect(html).toContain('class="diff-partial-codeline"');
     expect(html).toContain("line-comment-trigger");
     expect(html).toContain('data-line="2"');
+    expect(html).toContain('data-side="A"');
+    expect(html).toContain('data-side="B"');
+    expect(html).toContain('<div class="btnPop">');
+  });
+
+  it("renders legacy active commit watch state when the commit is already watched", () => {
+    const html = renderToStaticMarkup(
+      <CodeCommitDetailPage
+        commitDetail={{ ...commitDetail, isWatching: true }}
+        detail={projectDetail}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(html).toContain(
+      'class="pull-left ybtn active ybtn-watching" data-toggle="button" id="watch-button"',
+    );
+    expect(html).toContain(">Watch</button>");
   });
 
   it("renders empty commit diff body without non-legacy placeholder copy", () => {
@@ -1521,7 +1588,7 @@ describe("CodeCommitDetailPage", () => {
       />,
     );
 
-    expect(html).toContain("<strong>User.anonymous.name</strong>");
+    expect(html).toContain("<strong>User exists not</strong>");
     expect(html).toContain(">Watch</button>");
     expect(html).toContain(">List</a>");
     expect(html).toContain('class="yobicon-post2"');
@@ -1549,6 +1616,7 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain(">Close</button>");
     expect(html).toContain(">Add a comment</button>");
     expect(html).not.toContain("<strong>Anonymous</strong>");
+    expect(html).not.toContain("<strong>User.anonymous.name</strong>");
     expect(html).not.toContain(">notification.watch</button>");
     expect(html).not.toContain(">button.list</a>");
     expect(html).not.toContain(">Comments</button>");
@@ -1623,5 +1691,47 @@ describe("CodeCommitDetailPage", () => {
     expect(codeViewsSource).toContain('editorMode="update-comment-body"');
     expect(codeViewsSource).toContain("upload-drop-here");
     expect(codeViewsSource).toContain("editor-contents-");
+  });
+
+  it("keeps branch action cells gated by legacy update and delete permissions", () => {
+    const renderBranchList = (permissions: CodeBranchListViewModel["permissions"]) =>
+      renderToStaticMarkup(
+        <CodeBranchListPage
+          branchList={{ ...branchList, permissions }}
+          detail={projectDetail}
+          onDeleteBranch={async () => undefined}
+          onSetDefaultBranch={async () => undefined}
+          runtimeConfig={runtimeConfig}
+        />,
+      );
+
+    const adminHtml = renderBranchList({ canDelete: true, canUpdate: true });
+    expect(adminHtml).toContain("<th></th>");
+    expect(adminHtml).toContain('data-request-method="post"');
+    expect(adminHtml).toContain(
+      'data-request-uri="/yona/owner/projectYobi/code/topic%2Fdefault/setAsDefault"',
+    );
+    expect(adminHtml).toContain('data-request-method="delete"');
+    expect(adminHtml).toContain('href="/yona/owner/projectYobi/code/topic%2Fdefault/"');
+    expect(adminHtml).not.toContain(
+      'data-request-uri="/yona/owner/projectYobi/code/main/setAsDefault"',
+    );
+    expect(adminHtml).not.toContain('href="/yona/owner/projectYobi/code/main/"');
+
+    const updateOnlyHtml = renderBranchList({ canDelete: false, canUpdate: true });
+    expect(updateOnlyHtml).toContain("<th></th>");
+    expect(updateOnlyHtml).toContain('data-request-method="post"');
+    expect(updateOnlyHtml).not.toContain('data-request-method="delete"');
+
+    const deleteOnlyHtml = renderBranchList({ canDelete: true, canUpdate: false });
+    expect(deleteOnlyHtml).toContain("<th></th>");
+    expect(deleteOnlyHtml).not.toContain('data-request-method="post"');
+    expect(deleteOnlyHtml).toContain('data-request-method="delete"');
+
+    const readOnlyHtml = renderBranchList({ canDelete: false, canUpdate: false });
+    expect(readOnlyHtml).not.toContain("<th></th>");
+    expect(readOnlyHtml).not.toContain('class="actions"');
+    expect(readOnlyHtml).not.toContain("Set as default");
+    expect(readOnlyHtml).not.toContain(">Delete</a>");
   });
 });

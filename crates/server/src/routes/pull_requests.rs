@@ -1,9 +1,9 @@
 use axum::{
+    Json, Router,
     extract::{Form, Path, Query},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::{delete, get, post},
-    Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,6 +11,8 @@ use yoram_vcs::{CodeCommitFileDiffRecord, VcsError};
 
 use crate::api_types::IssueAttachment;
 use crate::{
+    ConnectError, MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
+    PilotServiceImpl, RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
     code_browser_error, decode_query_component, dispatch_pull_request_webhooks, gravatar_url,
     internal_error, issue_attachment_from_record, markdown_issue_references_for_project,
     markdown_mention_references, normalize_identifier, parse_rest_query_i64, parse_rest_query_u32,
@@ -18,17 +20,15 @@ use crate::{
     redirect_to, require_authenticated_user, require_session, require_valid_csrf, rest_actor_id,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rest_repository, rest_require_project_code_read, visible_code_projects_for_organization,
-    ConnectError, MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
-    PilotServiceImpl, RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
 };
 
 mod review_comments;
 
 use review_comments::{
-    direct_create_pull_request_comment, direct_update_review_thread_state,
-    rest_create_pull_request_comment, rest_delete_pull_request_comment,
-    rest_update_pull_request_comment, rest_update_pull_request_thread_state,
-    RestPullRequestCommentBody,
+    RestPullRequestCommentBody, direct_create_pull_request_comment,
+    direct_update_review_thread_state, rest_create_pull_request_comment,
+    rest_delete_pull_request_comment, rest_update_pull_request_comment,
+    rest_update_pull_request_thread_state,
 };
 
 #[derive(Clone, Copy)]
@@ -130,7 +130,7 @@ async fn direct_pull_request_state(
         Ok(Some(record)) => record,
         Ok(None) => return StatusCode::NOT_FOUND.into_response(),
         Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
     let source_branch_state = match rest_pull_request_source_branch_state(
@@ -353,6 +353,7 @@ pub(crate) struct RestPullRequestListResponse {
     category: String,
     closed_count: u32,
     contributors: Vec<RestPullRequestUser>,
+    current_user_id: i64,
     items: Vec<RestPullRequestListItem>,
     open_count: u32,
     page_num: u32,
@@ -1282,6 +1283,7 @@ fn rest_pull_request_list_item_from_record(
 
 fn rest_pull_request_list_from_record(
     record: persistence::PullRequestListRecord,
+    actor_id: Option<i64>,
 ) -> RestPullRequestListResponse {
     RestPullRequestListResponse {
         accepted_count: record.accepted_count,
@@ -1292,6 +1294,7 @@ fn rest_pull_request_list_from_record(
             .into_iter()
             .map(rest_pull_request_user_from_record)
             .collect(),
+        current_user_id: actor_id.unwrap_or_default(),
         items: record
             .items
             .into_iter()
@@ -1309,6 +1312,7 @@ fn rest_pull_request_list_from_record(
 fn rest_project_pull_request_list_from_record(
     service: &PilotServiceImpl,
     record: persistence::PullRequestListRecord,
+    actor_id: Option<i64>,
 ) -> RestPullRequestListResponse {
     RestPullRequestListResponse {
         accepted_count: record.accepted_count,
@@ -1319,6 +1323,7 @@ fn rest_project_pull_request_list_from_record(
             .into_iter()
             .map(rest_pull_request_user_from_record)
             .collect(),
+        current_user_id: actor_id.unwrap_or_default(),
         items: record
             .items
             .into_iter()
@@ -2850,7 +2855,7 @@ pub(crate) async fn rest_list_project_pull_requests(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(rest_project_pull_request_list_from_record(
-        &service, record,
+        &service, record, actor_id,
     )))
 }
 
@@ -3146,5 +3151,5 @@ pub(crate) async fn rest_list_organization_pull_requests(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    Ok(Json(rest_pull_request_list_from_record(record)))
+    Ok(Json(rest_pull_request_list_from_record(record, actor_id)))
 }

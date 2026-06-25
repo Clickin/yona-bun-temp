@@ -4,14 +4,15 @@ import { RestApiError } from "../../api/rest-client";
 import { setupSecretAdminRest } from "../../api/auth";
 import { useAppRuntime } from "../../app-runtime-context";
 import { prefixBasePath } from "../../runtime-config";
-import { navigateToAppHref, useDocumentTitle } from "../-shared";
+import { navigateToAppHref, NotFoundPage, useDocumentTitle } from "../-shared";
 
 export const Route = createFileRoute("/secret")({
   component: SecretAdminSetupRouteComponent,
 });
 
 function SecretAdminSetupRouteComponent() {
-  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { authUiCapabilities, bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } =
+    useAppRuntime();
   const [formState, setFormState] = React.useState({
     emailAddress: "",
     name: "",
@@ -28,6 +29,10 @@ function SecretAdminSetupRouteComponent() {
         <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
       </main>
     );
+  }
+
+  if (authUiCapabilities && authUiCapabilities.secretSetupRequired === false) {
+    return <NotFoundPage href="/secret" />;
   }
 
   return (

@@ -59,6 +59,7 @@ export type PullRequestListResponse = {
   category: string;
   closedCount: number;
   contributors: PullRequestUser[];
+  currentUserId?: number;
   items: PullRequestListItem[];
   openCount: number;
   pageNum: number;
@@ -548,6 +549,7 @@ function normalizeListResponse(
     category: response.category ?? "open",
     closedCount: response.closedCount ?? 0,
     contributors: (response.contributors ?? []).map(normalizeUser),
+    currentUserId: response.currentUserId ?? 0,
     items: (response.items ?? []).map(normalizeListItem),
     openCount: response.openCount ?? 0,
     pageNum: response.pageNum ?? 1,

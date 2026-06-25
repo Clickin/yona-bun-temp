@@ -273,6 +273,8 @@ describe("file-route parity harness", () => {
     expect(secretRouteSource).toContain('createFileRoute("/secret")');
     expect(secretRouteSource).toContain('useDocumentTitle("app.welcome")');
     expect(secretRouteSource).toContain("setupSecretAdminRest");
+    expect(secretRouteSource).toContain("authUiCapabilities.secretSetupRequired === false");
+    expect(secretRouteSource).toContain('<NotFoundPage href="/secret" />');
     expect(secretRouteSource).toContain("event.preventDefault()");
     expect(secretRouteSource).not.toContain(
       'action={prefixBasePath(runtimeConfig.basePath, "/secret")}',
@@ -284,6 +286,12 @@ describe("file-route parity harness", () => {
     expect(secretRouteSource).toContain("app.welcome.submit");
     expect(secretRouteSource).not.toContain("registerWithPasswordRest");
     expect(secretRouteSource).not.toContain("direct_legacy_secret_admin_setup");
+
+    const appRuntimeSource = fs.readFileSync(
+      path.resolve(__dirname, "app-runtime-context.tsx"),
+      "utf8",
+    );
+    expect(appRuntimeSource).toContain("secretSetupRequired: response.secretSetupRequired");
 
     const restartRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/restart/route.tsx"),
@@ -3603,14 +3611,15 @@ describe("file-route parity harness", () => {
       'class="usf-group" data-placement="top" data-toggle="tooltip" href="/yona/owner" title="owner"',
     );
     expect(html).toContain('<span class="avatar-wrap small">O</span>');
-    expect(html).toContain(
-      'class="usf-group user-link" data-placement="top" data-toggle="tooltip" href="/yona/owner" title="owner"',
-    );
+    expect(html).toContain("owner closed this pull request.");
+    expect(html).toContain("owner has committed.");
+    expect(html).toContain("owner merged commit (");
+    expect(html).not.toContain("pullRequest.event.message");
     expect(html).toContain(
       `<a class="link" href="/yona/owner/projectYobi/commit/${commitSha}" title="View commit">be6a8cc</a>`,
     );
     expect(html).toContain('<li class="event" id="comment-14">');
-    expect(html).toContain("<strong>User.anonymous.name</strong>");
+    expect(html).toContain("User.anonymous.name opened this pull request.");
     expect(html).not.toContain("<strong>Anonymous</strong>");
     expect(html).toContain('href="#event-11" title="now"');
     expect(html).toContain('<ul class="commit-list">');
@@ -4296,6 +4305,7 @@ describe("file-route parity harness", () => {
           acceptedCount: 1,
           category: "open",
           closedCount: 4,
+          currentUserId: 7,
           contributors: [
             {
               avatarUrl: "/yona/avatar/owner.png",
@@ -4364,6 +4374,7 @@ describe("file-route parity harness", () => {
       '<select data-format="user" id="contributors" name="contributorId">',
     );
     expect(projectHtml).toContain("Sender");
+    expect(projectHtml).toContain('<option value="7">Sent by me</option>');
     expect(projectHtml).toContain(
       '<option data-login-id="owner" value="7" selected="">Owner User</option>',
     );
@@ -4847,12 +4858,15 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain('id="toBranch"');
     expect(pullRequestViewsSource).toContain('id="pullRequestState"');
     expect(pullRequestViewsSource).toContain('id="status"');
+    expect(pullRequestViewsSource).toContain('id="title"');
+    expect(pullRequestViewsSource).toContain('id="editor-body-content-body"');
     expect(pullRequestViewsSource).toContain("LegacyMarkdownEditorShell");
     expect(pullRequestViewsSource).toContain('id="__commits"');
     expect(pullRequestViewsSource).toContain('id="mergeResult"');
     expect(pullRequestViewsSource).toContain("title.newPullRequest");
     expect(pullRequestViewsSource).toContain("title.editPullRequest");
     expect(pullRequestViewsSource).toContain("pullRequest.title.required");
+    expect(pullRequestViewsSource).toContain("pullRequest.body.required");
     expect(pullRequestViewsSource).toContain("pullRequest.fromBranch.required");
     expect(pullRequestViewsSource).toContain("pullRequest.toBranch.required");
     expect(pullRequestViewsSource).toContain("pullRequest.from");
