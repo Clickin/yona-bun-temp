@@ -126,6 +126,8 @@ direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_
   `#usermenu-tab-content-list`, `#myOrganizationList`, `#myProjectList`,
   `#myRecentIssueList`, `gnb-outer`, and `admin-logged-in-affix` on the
   logged-in root shell.
+- Visual sweep representative paths: `/`, `/user/sidebar?path=%2Fadmin%2Fsample%2Fissue%2F1&hash=comment-7`,
+  and `/user/usermenuTabContentList`.
 - Frontend verification: `pnpm --dir frontend exec vitest run
 src/root-custom-navbar-link.spec.ts src/auth-workspace-shell.spec.tsx
 src/route-parity.spec.tsx` passed with 3 files and 117 tests.
@@ -308,6 +310,8 @@ tests/legacy-rendered-page-audit.e2e.ts -g "project issue|XSS payloads"`
   `parity-spec-coverage.json`, `e2e-render-coverage.json`, and
   `anchor-coverage.json` map the milestone list and create-form routes to Rust
   routes, parity specs, and rendered legacy signal evidence.
+- Visual sweep representative paths: `/admin/sample/milestones`,
+  `/admin/sample/newMilestoneForm`, and `/admin/sample/milestone/1`.
 - Test expectation fixes closed in this packet: milestone e2e now expects the
   runtime English legacy copy (`Open`, `Closed`, `All`, `List`, `Edit`,
   `Close milestone`, `Save`) where the runtime message provider is active, while
@@ -332,6 +336,9 @@ yoram-server --test milestone_contract -- --nocapture` passed.
   `parity-spec-coverage.json`, `e2e-render-coverage.json`, and
   `anchor-coverage.json` map board list and create-form routes to Rust routes,
   parity specs, rendered e2e coverage, and project header/menu anchor evidence.
+- Visual sweep representative paths: `/admin/sample/posts`,
+  `/admin/sample/post/1`, `/admin/sample/postform`, and
+  `/admin/sample/post/1/editform`.
 - Test expectation fixes closed in this packet: board e2e now targets the
   runtime English legacy copy for search, label, sort, pagination, watch,
   comment, and save/delete controls; the backend board contract now verifies
@@ -360,6 +367,9 @@ tests/board-posting-parity.e2e.ts` passed outside the sandbox with 6 tests,
   `anchor-coverage.json` map PR list, review list, create form, detail, changes,
   and review-thread routes to Rust routes, parity specs, rendered e2e coverage,
   and project header/menu anchor evidence.
+- Visual sweep representative paths: `/admin/sample/pullRequests`,
+  `/admin/sample/newPullRequestForm`, `/admin/sample/reviews`,
+  `/admin/sample/pullRequest/1`, and `/admin/sample/pullRequest/1/changes`.
 - Parity fixes closed in this packet: PR e2e assertions now follow runtime
   legacy copy for create/edit/comment/review/merge/source-branch controls and
   translated error shells. PR event timeline no longer leaks
@@ -444,6 +454,9 @@ tests/legacy-rendered-page-audit.e2e.ts -g "logged-in /|/notifications|/notifica
   executed the audit file outside the sandbox and passed all 43 tests, including
   the logged-in root shell, `/notifications`, `/notification`, and notification
   settings rows.
+- Visual sweep representative paths: `/notification?from=0&limit=20`,
+  `/user/sidebar?path=%2Fadmin%2Fsample%2Fissue%2F1&hash=comment-7`, and
+  `/user/usermenuTabContentList`.
 - Backend compatibility verification: these focused contracts passed outside the
   sandbox:
   `auth_workspace_contract::direct_legacy_usermenu_tab_content_list_returns_workspace_api_payload`,
@@ -458,6 +471,9 @@ tests/legacy-rendered-page-audit.e2e.ts -g "logged-in /|/notifications|/notifica
   records issue title/body XSS probes and hostile search result probes as inert
   rendered text. The current audit also keeps the project issue detail XSS
   regression in `frontend/tests/legacy-rendered-page-audit.e2e.ts`.
+- Visual sweep representative paths: `/admin/sample/issue/1`,
+  `/search?keyword=yona&searchType=auto`, and
+  `/admin/sample/code/main/README.md`.
 - Markdown stability verification: `pnpm --dir frontend exec vitest run
 src/markdown-renderer.spec.tsx` passed with 429 tests
   (`frontend/src/markdown-renderer.spec.tsx`), including raw

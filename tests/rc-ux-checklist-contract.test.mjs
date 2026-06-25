@@ -16,13 +16,7 @@ const visualProvenancePath = path.join(
   "provenance",
   "visual-parity-sweep-2026-06-25.md",
 );
-const sweepOutputPath = path.join(
-  repoRoot,
-  "output",
-  "playwright",
-  "visual-sweep",
-  "latest.json",
-);
+const sweepOutputPath = path.join(repoRoot, "output", "playwright", "visual-sweep", "latest.json");
 
 const allowedClosedStatuses = new Set(["pass", "not-applicable", "expected-legacy-non-ok"]);
 const forbiddenOpenStatuses = new Set(["unchecked", "diff", "blocked"]);
@@ -43,6 +37,99 @@ const requiredRows = [
   "rc-ux-security-stability",
   "rc-ux-db-migration-smoke",
 ];
+const requiredVisualPathsByRow = {
+  "rc-ux-public-auth": ["/", "/users/loginform", "/users/signupform", "/lostPassword", "/_help"],
+  "rc-ux-auth-shell": [
+    "/",
+    "/user/sidebar?path=%2Fadmin%2Fsample%2Fissue%2F1&hash=comment-7",
+    "/user/usermenuTabContentList",
+  ],
+  "rc-ux-directory-create": [
+    "/projects",
+    "/projectform",
+    "/_import",
+    "/orgs",
+    "/organizations/new",
+  ],
+  "rc-ux-user-workspace": [
+    "/admin",
+    "/user/issues",
+    "/user/issues/new/mine",
+    "/user/files",
+    "/user/editform",
+    "/user/editform/password",
+    "/user/editform/notifications",
+    "/user/editform/emails",
+    "/user/editform/token",
+  ],
+  "rc-ux-search-notification": [
+    "/search?keyword=yona&searchType=auto",
+    "/notifications",
+    "/notification?from=0&limit=20",
+  ],
+  "rc-ux-site-admin": [
+    "/sites/userList",
+    "/sites/projectList",
+    "/sites/postList",
+    "/sites/issueList",
+    "/sites/mail",
+    "/sites/massmail",
+    "/sites/update",
+    "/sites/diagnostic",
+    "/sites/data",
+  ],
+  "rc-ux-project-home-code": [
+    "/admin/sample",
+    "/admin/sample/code",
+    "/admin/sample/commits",
+    "/admin/sample/branches",
+  ],
+  "rc-ux-issues": [
+    "/admin/sample/issues",
+    "/admin/sample/issue/1",
+    "/admin/sample/issueform",
+    "/admin/sample/issue/labelsform",
+  ],
+  "rc-ux-board": [
+    "/admin/sample/posts",
+    "/admin/sample/post/1",
+    "/admin/sample/postform",
+    "/admin/sample/post/1/editform",
+  ],
+  "rc-ux-milestones": [
+    "/admin/sample/milestones",
+    "/admin/sample/newMilestoneForm",
+    "/admin/sample/milestone/1",
+  ],
+  "rc-ux-pull-requests": [
+    "/admin/sample/pullRequests",
+    "/admin/sample/newPullRequestForm",
+    "/admin/sample/reviews",
+    "/admin/sample/pullRequest/1",
+    "/admin/sample/pullRequest/1/changes",
+  ],
+  "rc-ux-project-admin": [
+    "/admin/sample/members",
+    "/admin/sample/watchers",
+    "/admin/sample/settingform",
+    "/admin/sample/webhooks",
+    "/admin/sample/deleteform",
+    "/admin/sample/transfer",
+    "/admin/sample/newFork",
+    "/admin/sample/statistics",
+    "/admin/sample/changeVCS",
+  ],
+  "rc-ux-fragment-conversions": [
+    "/notification?from=0&limit=20",
+    "/user/sidebar?path=%2Fadmin%2Fsample%2Fissue%2F1&hash=comment-7",
+    "/user/usermenuTabContentList",
+  ],
+  "rc-ux-security-stability": [
+    "/admin/sample/issue/1",
+    "/search?keyword=yona&searchType=auto",
+    "/admin/sample/code/main/README.md",
+  ],
+};
 
 function readText(filePath) {
   return readFileSync(filePath, "utf8");
@@ -70,6 +157,28 @@ function sectionForRow(source, rowId) {
   assert.notEqual(start, -1, `${rowId} needs closed evidence`);
   const next = source.indexOf("\n### `rc-ux-", start + startMarker.length);
   return source.slice(start, next === -1 ? source.length : next);
+}
+
+function collectStringPaths(value, paths = new Set()) {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectStringPaths(item, paths);
+    }
+    return paths;
+  }
+  if (value && typeof value === "object") {
+    if (typeof value.path === "string" && value.path.startsWith("/")) {
+      paths.add(value.path);
+    }
+    for (const item of Object.values(value)) {
+      collectStringPaths(item, paths);
+    }
+    return paths;
+  }
+  if (typeof value === "string" && value.startsWith("/") && !path.isAbsolute(value)) {
+    paths.add(value);
+  }
+  return paths;
 }
 
 test("RC UX checklist keeps every row closed and backed by evidence sections", () => {
@@ -101,6 +210,34 @@ test("RC UX checklist keeps every row closed and backed by evidence sections", (
   assert.match(source, /Adopted legacy MariaDB plus SQLite, PostgreSQL, MySQL\/MariaDB/u);
 });
 
+test("RC UX user-facing rows stay backed by visual sweep coverage", () => {
+  const source = readText(checklistPath);
+  const latestSweep = JSON.parse(readText(sweepOutputPath));
+  const sweepPaths = collectStringPaths(latestSweep);
+
+  assert.deepEqual(
+    Object.keys(requiredVisualPathsByRow),
+    requiredRows.filter((row) => row !== "rc-ux-db-migration-smoke"),
+    "Every user-facing RC row except DB migration smoke must declare visual sweep path coverage",
+  );
+
+  for (const [rowId, requiredPaths] of Object.entries(requiredVisualPathsByRow)) {
+    const section = sectionForRow(source, rowId);
+    for (const requiredPath of requiredPaths) {
+      assert.equal(
+        sweepPaths.has(requiredPath),
+        true,
+        `${rowId} requires visual sweep coverage for ${requiredPath}`,
+      );
+      assert.match(
+        section,
+        new RegExp(requiredPath.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")),
+        `${rowId} evidence should name ${requiredPath}`,
+      );
+    }
+  }
+});
+
 test("RC auth row documents REST JSON as the React submit boundary", () => {
   const source = readText(checklistPath);
   const section = sectionForRow(source, "rc-ux-public-auth");
@@ -126,7 +263,10 @@ test("RC security row keeps concrete XSS, SQLi, and Markdown stability evidence"
   assert.match(section, /ReactMarkdown path[\s\S]*Yona legacy compatibility plugins/u);
   assert.match(section, /server-rendered HTML fragments/u);
   assert.match(section, /tests\/search-parity\.e2e\.ts/u);
-  assert.match(section, /search_contract[\s\S]*global_search_treats_sql_injection_probe_as_plain_keyword/u);
+  assert.match(
+    section,
+    /search_contract[\s\S]*global_search_treats_sql_injection_probe_as_plain_keyword/u,
+  );
   assert.match(section, /very long fenced[\s\S]*plain source without syntax highlighting/u);
 });
 
