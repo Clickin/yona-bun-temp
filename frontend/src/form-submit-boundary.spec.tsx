@@ -38,6 +38,7 @@ const propsSubmitFallbackPattern =
 const memberSubmitFallbackPattern = /if \(!props\.on(?:AddMember|UpdateMemberRole)\) \{/;
 const createSettingsSubmitFallbackPattern =
   /if \(!props\.on(?:CreateProject|CreateOrganization|UpdateProjectSettings|UpdateOrganization)\) \{/;
+const projectActionSubmitFallbackPattern = /if \(!props\.on(?:CreateWebhook|Fork)\) \{/;
 
 function readRouteSource(relativePath: string) {
   return fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
@@ -175,5 +176,14 @@ describe("React form submit boundary", () => {
       expect(source, file).toContain("event.preventDefault()");
       expect(source, file).not.toMatch(createSettingsSubmitFallbackPattern);
     }
+  });
+
+  it("keeps React-owned project action forms inside the callback boundary", () => {
+    const source = readRouteSource("routes/-project-views.tsx");
+
+    expect(source).toContain('id="formNewWebhook"');
+    expect(source).toContain('className="form-horizontal nm"');
+    expect(source).not.toMatch(projectActionSubmitFallbackPattern);
+    expect(source).not.toContain('className="form-horizontal nm"\n              method="post"');
   });
 });

@@ -5181,8 +5181,8 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("ProjectWebhooksPage");
     expect(viewSource).toContain("webhook-editor-wrap");
     expect(viewSource).toContain('id="formNewWebhook"');
-    expect(viewSource).toContain("if (!props.onCreateWebhook) {");
-    expect(viewSource).toContain("props.onCreateWebhook(formState);");
+    expect(viewSource).not.toContain("if (!props.onCreateWebhook) {");
+    expect(viewSource).toContain("props.onCreateWebhook?.(formState);");
     expect(viewSource).toContain("input-webhook-payload");
     expect(viewSource).toContain("input-webhook-secret");
     expect(viewSource).toContain('id="gitPush"');
@@ -5533,8 +5533,8 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("href={`${projectHref}/newFork`}");
     expect(viewSource).not.toContain("action={forkPath}");
     expect(viewSource).not.toContain('className="form-horizontal nm"\n              method="post"');
-    expect(viewSource).toContain("if (!props.onFork) {");
-    expect(viewSource).toContain("void props.onFork({");
+    expect(viewSource).not.toContain("if (!props.onFork) {");
+    expect(viewSource).toContain("void props.onFork?.({");
     expect(viewSource).toContain('className="content-wrap frm-wrap"');
     expect(viewSource).toContain('id="helpMessage"');
     expect(viewSource).toContain('id="project-owner"');

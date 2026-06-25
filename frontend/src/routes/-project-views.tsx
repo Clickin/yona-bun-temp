@@ -2281,15 +2281,12 @@ export function ProjectWebhooksPage(props: {
                 id="formNewWebhook"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  if (!props.onCreateWebhook) {
-                    return;
-                  }
                   if (formState.payloadUrl.length === 0) {
                     setValidationMessage("project.webhook.payloadUrl.empty");
                     return;
                   }
                   setValidationMessage(null);
-                  props.onCreateWebhook(formState);
+                  props.onCreateWebhook?.(formState);
                   setFormState({
                     gitPush: false,
                     payloadUrl: "",
@@ -2702,13 +2699,10 @@ export function ProjectForkPage(props: {
               className="form-horizontal nm"
               onSubmit={(event) => {
                 event.preventDefault();
-                if (!props.onFork) {
-                  return;
-                }
                 if (!canSubmit || props.pending) {
                   return;
                 }
-                void props.onFork({
+                void props.onFork?.({
                   name: name.trim(),
                   owner: owner.trim(),
                   projectScope,
