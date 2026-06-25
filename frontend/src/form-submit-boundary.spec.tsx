@@ -491,9 +491,7 @@ describe("React form submit boundary", () => {
     for (const element of requestMethodElements()) {
       if (element.tag === "button") {
         expect(element.snippet, `${element.file}:${element.line}`).toContain('type="button"');
-        if (!/onClick=/.test(element.snippet)) {
-          continue;
-        }
+        expect(element.snippet, `${element.file}:${element.line}`).toContain("onClick=");
       }
       expect(element.snippet, `${element.file}:${element.line}`).toContain(
         "event.preventDefault()",

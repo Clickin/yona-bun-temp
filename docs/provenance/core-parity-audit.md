@@ -480,7 +480,7 @@
 - 2026-06-25 data-request guard continuation: the React submit boundary guard now
   covers legacy `data-request-uri` markers even when `data-request-method` is
   absent, requiring mutation anchors to intercept navigation and mutation
-  buttons with React click handlers to both declare `type="button"` and call
+  buttons to declare `type="button"`, own an `onClick` handler, and call
   `event.preventDefault()`. This keeps board/issue child comment delete,
   comment vote, code discussion, milestone, pull-request review/thread/source
   branch, workspace email, and site-admin user/mail controls inside the React
