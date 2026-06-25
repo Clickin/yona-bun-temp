@@ -45,6 +45,10 @@ the supported app-runtime scope.
   finish line. Each packet must also check user-visible state transitions that
   route-entry sweeps can miss: form validation, modal open/confirm/cancel,
   permission-filtered controls, empty states, and mutation-visible results.
+- A page is not covered by static DOM assertions alone when the defect class is
+  layout or asset loading. CSS/application-shell presence, raw visible i18n
+  keys, and first-screen usability must be checked with Playwright from the
+  user's viewport.
 - If an explorer reports a `gap` or `deviation`, the parent must either assign a
   worker with a disjoint write scope or reclassify the item in root canonical
   docs, provenance, and follow-up plan before this phase can close.
@@ -63,6 +67,29 @@ the corresponding report rows exist.
    `docs/provenance/ui-parity-reports/`.
 2. Parent consolidates explorer reports into the Audit Result Queue and selects
    concrete gap, deviation, or weak-evidence rows.
+
+Gate A2 is a browser-visible re-sweep. It exists because a page can have
+route/spec evidence while still being unusable to a real user because CSS is not
+loaded, the app shell is visually collapsed, a React-only public entry flow is
+missing, or legacy message keys such as `title.no.results` leak as visible copy.
+
+Gate A2 must run before any RC claim that "all UI parity is done":
+
+1. Build a route corpus from the active packet scope, legacy discovered links in
+   `.agent/legacy-html-page-audit/*`, `frontend/src/routeTree.gen.ts`, and
+   packet-specific interaction paths.
+2. For each packet, use Playwright against the current app with the same base
+   path mode intended for release. When direct access to the homelab legacy
+   baseline is available, compare against `http://192.168.45.10:9000`; when it
+   is not, use the existing localhost curl proxy and still render the legacy
+   HTML in a browser.
+3. Capture user-visible pass/fail using selector/copy/layout assertions, not
+   screenshots alone. A screenshot can support a finding, but it cannot be the
+   only proof for a covered row.
+4. Record every failed page or state as `gap` unless the parent records an
+   explicit `not-applicable`, `deferred`, or expected legacy non-OK decision.
+5. Reopen the owning report when a previously closed packet fails this browser
+   proof. The old report remains baseline evidence, not closure evidence.
 
 Gate B is bounded implementation. Worker subagents are spawned only after Gate A
 has produced concrete rows with disjoint owned files.
@@ -124,6 +151,56 @@ Every inventory row must include:
 The inventory is complete only when every active packet has a report and every
 report's row count is reflected in the Audit Result Queue or explicitly closed
 as `covered` inside the report.
+
+## Browser-Visible Round 2 Gate
+
+Round 2 is the current active UI parity gate after the completed explorer
+reports. It must be run as a separate phase before RC release because prior
+smoke tests missed first-screen rendering failures.
+
+Automatic `gap` findings:
+
+- The page renders without the legacy stylesheet effect, such as unstyled
+  top-left links, collapsed login dialog placement, missing Bootstrap modal
+  behavior, or page content that is visibly detached from the legacy shell.
+- A visible legacy i18n key is shown where legacy would resolve it, including
+  examples such as `title.no.results`, `button.*`, `project.*`, or
+  `user.*`.
+- A legacy public/setup flow is absent, including the admin account/bootstrap
+  creation state when the database has no administrator.
+- A React screen depends on a Java server-rendered HTML fragment instead of
+  API-return plus React render.
+- A form that is React-visible posts through a non-REST/direct compatibility
+  boundary without a documented parent decision.
+- A page only passes at `/` but fails when served behind a subdirectory base
+  path such as `/yona`.
+
+Minimum Playwright assertions per route group:
+
+- Viewports: at least one desktop viewport wide enough to expose the same
+  first-screen layout a workstation user sees, plus one narrow/mobile viewport
+  for shell/menu routes.
+- Shell: `.gnb-outer`, side menu or project/org header/menu selectors when the
+  legacy page has them, loaded stylesheet effect, document title, and absence of
+  placeholder headings such as file-route placeholders.
+- Copy: visible labels, placeholders, validation, empty states, and raw-key
+  absence.
+- Interaction: at least one tab/filter/modal/form state for every route family,
+  plus mutation-visible state when the packet owns create/update/delete/toggle
+  flows.
+- Boundary: REST JSON/API return plus React render for React-visible flows,
+  with direct legacy routes limited to compatibility/deep-link adapters.
+
+Round 2 cannot close while any packet status below is `pending`, `running`,
+`gap`, `weak evidence`, or `needs-parent-decision`.
+
+| Round 2 packet | Browser scope | Status | Required report update |
+| --- | --- | --- | --- |
+| `r2-auth-setup-public-shell` | `/`, first-run/no-admin setup state, `/users/loginform`, `/users/signupform`, `/lostPassword`, `/resetPassword`, `/verify/**`, login dialog, base-path asset loading | pending | Reopen `ui-parity-auth-public-entry.md` and `ui-parity-root-navigation-shell.md` with browser-visible rows |
+| `r2-workspace-settings-directory` | `/me`, `/:user`, `/user/issues`, `/user/files`, `/user/editform/**`, `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`, org settings/member/delete flows | pending | Reopen workspace/settings/directory reports with per-route Playwright proof |
+| `r2-project-issue-board-milestone` | project home/admin/settings plus issue, board, and milestone list/form/detail/comment flows | pending | Reopen project/issues/board-milestone reports with route and interaction rows |
+| `r2-code-pr-review-search-notification` | code browser, commits, branches, compare, PR list/form/detail/changes/reviews, search, notification page and incremental notification route | pending | Reopen code/PR/search-notification reports with browser-visible rows |
+| `r2-site-admin-security-db` | `/sites/**`, `/secret`, `/restart`, `/migration`, security probes, DB matrix/adopt smoke entry pages | pending | Reopen site-admin and fragment-security-db reports with browser/security rows |
 
 ## Full UI Parity Matrix
 

@@ -17,6 +17,10 @@ Rules:
   `not-applicable`, or `needs-parent-decision`.
 - Browser-visible checks should prefer selector/copy assertions over screenshots
   alone. Screenshots are supporting evidence only.
+- Round 2 browser-visible audits must prove stylesheet/shell usability from a
+  real Playwright viewport. A route is not `covered` if it only has static DOM
+  or snapshot evidence while CSS, layout placement, modal behavior, or first-run
+  public/setup flow is unverified.
 - Reports must include a route inventory summary with counts for `covered`,
   `gap`, `deviation`, `deferred`, `not-applicable`, `weak evidence`, and
   `needs-parent-decision`.
@@ -33,3 +37,13 @@ Rules:
   API-return plus React-render conversions. Do not record a missing server-side
   HTML fragment as the intended fix unless the parent explicitly classifies it
   as a compatibility route.
+
+Round 2 report rows must additionally include:
+
+- `viewport`: desktop or mobile viewport used for the assertion.
+- `base path`: `/` or mounted subdirectory such as `/yona`.
+- `stylesheet/shell proof`: selector or computed-style evidence that the
+  legacy shell is visually usable, not just present in HTML.
+- `raw-key scan`: result for visible legacy i18n keys.
+- `first-run/setup state`: covered, not applicable, or gap when the packet owns
+  public/setup/admin bootstrap flows.
