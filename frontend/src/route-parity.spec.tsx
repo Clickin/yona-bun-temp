@@ -3170,6 +3170,8 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('id="milestone-close"');
     expect(createHtml).toContain("milestone.state.closed");
     expect(createHtml).toContain("milestone.form.dueDate");
+    expect(createHtml).toContain('aria-label="milestone.form.dueDate"');
+    expect(createHtml).not.toContain('aria-label="milestone.dueDate"');
     expect(createHtml).toContain('id="dueDate"');
     expect(createHtml).toContain('name="dueDate"');
     expect(createHtml).toContain('class="validate due-date"');

@@ -45,6 +45,8 @@ function legacyMessage(
   return fallbackText;
 }
 
+const LEGACY_ANONYMOUS_USER_NAME = "User.anonymous.name";
+
 function fallbackProjectDetail(): ProjectDetailViewModel {
   return {
     enrollmentRequested: false,
@@ -2155,9 +2157,7 @@ function PullRequestEventTimeline(props: {
                 href={`${props.runtimeConfig.basePath}/${encodeURIComponent(event.senderLoginId)}`}
                 title={event.senderLoginId}
               >
-                <strong>
-                  {event.senderLoginId || legacyMessage(props.messages, "User.anonymous.name")}
-                </strong>
+                <strong>{event.senderLoginId || LEGACY_ANONYMOUS_USER_NAME}</strong>
               </a>
               <span>{` ${legacyMessage(props.messages, pullRequestEventMessage(event))}`}</span>
               {pullRequestEventHasMergedCommit(event) && mergedCommitId ? (
@@ -3030,8 +3030,7 @@ function SelectedPullRequestCommitInfo(props: {
   commit: PullRequestCommitViewModel;
   messages?: LegacyMessageLookup;
 }) {
-  const authorLabel =
-    props.commit.authorEmail || legacyMessage(props.messages, "User.anonymous.name");
+  const authorLabel = props.commit.authorEmail || LEGACY_ANONYMOUS_USER_NAME;
   return (
     <>
       <p className="commitInfo">

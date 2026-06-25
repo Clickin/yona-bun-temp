@@ -323,7 +323,7 @@ function ProjectHomeDashboardPane(props: {
                   <ProjectDashboardMetric
                     count={openIssueCount}
                     href={projectHref("issues?state=open")}
-                    label={legacyMessage(props.messages, "milestone.none")}
+                    label={legacyMessage(props.messages, "issue.noMilestone")}
                     percent={0}
                   />
                 )}
@@ -363,36 +363,24 @@ function ProjectHomeDashboardPane(props: {
         {detail.showIssue ? (
           <div className="span6">
             <h5>{legacyMessage(props.messages, "project.dashboard.openIssuesByLabel")}</h5>
-            {dashboardLabelCategories.length > 0 ? (
-              dashboardLabelCategories.map((category) => (
-                <dl className="dl-horizontal overview-label" key={category.categoryName}>
-                  <dt>{legacyMessage(props.messages, category.categoryName)}</dt>
-                  <dd>
-                    {category.labels.map((label) => (
-                      <ProjectDashboardLabelMetric
-                        count={label.openIssueCount}
-                        href={projectHref(`issues?state=open&labelIds=${label.id}`)}
-                        key={label.id}
-                        labelId={label.id}
-                        labelName={label.name}
-                      />
-                    ))}
-                  </dd>
-                </dl>
-              ))
-            ) : (
-              <dl className="dl-horizontal overview-label">
-                <dt>{legacyMessage(props.messages, "project.dashboard.openIssuesByLabel")}</dt>
-                <dd>
-                  <ProjectDashboardMetric
-                    count={openIssueCount}
-                    href={projectHref("issues?state=open")}
-                    label={legacyMessage(props.messages, "label.none")}
-                    percent={openIssueCount > 0 ? 100 : 0}
-                  />
-                </dd>
-              </dl>
-            )}
+            {dashboardLabelCategories.length > 0
+              ? dashboardLabelCategories.map((category) => (
+                  <dl className="dl-horizontal overview-label" key={category.categoryName}>
+                    <dt>{legacyMessage(props.messages, category.categoryName)}</dt>
+                    <dd>
+                      {category.labels.map((label) => (
+                        <ProjectDashboardLabelMetric
+                          count={label.openIssueCount}
+                          href={projectHref(`issues?state=open&labelIds=${label.id}`)}
+                          key={label.id}
+                          labelId={label.id}
+                          labelName={label.name}
+                        />
+                      ))}
+                    </dd>
+                  </dl>
+                ))
+              : null}
           </div>
         ) : null}
       </div>

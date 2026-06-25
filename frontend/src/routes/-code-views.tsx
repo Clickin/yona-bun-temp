@@ -26,6 +26,8 @@ function legacyMessage(
   return fallbackText;
 }
 
+const LEGACY_ANONYMOUS_USER_NAME = "User.anonymous.name";
+
 const MARKDOWN_CODE_EXTENSIONS = new Set([
   "license",
   "markdown",
@@ -1326,9 +1328,7 @@ function CodeCommitDiffView(props: {
       <div className="diffs-wrap">
         <div className="commitInfo">
           <div className="commitAuthor">
-            <strong>
-              {commit?.authorName || legacyMessage(props.messages, "User.anonymous.name")}
-            </strong>
+            <strong>{commit?.authorName || LEGACY_ANONYMOUS_USER_NAME}</strong>
             {commit?.authorEmail ? <span>{` <${commit.authorEmail}>`}</span> : null}
             {commit?.authorDate ? (
               <span className="ago" title={commit.authorDate}>
@@ -2665,7 +2665,7 @@ function CodeFileHeader(props: {
             </a>
           ) : null}
           <a className="ml5" href={codeAuthorHref(props.runtimeConfig, props.file.authorLoginId)}>
-            {props.file.authorLabel || legacyMessage(props.messages, "User.anonymous.name")}
+            {props.file.authorLabel || LEGACY_ANONYMOUS_USER_NAME}
           </a>
         </span>
         <span id="commitDate" className="commitDate">
@@ -2782,7 +2782,7 @@ function CodeHistoryAuthorCell(props: {
   if (commit.authorName) {
     return <span>{commit.authorName}</span>;
   }
-  return <span>{legacyMessage(props.messages, "User.anonymous.name")}</span>;
+  return <span>{LEGACY_ANONYMOUS_USER_NAME}</span>;
 }
 
 function codeAuthorHref(runtimeConfig: RuntimeConfig | undefined, loginId: string | undefined) {

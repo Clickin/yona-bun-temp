@@ -277,6 +277,21 @@
   `OK` message key; the non-visible accessible name uses the legacy
   `button.comment.new` key. Focused evidence:
   `issue-board-pr-milestone-i18n.spec.tsx` and `route-parity.spec.tsx`.
+- 2026-06-25 dashboard/milestone key cleanup: project dashboard no-current-
+  milestone rows now use legacy `partial_dashboard_issuesbymilestone.scala.html`
+  `issue.noMilestone` instead of non-legacy `milestone.none`, and milestone
+  form due-date accessibility text uses the existing `milestone.form.dueDate`
+  label instead of non-legacy `milestone.dueDate`. Project dashboard label
+  sections also stop rendering a non-legacy `label.none` fallback row when the
+  legacy `partial_dashboard_issuesbylabel.scala.html` has no labels to output.
+  Focused evidence: `project-home-tabs.spec.tsx` and `route-parity.spec.tsx`.
+- 2026-06-25 anonymous user label cleanup: code/PR anonymous-author fallbacks
+  now preserve legacy template output as a model-constant string
+  `User.anonymous.name` instead of routing it through legacy message lookup,
+  because `code/diff.scala.html`, `code/history.scala.html`, and
+  `git/viewChanges.scala.html` render `@User.anonymous.name`, not
+  `Messages(...)`. Focused evidence: `code-views.spec.tsx` and
+  `route-parity.spec.tsx`.
 - 2026-06-25 raw Markdown sanitizer continuation: React raw HTML rendering now
   keeps the legacy `utils/Markdown.java` sanitizer allowlist for media embeds,
   including `video` `autoplay`/`controls`/`preload`/`type`/`responsive`/

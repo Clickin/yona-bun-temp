@@ -805,7 +805,7 @@ export function ProjectMilestoneFormPage(props: {
                       <dd>
                         <div>
                           <label
-                            aria-label={legacyMessage(props.messages, "milestone.dueDate")}
+                            aria-label={legacyMessage(props.messages, "milestone.form.dueDate")}
                             htmlFor="dueDate"
                           >
                             <input
