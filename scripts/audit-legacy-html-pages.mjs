@@ -11,7 +11,9 @@ const baseUrl = (process.env.YONA_LEGACY_BASE_URL ?? "http://192.168.45.10:9000"
 );
 const loginId = process.env.YONA_LEGACY_LOGIN_ID ?? "admin";
 const password = process.env.YONA_LEGACY_PASSWORD ?? "admin";
-const outputDir = resolve(repoRoot, ".agent/legacy-html-page-audit");
+const outputDir = process.env.YONA_LEGACY_AUDIT_OUTPUT_DIR
+  ? resolve(process.env.YONA_LEGACY_AUDIT_OUTPUT_DIR)
+  : resolve(repoRoot, ".agent/legacy-html-page-audit");
 const cookieDir = mkdtempSync(join(tmpdir(), "yona-legacy-cookies-"));
 const cookieJar = join(cookieDir, "cookies.txt");
 const legacyOrigin = new URL(baseUrl).origin;

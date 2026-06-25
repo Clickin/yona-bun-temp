@@ -7,7 +7,6 @@ import { spawnSync } from "node:child_process";
 import { buildLegacyAuditCorpus } from "./visual-parity-sweep-corpus.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
-const latestPath = resolve(repoRoot, ".agent/legacy-html-page-audit/latest.json");
 
 function normalizePathForTest(_baseUrl, href) {
   return href;
@@ -15,25 +14,32 @@ function normalizePathForTest(_baseUrl, href) {
 
 describe("legacy HTML page audit", () => {
   it("records an unreachable legacy baseline as machine-readable audit output", () => {
-    const result = spawnSync("node", ["scripts/audit-legacy-html-pages.mjs"], {
-      cwd: repoRoot,
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        YONA_LEGACY_BASE_URL: "http://127.0.0.1:9",
-      },
-    });
+    const outputDir = mkdtempSync(resolve(tmpdir(), "yoram-legacy-audit-"));
+    try {
+      const latestPath = resolve(outputDir, "latest.json");
+      const result = spawnSync("node", ["scripts/audit-legacy-html-pages.mjs"], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          YONA_LEGACY_AUDIT_OUTPUT_DIR: outputDir,
+          YONA_LEGACY_BASE_URL: "http://127.0.0.1:9",
+        },
+      });
 
-    assert.notEqual(result.status, 0);
-    assert.match(result.stdout, /"status": "unreachable"/);
-    assert.equal(existsSync(latestPath), true);
+      assert.notEqual(result.status, 0);
+      assert.match(result.stdout, /"status": "unreachable"/);
+      assert.equal(existsSync(latestPath), true);
 
-    const summary = JSON.parse(readFileSync(latestPath, "utf8"));
-    assert.equal(summary.baseUrl, "http://127.0.0.1:9");
-    assert.equal(summary.status, "unreachable");
-    assert.equal(summary.total, 0);
-    assert.equal(summary.failed, 1);
-    assert.match(summary.error, /curl:/);
+      const summary = JSON.parse(readFileSync(latestPath, "utf8"));
+      assert.equal(summary.baseUrl, "http://127.0.0.1:9");
+      assert.equal(summary.status, "unreachable");
+      assert.equal(summary.total, 0);
+      assert.equal(summary.failed, 1);
+      assert.match(summary.error, /curl:/);
+    } finally {
+      rmSync(outputDir, { recursive: true, force: true });
+    }
   });
 
   it("keeps visual sweep corpus unusable when the latest legacy audit is unreachable", () => {
