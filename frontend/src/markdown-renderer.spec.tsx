@@ -316,7 +316,7 @@ describe("MarkdownRenderer", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
         markdown={
-          '<input type="checkbox" checked disabled onclick="bad()"> Task\n\n<input type="checkbox">\n[input-line](https://example.com/input-line)\n\n<img src="/a.png">\n[image-line](https://example.com/image-line)\n\n<hr> [hr-line](https://example.com/hr-line)\n\nhello <hr> [hr-inline](https://example.com/hr-inline)\n\n<source src="zpl:movie"> [source-line](https://example.com/source-line)\n\nbefore\n<source src="zpl:movie">\n[source-after](https://example.com/source-after)\n\nhello <source src="zpl:movie"> [source-inline](https://example.com/source-inline)\n\n<iframe src="https://example.com/embed" width="640" height="360" frameborder="0" allowfullscreen></iframe>\n\n<video controls preload="metadata" width="320"><source src="zpl:movie" type="video/mp4"></video> [video](https://example.com/video)\n\nbefore\n<img src="/a.png">\n[inline-image-line](https://example.com/inline-image-line)\n\nbefore\n<video><source src="zpl:movie"></video>\n[video-line](https://example.com/video-line)'
+          '<input type="checkbox" checked disabled onclick="bad()"> Task\n\n<input type="checkbox">\n[input-line](https://example.com/input-line)\n\n<img src="/a.png">\n[image-line](https://example.com/image-line)\n\n<hr> [hr-line](https://example.com/hr-line)\n\nhello <hr> [hr-inline](https://example.com/hr-inline)\n\n<source src="zpl:movie"> [source-line](https://example.com/source-line)\n\nbefore\n<source src="zpl:movie">\n[source-after](https://example.com/source-after)\n\nhello <source src="zpl:movie"> [source-inline](https://example.com/source-inline)\n\n<a href="file:///tmp/report.txt">file raw</a> <a href="zpl:movie">zpl raw</a> <a href="mailto:help@example.com">mail raw</a>\n\n<iframe src="https://example.com/embed" width="640" height="360" frameborder="0" allowfullscreen></iframe>\n\n<video controls preload="metadata" width="320"><source src="zpl:movie" type="video/mp4"></video> [video](https://example.com/video)\n\nbefore\n<img src="/a.png">\n[inline-image-line](https://example.com/inline-image-line)\n\nbefore\n<video><source src="zpl:movie"></video>\n[video-line](https://example.com/video-line)'
         }
       />,
     );
@@ -351,6 +351,9 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('href="https://example.com/hr-line"');
     expect(html).not.toContain('href="https://example.com/source-line"');
     expect(html).not.toContain('href="https://example.com/source-after"');
+    expect(html).toContain('<a href="file:///tmp/report.txt">file raw</a>');
+    expect(html).toContain('<a href="zpl:movie">zpl raw</a>');
+    expect(html).toContain('<a href="mailto:help@example.com">mail raw</a>');
     expect(html).toContain(
       '<iframe src="https://example.com/embed" width="640" height="360" frameBorder="0" allowFullScreen=""></iframe>',
     );
