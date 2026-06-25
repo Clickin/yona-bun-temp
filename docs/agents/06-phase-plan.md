@@ -504,12 +504,21 @@
 - Active plan: `docs/plans/2026-06-26-full-ui-parity-subagent-phase.md`.
 - Purpose: turn the RC UX checklist into a full user-visible UI parity audit
   that can be split across subagents without changing the conversion goal.
-- Scope: public/auth/shell, directory/workspace/site-admin, project content, and
-  fragment/security/DB evidence packets.
+- Scope: the historical four broad packets are only baseline evidence. The
+  active execution split is now auth/public entry, root navigation shell, user
+  workspace/profile, user account settings, directory/organization, project
+  home/admin, issues, board/milestone, code/VCS, pull request/review,
+  search/notification, site-admin/setup, and fragment/security/DB evidence.
 - Rule: subagents start read-only unless the parent assigns a disjoint write
   scope; React screens remain REST JSON/API-return plus React render; Markdown
   surfaces remain owned by `MarkdownRenderer` and its Yona compatibility
   plugins.
+- Gate: existing visual sweep and curl HTML audit coverage are the baseline,
+  not the finish line. Each active packet must check form validation, modal
+  confirm/cancel paths, permission-filtered controls, empty/populated states,
+  and mutation-visible results that route-entry sweeps can miss. Any `gap` or
+  `deviation` must be implemented by a disjoint worker or reclassified in root
+  canonical docs, provenance, and follow-up plan before this phase closes.
 
 ## Phase Gate 규칙
 

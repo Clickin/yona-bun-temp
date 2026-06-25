@@ -3,11 +3,12 @@
 Status: current execution plan
 Date: 2026-06-26
 
-This phase turns the RC UX checklist into a full UI parity work queue that can
-be split across subagents. The goal is still conversion parity, not UI
-improvement: a legacy Yona administrator should be able to replace legacy Yona
-with Yoram and normal users should not notice route, layout, copy, interaction,
-or Markdown rendering differences in the supported app-runtime scope.
+This phase is the goal directive for a full UI parity sweep that can be split
+across subagents. The goal is still conversion parity, not UI improvement: a
+legacy Yona administrator should be able to replace legacy Yona with Yoram and
+normal users should not notice route, layout, copy, interaction, permission
+state, form, modal, fragment-conversion, or Markdown rendering differences in
+the supported app-runtime scope.
 
 ## Source of Truth
 
@@ -36,24 +37,52 @@ or Markdown rendering differences in the supported app-runtime scope.
   already-covered evidence.
 - Direct legacy form/fragment routes are compatibility evidence only. React
   screens must remain REST JSON/API-return plus React render.
+- Existing visual sweep and curl HTML audit coverage are the baseline, not the
+  finish line. Each packet must also check user-visible state transitions that
+  route-entry sweeps can miss: form validation, modal open/confirm/cancel,
+  permission-filtered controls, empty states, and mutation-visible results.
+- If an explorer reports a `gap` or `deviation`, the parent must either assign a
+  worker with a disjoint write scope or reclassify the item in root canonical
+  docs, provenance, and follow-up plan before this phase can close.
 
 ## Full UI Parity Matrix
 
 | Packet | Scope | Initial owner mode | Output |
 | --- | --- | --- | --- |
-| `ui-parity-public-auth-shell` | `/`, auth forms, `/secret`, `/restart`, global nav, user menu, sidebar, notification affordances | explorer | Missing page/state/copy/visual evidence, or confirmation of current coverage |
-| `ui-parity-directory-workspace-site-admin` | directory/create/import/org routes, workspace/profile/settings/files, site-admin pages | explorer | Missing route/state/copy/mutation evidence, with exact path and file targets |
-| `ui-parity-project-content` | project home/code/commits/branches, issues, board, milestones, PR/review, project admin | explorer | Missing page/state/interaction/Markdown evidence, grouped by disjoint implementation owner |
-| `ui-parity-fragment-security-db` | legacy fragment conversions, XSS/SQLi/pathological Markdown, visual sweep status deltas, DB/migration smoke evidence | explorer | Any weak evidence links or missing guard coverage |
+| `ui-parity-auth-public-entry` | `/`, `/users/loginform`, `/users/signupform`, `/lostPassword`, `/resetPassword`, `/verify/**`, auth aliases | explorer | Auth route/form/copy/redirect/error-state evidence and REST submit-boundary findings |
+| `ui-parity-root-navigation-shell` | global nav, feedback/project-list gating, login dialog, authenticated user menu, sidebar, footer suppression | explorer | Shell state matrix across anonymous/authenticated/site-admin/guest and fragment-conversion findings |
+| `ui-parity-user-workspace-profile` | `/me`, `/:user`, `/user/issues`, `/user/files`, profile issue/PR/project tabs | explorer | Workspace/profile/list empty/populated/permission-state findings |
+| `ui-parity-user-account-settings` | `/user/editform/**`, `/me/settings/**`, avatar/password/notification/email/token settings | explorer | Settings form, validation, modal, upload, notification-toggle, and direct-anchor findings |
+| `ui-parity-directory-organization` | `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`, `/organizations/:org/**` | explorer | Directory, project/org creation, org home/settings/member/delete state findings |
+| `ui-parity-project-home-admin` | `/:owner/:project`, project settings/members/watchers/webhooks/delete/transfer/fork/statistics/changeVCS | explorer | Project shell, admin form/modal, permission-state, and mutation-boundary findings |
+| `ui-parity-issues` | project/user issue lists, issue create/edit/detail/comment/timeline/label settings | explorer | Issue filters, forms, sidebar controls, comments, child comments, autocomplete, and Markdown findings |
+| `ui-parity-board-milestone` | board list/detail/create/edit/comment plus milestone list/detail/create/edit | explorer | Board/milestone route, form, attachment, comment, state-tab, progress, and empty-state findings |
+| `ui-parity-code-vcs` | code browser, file rendering, commit history/detail, compare, branches, raw/download/image links | explorer | Code/VCS shell, branch selector, diff/comment, no-head/error-state, and direct-link findings |
+| `ui-parity-pull-request-review` | PR lists/create/edit/detail/changes/reviews/review threads | explorer | PR branch selector, merge/conflict/review/comment/thread state findings |
+| `ui-parity-search-notification` | global/project/org search, `/notifications`, `/notification?from=&limit=` | explorer | Search result-type/filter/pagination and notification stream/fragment-conversion findings |
+| `ui-parity-site-admin-setup` | `/sites/**`, `/secret`, `/restart`, `/migration`, release/setup/import operator pages | explorer | Site-admin/setup/import/update/diagnostic state findings and deferred/operator-scope classifications |
+| `ui-parity-fragment-security-db` | legacy fragment conversions, XSS/SQLi/pathological Markdown, visual sweep status deltas, DB/migration smoke evidence | explorer | Weak evidence links, guard gaps, or DB/security smoke gaps |
 
 ## Active Subagent Assignments
 
 | Packet | Agent | Status | Notes |
 | --- | --- | --- | --- |
-| `ui-parity-public-auth-shell` | `019eff61-971c-7903-aca3-b7f9b3cdc76d` (`Dewey`) | completed | Covered; `/secret` and `/restart` are state-flow pages backed by FG-01/routes/contracts/local visual 200 but not paired legacy audit/diff pages |
-| `ui-parity-directory-workspace-site-admin` | `019eff61-b850-7873-a81b-c6bae630a8a9` (`Locke`) | completed | Covered; weakest evidence is `/user/issues/new/mine`, still backed by route parity, rendered e2e, visual sweep, and legacy HTML audit |
-| `ui-parity-project-content` | `019eff61-dd1d-7233-b182-10898e1735ee` (`Averroes`) | completed | Initial README postform and query-string coverage gaps are closed; sample-data status-delta policy is documented under Parent Decisions |
-| `ui-parity-fragment-security-db` | `019eff61-fd34-7df2-bdd5-12a76a596ecb` (`Kuhn`) | completed | Issue timeline/PJAX fragment policy and legacy MariaDB adopted-data smoke are closed as API-return plus React render and adopted-data profile evidence |
+| `ui-parity-public-auth-shell` | `019eff61-971c-7903-aca3-b7f9b3cdc76d` (`Dewey`) | completed | Historical broad packet; split into the narrower packets below for the next sweep |
+| `ui-parity-directory-workspace-site-admin` | `019eff61-b850-7873-a81b-c6bae630a8a9` (`Locke`) | completed | Historical broad packet; split into workspace, organization, and site-admin packets below |
+| `ui-parity-project-content` | `019eff61-dd1d-7233-b182-10898e1735ee` (`Averroes`) | completed | Historical broad packet; split into project admin, issue, board/milestone, code/VCS, and PR/review packets below |
+| `ui-parity-fragment-security-db` | `019eff61-fd34-7df2-bdd5-12a76a596ecb` (`Kuhn`) | completed | Historical evidence packet; remains active as a cross-cutting guard packet |
+| `ui-parity-auth-public-entry` | unassigned | pending | Use the initial delegation prompt below before implementation work |
+| `ui-parity-root-navigation-shell` | unassigned | pending | Use the initial delegation prompt below before implementation work |
+| `ui-parity-user-workspace-profile` | unassigned | pending | Use the initial delegation prompt below before implementation work |
+| `ui-parity-user-account-settings` | unassigned | pending | Use the initial delegation prompt below before implementation work |
+| `ui-parity-directory-organization` | unassigned | pending | Use the initial delegation prompt below before implementation work |
+| `ui-parity-project-home-admin` | unassigned | pending | Use the initial delegation prompt below before implementation work |
+| `ui-parity-issues` | unassigned | pending | Use the initial delegation prompt below before implementation work |
+| `ui-parity-board-milestone` | unassigned | pending | Use the initial delegation prompt below before implementation work |
+| `ui-parity-code-vcs` | unassigned | pending | Use the initial delegation prompt below before implementation work |
+| `ui-parity-pull-request-review` | unassigned | pending | Use the initial delegation prompt below before implementation work |
+| `ui-parity-search-notification` | unassigned | pending | Use the initial delegation prompt below before implementation work |
+| `ui-parity-site-admin-setup` | unassigned | pending | Use the initial delegation prompt below before implementation work |
 
 ## Audit Result Queue
 
@@ -91,6 +120,15 @@ or Markdown rendering differences in the supported app-runtime scope.
   is closed as not-applicable compatibility. Normal user-visible issue-list UX
   remains React route plus `/api/v1/projects/:owner/:project/issues` REST JSON
   list data; direct server-rendered PJAX fragments are not retained.
+- The 2026-06-26 continuation splits the historical four broad packets into
+  narrower subagent packets because the existing route-entry visual sweep cannot
+  prove every tab, modal, validation branch, permission-gated control, and
+  mutation-visible state. The older packet results remain valid baseline
+  evidence but no longer by themselves close the full UI parity goal directive.
+- Browser parity should use the current localhost curl proxy for the homelab
+  legacy instance when direct Playwright access to `192.168.45.10:9000` fails.
+  This remains browser-rendered legacy HTML and is stronger than raw curl for
+  user-visible checks.
 
 ## Subagent Report Contract
 
@@ -106,6 +144,23 @@ Each subagent report must include:
   `not-applicable`, or `needs-parent-decision`.
 - For any `gap` or `deviation`, include a bounded write-scope proposal that can
   be assigned to a worker without conflicting with other packets.
+- A Playwright scenario table with this shape:
+  `path`, `state`, `legacy selector/copy`, `Rust selector/copy`, `interaction`,
+  `API/direct boundary`, `status`.
+- Screenshots are optional supporting evidence, but selector/copy assertions are
+  required for form, modal, permission, empty-state, and mutation-visible checks.
+
+## Worker Split Rule
+
+After an explorer report:
+
+- Assign workers only for concrete `gap` rows, not for broad investigation.
+- Give each worker a disjoint write set such as one route helper, one API module,
+  one backend route group, one e2e file, or one provenance/checklist section.
+- Tell every worker that other agents may edit the codebase and that they must
+  not revert unrelated changes.
+- Worker output must include changed file paths, verification commands, and
+  any remaining `gap`/`deviation` row that could not be closed.
 
 ## Parent Integration Gate
 
@@ -141,7 +196,175 @@ Before this phase can close:
 
 ## Initial Delegation Prompts
 
-### `ui-parity-public-auth-shell`
+### `ui-parity-auth-public-entry`
+
+Audit public/auth UI parity only. Do not edit files. Legacy evidence:
+`yona-original/app/views/user/login.scala.html`, `signup.scala.html`,
+`resetPassword.scala.html`, `verified.scala.html`,
+`yona-original/app/views/site/lostPassword.scala.html`, and
+`yona-original/conf/routes`. Current evidence:
+`frontend/src/routes/-auth-views.tsx`, `/users/loginform`,
+`/users/signupform`, `/lostPassword`, `/resetPassword`,
+`/verify/$loginId/$verificationCode`, `/login`, `/register`,
+`/forgot-password`, and auth API wrappers. Check anonymous `/`, local login,
+`rememberMe`, `redirectUrl`, OAuth configured/unsupported/denied states,
+social-login-only mode, signup confirm/email-verification states, lost/reset
+password valid/invalid token states, and verify success/invalid pages. Confirm
+React submits stay REST JSON while legacy POST routes remain compatibility
+adapters.
+
+### `ui-parity-root-navigation-shell`
+
+Audit root navigation/shell UI parity only. Do not edit files. Legacy evidence:
+`common/navbar.scala.html`, `common/usermenu.scala.html`,
+`common/loginDialog.scala.html`, and `common/footer.scala.html`. Current
+evidence: `frontend/src/routes/__root.tsx`, root shell tests, visual sweep, and
+direct `/user/sidebar` / `/user/usermenuTabContentList` API boundaries. Check
+anonymous/authenticated/site-admin/guest states, `hideProjectListing`,
+feedback URL on/off, global/project/org search scope form, `#mySidenav`,
+favorite/project/recent-history tabs, create dropdown, site-admin affix, login
+dialog, and footer suppression on standalone pages.
+
+### `ui-parity-user-workspace-profile`
+
+Audit user workspace/public profile UI parity only. Do not edit files. Legacy
+evidence: `user/view.scala.html`, `partial_issues.scala.html`,
+`partial_pullRequests.scala.html`, `partial_projectlist.scala.html`, and
+`userFiles.scala.html`. Current evidence: `frontend/src/routes/-workspace-views.tsx`,
+`frontend/src/routes/me/route.tsx`, `/$user`, `/user/issues`, and `/user/files`.
+Check `/me`, `/:user`, missing user, org-name redirect, `daysAgo`/`selected`
+tabs, issue/PR/project empty and populated states, guest/site-admin/blocked
+badges, connected providers, `YONA_SHOW_USER_EMAIL=false`, watch/unwatch and
+leave anchors, and REST profile/workspace APIs.
+
+### `ui-parity-user-account-settings`
+
+Audit user account settings UI parity only. Do not edit files. Legacy evidence:
+`user/edit.scala.html`, `edit_password.scala.html`,
+`edit_notifications.scala.html`, `edit_emails.scala.html`,
+`edit_token.scala.html`, and `partial_edit_tabmenu.scala.html`. Current
+evidence: `frontend/src/routes/-workspace-settings-view.tsx`,
+`/user/editform/**`, and `/me/settings/**`. Check profile form, avatar upload
+and invalid image state, reset visited list, password change/reset-email link,
+watched-project notification tabs/toggles, add/delete/set-main/send-validation
+email, token display/select/reset, and direct legacy anchors such as
+`/user/email/**` and `/noti/toggle/**`.
+
+### `ui-parity-directory-organization`
+
+Audit directory and organization UI parity only. Do not edit files. Legacy
+evidence: `project/list.scala.html`, `project/create.scala.html`,
+`organization/list.scala.html`, `organization/create.scala.html`,
+`organization/view.scala.html`, `organization/header.scala.html`,
+`organization/menu.scala.html`, `organization/members.scala.html`,
+`organization/setting.scala.html`, and `organization/deleteForm.scala.html`.
+Current evidence: `frontend/src/routes/-directory-views.tsx`,
+`frontend/src/routes/-organization-views.tsx`, `/projects`, `/projectform`,
+`/_import`, `/orgs`, `/organizations/new`, and `/organizations/$organizationName/**`.
+Check search/pagination/empty states, project/org create validation, org home
+project list, create-project CTA, enroll/cancel/leave, settings logo upload,
+members add/typeahead/role/delete/enrollment accept, and deleteForm confirm
+state.
+
+### `ui-parity-project-home-admin`
+
+Audit project home/admin UI parity only. Do not edit files. Legacy evidence:
+`project/home.scala.html`, `partial_history.scala.html`,
+`partial_dashboard*.scala.html`, `setting.scala.html`, `members.scala.html`,
+`watchers.scala.html`, `webhooks.scala.html`, `transfer.scala.html`,
+`change_vcs.scala.html`, `delete.scala.html`, `statistics.scala.html`, and
+`projectMenu.scala.html`. Current evidence: `frontend/src/routes/-project-views.tsx`
+and `/:owner/:project` plus admin subroutes. Check home `tabId` states,
+README/Git fallback/DB README, history/dashboard blocks, project header/menu,
+member add/edit/delete/leave, watcher list, webhook form/list/delete,
+settings menu persistence, transfer/changeVCS/delete checkbox alerts, fork, and
+statistics `Under Construction`.
+
+### `ui-parity-issues`
+
+Audit issue UI parity only. Do not edit files. Legacy evidence:
+`issue/list.scala.html`, `create.scala.html`, `edit.scala.html`,
+`view.scala.html`, `partial_*`, `common/commentForm.scala.html`, and
+`common/childComments.scala.html`. Current evidence: `frontend/src/routes/-issue-views.tsx`,
+project issue routes, and user issue routes. Check project/user issue filters,
+state tabs, two-column/subtask toggles, mass-update controls, create/edit
+fields, hidden `authorId`, due date, assignee/milestone/label/parent selectors,
+detail sidebar watch/vote/favorite/share/delete, comments edit/delete/vote,
+child comments, timeline rows, sharer panel, `@`/`#` autocomplete,
+paste/drop attachments, Markdown preview/source rendering, and REST submit
+boundaries.
+
+### `ui-parity-board-milestone`
+
+Audit board and milestone UI parity only. Do not edit files. Legacy evidence:
+`board/list.scala.html`, `board/create.scala.html`, `board/edit.scala.html`,
+`board/view.scala.html`, `board/partial_comments.scala.html`,
+`milestone/list.scala.html`, `milestone/view.scala.html`,
+`milestone/create.scala.html`, `milestone/edit.scala.html`, and
+`milestone/partial_status.scala.html`. Current evidence:
+`frontend/src/routes/-board-views.tsx` and `frontend/src/routes/-milestone-views.tsx`.
+Check board list search/sort/label/page, org board aggregate list, create/edit
+notice/readmefy/labels/attachments, detail history/watch/labels/comments/child
+comments, milestone open/closed/all tabs, sort, empty state, progress/counts,
+create/edit validation, detail actions, attachments, and linked issue tabs.
+
+### `ui-parity-code-vcs`
+
+Audit code browser/VCS UI parity only. Do not edit files. Legacy evidence:
+`code/view.scala.html`, `code/history.scala.html`, `code/branches.scala.html`,
+`code/diff.scala.html`, `code/compare.scala.html`, and code/commit/branch routes.
+Current evidence: `frontend/src/routes/-code-views.tsx`, code/commit/compare
+routes, `frontend/src/api/code-commits.ts`, and `frontend/src/api/code-branches.ts`.
+Check `/code` default branch, no-head Git/SVN state, `#branches`,
+`#breadcrumbs`, folder/file rows, `#showCode`, Markdown file rendering,
+raw/file/image/download links, commits/path history, commit diff/comment
+forms, inline diff comments, compare, branches table, default branch badge, and
+set-default/delete enabled/disabled states.
+
+### `ui-parity-pull-request-review`
+
+Audit pull request and review UI parity only. Do not edit files. Legacy
+evidence: `git/list.scala.html`, `git/create.scala.html`, `git/edit.scala.html`,
+`git/view.scala.html`, `git/viewChanges.scala.html`, and
+`reviewthread/list.scala.html`. Current evidence:
+`frontend/src/routes/-pull-request-views.tsx`, pull-request routes, and
+`frontend/src/api/pull-requests.ts`. Check PR list tabs/search/contributor
+filter/empty state, pushed-branch prompt, branch selectors, merge-result block,
+edit disabled controls, detail branch info, watch/close/reopen/edit/delete,
+reviewer block, review/unreview, accept/conflict/source-branch states,
+overview/changes tabs, general comments, commit dropdown, inline comments,
+review cards, and review-thread filters/export.
+
+### `ui-parity-search-notification`
+
+Audit search and notification UI parity only. Do not edit files. Legacy
+evidence: `search/result.scala.html`, `search/partial_search.scala.html`,
+search type partials, `index/notifications.scala.html`,
+`index/partial_notifications.scala.html`, and `common/mySeriesMenuTab.scala.html`.
+Current evidence: `frontend/src/routes/-search-views.tsx`,
+`frontend/src/routes/search/route.tsx`, project/org search routes,
+`frontend/src/routes/notifications/route.tsx`, `frontend/src/routes/notification/route.tsx`,
+and related API wrappers. Check global/project/org search scopes, bad-request
+branches, `#searchInnerForm`, category badges, every result type, snippets,
+ACL-filtered private absence, empty state, pagination, notification welcome
+guide, `#toggleIntro`, my-series tabs, stream row expand/collapse, empty state,
+load-more, and `/notification?from=&limit=` JSON fragment-conversion boundary.
+
+### `ui-parity-site-admin-setup`
+
+Audit site-admin, setup, import, and operator-adjacent UI parity only. Do not
+edit files. Legacy evidence: `site/siteMngLayout.scala.html`, site admin view
+templates, `welcome/secret.scala.html`, `welcome/restart.scala.html`,
+`migration/home.scala.html`, import views, and `conf/routes`. Current evidence:
+`frontend/src/routes/sites/$pageName/route.tsx`, `secret/route.tsx`,
+`restart/route.tsx`, `migration/route.tsx`, `frontend/src/routes/[_]import/route.tsx`,
+and `frontend/src/api/site-admin.ts`. Check non-admin forbidden/admin state,
+site sidebar active/update badge, user/project/post/issue lists, mail/mass-mail,
+data export/import, update, diagnostic, `/secret` setup-required versus
+configured state, `/restart`, `/_import`, and `/migration` deferred/operator
+scope classification.
+
+### Historical `ui-parity-public-auth-shell`
 
 Audit public/auth/shell UI parity only. Do not edit files. Compare
 `docs/plans/2026-06-24-rc-ux-diff-closure-checklist.md`,
@@ -152,7 +375,7 @@ Audit public/auth/shell UI parity only. Do not edit files. Compare
 and `/user/usermenuTabContentList`. Report only missing/weak evidence or
 confirm coverage.
 
-### `ui-parity-directory-workspace-site-admin`
+### Historical `ui-parity-directory-workspace-site-admin`
 
 Audit directory, workspace, and site-admin UI parity only. Do not edit files.
 Check `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`,
@@ -161,7 +384,7 @@ Check `/projects`, `/projectform`, `/_import`, `/orgs`, `/organizations/new`,
 audit coverage, RC checklist, frontend tests, and backend contract evidence.
 Return missing/weak evidence with proposed disjoint owner files.
 
-### `ui-parity-project-content`
+### Historical `ui-parity-project-content`
 
 Audit project content UI parity only. Do not edit files. Check
 `/admin/sample/**` project home/code/commits/branches, issues, board,
