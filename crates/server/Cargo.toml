@@ -141,6 +141,10 @@ name = "mailbox_contract"
 path = "tests/mailbox_contract.rs"
 
 [[test]]
+name = "markdown_contract"
+path = "tests/markdown_contract.rs"
+
+[[test]]
 name = "milestone_contract"
 path = "tests/milestone_contract.rs"
 

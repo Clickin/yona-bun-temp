@@ -276,3 +276,38 @@ async fn legacy_markdown_preview_route_does_not_server_render_autolinks() {
         "ftp://files.example.com www.example.com help@example.com"
     );
 }
+
+#[tokio::test]
+async fn legacy_markdown_preview_route_returns_long_sql_fence_as_source() {
+    let app = build_app_with_repository().await;
+    let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie_header, &csrf).await;
+    let sql_line = "SELECT body FROM release_candidate_table WHERE body LIKE '%markdown%';";
+    let long_sql = format!("```sql\n{}\n```", format!("{sql_line}\n").repeat(2048));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/markdown/owner/projectYobi")
+                .header(http::header::COOKIE, &cookie_header)
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from(
+                    json!({
+                        "body": long_sql,
+                        "breaks": true
+                    })
+                    .to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload: Value = serde_json::from_str(&response_text(response).await).unwrap();
+    assert_eq!(payload["bodyMarkdown"], long_sql);
+    assert_eq!(payload["breaks"], true);
+    assert!(payload.get("bodyHtml").is_none());
+    assert!(payload.get("html").is_none());
+}
