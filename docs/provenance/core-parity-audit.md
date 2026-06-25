@@ -1841,6 +1841,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   provider. Focused coverage: `frontend/src/search-i18n.spec.tsx`,
   `frontend/src/route-parity.spec.tsx`, and full
   `pnpm --dir frontend exec vitest run`.
+- 2026-06-25 user-files provider-less i18n tightening:
+  `frontend/src/routes/user/files/route.tsx` now resolves the my-series tabs
+  and user-file search placeholder through the default legacy message table
+  when direct-rendered without a runtime provider. Focused coverage:
+  `frontend/src/user-files-parity.spec.tsx`,
+  `frontend/src/directory-home-user-files-notification-i18n.spec.tsx`, and full
+  `pnpm --dir frontend exec vitest run`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and

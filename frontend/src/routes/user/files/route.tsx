@@ -2,7 +2,11 @@ import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { listWorkspaceFilesRest, type WorkspaceFilesResponse } from "../../../api/workspace";
 import { useAppRuntime } from "../../../app-runtime-context";
-import type { LegacyI18nContextValue } from "../../../i18n";
+import {
+  LEGACY_DEFAULT_LANGUAGE,
+  lookupLegacyMessage,
+  type LegacyI18nContextValue,
+} from "../../../i18n";
 import { prefixBasePath } from "../../../runtime-config";
 import { BadRequestPage, useDocumentTitle, useRequireAuthenticatedRoute } from "../../-shared";
 
@@ -17,7 +21,9 @@ function appHref(basePath: string, href: string): string {
 }
 
 function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
-  return messages ? messages(key, { fallback: key }) : key;
+  return messages
+    ? messages(key, { fallback: key })
+    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { fallback: key });
 }
 
 function legacyUserFileIconClass(fileName: string): string {

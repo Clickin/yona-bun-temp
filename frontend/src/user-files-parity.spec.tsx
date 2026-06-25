@@ -152,7 +152,8 @@ describe("legacy user files route parity", () => {
     expect(html).toContain('action="/yona/user/files"');
     expect(html).toContain('class="user-file-search search search-bar"');
     expect(html).toContain('name="filter"');
-    expect(html).toContain('placeholder="search.title"');
+    expect(html).toContain('placeholder="Search"');
+    expect(html).not.toContain('placeholder="search.title"');
     expect(html).toContain('value=""');
     expect(html).not.toContain('value="screen"');
     expect(html).toContain('class="search-btn"');
@@ -196,8 +197,6 @@ describe("legacy user files route parity", () => {
     expect(html).toContain('href="/yona/user/files?filter=screen&amp;pageNum=2"');
     expect(html).not.toContain("page=2");
     expect(html).not.toContain('href="/yona/files/77" target="_blank" rel=');
-    expect(html).not.toContain(
-      'href="/yona/owner/projectYobi/issue/5" target="_blank" rel=',
-    );
+    expect(html).not.toContain('href="/yona/owner/projectYobi/issue/5" target="_blank" rel=');
   });
 });
