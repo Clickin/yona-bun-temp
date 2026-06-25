@@ -120,6 +120,25 @@ describe("project home tab parity", () => {
     expect(html).not.toContain("Project **home** ~~parity~~");
   });
 
+  it("renders project enrollment as the legacy direct enroll anchor", () => {
+    const enrollHtml = renderProjectHome("/yona/yona/projectYobi", {
+      viewerCanEnroll: true,
+    });
+    expect(enrollHtml).toContain(
+      'class="ybtn ybtn-info enrollBtn" href="/yona/yona/projectYobi/enroll" id="enrollBtn"',
+    );
+    expect(enrollHtml).toContain('class="yobicon-addfriend"');
+
+    const cancelHtml = renderProjectHome("/yona/yona/projectYobi", {
+      enrollmentRequested: true,
+      viewerCanEnroll: true,
+    });
+    expect(cancelHtml).toContain(
+      'class="ybtn enrollBtn" href="/yona/yona/projectYobi/cancel/enroll" id="enrollBtn"',
+    );
+    expect(cancelHtml).toContain('class="yobicon-removefriend"');
+  });
+
   it("keeps project overview mentions plain like legacy Markdown.render(String)", () => {
     const html = renderProjectHome("/yona/yona/projectYobi", {
       overview: "Project **home** @admin @yona/projectYobi",

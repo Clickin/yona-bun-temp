@@ -1548,6 +1548,12 @@ export function ProjectDetailPage(props: {
     normalizeProjectHomeTab(detail.defaultTab) ??
     "readme";
   const projectHref = buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName);
+  const enrollmentHref = buildProjectHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    detail.enrollmentRequested ? "cancel/enroll" : "enroll",
+  );
   const isGitProject = !detail.vcs || detail.vcs.toLowerCase() === "git";
 
   return (
@@ -1796,25 +1802,35 @@ export function ProjectDetailPage(props: {
                       </button>
                     ) : null}
                     {detail.viewerCanEnroll ? (
-                      detail.enrollmentRequested ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            props.onCancelEnrollProject?.(detail.ownerName, detail.projectName)
+                      <a
+                        className={`ybtn${detail.enrollmentRequested ? "" : " ybtn-info"} enrollBtn`}
+                        href={enrollmentHref}
+                        id="enrollBtn"
+                        onClick={(event) => {
+                          const handler = detail.enrollmentRequested
+                            ? props.onCancelEnrollProject
+                            : props.onEnrollProject;
+                          if (!handler) {
+                            return;
                           }
-                        >
-                          {legacyMessage(messages, "button.cancel.enrollment")}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            props.onEnrollProject?.(detail.ownerName, detail.projectName)
+                          event.preventDefault();
+                          handler(detail.ownerName, detail.projectName);
+                        }}
+                      >
+                        <i
+                          className={
+                            detail.enrollmentRequested
+                              ? "yobicon-removefriend"
+                              : "yobicon-addfriend"
                           }
-                        >
-                          {legacyMessage(messages, "button.new.enrollment")}
-                        </button>
-                      )
+                        />{" "}
+                        {legacyMessage(
+                          messages,
+                          detail.enrollmentRequested
+                            ? "button.cancel.enrollment"
+                            : "button.new.enrollment",
+                        )}
+                      </a>
                     ) : null}
                   </div>
                 </section>
