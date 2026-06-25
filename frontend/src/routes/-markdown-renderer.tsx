@@ -2871,10 +2871,7 @@ function collectMarkdownListLines(
   return { lines: listLines, nextIndex: index };
 }
 
-function parseFencedCodeBlock(
-  lines: MarkdownLineRecord[],
-  closesAtEof: boolean,
-): MarkdownCodeBlockRecord | null {
+function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRecord | null {
   if (lines.length < 2) {
     return null;
   }
@@ -2886,7 +2883,7 @@ function parseFencedCodeBlock(
     return null;
   }
   const hasClosingFence = Boolean(closeFence && closesMarkdownFence(fence, closeFence));
-  if (!hasClosingFence && !closesAtEof) {
+  if (!hasClosingFence && lines.slice(1).some((line) => closingFenceFromLine(line.text) !== "")) {
     return null;
   }
   return {
@@ -6419,7 +6416,7 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   if (lines.length === 2 && /^ {0,3}-+\s*$/.test(secondLine)) {
     return <MarkdownHeading context={props.context} level={2} text={firstLine.trim()} />;
   }
-  const codeBlock = parseFencedCodeBlock(lines, props.block.terminalNewline ?? false);
+  const codeBlock = parseFencedCodeBlock(lines);
   if (codeBlock) {
     if (markdownBlockCanUseReactMarkdownSimpleFencedCode(lines)) {
       return (

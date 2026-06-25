@@ -404,6 +404,13 @@
   `common/childComments.scala.html` one-line child-comment fragments, both of
   which are also unwrapped in legacy templates. Focused evidence:
   `markdown-render-boundary.spec.tsx`.
+- 2026-06-25 markdown unclosed-fence stability continuation: legacy `marked`
+  closes fenced code blocks at EOF. React Markdown now preserves that behavior
+  even when the source does not end with a trailing newline, while keeping
+  mismatched closing-fence candidates as paragraph text like legacy. This keeps
+  invalid or truncated very long SQL fenced blocks on the escaped plain-source
+  code path instead of expanding into a giant paragraph/line-break tree or
+  syntax-highlight spans. Focused evidence: `markdown-renderer.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks preserve only
