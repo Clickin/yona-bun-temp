@@ -241,6 +241,33 @@ function legacyApiActionForms() {
   });
 }
 
+function formsWithForbiddenReactOwnedLegacyActions(files: string[]) {
+  return files.flatMap((file) => {
+    const source = readRouteSource(file);
+    return Array.from(source.matchAll(/<form\b/g)).flatMap((formMatch) => {
+      const formStart = formMatch.index ?? 0;
+      const tag = source.slice(formStart, openingTagEnd(source, formStart));
+      if (!tag.includes("action=")) {
+        return [];
+      }
+      const forbiddenAction = forbiddenReactOwnedLegacyActions.find((action) =>
+        tag.includes(action),
+      );
+      if (!forbiddenAction) {
+        return [];
+      }
+      return [
+        {
+          file,
+          forbiddenAction,
+          line: lineNumberForIndex(source, formStart),
+          tag,
+        },
+      ];
+    });
+  });
+}
+
 function defaultActionFormsWithoutSubmit() {
   return listRouteFiles().flatMap((file) => {
     const source = readRouteSource(file);
@@ -415,19 +442,12 @@ describe("React form submit boundary", () => {
       expect(readRouteSource(file), file).toContain("event.preventDefault()");
     }
 
-    for (const [file, source] of sourceByFile) {
-      for (const action of forbiddenReactOwnedLegacyActions) {
-        expect(source, `${file} must not render legacy direct form action ${action}`).not.toContain(
-          `action={appHref(runtimeConfig, "${action}")}`,
-        );
-        expect(source, `${file} must not render legacy direct form action ${action}`).not.toContain(
-          `action={appHref(props.runtimeConfig, "${action}")}`,
-        );
-        expect(source, `${file} must not render legacy direct form action ${action}`).not.toContain(
-          `action="${action}"`,
-        );
-      }
-    }
+    expect(
+      formsWithForbiddenReactOwnedLegacyActions(sourceByFile.map(([file]) => file)).map(
+        (form) => `${form.file}:${form.line}:${form.forbiddenAction}`,
+      ),
+      "Auth and workspace settings forms must not expose legacy direct POST targets as React form actions.",
+    ).toEqual([]);
   });
 
   it("keeps React-owned markdown editor forms off native submit fallback guards", () => {
