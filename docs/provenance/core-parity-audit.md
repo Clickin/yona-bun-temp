@@ -849,6 +849,7 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
 - Markdown loose task-list rendering now keeps the checkbox inside the first loose-list paragraph instead of before the paragraph wrapper.
 - Markdown nested loose-list rendering now propagates looseness to ancestor lists so parent task items also use paragraph-wrapped checkbox placement when a child item is loose.
 - Markdown blockquote rendering now keeps loose-list continuations inside the quoted list instead of splitting them into separate paragraph and list blocks.
+- Markdown Haskell fenced-code highlighting now preserves legacy Highlight.js standalone multiline `{- ... -}` block comments as opaque comment spans across lines while leaving pragma/meta lines and normal module keywords on the existing Haskell tokenizer path.
 - Markdown blockquote rendering now keeps marked-style lazy continuation lines inside the quote instead of escaping the leading `>` paragraph.
 - Markdown blockquote rendering now also keeps marked-style lazy list-item continuations inside quoted lists instead of splitting them into separate quoted paragraphs.
 - Markdown bare URL/email autolinks now follow legacy marked GFM's case-insensitive scheme and extended email rules, so `HTTP://`, `FTP://`, and bare email domains with underscores render as links on the React path.

@@ -5829,7 +5829,7 @@ function markdownBlockCanUseReactMarkdownCompatibleBlock(
     (lines.length === 1 &&
       /^ {0,3}(?:(?:-[ \t]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})$/.test(firstLine)) ||
     markdownBlockCanUseReactMarkdownSetextHeading(lines, context) ||
-    (Boolean(parseFencedCodeBlock(lines, block.terminalNewline ?? false)) &&
+    (Boolean(parseFencedCodeBlock(lines)) &&
       markdownBlockCanUseReactMarkdownSimpleFencedCode(lines)) ||
     (Boolean(parseIndentedCodeBlock(lines)) &&
       markdownBlockCanUseReactMarkdownSimpleIndentedCode(lines)) ||

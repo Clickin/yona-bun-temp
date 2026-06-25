@@ -1863,6 +1863,17 @@ export function highlightCodeBlock(code: string, language: string | undefined) {
       return lineIndex === lines.length - 1 ? nodes : [...nodes, "\n"];
     });
   }
+  if (normalizedLanguage === "haskell") {
+    let blockCommentDepth = 0;
+    return lines.flatMap((line, lineIndex) => {
+      const result = highlightHaskellCodeLine(line, language ?? "", {
+        blockCommentDepth,
+        lineIndex,
+      });
+      blockCommentDepth = result.blockCommentDepth;
+      return lineIndex === lines.length - 1 ? result.nodes : [...result.nodes, "\n"];
+    });
+  }
   if (normalizedLanguage === "yaml") {
     let inErbBlock = false;
     return lines.flatMap((line, lineIndex) => {
@@ -1914,6 +1925,39 @@ function highlightHamlCodeLine(line: string, language: string, lineIndex: number
   }
 
   return nodes.length > 0 ? nodes : ["\u00a0"];
+}
+
+function highlightHaskellCodeLine(
+  line: string,
+  language: string,
+  state: {
+    blockCommentDepth: number;
+    lineIndex: number;
+  },
+) {
+  const startsStandaloneBlockComment = /^\s*\{-(?!#)/.test(line);
+  if (state.blockCommentDepth > 0 || startsStandaloneBlockComment) {
+    const opens = countHaskellBlockCommentOpeners(line);
+    const closes = countHaskellBlockCommentClosers(line);
+    const nextBlockCommentDepth = Math.max(0, state.blockCommentDepth + opens - closes);
+    return {
+      blockCommentDepth: nextBlockCommentDepth,
+      nodes: [
+        <span className="syntax-token syntax-comment" key={`haskell-comment-${state.lineIndex}`}>
+          {line.length > 0 ? line : "\u00a0"}
+        </span>,
+      ],
+    };
+  }
+  return { blockCommentDepth: state.blockCommentDepth, nodes: highlightCodeLine(line, language) };
+}
+
+function countHaskellBlockCommentOpeners(line: string) {
+  return Array.from(line.matchAll(/\{-(?!#)/g)).length;
+}
+
+function countHaskellBlockCommentClosers(line: string) {
+  return Array.from(line.matchAll(/-\}/g)).length;
 }
 
 function highlightYamlCodeLine(

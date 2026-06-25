@@ -1910,6 +1910,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">-42</span>');
   });
 
+  it("keeps legacy Highlight.js Haskell multiline block comments opaque in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```haskell",
+          "{- legacy",
+          "   multiline comment",
+          "-}",
+          "module Yona where",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="haskell">');
+    expect(html).toContain('class="syntax-token syntax-comment">{- legacy</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">   multiline comment</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">-}</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">module</span>');
+  });
+
   it("recognizes legacy Highlight.js Lua language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
