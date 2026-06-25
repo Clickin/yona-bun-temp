@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { ProjectImportPage } from "./routes/-project-views";
+import { ProjectImportPage, validateLegacyProjectForm } from "./routes/-project-views";
 
 describe("project import parity", () => {
   it("renders the legacy git import form shell with owner handoff", () => {
@@ -56,6 +56,18 @@ describe("project import parity", () => {
     expect(html).toContain('href="/projectform?owner=weblabs"');
   });
 
+  it("keeps legacy _import empty URL client validation message key", () => {
+    expect(validateLegacyProjectForm({ projectName: "imported", url: "" })).toEqual({
+      url: ["project.import.error.empty.url"],
+    });
+    expect(validateLegacyProjectForm({ projectName: "imported", url: "   " })).toEqual({
+      url: ["project.import.error.empty.url"],
+    });
+    expect(
+      validateLegacyProjectForm({ projectName: "imported", url: "https://example/repo.git" }),
+    ).toEqual({});
+  });
+
   it("mounts the legacy _import route without a placeholder page", () => {
     const routeSource = readFileSync(join(process.cwd(), "src/routes/[_]import/route.tsx"), "utf8");
 
@@ -70,5 +82,11 @@ describe("project import parity", () => {
     expect(routeSource).toContain("csrfToken={csrfToken}");
     expect(routeSource).not.toContain("Project import mutation is deferred.");
     expect(routeSource).not.toContain("PlaceholderPage");
+
+    const viewSource = readFileSync(join(process.cwd(), "src/routes/-project-views.tsx"), "utf8");
+    expect(viewSource).toContain("validateLegacyProjectForm({");
+    expect(viewSource).toContain("url: formState.url");
+    expect(viewSource).toContain('field="url"');
+    expect(viewSource).toContain("project.import.error.empty.url");
   });
 });

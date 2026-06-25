@@ -10,6 +10,7 @@ import {
   OrganizationIssueListPage,
   OrganizationMembersPage,
   OrganizationSettingsPage,
+  shouldReuseLegacyMemberTypeaheadCache,
 } from "./routes/-organization-views";
 import type { OrganizationDetailViewModel } from "./routes/-view-models";
 
@@ -254,8 +255,33 @@ describe("organization shell legacy i18n opt-in", () => {
     expect(issueHtml).toContain(">Column View<");
     expect(issueHtml).toContain(">No issue found<");
     expect(memberHtml).toContain('title="Enter Valid ID"');
+    expect(memberHtml).toContain('data-provider="typeahead"');
     expect(memberHtml).toContain(">Group Manager<");
     expect(memberHtml).toContain(">Group Member<");
+  });
+
+  it("preserves legacy organization member typeahead cache reuse rule", () => {
+    expect(
+      shouldReuseLegacyMemberTypeaheadCache({
+        isLastRangeEntire: true,
+        lastQuery: "vi",
+        query: "vis",
+      }),
+    ).toBe(true);
+    expect(
+      shouldReuseLegacyMemberTypeaheadCache({
+        isLastRangeEntire: false,
+        lastQuery: "vi",
+        query: "vis",
+      }),
+    ).toBe(false);
+    expect(
+      shouldReuseLegacyMemberTypeaheadCache({
+        isLastRangeEntire: true,
+        lastQuery: "door",
+        query: "vis",
+      }),
+    ).toBe(false);
   });
 
   it("uses default English legacy messages for organization shell labels", () => {

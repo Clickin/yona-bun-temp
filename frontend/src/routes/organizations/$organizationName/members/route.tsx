@@ -5,6 +5,7 @@ import {
   addOrganizationMember,
   deleteOrganizationMember,
   readOrganizationAdmin,
+  searchLegacyMemberUsers,
   updateOrganizationMemberRole,
 } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
@@ -130,6 +131,9 @@ function OrganizationMembersRouteComponent() {
           );
         }
       }}
+      onSearchMemberUsers={async (_nextOrganizationName, query) =>
+        searchLegacyMemberUsers(runtimeConfig, query)
+      }
       onUpdateMemberRole={async (nextOrganizationName, userId, role) => {
         try {
           const nextDetail = await updateOrganizationMemberRole(runtimeConfig, csrfToken, {

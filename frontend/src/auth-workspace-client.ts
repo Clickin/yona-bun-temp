@@ -117,6 +117,8 @@ import {
 } from "./api/notifications";
 import {
   readPublicUserProfile as readPublicUserProfileRest,
+  searchLegacyMemberUsers as searchLegacyMemberUsersRest,
+  type LegacyMemberUserSearchResponse,
   type PublicUserProfileInput,
   type PublicUserProfileResponse,
 } from "./api/users";
@@ -1056,6 +1058,14 @@ export async function searchIssueMentionUsers(
   fetchImpl: typeof fetch = fetch,
 ): Promise<IssueMentionUsersResponse> {
   return searchIssueMentionUsersRest(runtimeConfig, input, fetchImpl);
+}
+
+export async function searchLegacyMemberUsers(
+  runtimeConfig: RuntimeConfig,
+  query: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<LegacyMemberUserSearchResponse> {
+  return searchLegacyMemberUsersRest(runtimeConfig, query, fetchImpl);
 }
 
 export async function searchProjectAssignableUsers(

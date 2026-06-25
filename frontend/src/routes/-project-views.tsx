@@ -37,6 +37,108 @@ export function buildProjectHref(
 
 type ProjectHomeTab = "dashboard" | "history" | "readme";
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
+type ProjectMenuSettingKey = "board" | "code" | "issue" | "milestone" | "pullRequest" | "review";
+
+export const LEGACY_PROJECT_NAME_PATTERN = /^[0-9A-Za-z-_.가-힣]+$/;
+export const LEGACY_PROJECT_RESERVED_NAMES = [".", "..", ".git"];
+
+export type LegacyProjectFormValidationInput = {
+  projectName: string;
+  url?: string;
+};
+
+export type LegacyProjectFormValidationErrors = {
+  name?: string[];
+  url?: string[];
+};
+
+export function normalizeLegacyProjectNameOnFocusout(value: string) {
+  return value.trim().replace(/ /g, "-");
+}
+
+export function validateLegacyProjectForm(
+  input: LegacyProjectFormValidationInput,
+): LegacyProjectFormValidationErrors {
+  const errors: LegacyProjectFormValidationErrors = {};
+  const projectName = input.projectName;
+
+  if (projectName.length === 0 || !LEGACY_PROJECT_NAME_PATTERN.test(projectName)) {
+    errors.name = [...(errors.name ?? []), "project.name.alert"];
+  }
+  if (LEGACY_PROJECT_RESERVED_NAMES.includes(projectName)) {
+    errors.name = [...(errors.name ?? []), "project.name.reserved.alert"];
+  }
+  if (input.url !== undefined && input.url.trim().length === 0) {
+    errors.url = [...(errors.url ?? []), "project.import.error.empty.url"];
+  }
+
+  return errors;
+}
+
+export function hasLegacyProjectFormErrors(errors: LegacyProjectFormValidationErrors) {
+  return Boolean(errors.name?.length || errors.url?.length);
+}
+
+export function normalizeProjectOwnerScope(
+  ownerOptions: ProjectCreateOwnerOption[],
+  ownerName: string,
+  projectScope: string,
+) {
+  const ownerOption = ownerOptions.find((option) => option.ownerName === ownerName);
+  const selectedOwnerIsOrganization = ownerOption?.organization ?? false;
+  return {
+    projectScope:
+      selectedOwnerIsOrganization || projectScope !== "protected" ? projectScope : "public",
+    protectedVisible: selectedOwnerIsOrganization,
+  };
+}
+
+export function normalizeProjectMenusForCodeToggle(
+  current: Record<ProjectMenuSettingKey, boolean>,
+  checked: boolean,
+) {
+  return checked
+    ? { ...current, code: true }
+    : { ...current, code: false, pullRequest: false, review: false };
+}
+
+export function normalizeProjectMenusForDependentCodeToggle(
+  current: Record<ProjectMenuSettingKey, boolean>,
+  key: "pullRequest" | "review",
+  checked: boolean,
+) {
+  return {
+    ...current,
+    [key]: checked,
+    code: checked ? true : current.code,
+  };
+}
+
+export function isLegacySubversionVcs(value: string) {
+  const normalized = value.trim().toUpperCase();
+  return normalized === "SVN" || normalized === "SUBVERSION";
+}
+
+function firstLegacyProjectError(errors: LegacyProjectFormValidationErrors, field: "name" | "url") {
+  return errors[field]?.[0] ?? null;
+}
+
+function LegacyProjectFieldPopover(props: {
+  field: "name" | "url";
+  messages: LegacyMessageLookup;
+  validationErrors: LegacyProjectFormValidationErrors;
+}) {
+  const errorKey = firstLegacyProjectError(props.validationErrors, props.field);
+  if (!errorKey) {
+    return null;
+  }
+  return (
+    <div className="popover fade left in" role="tooltip" style={{ display: "block" }}>
+      <div className="arrow" />
+      <div className="popover-content">{legacyMessage(props.messages, errorKey)}</div>
+    </div>
+  );
+}
 
 function legacyMessage(
   messages: LegacyMessageLookup | undefined,
@@ -907,6 +1009,9 @@ export function ProjectNewPage(props: {
     vcs: "GIT",
     ...defaultProjectMenuSettings(props.defaultProjectMenus),
   });
+  const [validationErrors, setValidationErrors] = React.useState<LegacyProjectFormValidationErrors>(
+    {},
+  );
 
   React.useEffect(() => {
     setFormState((current) => ({
@@ -921,6 +1026,12 @@ export function ProjectNewPage(props: {
       ? [{ organization: false, ownerName: selectedOwnerName, selected: true }]
       : [];
   const importFormHref = `/_import?owner=${encodeURIComponent(formState.ownerName)}`;
+  const ownerScope = normalizeProjectOwnerScope(
+    ownerOptions,
+    formState.ownerName,
+    formState.projectScope,
+  );
+  const svnSelected = isLegacySubversionVcs(formState.vcs);
 
   return (
     <div className="page-wrap-outer">
@@ -931,7 +1042,15 @@ export function ProjectNewPage(props: {
             id="newProjectForm"
             onSubmit={(event) => {
               event.preventDefault();
-              props.onCreateProject?.(formState);
+              const errors = validateLegacyProjectForm({ projectName: formState.projectName });
+              setValidationErrors(errors);
+              if (hasLegacyProjectFormErrors(errors)) {
+                return;
+              }
+              props.onCreateProject?.({
+                ...formState,
+                projectScope: ownerScope.projectScope,
+              });
             }}
           >
             <legend>
@@ -963,6 +1082,11 @@ export function ProjectNewPage(props: {
                     setFormState((current) => ({
                       ...current,
                       ownerName: event.target.value,
+                      projectScope: normalizeProjectOwnerScope(
+                        ownerOptions,
+                        event.target.value,
+                        current.projectScope,
+                      ).projectScope,
                     }))
                   }
                 >
@@ -992,12 +1116,24 @@ export function ProjectNewPage(props: {
                   placeholder={legacyMessage(messages, "project.name.placeholder")}
                   type="text"
                   value={formState.projectName}
+                  onBlur={(event) => {
+                    const normalized = normalizeLegacyProjectNameOnFocusout(event.target.value);
+                    setFormState((current) => ({
+                      ...current,
+                      projectName: normalized,
+                    }));
+                  }}
                   onChange={(event) =>
                     setFormState((current) => ({
                       ...current,
                       projectName: event.target.value,
                     }))
                   }
+                />
+                <LegacyProjectFieldPopover
+                  field="name"
+                  messages={messages}
+                  validationErrors={validationErrors}
                 />
               </dd>
               <dt>
@@ -1048,6 +1184,11 @@ export function ProjectNewPage(props: {
                         className={scope.id === "public" ? undefined : "mt10"}
                         id={scope.id === "protected" ? "opt-protected" : undefined}
                         key={scope.id}
+                        style={
+                          scope.id === "protected" && !ownerScope.protectedVisible
+                            ? { display: "none" }
+                            : undefined
+                        }
                       >
                         <input
                           checked={formState.projectScope === scope.id}
@@ -1087,6 +1228,9 @@ export function ProjectNewPage(props: {
                     onChange={(event) =>
                       setFormState((current) => ({
                         ...current,
+                        pullRequest: isLegacySubversionVcs(event.target.value)
+                          ? true
+                          : current.pullRequest,
                         vcs: event.target.value,
                       }))
                     }
@@ -1100,7 +1244,11 @@ export function ProjectNewPage(props: {
                       {legacyMessage(messages, "project.new.vcsType.subversion")}
                     </option>
                   </select>
-                  <span className="ml10 notice" id="svn" style={{ display: "none" }}>
+                  <span
+                    className="ml10 notice"
+                    id="svn"
+                    style={{ display: svnSelected ? undefined : "none" }}
+                  >
                     {legacyMessage(messages, "project.svn.warning")}
                   </span>
                 </div>
@@ -1116,18 +1264,42 @@ export function ProjectNewPage(props: {
                       className="bg-radiobtn label-public inline-list"
                       htmlFor={item.id}
                       key={item.key}
+                      style={
+                        item.key === "pullRequest" && svnSelected ? { display: "none" } : undefined
+                      }
                     >
                       <input
                         checked={formState[item.key]}
                         className="radio-btn"
                         id={item.id}
                         name={item.name}
-                        onChange={(event) =>
-                          setFormState((current) => ({
-                            ...current,
-                            [item.key]: event.target.checked,
-                          }))
-                        }
+                        onChange={(event) => {
+                          setFormState((current) => {
+                            if (item.key === "code") {
+                              return {
+                                ...current,
+                                ...normalizeProjectMenusForCodeToggle(
+                                  current,
+                                  event.target.checked,
+                                ),
+                              };
+                            }
+                            if (item.key === "pullRequest" || item.key === "review") {
+                              return {
+                                ...current,
+                                ...normalizeProjectMenusForDependentCodeToggle(
+                                  current,
+                                  item.key,
+                                  event.target.checked,
+                                ),
+                              };
+                            }
+                            return {
+                              ...current,
+                              [item.key]: event.target.checked,
+                            };
+                          });
+                        }}
                         type="checkbox"
                         value="true"
                       />
@@ -1195,6 +1367,9 @@ export function ProjectImportPage(props: {
     vcs: "GIT",
     ...defaultProjectMenuSettings(props.defaultProjectMenus),
   });
+  const [validationErrors, setValidationErrors] = React.useState<LegacyProjectFormValidationErrors>(
+    {},
+  );
 
   React.useEffect(() => {
     setFormState((current) => ({
@@ -1209,6 +1384,11 @@ export function ProjectImportPage(props: {
       ? [{ organization: false, ownerName: selectedOwnerName, selected: true }]
       : [];
   const createFormHref = `/projectform?owner=${encodeURIComponent(formState.ownerName)}`;
+  const ownerScope = normalizeProjectOwnerScope(
+    ownerOptions,
+    formState.ownerName,
+    formState.projectScope,
+  );
 
   return (
     <div className="page-wrap-outer">
@@ -1219,10 +1399,18 @@ export function ProjectImportPage(props: {
             id="importGit"
             onSubmit={(event) => {
               event.preventDefault();
-              if (!props.onImportProject) {
+              const errors = validateLegacyProjectForm({
+                projectName: formState.projectName,
+                url: formState.url,
+              });
+              setValidationErrors(errors);
+              if (hasLegacyProjectFormErrors(errors) || !props.onImportProject) {
                 return;
               }
-              void props.onImportProject(formState);
+              void props.onImportProject({
+                ...formState,
+                projectScope: ownerScope.projectScope,
+              });
             }}
           >
             <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
@@ -1256,6 +1444,11 @@ export function ProjectImportPage(props: {
                       url: event.target.value,
                     }))
                   }
+                />
+                <LegacyProjectFieldPopover
+                  field="url"
+                  messages={messages}
+                  validationErrors={validationErrors}
                 />
               </dd>
               <dt />
@@ -1332,6 +1525,11 @@ export function ProjectImportPage(props: {
                     setFormState((current) => ({
                       ...current,
                       ownerName: event.target.value,
+                      projectScope: normalizeProjectOwnerScope(
+                        ownerOptions,
+                        event.target.value,
+                        current.projectScope,
+                      ).projectScope,
                     }))
                   }
                 >
@@ -1361,12 +1559,24 @@ export function ProjectImportPage(props: {
                   placeholder={legacyMessage(messages, "project.name.alert")}
                   type="text"
                   value={formState.projectName}
+                  onBlur={(event) => {
+                    const normalized = normalizeLegacyProjectNameOnFocusout(event.target.value);
+                    setFormState((current) => ({
+                      ...current,
+                      projectName: normalized,
+                    }));
+                  }}
                   onChange={(event) =>
                     setFormState((current) => ({
                       ...current,
                       projectName: event.target.value,
                     }))
                   }
+                />
+                <LegacyProjectFieldPopover
+                  field="name"
+                  messages={messages}
+                  validationErrors={validationErrors}
                 />
               </dd>
               <dt>
@@ -1417,6 +1627,11 @@ export function ProjectImportPage(props: {
                         className={scope.id === "public" ? undefined : "mt10"}
                         id={scope.id === "protected" ? "opt-protected" : undefined}
                         key={scope.id}
+                        style={
+                          scope.id === "protected" && !ownerScope.protectedVisible
+                            ? { display: "none" }
+                            : undefined
+                        }
                       >
                         <input
                           checked={formState.projectScope === scope.id}
@@ -1483,12 +1698,33 @@ export function ProjectImportPage(props: {
                         name={item.name}
                         type="checkbox"
                         value="true"
-                        onChange={(event) =>
-                          setFormState((current) => ({
-                            ...current,
-                            [item.key]: event.target.checked,
-                          }))
-                        }
+                        onChange={(event) => {
+                          setFormState((current) => {
+                            if (item.key === "code") {
+                              return {
+                                ...current,
+                                ...normalizeProjectMenusForCodeToggle(
+                                  current,
+                                  event.target.checked,
+                                ),
+                              };
+                            }
+                            if (item.key === "pullRequest" || item.key === "review") {
+                              return {
+                                ...current,
+                                ...normalizeProjectMenusForDependentCodeToggle(
+                                  current,
+                                  item.key,
+                                  event.target.checked,
+                                ),
+                              };
+                            }
+                            return {
+                              ...current,
+                              [item.key]: event.target.checked,
+                            };
+                          });
+                        }}
                       />
                       {legacyMessage(messages, item.label)}
                     </label>

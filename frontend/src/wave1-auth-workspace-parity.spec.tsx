@@ -103,7 +103,15 @@ describe("wave 1 auth and workspace parity", () => {
     expect(invalidLostPasswordHtml).not.toContain("Invalid login ID or email address.");
 
     const invalidResetPasswordHtml = renderResetPassword("/resetPassword?error=invalid");
+    expect(invalidResetPasswordHtml).toContain('class="page-wrap-outer"');
+    expect(invalidResetPasswordHtml).toContain('class="project-page-wrap"');
+    expect(invalidResetPasswordHtml).toContain('class="error-wrap"');
+    expect(invalidResetPasswordHtml).toContain('class="ico-404"');
     expect(invalidResetPasswordHtml).toContain("Wrong url to reset password.");
+    expect(invalidResetPasswordHtml).toContain('href="/yona"');
+    expect(invalidResetPasswordHtml).toContain(">Home<");
+    expect(invalidResetPasswordHtml).not.toContain('class="login-form-wrap frm-wrap"');
+    expect(invalidResetPasswordHtml).not.toContain('name="passwordReset"');
     expect(invalidResetPasswordHtml).not.toContain("Invalid password reset link.");
 
     const loginHtml = renderLogin({ routeHref: "/users/loginform?password=reset" });

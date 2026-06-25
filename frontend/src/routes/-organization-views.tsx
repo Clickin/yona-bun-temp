@@ -1,5 +1,6 @@
 import * as React from "react";
 import { uploadTemporaryAttachment } from "../api/attachments";
+import type { LegacyMemberUserSearchItem, LegacyMemberUserSearchResponse } from "../api/users";
 import {
   LEGACY_DEFAULT_LANGUAGE,
   lookupLegacyMessage,
@@ -119,6 +120,18 @@ function isOrganizationLogoImageFile(file: File) {
 
 function isLegacyOrganizationName(name: string) {
   return /^[a-zA-Z0-9-가-힣]+([_.][a-zA-Z0-9-가-힣]+)*$/.test(name);
+}
+
+export function shouldReuseLegacyMemberTypeaheadCache(input: {
+  isLastRangeEntire: boolean;
+  lastQuery: string;
+  query: string;
+}) {
+  return (
+    input.isLastRangeEntire &&
+    input.lastQuery.length > 0 &&
+    input.query.toLocaleLowerCase().startsWith(input.lastQuery.toLocaleLowerCase())
+  );
 }
 
 export interface OrganizationIssueListQuery {
@@ -1344,11 +1357,13 @@ export function OrganizationSettingsPage(props: {
                             props.csrfToken,
                             file,
                           ).then((attachment) => {
-                            setFormState((current) => ({
-                              ...current,
+                            const nextFormState = {
+                              ...formState,
                               logoAttachmentId: attachment.id,
-                            }));
+                            };
+                            setFormState(nextFormState);
                             setLogoPreviewUrl(attachment.url);
+                            props.onUpdateOrganization?.(nextFormState);
                           });
                         }}
                       />
@@ -1434,6 +1449,10 @@ export function OrganizationMembersPage(props: {
   onAcceptEnrollment?: (organizationName: string, userId: string) => void;
   onAddMember?: (organizationName: string, loginId: string) => void;
   onDeleteMember?: (organizationName: string, userId: string) => void;
+  onSearchMemberUsers?: (
+    organizationName: string,
+    query: string,
+  ) => Promise<LegacyMemberUserSearchResponse>;
   onUpdateMemberRole?: (organizationName: string, userId: string, role: string) => void;
 }) {
   const detail = props.detail ?? {
@@ -1446,11 +1465,48 @@ export function OrganizationMembersPage(props: {
   };
   const [loginId, setLoginId] = React.useState("");
   const [deleteTarget, setDeleteTarget] = React.useState<null | string>(null);
+  const [typeaheadItems, setTypeaheadItems] = React.useState<LegacyMemberUserSearchItem[]>([]);
+  const [typeaheadOpen, setTypeaheadOpen] = React.useState(false);
+  const typeaheadCacheRef = React.useRef({
+    isLastRangeEntire: true,
+    items: [] as LegacyMemberUserSearchItem[],
+    lastQuery: "",
+  });
   const organizationDetail = {
     description: "",
     organizationName: detail.organizationName,
     viewerCanUpdate: detail.viewerCanUpdate,
   };
+
+  async function updateTypeahead(nextQuery: string) {
+    setLoginId(nextQuery);
+    const trimmedQuery = nextQuery.trim();
+    if (!trimmedQuery || !props.onSearchMemberUsers) {
+      setTypeaheadItems([]);
+      setTypeaheadOpen(false);
+      return;
+    }
+    const cached = typeaheadCacheRef.current;
+    if (
+      shouldReuseLegacyMemberTypeaheadCache({
+        isLastRangeEntire: cached.isLastRangeEntire,
+        lastQuery: cached.lastQuery,
+        query: trimmedQuery,
+      })
+    ) {
+      setTypeaheadItems(cached.items);
+      setTypeaheadOpen(cached.items.length > 0);
+      return;
+    }
+    const response = await props.onSearchMemberUsers(detail.organizationName, trimmedQuery);
+    typeaheadCacheRef.current = {
+      isLastRangeEntire: !response.truncated,
+      items: response.items,
+      lastQuery: trimmedQuery,
+    };
+    setTypeaheadItems(response.items);
+    setTypeaheadOpen(response.items.length > 0);
+  }
 
   return (
     <main className="app-shell">
@@ -1488,7 +1544,17 @@ export function OrganizationMembersPage(props: {
                 data-provider="typeahead"
                 id="loginId"
                 name="loginId"
-                onChange={(event) => setLoginId(event.target.value)}
+                onBlur={() => {
+                  window.setTimeout(() => setTypeaheadOpen(false), 100);
+                }}
+                onChange={(event) => {
+                  void updateTypeahead(event.target.value);
+                }}
+                onFocus={() => {
+                  if (typeaheadItems.length > 0) {
+                    setTypeaheadOpen(true);
+                  }
+                }}
                 pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
                 placeholder={legacyMessage(props.messages, "project.members.addMember")}
                 required
@@ -1496,6 +1562,32 @@ export function OrganizationMembersPage(props: {
                 type="text"
                 value={loginId}
               />
+              {typeaheadOpen && typeaheadItems.length > 0 ? (
+                <ul className="typeahead dropdown-menu" style={{ display: "block" }}>
+                  {typeaheadItems.map((item, index) => (
+                    <li
+                      className={index === 0 ? "active" : undefined}
+                      data-value={item.info}
+                      key={`${item.loginId}:${item.info}`}
+                    >
+                      <a
+                        href={prefixBasePath(props.runtimeConfig.basePath, `/${item.loginId}`)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setLoginId(item.loginId);
+                          setTypeaheadOpen(false);
+                        }}
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          setLoginId(item.loginId);
+                          setTypeaheadOpen(false);
+                        }}
+                        dangerouslySetInnerHTML={{ __html: item.info }}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               <button className="ybtn ybtn-success" disabled={props.pending} type="submit">
                 <i className="yobicon-addfriend" /> {legacyMessage(props.messages, "button.add")}
               </button>

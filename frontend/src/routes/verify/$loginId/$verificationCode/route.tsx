@@ -11,13 +11,14 @@ export const Route = createFileRoute("/verify/$loginId/$verificationCode")({
 
 function VerifyUserRouteComponent() {
   const { loginId, verificationCode } = Route.useParams();
-  const { runtimeConfig, setErrorMessage } = useAppRuntime();
-  const [invalid, setInvalid] = React.useState(false);
+  const { messages, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const [status, setStatus] = React.useState<"invalid" | "pending" | "success">("pending");
   const [resolvedLoginId, setResolvedLoginId] = React.useState(loginId);
   useDocumentTitle("user.verification");
 
   React.useEffect(() => {
     let cancelled = false;
+    setStatus("pending");
 
     void (async () => {
       try {
@@ -26,12 +27,12 @@ function VerifyUserRouteComponent() {
           verificationCode,
         });
         if (!cancelled) {
-          setInvalid(false);
+          setStatus("success");
           setResolvedLoginId(response.loginId || loginId);
         }
       } catch (error) {
         if (!cancelled) {
-          setInvalid(true);
+          setStatus("invalid");
           setResolvedLoginId(loginId);
           setErrorMessage(error instanceof Error ? error.message : "Invalid verification");
         }
@@ -43,9 +44,17 @@ function VerifyUserRouteComponent() {
     };
   }, [loginId, runtimeConfig, setErrorMessage, verificationCode]);
 
+  if (status === "pending") {
+    return (
+      <main className="app-shell">
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
+      </main>
+    );
+  }
+
   return (
     <VerifyUserPage
-      invalid={invalid}
+      invalid={status === "invalid"}
       loginId={resolvedLoginId}
       runtimeConfig={runtimeConfig}
     />

@@ -8,6 +8,7 @@ import type {
 import type { RuntimeConfig } from "../runtime-config";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
+import { prefixBasePath } from "../runtime-config";
 
 type WorkspaceProfileWithGuest = WorkspaceProfile & { isGuest?: boolean };
 
@@ -36,6 +37,17 @@ export type UserStatisticsResponse = {
   issueVoter: number;
   posting: number;
   postingComment: number;
+};
+
+export type LegacyMemberUserSearchItem = {
+  info: string;
+  loginId: string;
+};
+
+export type LegacyMemberUserSearchResponse = {
+  items: LegacyMemberUserSearchItem[];
+  total: number;
+  truncated: boolean;
 };
 
 function normalizePublicUserProfileResponse(
@@ -87,6 +99,65 @@ function normalizeUserStatisticsResponse(response: UserStatisticsResponse): User
     posting: response.posting ?? 0,
     postingComment: response.postingComment ?? 0,
   };
+}
+
+function parseLegacyContentRange(value: string | null, itemCount: number) {
+  const match = /^items\s+([0-9]+)\/([0-9]+)$/.exec(value ?? "");
+  if (!match) {
+    return { total: itemCount, truncated: false };
+  }
+  const returned = Number.parseInt(match[1] ?? "0", 10);
+  const total = Number.parseInt(match[2] ?? String(itemCount), 10);
+  return {
+    total,
+    truncated: returned < total,
+  };
+}
+
+function normalizeLegacyMemberUserSearchResponse(
+  payload: unknown,
+  contentRange: string | null,
+): LegacyMemberUserSearchResponse {
+  const items = Array.isArray(payload)
+    ? payload.map((item) => {
+        const candidate = item as Partial<LegacyMemberUserSearchItem>;
+        return {
+          info: candidate.info ?? "",
+          loginId: candidate.loginId ?? "",
+        };
+      })
+    : [];
+  const range = parseLegacyContentRange(contentRange, items.length);
+  return {
+    items,
+    total: range.total,
+    truncated: range.truncated,
+  };
+}
+
+export async function searchLegacyMemberUsers(
+  runtimeConfig: RuntimeConfig,
+  query: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<LegacyMemberUserSearchResponse> {
+  const params = new URLSearchParams();
+  params.set("query", query);
+  const response = await fetchImpl(
+    prefixBasePath(runtimeConfig.basePath, `/-_-api/v1/users?${params.toString()}`),
+    {
+      credentials: "same-origin",
+      headers: new Headers({ Accept: "application/json" }),
+      method: "GET",
+    },
+  );
+  const text = await response.text();
+  const payload = text.trim() === "" ? [] : (JSON.parse(text) as unknown);
+
+  if (!response.ok) {
+    throw new Error(`Legacy users search failed with ${response.status}.`);
+  }
+
+  return normalizeLegacyMemberUserSearchResponse(payload, response.headers.get("Content-Range"));
 }
 
 export async function readPublicUserProfile(

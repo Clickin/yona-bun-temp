@@ -131,6 +131,22 @@ export function workspaceAvatarUploadErrorForMimeType(fileType: string): string 
   return fileType.startsWith("image/") ? null : WORKSPACE_AVATAR_ONLY_IMAGE_MESSAGE;
 }
 
+export function workspaceNotificationActiveProjectId(
+  routeHref: string,
+  watchedProjects: Array<{ projectId: string }>,
+  fallbackHash = "",
+): string {
+  const routeHash = new URL(routeHref, "http://yona.local").hash;
+  const hash = routeHash || fallbackHash;
+  const targetProjectId = hash.startsWith("#") ? hash.slice(1) : hash;
+
+  if (watchedProjects.some((project) => project.projectId === targetProjectId)) {
+    return targetProjectId;
+  }
+
+  return watchedProjects[0]?.projectId ?? "";
+}
+
 export function buildProfileUpdateInput(
   formData: FormData,
   avatarAttachmentId: string,
@@ -219,6 +235,12 @@ export function WorkspaceSettingsPage(props: {
       profile.avatarUrl,
       profile.displayName || session.userLabel || session.loginId,
     );
+  const browserHash = typeof window === "undefined" ? "" : window.location.hash;
+  const activeNotificationProjectId = workspaceNotificationActiveProjectId(
+    props.routeHref,
+    watchedProjects,
+    browserHash,
+  );
   const isCropModalOpen = cropSourceUrl !== "";
   const cropPreviewStyle = getAvatarCropPreviewStyle(
     cropSelection,
@@ -362,7 +384,11 @@ export function WorkspaceSettingsPage(props: {
                   />
                 </label>
               </div>
-              {avatarErrorMessage ? <p className="lede">{avatarErrorMessage}</p> : null}
+              {avatarErrorMessage ? (
+                <p className="alert alert-error" role="alert">
+                  {legacyMessage(props.messages, avatarErrorMessage)}
+                </p>
+              ) : null}
             </div>
           </form>
           <div className="reset-user-visited-list">
@@ -379,7 +405,7 @@ export function WorkspaceSettingsPage(props: {
             </form>
           </div>
           <section
-            className="modal hide"
+            className={`modal${isCropModalOpen ? "" : " hide"}`}
             data-backdrop="static"
             hidden={!isCropModalOpen}
             id="avatarCropWrap"
@@ -543,8 +569,11 @@ export function WorkspaceSettingsPage(props: {
       sectionBody = (
         <div>
           <ul className="unstyled lst-stacked span3 mr20" id="notification-projects">
-            {watchedProjects.map((project, index) => (
-              <li className={index === 0 ? "active" : undefined} key={project.projectId}>
+            {watchedProjects.map((project) => (
+              <li
+                className={project.projectId === activeNotificationProjectId ? "active" : undefined}
+                key={project.projectId}
+              >
                 <a data-toggle="tab" href={`#${project.projectId}`}>
                   {`${project.ownerName} / ${project.projectName}`}
                 </a>
@@ -552,9 +581,11 @@ export function WorkspaceSettingsPage(props: {
             ))}
           </ul>
           <div className="tab-content">
-            {watchedProjects.map((project, index) => (
+            {watchedProjects.map((project) => (
               <div
-                className={`tab-pane ${index === 0 ? "active" : ""}`}
+                className={`tab-pane ${
+                  project.projectId === activeNotificationProjectId ? "active" : ""
+                }`}
                 id={project.projectId}
                 key={project.projectId}
               >

@@ -640,6 +640,20 @@ describe("auth and workspace views", () => {
     }
   });
 
+  it("keeps verify route pending until the REST verification result is known", () => {
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "routes/verify/$loginId/$verificationCode/route.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain('React.useState<"invalid" | "pending" | "success">("pending")');
+    expect(source).toContain('setStatus("pending")');
+    expect(source).toContain('setStatus("success")');
+    expect(source).toContain('setStatus("invalid")');
+    expect(source).toContain('status === "pending"');
+    expect(source).toContain('invalid={status === "invalid"}');
+  });
+
   it("renders auth capability help copy when email verification or signup confirmation is enabled", () => {
     const loginHtml = renderLogin({
       authUiCapabilities: {
@@ -712,8 +726,9 @@ describe("auth and workspace views", () => {
     expect(successHtml).not.toContain('href="/yona/users/loginform"');
 
     const invalidHtml = renderVerifyUser({ invalid: true, loginId: "door" });
-    expect(invalidHtml).toContain('class="error-wrap"');
-    expect(invalidHtml).toContain("Invalid verification");
+    expect(invalidHtml).toBe("Invalid verification");
+    expect(invalidHtml).not.toContain('class="app-shell"');
+    expect(invalidHtml).not.toContain('class="error-wrap"');
     expect(invalidHtml).not.toContain("door");
     expect(invalidHtml).not.toContain("Yona Rust Auth");
   });

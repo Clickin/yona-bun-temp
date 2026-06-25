@@ -59,6 +59,7 @@ import {
   searchIssueAssignableUsers,
   searchIssueMentionUsers,
   searchIssueSharableUsers,
+  searchLegacyMemberUsers,
   searchProjectAssignableUsers,
   searchProjectIssueReferences,
   toggleFavoriteProject,
@@ -767,6 +768,49 @@ describe("workspace REST clients", () => {
 });
 
 describe("issue assignable user REST client", () => {
+  it("calls the legacy member typeahead user search endpoint", async () => {
+    const fetchMock = vi.fn(async () => ({
+      headers: new Headers({
+        "Content-Range": "items 10/12",
+      }),
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify([
+          {
+            info: "<img class='mention_image' src='/avatar'><b class='mention_name'>Door</b><span class='mention_username'> @door</span>",
+            loginId: "door",
+          },
+        ]),
+    }));
+
+    const result = await searchLegacyMemberUsers(
+      runtimeConfig,
+      "Door Name",
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe("/yona/-_-api/v1/users?query=Door+Name");
+    expect(requestInit.credentials).toBe("same-origin");
+    expect(requestInit.headers.get("Accept")).toBe("application/json");
+    expect(requestInit.method).toBe("GET");
+    expect(result).toEqual({
+      items: [
+        {
+          info: "<img class='mention_image' src='/avatar'><b class='mention_name'>Door</b><span class='mention_username'> @door</span>",
+          loginId: "door",
+        },
+      ],
+      total: 12,
+      truncated: true,
+    });
+  });
+
   it("encodes assignable-user search queries and normalizes sparse responses", async () => {
     const fetchMock = vi.fn(async () =>
       okJsonResponse({

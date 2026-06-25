@@ -783,6 +783,10 @@ export function ResetPasswordPage({
   const message =
     searchParams.get("error") === "invalid" ? "site.resetPasswordEmail.wrongUrl" : null;
 
+  if (message) {
+    return <AuthBadRequestPage href={appHref(runtimeConfig, "/")} messageKey={message} />;
+  }
+
   return (
     <main className="app-shell">
       <div className="page full">
@@ -795,9 +799,6 @@ export function ResetPasswordPage({
           </p>
         </div>
         <div className="login-form-wrap frm-wrap">
-          {message ? (
-            <div className="alert alert-error">{messages.t(message, { fallback: message })}</div>
-          ) : null}
           <form
             name="passwordReset"
             onSubmit={(event) => {
@@ -868,11 +869,7 @@ export function VerifyUserPage({
 }) {
   const messages = useLegacyMessages();
   if (invalid) {
-    return (
-      <main className="app-shell">
-        <div className="error-wrap">Invalid verification</div>
-      </main>
-    );
+    return <>Invalid verification</>;
   }
 
   return (
@@ -884,6 +881,28 @@ export function VerifyUserPage({
         <p className="tag-line">
           {messages.t("user.verified.detail", { fallback: "user.verified.detail" })}
         </p>
+      </div>
+    </main>
+  );
+}
+
+export function AuthBadRequestPage({ href, messageKey }: { href: string; messageKey: string }) {
+  const messages = useLegacyMessages();
+  const title = messages.t(messageKey, { fallback: messageKey });
+  const homeLabel = messages.t("menu.home", { fallback: "menu.home" });
+
+  return (
+    <main className="app-shell">
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="error-wrap">
+            <i className="ico-404"></i>
+            <p>{title}</p>
+            <a className="ybtn ybtn-info" href={href}>
+              {homeLabel}
+            </a>
+          </div>
+        </div>
       </div>
     </main>
   );

@@ -5081,6 +5081,7 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain("readOrganizationAdmin");
     expect(routeSource).toContain("addOrganizationMember");
     expect(routeSource).toContain("deleteOrganizationMember");
+    expect(routeSource).toContain("searchLegacyMemberUsers");
     expect(routeSource).toContain("updateOrganizationMemberRole");
     expect(routeSource).toContain("error.badrequest");
     expect(routeSource).not.toContain("Accept enrollment failed.");
@@ -5098,6 +5099,9 @@ describe("file-route parity harness", () => {
     expect(viewSource).not.toContain('id="addNewMember"\n              method="post"');
     expect(viewSource).not.toContain("if (!props.onAddMember) {");
     expect(viewSource).toContain("props.onAddMember?.(detail.organizationName, loginId);");
+    expect(viewSource).toContain("onSearchMemberUsers");
+    expect(viewSource).toContain('className="typeahead dropdown-menu"');
+    expect(viewSource).toContain("dangerouslySetInnerHTML");
     expect(viewSource).toContain('className="members project row-fluid"');
     expect(viewSource).toContain('data-action="apply"');
     expect(viewSource).toContain('data-action="delete"');
@@ -5147,6 +5151,7 @@ describe("file-route parity harness", () => {
     expect(viewSource).not.toContain("if (!props.onUpdateOrganization) {");
     expect(viewSource).toContain("props.onCreateOrganization?.(formState);");
     expect(viewSource).toContain("props.onUpdateOrganization?.(formState);");
+    expect(viewSource).toContain("props.onUpdateOrganization?.(nextFormState);");
     expect(viewSource.match(/setValidationMessage\("organization\.name\.alert"\)/g)?.length).toBe(
       2,
     );
