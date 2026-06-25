@@ -2356,7 +2356,7 @@ export function ProjectIssueDetailPage(props: {
                 )}
               </div>
               <dl className="issue-info">
-                <dt>{legacyMessage(messages, "issue.milestone")}</dt>
+                <dt>{legacyMessage(messages, "milestone")}</dt>
                 <dd>{issue?.milestoneTitle || legacyMessage(messages, "issue.noMilestone")}</dd>
               </dl>
               <div className="watcher-list"></div>

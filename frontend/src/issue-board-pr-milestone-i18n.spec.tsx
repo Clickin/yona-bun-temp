@@ -356,7 +356,7 @@ describe("issue/board/PR/milestone legacy i18n opt-in", () => {
       "issue.draft.description",
       "common.comment",
       "issue.menu.new.by",
-      "issue.milestone",
+      "milestone",
       "issue.search",
       "issue.myIssue",
       "user.files",

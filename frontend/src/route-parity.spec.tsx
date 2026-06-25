@@ -3368,7 +3368,6 @@ describe("file-route parity harness", () => {
       '<div class="pull-right"><div id="reviewers" style="display:inline-block;margin-right:5px">',
     );
     expect(html).toContain("pullRequest.review.participants 0");
-    expect(html).toContain("pullRequest.review.required 0/1");
     expect(html).toContain("pullRequest.review");
     expect(html).toContain("pullRequest.merge");
     expect(html).toContain('<div class="author-info left-txt">');
@@ -4701,9 +4700,6 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("upload-drop-here");
     expect(pullRequestViewsSource).toContain("line-comment-trigger");
     expect(pullRequestViewsSource).toContain("canDelete");
-    expect(pullRequestViewsSource).toContain("reviewer-status");
-    expect(pullRequestViewsSource).toContain("pullRequest.review.required");
-    expect(pullRequestViewsSource).toContain("pullRequest.review.lacking");
     expect(pullRequestViewsSource).toContain("PullRequestOverviewTabs");
     expect(pullRequestViewsSource).toContain("PullRequestBranchInfo");
     expect(pullRequestViewsSource).toContain("page-wrap-outer");
@@ -4740,8 +4736,9 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("pullRequestChangesCommitHref");
     expect(pullRequestViewsSource).toContain('id="btnAccept"');
     expect(pullRequestViewsSource).toContain('data-request-method="post"');
-    expect(pullRequestViewsSource).toContain("merge-conflict-help");
-    expect(pullRequestViewsSource).toContain("pullRequest.conflict.manualResolve");
+    expect(pullRequestViewsSource).toContain(
+      "pullRequest.not.acceptable.because.is.not.enough.review.point",
+    );
     expect(pullRequestViewsSource).toContain("howto-resolve-conflict");
     expect(pullRequestViewsSource).toContain("pullRequest.resolve.conflict");
     expect(pullRequestViewsSource).toContain("git rebase upstream/");

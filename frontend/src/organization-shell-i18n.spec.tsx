@@ -323,17 +323,17 @@ describe("organization shell legacy i18n opt-in", () => {
     const emptyIssueHtml = renderEmptyOrganizationIssues(runtime.t);
     const memberHtml = renderOrganizationMembers(runtime.t);
 
-    expect(homeHtml).toContain('placeholder="title.type.name"');
+    expect(homeHtml).toContain('placeholder="Type name"');
     expect(homeHtml).toContain(">Create new project<");
     expect(homeHtml).toContain(", Latest code update ");
-    expect(homeHtml).toContain('title="project.you.are.not.watching"');
-    expect(homeHtml).toContain(">organization.member.leave<");
-    expect(homeHtml).toContain(">user.role.org_admin<");
-    expect(homeHtml).toContain(">user.role.org_member<");
-    expect(issueHtml).toContain(">issue.list.all<");
+    expect(homeHtml).toContain('title="You are not watching the  project."');
+    expect(homeHtml).toContain(">Leave the group<");
+    expect(homeHtml).toContain(">Group Manager<");
+    expect(homeHtml).toContain(">Group Member<");
+    expect(issueHtml).toContain(">All issues<");
     expect(issueHtml).toContain(">Assigned<");
     expect(issueHtml).toContain(">Created<");
-    expect(issueHtml).toContain(">issue.list.mentionedOfMe<");
+    expect(issueHtml).toContain(">Mentioned<");
     expect(issueHtml).toContain(">Open ");
     expect(issueHtml).toContain(">Closed ");
     expect(issueHtml).toContain('title="Two Column Mode"');
@@ -343,9 +343,9 @@ describe("organization shell legacy i18n opt-in", () => {
     expect(issueHtml).toContain(">No author<");
     expect(issueHtml).toContain('title="Assignee: Assignee"');
     expect(emptyIssueHtml).toContain(">No issue found<");
-    expect(memberHtml).toContain('title="user.wrongloginId.alert"');
-    expect(memberHtml).toContain(">user.role.org_admin<");
-    expect(memberHtml).toContain(">user.role.org_member<");
+    expect(memberHtml).toContain('title="Enter Valid ID"');
+    expect(memberHtml).toContain(">Group Manager<");
+    expect(memberHtml).toContain(">Group Member<");
   });
 
   it("switches organization shell labels to Korean legacy messages", () => {

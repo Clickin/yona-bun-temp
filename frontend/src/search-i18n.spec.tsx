@@ -114,7 +114,7 @@ describe("search legacy i18n opt-in", () => {
     const html = renderSearchShell(runtime.t);
 
     expect(html).toContain(">Issues<span");
-    expect(html).toContain("> Users<span");
+    expect(html).toContain(">Users<span");
     expect(html).toContain(">Projects<span");
     expect(html).toContain(">Posts<span");
     expect(html).toContain(">Issue Comments<span");
@@ -130,7 +130,7 @@ describe("search legacy i18n opt-in", () => {
     const html = renderSearchShell(runtime.t);
 
     expect(html).toContain(">이슈<span");
-    expect(html).toContain("> 사용자<span");
+    expect(html).toContain(">사용자<span");
     expect(html).toContain(">프로젝트<span");
     expect(html).toContain(">게시판<span");
     expect(html).toContain(">이슈 댓글<span");

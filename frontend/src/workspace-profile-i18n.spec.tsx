@@ -184,8 +184,8 @@ describe("workspace/profile legacy i18n opt-in", () => {
       expect(html).toContain("Edit profile");
       expect(html).toContain("<strong>Member since</strong>");
       expect(html).toContain("<strong>Connected Social Login</strong>");
-      expect(html).toContain("> recently</span>");
-      expect(html).toContain("> days ago</span>");
+      expect(html).toContain(">recently</span>");
+      expect(html).toContain(">days ago</span>");
       expect(html).not.toContain(">menu.issue <span");
       expect(html).not.toContain(">menu.pullRequest <span");
     }
@@ -199,7 +199,7 @@ describe("workspace/profile legacy i18n opt-in", () => {
     expect(workspaceHtml).toContain(">Set to default page</h2>");
     expect(workspaceHtml).toContain(">Make current page the index page when logged in</span>");
     expect(workspaceHtml).toContain(">Favorite</h2>");
-    expect(workspaceHtml).toContain("> Recently visited</h2>");
+    expect(workspaceHtml).toContain(">Recently visited</h2>");
     expect(workspaceHtml).toContain(">No results</div>");
   });
 
@@ -216,8 +216,8 @@ describe("workspace/profile legacy i18n opt-in", () => {
       expect(html).toContain("프로필 수정");
       expect(html).toContain("<strong>가입일</strong>");
       expect(html).toContain("<strong>연결된 소셜 로그인</strong>");
-      expect(html).toContain("> 최근</span>");
-      expect(html).toContain("> 일</span>");
+      expect(html).toContain(">최근</span>");
+      expect(html).toContain(">일</span>");
       expect(html).not.toContain(">Issue <span");
     }
     expect(profileHtml).toContain('title="투 컬럼 모드"');
@@ -230,7 +230,7 @@ describe("workspace/profile legacy i18n opt-in", () => {
       ">현재 페이지를 로그인 후 표시되는 기본 인덱스 페이지로 지정합니다</span>",
     );
     expect(workspaceHtml).toContain(">즐겨찾기</h2>");
-    expect(workspaceHtml).toContain("> 최근 방문</h2>");
+    expect(workspaceHtml).toContain(">최근 방문</h2>");
     expect(workspaceHtml).toContain(">결과 없음</div>");
   });
 

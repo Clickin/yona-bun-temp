@@ -1,5 +1,7 @@
+import { readFileSync } from "node:fs";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import * as ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
   LegacyI18nProvider,
@@ -12,7 +14,94 @@ import {
 import { LoginPage } from "./routes/-auth-views";
 import { BadRequestPage, ForbiddenPage, NotFoundPage } from "./routes/-shared";
 
+function parseMessageKeys(source: string): Set<string> {
+  const keys = new Set<string>();
+  for (const line of source.split(/\r?\n/u)) {
+    const trimmed = line.trim();
+    if (trimmed === "" || trimmed.startsWith("#")) {
+      continue;
+    }
+    const messageMatch = /^([^=]+)=/u.exec(trimmed);
+    if (!messageMatch) {
+      continue;
+    }
+    keys.add(messageMatch[1].trim());
+  }
+  return keys;
+}
+
+function propertyNameText(name: ts.PropertyName): string | null {
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)) {
+    return name.text;
+  }
+  return null;
+}
+
+function localFallbackMessageKeys(): string[] {
+  const source = readFileSync(new URL("./i18n.tsx", import.meta.url), "utf8");
+  const sourceFile = ts.createSourceFile(
+    "i18n.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  let legacyMessagesInitializer: ts.Expression | undefined;
+  sourceFile.forEachChild(function visit(node): void {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === "LEGACY_MESSAGES"
+    ) {
+      legacyMessagesInitializer = node.initializer;
+    }
+    ts.forEachChild(node, visit);
+  });
+
+  expect(legacyMessagesInitializer).toBeDefined();
+  expect(ts.isObjectLiteralExpression(legacyMessagesInitializer!)).toBe(true);
+  const keys = new Set<string>();
+  for (const languageProperty of (legacyMessagesInitializer as ts.ObjectLiteralExpression)
+    .properties) {
+    if (
+      !ts.isPropertyAssignment(languageProperty) ||
+      !ts.isObjectLiteralExpression(languageProperty.initializer)
+    ) {
+      continue;
+    }
+    for (const messageProperty of languageProperty.initializer.properties) {
+      if (!ts.isPropertyAssignment(messageProperty)) {
+        continue;
+      }
+      const key = propertyNameText(messageProperty.name);
+      if (key) {
+        keys.add(key);
+      }
+    }
+  }
+  return Array.from(keys).sort();
+}
+
 describe("legacy i18n runtime", () => {
+  it("keeps the local fallback dictionary inside the legacy message keyspace", () => {
+    const legacyKeys = new Set<string>();
+    for (const filename of [
+      "messages",
+      "messages.ko-KR",
+      "messages.ja-JP",
+      "messages.ru-RU",
+      "messages.uz-UZ",
+    ]) {
+      for (const key of parseMessageKeys(
+        readFileSync(new URL(`../../yona-original/conf/${filename}`, import.meta.url), "utf8"),
+      )) {
+        legacyKeys.add(key);
+      }
+    }
+
+    expect(localFallbackMessageKeys().filter((key) => !legacyKeys.has(key))).toEqual([]);
+  });
+
   it("normalizes supported legacy languages and ignores unsupported dictionaries", () => {
     expect(normalizeLegacyLanguageCode("ko_kr")).toBe("ko-KR");
     expect(normalizeLegacyLanguageCode("EN")).toBe("en-US");

@@ -1073,10 +1073,9 @@ h1 {
 
 .attachment-files .row {
   display: grid;
-  grid-template-columns: minmax(72px, 1fr) minmax(180px, 5fr) minmax(72px, 1fr) minmax(
-      72px,
-      1fr
-    ) minmax(120px, 2fr) minmax(180px, 4fr);
+  grid-template-columns:
+    minmax(72px, 1fr) minmax(180px, 5fr) minmax(72px, 1fr) minmax(72px, 1fr)
+    minmax(120px, 2fr) minmax(180px, 4fr);
   align-items: center;
   border-bottom: 1px solid #eee;
 }
@@ -1544,12 +1543,6 @@ h1 {
   background: #fbe9e7;
 }
 
-.merge-conflict-help {
-  flex-basis: 100%;
-  margin: 0;
-  color: #b13427;
-}
-
 .pull-request-conflict-guide {
   margin-top: 18px;
   padding: 14px 16px;
@@ -1579,19 +1572,6 @@ h1 {
 .review-list-wrap,
 .comment-thread-wrap {
   margin-top: 18px;
-}
-
-.reviewer-status {
-  margin: 0 0 8px;
-  color: #666;
-}
-
-.reviewer-status.lacking {
-  color: #b13427;
-}
-
-.reviewer-status.reviewed {
-  color: #2f6f36;
 }
 
 .review-card {

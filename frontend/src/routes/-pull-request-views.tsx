@@ -1662,10 +1662,14 @@ function PullRequestReviewMergeControls(props: {
   const canAccept =
     pr.permissions.canUpdateState && pr.state === "open" && !pr.conflict && reviewSatisfied;
   const disabledMergeTitle = pr.conflict
-    ? "pullRequest.is.not.safe"
-    : reviewSatisfied
-      ? "pullRequest.merge.disabled"
-      : "pullRequest.not.enough.review.point";
+    ? "pullRequest.not.acceptable.because.is.conflict"
+    : pr.state === "open"
+      ? "pullRequest.not.acceptable.because.is.not.enough.review.point"
+      : "pullRequest.not.acceptable.because.is.not.open";
+  const disabledMergeTitleArgs =
+    disabledMergeTitle === "pullRequest.not.acceptable.because.is.not.enough.review.point"
+      ? [pr.lackingReviewerCount]
+      : undefined;
   return (
     <>
       <div id="reviewers" style={{ display: "inline-block", marginRight: 5 }}>
@@ -1688,16 +1692,6 @@ function PullRequestReviewMergeControls(props: {
             />
           </a>
         ))}
-        <span className={`reviewer-status ${pr.reviewed ? "reviewed" : "lacking"}`}>
-          {legacyMessage(props.messages, "pullRequest.review.required", [
-            `${pr.reviewers.length}/${pr.requiredReviewerCount}`,
-          ])}
-          {pr.reviewed
-            ? ` ${legacyMessage(props.messages, "pullRequest.review.complete")}`
-            : ` ${legacyMessage(props.messages, "pullRequest.review.lacking", [
-                pr.lackingReviewerCount,
-              ])}`}
-        </span>
       </div>
       {pr.permissions.canReview && pr.state === "open" ? (
         viewerReviewed ? (
@@ -1747,16 +1741,11 @@ function PullRequestReviewMergeControls(props: {
               data-placement="top"
               data-toggle="tooltip"
               disabled
-              title={legacyMessage(props.messages, disabledMergeTitle)}
+              title={legacyMessage(props.messages, disabledMergeTitle, disabledMergeTitleArgs)}
               type="button"
             >
               {legacyMessage(props.messages, "pullRequest.merge")}
             </button>
-            {pr.conflict ? (
-              <p className="merge-conflict-help">
-                {legacyMessage(props.messages, "pullRequest.conflict.manualResolve")}
-              </p>
-            ) : null}
           </>
         )
       ) : null}
