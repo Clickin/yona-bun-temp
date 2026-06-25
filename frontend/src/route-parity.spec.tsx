@@ -272,7 +272,9 @@ describe("file-route parity harness", () => {
     );
     expect(secretRouteSource).not.toContain("PlaceholderPage");
     expect(secretRouteSource).toContain('createFileRoute("/secret")');
-    expect(secretRouteSource).toContain('useDocumentTitle("app.welcome")');
+    expect(secretRouteSource).toContain('messages("app.welcome", { args: [siteName]');
+    expect(secretRouteSource).toContain("useDocumentTitle(welcomeTitle)");
+    expect(secretRouteSource).not.toContain('useDocumentTitle("app.welcome")');
     expect(secretRouteSource).toContain("setupSecretAdminRest");
     expect(secretRouteSource).toContain("authUiCapabilities.secretSetupRequired === false");
     expect(secretRouteSource).toContain('<NotFoundPage href="/secret" />');

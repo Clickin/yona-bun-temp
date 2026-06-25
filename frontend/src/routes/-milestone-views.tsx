@@ -987,6 +987,7 @@ export function ProjectMilestoneDetailPage(props: {
   }, [issueState, milestone?.closedIssues, milestone?.openIssues]);
   const [filter, setFilter] = React.useState("");
   const [selectedIssueNumbers, setSelectedIssueNumbers] = React.useState<number[]>([]);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const visibleIssueNumbers = React.useMemo(() => {
     const issueNumbers: number[] = [];
     for (const issue of issues) {
@@ -1114,7 +1115,15 @@ export function ProjectMilestoneDetailPage(props: {
                     {legacyMessage(props.messages, "button.list")}
                   </a>
                   {milestone.viewerCanDelete && props.onDelete ? (
-                    <a className="ybtn ybtn-danger" data-toggle="modal" href="#deleteConfirm">
+                    <a
+                      className="ybtn ybtn-danger"
+                      data-toggle="modal"
+                      href="#deleteConfirm"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setDeleteConfirmOpen(true);
+                      }}
+                    >
                       {legacyMessage(props.messages, "button.delete")}
                     </a>
                   ) : null}
@@ -1254,12 +1263,18 @@ export function ProjectMilestoneDetailPage(props: {
             </div>
           </div>
           {milestone.viewerCanDelete && props.onDelete ? (
-            <div className="modal hide fade" id="deleteConfirm">
+            <div
+              aria-hidden={deleteConfirmOpen ? "false" : "true"}
+              className={`modal hide fade${deleteConfirmOpen ? " in" : ""}`}
+              id="deleteConfirm"
+              style={deleteConfirmOpen ? { display: "block" } : undefined}
+            >
               <div className="modal-header">
                 <button
                   aria-label={legacyMessage(props.messages, "button.close")}
                   className="close"
                   data-dismiss="modal"
+                  onClick={() => setDeleteConfirmOpen(false)}
                   type="button"
                 >
                   ×
@@ -1281,13 +1296,19 @@ export function ProjectMilestoneDetailPage(props: {
                   )}
                   onClick={(event) => {
                     event.preventDefault();
+                    setDeleteConfirmOpen(false);
                     void props.onDelete?.();
                   }}
                   type="button"
                 >
                   {legacyMessage(props.messages, "button.yes")}
                 </button>
-                <button className="ybtn" data-dismiss="modal" type="button">
+                <button
+                  className="ybtn"
+                  data-dismiss="modal"
+                  onClick={() => setDeleteConfirmOpen(false)}
+                  type="button"
+                >
                   {legacyMessage(props.messages, "button.no")}
                 </button>
               </div>

@@ -743,7 +743,7 @@ test("organization board route renders cross-project posts and project filters",
   );
 
   await expect(page.getByRole("heading", { name: "Boards" })).toHaveCount(0);
-  await expect(page.getByPlaceholder("title.searchByKeyword")).toHaveValue("post");
+  await expect(page.getByPlaceholder("Search by keyword")).toHaveValue("post");
   await expect(page.getByLabel("Projects")).toHaveValues(["projectAlpha"]);
   await expect(page.getByRole("link", { name: "Organization board update" })).toBeVisible();
   await expect(page.locator('.post-list-wrap .avatar-wrap.mlarge img[alt="Nori"]')).toHaveAttribute(

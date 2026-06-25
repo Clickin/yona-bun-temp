@@ -4055,6 +4055,7 @@ function IssueAssigneeAutocompleteField(props: {
   messages?: LegacyMessageLookup;
   name: string;
   onChange: (value: string) => void;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
   onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
   onSelect: (suggestion: IssueAssignableUserItem) => void;
   placeholder: string;
@@ -4110,6 +4111,7 @@ function IssueAssigneeAutocompleteField(props: {
         id={props.id}
         name={props.name}
         onChange={(event) => props.onChange(event.currentTarget.value)}
+        onKeyDown={props.onKeyDown}
         placeholder={props.placeholder}
         style={props.style}
         title={props.title}
@@ -4144,18 +4146,20 @@ function IssueAssignForm(props: {
   };
 
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        void submitIssueAssigneeText(assigneeLoginId, props.onSubmit);
-      }}
-    >
+    <div>
       <IssueAssigneeAutocompleteField
         className="bigdrop"
         id="assignee"
         messages={props.messages}
         name="assigneeLoginId"
         onChange={setAssigneeLoginId}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter") {
+            return;
+          }
+          event.preventDefault();
+          void submitIssueAssigneeText(assigneeLoginId, props.onSubmit);
+        }}
         onSearchAssignableUsers={props.onSearchAssignableUsers}
         onSelect={selectSuggestion}
         placeholder={legacyMessage(props.messages, "issue.noAssignee")}
@@ -4163,7 +4167,7 @@ function IssueAssignForm(props: {
         title=""
         value={assigneeLoginId}
       />
-    </form>
+    </div>
   );
 }
 

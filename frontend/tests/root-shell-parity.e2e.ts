@@ -178,6 +178,8 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
 
   await page.locator("#required-logged-in a[data-login='required']").click();
   await expect(page.locator("#loginDialog.modal.loginDialog")).toBeVisible();
+  await expect(page.locator("#loginDialog")).toHaveCSS("position", "fixed");
+  await expect(page.locator("#loginDialog")).toHaveCSS("width", "460px");
   await page.locator("#loginDialog input[name='loginIdOrEmail']").fill("admin");
   await page.locator("#loginDialog input[name='password']").fill("wrong-password");
   await page.locator("#loginDialog button[type='submit']").click();
@@ -240,6 +242,7 @@ test("standalone legacy pages suppress the root footer", async ({ page }) => {
 
   await page.goto("/yona/secret");
 
+  await expect(page).toHaveTitle("Tada! Welcome to Yona!");
   await expect(page.locator(".gnb-outer .gnb-inner")).toBeVisible();
   await expect(page.locator(".page-footer-outer")).toHaveCount(1);
   await expect(page.locator(".secret-page .page-footer-outer")).toContainText("Powered by");

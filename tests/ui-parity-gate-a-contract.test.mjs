@@ -116,3 +116,37 @@ test("full UI parity phase records Gate A report closure evidence", () => {
   assert.match(gateStatus, /ui-parity-user-account-settings\.md` records 12 covered rows/);
   assert.match(gateStatus, /ui-parity-fragment-security-db\.md` records 11 covered rows/);
 });
+
+test("full UI parity Round 2 browser-visible gate remains explicit while active", () => {
+  const phasePlan = readText(phasePlanPath);
+  const roundTwo = section(phasePlan, "Browser-Visible Round 2 Gate");
+  const packets = roundTwo
+    .split("\n")
+    .filter((line) => line.startsWith("| `r2-"))
+    .map((line) => {
+      const match = /^\| `([^`]+)` \|[^|]+\| ([^|]+) \|/.exec(line);
+      assert.ok(match, `cannot parse Round 2 row: ${line}`);
+      return { packet: match[1], status: match[2].trim() };
+    });
+
+  assert.deepEqual(
+    packets.map(({ packet }) => packet),
+    [
+      "r2-auth-setup-public-shell",
+      "r2-workspace-settings-directory",
+      "r2-project-issue-board-milestone",
+      "r2-code-pr-review-search-notification",
+      "r2-site-admin-security-db",
+    ],
+    "Round 2 browser-visible packets must stay explicit while this gate is active",
+  );
+  assert.match(roundTwo, /Round 2 cannot close while any packet status below is `pending`, `running`/);
+
+  const statuses = new Map(packets.map(({ packet, status }) => [packet, status]));
+  assert.equal(statuses.get("r2-auth-setup-public-shell"), "covered in current follow-up");
+  assert.equal(statuses.get("r2-workspace-settings-directory"), "weak evidence");
+  assert.equal(statuses.get("r2-project-issue-board-milestone"), "weak evidence");
+  assert.equal(statuses.get("r2-code-pr-review-search-notification"), "weak evidence");
+  assert.equal(statuses.get("r2-site-admin-security-db"), "weak evidence");
+  assert.match(phasePlan, /Round 2 remaining browser proof gaps/);
+});

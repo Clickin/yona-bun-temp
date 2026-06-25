@@ -58,7 +58,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("site admin diagnostics preserves legacy shell and no-error message key", async ({ page }) => {
+test("site admin diagnostics preserves legacy shell and no-error copy", async ({ page }) => {
   const requests: string[] = [];
 
   await page.route(apiV1Route("/site/diagnostics"), async (route) => {
@@ -77,14 +77,10 @@ test("site admin diagnostics preserves legacy shell and no-error message key", a
   await expect(page).toHaveTitle("Site Admin");
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText(
-    "site.sidebar.diagnostics",
-  );
-  await expect(page.locator(".title_area h2.pull-left")).toHaveText(
-    "site.sidebar.diagnostics",
-  );
-  await expect(page.getByText("site.diagnostic.errorNotFound")).toBeVisible();
-  await expect(page.getByText("No errors were found")).toHaveCount(0);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Diagnostics");
+  await expect(page.locator(".title_area h2.pull-left")).toHaveText("Diagnostics");
+  await expect(page.getByText("No errors were found")).toBeVisible();
+  await expect(page.getByText("site.diagnostic.errorNotFound")).toHaveCount(0);
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
   await expect.poll(() => requests).toEqual(["GET /yona/api/v1/site/diagnostics"]);
 });
@@ -103,8 +99,8 @@ test("site admin diagnostics renders legacy error pre blocks", async ({ page }) 
 
   await page.goto("/yona/sites/diagnostic");
 
-  await expect(page.getByText("site.diagnostic.errorFound 2")).toBeVisible();
-  await expect(page.getByText("2 errors were found")).toHaveCount(0);
+  await expect(page.getByText("2 errors were found")).toBeVisible();
+  await expect(page.getByText("site.diagnostic.errorFound 2")).toHaveCount(0);
   await expect(page.locator(".span10 > ul > li > pre")).toHaveText([
     "database probe failed",
     "repository path is unavailable",

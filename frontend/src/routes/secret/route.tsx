@@ -21,7 +21,8 @@ function SecretAdminSetupRouteComponent() {
   });
   const [pending, setPending] = React.useState(false);
   const siteName = runtimeConfig.siteName || "Yona";
-  useDocumentTitle("app.welcome");
+  const welcomeTitle = messages("app.welcome", { args: [siteName], fallback: "app.welcome" });
+  useDocumentTitle(welcomeTitle);
 
   if (bootstrapping) {
     return (

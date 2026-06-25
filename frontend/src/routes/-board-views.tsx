@@ -977,6 +977,7 @@ export function ProjectBoardDetailPage(props: {
   const [translatingCommentIds, setTranslatingCommentIds] = React.useState<Set<string>>(
     () => new Set(),
   );
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const post = props.post;
 
   if (!post) {
@@ -1226,7 +1227,14 @@ export function ProjectBoardDetailPage(props: {
                     </a>
                   )}
                   {post.permissions.canDelete ? (
-                    <a href="#deleteConfirm" data-toggle="modal">
+                    <a
+                      href="#deleteConfirm"
+                      data-toggle="modal"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setDeleteConfirmOpen(true);
+                      }}
+                    >
                       <button
                         className="icon btn-transparent-with-fontsize-lineheight ml6"
                         data-toggle="tooltip"
@@ -1844,7 +1852,14 @@ export function ProjectBoardDetailPage(props: {
                     </button>
                   </a>
                   {post.permissions.canDelete ? (
-                    <a href="#deleteConfirm" data-toggle="modal">
+                    <a
+                      href="#deleteConfirm"
+                      data-toggle="modal"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setDeleteConfirmOpen(true);
+                      }}
+                    >
                       <button
                         className="icon btn-transparent-with-fontsize-lineheight ml6"
                         data-toggle="tooltip"
@@ -1866,12 +1881,18 @@ export function ProjectBoardDetailPage(props: {
         </div>
       </div>
       {post.permissions.canDelete ? (
-        <div className="modal hide fade" id="deleteConfirm">
+        <div
+          aria-hidden={deleteConfirmOpen ? "false" : "true"}
+          className={`modal hide fade${deleteConfirmOpen ? " in" : ""}`}
+          id="deleteConfirm"
+          style={deleteConfirmOpen ? { display: "block" } : undefined}
+        >
           <div className="modal-header">
             <button
               aria-label={legacyMessage(props.messages, "button.close")}
               className="close"
               data-dismiss="modal"
+              onClick={() => setDeleteConfirmOpen(false)}
               type="button"
             >
               ×
@@ -1891,13 +1912,19 @@ export function ProjectBoardDetailPage(props: {
               )}
               onClick={(event) => {
                 event.preventDefault();
+                setDeleteConfirmOpen(false);
                 void props.onDeletePost?.();
               }}
               type="button"
             >
               {legacyMessage(props.messages, "button.yes")}
             </button>
-            <button className="ybtn" data-dismiss="modal" type="button">
+            <button
+              className="ybtn"
+              data-dismiss="modal"
+              onClick={() => setDeleteConfirmOpen(false)}
+              type="button"
+            >
               {legacyMessage(props.messages, "button.no")}
             </button>
           </div>

@@ -279,6 +279,7 @@ test("lost and reset password browser states preserve legacy copy and redirects"
   });
 
   await page.goto("/yona/lostPassword");
+  await expect(page).toHaveTitle("Password reset request");
   await page.locator("#loginId").fill("door");
   await page.locator("#emailAddress").fill("door@example.com");
   await page.locator("main .login-form-wrap.frm-wrap form button[type='submit']").click();
@@ -293,6 +294,7 @@ test("lost and reset password browser states preserve legacy copy and redirects"
   await expect(page.locator(".alert.alert-error")).toContainText("Invalid password reset request");
 
   await page.goto("/yona/resetPassword?s=hash-123");
+  await expect(page).toHaveTitle("Reset password");
   await page.locator("#password").fill("new-secret");
   await page.locator("#retypedPassword").fill("new-secret");
   await page.locator("form[name='passwordReset'] button[type='submit']").click();

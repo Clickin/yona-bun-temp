@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useAppRuntime } from "../../app-runtime-context";
 import { completePasswordReset } from "../../auth-workspace-client";
 import { ResetPasswordPage } from "../-auth-views";
-import { navigateToAppHref, useCurrentHref } from "../-shared";
+import { navigateToAppHref, useCurrentHref, useDocumentTitle } from "../-shared";
 
 export const Route = createFileRoute("/resetPassword")({
   component: ResetPasswordRouteComponent,
@@ -11,6 +11,7 @@ export const Route = createFileRoute("/resetPassword")({
 function ResetPasswordRouteComponent() {
   const { csrfToken, runtimeConfig } = useAppRuntime();
   const currentHref = useCurrentHref();
+  useDocumentTitle("title.resetPassword");
   return (
     <ResetPasswordPage
       csrfToken={csrfToken}

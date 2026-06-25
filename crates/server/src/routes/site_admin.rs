@@ -1503,10 +1503,7 @@ async fn direct_read_site_diagnostic_shell(
             AssetMode::None => payload.into_response(),
             assets => serve_frontend_page(assets, Method::GET, browser_runtime).await,
         },
-        Err(error) => match assets {
-            AssetMode::None => error.into_response(),
-            assets => serve_frontend_page(assets, Method::GET, browser_runtime).await,
-        },
+        Err(error) => error.into_response(),
     }
 }
 
