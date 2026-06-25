@@ -74,10 +74,10 @@ describe("project home tab parity", () => {
     expect(html).toContain('class="code-menu');
     expect(html).toContain('class="project-menu-count"');
     expect(html).toContain(
-      'href="/yona/yona/projectYobi"><span class="menu-name">title.projectHome</span>',
+      'href="/yona/yona/projectYobi"><span class="menu-name">Project home</span>',
     );
     expect(html).toContain(
-      'href="/yona/yona/projectYobi/code"><span class="menu-name">menu.code</span>',
+      'href="/yona/yona/projectYobi/code"><span class="menu-name">Code</span>',
     );
     expect(html).toContain(
       'class="title" href="/yona/yona/projectYobi/milestone/7">Phase dashboard</a>',
@@ -145,7 +145,7 @@ describe("project home tab parity", () => {
     });
 
     expect(html).toContain(
-      '<span class="markdown-wrap" id="project-description">project.description.placeholder</span>',
+      '<span class="markdown-wrap" id="project-description">Enter project description</span>',
     );
   });
 
@@ -195,9 +195,9 @@ describe("project home tab parity", () => {
 
     expect(html).toContain('class="bubble-wrap gray readme"');
     expect(html).toContain('class="default"');
-    expect(html).toContain("project.readme");
+    expect(html).toContain("README.md will be shown here");
     expect(html).toContain('href="/yona/yona/projectYobi/postform?readme=true"');
-    expect(html).toContain("project.readme.create");
+    expect(html).toContain("create README");
     expect(html).not.toContain("project.svn.readme");
     expect(html).not.toContain("No README post yet.");
   });
@@ -210,8 +210,8 @@ describe("project home tab parity", () => {
     });
 
     expect(html).toContain('class="bubble-wrap gray readme"');
-    expect(html).toContain("project.svn.readme");
-    expect(html).not.toContain("project.readme.create");
+    expect(html).toContain("README.md will be shown here");
+    expect(html).not.toContain("create README");
     expect(html).not.toContain("No README post yet.");
   });
 
@@ -331,11 +331,11 @@ describe("project home tab parity", () => {
     expect(html).toContain('class="overview-assignee"');
     expect(html).toContain('class="overview-milestone"');
     expect(html).toContain('class="overview-pullrequest"');
-    expect(html).toContain("project.dashboard.openIssuesByAssignee");
+    expect(html).toContain("Open issues: by assignee");
     expect(html).toContain("Project home parity");
     expect(html).not.toContain("Legacy placeholder panel");
     expect(html).not.toContain("No README post yet.");
-    expect(noMilestoneHtml).toContain("issue.noMilestone");
+    expect(noMilestoneHtml).toContain("No milestone");
     expect(noMilestoneHtml).not.toContain("milestone.none");
   });
 
@@ -364,7 +364,7 @@ describe("project home tab parity", () => {
     expect(html).toContain("Guide");
     expect(html).toContain("<strong>3</strong>");
     expect(html).not.toContain("label.none");
-    expect(emptyLabelHtml).toContain("project.dashboard.openIssuesByLabel");
+    expect(emptyLabelHtml).toContain("Open issues: by label");
     expect(emptyLabelHtml).not.toContain("label.none");
     expect(emptyLabelHtml).not.toContain('class="issue-label list-label active"');
   });
@@ -396,7 +396,7 @@ describe("project home tab parity", () => {
     );
     expect(html).toContain('href="/yona/yona/projectYobi/issues?state=open&amp;assigneeId=0"');
     expect(html).toContain("Assigned User");
-    expect(html).toContain("issue.noAssignee");
+    expect(html).toContain("No assignee");
     expect(html).toContain("<strong>2</strong>");
     expect(html).toContain("<strong>1</strong>");
     expect(html).toContain('title="67%"');

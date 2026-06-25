@@ -14,14 +14,14 @@ describe("wave 1 auth and workspace parity", () => {
     const loginHtml = renderLogin({ routeHref: "/users/loginform" });
     expect(loginHtml).toContain('action="/yona/users/login"');
     expect(loginHtml).toContain('href="/yona/lostPassword"');
-    expect(loginHtml).toContain(">title.loginFor<");
-    expect(loginHtml).not.toContain('Log in to <span class="highlight">Yona</span>');
-    expect(loginHtml).toContain('placeholder="user.login.key"');
-    expect(loginHtml).toContain('placeholder="user.password"');
-    expect(loginHtml).toContain(">button.login<");
-    expect(loginHtml).toContain(">title.forgotpassword<");
-    expect(loginHtml).not.toContain('placeholder="Login ID or email"');
-    expect(loginHtml).not.toContain(">Forgot password<");
+    expect(loginHtml).toContain('Log in to <span class="highlight">Yona</span>');
+    expect(loginHtml).not.toContain(">title.loginFor<");
+    expect(loginHtml).toContain('placeholder="Login ID or E-mail"');
+    expect(loginHtml).toContain('placeholder="Password"');
+    expect(loginHtml).toContain(">Log in<");
+    expect(loginHtml).toContain(">Password forgotten?<");
+    expect(loginHtml).not.toContain('placeholder="user.login.key"');
+    expect(loginHtml).not.toContain(">title.forgotpassword<");
     expect(loginHtml).not.toContain(">title.resetPassword<");
 
     const registerHtml = renderRegister({
@@ -33,35 +33,31 @@ describe("wave 1 auth and workspace parity", () => {
     });
     expect(registerHtml).toContain('action="/yona/users/signup"');
     expect(registerHtml).toContain('href="/yona/users/loginform"');
-    expect(registerHtml).toContain(">title.signupFor<");
-    expect(registerHtml).not.toContain('Sign up for <span class="highlight">Yona</span>');
+    expect(registerHtml).toContain('Sign up for <span class="highlight">Yona</span>');
+    expect(registerHtml).not.toContain(">title.signupFor<");
     expect(registerHtml).toContain('name="email"');
-    expect(registerHtml).toContain(">user.signupBtn<");
+    expect(registerHtml).toContain(">Sign up<");
     expect(registerHtml).not.toContain('name="emailAddress"');
     expect(registerHtml).not.toContain(">button.signup<");
-    expect(registerHtml).toContain(">title.login<");
-    expect(registerHtml).not.toContain(">Sign up<");
+    expect(registerHtml).toContain(">Log in<");
+    expect(registerHtml).not.toContain(">user.signupBtn<");
 
     const lostPasswordHtml = renderLostPassword("/lostPassword");
     expect(lostPasswordHtml).toContain('action="/yona/lostPassword"');
     expect(lostPasswordHtml).toContain('name="loginId"');
     expect(lostPasswordHtml).toContain('name="emailAddress"');
-    expect(lostPasswordHtml).toContain(">title.resetPasswordFor<");
-    expect(lostPasswordHtml).not.toContain(
-      'Reset password for <span class="highlight">Yona</span>',
-    );
-    expect(lostPasswordHtml).toContain(">button.confirm<");
-    expect(lostPasswordHtml).not.toContain(">Confirm<");
+    expect(lostPasswordHtml).toContain('Reset password for <span class="highlight">Yona</span>');
+    expect(lostPasswordHtml).not.toContain(">title.resetPasswordFor<");
+    expect(lostPasswordHtml).toContain(">Confirm<");
+    expect(lostPasswordHtml).not.toContain(">button.confirm<");
 
     const resetPasswordHtml = renderResetPassword("/resetPassword");
     expect(resetPasswordHtml).toContain('action="/yona/resetPassword"');
     expect(resetPasswordHtml).toContain('name="hashString"');
-    expect(resetPasswordHtml).toContain(">title.resetPasswordFor<");
-    expect(resetPasswordHtml).not.toContain(
-      'Reset password for <span class="highlight">Yona</span>',
-    );
-    expect(resetPasswordHtml).toContain(">button.confirm<");
-    expect(resetPasswordHtml).not.toContain(">Confirm<");
+    expect(resetPasswordHtml).toContain('Reset password for <span class="highlight">Yona</span>');
+    expect(resetPasswordHtml).not.toContain(">title.resetPasswordFor<");
+    expect(resetPasswordHtml).toContain(">Confirm<");
+    expect(resetPasswordHtml).not.toContain(">button.confirm<");
   });
 
   it("renders legacy auth page titles with the configured site name", () => {
@@ -72,7 +68,7 @@ describe("wave 1 auth and workspace parity", () => {
     };
 
     expect(renderLogin({ routeHref: "/users/loginform" }, runtimeConfig)).toContain(
-      ">title.loginFor<",
+      'Log in to <span class="highlight">Legacy Yona</span>',
     );
     expect(
       renderRegister(
@@ -85,34 +81,34 @@ describe("wave 1 auth and workspace parity", () => {
         },
         runtimeConfig,
       ),
-    ).toContain(">title.signupFor<");
+    ).toContain('Sign up for <span class="highlight">Legacy Yona</span>');
     expect(renderLostPassword("/lostPassword", runtimeConfig)).toContain(
-      ">title.resetPasswordFor<",
+      'Reset password for <span class="highlight">Legacy Yona</span>',
     );
     expect(renderResetPassword("/resetPassword", runtimeConfig)).toContain(
-      ">title.resetPasswordFor<",
+      'Reset password for <span class="highlight">Legacy Yona</span>',
     );
   });
 
   it("renders password-reset query messages without temporary email-validation page copy", () => {
     const lostPasswordHtml = renderLostPassword("/lostPassword?requested=1");
     expect(lostPasswordHtml).toContain('class="alert alert-success"');
-    expect(lostPasswordHtml).toContain("<h4>site.mail.sended</h4>");
+    expect(lostPasswordHtml).toContain("<h4>Mail has been sent.</h4>");
     expect(lostPasswordHtml).not.toContain("Password reset request was accepted.");
 
     const invalidLostPasswordHtml = renderLostPassword("/lostPassword?error=invalid");
     expect(invalidLostPasswordHtml).toContain('class="alert alert-error"');
-    expect(invalidLostPasswordHtml).toContain("<h4>site.mail.fail</h4>");
-    expect(invalidLostPasswordHtml).toContain("site.resetPasswordEmail.invalidRequest");
+    expect(invalidLostPasswordHtml).toContain("<h4>Failed to send mail.</h4>");
+    expect(invalidLostPasswordHtml).toContain("Invalid password reset request");
     expect(invalidLostPasswordHtml).not.toContain("Invalid login ID or email address.");
 
     const invalidResetPasswordHtml = renderResetPassword("/resetPassword?error=invalid");
-    expect(invalidResetPasswordHtml).toContain("site.resetPasswordEmail.wrongUrl");
+    expect(invalidResetPasswordHtml).toContain("Wrong url to reset password.");
     expect(invalidResetPasswordHtml).not.toContain("Invalid password reset link.");
 
     const loginHtml = renderLogin({ routeHref: "/users/loginform?password=reset" });
-    expect(loginHtml).toContain("user.loginWithNewPassword");
-    expect(loginHtml).not.toContain("Login with your new password.");
+    expect(loginHtml).toContain("Please log in with the new password!");
+    expect(loginHtml).not.toContain("user.loginWithNewPassword");
 
     const emailHtml = renderWorkspaceSettings("emails", "/user/editform/emails?validation=sent", {
       defaultLandingPath: "/me",
@@ -151,7 +147,7 @@ describe("wave 1 auth and workspace parity", () => {
         },
       },
     );
-    expect(invalidConfirmHtml).toContain("emails.send.validatino.mail");
+    expect(invalidConfirmHtml).toContain("Send a validation email.");
     expect(invalidConfirmHtml).not.toContain("Validation request failed.");
     expect(invalidConfirmHtml).not.toContain("Invalid email confirmation link.");
   });
@@ -166,7 +162,7 @@ describe("wave 1 auth and workspace parity", () => {
       routeHref: "/users/loginform",
     });
 
-    expect(socialLoginHtml).toContain("app.warn.support.social.login.only");
+    expect(socialLoginHtml).toContain("Only allow sign-in via social login");
     expect(socialLoginHtml).toContain('class="btns-row nm"');
     expect(socialLoginHtml).not.toContain('name="loginIdOrEmail"');
     expect(socialLoginHtml).not.toContain('name="password"');
@@ -256,14 +252,14 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).toContain("Door English");
     expect(html).toContain("@door");
     expect(html).toContain("SITE ADMIN");
-    expect(html).toContain("userinfo.editProfile");
-    expect(html).toContain("userinfo.since");
-    expect(html).toContain("user.connected.social.login");
-    expect(html).toContain("userinfo.daysAgo.prefix");
-    expect(html).toContain("userinfo.daysAgo.suffix");
-    expect(html).not.toContain("Edit Profile");
+    expect(html).toContain("Edit profile");
+    expect(html).toContain("Member since");
+    expect(html).toContain("Connected Social Login");
+    expect(html).toContain("recently");
+    expect(html).toContain("days ago");
+    expect(html).not.toContain("userinfo.editProfile");
     expect(html).not.toContain(">Since</strong>");
-    expect(html).not.toContain("Connected Social Login");
+    expect(html).not.toContain("user.connected.social.login");
     expect(html).not.toContain("Connected social login");
     expect(html).toContain('class="github"');
     expect(html).toContain('class="google"');
@@ -272,15 +268,15 @@ describe("wave 1 auth and workspace parity", () => {
     );
     expect(html).not.toContain('viewBox="0 0 24 24"');
     expect(html).toContain("Apr 11, 2026");
-    expect(html).toContain("menu.issue <span");
-    expect(html).toContain("menu.pullRequest <span");
-    expect(html).toContain("project.projects <span");
+    expect(html).toContain("Issue <span");
+    expect(html).toContain("Pull request <span");
+    expect(html).toContain("projects <span");
     expect(html).not.toContain("Issues <span");
     expect(html).not.toContain("Pull Requests <span");
     expect(html).not.toContain("Projects <span");
     expect(html).toContain('data-toggle="tab"');
     expect(html).toContain("Fix login redirect");
-    expect(html).toContain("issue.state.closed <span");
+    expect(html).toContain("Closed <span");
     expect(html).toContain("project-name-in-my-issues");
     expect(html).toContain("fixed-height-my-issues-list");
     expect(html).toContain("author-cell");
@@ -302,7 +298,7 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).toContain('<span class="size">2</span>');
     expect(html).toContain('class="avatar-wrap assinee"');
     expect(html).toContain('title="Admin"');
-    expect(html).toContain('<div class="state open pull-right">pullRequest.state.open</div>');
+    expect(html).toContain('<div class="state open pull-right">Open</div>');
     expect(html).not.toContain("Contributor: Door");
     expect(html).not.toContain("Reviewer: Admin");
     expect(html).not.toContain("Comments: 2");
@@ -312,7 +308,7 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).not.toContain("project.onmember 4");
     expect(html).toContain('class="owner-name-small"');
     expect(html).toContain(">admin</a>");
-    expect(html).toContain("project.codeUpdate");
+    expect(html).toContain("Latest code update");
     expect(html).toContain('<span class="num-badge">2</span>');
     expect(html).not.toContain("Owner: admin");
     expect(html).not.toContain("Created 2026-04-01");
@@ -395,27 +391,27 @@ describe("wave 1 auth and workspace parity", () => {
       },
     });
 
-    expect(html).toContain("userinfo.daysAgo.prefix issue.is.empty");
-    expect(html).toContain("userinfo.daysAgo.prefix pullRequest.is.empty");
-    expect(html).toContain(">project.is.empty<");
+    expect(html).toContain("recently No issue found");
+    expect(html).toContain("recently No pull requests have been received");
+    expect(html).toContain(">Project is non existent<");
     expect(html).toContain('id="watching"');
     expect(html).toContain('class="no-result tab-pane user-ul"');
     expect(html).toContain('id="recentlyVisited"');
     expect(html).toContain('class="no-result tab-pane user-ul active"');
-    expect(html).toContain("title.no.results");
-    expect(html).toContain("button.setDefaultLoginPage");
-    expect(html).toContain("button.setDefaultLoginPage.desc");
-    expect(html).toContain("title.favorite");
-    expect(html).toContain("title.recently.visited");
-    expect(html).toContain("title.logout");
+    expect(html).toContain("No results");
+    expect(html).toContain("Set to default page");
+    expect(html).toContain("Make current page the index page when logged in");
+    expect(html).toContain("Favorite");
+    expect(html).toContain("Recently visited");
+    expect(html).toContain("Log out");
     expect(html).not.toContain("Default landing");
     expect(html).not.toContain("Save default landing");
     expect(html).not.toContain("Favorite projects");
     expect(html).not.toContain("Recent projects");
     expect(html).not.toContain("Sign out");
     expect(html).toContain('class="auth-provider-logo"');
-    expect(html).toContain("menu.pullRequest <span");
-    expect(html).toContain("project.projects <span");
+    expect(html).toContain("Pull request <span");
+    expect(html).toContain("projects <span");
     expect(html).not.toContain("Pull Requests <span");
     expect(html).not.toContain("Projects <span");
     expect(html).not.toContain("No pull requests found in the last 14 days.");
@@ -443,40 +439,40 @@ describe("wave 1 auth and workspace parity", () => {
     expect(profileHtml).toContain('class="site-breadcrumb-outer"');
     expect(profileHtml).toContain('class="page-wrap-outer"');
     expect(profileHtml).toContain('class="page-wrap"');
-    expect(profileHtml).toContain("<h3>userinfo.accountSetting</h3>");
+    expect(profileHtml).toContain("<h3>Account</h3>");
     expect(profileHtml).toContain('class="nav nav-tabs mt20"');
-    expect(profileHtml).toContain("userinfo.editProfile");
-    expect(profileHtml).toContain("userinfo.changePassword");
-    expect(profileHtml).toContain("userinfo.changeNotifications");
-    expect(profileHtml).toContain("userinfo.changeEmails");
-    expect(profileHtml).toContain("userinfo.token");
+    expect(profileHtml).toContain("Edit profile");
+    expect(profileHtml).toContain("Change password");
+    expect(profileHtml).toContain("Notification settings");
+    expect(profileHtml).toContain("Email settings");
+    expect(profileHtml).toContain("User Token");
     expect(profileHtml).not.toContain("Yona Rust Workspace");
     expect(profileHtml).toContain('id="frmBasic"');
     expect(profileHtml).toContain('class="pull-left"');
     expect(profileHtml).toContain('action="/yona/user/edit"');
-    expect(profileHtml).toContain("user.loginId");
-    expect(profileHtml).toContain("user.name");
-    expect(profileHtml).toContain("user.email");
+    expect(profileHtml).toContain("Login ID");
+    expect(profileHtml).toContain("Name");
+    expect(profileHtml).toContain("Email address");
     expect(profileHtml).toContain('name="loginId"');
     expect(profileHtml).toContain('name="name"');
     expect(profileHtml).toContain('name="email"');
-    expect(profileHtml).toContain("userinfo.editProfile");
+    expect(profileHtml).toContain("Edit profile");
     expect(profileHtml).toContain('id="frmAvatar"');
     expect(profileHtml).toContain("avatar-frm");
     expect(profileHtml).toContain("fake-file-wrap btnUploadAvatar");
-    expect(profileHtml).toContain("userinfo.changeAvatar");
+    expect(profileHtml).toContain("Change avatar");
     expect(profileHtml).toContain('id="avatarFile"');
     expect(profileHtml).toContain('id="avatarCropWrap"');
     expect(profileHtml).toContain("btnSubmitCrop");
-    expect(profileHtml).toContain("button.cancel");
-    expect(profileHtml).toContain("button.save");
+    expect(profileHtml).toContain("Cancel");
+    expect(profileHtml).toContain("Save");
     expect(profileHtml).toContain("reset-user-visited-list");
     expect(profileHtml).toContain('action="/yona/user/resetVisitedList"');
-    expect(profileHtml).toContain("userinfo.reset.visited.project.list");
-    expect(profileHtml).not.toContain("Login ID");
-    expect(profileHtml).not.toContain("Edit Profile");
-    expect(profileHtml).not.toContain("Change avatar");
-    expect(profileHtml).not.toContain("Reset visited project list");
+    expect(profileHtml).toContain("Reset recently visited project list");
+    expect(profileHtml).not.toContain("user.loginId");
+    expect(profileHtml).not.toContain("userinfo.editProfile");
+    expect(profileHtml).not.toContain("userinfo.changeAvatar");
+    expect(profileHtml).not.toContain("userinfo.reset.visited.project.list");
     expect(profileHtml).not.toContain("Crop Avatar");
     expect(profileHtml).not.toContain("Crop X");
 
@@ -511,7 +507,7 @@ describe("wave 1 auth and workspace parity", () => {
         },
       },
     );
-    expect(notificationsHtml).toContain("<h3>userinfo.accountSetting</h3>");
+    expect(notificationsHtml).toContain("<h3>Account</h3>");
     expect(notificationsHtml).toContain('id="notification-projects"');
     expect(notificationsHtml).toContain('data-toggle="tab"');
     expect(notificationsHtml).toContain("admin / projectYobi");
@@ -544,19 +540,19 @@ describe("wave 1 auth and workspace parity", () => {
     expect(emailsHtml).toContain('action="/yona/user/email"');
     expect(emailsHtml).toContain("form-inline inner-bubble");
     expect(emailsHtml).toContain('name="email"');
-    expect(emailsHtml).toContain('placeholder="user.email.new"');
-    expect(emailsHtml).toContain(">button.add<");
-    expect(emailsHtml).toContain("emails.main.email.descr");
-    expect(emailsHtml).toContain("emails.sub.email.descr");
+    expect(emailsHtml).toContain('placeholder="New E-mail address"');
+    expect(emailsHtml).toContain(">Add<");
+    expect(emailsHtml).toContain("Your primary email address will be used");
+    expect(emailsHtml).toContain("You will be identified as the same user by multiple sub emails.");
     expect(emailsHtml).toContain('class="table mt20"');
-    expect(emailsHtml).toContain("emails.main.email");
+    expect(emailsHtml).toContain("Primary email address");
     expect(emailsHtml).toContain("door@example.com");
     expect(emailsHtml).toContain("alt@example.com");
     expect(emailsHtml).toContain('data-request-uri="/yona/user/email/delete/2"');
-    expect(emailsHtml).toContain("button.delete");
-    expect(emailsHtml).toContain("emails.set.as.main");
+    expect(emailsHtml).toContain("Delete");
+    expect(emailsHtml).toContain("Set as primary email address.");
     expect(emailsHtml).toContain("pending@example.com");
-    expect(emailsHtml).toContain("emails.send.validatino.mail");
+    expect(emailsHtml).toContain("Send a validation email.");
     expect(emailsHtml).not.toContain("New email");
     expect(emailsHtml).not.toContain("Main Email");
     expect(emailsHtml).not.toContain("Set as main");
@@ -583,10 +579,10 @@ describe("wave 1 auth and workspace parity", () => {
     expect(tokenHtml).toContain("token-generate");
     expect(tokenHtml).toContain('id="frmBasic"');
     expect(tokenHtml).toContain('class="pull-left"');
-    expect(tokenHtml).toContain("userinfo.token");
+    expect(tokenHtml).toContain("User Token");
     expect(tokenHtml).toContain('name="name"');
     expect(tokenHtml).toContain('value="door-token"');
-    expect(tokenHtml).toContain(">userinfo.recreateToken<");
-    expect(tokenHtml).not.toContain(">Recreate Token<");
+    expect(tokenHtml).toContain(">Recreate User Token<");
+    expect(tokenHtml).not.toContain(">userinfo.recreateToken<");
   });
 });

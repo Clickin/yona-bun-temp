@@ -1735,6 +1735,17 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `frontend/src/organization-shell-i18n.spec.tsx`,
   `frontend/src/wave2a-container-parity.spec.tsx`, and
   `frontend/src/i18n.spec.tsx`.
+- 2026-06-25 direct-render i18n expectation continuation: auth/workspace and
+  project shell direct-render parity specs now assert the default English
+  values loaded from `yona-original/conf/messages` for known keys while keeping
+  the legacy key names at call sites. Covered surfaces include auth titles and
+  reset alerts, workspace profile/settings stream labels, project menu/readme
+  dashboard labels, and project settings/member/webhook/transfer/delete/change
+  VCS controls. Focused coverage:
+  `frontend/src/wave1-auth-workspace-parity.spec.tsx`,
+  `frontend/src/project-settings-parity.spec.tsx`,
+  `frontend/src/project-home-tabs.spec.tsx`, and
+  `frontend/src/i18n.spec.tsx`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and

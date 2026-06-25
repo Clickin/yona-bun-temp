@@ -117,7 +117,7 @@ describe("project settings parity", () => {
     expect(html).toContain('id="save"');
   });
 
-  it("keeps literal legacy keys without AppRuntimeContext messages", () => {
+  it("uses default legacy messages without AppRuntimeContext messages", () => {
     const settingsHtml = renderToStaticMarkup(
       <ProjectSettingsPage detail={projectDetail} runtimeConfig={runtimeConfig} />,
     );
@@ -197,19 +197,21 @@ describe("project settings parity", () => {
       />,
     );
 
-    expect(settingsHtml).toContain(">project.setting</a>");
-    expect(settingsHtml).toContain(">button.save</button>");
-    expect(membersHtml).toContain('placeholder="project.members.addMember"');
-    expect(membersHtml).toContain('title="user.wrongloginId.alert"');
-    expect(membersHtml).toContain('class="label owner">user.role.owner</span>');
-    expect(membersHtml).toContain('class="d-label">user.role.member</span>');
-    expect(membersHtml).toContain(">user.role.manager</button>");
-    expect(webhooksHtml).toContain(">project.webhook.new</strong>");
+    expect(settingsHtml).toContain(">Settings</a>");
+    expect(settingsHtml).toContain(">Save</button>");
+    expect(membersHtml).toContain('placeholder="Add new member ID."');
+    expect(membersHtml).toContain('title="Enter Valid ID"');
+    expect(membersHtml).toContain('class="label owner">Project owner</span>');
+    expect(membersHtml).toContain('class="d-label">Member</span>');
+    expect(membersHtml).toContain(">Manager</button>");
+    expect(webhooksHtml).toContain(">Create new webhook</strong>");
     expect(webhooksHtml).not.toContain("project.webhook.delivery.");
     expect(webhooksHtml).not.toContain("webhookDeliveryHistory");
-    expect(transferHtml).toContain(">project.transfer.new.owner</div>");
-    expect(deleteHtml).toContain(">project.delete.description</strong>");
-    expect(changeVcsHtml).toContain(">project.changeVCS.description1</strong>");
+    expect(transferHtml).toContain(">new owner or group</div>");
+    expect(deleteHtml).toContain(
+      ">Once you delete the project, data related to code, board, issues etc. will also be deleted, and won&#x27;t be able to be recovered.</strong>",
+    );
+    expect(changeVcsHtml).toContain(">Changing the repository to Subversion.</strong>");
   });
 
   it("uses Korean legacy messages for project settings controls when lookup is provided", () => {
