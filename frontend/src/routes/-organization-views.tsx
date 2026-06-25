@@ -394,6 +394,7 @@ function OrganizationMembershipActions(props: {
 }
 
 export function OrganizationNewPage(props: {
+  basePath?: string;
   onCreateOrganization?: (input: { description: string; organizationName: string }) => void;
   pending?: boolean;
 }) {
@@ -410,18 +411,21 @@ export function OrganizationNewPage(props: {
         <div className="project-page-wrap">
           <div className="form-wrap new-project">
             <form
-              action="/organizations/new"
+              action={prefixBasePath(props.basePath ?? "", "/organizations/new")}
               className="frm-wrap"
               method="post"
               name="new-org"
               onSubmit={(event) => {
+                if (!props.onCreateOrganization) {
+                  return;
+                }
                 event.preventDefault();
                 if (!isLegacyOrganizationName(formState.organizationName)) {
                   setValidationMessage("organization.name.alert");
                   return;
                 }
                 setValidationMessage(null);
-                props.onCreateOrganization?.(formState);
+                props.onCreateOrganization(formState);
               }}
             >
               <legend>{legacyMessage(messages, "title.newOrganization")}</legend>
@@ -1236,13 +1240,16 @@ export function OrganizationSettingsPage(props: {
             method="post"
             name="update-org"
             onSubmit={(event) => {
+              if (!props.onUpdateOrganization) {
+                return;
+              }
               event.preventDefault();
               if (!isLegacyOrganizationName(formState.organizationName)) {
                 setValidationMessage("organization.name.alert");
                 return;
               }
               setValidationMessage(null);
-              props.onUpdateOrganization?.(formState);
+              props.onUpdateOrganization(formState);
             }}
           >
             <input name="id" type="hidden" value={detail.organizationName} />

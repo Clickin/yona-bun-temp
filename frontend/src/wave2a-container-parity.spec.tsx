@@ -219,6 +219,7 @@ describe("wave 2A container parity", () => {
   it("renders the organization create, settings, and project settings shells from the container state", () => {
     const organizationNewHtml = renderOrganizationNew();
     expect(organizationNewHtml).toContain('class="form-wrap new-project"');
+    expect(organizationNewHtml).toContain('action="/yona/organizations/new"');
     expect(organizationNewHtml).toContain('name="new-org"');
     expect(organizationNewHtml).toContain(">New Group<");
     expect(organizationNewHtml).toContain('id="name"');

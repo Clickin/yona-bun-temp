@@ -57,6 +57,7 @@ function ProjectNewRouteComponent() {
 
   return (
     <ProjectNewPage
+      basePath={runtimeConfig.basePath}
       defaultProjectMenus={runtimeConfig.projectDefaultMenus}
       defaultProjectScope={runtimeConfig.projectDefaultScope}
       ownerOptions={formOptions.ownerOptions}

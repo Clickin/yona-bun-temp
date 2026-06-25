@@ -4970,6 +4970,7 @@ describe("file-route parity harness", () => {
       "utf8",
     );
     expect(newRouteSource).toContain("createOrganization");
+    expect(newRouteSource).toContain("basePath={runtimeConfig.basePath}");
     expect(newRouteSource).toContain("error.badrequest");
     expect(newRouteSource).not.toContain("Create organization failed.");
 
@@ -4990,6 +4991,9 @@ describe("file-route parity harness", () => {
       "utf8",
     );
     expect(viewSource).toContain("organization.name.alert");
+    expect(viewSource).toContain('prefixBasePath(props.basePath ?? "", "/organizations/new")');
+    expect(viewSource).toContain("if (!props.onCreateOrganization) {");
+    expect(viewSource).toContain("if (!props.onUpdateOrganization) {");
     expect(viewSource.match(/setValidationMessage\("organization\.name\.alert"\)/g)?.length).toBe(
       2,
     );

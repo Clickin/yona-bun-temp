@@ -873,6 +873,7 @@ export function ProjectHeader(props: {
 }
 
 export function ProjectNewPage(props: {
+  basePath?: string;
   defaultProjectMenus?: string[];
   defaultProjectScope?: string;
   ownerOptions?: ProjectCreateOwnerOption[];
@@ -919,6 +920,7 @@ export function ProjectNewPage(props: {
     : selectedOwnerName
       ? [{ organization: false, ownerName: selectedOwnerName, selected: true }]
       : [];
+  const createAction = prefixBasePath(props.basePath ?? "", "/projects");
   const importFormHref = `/_import?owner=${encodeURIComponent(formState.ownerName)}`;
 
   return (
@@ -926,12 +928,16 @@ export function ProjectNewPage(props: {
       <div className="project-page-wrap">
         <div className="form-wrap new-project">
           <form
+            action={createAction}
             className="frm-wrap"
             id="newProjectForm"
             method="post"
             onSubmit={(event) => {
+              if (!props.onCreateProject) {
+                return;
+              }
               event.preventDefault();
-              props.onCreateProject?.(formState);
+              props.onCreateProject(formState);
             }}
           >
             <legend>

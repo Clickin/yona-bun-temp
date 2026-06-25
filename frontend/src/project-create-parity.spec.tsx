@@ -89,7 +89,11 @@ describe("project create parity", () => {
       join(process.cwd(), "src/routes/projectform/route.tsx"),
       "utf8",
     );
+    const viewSource = readFileSync(join(process.cwd(), "src/routes/-project-views.tsx"), "utf8");
 
+    expect(routeSource).toContain("basePath={runtimeConfig.basePath}");
+    expect(viewSource).toContain('prefixBasePath(props.basePath ?? "", "/projects")');
+    expect(viewSource).toContain("if (!props.onCreateProject) {");
     expect(routeSource).not.toContain("Create project failed.");
     expect(routeSource).toContain('messages("error.badrequest", { fallback: "error.badrequest" })');
   });
