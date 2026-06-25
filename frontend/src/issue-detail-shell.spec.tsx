@@ -332,6 +332,21 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(closedHtml).not.toContain(">button.nextState.open</button>");
   });
 
+  it("renders the legacy show-original edit control when the viewer cannot update", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={issueDetail}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/1/editform"');
+    expect(html).toContain('title="See text"');
+    expect(html).toContain('class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"');
+    expect(html).not.toContain('title="button.show.original"');
+  });
+
   it("renders legacy issue child comments under their parent with one-line reply form", () => {
     const parentComment = {
       authorAvatarUrl: "https://cdn.yona/avatar-parent.png",

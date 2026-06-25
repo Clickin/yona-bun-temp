@@ -1920,6 +1920,24 @@ export function ProjectIssueDetailPage(props: {
                     >
                       <i className="yobicon-edit-2"></i>
                     </a>
+                  ) : issue ? (
+                    <a
+                      href={buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        `issue/${issue.issueNumber}/editform`,
+                      )}
+                    >
+                      <button
+                        className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+                        data-toggle="tooltip"
+                        title={legacyMessage(messages, "button.show.original")}
+                        type="button"
+                      >
+                        <i className="yobicon-edit-2"></i>
+                      </button>
+                    </a>
                   ) : null}
                   {issue?.viewerCanUpdate && onStateChange ? (
                     <button
