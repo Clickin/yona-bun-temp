@@ -21,12 +21,32 @@ function RootRouteComponent() {
     <YonaQueryProvider>
       <AppRuntimeProvider runtimeConfig={runtimeConfig}>
         <RuntimeErrorBanner />
+        <SiteAdminLoggedInAffix />
         <RootHeader />
         <RootSidebar />
         <Outlet />
         <RootLoginDialog />
       </AppRuntimeProvider>
     </YonaQueryProvider>
+  );
+}
+
+function SiteAdminLoggedInAffix() {
+  const { currentSession, messages } = useAppRuntime();
+
+  if (!currentSession?.isSiteAdmin) {
+    return null;
+  }
+
+  return (
+    <div className="admin-logged-in-affix" data-spy="affix" data-offset-top="30">
+      {messages("user.siteAdminLoggedInAffix", { fallback: "user.siteAdminLoggedInAffix" })}{" "}
+      <span className="small-font">
+        {messages("user.siteAdminLoggedInAffix.maxim", {
+          fallback: "user.siteAdminLoggedInAffix.maxim",
+        })}
+      </span>
+    </div>
   );
 }
 

@@ -59,6 +59,13 @@ describe("auth and workspace views", () => {
     expect(source).toContain('<header className="gnb-outer">');
     expect(source).toContain('className="gnb-inner"');
     expect(source).toContain('className="gnb-nav"');
+    expect(source).toContain('className="admin-logged-in-affix"');
+    expect(source).toContain('data-spy="affix"');
+    expect(source).toContain('data-offset-top="30"');
+    expect(source).toContain(
+      'messages("user.siteAdminLoggedInAffix", { fallback: "user.siteAdminLoggedInAffix" })',
+    );
+    expect(source).toContain("user.siteAdminLoggedInAffix.maxim");
     expect(source).toContain('messages("title.list", { fallback: "title.list" })');
     expect(source).toContain(
       'messages("title.yobi.feedback", { fallback: "title.yobi.feedback" })',

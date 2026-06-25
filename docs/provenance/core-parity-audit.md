@@ -1659,10 +1659,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   logged-in root layout includes the site-admin `admin-logged-in-affix` user-menu
   link to `/sites/userList`; the React root now renders that affix for
   `currentSession.isSiteAdmin`, and `pnpm smoke:legacy-anchor-coverage` covers
-  90 curl-observed anchors with zero missing Rust source/spec evidence. Focused
-  coverage: `runtime_config_contract`, `assets_contract`,
-  `frontend/src/runtime-config.spec.ts`, and
-  `frontend/src/root-custom-navbar-link.spec.ts`.
+  104 curl-observed anchors with zero missing Rust source/spec evidence after
+  the 2026-06-25 rerun restored `admin-logged-in-affix` source evidence.
+  Focused coverage: `runtime_config_contract`, `assets_contract`,
+  `frontend/src/runtime-config.spec.ts`,
+  `frontend/src/root-custom-navbar-link.spec.ts`, and
+  `frontend/src/auth-workspace-shell.spec.tsx`.
 - 2026-06-25 Playwright route-sweep note: authenticated Chrome sweep over 36
   user-visible local routes under `/yona` now reports zero smoke blockers
   after fixing direct legacy GET navigation for `/_import`, `/notification`,

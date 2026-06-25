@@ -88,10 +88,10 @@ The same `57` routed URLs have frontend parity spec evidence with
 The route parity spec pins `/user/issues/new/mine` to
 `DirectIssueCreateFormRouteComponent mine={true}`.
 
-The latest `pnpm smoke:legacy-anchor-coverage` run checks `104` curl-observed
-legacy anchors across those pages: `104` with Rust evidence, `0` missing. This
-keeps the logged-in root page's legacy `admin-logged-in-affix` anchor and the
-other curl-observed anchors tied to Rust source/spec evidence.
+The 2026-06-25 `pnpm smoke:legacy-anchor-coverage` rerun checks `104`
+curl-observed legacy anchors across those pages: `104` with Rust evidence, `0`
+missing. This keeps the logged-in root page's legacy `admin-logged-in-affix`
+anchor and the other curl-observed anchors tied to Rust source/spec evidence.
 
 The latest `pnpm smoke:legacy-e2e-render-coverage` run finds rendered
 Playwright e2e navigation evidence and rendered legacy signal evidence for all
