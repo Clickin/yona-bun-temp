@@ -90,7 +90,8 @@ describe("pull request review legacy i18n opt-in", () => {
   it("keeps literal key fallbacks without runtime messages", () => {
     const html = renderPullRequestDetail();
 
-    expect(html).toContain("pullRequest.review.participants 0");
+    expect(html).toContain("pullRequest.review.participants");
+    expect(html).not.toContain("pullRequest.review.participants 0");
     expect(html).toContain(">pullRequest.review</button>");
     expect(html).toContain(">pullRequest.merge</a>");
     expect(html).toContain("<span>pullRequest.is.safe</span>");

@@ -188,7 +188,9 @@ describe("legacy i18n runtime", () => {
     const routeSources = [
       "./routes/-auth-views.tsx",
       "./routes/-board-views.tsx",
+      "./routes/-code-views.tsx",
       "./routes/-issue-views.tsx",
+      "./routes/$owner/$projectName/issue/labelsform/route.tsx",
       "./routes/-project-views.tsx",
       "./routes/-pull-request-views.tsx",
       "./routes/__root.tsx",
@@ -198,6 +200,8 @@ describe("legacy i18n runtime", () => {
       expect(source).not.toMatch(/fallback:\s*`[^`]*\s[^`]*`/u);
       expect(source).not.toMatch(/fallback:\s*"[^"]*\s[^"]*"/u);
       expect(source).not.toMatch(/fallback:\s*'[^']*\s[^']*'/u);
+      expect(source).not.toContain('`${key} ${args.join(" ")}`');
+      expect(source).not.toContain('`${key} ${options.args.join(" ")}`');
     }
   });
 

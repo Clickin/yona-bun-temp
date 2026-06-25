@@ -19,10 +19,7 @@ function legacyMessage(
   argsOrOptions?: (number | string)[] | { args?: (number | string)[]; fallback?: string },
 ) {
   const args = Array.isArray(argsOrOptions) ? argsOrOptions : argsOrOptions?.args;
-  const fallback = args && args.length > 0 ? `${key} ${args.join(" ")}` : key;
-  const fallbackText = Array.isArray(argsOrOptions)
-    ? fallback
-    : (argsOrOptions?.fallback ?? fallback);
+  const fallbackText = Array.isArray(argsOrOptions) ? key : (argsOrOptions?.fallback ?? key);
   if (messages) {
     return messages(key, { args, fallback: fallbackText });
   }

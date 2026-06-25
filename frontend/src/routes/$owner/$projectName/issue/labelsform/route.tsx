@@ -56,9 +56,7 @@ function legacyMessage(
   key: string,
   options: { args?: Array<number | string>; fallback?: string } = {},
 ) {
-  const fallback =
-    options.fallback ??
-    (options.args && options.args.length > 0 ? `${key} ${options.args.join(" ")}` : key);
+  const fallback = options.fallback ?? key;
   return messages ? messages(key, { ...options, fallback }) : fallback;
 }
 

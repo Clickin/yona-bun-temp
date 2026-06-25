@@ -38,10 +38,7 @@ function legacyMessage(
   argsOrOptions?: (number | string)[] | { args?: (number | string)[]; fallback?: string },
 ) {
   const args = Array.isArray(argsOrOptions) ? argsOrOptions : argsOrOptions?.args;
-  const fallback = args && args.length > 0 ? `${key} ${args.join(" ")}` : key;
-  const fallbackText = Array.isArray(argsOrOptions)
-    ? fallback
-    : (argsOrOptions?.fallback ?? fallback);
+  const fallbackText = Array.isArray(argsOrOptions) ? key : (argsOrOptions?.fallback ?? key);
   if (messages) {
     return messages(key, { args, fallback: fallbackText });
   }
@@ -141,6 +138,31 @@ function reviewThreadCardHref(
 
 function pullRequestCommitTitle(commit: PullRequestCommitViewModel) {
   return (commit.commitMessage || "").split("\n")[0] || commit.commitId;
+}
+
+function pullRequestCommitExpandedMessage(commit: PullRequestCommitViewModel) {
+  const commitMessage = (commit.commitMessage || "").trim();
+  const newlineIndex = commitMessage.search(/\r?\n/u);
+  if (newlineIndex < 0) {
+    return "";
+  }
+  return commitMessage.slice(newlineIndex).replace(/^\r?\n/u, "");
+}
+
+function ExpandableCommitMessage(props: { message: string }) {
+  const [expanded, setExpanded] = React.useState(false);
+  return (
+    <>
+      <button
+        className="commitMsg moreBtn"
+        onClick={() => setExpanded((current) => !current)}
+        type="button"
+      >
+        <span>…</span>
+      </button>
+      <pre className={`commitMsg desc${expanded ? "" : " hidden"}`}>{props.message}</pre>
+    </>
+  );
 }
 
 function pullRequestMarkdownCommitReferences(pullRequest: PullRequestDetailResponse) {
@@ -2181,7 +2203,7 @@ function PullRequestEventTimeline(props: {
                       commit.commitId,
                     );
                     const shortMessage = pullRequestCommitTitle(commit);
-                    const fullMessage = commit.commitMessage.trim();
+                    const expandedMessage = pullRequestCommitExpandedMessage(commit);
                     return (
                       <li
                         className={`comment-body commit-info${
@@ -2201,8 +2223,8 @@ function PullRequestEventTimeline(props: {
                         <a className="commitMsg short" href={commitHref}>
                           {shortMessage}
                         </a>
-                        {fullMessage && fullMessage !== shortMessage ? (
-                          <pre className="commitMsg desc hidden">{fullMessage}</pre>
+                        {expandedMessage ? (
+                          <ExpandableCommitMessage message={expandedMessage} />
                         ) : null}
                       </li>
                     );

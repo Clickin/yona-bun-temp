@@ -1399,13 +1399,16 @@ describe("CodeCommitDetailPage", () => {
     );
 
     expect(html).toContain("code.nohead");
-    expect(html).toContain("code.nohead.clone Legacy Yona");
+    expect(html).toContain("code.nohead.clone");
     expect(html).toContain("git clone http://example.test/owner/projectYobi.git projectYobi");
     expect(html).toContain("git commit -m &quot;Hello Legacy Yona&quot;");
-    expect(html).toContain("code.nohead.init Legacy Yona");
-    expect(html).toContain("code.nohead.remote Legacy Yona");
+    expect(html).toContain("code.nohead.init");
+    expect(html).toContain("code.nohead.remote");
     expect(html).toContain("git remote add origin http://example.test/owner/projectYobi.git");
     expect(html).toContain("code.nohead.pull.push");
+    expect(html).not.toContain("code.nohead.clone Legacy Yona");
+    expect(html).not.toContain("code.nohead.init Legacy Yona");
+    expect(html).not.toContain("code.nohead.remote Legacy Yona");
     expect(html).not.toContain("The repository is empty!");
     expect(html).not.toContain("Clone URL:");
   });
@@ -1424,9 +1427,10 @@ describe("CodeCommitDetailPage", () => {
     );
 
     expect(html).toContain("code.nohead");
-    expect(html).toContain("code.nohead.svn.clone Legacy Yona");
+    expect(html).toContain("code.nohead.svn.clone");
     expect(html).toContain("svn co http://example.test/svn/owner/projectYobi");
     expect(html).toContain("echo &quot;# projectYobi&quot; &gt; README.md");
+    expect(html).not.toContain("code.nohead.svn.clone Legacy Yona");
     expect(html).not.toContain("code.nohead.clone");
     expect(html).not.toContain("The repository is empty!");
   });

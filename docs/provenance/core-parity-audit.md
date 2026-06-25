@@ -126,6 +126,19 @@
   reuse keys from `yona-original/conf/messages*`. Focused evidence:
   `i18n.spec.tsx`, `project-settings-parity.spec.tsx`,
   `route-parity.spec.tsx`, and `pnpm --dir frontend check`.
+- 2026-06-25 legacy-key-only fallback expansion: code, pull-request, and issue
+  label settings helpers now use the same provider-less fallback rule. Legacy
+  message arguments are still passed to the runtime provider for translated
+  rendering, but missing-provider output keeps only the original legacy key
+  instead of synthetic `key arg` strings such as
+  `pullRequest.review.participants 0` or `code.nohead.clone <site>`. The same
+  pass restores the PR event commit-message shell from
+  `common/commitMsg.scala.html`: multi-line PR event commits render
+  `.commitMsg.moreBtn` and a hidden `.commitMsg.desc` containing only the body
+  after the first line. Focused evidence: `frontend/src/i18n.spec.tsx`,
+  `frontend/src/code-views.spec.tsx`,
+  `frontend/src/pull-request-review-i18n.spec.tsx`,
+  `frontend/src/route-parity.spec.tsx`, and `pnpm --dir frontend check`.
 - 2026-06-25 legacy mention highlight continuation: board, issue, and pull
   request review comment rendering now reproduces the legacy
   `board/view.scala.html`, `issue/view.scala.html`, and `git/view.scala.html`

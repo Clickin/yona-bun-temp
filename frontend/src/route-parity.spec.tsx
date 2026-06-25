@@ -3378,7 +3378,8 @@ describe("file-route parity harness", () => {
     expect(html).toContain(
       '<div class="pull-right"><div id="reviewers" style="display:inline-block;margin-right:5px">',
     );
-    expect(html).toContain("pullRequest.review.participants 0");
+    expect(html).toContain("pullRequest.review.participants");
+    expect(html).not.toContain("pullRequest.review.participants 0");
     expect(html).toContain("pullRequest.review");
     expect(html).toContain("pullRequest.merge");
     expect(html).toContain('<div class="author-info left-txt">');
@@ -3438,7 +3439,11 @@ describe("file-route parity harness", () => {
       '<a class="commit-id" href="/yona/owner/projectYobi/pullRequest/1/changes/',
     );
     expect(html).toContain('<a class="commitMsg short"');
-    expect(html).toContain('<pre class="commitMsg desc hidden">Commit SHA markdown');
+    expect(html).toContain(
+      '<button class="commitMsg moreBtn" type="button"><span>…</span></button>',
+    );
+    expect(html).toContain('<pre class="commitMsg desc hidden">full message</pre>');
+    expect(html).not.toContain('<pre class="commitMsg desc hidden">Commit SHA markdown');
     expect(html).not.toContain('<section class="review-list-wrap">');
     expect(html).not.toContain("<h2>Reviews</h2>");
     expect(html).not.toContain("<p>Review <strong>comment</strong> with ");
