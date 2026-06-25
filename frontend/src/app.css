@@ -147,6 +147,36 @@ button[type="submit"]:focus {
   font-weight: normal;
 }
 
+.secret-page .secret-box {
+  width: 50%;
+  margin: 20px auto;
+}
+
+.secret-page .secret-wrap {
+  text-align: center;
+}
+
+.secret-page .secret-wrap.restart {
+  padding: 50px 0;
+}
+
+.secret-page .logo {
+  display: block;
+  width: 123px;
+  height: 55px;
+  margin: 50px auto;
+  overflow: hidden;
+  color: #fff;
+  font-size: 2em;
+  line-height: 55px;
+  text-align: center;
+  background-color: #f36c22;
+}
+
+.secret-page .logo:hover {
+  color: #fff;
+}
+
 .app-shell {
   width: 95%;
   max-width: 1100px;

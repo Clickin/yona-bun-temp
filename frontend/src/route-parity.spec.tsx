@@ -131,6 +131,8 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/users/loginform'");
     expect(routeTreeSource).toContain("fullPath: '/_UIKit'");
     expect(routeTreeSource).toContain("fullPath: '/users/signupform'");
+    expect(routeTreeSource).toContain("fullPath: '/secret'");
+    expect(routeTreeSource).toContain("fullPath: '/restart'");
     expect(routeTreeSource).toContain("fullPath: '/lostPassword'");
     expect(routeTreeSource).toContain("fullPath: '/resetPassword'");
     expect(routeTreeSource).toContain("fullPath: '/projects'");

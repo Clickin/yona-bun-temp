@@ -57,6 +57,15 @@ pub(crate) struct RestVerifyUserRequest {
     verification_code: String,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RestSecretAdminSetupRequest {
+    email_address: String,
+    name: String,
+    password: String,
+    retyped_password: String,
+}
+
 pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
     Router::new()
         .route(
@@ -116,6 +125,16 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Json(input): Json<RestVerifyUserRequest>| {
                     let service = service.clone();
                     async move { rest_verify_user(headers, input, service).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/secret",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(input): Json<RestSecretAdminSetupRequest>| {
+                    let service = service.clone();
+                    async move { rest_secret_admin_setup(headers, input, service).await }
                 }
             }),
         )
@@ -184,6 +203,31 @@ pub(crate) async fn rest_verify_user(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_secret_admin_setup(
+    headers: HeaderMap,
+    input: RestSecretAdminSetupRequest,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    update_legacy_default_site_admin(
+        &service,
+        &input.name,
+        &input.email_address,
+        &input.password,
+        &input.retyped_password,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(rest_json_response(
+        serde_json::json!({ "restartPath": "/restart" }),
+        Context::new(headers),
+    ))
 }
 
 pub(crate) async fn rest_sign_out(
@@ -881,6 +925,66 @@ pub(crate) async fn direct_legacy_signup(
     }
 }
 
+pub(crate) async fn direct_legacy_secret_admin_setup(
+    form: HashMap<String, String>,
+    service: PilotServiceImpl,
+) -> Response {
+    let name = form.get("name").cloned().unwrap_or_default();
+    let email = form.get("email").cloned().unwrap_or_default();
+    let password = form.get("password").cloned().unwrap_or_default();
+    let retyped_password = form.get("retypedPassword").cloned().unwrap_or_default();
+    match update_legacy_default_site_admin(&service, &name, &email, &password, &retyped_password)
+        .await
+    {
+        Ok(()) => Redirect::to(&base_path_href(&service.base_path, "/restart")).into_response(),
+        Err(error) => RestRouteError::from_connect_error(error).into_response(),
+    }
+}
+
+async fn update_legacy_default_site_admin(
+    service: &PilotServiceImpl,
+    name: &str,
+    email: &str,
+    password: &str,
+    retyped_password: &str,
+) -> Result<(), ConnectError> {
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "auth requires repository backend",
+        ));
+    };
+
+    if name.trim().is_empty() {
+        return Err(ConnectError::invalid_argument("validation.required"));
+    }
+    let email_address = normalize_identifier(email);
+    if email_address.is_empty() {
+        return Err(ConnectError::invalid_argument("validation.invalidEmail"));
+    }
+    if password.len() < LEGACY_MIN_PASSWORD_LENGTH {
+        return Err(ConnectError::invalid_argument(
+            "validation.tooShortPassword",
+        ));
+    }
+    if password != retyped_password {
+        return Err(ConnectError::invalid_argument(
+            "validation.passwordMismatch",
+        ));
+    }
+
+    let password_hash = match hash(&password, DEFAULT_COST) {
+        Ok(password_hash) => password_hash,
+        Err(error) => return Err(crate::internal_error(error)),
+    };
+    match repository
+        .update_default_site_admin(name.trim(), &email_address, &password_hash)
+        .await
+    {
+        Ok(_) => Ok(()),
+        Err(error) => Err(crate::internal_error(error)),
+    }
+}
+
 pub(crate) async fn direct_unsupported_authenticate_provider(
     provider: String,
     service: PilotServiceImpl,
@@ -1423,8 +1527,13 @@ pub(crate) fn routes(
     let signup_email_validator_service = service.clone();
     let legacy_lost_password_page_assets = assets.clone();
     let legacy_lost_password_page_browser_runtime = browser_runtime.clone();
-    let legacy_reset_password_page_assets = assets;
-    let legacy_reset_password_page_browser_runtime = browser_runtime;
+    let legacy_reset_password_page_assets = assets.clone();
+    let legacy_reset_password_page_browser_runtime = browser_runtime.clone();
+    let legacy_secret_page_assets = assets.clone();
+    let legacy_secret_page_browser_runtime = browser_runtime.clone();
+    let legacy_restart_page_assets = assets;
+    let legacy_restart_page_browser_runtime = browser_runtime;
+    let secret_setup_service = service.clone();
     let reset_password_service = service;
 
     Router::new()
@@ -1501,6 +1610,27 @@ pub(crate) fn routes(
                     direct_legacy_signup(headers, form, direct_signup_service.clone()).await
                 },
             ),
+        )
+        .route(
+            "/secret",
+            get(move || {
+                let assets = legacy_secret_page_assets.clone();
+                let browser_runtime = legacy_secret_page_browser_runtime.clone();
+                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+            })
+            .post(
+                move |Form(form): Form<HashMap<String, String>>| async move {
+                    direct_legacy_secret_admin_setup(form, secret_setup_service.clone()).await
+                },
+            ),
+        )
+        .route(
+            "/restart",
+            get(move || {
+                let assets = legacy_restart_page_assets.clone();
+                let browser_runtime = legacy_restart_page_browser_runtime.clone();
+                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+            }),
         )
         .route(
             "/user/isUsed",

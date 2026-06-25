@@ -1168,6 +1168,76 @@ async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
 }
 
 #[tokio::test]
+async fn secret_admin_setup_rest_updates_legacy_default_admin_and_redirect_fallback_remains() {
+    let (app, _repo, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let rest_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/secret")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"name\":\"Root Admin\",\"emailAddress\":\"root@example.com\",\"password\":\"rootpass1\",\"retypedPassword\":\"rootpass1\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(rest_response.status(), StatusCode::OK);
+    let rest_json: serde_json::Value =
+        serde_json::from_str(&response_text(rest_response).await).unwrap();
+    assert_eq!(rest_json["restartPath"], "/restart");
+
+    let admin = n4user::Entity::find()
+        .filter(n4user::Column::LoginId.eq(Some("admin".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("default admin user");
+    assert_eq!(admin.name.as_deref(), Some("Root Admin"));
+    assert_eq!(admin.email.as_deref(), Some("root@example.com"));
+    assert_eq!(admin.state.as_deref(), Some("active"));
+    assert!(bcrypt::verify("rootpass1", admin.password.as_deref().unwrap()).unwrap());
+    assert_eq!(
+        site_admin::Entity::find()
+            .filter(site_admin::Column::AdminId.eq(Some(admin.id)))
+            .all(&db)
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
+
+    let direct_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/secret")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .body(Body::from(
+                    "loginId=admin&name=Fallback+Admin&email=fallback%40example.com&password=fallback1&retypedPassword=fallback1",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_response.headers().get(http::header::LOCATION).unwrap(),
+        "/yona/restart"
+    );
+}
+
+#[tokio::test]
 // Guards direct auth aliases through the app-scoped service/runtime config
 // supplied by router bootstrap; no process env mutation is needed for defaults.
 async fn direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate(

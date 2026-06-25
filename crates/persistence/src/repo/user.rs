@@ -141,6 +141,61 @@ impl AppRepositoryImpl<'_> {
         Ok(())
     }
 
+    pub async fn update_default_site_admin(
+        &self,
+        display_name: &str,
+        email_address: &str,
+        password_hash: &str,
+    ) -> Result<AppUserRecord, DbErr> {
+        let normalized_email = normalize_identity(email_address);
+        if normalized_email.is_empty() {
+            return Err(DbErr::Custom("Email address is required.".to_string()));
+        }
+        if !looks_like_email_address(&normalized_email) {
+            return Err(DbErr::Custom("Email address is invalid.".to_string()));
+        }
+        let existing_admin = self.find_user_model_by_login_id("admin").await?;
+        let existing_admin_id = existing_admin.as_ref().map(|model| model.id);
+
+        let duplicate_email = n4user::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter(|row| Some(row.id) != existing_admin_id)
+            .any(|row| {
+                normalize_optional(row.email.as_deref()).as_deref()
+                    == Some(normalized_email.as_str())
+            });
+        if duplicate_email {
+            return Err(DbErr::Custom(
+                "Email address is already in use.".to_string(),
+            ));
+        }
+
+        let Some(model) = existing_admin else {
+            return self
+                .create_user(CreateUserInput {
+                    display_name: display_name.trim().to_string(),
+                    email_address: normalized_email,
+                    is_confirmed: true,
+                    is_site_admin: true,
+                    login_id: "admin".to_string(),
+                    password_hash: password_hash.to_string(),
+                })
+                .await;
+        };
+
+        let mut active = n4user::ActiveModel::from(model);
+        active.name = Set(Some(display_name.trim().to_string()));
+        active.email = Set(Some(normalized_email));
+        active.password = Set(Some(password_hash.to_string()));
+        active.password_salt = Set(None);
+        active.state = Set(Some("active".to_string()));
+        let updated = active.update(&self.db).await?;
+        self.ensure_site_admin(updated.id).await?;
+        self.app_user_record_from_model(updated).await
+    }
+
     pub async fn update_ldap_user_profile(
         &self,
         user_id: i64,

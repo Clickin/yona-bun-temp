@@ -41,6 +41,23 @@ export function registerWithPasswordRest<TInput extends object>(
   });
 }
 
+export interface SecretAdminSetupResponse {
+  restartPath: string;
+}
+
+export function setupSecretAdminRest<TInput extends object>(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: TInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SecretAdminSetupResponse> {
+  return restFetch<SecretAdminSetupResponse>(runtimeConfig, "/auth/secret", {
+    body: input,
+    csrfToken,
+    fetchImpl,
+  });
+}
+
 export function signOutRest(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
