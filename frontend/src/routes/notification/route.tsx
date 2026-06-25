@@ -5,7 +5,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { listNotificationsQueryOptions } from "../../api/notifications";
 import { setDefaultLandingPathRest } from "../../api/workspace";
 import { useAppRuntime } from "../../app-runtime-context";
-import type { LegacyI18nContextValue } from "../../i18n";
+import {
+  LEGACY_DEFAULT_LANGUAGE,
+  lookupLegacyMessage,
+  type LegacyI18nContextValue,
+  type TranslateOptions,
+} from "../../i18n";
 import { prefixBasePath } from "../../runtime-config";
 import { BadRequestPage, useDocumentTitle, useRequireAuthenticatedRoute } from "../-shared";
 
@@ -16,8 +21,15 @@ export const Route = createFileRoute("/notification")({
   component: () => <NotificationRouteComponent routePath="/notifications" />,
 });
 
-function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
-  return messages ? messages(key, { fallback: key }) : key;
+function legacyMessage(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  options: TranslateOptions = {},
+) {
+  const fallback = options.fallback ?? key;
+  return messages
+    ? messages(key, { ...options, fallback })
+    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { ...options, fallback });
 }
 
 export function NotificationRouteComponent({
@@ -331,12 +343,15 @@ export function NotificationWelcomeGuide({
       return next;
     });
   };
+  const welcomeTitle = `${legacyMessage(messages, "app.welcome", {
+    args: [siteName],
+  })} - ${legacyMessage(messages, "app.description")}`;
 
   return (
     <>
       <div className={`site-guide-outer${visible ? "" : " hide"}`}>
         <h3>
-          <span>{`Tada! Welcome to ${siteName}! - Web-based platform for collaborative software development`}</span>
+          <span>{welcomeTitle}</span>
         </h3>
         <table className="welcome-table table borderless">
           <tbody>

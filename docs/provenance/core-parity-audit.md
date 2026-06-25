@@ -1854,6 +1854,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   when direct-rendered without a helper/runtime message provider. Focused
   coverage: `frontend/src/workspace-settings-i18n.spec.tsx` and full
   `pnpm --dir frontend exec vitest run`.
+- 2026-06-25 notification welcome provider-less i18n tightening:
+  `frontend/src/routes/notification/route.tsx` now resolves the welcome guide
+  title, CTA labels, and guide descriptions through the default legacy message
+  table when direct-rendered without a runtime provider, while preserving the
+  legacy `app.welcome` / `app.description` composition. Focused coverage:
+  `frontend/src/route-parity.spec.tsx`,
+  `frontend/src/directory-home-user-files-notification-i18n.spec.tsx`, and full
+  `pnpm --dir frontend exec vitest run`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and

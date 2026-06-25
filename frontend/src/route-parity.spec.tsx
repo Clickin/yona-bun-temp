@@ -1920,9 +1920,8 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).toContain(
       'className={`site-guide-outer${visible ? "" : " hide"}`}',
     );
-    expect(notificationRouteSource).toContain(
-      "Tada! Welcome to ${siteName}! - Web-based platform for collaborative software development",
-    );
+    expect(notificationRouteSource).toContain('legacyMessage(messages, "app.welcome"');
+    expect(notificationRouteSource).toContain('legacyMessage(messages, "app.description")');
     expect(notificationRouteSource).toContain("welcome-table table borderless");
     expect(notificationRouteSource).toContain("button.newProject");
     expect(notificationRouteSource).toContain("title.newOrganization");
@@ -1995,14 +1994,17 @@ describe("file-route parity harness", () => {
     );
     expect(html).toContain('class="welcome-table table borderless"');
     expect(html).toContain('href="/yona/projects/new"');
-    expect(html).toContain(">button.newProject</a>");
-    expect(html).toContain("app.welcome.project.desc");
+    expect(html).toContain(">Create new project</a>");
+    expect(html).toContain("Create your own project");
     expect(html).toContain('href="/yona/organizations/new"');
-    expect(html).toContain(">title.newOrganization</a>");
-    expect(html).toContain("app.welcome.group.desc");
+    expect(html).toContain(">New Group</a>");
+    expect(html).toContain(
+      "If you want to make a group and work with other members, then create a group",
+    );
     expect(html).toContain('href="/yona/projects"');
-    expect(html).toContain(">title.projectList</a>");
-    expect(html).toContain("app.welcome.searchProject.desc");
+    expect(html).toContain(">Project list</a>");
+    expect(html).toContain("Find a project in which you are interested");
+    expect(html).not.toContain("app.welcome.project.desc");
     expect(html).toContain('class="guide-toggle"');
     expect(html).toContain('id="toggleIntro"');
     expect(html).toContain('class="yobicon-resizev"');
