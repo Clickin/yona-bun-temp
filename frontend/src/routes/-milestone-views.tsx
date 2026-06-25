@@ -661,28 +661,12 @@ export function ProjectMilestoneFormPage(props: {
         <div className="project-page-wrap">
           <div className="content-wrap frm-wrap">
             <form
-              action={
-                props.mode === "edit" && initial?.id
-                  ? buildProjectHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      `milestone/${initial.id}/edit`,
-                    )
-                  : buildProjectHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      "milestones",
-                    )
-              }
               id="milestone-form"
-              method="post"
               onSubmit={(event) => {
+                event.preventDefault();
                 if (!props.onSubmit) {
                   return;
                 }
-                event.preventDefault();
                 const nextValidationMessage = legacyMilestoneValidationMessage({
                   contentsMarkdown,
                   dueDate,

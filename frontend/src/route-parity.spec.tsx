@@ -3189,7 +3189,8 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('class="project-page-wrap"');
     expect(createHtml).toContain('class="content-wrap frm-wrap"');
     expect(createHtml).toContain('id="milestone-form"');
-    expect(createHtml).toContain('action="/yona/owner/projectYobi/milestones"');
+    expect(createHtml).not.toContain('action="/yona/owner/projectYobi/milestones"');
+    expect(createHtml).not.toContain('method="post"');
     const milestoneViewSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-milestone-views.tsx"),
       "utf8",
@@ -3254,7 +3255,7 @@ describe("file-route parity harness", () => {
         runtimeConfig={runtimeConfig}
       />,
     );
-    expect(editHtml).toContain('action="/yona/owner/projectYobi/milestone/7/edit"');
+    expect(editHtml).not.toContain('action="/yona/owner/projectYobi/milestone/7/edit"');
     expect(editHtml).toContain('<h1 class="sr-only">Edit milestone</h1>');
     expect(editHtml).not.toContain("title.editMilestone");
     expect(editHtml).toContain('value="v1.0"');
