@@ -214,12 +214,12 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="project-menu-outer"');
     expect(html).toContain('href="#helpKeys"');
     expect(html).toContain('class="modal hide fade keymap-help"');
-    expect(html).toContain("<h5>title.issueDetail</h5>");
-    expect(html).toContain('<span class="help-inline">issue.menu.new</span>');
-    expect(html).toContain('<span class="help-inline">button.list</span>');
-    expect(html).toContain('<span class="help-inline">button.edit</span>');
-    expect(html).toContain("<h5>search.menu.issue.comments</h5>");
-    expect(html).toContain('<span class="help-inline">button.commentAndNextState.closed</span>');
+    expect(html).toContain("<h5>Issue details</h5>");
+    expect(html).toContain('<span class="help-inline">New issue</span>');
+    expect(html).toContain('<span class="help-inline">List</span>');
+    expect(html).toContain('<span class="help-inline">Edit</span>');
+    expect(html).toContain("<h5>Issue Comments</h5>");
+    expect(html).toContain('<span class="help-inline">Comment &amp; Close issue</span>');
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).not.toContain("Yona Rust Project");
     expect(html).not.toContain("<p>owner/projectYobi</p>");
@@ -234,25 +234,27 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="board-actrow right-txt"');
     expect(html).toContain('id="watch-button"');
     expect(html).toContain('data-watching="true"');
-    expect(html).toContain(">issue.unwatch</button>");
-    expect(html).not.toContain(">Unwatch</button>");
+    expect(html).toContain(">Unsubscribe from this issue</button>");
+    expect(html).not.toContain(">issue.unwatch</button>");
     expect(html).toContain('id="issue-share-button"');
-    expect(html).toContain("button.share.issue");
-    expect(html).toContain('data-content="issue.sharer.description"');
+    expect(html).toContain("Issue Sharing");
+    expect(html).toContain(
+      'data-content="You can share this issue with a user or all members of a project.',
+    );
     expect(html).toContain('class="project-btn-item hide show-in-mobile-inline ml4"');
     expect(html).toContain('href="/yona/owner/projectYobi/issueform?parentIssueId=101"');
-    expect(html).toContain("button.newSubtask");
+    expect(html).toContain("New subtask");
     expect(html).toContain('class="issue-weight"');
     expect(html).toContain('id="upvote-issue-weight"');
-    expect(html).toContain('title="issue.weight: Upvote"');
+    expect(html).toContain('title="Issue weight: Upvote"');
     expect(html).toContain('id="down-vote-issue-weight"');
-    expect(html).toContain('title="issue.weight: Down vote"');
+    expect(html).toContain('title="Issue weight: Down vote"');
     expect(html).toContain('class="weight-number"');
     expect(html).toContain(">3</span>");
     expect(html).toContain('id="translate"');
-    expect(html).toContain('title="button.translation"');
+    expect(html).toContain('title="Translation"');
     expect(html).toContain('class="yobicon-lang"');
-    expect(html).toContain('title="button.edit"');
+    expect(html).toContain('title="Edit"');
     expect(html).toContain('class="yobicon-edit-2"');
     expect(html).not.toContain(">Edit</a>");
     expect(html).toContain('id="vote"');
@@ -267,11 +269,11 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('src="https://cdn.yona/avatar-door.png"');
     expect(html).toContain('id="voters"');
     expect(html).toContain('class="modal hide voters-dialog"');
-    expect(html).toContain("issue.voters");
+    expect(html).toContain("People who agree with this");
     expect(html).toContain('class="usf-group"');
     expect(html).toContain("Door User");
     expect(html).toContain('id="copyEmailBtn"');
-    expect(html).toContain("button.copy.email");
+    expect(html).toContain("Copy email list");
     expect(html).toContain("Door User &lt;door@yona.test&gt;;");
     expect(html).toContain("Nori User &lt;nori@yona.test&gt;;");
     expect(html).toContain("Rio User &lt;rio@yona.test&gt;;");
@@ -281,7 +283,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).not.toContain("Unvote");
     expect(html).toContain('<div class="watcher-list"></div>');
     expect(html).not.toContain("Watchers: 3");
-    expect(html).toContain("<dt>label</dt>");
+    expect(html).toContain("<dt>Label</dt>");
     expect(html).toContain('class="label issue-label active static white"');
     expect(html).toContain('data-label-id="5"');
     expect(html).toContain('href="/yona/owner/projectYobi/issues?state=open&amp;labelIds=5"');
@@ -321,10 +323,10 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
       />,
     );
 
-    expect(openHtml).toContain(">button.nextState.closed</button>");
-    expect(openHtml).not.toContain(">Close</button>");
-    expect(closedHtml).toContain(">button.nextState.open</button>");
-    expect(closedHtml).not.toContain(">Reopen</button>");
+    expect(openHtml).toContain(">Close issue</button>");
+    expect(openHtml).not.toContain(">button.nextState.closed</button>");
+    expect(closedHtml).toContain(">Reopen issue</button>");
+    expect(closedHtml).not.toContain(">button.nextState.open</button>");
   });
 
   it("renders legacy issue child comments under their parent with one-line reply form", () => {
@@ -402,7 +404,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('name="parentCommentId"');
     expect(html).toContain('value="77"');
     expect(html).toContain('class="oneline-comment-box"');
-    expect(html).toContain("comment.oneline.comment.placeholder (CTRL + ENTER)");
+    expect(html).toContain("Reply (CTRL + ENTER)");
     expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/78/delete"');
   });
 
@@ -468,8 +470,8 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
       />,
     );
 
-    expect(html).toContain('<strong class="name">issue.noAuthor</strong>');
-    expect(html).toContain('alt="issue.noAuthor"');
+    expect(html).toContain('<strong class="name">No author</strong>');
+    expect(html).toContain('alt="No author"');
     expect(html).not.toContain("Unknown");
   });
 
@@ -490,11 +492,11 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('data-toggle="modal"');
     expect(html).toContain('id="deleteConfirm"');
     expect(html).toContain('class="modal hide fade"');
-    expect(html).toContain("issue.delete");
-    expect(html).toContain("post.delete.confirm");
+    expect(html).toContain("Delete issue");
+    expect(html).toContain("Once you delete the post, you won&#x27;t be able to recover it.");
     expect(html).toContain('class="ybtn ybtn-danger"');
     expect(html).toContain('data-request-method="delete"');
-    expect(html).toContain('title="button.delete"');
+    expect(html).toContain('title="Delete"');
     expect(html).toContain('class="yobicon-trash"');
     expect(html).not.toContain(">Delete</button>");
   });
@@ -550,21 +552,21 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
       'class="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"',
     );
     expect(html).toContain('data-comment-id="55"');
-    expect(html).toContain('title="button.translation"');
+    expect(html).toContain('title="Translation"');
     expect(html).toContain('data-request-type="comment-vote"');
     expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/55/vote"');
-    expect(html).toContain('title="common.comment.vote"');
+    expect(html).toContain('title="Agree"');
     expect(html).toContain('id="comment-body-55"');
     expect(html).toContain('<div class="comment-body markdown-wrap"');
     expect(html).toContain("<p>Comment body</p>");
     expect(html).toContain('data-allowed-update="false"');
     expect(html).toContain('data-toggle="comment-delete"');
     expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/55/delete"');
-    expect(html).toContain('title="common.comment.delete"');
+    expect(html).toContain('title="Delete comment"');
     expect(html).toContain('class="btn-transparent-with-fontsize-lineheight ml6"');
     expect(html).toContain('id="comment-delete-modal"');
     expect(html).toContain('class="modal hide fade"');
-    expect(html).toContain("common.comment.delete.confirm");
+    expect(html).toContain("Once you delete this comment, you won&#x27;t be able to recover it.");
     expect(html).toContain('id="comment-delete-confirm"');
     expect(html).toContain('data-request-method="delete"');
   });
@@ -610,7 +612,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('id="comment-56"');
     expect(html).toContain('data-toggle="comment-edit"');
     expect(html).toContain('data-comment-id="56"');
-    expect(html).toContain('title="common.comment.edit"');
+    expect(html).toContain('title="Edit comment"');
     expect(html).toContain('class="btn-transparent-with-fontsize-lineheight ml10"');
     expect(html).toContain('class="yobicon-edit-2"');
     expect(html).toContain('id="comment-editform-56"');
@@ -645,8 +647,8 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(writableHtml).toContain('<div class="write-comment-box">');
     expect(writableHtml).toContain('data-toggle="markdown-editor"');
     expect(writableHtml).toContain('class="nav nav-tabs nm small"');
-    expect(writableHtml).toContain("common.editor.edit");
-    expect(writableHtml).toContain("common.editor.preview");
+    expect(writableHtml).toContain("Edit");
+    expect(writableHtml).toContain("Preview");
     expect(writableHtml).toContain('class="markdown-help"');
     expect(writableHtml).toContain('class="markdown-help-nav"');
     expect(writableHtml).toContain('data-target="markdownShortLinks"');
@@ -657,7 +659,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(writableHtml).toContain('class="temporaryUploadFiles"');
     expect(writableHtml).toContain('data-resourcetype="ISSUE_COMMENT"');
     expect(writableHtml).toContain('id="dynamic-comment-btn"');
-    expect(writableHtml).toContain("button.comment.new");
+    expect(writableHtml).toContain("Add a comment");
     expect(writableHtml).not.toContain("Leave a comment");
     expect(writableHtml).not.toContain(">Comment</button>");
 
@@ -673,7 +675,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     );
 
     expect(disabledHtml).toContain('class="write-comment-box mt20"');
-    expect(disabledHtml).toContain('title="error.auth.unauthorized.comment"');
+    expect(disabledHtml).toContain('title="You need to log in to add comments."');
     expect(disabledHtml).toContain('data-login="required"');
     expect(disabledHtml).toContain('class="comment disabled"');
     expect(disabledHtml).toContain('class="ybtn ybtn-disabled"');

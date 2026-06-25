@@ -1754,6 +1754,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   expectations from pinning raw key leakage as desired UI. Focused coverage:
   `frontend/src/site-admin-route-parity.spec.tsx` and
   `frontend/src/i18n.spec.tsx`.
+- 2026-06-25 issue-detail direct-render i18n expectation continuation:
+  issue detail parity tests now assert default English legacy message output
+  for keymap labels, issue action buttons, voter/delete/comment modals,
+  author fallback, Markdown editor labels, and disabled comment affordances.
+  The same pass keeps intentionally raw attributes where the implementation
+  still passes legacy keys directly, such as autocomplete no-result and
+  selected subtask parent-state markers. Focused coverage:
+  `frontend/src/issue-detail-shell.spec.tsx` and `frontend/src/i18n.spec.tsx`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and
