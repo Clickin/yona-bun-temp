@@ -489,6 +489,40 @@ test("renders legacy audited anchors for project issue detail", async ({ page })
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
+test("renders project home, settings, and issue shells on a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+
+  await page.goto("/yona/admin/sample");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-page-wrap")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("project.");
+
+  await page.goto("/yona/admin/sample/settingform");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator(".project-setting")).toBeVisible();
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/active/);
+  await expect(page.locator("body")).not.toContainText("project.");
+
+  await page.goto("/yona/admin/sample/issues");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator(".row-fluid.issue-list-wrap")).toBeVisible();
+  await expect(page.locator(".left-menu.span2")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("issue.list.");
+
+  await page.goto("/yona/admin/sample/issueform");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator("#title")).toBeVisible();
+  await expect(page.locator(".content-wrap.frm-wrap")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("title.newIssue");
+
+  await page.goto("/yona/admin/sample/issue/1");
+  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+  await expect(page.locator("#issueUpdateForm")).toBeVisible();
+  await expect(page.locator("#comments")).toHaveCount(1);
+  await expect(page.locator("body")).not.toContainText("issue.state.");
+});
+
 test("does not execute XSS payloads rendered through legacy issue detail surface", async ({
   page,
 }) => {
