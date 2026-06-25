@@ -54,15 +54,22 @@ the supported app-runtime scope.
 
 ## Execution Model
 
-1. Parent prepares/maintains this phase document and assigns explorer packets.
-2. Explorer packets audit user-visible parity from legacy evidence and current
+Gate A is documentation-only inventory. Parent prepares/maintains this phase
+document, assigns explorer packets, and does not distribute implementation until
+the corresponding report rows exist.
+
+1. Explorer packets audit user-visible parity from legacy evidence and current
    React/browser evidence, then write one report under
    `docs/provenance/ui-parity-reports/`.
-3. Parent consolidates explorer reports into the Audit Result Queue and selects
-   concrete gap rows.
-4. Worker subagents are spawned only for concrete gap rows with disjoint owned
-   files. Worker prompts must name the owned files or modules explicitly.
-5. Parent reviews worker patches, updates root canonical/provenance/plan status,
+2. Parent consolidates explorer reports into the Audit Result Queue and selects
+   concrete gap, deviation, or weak-evidence rows.
+
+Gate B is bounded implementation. Worker subagents are spawned only after Gate A
+has produced concrete rows with disjoint owned files.
+
+3. Worker prompts must name the exact row, owned files/modules, focused tests,
+   and report rows they may update.
+4. Parent reviews worker patches, updates root canonical/provenance/plan status,
    runs integration gates, and commits.
 
 Explorer report file naming:
@@ -278,10 +285,12 @@ Each subagent report must include:
 
 ## Parallelization Plan
 
-Run the phase in two distinct lanes. The inventory lane is complete enough to
-start worker delegation because each active packet now has a report under
-`docs/provenance/ui-parity-reports/`. The worker lane must still stay bounded
-to the queued findings below; do not reopen broad design work.
+Run the phase in two distinct gates. Gate A documents the complete UI parity
+inventory first; Gate B distributes only the concrete queued rows produced by
+that inventory. The inventory gate is complete enough to start worker delegation
+because each active packet now has a report under
+`docs/provenance/ui-parity-reports/`, but new or reopened pages must return to
+Gate A before implementation.
 
 1. Keep `docs/provenance/ui-parity-reports/*` as the route-family inventory
    baseline. If a new legacy page or user-visible state is discovered, add a

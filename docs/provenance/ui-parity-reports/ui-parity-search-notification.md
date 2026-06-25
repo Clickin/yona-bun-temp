@@ -57,8 +57,8 @@ Total rows: 23
 
 | status | count |
 | --- | ---: |
-| covered | 19 |
-| gap | 2 |
+| covered | 21 |
+| gap | 0 |
 | deviation | 1 |
 | deferred | 0 |
 | not-applicable | 1 |
@@ -100,12 +100,12 @@ Total rows: 23
 | `/search?keyword=yona&searchType=auto` | authenticated/global/populated | `.search-category-wrap`, `#searchInnerForm`, `Found <strong>...` | `.search-category-wrap`, `#searchInnerForm`, `SearchResultTitle` | submit search; click category tab changes `searchType` | React route calls `/api/v1/search` JSON | covered |
 | `/search` | anonymous or authenticated/missing params | legacy `badRequest(ErrorViews.BadRequest.render())` | legacy bad-request shell, no `#searchInnerForm`, no REST search call | direct navigation | React route validation before REST call; REST also rejects missing input | covered in Wave 3 |
 | `/pilot/yona/search?keyword=yona&searchType=project` | project scope invalid type | bad request | `BadRequestPage`; REST `400` | direct navigation | React route + `/api/v1/projects/:owner/:project/search` guard | covered |
-| `/pilot/yona/search?keyword=yona&searchType=issue` | project scope/populated | real `projectLayout`, no project category | search page with synthesized project detail | render project header/menu and result list | React route + project search JSON | gap |
-| `/organizations/pilot/search?keyword=yona&searchType=post` | organization scope/populated | real `organization.header`, `organization.menu` | search page with synthesized organization detail | render org header/menu and category tab | React route + organization search JSON | gap |
+| `/pilot/yona/search?keyword=yona&searchType=issue` | project scope/populated | real `projectLayout`, no project category | real project container header/menu and no project category | render project header/menu and result list | React route + project search JSON | covered in Wave 3 |
+| `/organizations/pilot/search?keyword=yona&searchType=post` | organization scope/populated | real `organization.header`, `organization.menu` | real organization container header/menu and category tab | render org header/menu and category tab | React route + organization search JSON | covered in Wave 3 |
 | `/search?keyword=NoSuchNeedle&searchType=issue` | empty result | `<div class="empty-result"></div>` | `<div class="empty-result"></div>` | direct navigation | `/api/v1/search` returns counts/items | covered |
 | `/search?keyword=Needle&searchType=user` | user result type | `.avatar-wrap`, `.title.user-link`, `(@loginId)`, `userinfo.since` | same selectors/copy rendered by user-specific branch | direct navigation/result inspection | `/api/v1/search` user item | covered in Wave 3 |
-| `/search?keyword=Needle&searchType=project` | project result type | project logo, overview, created/code update, fork-original block | row class/logo slot/title/overview/created/code-update covered; fork-original and exact logo need DTO projection | direct navigation/result inspection | `/api/v1/search` project item | gap, narrowed in Wave 3 |
-| `/search?keyword=Needle&searchType=milestone` | milestone result type | `.due-date`, `label.dueDate`, `getDueDateString`, `until` | `.due-date` and label covered; `until` still lacks DTO projection | direct navigation/result inspection | `/api/v1/search` milestone item | gap, narrowed in Wave 3 |
+| `/search?keyword=Needle&searchType=project` | project result type | project logo, overview, created/code update, fork-original block | row class/logo/title/overview/created/code-update and fork-original metadata rendered from DTO projection | direct navigation/result inspection | `/api/v1/search` project item | covered in Wave 5 |
+| `/search?keyword=Needle&searchType=milestone` | milestone result type | `.due-date`, `label.dueDate`, `getDueDateString`, `until` | `.due-date`, label, and legacy `until` text rendered from DTO projection | direct navigation/result inspection | `/api/v1/search` milestone item | covered in Wave 5 |
 | `/notifications` | authenticated/empty inbox | `.site-guide-outer`, `#toggleIntro`, `.nav.nav-tabs`, `.warning-none`, `notification.none` | same guide/tabs/warning selectors and translated copy | click `#toggleIntro`, inspect localStorage and `.hide`, reload persistence | React route calls `/api/v1/notifications?from=0&size=20` | covered in Wave 3 |
 | `/notifications` | authenticated/populated inbox | `.notification-stream`, `.stream-type`, `.message-wrap.nowrap`, `.more`, avatar/author/date | same stream selectors via `NotificationRouteComponent` | click row; click link/img should not toggle; click `.more` expands | React route calls `/api/v1/notifications` JSON | covered |
 | `/notifications` | more than 20 notifications | `#notification-more` GETs `/notification?from=20&limit=20` and appends returned fragment | `#notification-more` prevents navigation, fetches `/api/v1/notifications?from=<current items>&size=20`, and appends returned rows | click More once and assert request params/new rows only | React route uses REST JSON plus React append render | covered in follow-up |
@@ -115,4 +115,4 @@ Total rows: 23
 
 - No raw visible i18n-key failure was found in the audited search/notification evidence. `frontend/src/search-i18n.spec.tsx`, `frontend/src/directory-home-user-files-notification-i18n.spec.tsx`, and the 2026-06-25 visual sweep raw-key scan are the strongest current evidence.
 - The notification direct route has two separate statuses by design: JSON/API-return plus React-render is covered, while retaining legacy server-rendered fragment injection as a runtime data source is not applicable under the phase rule.
-- The search scoped chrome gaps are separate from scoped search data correctness. REST scope, ACL, and count behavior have strong backend coverage; the visible header/menu detail is the weak area.
+- Search scoped chrome is now covered by real project/organization container data rather than synthesized detail, so REST scope, ACL, counts, and visible header/menu state are tracked as one closed parity area.
