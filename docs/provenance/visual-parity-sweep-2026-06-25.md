@@ -122,6 +122,11 @@ upstream fetches and lets Playwright render the legacy responses from `127.0.0.1
   audit coverage.
 - Cross-target comparison failures: 0. The harness now catches the class of issue where legacy
   renders a normal page and local renders a not-found/forbidden/bad-request page.
+- 2026-06-25T13:06:20Z combined rerun through
+  `pnpm smoke:legacy-curl-proxy` plus local `http://127.0.0.1:18111/yona` recorded
+  legacy 73/77 with the same four homelab-reference failures, local 154/154,
+  direct API 13/13, imported legacy audit page coverage 49/49 on both targets,
+  and 0 same-path comparison failures.
 - A rerun first exposed `/user/issues/new` as that exact class of failure:
   legacy rendered the normal `새 이슈 - admin/sample` form, while local rendered
   a not-found page because the sweep-created `admin/sample` project had not
