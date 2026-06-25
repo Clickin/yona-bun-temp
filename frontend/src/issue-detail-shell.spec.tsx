@@ -475,7 +475,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
                 authorLabel: "Commenter",
                 authorLoginId: "commenter",
                 contentsHtml: "",
-                contentsMarkdown: "Comment body",
+                contentsMarkdown: "- [ ] Comment body",
                 createdLabel: "now",
                 id: 56,
                 viewerCanDelete: false,
@@ -514,6 +514,8 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="markdown-help"');
     expect(html).toContain('class="markdown-preview markdown-wrap update-comment-body"');
     expect(html).toContain('class="upload-drop-here"');
+    expect(html).toContain('data-task-index="0"');
+    expect(html).toContain('data-allowed-update="true"');
   });
 
   it("renders the legacy writable and disabled issue comment form shells", () => {

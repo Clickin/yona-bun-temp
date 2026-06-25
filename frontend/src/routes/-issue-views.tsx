@@ -2158,9 +2158,16 @@ export function ProjectIssueDetailPage(props: {
                                     comment.contentsMarkdown
                                   }
                                   mentionReferences={comment.mentionReferences}
+                                  onTasklistToggle={
+                                    comment.viewerCanUpdate && props.onCommentUpdate
+                                      ? async (input) =>
+                                          props.onCommentUpdate?.(comment.id, input.nextMarkdown)
+                                      : undefined
+                                  }
                                   ownerName={detail.ownerName}
                                   projectName={detail.projectName}
                                   showTasklistBar
+                                  tasklistSourceMarkdown={comment.contentsMarkdown}
                                 />
                               </div>
                             </div>

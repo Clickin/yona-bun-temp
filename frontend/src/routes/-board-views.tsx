@@ -1296,9 +1296,16 @@ export function ProjectBoardDetailPage(props: {
                                       comment.contentsMarkdown
                                     }
                                     mentionReferences={comment.mentionReferences}
+                                    onTasklistToggle={
+                                      canEdit && props.onCommentUpdate
+                                        ? async (input) =>
+                                            props.onCommentUpdate?.(comment.id, input.nextMarkdown)
+                                        : undefined
+                                    }
                                     ownerName={post.ownerName}
                                     projectName={post.projectName}
                                     showTasklistBar
+                                    tasklistSourceMarkdown={comment.contentsMarkdown}
                                   />
                                   <div className="attachments" />
                                 </div>

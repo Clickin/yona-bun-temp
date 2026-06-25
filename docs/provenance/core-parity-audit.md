@@ -150,6 +150,15 @@
   deeper `-`/`+`/`*` task rows until the next same-or-shallower task row, while
   still leaving ordered task rows outside the legacy update regex. Focused
   evidence: `markdown-renderer.spec.tsx`.
+- 2026-06-25 markdown comment tasklist continuation: issue and board comments
+  now wire writable rendered task-list checkboxes to the existing comment update
+  mutation path, matching legacy `partial_comment.scala.html` /
+  `partial_comments.scala.html` where `commentUpdateForm` sits immediately
+  before `#comment-body-*` and `yona.Tasklist.js` PATCHes updated Markdown
+  content from the hidden form. The callback uses the original comment Markdown,
+  not translated display Markdown. Focused evidence:
+  `issue-detail-shell.spec.tsx`, `route-parity.spec.tsx`, and
+  `pnpm --dir frontend check`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
   `title.signupFor`, or `title.resetPasswordFor`; those fallbacks are derived

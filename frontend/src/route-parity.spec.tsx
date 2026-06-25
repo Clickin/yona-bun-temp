@@ -2318,7 +2318,7 @@ describe("file-route parity harness", () => {
               authorLabel: "Owner User",
               authorLoginId: "owner",
               contentsHtml: "",
-              contentsMarkdown: "via mail",
+              contentsMarkdown: "- [ ] via mail",
               createdLabel: "now",
               id: "9",
               parentCommentId: "",
@@ -2360,7 +2360,9 @@ describe("file-route parity harness", () => {
           watcherCount: 0,
         }}
         onCommentDelete={async () => undefined}
+        onCommentUpdate={async () => undefined}
         runtimeConfig={runtimeConfig}
+        viewerId="1"
       />,
     );
     expect(detailHtml).not.toContain(">Watch<");
@@ -2427,6 +2429,7 @@ describe("file-route parity harness", () => {
     expect(detailHtml).not.toContain(">Save</button>");
     expect(detailHtml).not.toContain(">Cancel</button>");
     expect(detailHtml).toContain('id="comment-body-9"');
+    expect(detailHtml).toContain('data-task-index="0"');
     expect(detailHtml).toContain('data-via-email="true"');
     expect(detailHtml).toContain('href="/yona/owner/projectYobi/issue/1"');
     expect(detailHtml).toContain('data-issue-state="open"');
