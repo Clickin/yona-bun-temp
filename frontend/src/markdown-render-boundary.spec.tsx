@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 
 const serverRenderedHtmlFieldAccessPattern =
   /\.(?:bodyHtml|contentsHtml|historyHtml|descriptionHtml|renderedHtml|markdownHtml)\b/;
+const htmlFragmentDomApiPattern =
+  /\b(?:DOMParser|insertAdjacentHTML|createContextualFragment|innerHTML|outerHTML)\b|dangerouslySetInnerHTML/;
+const routeHtmlFragmentFetchPattern = /\bresponse\.text\(|\btext\/html\b/;
 const markdownWrapClassPattern = /\bmarkdown-wrap\b/;
 const serverRenderedHtmlCompatibilityFiles = new Set([
   "api/boards.ts",
@@ -120,6 +123,18 @@ describe("Markdown render boundary", () => {
       const source = readSource(file);
       expect(source, file).not.toContain("dangerouslySetInnerHTML");
       expect(source, file).not.toMatch(serverRenderedHtmlFieldAccessPattern);
+    }
+  });
+
+  it("keeps React render surfaces from parsing or inserting legacy HTML fragments", () => {
+    for (const file of listRenderSurfaceFiles()) {
+      expect(readSource(file), file).not.toMatch(htmlFragmentDomApiPattern);
+    }
+  });
+
+  it("keeps route components from fetching server-rendered HTML fragments", () => {
+    for (const file of listSourceFiles(path.resolve(__dirname, "routes"))) {
+      expect(readSource(file), file).not.toMatch(routeHtmlFragmentFetchPattern);
     }
   });
 
