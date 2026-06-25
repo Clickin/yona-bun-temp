@@ -86,9 +86,11 @@
   parses `yona-original/conf/messages` directly and publishes the full legacy
   default key map through `Messages(key, ...)` and `Messages._messages`, keeping
   the browser-side global helper on the same legacy keyspace as the React i18n
-  runtime. Provider-less visible fallback exceptions such as the anonymous home
-  signup CTA are derived through `lookupLegacyDefaultMessage("<legacy key>")`
-  instead of embedding a separate English template. Focused evidence:
+  runtime. Provider-less visible fallback exceptions are no longer allowed:
+  anonymous home signup, auth titles, and other visible labels preserve the
+  legacy key itself when the React i18n provider is absent, while provider-backed
+  rendering still resolves through `yona-original/conf/messages*`. Focused
+  evidence:
   `routes::messages` Rust unit tests, `frontend/src/i18n.spec.tsx`, the full
   frontend Vitest suite selected by that spec invocation, and
   `pnpm --dir frontend check`.
@@ -230,9 +232,9 @@
   `route-parity.spec.tsx`.
 - 2026-06-25 auth-title fallback continuation: provider-less auth renders no
   longer carry hardcoded English title templates for `title.loginFor`,
-  `title.signupFor`, or `title.resetPasswordFor`; those fallbacks are derived
-  from the checked-in legacy default message dictionary via
-  `lookupLegacyDefaultMessage(...)`. Focused evidence: `i18n.spec.tsx`,
+  `title.signupFor`, or `title.resetPasswordFor`; those fallbacks preserve only
+  the exact legacy key while provider-backed rendering still resolves the
+  checked-in legacy message dictionary. Focused evidence: `i18n.spec.tsx`,
   `auth-workspace-shell.spec.tsx`, `wave1-auth-workspace-parity.spec.tsx`, and
   `pnpm --dir frontend check`.
 - 2026-06-25 pilot seed copy note: the seeded `pilot/yona` project no longer exposes the internal "browser-safe route tree" implementation note in project home/directory views; the visual sweep now fails if that fixture copy or the unbased `localhost:3001/yo` clone URL leaks into rendered UI.

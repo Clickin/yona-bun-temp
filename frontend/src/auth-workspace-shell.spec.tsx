@@ -96,8 +96,8 @@ describe("auth and workspace views", () => {
       routeHref: "/users/loginform?redirectUrl=/admin/projectYobi/issue/1",
     });
 
-    expect(html).toContain('Log in to <span class="highlight">Yona</span>');
-    expect(html).not.toContain("title.loginFor");
+    expect(html).toContain(">title.loginFor<");
+    expect(html).not.toContain('Log in to <span class="highlight">Yona</span>');
     expect(html).toContain('class="page full"');
     expect(html).toContain('class="center-wrap tag-line-wrap login"');
     expect(html).toContain('class="login-form-wrap frm-wrap"');
@@ -480,8 +480,8 @@ describe("auth and workspace views", () => {
       },
     });
 
-    expect(html).toContain('Sign up for <span class="highlight">Yona</span>');
-    expect(html).not.toContain("title.signupFor");
+    expect(html).toContain(">title.signupFor<");
+    expect(html).not.toContain('Sign up for <span class="highlight">Yona</span>');
     expect(html).toContain('class="page full"');
     expect(html).toContain('class="center-wrap tag-line-wrap signup"');
     expect(html).toContain('class="signup-form-wrap frm-wrap"');
@@ -511,8 +511,10 @@ describe("auth and workspace views", () => {
 
   it("renders lost-password and reset-password shells with legacy field layout", () => {
     const lostPasswordHtml = renderLostPassword("/lostPassword");
-    expect(lostPasswordHtml).toContain('Reset password for <span class="highlight">Yona</span>');
-    expect(lostPasswordHtml).not.toContain("title.resetPasswordFor");
+    expect(lostPasswordHtml).toContain(">title.resetPasswordFor<");
+    expect(lostPasswordHtml).not.toContain(
+      'Reset password for <span class="highlight">Yona</span>',
+    );
     expect(lostPasswordHtml).toContain('class="center-wrap tag-line-wrap reset-password"');
     expect(lostPasswordHtml).toContain('class="login-form-wrap frm-wrap"');
     expect(lostPasswordHtml).toContain('action="/yona/lostPassword"');
@@ -527,8 +529,10 @@ describe("auth and workspace views", () => {
     expect(lostPasswordHtml).not.toContain(">Confirm<");
 
     const resetPasswordHtml = renderResetPassword("/resetPassword");
-    expect(resetPasswordHtml).toContain('Reset password for <span class="highlight">Yona</span>');
-    expect(resetPasswordHtml).not.toContain("title.resetPasswordFor");
+    expect(resetPasswordHtml).toContain(">title.resetPasswordFor<");
+    expect(resetPasswordHtml).not.toContain(
+      'Reset password for <span class="highlight">Yona</span>',
+    );
     expect(resetPasswordHtml).toContain('class="center-wrap tag-line-wrap reset-password"');
     expect(resetPasswordHtml).toContain('class="login-form-wrap frm-wrap"');
     expect(resetPasswordHtml).toContain('name="passwordReset"');
@@ -685,8 +689,8 @@ describe("auth and workspace views", () => {
     expect(homeHtml).toContain("21st Century Software Development Platform");
     expect(homeHtml).toContain("Just focus on what you have to do");
     expect(homeHtml).toContain('href="/yona/users/signupform"');
-    expect(homeHtml).toContain(">Sign up for Yona</a>");
-    expect(homeHtml).not.toContain("button.signup");
+    expect(homeHtml).toContain(">button.signup</a>");
+    expect(homeHtml).not.toContain(">Sign up for Yona</a>");
     expect(homeHtml).toContain("title.features");
     expect(homeHtml).toContain("title.unlimitedProjects");
     expect(homeHtml).toContain("site.features.codeReview");
@@ -763,9 +767,9 @@ describe("auth and workspace views", () => {
       siteName: "Legacy Yona",
     });
 
-    expect(html).toContain(">Sign up for Legacy Yona</a>");
+    expect(html).toContain(">button.signup</a>");
     expect(html).not.toContain(">Sign up for Yona</a>");
-    expect(html).not.toContain("button.signup");
+    expect(html).not.toContain(">Sign up for Legacy Yona</a>");
   });
 
   it("renders organization and project baseline views", () => {

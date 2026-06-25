@@ -1,9 +1,5 @@
 import * as React from "react";
-import {
-  lookupLegacyDefaultMessage,
-  renderLegacyHighlightedMessage,
-  useLegacyMessages,
-} from "../i18n";
+import { renderLegacyHighlightedMessage, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { AuthUiCapabilitiesViewModel } from "./-view-models";
 
@@ -72,7 +68,7 @@ function LoginForTitle({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   return renderLegacyHighlightedMessage(
     messages.t("title.loginFor", {
       args: [siteNameForTitle(runtimeConfig)],
-      fallback: lookupLegacyDefaultMessage("title.loginFor"),
+      fallback: "title.loginFor",
     }),
   );
 }
@@ -82,7 +78,7 @@ function SignupForTitle({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   return renderLegacyHighlightedMessage(
     messages.t("title.signupFor", {
       args: [siteNameForTitle(runtimeConfig)],
-      fallback: lookupLegacyDefaultMessage("title.signupFor"),
+      fallback: "title.signupFor",
     }),
   );
 }
@@ -92,7 +88,7 @@ function ResetPasswordForTitle({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   return renderLegacyHighlightedMessage(
     messages.t("title.resetPasswordFor", {
       args: [siteNameForTitle(runtimeConfig)],
-      fallback: lookupLegacyDefaultMessage("title.resetPasswordFor"),
+      fallback: "title.resetPasswordFor",
     }),
   );
 }

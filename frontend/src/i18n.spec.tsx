@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 import {
   LegacyI18nProvider,
   createLegacyI18nRuntime,
-  lookupLegacyDefaultMessage,
   lookupLegacyMessage,
   normalizeLegacyLanguageCode,
   normalizeSupportedLanguages,
@@ -80,21 +79,12 @@ describe("legacy i18n runtime", () => {
     );
   });
 
-  it("uses legacy default messages for auth title fallbacks without hardcoded templates", () => {
-    expect(lookupLegacyDefaultMessage("title.loginFor")).toBe(
-      'Log in to <span class="highlight">{0}</span>',
-    );
-    expect(lookupLegacyDefaultMessage("title.signupFor")).toBe(
-      'Sign up for <span class="highlight">{0}</span>',
-    );
-    expect(lookupLegacyDefaultMessage("title.resetPasswordFor")).toBe(
-      'Reset password for <span class="highlight">{0}</span>',
-    );
-
+  it("keeps auth title fallbacks in the legacy keyspace without hardcoded templates", () => {
     const authSource = readFileSync(`${__dirname}/routes/-auth-views.tsx`, "utf8");
-    expect(authSource).toContain('lookupLegacyDefaultMessage("title.loginFor")');
-    expect(authSource).toContain('lookupLegacyDefaultMessage("title.signupFor")');
-    expect(authSource).toContain('lookupLegacyDefaultMessage("title.resetPasswordFor")');
+    expect(authSource).toContain('fallback: "title.loginFor"');
+    expect(authSource).toContain('fallback: "title.signupFor"');
+    expect(authSource).toContain('fallback: "title.resetPasswordFor"');
+    expect(authSource).not.toContain("lookupLegacyDefaultMessage");
     expect(authSource).not.toContain("fallback: 'Log in to <span class=\"highlight\">{0}</span>'");
     expect(authSource).not.toContain(
       "fallback: 'Sign up for <span class=\"highlight\">{0}</span>'",
@@ -104,11 +94,10 @@ describe("legacy i18n runtime", () => {
     );
   });
 
-  it("uses legacy default messages for public home signup fallback without hardcoded templates", () => {
-    expect(lookupLegacyDefaultMessage("button.signup")).toBe("Sign up for {0}");
-
+  it("keeps public home signup fallback in the legacy keyspace without hardcoded templates", () => {
     const homeSource = readFileSync(`${__dirname}/routes/-home-view.tsx`, "utf8");
-    expect(homeSource).toContain('lookupLegacyDefaultMessage("button.signup")');
+    expect(homeSource).toContain('fallback: "button.signup"');
+    expect(homeSource).not.toContain("lookupLegacyDefaultMessage");
     expect(homeSource).not.toContain("fallback: `Sign up for ${siteName}`");
   });
 
@@ -143,7 +132,7 @@ describe("legacy i18n runtime", () => {
     expect(html).not.toContain(">button.login<");
   });
 
-  it("keeps current fallback copy outside an i18n provider", () => {
+  it("keeps legacy keys outside an i18n provider", () => {
     const html = renderToStaticMarkup(
       <LoginPage
         authUiCapabilities={{
@@ -156,7 +145,7 @@ describe("legacy i18n runtime", () => {
       />,
     );
 
-    expect(html).toContain('Log in to <span class="highlight">Yona</span>');
+    expect(html).toContain(">title.loginFor<");
     expect(html).toContain(">app.description<");
     expect(html).toContain(">button.login<");
   });

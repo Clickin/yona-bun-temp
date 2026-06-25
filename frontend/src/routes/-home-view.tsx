@@ -1,8 +1,4 @@
-import {
-  lookupLegacyDefaultMessage,
-  useLegacyMessages,
-  type LegacyI18nContextValue,
-} from "../i18n";
+import { useLegacyMessages, type LegacyI18nContextValue } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
@@ -44,7 +40,7 @@ export function HomePage({
               >
                 {messages("button.signup", {
                   args: [siteName],
-                  fallback: lookupLegacyDefaultMessage("button.signup"),
+                  fallback: "button.signup",
                 })}
               </a>
             </div>

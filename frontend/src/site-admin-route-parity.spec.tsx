@@ -148,8 +148,8 @@ describe("site-admin route parity harness", () => {
     expect(html).toContain("user.newPassword: new-secret");
     expect(html).toContain(">button.delete<");
     expect(html).toContain('aria-label="button.close"');
-    expect(html).toContain(">site.diagnostic.errorFound 2<");
-    expect(html).toContain("site.update.isAvailable 1.1.0");
+    expect(html).toContain(">site.diagnostic.errorFound<");
+    expect(html).toContain("site.update.isAvailable");
     expect(html).not.toContain(">Mail Send<");
     expect(html).not.toContain(">Mass Mail<");
     expect(html).not.toContain(">Update<span");
@@ -685,7 +685,7 @@ describe("site-admin route parity harness", () => {
       />,
     );
 
-    expect(errorHtml).toContain(">site.diagnostic.errorFound 2<");
+    expect(errorHtml).toContain(">site.diagnostic.errorFound<");
     expect(errorHtml).toContain("<ul><li><pre>storage missing</pre></li>");
     expect(errorHtml).toContain("<pre>storage missing</pre>");
     expect(errorHtml).toContain("<pre>smtp missing</pre>");
@@ -790,13 +790,13 @@ describe("site-admin route parity harness", () => {
     );
 
     expect(updateHtml).toContain(">site.sidebar.update<");
-    expect(updateHtml).toContain("site.update.isAvailable 1.1.0");
+    expect(updateHtml).toContain("site.update.isAvailable");
     expect(updateHtml).toContain(
       '<a href="/yona/sites/update">site.sidebar.update<span class="notification-badge">1</span></a>',
     );
     expect(updateHtml).toContain('href="/yona/sites/update/download-file"');
     expect(updateHtml).toContain(">site.update.download<");
-    expect(updateHtml).toContain("site.update.currentVersion 1.0.0");
+    expect(updateHtml).toContain("site.update.currentVersion");
     expect(updateHtml).not.toContain("Current version is Yona 1.0.0");
     expect(updateHtml).not.toContain(">Update<");
 

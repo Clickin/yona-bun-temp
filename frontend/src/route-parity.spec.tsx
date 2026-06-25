@@ -5819,8 +5819,8 @@ describe("file-route parity harness", () => {
     expect(html).toContain("Just focus on what you have to do");
     expect(html).toContain('class="signup-btn"');
     expect(html).toContain('class="ybtn ybtn-success ybtn-padding"');
-    expect(html).toContain(">Sign up for Yona</a>");
-    expect(html).not.toContain("button.signup");
+    expect(html).toContain(">button.signup</a>");
+    expect(html).not.toContain(">Sign up for Yona</a>");
     expect(html).toContain('class="feature-wrap row"');
     expectOrderedText(html, [
       "title.unlimitedProjects",
@@ -5841,9 +5841,9 @@ describe("file-route parity harness", () => {
       siteName: "Legacy Yona",
     });
 
-    expect(html).toContain(">Sign up for Legacy Yona</a>");
+    expect(html).toContain(">button.signup</a>");
     expect(html).not.toContain(">Sign up for Yona</a>");
-    expect(html).not.toContain("button.signup");
+    expect(html).not.toContain(">Sign up for Legacy Yona</a>");
   });
 
   it("pins project directory empty state and search CTA", () => {

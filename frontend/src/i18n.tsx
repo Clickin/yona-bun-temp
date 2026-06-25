@@ -111,10 +111,6 @@ export function lookupLegacyMessage(
   return formatLegacyMessage(raw, options.args);
 }
 
-export function lookupLegacyDefaultMessage(key: string): string {
-  return LEGACY_MESSAGES[LEGACY_DEFAULT_LANGUAGE][key] ?? key;
-}
-
 export function createLegacyI18nRuntime(
   supportedLanguages: readonly string[] | null | undefined,
   preferredLanguages: readonly string[] | null | undefined = [],
@@ -159,7 +155,7 @@ const fallbackI18n: LegacyI18nContextValue = {
   language: LEGACY_DEFAULT_LANGUAGE,
   setLanguage: () => {},
   supportedLanguages: [...LEGACY_LANGUAGE_CODES],
-  t: (key, options) => formatLegacyMessage(options?.fallback ?? key, options?.args),
+  t: (key) => key,
 };
 
 const LegacyI18nContext = React.createContext<LegacyI18nContextValue>(fallbackI18n);
