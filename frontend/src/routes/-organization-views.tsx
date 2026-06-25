@@ -1688,7 +1688,12 @@ export function OrganizationMembersPage(props: {
             ))}
           </ul>
 
-          <div className={`modal hide${deleteTarget ? " in" : ""}`} id="alertDeletion">
+          <div
+            aria-hidden={deleteTarget ? "false" : "true"}
+            className={`modal hide fade${deleteTarget ? " in" : ""}`}
+            id="alertDeletion"
+            style={deleteTarget ? { display: "block" } : undefined}
+          >
             <div className="modal-header">
               <button
                 aria-label={legacyMessage(props.messages, "button.close")}
@@ -1837,7 +1842,12 @@ export function OrganizationDeletePage(props: {
             </button>
           </div>
 
-          <div className={modalOpen ? "modal" : "modal hide"} id="alertDeletion">
+          <div
+            aria-hidden={modalOpen ? "false" : "true"}
+            className={`modal hide fade${modalOpen ? " in" : ""}`}
+            id="alertDeletion"
+            style={modalOpen ? { display: "block" } : undefined}
+          >
             <div className="modal-header">
               <button
                 aria-label={legacyMessage(props.messages, "button.close")}
