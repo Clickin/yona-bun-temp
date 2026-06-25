@@ -190,6 +190,25 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
   await expect(page.locator("#loginDialog.modal.hide.loginDialog")).toHaveCount(1);
 });
 
+test("anonymous root shell keeps the legacy login dialog usable on a mobile viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await installRuntimeConfig(page, { feedbackUrl: "https://feedback.example.test" });
+  await installCommonApiMocks(page, { session: { isAnonymous: true } });
+
+  await page.goto("/yona/");
+
+  await expect(page.locator(".gnb-outer .gnb-inner")).toBeVisible();
+  await expect(page.locator("#required-logged-in a[data-login='required']")).toBeVisible();
+  await page.locator("#required-logged-in a[data-login='required']").click();
+  await expect(page.locator("#loginDialog.modal.loginDialog")).toBeVisible();
+  await expect(page.locator("#loginDialog")).toHaveCSS("position", "fixed");
+  await expect(page.locator("#loginDialog")).toHaveCSS("width", "390px");
+  await expect(page.locator("#loginDialog input[name='loginIdOrEmail']")).toBeVisible();
+  await expect(page.locator("#loginDialog input[name='password']")).toBeVisible();
+});
+
 test("authenticated site admin shell renders user menu, sidebar tabs, create menu, and admin affix", async ({
   page,
 }) => {

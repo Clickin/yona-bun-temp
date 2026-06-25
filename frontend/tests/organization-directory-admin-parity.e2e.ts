@@ -128,6 +128,37 @@ test("direct organization directory preserves the legacy list shell", async ({ p
   await expect(page.locator(".all-projects .project .name-tag")).toContainText("created");
 });
 
+test("direct organization directory keeps its legacy shell on a mobile viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.route(apiV1Route("/organizations"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        items: [
+          {
+            createdLabel: "2026-06-01",
+            description: "Frontend platform group",
+            logoUrl: "/avatars/weblabs.png",
+            organizationName: "weblabs",
+          },
+        ],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/orgs?filter=web&pageNum=1");
+
+  await expect(page.locator(".site-breadcrumb-outer .nav-tabs li.active")).toContainText(
+    "Group List",
+  );
+  await expect(page.locator("#search input[name='filter']")).toBeVisible();
+  await expect(page.locator(".all-projects .project .black")).toHaveText("weblabs");
+  await expect(page.locator(".all-projects .project .owner-avatar-wrap")).toBeVisible();
+});
+
 test("organization home, settings, members, and delete screens expose legacy interactions", async ({
   page,
 }) => {

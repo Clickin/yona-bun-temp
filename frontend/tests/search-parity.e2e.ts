@@ -327,6 +327,26 @@ test("renders global results, category counts, highlight snippets, and type swit
   await expect(page.locator(".title-wrap .title")).toContainText("Re) Needle pull request");
 });
 
+test("global search keeps the legacy result shell on a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.route(/\/api\/v1\/search(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(searchResponse({ totalCount: 1 })),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/search?keyword=Needle&searchType=auto&pageNum=1");
+
+  await expect(page.locator("#searchInnerForm")).toBeVisible();
+  await expect(page.locator(".search-category-wrap")).toBeVisible();
+  await expect(page.locator(".search-result-title")).toContainText("Found 1 result(s) in Issues");
+  await expect(page.locator(".search-list-item .title-wrap .title")).toContainText(
+    "Needle issue title",
+  );
+});
+
 test("renders project and organization scoped search parity", async ({ page }) => {
   await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
     await route.fulfill({
@@ -480,6 +500,50 @@ test("shows an invalid query shell without sending a REST search request", async
     searchApiCalls += 1;
     await route.fulfill({
       body: JSON.stringify(searchResponse()),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        boardCount: 0,
+        cloneUrl: "",
+        codeMemberOnly: false,
+        dashboard: { assignees: [], labels: [] },
+        defaultReviewerCount: 1,
+        enrollmentRequested: false,
+        history: { items: [] },
+        isFavorited: false,
+        isUsingReviewerCount: false,
+        isWatching: false,
+        logoUrl: "",
+        maxReviewerCount: 3,
+        memberCount: 1,
+        members: [],
+        openIssueCount: 0,
+        openPullRequestCount: 0,
+        organizationName: "",
+        overview: "Real project overview",
+        ownerName: "owner",
+        projectName: "projectYobi",
+        projectScope: "public",
+        reviewCount: 0,
+        showAdmin: false,
+        showBoard: true,
+        showCode: true,
+        showIssue: true,
+        showMilestone: true,
+        showPullRequest: true,
+        showReview: true,
+        vcs: "GIT",
+        viewerCanEnroll: false,
+        viewerCanLeave: false,
+        viewerCanUpdate: false,
+        viewerCanWatch: false,
+        viewerUserId: 1,
+        watchCount: 1,
+      }),
       headers: restJsonHeaders,
       status: 200,
     });
@@ -642,4 +706,68 @@ test("persists the notification welcome guide toggle with the legacy localStorag
   await expect
     .poll(() => page.evaluate(() => window.localStorage.getItem("yobi-intro")))
     .toBe("true");
+});
+
+test("notification page keeps the legacy guide shell on a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.route(apiV1Route("/session"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        actorId: "1",
+        defaultLandingPath: "/",
+        emailAddress: "owner@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "owner",
+        userLabel: "Owner",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/workspace"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/",
+        emails: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        profile: {
+          avatarUrl: "",
+          connectedSocialProviders: [],
+          displayName: "Owner",
+          englishName: "",
+          isBlocked: false,
+          isSiteAdmin: false,
+          loginId: "owner",
+          primaryEmailAddress: "owner@example.com",
+          sinceLabel: "2026-05-01",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(/\/api\/v1\/notifications\?from=0&size=20$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        hasMore: false,
+        items: [],
+        total: 0,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/notifications");
+
+  await expect(page.locator(".site-guide-outer")).toBeVisible();
+  await expect(page.locator("#toggleIntro")).toBeVisible();
+  await expect(page.locator("#notification-more")).toHaveCount(0);
 });

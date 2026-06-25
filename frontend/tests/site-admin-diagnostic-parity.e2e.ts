@@ -85,6 +85,26 @@ test("site admin diagnostics preserves legacy shell and no-error copy", async ({
   await expect.poll(() => requests).toEqual(["GET /yona/api/v1/site/diagnostics"]);
 });
 
+test("site admin diagnostics keeps the legacy admin shell on a mobile viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.route(apiV1Route("/site/diagnostics"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ errorCount: 0, errors: [] }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/sites/diagnostic");
+
+  await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
+  await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Diagnostics");
+  await expect(page.getByText("No errors were found")).toBeVisible();
+});
+
 test("site admin diagnostics renders legacy error pre blocks", async ({ page }) => {
   await page.route(apiV1Route("/site/diagnostics"), async (route) => {
     await route.fulfill({

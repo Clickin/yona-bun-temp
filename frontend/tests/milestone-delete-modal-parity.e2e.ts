@@ -148,3 +148,17 @@ test("milestone detail delete opens and closes the legacy confirmation modal", a
   await page.locator("#deleteConfirm").getByRole("button", { name: "No" }).click();
   await expect(page.locator("#deleteConfirm")).toBeHidden();
 });
+
+test("milestone detail preserves the project issue shell on a mobile viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+
+  await page.goto("/yona/admin/projectYobi/milestone/7");
+
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
+  await expect(page.locator(".span3.hide-in-mobile")).toHaveCount(1);
+  await expect(page.locator(".post-list-wrap .post-item.title")).toBeVisible();
+});

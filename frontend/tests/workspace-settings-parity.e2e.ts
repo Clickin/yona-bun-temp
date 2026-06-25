@@ -116,6 +116,19 @@ test("workspace notification settings honors legacy hash tab activation", async 
   await expect(page.locator('.tab-content [id="1"]')).not.toHaveClass(/active/);
 });
 
+test("workspace settings shell stays usable on a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+
+  await page.goto("/yona/user/editform/notifications#2");
+
+  await expect(page.locator(".page-wrap-outer")).toBeVisible();
+  await expect(page.locator("#notification-projects")).toBeVisible();
+  await expect(page.locator('#notification-projects li.active a[href="#2"]')).toHaveText(
+    "weblabs / projectTwo",
+  );
+  await expect(page.locator('.tab-content [id="2"]')).toHaveClass(/active/);
+});
+
 test("workspace avatar invalid file and crop modal keep legacy settings selectors visible", async ({
   page,
 }) => {
