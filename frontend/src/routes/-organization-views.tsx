@@ -378,17 +378,27 @@ function OrganizationMembershipActions(props: {
   detail: OrganizationDetailViewModel;
   messages?: LegacyMessageLookup;
   onLeaveOrganization?: (organizationName: string) => void;
+  runtimeConfig: RuntimeConfig;
 }) {
   const { detail } = props;
 
   if (detail.viewerCanLeave) {
     return (
-      <section>
-        <h2>{legacyMessage(props.messages, "organization.member.leave")}</h2>
-        <button type="button" onClick={() => props.onLeaveOrganization?.(detail.organizationName)}>
-          {legacyMessage(props.messages, "organization.member.leave")}
-        </button>
-      </section>
+      <button
+        className="ybtn ybtn-minimum ybtn-danger pull-right"
+        data-href={buildOrganizationHref(props.runtimeConfig, detail.organizationName, "leave")}
+        id="groupLeaveBtn"
+        onClick={(event) => {
+          if (!props.onLeaveOrganization) {
+            return;
+          }
+          event.preventDefault();
+          props.onLeaveOrganization(detail.organizationName);
+        }}
+        type="button"
+      >
+        {legacyMessage(props.messages, "organization.member.leave")}
+      </button>
     );
   }
 
@@ -701,6 +711,7 @@ export function OrganizationDetailPage(props: {
                 detail={detail}
                 messages={props.messages}
                 onLeaveOrganization={props.onLeaveOrganization}
+                runtimeConfig={props.runtimeConfig}
               />
               {detail.adminMembers?.length ? (
                 <OrganizationMemberBubble

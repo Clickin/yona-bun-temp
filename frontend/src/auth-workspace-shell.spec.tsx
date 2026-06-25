@@ -854,6 +854,9 @@ describe("auth and workspace views", () => {
       viewerCanUpdate: false,
     });
     expect(leaveOrgHtml).toContain("Leave the group");
+    expect(leaveOrgHtml).toContain(
+      'class="ybtn ybtn-minimum ybtn-danger pull-right" data-href="/yona/organizations/weblabs/leave" id="groupLeaveBtn"',
+    );
     expect(leaveOrgHtml).not.toContain("Membership");
     expect(leaveOrgHtml).not.toContain("organization.member.leave");
 
