@@ -1164,6 +1164,8 @@ describe("auth and workspace views", () => {
     expect(routeSources).toContain("error.badrequest");
     expect(routeSources).toContain("error.failedTo");
     expect(routeSources).toContain("userinfo.changeNotifications");
+    expect(routeSources).toContain("sendWorkspaceEmailValidation");
+    expect(routeSources).toContain("onSendWorkspaceEmailValidation");
     expect(routeSources).not.toContain("error.failedTo userinfo.changeNotifications");
     expect(routeSources).not.toContain("Update profile failed.");
     expect(routeSources).not.toContain("Change password failed.");
@@ -1171,6 +1173,7 @@ describe("auth and workspace views", () => {
     expect(routeSources).not.toContain("Toggle notification failed.");
     expect(routeSources).not.toContain("Add email failed.");
     expect(routeSources).not.toContain("Delete email failed.");
+    expect(routeSources).not.toContain("Send validation email failed.");
     expect(routeSources).not.toContain("Set main email failed.");
   });
 

@@ -163,6 +163,7 @@ export function WorkspaceSettingsPage(props: {
   onDeleteWorkspaceEmail?: (id: string) => void;
   onResetApiToken?: () => void;
   onResetVisitedProjects?: () => void;
+  onSendWorkspaceEmailValidation?: (id: string) => void;
   onSetMainWorkspaceEmail?: (id: string) => void;
   onToggleWorkspaceNotification?: (projectId: string, eventType: string) => void;
   onUploadAvatar?: (blob: Blob, filename: string) => Promise<string>;
@@ -685,7 +686,7 @@ export function WorkspaceSettingsPage(props: {
                           props.runtimeConfig,
                           `/user/email/sendValidationEmail/${email.id}`,
                         )}
-                        onClick={() => undefined}
+                        onClick={() => props.onSendWorkspaceEmailValidation?.(email.id)}
                         style={{ width: "150px" }}
                         type="button"
                       >

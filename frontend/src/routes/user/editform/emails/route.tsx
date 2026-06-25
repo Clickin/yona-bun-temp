@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   addWorkspaceEmail,
   deleteWorkspaceEmail,
+  sendWorkspaceEmailValidation,
   setMainWorkspaceEmail,
 } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
@@ -56,6 +57,18 @@ function EditEmailsRouteComponent() {
       onDeleteWorkspaceEmail={async (id) => {
         try {
           const overview = await deleteWorkspaceEmail(runtimeConfig, csrfToken, id);
+          await syncWorkspaceFromOverview(overview);
+        } catch (error) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
+        }
+      }}
+      onSendWorkspaceEmailValidation={async (id) => {
+        try {
+          const overview = await sendWorkspaceEmailValidation(runtimeConfig, csrfToken, id);
           await syncWorkspaceFromOverview(overview);
         } catch (error) {
           setErrorMessage(

@@ -422,7 +422,7 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 - [x] Project clone URL controls preserve legacy `project/home.scala.html` scalar key `code.copyUrl` instead of temporary `Clone URL` copy.
 - [x] Project home tab/right-pane scalar UI preserves legacy `project/home.scala.html` / `milestone/partial_status.scala.html` output: `project.history.recent`, `project.dashboard`, `.milestone-info`, milestone title detail link, due-date label, progress bar, and closed/total issue ratio without temporary `Recent history` / `Dashboard` / `Current milestone` summary copy.
 - [x] 프로필 편집에서 아바타 업로드 시 `/files` 엔드포인트로 멀티파트 업로드 후 크롭이 동작한다
-- [x] 프로필 수정과 복수 이메일 추가/삭제/인증/주 이메일 설정이 모두 동작하고 legacy direct profile/email mutation routes가 `/user/editform` redirect를 반환한다
+- [x] 프로필 수정과 복수 이메일 추가/삭제/인증 메일 발송/주 이메일 설정이 모두 React REST mutation으로 동작하고 legacy direct profile/email mutation routes가 `/user/editform` redirect를 반환한다
 - [x] 프로젝트별 알림 토글이 legacy의 `NEW_COMMENT` 기본 off 동작을 따른다
 - [x] API 토큰 재생성이 동작하고 새 토큰이 표시된다
 
