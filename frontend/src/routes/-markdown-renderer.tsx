@@ -7219,12 +7219,12 @@ export function LegacyMarkdownEditorShell(props: {
       <ul className="nav nav-tabs nm small">
         <li className="active">
           <a href={`#${props.editId}`} data-toggle="tab" data-mode="edit">
-            {messages("common.editor.edit", { fallback: "common.editor.edit" })}
+            {legacyMessage(messages, "common.editor.edit")}
           </a>
         </li>
         <li>
           <a href={`#${props.previewId}`} data-toggle="tab" data-mode="preview">
-            {messages("common.editor.preview", { fallback: "common.editor.preview" })}
+            {legacyMessage(messages, "common.editor.preview")}
           </a>
         </li>
         <li>
@@ -7235,7 +7235,7 @@ export function LegacyMarkdownEditorShell(props: {
               type="button"
             >
               <i className="yobicon-list task-list-icon"></i>{" "}
-              {messages("button.add.checklist", { fallback: "button.add.checklist" })}
+              {legacyMessage(messages, "button.add.checklist")}
             </button>
           </div>
         </li>
@@ -7247,7 +7247,7 @@ export function LegacyMarkdownEditorShell(props: {
                 id="button-clear-temporary"
                 type="button"
               >
-                {messages("button.clear.temporary", { fallback: "button.clear.temporary" })}
+                {legacyMessage(messages, "button.clear.temporary")}
               </button>
             </div>
           </div>

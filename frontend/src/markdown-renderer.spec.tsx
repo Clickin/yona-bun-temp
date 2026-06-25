@@ -71,8 +71,16 @@ describe("MarkdownRenderer", () => {
       </LegacyMarkdownEditorShell>,
     );
 
+    expect(defaultHtml).toContain(">Edit<");
+    expect(defaultHtml).toContain(">Preview<");
+    expect(defaultHtml).toContain("Add checklist");
+    expect(defaultHtml).toContain("Clear Temporary");
     expect(defaultHtml).toContain("Markdown help");
     expect(defaultHtml).toContain("Notification receivers");
+    expect(defaultHtml).not.toContain("common.editor.edit");
+    expect(defaultHtml).not.toContain("common.editor.preview");
+    expect(defaultHtml).not.toContain("button.add.checklist");
+    expect(defaultHtml).not.toContain("button.clear.temporary");
     expect(defaultHtml).not.toContain("title.markdown.help");
     expect(defaultHtml).not.toContain("notification.receiver.list.title");
     expect(html).toContain("Translated Markdown Help");

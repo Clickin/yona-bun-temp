@@ -160,7 +160,10 @@
 - 2026-06-25 auxiliary direct-helper i18n continuation: the shared
   directory, anonymous home, help, and Markdown editor/receiver helper
   functions now resolve missing-provider labels through the legacy default
-  message file rather than returning raw keys. Focused evidence:
+  message file rather than returning raw keys. The Markdown editor tab and
+  action labels now cover `common.editor.edit`, `common.editor.preview`,
+  `button.add.checklist`, and `button.clear.temporary` through the same legacy
+  default lookup. Focused evidence:
   `directory-home-user-files-notification-i18n.spec.tsx`,
   `help-route-parity.spec.tsx`, `markdown-renderer.spec.tsx`, and
   `i18n.spec.tsx`.
