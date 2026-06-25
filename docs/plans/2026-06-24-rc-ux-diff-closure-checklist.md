@@ -106,6 +106,12 @@ src/help-route-parity.spec.tsx src/route-parity.spec.tsx` passed with 4 files
 --outside-sandbox -p yoram-server --test auth_workspace_contract
 direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate
 -- --nocapture` passed.
+- React submit boundary verification: `frontend/src/form-submit-boundary.spec.tsx`,
+  `frontend/src/auth-workspace-shell.spec.tsx`, and
+  `tests/server-spa-rest-boundary-contract.test.mjs` keep login, signup, lost
+  password, reset password, and site-admin bootstrap screen submits on REST JSON
+  wrappers while retaining direct legacy POST routes only as no-JS/deep-link
+  compatibility adapters.
 - Note: stale `server_core_contract.rs` reference to missing
   `protocol_foundation_contract` was removed so the consolidated server-core
   target can compile before filtered route tests run.
@@ -453,7 +459,8 @@ tests/legacy-rendered-page-audit.e2e.ts -g "logged-in /|/notifications|/notifica
   rendered text. The current audit also keeps the project issue detail XSS
   regression in `frontend/tests/legacy-rendered-page-audit.e2e.ts`.
 - Markdown stability verification: `pnpm --dir frontend exec vitest run
-src/markdown-renderer.spec.tsx` passed with 429 tests, including raw
+src/markdown-renderer.spec.tsx` passed with 429 tests
+  (`frontend/src/markdown-renderer.spec.tsx`), including raw
   script/style stripping, unsafe `javascript:` URL stripping, very long fenced
   blocks rendered as plain source without syntax highlighting, EOF/tilde fenced
   block recovery, and raw/invalid Markdown sanitizer cases.
