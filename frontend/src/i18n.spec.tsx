@@ -215,6 +215,14 @@ describe("legacy i18n runtime", () => {
     expect(notFoundHtml).toContain(">페이지를 찾을 수 없습니다</p>");
   });
 
+  it("keeps document title keys routed through the legacy message lookup", () => {
+    const sharedSource = readFileSync(new URL("./routes/-shared.tsx", import.meta.url), "utf8");
+
+    expect(sharedSource).toContain("const messages = useLegacyMessages();");
+    expect(sharedSource).toContain("document.title = messages.t(title, { fallback: title });");
+    expect(sharedSource).not.toContain("document.title = title");
+  });
+
   it("keeps visible fallbacks in the legacy keyspace", () => {
     const routeSources = [
       "./routes/-auth-views.tsx",
