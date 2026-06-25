@@ -1,11 +1,11 @@
 use crate::api_types::OwnedView;
 use axum::{
-    Json, Router,
     body::Bytes,
     extract::{Form, Path, Query},
     http::{HeaderMap, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::{delete, get, patch, post, put},
+    Json, Router,
 };
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Serialize};
@@ -15,30 +15,31 @@ use crate::api_types::*;
 use crate::assets::serve_frontend_page;
 use crate::routes::utils::gravatar_url;
 use crate::{
-    AssetMode, BrowserRuntimeConfig, ConnectError, Context, PilotBackend, PilotRepository,
-    PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
-    RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError, absolute_app_url,
-    accepts_legacy_json, attach_session_headers, base_path_href, build_organization_admin_response,
-    build_organization_container_response, build_project_container_response, code_browser_error,
-    code_file_record_is_renderable_markdown, direct_project_update_allowed,
-    direct_status_from_connect_error, form_value, format_project_date_label, internal_error,
-    issue_milestone_from_record, issue_milestone_from_record_with_issue_references,
-    legacy_external_api_auth_error_response, legacy_external_assignable_users_result,
-    legacy_external_authenticated_user_id, legacy_json_find_value, map_project_scope,
-    markdown_mention_references, normalize_identifier, normalize_issue_label_color,
-    normalize_milestone_state, organization_detail_with_logo_from_record, organization_logo_url,
-    parse_attachment_ids, parse_milestone_due_date, percent_encode_uri_component, persistence,
+    absolute_app_url, accepts_legacy_json, attach_session_headers, base_path_href,
+    build_organization_admin_response, build_organization_container_response,
+    build_project_container_response, code_browser_error, code_file_record_is_renderable_markdown,
+    direct_project_update_allowed, direct_status_from_connect_error, form_value,
+    format_project_date_label, internal_error, issue_milestone_from_record,
+    issue_milestone_from_record_with_issue_references, legacy_external_api_auth_error_response,
+    legacy_external_assignable_users_result, legacy_external_authenticated_user_id,
+    legacy_json_find_value, map_project_scope, markdown_mention_references, normalize_identifier,
+    normalize_issue_label_color, normalize_milestone_state,
+    organization_detail_with_logo_from_record, organization_logo_url, parse_attachment_ids,
+    parse_milestone_due_date, percent_encode_uri_component, persistence,
     project_detail_from_record, project_detail_with_logo_from_record, project_logo_url,
     project_read_allowed, project_update_allowed, redirect_to, repository_provisioning_lock,
     require_authenticated_user, require_project_read, require_project_resource_create,
     require_session, require_valid_csrf, resolve_issue_reference_search_project,
     rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
     rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
+    AssetMode, BrowserRuntimeConfig, ConnectError, Context, PilotBackend, PilotRepository,
+    PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
+    RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError,
 };
 use yoram_domain::{
-    ProjectAccessFacts, ProjectOperation, authorize_project_access,
-    can_create_organization_project, can_create_personal_project, can_request_project_enrollment,
-    can_update_organization, is_valid_organization_name, is_valid_project_name,
+    authorize_project_access, can_create_organization_project, can_create_personal_project,
+    can_request_project_enrollment, can_update_organization, is_valid_organization_name,
+    is_valid_project_name, ProjectAccessFacts, ProjectOperation,
 };
 
 mod forks;
@@ -52,14 +53,14 @@ mod vcs;
 mod webhooks;
 
 use forks::{
-    RestProjectForkBody, direct_clone_project, rest_fork_project, rest_read_project_fork_options,
+    direct_clone_project, rest_fork_project, rest_read_project_fork_options, RestProjectForkBody,
 };
 use home::rest_read_project_container;
 pub(crate) use members::rest_delete_project_member;
 use members::{
-    RestProjectMemberBody, RestProjectMemberRoleBody, direct_add_project_member,
-    direct_delete_project_member, direct_update_project_member_role, rest_add_project_member,
-    rest_read_project_members, rest_update_project_member_role,
+    direct_add_project_member, direct_delete_project_member, direct_update_project_member_role,
+    rest_add_project_member, rest_read_project_members, rest_update_project_member_role,
+    RestProjectMemberBody, RestProjectMemberRoleBody,
 };
 use milestones::{
     direct_create_project_milestone, direct_delete_project_milestone,
@@ -70,15 +71,6 @@ pub(crate) use milestones::{
     project_milestone_create, project_milestone_delete, project_milestone_list,
     project_milestone_read, project_milestone_state_mutation, project_milestone_update,
 };
-use organizations::{
-    RestOrganizationBody, RestOrganizationMemberBody, RestOrganizationMemberRoleBody,
-    rest_accept_organization_enrollment, rest_add_organization_member,
-    rest_cancel_enroll_organization, rest_create_organization, rest_delete_organization,
-    rest_delete_organization_member, rest_enroll_organization, rest_leave_organization,
-    rest_list_organizations, rest_read_organization_admin, rest_read_organization_container,
-    rest_read_organization_detail, rest_read_organization_members, rest_read_organization_settings,
-    rest_update_organization, rest_update_organization_member_role,
-};
 #[cfg(debug_assertions)]
 pub(crate) use organizations::{
     organization_admin_read, organization_container_read, organization_create, organization_delete,
@@ -86,6 +78,15 @@ pub(crate) use organizations::{
     organization_enrollment_accept, organization_leave, organization_list, organization_member_add,
     organization_member_delete, organization_member_role_update, organization_settings_read,
     organization_update,
+};
+use organizations::{
+    rest_accept_organization_enrollment, rest_add_organization_member,
+    rest_cancel_enroll_organization, rest_create_organization, rest_delete_organization,
+    rest_delete_organization_member, rest_enroll_organization, rest_leave_organization,
+    rest_list_organizations, rest_read_organization_admin, rest_read_organization_container,
+    rest_read_organization_detail, rest_read_organization_members, rest_read_organization_settings,
+    rest_update_organization, rest_update_organization_member_role, RestOrganizationBody,
+    RestOrganizationMemberBody, RestOrganizationMemberRoleBody,
 };
 pub(crate) use participation::recent_project_visit_record;
 use participation::{
@@ -97,8 +98,8 @@ pub(crate) use participation::{
     project_enroll, project_enroll_cancel, project_favorite_toggle, project_watch_toggle,
 };
 use transfers::{
-    RestProjectTransferBody, direct_accept_project_transfer, direct_request_project_transfer,
-    rest_read_project_transfer, rest_request_project_transfer,
+    direct_accept_project_transfer, direct_request_project_transfer, rest_read_project_transfer,
+    rest_request_project_transfer, RestProjectTransferBody,
 };
 pub(crate) use vcs::delete_project_repository_storage;
 use vcs::{
@@ -106,8 +107,8 @@ use vcs::{
     rest_read_project_change_vcs,
 };
 use webhooks::{
-    RestProjectWebhookBody, direct_create_project_webhook, direct_delete_project_webhook,
-    rest_create_project_webhook, rest_delete_project_webhook, rest_read_project_webhooks,
+    direct_create_project_webhook, direct_delete_project_webhook, rest_create_project_webhook,
+    rest_delete_project_webhook, rest_read_project_webhooks, RestProjectWebhookBody,
 };
 pub(crate) use webhooks::{
     dispatch_issue_webhooks, dispatch_posting_comment_webhooks, dispatch_posting_webhooks,
@@ -1058,6 +1059,33 @@ struct RestProjectCreateBody {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectImportBody {
+    auth_id: Option<String>,
+    auth_pw: Option<String>,
+    board: Option<bool>,
+    code: Option<bool>,
+    issue: Option<bool>,
+    milestone: Option<bool>,
+    owner_name: String,
+    overview: String,
+    pull_request: Option<bool>,
+    project_name: String,
+    project_scope: String,
+    review: Option<bool>,
+    url: String,
+    vcs: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectImportResponse {
+    owner_name: String,
+    project_name: String,
+    redirect_path: String,
+}
+
+#[derive(Deserialize)]
 struct RestProjectCreateFormOptionsQuery {
     owner: Option<String>,
 }
@@ -1122,6 +1150,19 @@ impl RestProjectCreateBody {
             "svn" | "subversion" => Ok("Subversion"),
             _ => Err(RestRouteError::bad_request("invalid project VCS")),
         }
+    }
+}
+
+impl RestProjectImportBody {
+    fn menu_settings(&self) -> Option<persistence::ProjectMenuSettingsRecord> {
+        rest_project_menu_settings(
+            self.code,
+            self.issue,
+            self.pull_request,
+            self.review,
+            self.milestone,
+            self.board,
+        )
     }
 }
 
@@ -1425,6 +1466,151 @@ async fn rest_create_project(
         .await?;
     }
     Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_import_project(
+    headers: HeaderMap,
+    body: RestProjectImportBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project import requires repository backend",
+        ));
+    };
+
+    let source_url = body.url.trim();
+    if source_url.is_empty() {
+        return Err(RestRouteError::bad_request(
+            "project.import.error.empty.url",
+        ));
+    }
+    let owner_name = body.owner_name.trim();
+    let project_name = body.project_name.trim();
+    let overview = body.overview.trim();
+    if !is_valid_project_name(project_name) || overview.len() > 255 {
+        return Err(RestRouteError::bad_request("project.name.alert"));
+    }
+    if repository
+        .project_identifier_exists(owner_name, project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+    {
+        return Err(RestRouteError::bad_request("project.name.duplicate"));
+    }
+
+    let scope_value = if body.project_scope.trim().is_empty() {
+        service.project_default_scope.as_str()
+    } else {
+        body.project_scope.trim()
+    };
+    let scope = map_project_scope(scope_value)
+        .map_err(|_| RestRouteError::bad_request("invalid project scope"))?;
+    let actor = repository
+        .find_user_by_id(actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::permission_denied("forbidden"))
+        })?;
+    let organization = repository
+        .read_organization_authorization(owner_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    let created = if let Some(organization) = organization {
+        if !can_create_organization_project(organization.viewer.is_organization_admin) {
+            return Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("forbidden"),
+            ));
+        }
+        repository
+            .create_project(persistence::CreateProjectInput {
+                organization_id: Some(organization.organization.id),
+                owner_name: organization.organization.organization_name,
+                overview: Some(overview.to_string()),
+                project_name: project_name.to_string(),
+                project_scope: scope.as_str().to_string(),
+                vcs: "GIT".to_string(),
+            })
+            .await
+    } else {
+        if !can_create_personal_project(Some(&actor.login_id), owner_name) {
+            return Err(RestRouteError::bad_request("project.owner.invalid"));
+        }
+        repository
+            .create_project(persistence::CreateProjectInput {
+                organization_id: None,
+                owner_name: owner_name.to_string(),
+                overview: Some(overview.to_string()),
+                project_name: project_name.to_string(),
+                project_scope: scope.as_str().to_string(),
+                vcs: "GIT".to_string(),
+            })
+            .await
+    }
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
+
+    let repo_path = yoram_vcs::repository_path(&service.data_root, created.id);
+    let clone_result = {
+        let _guard = repository_provisioning_lock()
+            .lock()
+            .map_err(|_| RestRouteError::internal("repository provisioning lock poisoned"))?;
+        if repo_path.exists() {
+            let _ = yoram_vcs::delete_repository(&repo_path);
+        }
+        yoram_vcs::clone_bare_repository_from_source(source_url, &repo_path)
+    };
+    if let Err(error) = clone_result {
+        let _ = repository
+            .delete_project_by_owner_and_name(&created.owner_name, &created.project_name)
+            .await;
+        let _ = yoram_vcs::delete_repository(&repo_path);
+        return Err(RestRouteError::bad_request(format!(
+            "project.import.error.invalid.url: {error}"
+        )));
+    }
+
+    if let Err(error) = repository
+        .add_project_membership(created.id, actor_id, "manager")
+        .await
+    {
+        let _ = repository
+            .delete_project_by_owner_and_name(&created.owner_name, &created.project_name)
+            .await;
+        let _ = yoram_vcs::delete_repository(&repo_path);
+        return Err(RestRouteError::from_connect_error(internal_error(error)));
+    }
+    if let Some(menu_settings) = body.menu_settings() {
+        repository
+            .set_project_menu_settings(created.id, menu_settings)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?;
+    }
+
+    let redirect_path = format!("/{}/{}", created.owner_name, created.project_name);
+    Ok(rest_json_response(
+        RestProjectImportResponse {
+            owner_name: created.owner_name,
+            project_name: created.project_name,
+            redirect_path,
+        },
+        Context::new(headers),
+    ))
 }
 
 async fn rest_project_create_form_options(
@@ -1947,6 +2133,16 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Query(query): Query<RestProjectCreateFormOptionsQuery>| {
                     let service = service.clone();
                     async move { rest_project_create_form_options(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/projects/import",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestProjectImportBody>| {
+                    let service = service.clone();
+                    async move { rest_import_project(headers, body, service).await }
                 }
             }),
         )

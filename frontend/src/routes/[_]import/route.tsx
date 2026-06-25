@@ -1,24 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import {
+  importProjectRest,
   readProjectCreateFormOptionsRest,
   type ProjectCreateFormOptionsResponse,
 } from "../../api/org-project";
 import { useAppRuntime } from "../../app-runtime-context";
 import { ProjectImportPage } from "../-project-views";
-import { BadRequestPage, useRequireAuthenticatedRoute } from "../-shared";
+import { BadRequestPage, navigateToAppHref, useRequireAuthenticatedRoute } from "../-shared";
 
 export const Route = createFileRoute("/_import")({
   component: ProjectImportRouteComponent,
 });
 
 function ProjectImportRouteComponent() {
-  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/_import");
   const [formOptions, setFormOptions] = React.useState<ProjectCreateFormOptionsResponse | null>(
     null,
   );
   const [readFailed, setReadFailed] = React.useState(false);
+  const [pending, setPending] = React.useState(false);
 
   React.useEffect(() => {
     if (bootstrapping || !canRender) {
@@ -60,7 +62,24 @@ function ProjectImportRouteComponent() {
       defaultProjectMenus={runtimeConfig.projectDefaultMenus}
       defaultProjectScope={runtimeConfig.projectDefaultScope}
       csrfToken={csrfToken}
+      onImportProject={async (input) => {
+        setPending(true);
+        setErrorMessage(null);
+        try {
+          const imported = await importProjectRest(runtimeConfig, csrfToken, input);
+          navigateToAppHref(runtimeConfig.basePath, imported.redirectPath);
+        } catch (error) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
+        } finally {
+          setPending(false);
+        }
+      }}
       ownerOptions={formOptions.ownerOptions}
+      pending={pending}
       selectedOwnerName={formOptions.selectedOwnerName}
     />
   );

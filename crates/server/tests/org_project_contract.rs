@@ -1,6 +1,7 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
+use serde_json::json;
 
 // Guards project route behavior while server root domain/VCS import forwarding
 // is replaced with module-local imports and stale route imports are removed.
@@ -10,14 +11,12 @@ use std::path::Path;
 use std::process::Command;
 use tempfile::{tempdir, TempDir};
 use tower::ServiceExt;
+use yoram_migration::Migrator;
 use yoram_persistence::{
     AppRepository, CreatePostingInput, CreateProjectLabelInput, CreatePullRequestInput,
     PostingMutationInput, ProjectMenuSettingsRecord, PullRequestMutationInput, RepositoryConfig,
 };
-use yoram_migration::Migrator;
-use yoram_server::{
-    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
-};
+use yoram_server::{create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig};
 use yoram_vcs::{repository_path, svn_repository_path};
 
 fn svnadmin_available() -> bool {
@@ -472,6 +471,77 @@ async fn project_import_direct_route_clones_git_repository_and_preserves_legacy_
     assert!(response_json(no_url)
         .await
         .contains("project.import.error.empty.url"));
+}
+
+#[tokio::test]
+async fn project_import_rest_route_clones_git_repository_for_spa() {
+    let yona_data = temp_yona_data_root();
+    let source_dir = tempdir().expect("source repo tempdir");
+    let source_repo = source_dir.path().join("source.git");
+    seed_source_bare_repository(&source_repo, "# Imported through REST\n");
+
+    let (app, app_repo) = build_app_with_repository_in_data_root(yona_data.path()).await;
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+
+    let imported = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/projects/import")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    json!({
+                        "url": source_repo.to_str().expect("source repo path"),
+                        "ownerName": "admin",
+                        "projectName": "imported-rest",
+                        "overview": "Imported through REST",
+                        "projectScope": "PUBLIC",
+                        "vcs": "GIT",
+                        "code": true,
+                        "issue": true,
+                        "pullRequest": true,
+                        "review": true,
+                        "milestone": true,
+                        "board": true
+                    })
+                    .to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let imported_status = imported.status();
+    let imported_body = response_json(imported).await;
+    assert_eq!(
+        imported_status,
+        StatusCode::OK,
+        "unexpected REST import response body: {imported_body}"
+    );
+    let imported_json: serde_json::Value =
+        serde_json::from_str(&imported_body).expect("project import json");
+    assert_eq!(imported_json["redirectPath"], "/admin/imported-rest");
+
+    let authorization = app_repo
+        .read_project_authorization("admin", "imported-rest", None)
+        .await
+        .expect("read imported project")
+        .expect("imported project exists");
+    let imported_repo = repository_path(yona_data.path(), authorization.project.id);
+    assert!(imported_repo.exists());
+    let readme = git_output(
+        &[
+            "--git-dir",
+            imported_repo.to_str().unwrap(),
+            "show",
+            "HEAD:README.md",
+        ],
+        None,
+    );
+    assert_eq!(readme, "# Imported through REST\n");
 }
 
 #[tokio::test]

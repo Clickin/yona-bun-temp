@@ -12,7 +12,7 @@ const allowedFormPosts: AllowedFormPost[] = [
   {
     file: "routes/-project-views.tsx",
     marker: 'id="importGit"',
-    reason: "project Git import still uses the direct multipart import route",
+    reason: "project Git import keeps the legacy direct form action as a fallback",
   },
   {
     file: "routes/sites/$pageName/route.tsx",
@@ -456,6 +456,19 @@ describe("React form submit boundary", () => {
     expect(source).toContain("JSON.parse(await data.text())");
     expect(source).toContain("onImportSiteData");
     expect(source).toContain("event.preventDefault()");
+  });
+
+  it("keeps project Git import on the React REST JSON primary boundary", () => {
+    const routeSource = readRouteSource("routes/[_]import/route.tsx");
+    const apiSource = fs.readFileSync(path.resolve(__dirname, "api/org-project.ts"), "utf8");
+
+    expect(routeSource).toContain("importProjectRest");
+    expect(apiSource).toContain(
+      'restFetch<ProjectImportResponse>(runtimeConfig, "/projects/import"',
+    );
+    expect(routeSource).toContain("onImportProject");
+    expect(routeSource).toContain("navigateToAppHref");
+    expect(readRouteSource("routes/-project-views.tsx")).toContain("event.preventDefault()");
   });
 
   it("keeps indirect submit handlers from falling through to native form submit", () => {

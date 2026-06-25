@@ -52,6 +52,19 @@ type ProjectCreateInput = {
   vcs?: string;
 };
 
+type ProjectImportInput = ProjectCreateInput & {
+  authId?: string;
+  authPw?: string;
+  ownerName: string;
+  url: string;
+};
+
+export type ProjectImportResponse = {
+  ownerName: string;
+  projectName: string;
+  redirectPath: string;
+};
+
 export type ProjectCreateOwnerOption = {
   organization: boolean;
   ownerName: string;
@@ -564,6 +577,30 @@ export function createProjectRest(
       overview: input.overview,
       projectName: input.projectName,
       projectScope: input.projectScope,
+      ...(input.vcs !== undefined ? { vcs: input.vcs } : {}),
+    },
+    csrfToken,
+    fetchImpl,
+    method: "POST",
+  });
+}
+
+export function importProjectRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectImportInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectImportResponse> {
+  return restFetch<ProjectImportResponse>(runtimeConfig, "/projects/import", {
+    body: {
+      ...projectMenuBody(input),
+      authId: input.authId ?? "",
+      authPw: input.authPw ?? "",
+      ownerName: input.ownerName,
+      overview: input.overview,
+      projectName: input.projectName,
+      projectScope: input.projectScope,
+      url: input.url,
       ...(input.vcs !== undefined ? { vcs: input.vcs } : {}),
     },
     csrfToken,

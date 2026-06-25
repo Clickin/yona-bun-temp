@@ -1173,7 +1173,7 @@ export function ProjectImportPage(props: {
     review: boolean;
     url: string;
     vcs: string;
-  }) => void;
+  }) => Promise<void> | void;
   pending?: boolean;
   selectedOwnerName?: string;
 }) {
@@ -1224,7 +1224,7 @@ export function ProjectImportPage(props: {
             onSubmit={(event) => {
               if (props.onImportProject) {
                 event.preventDefault();
-                props.onImportProject(formState);
+                void props.onImportProject(formState);
               }
             }}
           >
