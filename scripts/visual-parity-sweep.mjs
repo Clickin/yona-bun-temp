@@ -667,6 +667,18 @@ async function inspectPage(page, baseUrl, path, label) {
   } catch (error) {
     page.off("console", onConsole);
     page.off("requestfailed", onRequestFailed);
+    if (error instanceof Error && error.message.includes("Download is starting")) {
+      return {
+        path,
+        status: 0,
+        ok: true,
+        download: true,
+        errors: [],
+        consoleErrors,
+        requestFailures,
+        metrics: null,
+      };
+    }
     return { path, ok: false, errors: [`navigation failed: ${error.message}`] };
   }
 

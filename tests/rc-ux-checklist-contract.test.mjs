@@ -16,6 +16,12 @@ const visualProvenancePath = path.join(
   "provenance",
   "visual-parity-sweep-2026-06-25.md",
 );
+const legacyAuditOutputPath = path.join(
+  repoRoot,
+  ".agent",
+  "legacy-html-page-audit",
+  "latest.json",
+);
 const sweepOutputPath = path.join(repoRoot, "output", "playwright", "visual-sweep", "latest.json");
 
 const allowedClosedStatuses = new Set(["pass", "not-applicable", "expected-legacy-non-ok"]);
@@ -130,6 +136,12 @@ const requiredVisualPathsByRow = {
     "/admin/sample/code/main/README.md",
   ],
 };
+const requiredQueryStringUiLinks = [
+  "/admin/sample/postform?readme=true",
+  "/admin/sample/postform?issueTemplate=true",
+  "/admin/sample/issues?format=xls",
+  "/admin/sample/reviews?format=xls",
+];
 
 function readText(filePath) {
   return readFileSync(filePath, "utf8");
@@ -235,6 +247,36 @@ test("RC UX user-facing rows stay backed by visual sweep coverage", () => {
         `${rowId} evidence should name ${requiredPath}`,
       );
     }
+  }
+});
+
+test("generated audit and visual sweep evidence preserves discovered query-string UI links", () => {
+  const latestAudit = JSON.parse(readText(legacyAuditOutputPath));
+  const latestSweep = JSON.parse(readText(sweepOutputPath));
+  const auditLinks = new Set(latestAudit.discoveredPageLinks ?? []);
+  const sweepPaths = collectStringPaths(latestSweep);
+  const legacyAuditPagesByTarget = [
+    ...(latestSweep.legacy?.legacyAuditPages ?? []),
+    ...(latestSweep.local?.legacyAuditPages ?? []),
+  ];
+  const importedAuditPages = new Set(legacyAuditPagesByTarget);
+
+  for (const requiredPath of requiredQueryStringUiLinks) {
+    assert.equal(
+      auditLinks.has(requiredPath),
+      true,
+      `legacy HTML audit discoveredPageLinks must keep ${requiredPath}`,
+    );
+    assert.equal(
+      importedAuditPages.has(requiredPath),
+      true,
+      `visual sweep legacyAuditPages must import ${requiredPath}`,
+    );
+    assert.equal(
+      sweepPaths.has(requiredPath),
+      true,
+      `visual sweep results must include rendered coverage evidence for ${requiredPath}`,
+    );
   }
 });
 

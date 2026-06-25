@@ -337,14 +337,14 @@ try {
   const dynamicPages = discoverProjectPages();
   const authResults = [...authenticatedPages, ...dynamicPages].map(auditPage);
   const results = [...publicResults, ...authResults];
-  const auditedPagePaths = new Set(results.map((result) => result.path.split("?")[0]));
+  const auditedPagePaths = new Set(
+    results.map((result) => new URL(result.path, baseUrl).pathname.replace(/\/$/, "") || "/"),
+  );
   const discoveredPageLinks = [
-    ...new Set(
-      results.flatMap((result) => result.discoveredPageLinks.map((link) => link.split("?")[0])),
-    ),
+    ...new Set(results.flatMap((result) => result.discoveredPageLinks)),
   ].sort();
   const unauditedDiscoveredPageLinks = discoveredPageLinks.filter(
-    (link) => !auditedPagePaths.has(link),
+    (link) => !auditedPagePaths.has(new URL(link, baseUrl).pathname.replace(/\/$/, "") || "/"),
   );
   const summary = {
     baseUrl,
