@@ -103,6 +103,34 @@ const projectSuffixes = [
   "/changeVCS",
 ];
 
+const localDirectApiSurfaces = [
+  {
+    expectKeys: ["profile", "recentProjects"],
+    expectPaths: ["profile.loginId", "recentProjects"],
+    method: "GET",
+    path: "/user/usermenuTabContentList",
+  },
+  {
+    expectKeys: ["iframePath", "siteName", "workspace"],
+    expectPaths: ["iframePath", "workspace.profile.loginId", "workspace.recentProjects"],
+    method: "GET",
+    path: "/user/sidebar?path=%2Fadmin%2Fsample%2Fissue%2F1&hash=comment-7",
+  },
+  {
+    expectKeys: ["hasMore", "items", "total"],
+    headers: { accept: "application/json" },
+    method: "GET",
+    path: "/notification?from=0&limit=20",
+  },
+  {
+    body: { body: "Preview **source** #1", breaks: false },
+    expectKeys: ["bodyMarkdown", "breaks"],
+    expectPaths: ["bodyMarkdown", "breaks"],
+    method: "POST",
+    path: "/markdown/admin/sample",
+  },
+];
+
 const routeSampleValues = {
   $branch: "main",
   $commitId: "HEAD",
@@ -364,6 +392,97 @@ async function discoverProjectPaths(page, baseUrl) {
   return projectRoots.flatMap((root) => projectSuffixes.map((suffix) => `${root}${suffix}`));
 }
 
+async function inspectLocalDirectApiSurface(page, baseUrl, surface) {
+  const requestOptions = {
+    headers: surface.headers ?? {},
+  };
+  let response;
+  if (surface.method === "POST") {
+    response = await page.request.post(`${baseUrl}${surface.path}`, {
+      ...requestOptions,
+      data: surface.body ?? {},
+    });
+  } else {
+    response = await page.request.get(`${baseUrl}${surface.path}`, requestOptions);
+  }
+  const contentType = response.headers()["content-type"] ?? "";
+  const text = await response.text();
+  const errors = [];
+  let payload = null;
+  if (!response.ok()) {
+    errors.push(`HTTP ${response.status()}`);
+  }
+  if (!contentType.startsWith("application/json")) {
+    errors.push(`non-json content-type: ${contentType || "(missing)"}`);
+  }
+  if (/<(?:!doctype|html|body|div|ul|li|span|a)\b/iu.test(text)) {
+    errors.push("html fragment visible in direct API response");
+  }
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    errors.push("response is not valid JSON");
+  }
+  if (payload) {
+    for (const key of surface.expectKeys) {
+      if (!Object.prototype.hasOwnProperty.call(payload, key)) {
+        errors.push(`missing payload key: ${key}`);
+      }
+    }
+    for (const path of surface.expectPaths ?? []) {
+      const hasPath = path.split(".").every((segment, index, segments) => {
+        const current = segments
+          .slice(0, index)
+          .reduce(
+            (value, key) => (value && typeof value === "object" ? value[key] : null),
+            payload,
+          );
+        return (
+          current &&
+          typeof current === "object" &&
+          Object.prototype.hasOwnProperty.call(current, segment)
+        );
+      });
+      if (!hasPath) {
+        errors.push(`missing payload path: ${path}`);
+      }
+    }
+  }
+  if (
+    surface.path.startsWith("/markdown/") &&
+    payload &&
+    (Object.prototype.hasOwnProperty.call(payload, "bodyHtml") ||
+      Object.prototype.hasOwnProperty.call(payload, "html"))
+  ) {
+    errors.push("markdown preview returned rendered HTML field");
+  }
+  return {
+    contentType,
+    method: surface.method,
+    ok: errors.length === 0,
+    payloadKeys:
+      payload && typeof payload === "object" && !Array.isArray(payload)
+        ? Object.keys(payload).sort()
+        : [],
+    path: surface.path,
+    status: response.status(),
+    errors,
+  };
+}
+
+async function inspectLocalDirectApiSurfaces(page, baseUrl) {
+  const results = [];
+  for (const surface of localDirectApiSurfaces) {
+    results.push(await inspectLocalDirectApiSurface(page, baseUrl, surface));
+  }
+  return {
+    failed: results.filter((result) => !result.ok).length,
+    passed: results.filter((result) => result.ok).length,
+    results,
+    total: results.length,
+  };
+}
+
 function hasRawI18n(text) {
   return /(?<![a-z0-9_.-])(?:button|code|error|issue|label|menu|message|milestone|notification|post|project|search|title|user|userinfo)\.[A-Za-z0-9_.-]+\b/u.test(
     text,
@@ -587,6 +706,8 @@ async function runTarget(label, baseUrl) {
   const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
   const page = await context.newPage();
   const loggedIn = label === "local" ? await apiLogin(page, baseUrl) : await login(page, baseUrl);
+  const directApiSurfaces =
+    label === "local" && loggedIn ? await inspectLocalDirectApiSurfaces(page, baseUrl) : null;
   const discoveredProjectPages = loggedIn ? await discoverProjectPaths(page, baseUrl) : [];
   const routeSamples = label === "legacy" ? [] : routeTreeSamplePaths();
   const paths = [...new Set([...basePages, ...routeSamples, ...discoveredProjectPages])];
@@ -608,6 +729,7 @@ async function runTarget(label, baseUrl) {
     total: results.length,
     passed: results.filter((result) => result.ok).length,
     failed: results.filter((result) => !result.ok).length,
+    directApiSurfaces,
     discoveredProjectPages,
     results,
   };
@@ -648,6 +770,7 @@ console.log(JSON.stringify(summary, null, 2));
 const comparisonFailures = comparison.filter((result) => result.diffErrors.length > 0);
 if (
   (local?.failed ?? 0) > 0 ||
+  (local?.directApiSurfaces?.failed ?? 0) > 0 ||
   (sweepTarget === "legacy" && (legacy?.failed ?? 0) > 0) ||
   comparisonFailures.length > 0
 ) {

@@ -37,6 +37,14 @@ Status: current audit evidence.
   fragments for the legacy target, while local browser navigation must render
   the React shell. Error-page detection includes both body text and document
   title so legacy 404/500 pages are not misclassified as normal pages.
+- Direct API criterion: the local sweep also checks legacy direct fragment
+  surfaces that have been converted to React-owned data boundaries. It fails if
+  `/user/usermenuTabContentList`, `/user/sidebar`, `/notification?from=...`, or
+  `POST /markdown/:owner/:project` return an HTML fragment instead of JSON, or
+  if markdown preview returns a rendered HTML field instead of Markdown source.
+- i18n criterion: React-owned views must keep using legacy `conf/messages*`
+  keys as-is. The sweep fails when a rendered normal page exposes raw legacy
+  message keys; new React-specific message keys are not a parity substitute.
 
 ## Commands
 
@@ -78,6 +86,7 @@ Playwright render the legacy responses from `127.0.0.1`.
   `/admin/sample/post/1/editform`, `/admin/sample/compare/main...main`, and
   `/admin/sample/branches` returned HTTP 500 from the homelab sample.
 - Local Playwright visual sweep: 152 checked, 152 passed, 0 failed, authenticated session confirmed.
+- Local direct API fragment-conversion sweep: 4 checked, 4 passed, 0 failed.
 - Cross-target comparison failures: 0. The harness now catches the class of issue where legacy
   renders a normal page and local renders a not-found/forbidden/bad-request page.
 - A rerun first exposed `/user/issues/new` as that exact class of failure:
@@ -89,8 +98,9 @@ Playwright render the legacy responses from `127.0.0.1`.
 - Local discovered project route root: `/pilot/yona`.
 - Legacy discovered project route root: `/admin/sample`.
 - Legacy i18n keys are now loaded directly from `yona-original/conf/messages*` before the local
-  fallback dictionary, so visible legacy keys such as `user.role.owner` fail only when they are
-  absent from the original message bundle.
+  fallback dictionary. React conversion work must keep those legacy key names rather than inventing
+  a new keyspace; visible keys such as `user.role.owner` now fail the sweep when they leak into a
+  rendered normal page.
 - `/admin/sample/newPullRequestForm` now preserves the project pull-request page shell when the
   form-options endpoint reports the legacy `pullRequest.error.newPullRequestForm` condition,
   matching the legacy rendered page instead of replacing it with a generic bad-request screen.
