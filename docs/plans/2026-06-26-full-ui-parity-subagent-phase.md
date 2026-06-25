@@ -312,7 +312,7 @@ Round 2 remaining subagent split:
 | Login dialog remember-me checkbox must be user-toggleable and submit the chosen value | `ui-parity-root-navigation-shell` | `covered in current follow-up` | `LegacyLoginDialog` uses normal default-checked checkbox semantics; root-shell E2E unchecks it and asserts REST JSON `rememberMe: false`. |
 | Public auth/root shell browser raw-key scans | `ui-parity-auth-public-entry`, `ui-parity-root-navigation-shell` | `covered in current follow-up` | Focused public-auth and root-shell Playwright suites now scan browser-visible `body.innerText()` for legacy raw message keys across their public/root state matrices. |
 | Directory pagination and create/import/org browser interaction proof | `ui-parity-directory-organization` | `covered in current follow-up` | `frontend/tests/directory-create-import-proof.e2e.ts` now drives `/projects` and `/orgs` page-2 pagination under `/yona`, validates query-preserving prev/next links, and proves `/projectform`, `/_import`, and `/organizations/new` invalid-state blocking plus REST JSON mutation payloads and redirects. The proof found and fixed a mounted-base pagination gap in `frontend/src/routes/-directory-views.tsx`. |
-| Workspace profile/avatar settings browser mutation depth | `ui-parity-user-account-settings` | `weak evidence` | `frontend/tests/workspace-settings-parity.e2e.ts`; implementation only if proof fails in `frontend/src/routes/-workspace-settings-view.tsx` |
+| Workspace profile/avatar settings browser mutation depth | `ui-parity-user-account-settings` | `covered in current follow-up` | `frontend/tests/workspace-settings-parity.e2e.ts` now drives crop Cancel, crop Save upload, hidden `avatarAttachmentId`, profile submit redirect, reset visited projects, and selected notification toggle from the browser-visible settings UI while asserting the REST/file request boundaries. |
 | Issue label settings update permission gate | `ui-parity-issues` | `covered in current follow-up` | The React labels form route now waits for project container data and renders the legacy forbidden shell when `viewerCanUpdate` is false; focused Playwright proof verifies read-only viewers do not see `#copyLabel` or `#frmNewLabel`. |
 | Issue label category typeahead and new-category single/multiple choice | `ui-parity-issues` | `covered in current follow-up` | `IssueLabelCreateForm` now renders an existing-category typeahead and opens `#newCategoryOption` for new categories before POSTing the REST JSON `categoryIsExclusive` value; focused Playwright proof chooses Single and asserts the payload. |
 | Issue label/category edit interactions must use legacy modal UX | `ui-parity-issues` | `covered in current follow-up` | Label/category edit buttons now open React-controlled legacy `#editLabel` and `#editCategory` modal shells, prefill values, submit PATCH REST JSON, and close on success/cancel; focused Playwright proof covers both modal flows. |
@@ -563,6 +563,11 @@ Before this phase can close:
 
 ## Parent Integration Evidence
 
+- 2026-06-27 workspace settings browser-depth refresh: `pnpm --dir frontend
+  test:e2e -- workspace-settings-parity.e2e.ts` passed 7 Playwright tests after
+  adding profile/avatar mutation-depth proof for crop Cancel, crop Save upload,
+  hidden `avatarAttachmentId`, `PATCH /api/v1/workspace/profile` and `/me`
+  redirect, reset visited projects, and selected notification toggle mutation.
 - 2026-06-27 reopen wave integration refresh: `pnpm --dir frontend test:e2e
   -- auth-public-entry-parity.e2e.ts root-shell-parity.e2e.ts
   directory-create-import-proof.e2e.ts project-code-comment-upload-parity.e2e.ts

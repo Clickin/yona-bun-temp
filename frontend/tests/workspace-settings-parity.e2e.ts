@@ -160,6 +160,179 @@ test("workspace avatar invalid file and crop modal keep legacy settings selector
   await expect(page.locator("#avatarCropWrap .modal-footer button").first()).toHaveText("Cancel");
 });
 
+test("workspace profile avatar save, profile submit, and visited reset mutate through REST", async ({
+  page,
+}) => {
+  const requests: Array<{ body: unknown; method: string; path: string }> = [];
+  let currentOverview = { ...workspaceOverview };
+  await page.route("**/files", async (route) => {
+    const request = route.request();
+    requests.push({
+      body: null,
+      method: request.method(),
+      path: new URL(request.url()).pathname.replace("/yona", ""),
+    });
+    await route.fulfill({
+      body: JSON.stringify({ attachmentId: "avatar-attachment-9" }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/workspace/profile"), async (route) => {
+    const request = route.request();
+    requests.push({
+      body: request.postDataJSON(),
+      method: request.method(),
+      path: new URL(request.url()).pathname.replace("/yona/api/v1", ""),
+    });
+    currentOverview = {
+      ...currentOverview,
+      profile: {
+        ...currentOverview.profile,
+        avatarUrl: "/files/avatar-attachment-9",
+        displayName: "Door Changed",
+        primaryEmailAddress: "door.changed@example.com",
+      },
+    };
+    await route.fulfill({
+      body: JSON.stringify(currentOverview),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/workspace/recent-projects"), async (route) => {
+    const request = route.request();
+    requests.push({
+      body: null,
+      method: request.method(),
+      path: new URL(request.url()).pathname.replace("/yona/api/v1", ""),
+    });
+    currentOverview = { ...currentOverview, recentProjects: [] };
+    await route.fulfill({
+      body: JSON.stringify(currentOverview),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/user/editform");
+
+  await page.locator("#avatarFile").setInputFiles({
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR42mP8z8BQz0AEYBxVSFMAJH0DCeULl7wAAAAASUVORK5CYII=",
+      "base64",
+    ),
+    mimeType: "image/png",
+    name: "avatar.png",
+  });
+  await expect(page.locator("#avatarCropWrap")).toBeVisible();
+  await page.locator("#avatarCropWrap .modal-footer button").first().click();
+  await expect(page.locator("#avatarCropWrap")).toBeHidden();
+
+  await page.locator("#avatarFile").setInputFiles({
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR42mP8z8BQz0AEYBxVSFMAJH0DCeULl7wAAAAASUVORK5CYII=",
+      "base64",
+    ),
+    mimeType: "image/png",
+    name: "avatar.png",
+  });
+  await expect(page.locator("#avatarCropWrap")).toBeVisible();
+  await page.locator("#avatarCropWrap .btnSubmitCrop").click();
+  await expect
+    .poll(() => requests.some((request) => request.path === "/files" && request.method === "POST"))
+    .toBe(true);
+  await expect(page.locator("#avatarCropWrap")).toBeHidden();
+  await expect(page.locator('input[name="avatarAttachmentId"]')).toHaveValue("avatar-attachment-9");
+
+  await page.locator('#frmBasic input[name="name"]').fill("Door Changed");
+  await page.locator('#frmBasic input[name="email"]').fill("door.changed@example.com");
+  await page.locator("#frmBasic button[type='submit']").click();
+  await expect
+    .poll(() => requests.some((request) => request.path === "/workspace/profile"))
+    .toBe(true);
+  expect(requests.find((request) => request.path === "/workspace/profile")).toEqual({
+    body: {
+      avatarAttachmentId: "avatar-attachment-9",
+      email: "door.changed@example.com",
+      name: "Door Changed",
+    },
+    method: "PATCH",
+    path: "/workspace/profile",
+  });
+  await expect(page).toHaveURL(/\/yona\/me$/);
+
+  await page.goto("/yona/user/editform");
+  await page.locator(".reset-user-visited-list button[type='submit']").click();
+  await expect
+    .poll(() => requests.some((request) => request.path === "/workspace/recent-projects"))
+    .toBe(true);
+  expect(requests.find((request) => request.path === "/workspace/recent-projects")).toEqual({
+    body: null,
+    method: "DELETE",
+    path: "/workspace/recent-projects",
+  });
+});
+
+test("workspace notification toggle mutates the selected legacy notification row", async ({
+  page,
+}) => {
+  const requests: Array<{ body: unknown; method: string; path: string }> = [];
+  let currentOverview = structuredClone(workspaceOverview);
+  await page.route(apiV1Route("/workspace"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(currentOverview),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/workspace/notifications"), async (route) => {
+    const request = route.request();
+    const body = request.postDataJSON();
+    requests.push({
+      body,
+      method: request.method(),
+      path: new URL(request.url()).pathname.replace("/yona/api/v1", ""),
+    });
+    currentOverview = {
+      ...currentOverview,
+      watchedProjects: currentOverview.watchedProjects.map((project) =>
+        project.projectId === body.projectId
+          ? {
+              ...project,
+              notifications: project.notifications.map((notification) =>
+                notification.eventType === body.eventType
+                  ? { ...notification, enabled: !notification.enabled }
+                  : notification,
+              ),
+            }
+          : project,
+      ),
+    };
+    await route.fulfill({
+      body: JSON.stringify(currentOverview),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/user/editform/notifications#2");
+
+  const toggle = page.locator('.tab-content [id="2"] input.notiUpdate');
+  await expect(toggle).toHaveAttribute("data-href", "/yona/noti/toggle/2/NEW_COMMENT");
+  await expect(toggle).not.toBeChecked();
+  await toggle.click();
+  await expect
+    .poll(() => requests.some((request) => request.path === "/workspace/notifications"))
+    .toBe(true);
+  expect(requests.at(-1)).toEqual({
+    body: { eventType: "NEW_COMMENT", projectId: "2" },
+    method: "POST",
+    path: "/workspace/notifications",
+  });
+  await expect(toggle).toBeChecked();
+});
+
 test("workspace email settings keep legacy controls while mutating through REST", async ({
   page,
 }) => {
