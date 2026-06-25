@@ -417,13 +417,14 @@
 - 2026-06-25 visual sweep corpus hardening note: `scripts/visual-parity-sweep.mjs` now imports `.agent/legacy-html-page-audit/latest.json` `discoveredPageLinks` into the rendered-screen corpus for both legacy and local targets, recording them as `legacyAuditPages` in the sweep output. This keeps browser parity checks coupled to the HTML-link audit so newly found legacy pages are not silently left out of Playwright review.
 - 2026-06-25 visual sweep corpus failure guard note: `scripts/visual-parity-sweep.mjs` now treats missing, invalid, unreachable, or failed `.agent/legacy-html-page-audit/latest.json` as an unusable corpus and exits non-zero instead of silently shrinking rendered-screen coverage to hand-listed routes only. The sweep output records `legacyAuditCorpus.status/error/pages`, and `scripts/legacy-html-page-audit.spec.mjs` covers unreachable and successful corpus normalization.
 - 2026-06-25 legacy audit test isolation note: `scripts/audit-legacy-html-pages.mjs` accepts `YONA_LEGACY_AUDIT_OUTPUT_DIR` so unreachable-baseline contract tests write to a temporary directory instead of overwriting `.agent/legacy-html-page-audit/latest.json`. After adding the override, the real homelab legacy audit was rerun outside the sandbox and restored the current corpus to 57/57 passing pages with no unaudited discovered links.
+- 2026-06-25 local visual sweep refresh: after restoring the legacy HTML audit corpus, the local Playwright sweep against `http://127.0.0.1:18111/yona` passed 154/154 rendered pages, 13/13 direct API fragment-conversion surfaces, and 49/49 imported legacy-audit pages with no missing coverage. Focused evidence: `output/playwright/visual-sweep/latest.json` and `docs/provenance/visual-parity-sweep-2026-06-25.md`.
 - 2026-06-25 direct API sweep hardening note: the local Playwright visual sweep
-  now checks 10 React-owned data/legacy-helper surfaces, adding direct
-  issue/project label JSON helpers and legacy external assignable/sharer lookup
-  helpers to the existing workspace sidebar/menu, notification paging, and
-  Markdown preview source-return checks. The direct sweep fails on HTML fragment
-  responses, non-JSON content types, wrong JSON kind, or missing required array
-  item keys.
+  now checks 13 React-owned data/legacy-helper surfaces, including workspace
+  sidebar/menu, notification paging, Markdown preview source return, direct
+  issue/project label JSON helpers, legacy external assignable/sharer lookup
+  helpers, and project mention-list autocomplete helper aliases. The direct
+  sweep fails on HTML fragment responses, non-JSON content types, wrong JSON
+  kind, or missing required array item keys.
 - 2026-06-25 auth REST boundary note: React-owned signup/login screens submit
   through `/api/v1/auth/register` and `/api/v1/auth/sign-in` REST JSON. The
   legacy `/users/signup` and `/users/login` form POST routes remain only as

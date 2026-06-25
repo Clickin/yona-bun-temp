@@ -100,15 +100,17 @@ Playwright render the legacy responses from `127.0.0.1`.
   `/admin/sample/issue/1` timed out waiting for `networkidle`, while
   `/admin/sample/post/1/editform`, `/admin/sample/compare/main...main`, and
   `/admin/sample/branches` returned HTTP 500 from the homelab sample.
-- Local Playwright visual sweep: 152 checked, 152 passed, 0 failed, authenticated session confirmed.
-- Latest recorded local direct API fragment-conversion sweep: 10 checked, 10 passed, 0
-  failed. The direct surfaces now cover the workspace sidebar/menu,
-  notification paging, Markdown preview source return, direct issue/project
-  label helpers, and legacy external assignable/sharer lookup helpers.
-- Harness update after the latest recorded sweep: the next local direct API
-  fragment-conversion rerun checks 13 surfaces by adding project mention-list
+- Local Playwright visual sweep: 154 checked, 154 passed, 0 failed, authenticated session confirmed.
+- Latest recorded local direct API fragment-conversion sweep: 13 checked, 13 passed, 0
+  failed. The direct surfaces cover the workspace sidebar/menu, notification
+  paging, Markdown preview source return, direct issue/project label helpers,
+  legacy external assignable/sharer lookup helpers, and project mention-list
   autocomplete helper aliases for user mentions, issue mentions, and
   commit-diff mentions.
+- 2026-06-25T12:53:45Z local rerun after legacy-audit corpus hardening:
+  `YORAM_SWEEP_TARGET=local` against `http://127.0.0.1:18111/yona`
+  passed 154/154 rendered pages, 13/13 direct API surfaces, and 49/49
+  imported legacy-audit pages with no missing legacy audit coverage.
 - 2026-06-25T06:57:15Z local rerun after the Markdown editor i18n fallback
   repair: `YORAM_SWEEP_TARGET=local` against
   `http://127.0.0.1:18111/yona` passed 152/152 rendered pages, 10/10 direct
@@ -167,7 +169,7 @@ API fragment conversion passed 4/4.
 
 ## Failures
 
-None in the stabilized 152-route local rendered-screen sweep or same-path comparison.
+None in the stabilized 154-route local rendered-screen sweep or same-path comparison.
 
 The latest combined run records four legacy-reference failures, but they are not Yoram blockers
 because the Rust target renders the corresponding same-path comparison without local errors and
@@ -187,12 +189,12 @@ exited non-zero and wrote `legacy.status: "unreachable"` with the Playwright
 
 ## Follow-Up
 
-- Raw i18n key visibility is currently clear in the 152-route local sweep.
+- Raw i18n key visibility is currently clear in the 154-route local sweep.
 - `/sites/diagnostic` browser GET now serves the React shell even when the viewer is not a site
   admin; `/api/v1/site/diagnostics` remains the site-admin-only JSON data endpoint. This prevents
   raw JSON forbidden responses from becoming the user-visible page.
 - `/changeVCS`, `/transfer`, and `/webhooks` now reach the React SPA on GET; the legacy direct
   mutation handlers still own POST/PUT/DELETE.
 - Re-run the combined legacy/local Playwright sweep after each repair batch; current success
-  criterion is local 152/152 and 0 comparison failures. Legacy-reference failures must remain
+  criterion is local 154/154 and 0 comparison failures. Legacy-reference failures must remain
   recorded with path/status/error details.
