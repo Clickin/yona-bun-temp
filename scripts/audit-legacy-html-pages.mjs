@@ -362,6 +362,20 @@ try {
   if (summary.failed > 0 || unauditedDiscoveredPageLinks.length > 0) {
     process.exitCode = 1;
   }
+} catch (error) {
+  const summary = {
+    baseUrl,
+    checkedAt: new Date().toISOString(),
+    error: error instanceof Error ? error.message : String(error),
+    failed: 1,
+    passed: 0,
+    status: "unreachable",
+    total: 0,
+  };
+  const outputPath = join(outputDir, "latest.json");
+  writeFileSync(outputPath, `${JSON.stringify(summary, null, 2)}\n`);
+  console.log(JSON.stringify(summary, null, 2));
+  process.exitCode = 1;
 } finally {
   rmSync(cookieDir, { recursive: true, force: true });
 }
