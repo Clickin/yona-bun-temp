@@ -46,7 +46,7 @@ describe("project review list export", () => {
 
     expect(html).toContain('class="ybtn small"');
     expect(html).toContain('class="yobicon-file-excel"');
-    expect(html).toContain("issue.downloadAsExcel");
+    expect(html).toContain("Download as Excel file");
     expect(html).toContain(
       'href="/yona/admin/projectYobi/reviews?state=closed&amp;filter=src%2Flib.rs&amp;authorId=5&amp;participantId=7&amp;orderBy=updatedDate&amp;orderDir=asc&amp;format=xls"',
     );

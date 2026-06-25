@@ -66,7 +66,7 @@ describe("project members parity", () => {
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('id="addNewMember"');
     expect(html).toContain('id="loginId"');
-    expect(html).toContain('placeholder="project.members.addMember"');
+    expect(html).toContain('placeholder="Add new member ID."');
     expect(html).toContain('class="members project row-fluid"');
     expect(html).toContain('class="member span6 span-hard-wrap"');
     expect(html).toContain('class="label owner"');
@@ -75,7 +75,7 @@ describe("project members parity", () => {
     expect(html).toContain('data-href="/owner/projectYobi/member/2/edit"');
     expect(html).toContain('data-action="delete"');
     expect(html).toContain('data-href="/owner/projectYobi/member/2/delete"');
-    expect(html).toContain("project.member.enrollment.request");
+    expect(html).toContain("Sign-up request");
     expect(html).toContain('class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"');
   });
 

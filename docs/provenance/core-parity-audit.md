@@ -1770,6 +1770,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `frontend/src/pull-request-review-i18n.spec.tsx`,
   `frontend/src/pull-request-list-form-review-i18n.spec.tsx`, and
   `frontend/src/i18n.spec.tsx`.
+- 2026-06-25 member/review-export direct-render i18n expectation
+  continuation: project member-management and review-export focused specs now
+  assert default English legacy message output for known keys such as
+  `project.members.addMember`, `project.member.enrollment.request`, and
+  `issue.downloadAsExcel`. Focused coverage:
+  `frontend/src/project-members-parity.spec.tsx`,
+  `frontend/src/project-reviews-export.spec.tsx`, and
+  `frontend/src/i18n.spec.tsx`.
 - Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - 2026-06-21 deferred-slice verification note: focused P4-A i18n specs are
   green for the current organization/search/site-admin and
