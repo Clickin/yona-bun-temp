@@ -486,7 +486,7 @@ describe("wave 1 auth and workspace parity", () => {
     expect(profileHtml).not.toContain("Yona Rust Workspace");
     expect(profileHtml).toContain('id="frmBasic"');
     expect(profileHtml).toContain('class="pull-left"');
-    expect(profileHtml).toContain('action="/yona/user/edit"');
+    expect(profileHtml).not.toContain('action="/yona/user/edit"');
     expect(profileHtml).toContain("Login ID");
     expect(profileHtml).toContain("Name");
     expect(profileHtml).toContain("Email address");
@@ -504,7 +504,7 @@ describe("wave 1 auth and workspace parity", () => {
     expect(profileHtml).toContain("Cancel");
     expect(profileHtml).toContain("Save");
     expect(profileHtml).toContain("reset-user-visited-list");
-    expect(profileHtml).toContain('action="/yona/user/resetVisitedList"');
+    expect(profileHtml).not.toContain('action="/yona/user/resetVisitedList"');
     expect(profileHtml).toContain("Reset recently visited project list");
     expect(profileHtml).not.toContain("user.loginId");
     expect(profileHtml).not.toContain("userinfo.editProfile");
@@ -574,7 +574,7 @@ describe("wave 1 auth and workspace parity", () => {
         userLabel: "Door",
       },
     });
-    expect(emailsHtml).toContain('action="/yona/user/email"');
+    expect(emailsHtml).not.toContain('action="/yona/user/email"');
     expect(emailsHtml).toContain("form-inline inner-bubble");
     expect(emailsHtml).toContain('name="email"');
     expect(emailsHtml).toContain('placeholder="New E-mail address"');
@@ -612,7 +612,7 @@ describe("wave 1 auth and workspace parity", () => {
         userLabel: "Door",
       },
     });
-    expect(tokenHtml).toContain('action="/yona/user/editform/token_reset"');
+    expect(tokenHtml).not.toContain('action="/yona/user/editform/token_reset"');
     expect(tokenHtml).toContain("token-generate");
     expect(tokenHtml).toContain('id="frmBasic"');
     expect(tokenHtml).toContain('class="pull-left"');

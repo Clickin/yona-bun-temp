@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { updateProfile, uploadProfileAvatar } from "../../../auth-workspace-client";
+import {
+  resetVisitedProjects,
+  updateProfile,
+  uploadProfileAvatar,
+} from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { type ProfileUpdateInput, WorkspaceSettingsPage } from "../../-workspace-settings-view";
 import { navigateToAppHref, useCurrentHref, useRequireAuthenticatedRoute } from "../../-shared";
@@ -42,6 +46,18 @@ function EditProfileRouteComponent() {
           const overview = await updateProfile(runtimeConfig, csrfToken, input);
           await syncWorkspaceFromOverview(overview);
           navigateToAppHref(runtimeConfig.basePath, "/me");
+        } catch (error) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : messages("error.badrequest", { fallback: "error.badrequest" }),
+          );
+        }
+      }}
+      onResetVisitedProjects={async () => {
+        try {
+          const overview = await resetVisitedProjects(runtimeConfig, csrfToken);
+          await syncWorkspaceFromOverview(overview);
         } catch (error) {
           setErrorMessage(
             error instanceof Error
