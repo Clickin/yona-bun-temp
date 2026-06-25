@@ -305,6 +305,32 @@ describe("legacy i18n runtime", () => {
     expect(missingFallbacks).toEqual([]);
   });
 
+  it("keeps route static legacy message lookups inside the legacy message keyspace", () => {
+    const legacyKeys = parseLegacyMessageKeys(
+      readFileSync(new URL("../../yona-original/conf/messages", import.meta.url), "utf8"),
+    );
+    const routeFiles = collectSourceFiles(new URL("./routes/", import.meta.url));
+    const missingLookups: string[] = [];
+    const staticLookupPatterns = [
+      /legacyMessage\([^,\n]+,\s*["']([^"']+)["']/gu,
+      /messages(?:\.t)?\(\s*["']([^"']+)["']/gu,
+    ];
+
+    for (const routeFile of routeFiles) {
+      const source = readFileSync(routeFile, "utf8");
+      for (const pattern of staticLookupPatterns) {
+        for (const match of source.matchAll(pattern)) {
+          const key = match[1];
+          if (/\./u.test(key) && !legacyKeys.has(key)) {
+            missingLookups.push(`${routeFile.pathname}: ${key}`);
+          }
+        }
+      }
+    }
+
+    expect(missingLookups).toEqual([]);
+  });
+
   it("does not keep route-local i18n fallback dictionaries", () => {
     const routeSources = collectSourceFiles(new URL("./routes/", import.meta.url)).map((path) =>
       readFileSync(path, "utf8"),
