@@ -207,7 +207,7 @@ describe("file-route parity harness", () => {
     expect(secretRouteSource).toContain('useDocumentTitle("app.welcome")');
     expect(secretRouteSource).toContain("setupSecretAdminRest");
     expect(secretRouteSource).toContain("event.preventDefault()");
-    expect(secretRouteSource).toContain(
+    expect(secretRouteSource).not.toContain(
       'action={prefixBasePath(runtimeConfig.basePath, "/secret")}',
     );
     expect(secretRouteSource).toContain('method="post"');

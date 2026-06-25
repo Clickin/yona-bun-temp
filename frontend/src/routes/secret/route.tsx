@@ -49,7 +49,6 @@ function SecretAdminSetupRouteComponent() {
             </div>
             <div className="signup-form-wrap frm-wrap">
               <form
-                action={prefixBasePath(runtimeConfig.basePath, "/secret")}
                 className="input-append"
                 method="post"
                 onSubmit={async (event) => {
