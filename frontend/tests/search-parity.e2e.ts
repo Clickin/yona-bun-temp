@@ -817,6 +817,115 @@ test("notification load more appends REST rows without using legacy HTML fragmen
   expect(notificationApiCalls).toEqual(["0:20", "20:20"]);
 });
 
+test("notification rows expand like legacy while links and images do not toggle", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.route(apiV1Route("/session"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        actorId: "1",
+        defaultLandingPath: "/",
+        emailAddress: "owner@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "owner",
+        userLabel: "Owner",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/workspace"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/",
+        emails: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        profile: {
+          avatarUrl: "",
+          connectedSocialProviders: [],
+          displayName: "Owner",
+          englishName: "",
+          isBlocked: false,
+          isSiteAdmin: false,
+          loginId: "owner",
+          primaryEmailAddress: "owner@example.com",
+          sinceLabel: "2026-05-01",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(/\/api\/v1\/notifications\?from=0&size=20$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        hasMore: false,
+        items: [
+          {
+            actor: {
+              avatarUrl: "",
+              displayName: "",
+              loginId: "",
+            },
+            createdAt: "2026-06-26T00:01:00Z",
+            createdLabel: "1 minute ago",
+            eventType: "ISSUE_BODY_CHANGED",
+            id: "row-toggle",
+            message: Array.from(
+              { length: 80 },
+              (_, index) => `notification-overflow-segment-${String(index + 1).padStart(2, "0")}`,
+            ).join(" "),
+            targetHref: "#notification-target",
+            targetTitle: "Issue target",
+            typeIcon: "issue",
+          },
+        ],
+        total: 1,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/notifications");
+
+  const row = page.locator(".notification-stream").first();
+  const message = row.locator(".message-wrap");
+  await expect(row).toContainText("Issue target");
+  await expect(message).toHaveClass(/nowrap/);
+  await expect(message).toHaveAttribute("aria-expanded", "false");
+  await expect(row.locator(".more")).toBeVisible();
+
+  await row.locator(".title a").click();
+  await expect(page).toHaveURL(/\/yona\/notifications#notification-target$/);
+  await expect(message).toHaveClass(/nowrap/);
+  await expect(message).toHaveAttribute("aria-expanded", "false");
+
+  await row.locator(".smaller img").click();
+  await expect(message).toHaveClass(/nowrap/);
+  await expect(message).toHaveAttribute("aria-expanded", "false");
+
+  await row.locator(".stream-desc").click();
+  await expect(message).not.toHaveClass(/nowrap/);
+  await expect(message).toHaveAttribute("aria-expanded", "true");
+
+  await message.click();
+  await expect(message).toHaveClass(/nowrap/);
+  await expect(message).toHaveAttribute("aria-expanded", "false");
+
+  await row.locator(".more").click();
+  await expect(message).not.toHaveClass(/nowrap/);
+  await expect(message).toHaveAttribute("aria-expanded", "true");
+});
+
 test("notification page keeps the legacy guide shell on a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ height: 844, width: 390 });
   await page.route(apiV1Route("/session"), async (route) => {
