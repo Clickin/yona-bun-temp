@@ -31,6 +31,7 @@ const overview: WorkspaceOverviewViewModel = {
   memberProjects: [
     {
       createdLabel: "2026-06-21",
+      isWatching: false,
       lastPushedLabel: "",
       logoUrl: "/yona/files/202",
       memberCount: 2,
@@ -40,6 +41,8 @@ const overview: WorkspaceOverviewViewModel = {
       overview: "Project overview",
       projectName: "projectYobi",
       projectScope: "public",
+      viewerCanLeave: true,
+      viewerCanWatch: true,
       watchCount: 1,
     },
   ],
@@ -124,6 +127,10 @@ describe("workspace/profile legacy i18n opt-in", () => {
       expect(html).toContain('href="/yona/naver/legacyYobi"');
       expect(html).toContain("naver");
       expect(html).toContain("legacyYobi");
+      expect(html).toContain('class="ybtn watchBtn" href="/yona/yona/projectYobi/watch"');
+      expect(html).toContain('class="yobicon-eye-close yobicon-middle yobicon-white"');
+      expect(html).toContain("Watch<span");
+      expect(html).toContain('href="/yona/info/leave/yona/projectYobi"');
       expect(html).toContain('style="margin-left:10px"');
       expect(html).not.toContain(">menu.issue <span");
       expect(html).not.toContain(">menu.pullRequest <span");

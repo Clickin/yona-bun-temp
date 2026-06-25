@@ -95,6 +95,15 @@
   workspace overview API, while the legacy `#setDefaultLoginPage` control stays
   on `common/mySeriesMenuTab.scala.html` pages such as `/user/issues` and
   `/notifications`.
+- 2026-06-25 workspace project action UI correction: legacy
+  `user/partial_projectlist.scala.html` renders viewer-specific watch/unwatch
+  anchors and a self-profile leave-project anchor in project stream rows. The
+  Rust workspace/public-profile projections now expose `isWatching`,
+  `viewerCanWatch`, and `viewerCanLeave` for those rows, and React renders the
+  legacy `watchBtn`/`leaveProject` anchors instead of a bare watcher-count badge.
+  Coverage: `frontend/src/wave1-auth-workspace-parity.spec.tsx`,
+  `frontend/src/workspace-profile-i18n.spec.tsx`, and
+  `pnpm agent:cargo -- --outside-sandbox check -p yoram-server`.
 - Optional webhook HMAC/signature compatibility is not applicable for legacy
   parity. `Webhook.java` `sendRequest` only sets `Content-Type:
   application/json`, `User-Agent: Yobi-Hookshot`, and optional

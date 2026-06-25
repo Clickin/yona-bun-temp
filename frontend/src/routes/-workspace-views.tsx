@@ -603,7 +603,43 @@ export function PublicUserProfilePage(props: {
                         </div>
                         <div className="stats-wrap pull-right">
                           <div className="stats">
-                            <span className="num-badge">{project.watchCount}</span>
+                            {project.viewerCanWatch ? (
+                              <a
+                                className="ybtn watchBtn"
+                                href={appHref(
+                                  props.runtimeConfig,
+                                  `${projectHref(project.ownerName, project.projectName)}/${
+                                    project.isWatching ? "unwatch" : "watch"
+                                  }`,
+                                )}
+                              >
+                                <i
+                                  className={`${
+                                    project.isWatching ? "yobicon-eye-open" : "yobicon-eye-close"
+                                  } yobicon-middle yobicon-white`}
+                                ></i>{" "}
+                                {legacyMessage(
+                                  props.messages,
+                                  project.isWatching
+                                    ? "notification.unwatch"
+                                    : "notification.watch",
+                                )}
+                                <span className="num-badge">{project.watchCount}</span>
+                              </a>
+                            ) : null}
+                            {project.viewerCanLeave ? (
+                              <a
+                                className="nbtn black medium last leaveProject"
+                                data-projectname={project.projectName}
+                                href={appHref(
+                                  props.runtimeConfig,
+                                  `/info/leave/${project.ownerName}/${project.projectName}`,
+                                )}
+                              >
+                                <i className="yobicon-trash"></i>{" "}
+                                {legacyMessage(props.messages, "userinfo.leaveProject")}
+                              </a>
+                            ) : null}
                           </div>
                         </div>
                       </li>
@@ -1230,7 +1266,43 @@ export function WorkspacePage(props: {
                         </div>
                         <div className="stats-wrap pull-right">
                           <div className="stats">
-                            <span className="num-badge">{project.watchCount}</span>
+                            {project.viewerCanWatch ? (
+                              <a
+                                className="ybtn watchBtn"
+                                href={appHref(
+                                  props.runtimeConfig,
+                                  `${projectHref(project.ownerName, project.projectName)}/${
+                                    project.isWatching ? "unwatch" : "watch"
+                                  }`,
+                                )}
+                              >
+                                <i
+                                  className={`${
+                                    project.isWatching ? "yobicon-eye-open" : "yobicon-eye-close"
+                                  } yobicon-middle yobicon-white`}
+                                ></i>{" "}
+                                {legacyMessage(
+                                  props.messages,
+                                  project.isWatching
+                                    ? "notification.unwatch"
+                                    : "notification.watch",
+                                )}
+                                <span className="num-badge">{project.watchCount}</span>
+                              </a>
+                            ) : null}
+                            {project.viewerCanLeave ? (
+                              <a
+                                className="nbtn black medium last leaveProject"
+                                data-projectname={project.projectName}
+                                href={appHref(
+                                  props.runtimeConfig,
+                                  `/info/leave/${project.ownerName}/${project.projectName}`,
+                                )}
+                              >
+                                <i className="yobicon-trash"></i>{" "}
+                                {legacyMessage(props.messages, "userinfo.leaveProject")}
+                              </a>
+                            ) : null}
                           </div>
                         </div>
                       </li>

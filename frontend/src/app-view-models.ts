@@ -123,6 +123,7 @@ export function toWorkspaceOverview(
     })),
     memberProjects: overview.memberProjects.map((project) => ({
       createdLabel: project.createdLabel,
+      isWatching: project.isWatching ?? false,
       lastPushedLabel: project.lastPushedLabel,
       logoUrl: project.logoUrl ?? "",
       memberCount: project.memberCount,
@@ -132,6 +133,8 @@ export function toWorkspaceOverview(
       overview: project.overview,
       projectName: project.projectName,
       projectScope: project.projectScope,
+      viewerCanLeave: project.viewerCanLeave ?? false,
+      viewerCanWatch: project.viewerCanWatch ?? false,
       watchCount: project.watchCount,
     })),
     profile: profile

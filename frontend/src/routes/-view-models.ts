@@ -19,6 +19,7 @@ export interface WorkspaceOverviewViewModel {
   }>;
   memberProjects?: Array<{
     createdLabel: string;
+    isWatching?: boolean;
     lastPushedLabel: string;
     logoUrl?: string;
     memberCount: number;
@@ -28,6 +29,8 @@ export interface WorkspaceOverviewViewModel {
     overview: string;
     projectName: string;
     projectScope: string;
+    viewerCanLeave?: boolean;
+    viewerCanWatch?: boolean;
     watchCount: number;
   }>;
   profile?: {

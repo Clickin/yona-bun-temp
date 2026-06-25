@@ -62,6 +62,7 @@ function toPublicProfileOverview(
     })),
     memberProjects: response.memberProjects.map((project) => ({
       createdLabel: project.createdLabel,
+      isWatching: project.isWatching ?? false,
       lastPushedLabel: project.lastPushedLabel,
       logoUrl: project.logoUrl ?? "",
       memberCount: project.memberCount,
@@ -71,6 +72,8 @@ function toPublicProfileOverview(
       overview: project.overview,
       projectName: project.projectName,
       projectScope: project.projectScope,
+      viewerCanLeave: project.viewerCanLeave ?? false,
+      viewerCanWatch: project.viewerCanWatch ?? false,
       watchCount: project.watchCount,
     })),
     profile: response.profile

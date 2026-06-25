@@ -200,6 +200,7 @@ describe("wave 1 auth and workspace parity", () => {
       memberProjects: [
         {
           createdLabel: "2026-04-01",
+          isWatching: true,
           lastPushedLabel: "2026-04-10",
           logoUrl: "/yona/files/101",
           memberCount: 4,
@@ -209,6 +210,8 @@ describe("wave 1 auth and workspace parity", () => {
           overview: "Yona project",
           projectName: "projectYobi",
           projectScope: "public",
+          viewerCanLeave: true,
+          viewerCanWatch: true,
           watchCount: 2,
         },
       ],
@@ -330,7 +333,15 @@ describe("wave 1 auth and workspace parity", () => {
     expect(html).toContain('class="owner-name-small"');
     expect(html).toContain(">admin</a>");
     expect(html).toContain("Latest code update");
+    expect(html).toContain('class="ybtn watchBtn" href="/yona/admin/projectYobi/unwatch"');
+    expect(html).toContain('class="yobicon-eye-open yobicon-middle yobicon-white"');
+    expect(html).toContain("Unwatch<span");
     expect(html).toContain('<span class="num-badge">2</span>');
+    expect(html).toContain(
+      'class="nbtn black medium last leaveProject" data-projectname="projectYobi" href="/yona/info/leave/admin/projectYobi"',
+    );
+    expect(html).toContain('class="yobicon-trash"');
+    expect(html).toContain(">Leave</a>");
     expect(html).not.toContain("Owner: admin");
     expect(html).not.toContain("Created 2026-04-01");
     expect(html).not.toContain("Updated 2026-04-10");

@@ -178,6 +178,15 @@ async fn rest_read_public_user_profile(
         .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
+    let viewer_login_id = match viewer_id {
+        Some(user_id) => repository
+            .find_user_by_id(user_id)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .map(|user| user.login_id)
+            .unwrap_or_default(),
+        None => String::new(),
+    };
     let viewer_can_edit_profile = viewer_id == Some(user.id);
     let days_ago = public_profile_days_ago(query.days_ago);
     let profile = match repository
@@ -226,6 +235,9 @@ async fn rest_read_public_user_profile(
         repository,
         &service.base_path,
         viewer_id,
+        &viewer_login_id,
+        user.id,
+        &user.login_id,
         repository
             .list_member_projects_for_user(user.id)
             .await
