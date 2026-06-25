@@ -13,6 +13,7 @@ import { translateLegacyResource } from "../api/translation";
 import {
   LEGACY_DEFAULT_LANGUAGE,
   lookupLegacyMessage,
+  type TranslateOptions,
   useLegacyMessages,
   type LegacyI18nContextValue,
 } from "../i18n";
@@ -42,10 +43,15 @@ type IssueTimelineCommentViewModel = NonNullable<
 
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
-function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
+function legacyMessage(
+  messages: LegacyMessageLookup | undefined,
+  key: string,
+  options: TranslateOptions = {},
+) {
+  const fallback = options.fallback ?? key;
   return messages
-    ? messages(key, { fallback: key })
-    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key);
+    ? messages(key, { ...options, fallback })
+    : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { ...options, fallback });
 }
 
 type IssueChildViewModel = ProjectIssueDetailViewModel["childIssues"][number];
@@ -1966,6 +1972,7 @@ export function ProjectIssueDetailPage(props: {
                               basePath={props.runtimeConfig.basePath}
                               item={item}
                               key={`${item.kind}-${item.id}`}
+                              messages={messages}
                             />
                           );
                         }
@@ -2568,27 +2575,37 @@ export function ProjectIssueDetailPage(props: {
 
 type IssueTimelineEventItem = ProjectIssueDetailViewModel["timeline"][number];
 
-function IssueTimelineEvent(props: { basePath: string; item: IssueTimelineEventItem }) {
+function IssueTimelineEvent(props: {
+  basePath: string;
+  item: IssueTimelineEventItem;
+  messages?: LegacyMessageLookup;
+}) {
   const item = props.item;
   if (item.eventType === "ISSUE_BODY_CHANGED") {
     return null;
   }
 
   const eventState = issueEventState(item);
+  const eventMessage = legacyMessage(props.messages, issueEventMessageKey(item), {
+    args: [item.senderLoginId || "", item.newValue || item.oldValue || ""],
+  });
   const senderHref = item.senderLoginId
     ? prefixBasePath(props.basePath, `/${item.senderLoginId}`)
     : "#";
 
   return (
     <li className="event" id={`event-${item.id}`}>
-      <span className={eventState.className}>{eventState.label}</span>{" "}
+      <span className={eventState.className}>
+        {legacyMessage(props.messages, eventState.label)}
+      </span>{" "}
       <span className="event-message">
-        {issueEventMessageKey(item)}{" "}
         {item.senderLoginId ? (
           <a className="user-link" href={senderHref}>
-            {item.senderLoginId}
+            {eventMessage}
           </a>
-        ) : null}
+        ) : (
+          eventMessage
+        )}
       </span>
       <span className="date">
         <a href={`#event-${item.id}`}>{item.createdLabel}</a>
@@ -3362,6 +3379,7 @@ const legacySelect2LoadingMoreText = `Loading more results${".".repeat(3)}`;
 export function IssueAssignableUserSuggestions(props: {
   emptyMessage?: string;
   errorMessage?: string;
+  messages?: LegacyMessageLookup;
   onSelect: (suggestion: IssueAssignableUserItem) => void;
   state: IssueAssigneeSearchState;
 }) {
@@ -3376,7 +3394,9 @@ export function IssueAssignableUserSuggestions(props: {
   }
   if (props.state.items.length === 0) {
     return (
-      <p className="assignee-autocomplete-status">{props.emptyMessage ?? "title.no.results"}</p>
+      <p className="assignee-autocomplete-status">
+        {props.emptyMessage ?? legacyMessage(props.messages, "title.no.results")}
+      </p>
     );
   }
 
@@ -3407,6 +3427,7 @@ function IssueAssigneeAutocompleteField(props: {
   emptyMessage?: string;
   errorMessage?: string;
   id?: string;
+  messages?: LegacyMessageLookup;
   name: string;
   onChange: (value: string) => void;
   onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
@@ -3472,6 +3493,7 @@ function IssueAssigneeAutocompleteField(props: {
       <IssueAssignableUserSuggestions
         emptyMessage={props.emptyMessage}
         errorMessage={props.errorMessage}
+        messages={props.messages}
         onSelect={props.onSelect}
         state={searchState}
       />
@@ -3506,6 +3528,7 @@ function IssueAssignForm(props: {
       <IssueAssigneeAutocompleteField
         className="bigdrop"
         id="assignee"
+        messages={props.messages}
         name="assigneeLoginId"
         onChange={setAssigneeLoginId}
         onSearchAssignableUsers={props.onSearchAssignableUsers}

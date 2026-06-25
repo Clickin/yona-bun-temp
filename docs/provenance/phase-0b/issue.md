@@ -271,3 +271,10 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   such as `project.owner`, `label.add`, or `button.delete` from being accepted
   as visible UI. Focused coverage:
   `frontend/src/issue-label-settings-i18n.spec.tsx`.
+- 2026-06-25 issue detail timeline/autocomplete i18n tightening: issue detail
+  timeline events and assignable-user empty states now keep the legacy event
+  and status key names but resolve them through the legacy message table before
+  rendering, so raw values such as `issue.event.closed`,
+  `issue.event.label.added`, and `title.no.results` are no longer accepted as
+  visible issue-detail UI. Focused coverage:
+  `frontend/src/issue-detail-shell.spec.tsx`.

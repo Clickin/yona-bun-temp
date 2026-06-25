@@ -38,7 +38,8 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
         state={{ items: [], status: "loaded", truncated: false }}
       />,
     );
-    expect(emptyHtml).toContain("title.no.results");
+    expect(emptyHtml).toContain("No results");
+    expect(emptyHtml).not.toContain("title.no.results");
     expect(emptyHtml).not.toContain("No matches found");
     expect(emptyHtml).not.toContain("No matching users");
 
@@ -759,12 +760,16 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
 
     expect(html).toContain('class="event" id="event-17"');
     expect(html).toContain('class="state closed"');
-    expect(html).toContain("issue.event.closed");
+    expect(html).toContain(">Closed</span>");
+    expect(html).toContain(">owner closed this issue</a>");
+    expect(html).not.toContain("issue.event.closed");
     expect(html).toContain('href="/yona/owner"');
     expect(html).toContain('class="date"><a href="#event-17">1 minute ago</a></span>');
     expect(html).toContain('class="event" id="event-18"');
     expect(html).toContain('class="state label-added"');
-    expect(html).toContain("issue.event.label.added");
+    expect(html).toContain(">Added</span>");
+    expect(html).toContain(">owner added bug label</a>");
+    expect(html).not.toContain("issue.event.label.added");
     expect(html).not.toContain('id="event-19"');
   });
 
