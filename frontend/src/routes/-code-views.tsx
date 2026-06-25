@@ -1282,14 +1282,11 @@ function CodeCommitDiffView(props: {
 
   async function submitComment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!props.onCreateComment) {
-      return;
-    }
     const contentsMarkdown = commentText.trim();
     if (!contentsMarkdown) {
       return;
     }
-    await props.onCreateComment({ attachmentIds: commentAttachmentIds, contentsMarkdown });
+    await props.onCreateComment?.({ attachmentIds: commentAttachmentIds, contentsMarkdown });
     setCommentAttachmentIds([]);
     setCommentText("");
   }
@@ -1316,14 +1313,11 @@ function CodeCommitDiffView(props: {
 
   async function submitInlineComment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!props.onCreateComment) {
-      return;
-    }
     const contentsMarkdown = inlineCommentText.trim();
     if (!contentsMarkdown || !inlineComment) {
       return;
     }
-    await props.onCreateComment({
+    await props.onCreateComment?.({
       attachmentIds: inlineAttachmentIds,
       contentsMarkdown,
       endLine: inlineComment.endLine,
@@ -1701,14 +1695,11 @@ function CommitDiscussionThread(props: {
 
   async function submitEdit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!props.onUpdateComment) {
-      return;
-    }
     const contentsMarkdown = editText.trim();
     if (!editingCommentId || !contentsMarkdown) {
       return;
     }
-    await props.onUpdateComment(editingCommentId, contentsMarkdown, editAttachmentIds);
+    await props.onUpdateComment?.(editingCommentId, contentsMarkdown, editAttachmentIds);
     setEditingCommentId(null);
     setEditText("");
     setEditAttachmentIds([]);
@@ -1716,14 +1707,11 @@ function CommitDiscussionThread(props: {
 
   async function submitReply(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!props.onCreateComment) {
-      return;
-    }
     const contentsMarkdown = replyText.trim();
     if (!contentsMarkdown) {
       return;
     }
-    await props.onCreateComment({
+    await props.onCreateComment?.({
       attachmentIds: replyAttachmentIds,
       contentsMarkdown,
       threadId: props.thread.id,

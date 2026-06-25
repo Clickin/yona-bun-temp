@@ -1613,12 +1613,10 @@ describe("CodeCommitDetailPage", () => {
     expect(html).not.toMatch(/<form[^>]*method="post"/);
     expect(html).not.toContain(">Edit</button>");
     expect(codeViewsSource).toContain("commitDiscussionDirectHref");
-    expect(codeViewsSource).toContain(
-      "event.preventDefault();\n    if (!props.onCreateComment) {\n      return;\n    }",
-    );
-    expect(codeViewsSource).toContain(
-      "event.preventDefault();\n    if (!props.onUpdateComment) {\n      return;\n    }",
-    );
+    expect(codeViewsSource).not.toContain("if (!props.onCreateComment) {");
+    expect(codeViewsSource).not.toContain("if (!props.onUpdateComment) {");
+    expect(codeViewsSource).toContain("await props.onCreateComment?.(");
+    expect(codeViewsSource).toContain("await props.onUpdateComment?.(");
   });
 
   it("keeps state-driven commit discussion editors in legacy common.editor shells", () => {

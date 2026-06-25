@@ -34,7 +34,7 @@ const forbiddenReactOwnedLegacyActions = [
   "/user/editform/token_reset",
 ];
 const propsSubmitFallbackPattern =
-  /if \(!props\.on(?:Submit|CommentSubmit|CommentUpdate|ThreadCommentSubmit|InlineCommentSubmit)\) \{/;
+  /if \(!props\.on(?:Submit|CreateComment|UpdateComment|CommentSubmit|CommentUpdate|ThreadCommentSubmit|InlineCommentSubmit)\) \{/;
 
 function readRouteSource(relativePath: string) {
   return fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
@@ -140,6 +140,7 @@ describe("React form submit boundary", () => {
   it("keeps React-owned markdown editor forms off native submit fallback guards", () => {
     const editorFormFiles = [
       "routes/-board-views.tsx",
+      "routes/-code-views.tsx",
       "routes/-issue-views.tsx",
       "routes/-milestone-views.tsx",
       "routes/-pull-request-views.tsx",
