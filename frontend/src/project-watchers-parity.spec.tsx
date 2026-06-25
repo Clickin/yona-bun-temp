@@ -37,8 +37,10 @@ describe("project watchers parity", () => {
       />,
     );
 
-    expect(html).toContain("project.watcher.title");
-    expect(html).toContain("project.watcher.description");
+    expect(html).toContain("This project&#x27;s watcher list.");
+    expect(html).toContain("* This list contains only those who can access this project.");
+    expect(html).not.toContain("project.watcher.title");
+    expect(html).not.toContain("project.watcher.description");
     expect(html).toContain('class="project-header-outer"');
     expect(html).toContain('class="project-header-inner"');
     expect(html).toContain('class="project-header-wrap"');

@@ -145,6 +145,10 @@
 - 2026-06-25 help route direct-render i18n continuation: anonymous `/_help`
   direct rendering now expects the legacy default `title.help` value `Help`
   while preserving Korean runtime lookup coverage for the same title.
+- 2026-06-25 project-watchers direct-render i18n continuation: the project
+  watchers page direct-render parity check now expects legacy default message
+  output for `project.watcher.title` and `project.watcher.description` instead
+  of raw fallback keys.
 - 2026-06-25 root search form continuation: root navigation preserves the
   legacy `common/navbar.scala.html` global search anchors:
   `name="gnb-search-form"`, hidden `searchType=auto`, `keyword`, and
