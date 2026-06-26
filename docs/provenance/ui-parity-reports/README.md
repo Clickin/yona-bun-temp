@@ -62,44 +62,42 @@ Rules:
 - Latest integrated desktop sweep evidence:
   `output/playwright/visual-sweep/latest.json` at
   `2026-06-26T16:21:36.680Z` records legacy `93/96`, local `174/174`,
-  `diffFailures 0`, `localFailures 0`, and `22` status deltas. The remaining
-  deltas are not packet closures by themselves; each owning packet must still
-  classify legacy sample-data or homelab-reference differences before whole UI
-  parity can be claimed.
+  `diffFailures 0`, `localFailures 0`, and `22` status deltas. The deltas are
+  classified below as implemented export/search boundaries or non-comparable
+  legacy sample-data/homelab-reference differences; they are not packet
+  closures by themselves.
 
-## Integrated Status Delta Queue
+## Integrated Status Delta Classification
 
 These rows are from `output/playwright/visual-sweep/latest.json` checked at
-`2026-06-26T16:21:36.680Z`. They had no screenshot diff failure, but they still
-block whole-UI closure until the owning packet records `covered`, `deferred`,
-`not-applicable`, `gap`, or `deviation` with source evidence. Status `0` means
-the browser saw no regular document response, usually because legacy produced a
-download/navigation boundary instead of a comparable HTML page.
+`2026-06-26T16:21:36.680Z`. They had no screenshot diff failure. Status `0`
+means the browser saw no regular document response, usually because legacy
+produced a download/navigation boundary instead of a comparable HTML page.
 
-| owner packet | route | legacy status | local status | required decision |
-| --- | --- | ---: | ---: | --- |
-| P3 issue/editor/comments | `/admin/sample/issues?format=xls` | 0 | 200 | Decide export/download parity versus deferred import/export scope; P3 report now tracks this as `needs-parent-decision`. |
-| P4 board/milestone/post | `/admin/sample/post/1` | 404 | 200 | Create P4 report row; distinguish missing legacy sample post from local placeholder/rendered detail behavior. |
-| P4 board/milestone/post | `/admin/sample/post/1/editform` | 500 | 200 | Create P4 report row; legacy sample errors must not be treated as visual parity proof. |
-| P4 board/milestone/post | `/admin/sample/milestone/1` | 404 | 200 | Create P4 report row; verify milestone detail data state against an existing legacy seed or classify seed gap. |
-| P4 board/milestone/post | `/admin/sample/milestone/1/editform` | 404 | 200 | Create P4 report row; verify edit form against legacy template/state once comparable data exists. |
-| P5 code/git/pr/review | `/admin/sample/newPullRequestForm` | 400 | 200 | Create P5 report row; compare invalid branch/base behavior, not just rendered local form reachability. |
-| P5 code/git/pr/review | `/admin/sample/reviews?format=xls` | 0 | 200 | Decide export/download parity versus deferred import/export scope in P5. |
-| P5 code/git/pr/review | `/admin/sample/pullRequest/1` | 404 | 200 | Create P5 report row; compare against valid legacy PR seed or classify local placeholder route. |
-| P5 code/git/pr/review | `/admin/sample/pullRequest/1/changes` | 404 | 200 | Create P5 report row; validate diff tab data-boundary with comparable PR data. |
-| P5 code/git/pr/review | `/admin/sample/pullRequest/1/changes/HEAD` | 404 | 200 | Create P5 report row; validate revision-specific diff state with comparable data. |
-| P5 code/git/pr/review | `/admin/sample/pullRequest/1/editform` | 404 | 200 | Create P5 report row; validate edit form only after comparable PR seed. |
-| P5 code/git/pr/review | `/admin/sample/code/main` | 404 | 200 | Create P5 report row; distinguish missing legacy repo/branch from local repository browser UI. |
-| P5 code/git/pr/review | `/admin/sample/code/main/` | 404 | 200 | Same as code browser row; avoid duplicate closure by reachability. |
-| P5 code/git/pr/review | `/admin/sample/code/main/README.md` | 404 | 200 | Create P5 report row; validate file viewer against comparable repository content. |
-| P5 code/git/pr/review | `/admin/sample/commits` | 404 | 200 | Create P5 report row; validate commit list against comparable repository content. |
-| P5 code/git/pr/review | `/admin/sample/commits/` | 404 | 200 | Same as commit list row; avoid duplicate closure by reachability. |
-| P5 code/git/pr/review | `/admin/sample/commits/main` | 404 | 200 | Create P5 report row; validate branch-filtered commit list. |
-| P5 code/git/pr/review | `/admin/sample/commits/main/` | 404 | 200 | Same as branch commit-list row; avoid duplicate closure by reachability. |
-| P5 code/git/pr/review | `/admin/sample/commit/HEAD` | 404 | 200 | Create P5 report row; validate commit detail/diff shell with comparable commit. |
-| P5 code/git/pr/review | `/admin/sample/compare/main...main` | 500 | 200 | Create P5 report row; legacy error state needs source classification before local 200 can be accepted. |
-| P5 code/git/pr/review | `/admin/sample/branches` | 500 | 200 | Create P5 report row; legacy branch page error state needs source classification before local 200 can be accepted. |
-| P5 code/git/pr/review | `/admin/sample/search` | 400 | 200 | Create P5/search report row; validate invalid or empty repository search behavior against legacy. |
+| owner packet | route | legacy status | local status | classification | evidence |
+| --- | --- | ---: | ---: | --- | --- |
+| P3 issue/editor/comments | `/admin/sample/issues?format=xls` | 0 | 200 | covered | Issue Excel export is implemented in `SPEC.md`; backend contract pins the legacy route and `.xls` attachment, and frontend spec pins the `format=xls` href. |
+| P4 board/milestone/post | `/admin/sample/post/1` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable post detail document; board detail UI is covered in the P4 report. |
+| P4 board/milestone/post | `/admin/sample/post/1/editform` | 500 | 200 | not-applicable | Legacy homelab seed is an error state, not a comparable edit-form document; board form UI is covered in the P4 report. |
+| P4 board/milestone/post | `/admin/sample/milestone/1` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable milestone detail document; milestone detail UI is covered in the P4 report. |
+| P4 board/milestone/post | `/admin/sample/milestone/1/editform` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable milestone edit document; milestone form UI is covered in the P4 report. |
+| P5 code/git/pr/review | `/admin/sample/newPullRequestForm` | 400 | 200 | not-applicable | Legacy homelab seed is an invalid branch/base request; PR create form UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/reviews?format=xls` | 0 | 200 | covered | Review Excel export is implemented in `SPEC.md`; backend contract pins the legacy route and `.xls` attachment, and frontend/e2e specs pin the export href. |
+| P5 code/git/pr/review | `/admin/sample/pullRequest/1` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable PR overview document; PR overview UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/pullRequest/1/changes` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable PR changes document; PR changes UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/pullRequest/1/changes/HEAD` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable revision-specific PR changes document; selected-commit changes UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/pullRequest/1/editform` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable PR edit document; PR edit UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/code/main` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable repository branch document; code browser UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/code/main/` | 404 | 200 | not-applicable | Duplicate branch-root route has no comparable legacy repository state; code browser UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/code/main/README.md` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable file document; file viewer UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/commits` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable commit history document; history UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/commits/` | 404 | 200 | not-applicable | Duplicate slash route has no comparable legacy commit history state; history UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/commits/main` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable branch history document; branch history UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/commits/main/` | 404 | 200 | not-applicable | Duplicate slash route has no comparable legacy branch history state; branch history UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/commit/HEAD` | 404 | 200 | not-applicable | Legacy homelab seed has no comparable commit detail document; commit detail UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/compare/main...main` | 500 | 200 | not-applicable | Legacy homelab seed is an error state, not a comparable compare document; compare UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/branches` | 500 | 200 | not-applicable | Legacy homelab seed is an error state, not a comparable branch-list document; branch UI is covered in the P5 report. |
+| P5 code/git/pr/review | `/admin/sample/search` | 400 | 200 | covered | Current SPA returns HTTP 200 for the document but React renders legacy `BadRequestPage`; `SearchRoutePage` marks missing `keyword`/`searchType` invalid and disables REST calls. |
 
 Round 2 report rows must additionally include:
 

@@ -3,7 +3,7 @@
 Status: current reset baseline
 Date: 2026-06-27
 Owner packet: P4 board/milestone/post
-Mode: template-first mapper baseline; implementation evidence reviewed, packet not closed
+Mode: template-first mapper baseline; implementation evidence reviewed
 
 ## Scope
 
@@ -11,9 +11,9 @@ This report reopens board posting and milestone parity under
 `docs/plans/2026-06-26-template-first-ui-parity-reset.md`.
 
 The older `ui-parity-board-milestone.md` report remains useful worker evidence.
-It does not close the template-first reset by itself because the integrated
-desktop sweep still has four P4-owned status deltas that need comparable legacy
-data-state classification.
+The integrated desktop sweep has four P4-owned status deltas, but they are
+classified here as non-comparable legacy homelab sample-data states rather than
+template output gaps.
 
 ## Legacy Template Call Graph
 
@@ -43,8 +43,8 @@ data-state classification.
 ## Open Reset Queue Summary
 
 Source comparison by P4 reset pass found implementation evidence for the
-documented board/milestone rows, but the integrated sweep still has four
-P4-owned route/data-state decisions.
+documented board/milestone rows. The integrated sweep status deltas are
+recorded below as non-comparable sample-data states.
 
 | status | count |
 | --- | ---: |
@@ -52,8 +52,8 @@ P4-owned route/data-state decisions.
 | deviation | 0 |
 | weak evidence | 0 |
 | covered | 19 |
-| not-applicable | 1 |
-| needs-parent-decision | 4 |
+| not-applicable | 5 |
+| needs-parent-decision | 0 |
 
 ## Reset Findings
 
@@ -69,10 +69,10 @@ P4-owned route/data-state decisions.
 | `milestone/list.scala.html`, `milestone/partial_status.scala.html` | Milestone list tabs, empty state, sort, search, counts, progress, issue previews. | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/routes/$owner/$projectName/milestones/route.tsx` | layout | covered in current follow-up | P4 | none | `frontend/src/board-milestone-parity.spec.tsx` proves state tabs, inactive sort links using `orderDir=asc`, `.pull-left.search.search-bar`, `.due-date.over`, `untilLabel`, `.completion-rate`, progress bars, and client filtering of `.issue-link` rows. |
 | `milestone/create.scala.html`, `milestone/edit.scala.html` | Milestone create/edit form, editor, uploader, state radios, due-date picker, field errors. | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/routes/$owner/$projectName/newMilestoneForm/route.tsx`, `milestone/$milestoneId/editform/route.tsx` | interaction | covered in current follow-up | P4 | none | `frontend/src/board-milestone-parity.spec.tsx` and `frontend/tests/milestone-delete-modal-parity.e2e.ts` prove `#milestone-form`, legacy `MILESTONE` uploader, state radios, `#dueDate`, field-adjacent `.error`/`.message`, invalid-submit no REST POST, and no generic alert substitution. |
 | `milestone/view.scala.html`, `issue.partial_massupdate`, `issue.partial_list` | Milestone detail, markdown, attachments, actions, issue tabs, linked issue list, mass update. | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx` | data-boundary | covered in current follow-up | P4 | none | Static and browser evidence prove `.milesion-wrap`, `.milestone-desc .attachments[data-attachments]`, `.actrow.right-txt`, `#deleteConfirm`, close/reopen REST callbacks, `#issues .nav.nav-tabs`, `#mass-update-form`, state/assignee/milestone/label dropdown options, `[data-toggle=item-search]`, `.post-list-wrap.row-fluid`, and `issue.partial_list` row selectors. |
-| `board/view.scala.html` | Integrated sweep sample `/admin/sample/post/1`. | `frontend/src/routes/$owner/$projectName/post/$postNumber/route.tsx`, board detail REST/view-model boundary | data-boundary | needs-parent-decision | P4 | Create comparable legacy sample post, update sweep seed, or classify local placeholder behavior as gap/deferred/deviation. | Integrated desktop sweep `output/playwright/visual-sweep/latest.json` checked at `2026-06-26T16:21:36.680Z` reports legacy status `404` and local status `200`. This is not visual parity proof because legacy did not render the target post. |
-| `board/edit.scala.html` | Integrated sweep sample `/admin/sample/post/1/editform`. | `frontend/src/routes/$owner/$projectName/post/$postNumber/editform/route.tsx`, board edit REST/view-model boundary | data-boundary | needs-parent-decision | P4 | Create comparable legacy sample post/edit state, update sweep seed, or classify route behavior explicitly. | Integrated desktop sweep reports legacy status `500` and local status `200`; legacy error state must be sourced before local rendered form can be accepted as covered. |
-| `milestone/view.scala.html` | Integrated sweep sample `/admin/sample/milestone/1`. | `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx`, milestone detail REST/view-model boundary | data-boundary | needs-parent-decision | P4 | Create comparable legacy milestone seed or classify sample-data mismatch before closing P4. | Integrated desktop sweep reports legacy status `404` and local status `200`; local detail reachability does not prove legacy template parity for this seed. |
-| `milestone/edit.scala.html` | Integrated sweep sample `/admin/sample/milestone/1/editform`. | `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/editform/route.tsx`, milestone edit REST/view-model boundary | data-boundary | needs-parent-decision | P4 | Create comparable legacy milestone edit seed or classify sample-data mismatch before closing P4. | Integrated desktop sweep reports legacy status `404` and local status `200`; local edit form reachability does not prove comparable legacy output. |
+| `board/view.scala.html` | Integrated sweep sample `/admin/sample/post/1`. | `frontend/src/routes/$owner/$projectName/post/$postNumber/route.tsx`, board detail REST/view-model boundary | data-boundary | not-applicable | P4 | none unless parent replaces the homelab seed with comparable legacy data. | Integrated desktop sweep `output/playwright/visual-sweep/latest.json` checked at `2026-06-26T16:21:36.680Z` reports legacy status `404` and local status `200`. This legacy homelab sample did not render a comparable post detail document, so the status delta is not visual closure evidence and not a template parity gap; board detail UI remains covered by the dedicated `board/view.scala.html` row above. |
+| `board/edit.scala.html` | Integrated sweep sample `/admin/sample/post/1/editform`. | `frontend/src/routes/$owner/$projectName/post/$postNumber/editform/route.tsx`, board edit REST/view-model boundary | data-boundary | not-applicable | P4 | none unless parent replaces the homelab seed with comparable legacy data. | Integrated desktop sweep reports legacy status `500` and local status `200`. The legacy reference is an error state for this seed, not a comparable edit-form rendering; board form parity remains covered by static and browser evidence above. |
+| `milestone/view.scala.html` | Integrated sweep sample `/admin/sample/milestone/1`. | `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx`, milestone detail REST/view-model boundary | data-boundary | not-applicable | P4 | none unless parent replaces the homelab seed with comparable legacy data. | Integrated desktop sweep reports legacy status `404` and local status `200`. The legacy homelab seed has no comparable milestone detail document, so this status delta is classified as a sample-data mismatch; milestone detail UI remains covered by the dedicated row above. |
+| `milestone/edit.scala.html` | Integrated sweep sample `/admin/sample/milestone/1/editform`. | `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/editform/route.tsx`, milestone edit REST/view-model boundary | data-boundary | not-applicable | P4 | none unless parent replaces the homelab seed with comparable legacy data. | Integrated desktop sweep reports legacy status `404` and local status `200`. The legacy homelab seed has no comparable milestone edit-form document, so this status delta is classified as a sample-data mismatch; milestone form parity remains covered by static and browser evidence above. |
 
 ## Verifier Evidence
 
@@ -96,6 +96,6 @@ Integrated browser sweep evidence:
 - Result: overall legacy `93/96`, local `174/174`, `diffFailures 0`,
   `localFailures 0`, with four P4 status deltas listed above.
 
-P4 packet cannot close until the four `needs-parent-decision` rows are resolved
-with comparable legacy seed evidence or canonical/provenance/follow-up
-classification.
+P4 has no remaining `needs-parent-decision` rows. The integrated sweep deltas
+above are classified as non-comparable legacy homelab sample-data states, not as
+P4 template output gaps.

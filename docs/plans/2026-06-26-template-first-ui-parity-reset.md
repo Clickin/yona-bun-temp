@@ -208,30 +208,30 @@ Update 2026-06-27:
   Artifact: `output/playwright/visual-sweep/latest.json`, checked at
   `2026-06-26T16:21:36.680Z`. Result: legacy `93/96`, local `174/174`,
   comparison `diffFailures 0`, `localFailures 0`, with `22` status deltas
-  remaining from legacy sample/homelab data states such as legacy 404/500/400
-  versus local rendered pages. The sweep now ignores only Vite dev
+  from legacy sample/homelab data states or non-HTML export boundaries such as
+  legacy 404/500/400/0 versus local rendered pages. The sweep now ignores only
+  Vite dev
   `ERR_ABORTED` module-load noise for framed `/sidebar` pages while preserving
   real request failures.
-- The remaining `22` integrated status deltas are now packet-owned in
-  `docs/provenance/ui-parity-reports/README.md#integrated-status-delta-queue`.
-  Current split: P3 issue export/download boundary `1`, P4
-  board/milestone/post sample-data states `4`, and P5 code/git/PR/review/search
-  states `17`. P3 also records `/admin/sample/issues?format=xls` as
-  `needs-parent-decision`; do not close P3 or whole UI parity until this route
-  is either implemented, deferred with canonical/provenance/follow-up entries,
-  or classified as not-applicable with legacy source evidence.
+- The `22` integrated status deltas are now packet-owned and classified in
+  `docs/provenance/ui-parity-reports/README.md#integrated-status-delta-classification`.
+  P3 issue export and P5 review export are `covered` because `format=xls`
+  routes are implemented and covered by backend/frontend evidence. P5
+  `/admin/sample/search` is `covered` as a SPA HTTP 200 plus legacy bad-request
+  shell boundary. P4 and the remaining P5 repository/PR/code route deltas are
+  `not-applicable` to visual closure because the legacy homelab seed rendered
+  404/500/400 or absent data rather than a comparable template document.
 - P4 board/milestone/post now has a template-first reset report at
   `docs/provenance/ui-parity-reports/template-first-p4-board-milestone-post.md`.
   The report preserves existing board/milestone implementation and interaction
-  evidence, but keeps the four integrated sample route deltas open as
-  `needs-parent-decision`; P4 is not closed until those rows have comparable
-  legacy seed evidence or canonical/provenance/follow-up classification.
+  evidence, and classifies the four integrated sample route deltas as
+  `not-applicable` non-comparable legacy homelab seed states.
 - P5 code/git/PR/review now has a template-first reset report at
   `docs/provenance/ui-parity-reports/template-first-p5-code-git-pr-review.md`.
   The report preserves existing code browser, Git/SVN no-head, commit/diff,
-  branch, compare, pull request, and review-thread implementation evidence, but
-  keeps the seventeen integrated repository/PR/search/export sample route
-  deltas open as `needs-parent-decision`.
+  branch, compare, pull request, and review-thread implementation evidence, and
+  classifies the seventeen integrated repository/PR/search/export sample route
+  deltas as `covered` or `not-applicable` according to their route boundary.
 - P6 organization/directory/workspace now has a template-first reset report at
   `docs/provenance/ui-parity-reports/template-first-p6-organization-directory-workspace.md`.
   The report records organization shell/admin, directory, workspace/profile,
@@ -239,23 +239,21 @@ Update 2026-06-27:
   and has no standalone `needs-parent-decision` row.
 - P7 site-admin/error/security now has a template-first reset report at
   `docs/provenance/ui-parity-reports/template-first-p7-site-admin-error-security.md`.
-  With this file, P0-P7 all have template-first packet reports. Whole UI parity
-  is still not closed because P3/P4/P5 retain integrated status-delta
-  `needs-parent-decision` rows.
+  With this file, P0-P7 all have template-first packet reports and no packet
+  retains integrated status-delta `needs-parent-decision` rows. Whole UI parity
+  still requires a final closure audit for any remaining `gap`, `deviation`,
+  `weak evidence`, or stale non-zero summary rows across all parity reports.
 
-1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
-   header/menu, issue/editor/comment surfaces define most repeated visual
-   contracts.
-2. Parent decides whether P3 `/admin/sample/issues?format=xls` belongs to
-   current issue functional parity or to deferred import/export scope, then
-   updates root canonical docs, provenance, and this plan with the same
-   classification.
-3. Subagent B resolves the four P4 integrated status deltas in
-   `template-first-p4-board-milestone-post.md` against comparable legacy sample
-   data or documented seed gaps.
-4. Subagent C resolves the seventeen P5 integrated status deltas in
-   `template-first-p5-code-git-pr-review.md`, including Git/SVN-visible UI
-   states, export/download routes, PR diff tabs, repository browser, branch,
+1. Parent runs a final closure audit across all template-first reports and
+   existing parity reports for any non-zero `gap`, `deviation`, `weak evidence`,
+   or `needs-parent-decision` summary rows.
+2. Subagent A maps any remaining P0/P2/P3 stale rows first because shell,
+   project header/menu, issue/editor/comment surfaces define most repeated
+   visual contracts.
+3. Subagent B resolves any remaining P4 stale rows against comparable legacy
+   sample data or documented classification.
+4. Subagent C resolves any remaining P5 stale rows, including Git/SVN-visible
+   UI states, export/download routes, PR diff tabs, repository browser, branch,
    compare, commit, and search behavior.
 5. Parent updates existing `docs/provenance/ui-parity-reports/*.md` to use the
    audit queue format above and reopens rows that were closed by reachability

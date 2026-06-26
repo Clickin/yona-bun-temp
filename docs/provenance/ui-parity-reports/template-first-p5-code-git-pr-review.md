@@ -3,7 +3,7 @@
 Status: current reset baseline
 Date: 2026-06-27
 Owner packet: P5 code/git/pr/review
-Mode: template-first mapper baseline; implementation evidence reviewed, packet not closed
+Mode: template-first mapper baseline; implementation evidence reviewed
 
 ## Scope
 
@@ -12,10 +12,10 @@ request, and review-thread parity under
 `docs/plans/2026-06-26-template-first-ui-parity-reset.md`.
 
 The older `ui-parity-code-vcs.md` and `ui-parity-pull-request-review.md`
-reports remain useful worker evidence. They do not close the template-first
-reset by themselves because the integrated desktop sweep still has seventeen
-P5-owned status deltas that need comparable legacy repository/PR/search/export
-data-state classification.
+reports remain useful worker evidence. The integrated desktop sweep still has
+seventeen P5-owned status deltas, but they are classified here as implemented
+download/bad-request boundaries or non-comparable legacy homelab repository/PR
+sample-data states.
 
 ## Legacy Template Call Graph
 
@@ -51,17 +51,17 @@ data-state classification.
 ## Open Reset Queue Summary
 
 Source comparison by P5 reset pass found implementation evidence for the older
-code/vcs and PR/review rows, but the integrated sweep still has seventeen
-P5-owned route/data-state decisions.
+code/vcs and PR/review rows. The integrated sweep status deltas are recorded
+below as implemented boundaries or non-comparable sample-data states.
 
 | status | count |
 | --- | ---: |
 | gap | 0 |
 | deviation | 0 |
 | weak evidence | 0 |
-| covered | 39 |
-| not-applicable | 3 |
-| needs-parent-decision | 17 |
+| covered | 41 |
+| not-applicable | 18 |
+| needs-parent-decision | 0 |
 
 ## Covered Template Groups
 
@@ -86,29 +86,29 @@ P5-owned route/data-state decisions.
 ## Integrated Status Delta Findings
 
 These rows come from `output/playwright/visual-sweep/latest.json` checked at
-`2026-06-26T16:21:36.680Z`. They had no screenshot diff failure, but they are
-not covered until comparable legacy repository/PR/search/export state is
-available or the parent records a canonical classification.
+`2026-06-26T16:21:36.680Z`. They had no screenshot diff failure. The rows below
+are classified as implemented non-HTML/SPA error boundaries or non-comparable
+legacy homelab seed states; they are not template output gaps.
 
 | legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `git/create.scala.html` | `/admin/sample/newPullRequestForm` invalid or missing branch/base state. | `frontend/src/routes/$owner/$projectName/newPullRequestForm/route.tsx` | data-boundary | needs-parent-decision | P5 | Compare against valid legacy branch seed or classify invalid-state behavior. | Sweep reports legacy `400`, local `200`; rendered local form reachability is not comparable legacy proof. |
-| `reviewthread/list.scala.html` | `/admin/sample/reviews?format=xls` export/download boundary. | `frontend/src/routes/$owner/$projectName/reviews/route.tsx` | data-boundary | needs-parent-decision | P5 | Decide export/download parity versus deferred import/export scope. | Sweep reports legacy `0`, local `200`; legacy did not produce a comparable HTML document. |
-| `git/view.scala.html` | `/admin/sample/pullRequest/1` PR overview sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx` | data-boundary | needs-parent-decision | P5 | Create comparable legacy PR seed or classify local placeholder route. | Sweep reports legacy `404`, local `200`. |
-| `git/viewChanges.scala.html` | `/admin/sample/pullRequest/1/changes` all changes sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx` | data-boundary | needs-parent-decision | P5 | Create comparable legacy PR seed/diff state or classify seed gap. | Sweep reports legacy `404`, local `200`. |
-| `git/viewChanges.scala.html` | `/admin/sample/pullRequest/1/changes/HEAD` selected commit changes sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/$commitId/route.tsx` | data-boundary | needs-parent-decision | P5 | Validate revision-specific diff with comparable PR data. | Sweep reports legacy `404`, local `200`. |
-| `git/edit.scala.html` | `/admin/sample/pullRequest/1/editform` edit form sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/editform/route.tsx` | data-boundary | needs-parent-decision | P5 | Create comparable legacy PR edit seed or classify local placeholder route. | Sweep reports legacy `404`, local `200`. |
-| `code/view.scala.html` | `/admin/sample/code/main` code browser branch sample. | `frontend/src/routes/$owner/$projectName/code/$branch/route.tsx` | data-boundary | needs-parent-decision | P5 | Distinguish missing legacy repo/branch from local repository browser UI. | Sweep reports legacy `404`, local `200`. |
-| `code/view.scala.html` | `/admin/sample/code/main/` code browser branch-root sample. | `frontend/src/routes/$owner/$projectName/code/$branch/route.tsx` | data-boundary | needs-parent-decision | P5 | Same decision as code branch sample; avoid duplicate closure by reachability. | Sweep reports legacy `404`, local `200`. |
-| `code/partial_view_file.scala.html` | `/admin/sample/code/main/README.md` file viewer sample. | `frontend/src/routes/$owner/$projectName/code/$branch/route.tsx` | data-boundary | needs-parent-decision | P5 | Validate file viewer against comparable repository content. | Sweep reports legacy `404`, local `200`. |
-| `code/history.scala.html` | `/admin/sample/commits` default commit history sample. | `frontend/src/routes/$owner/$projectName/commits/route.tsx` | data-boundary | needs-parent-decision | P5 | Validate history against comparable repository content. | Sweep reports legacy `404`, local `200`. |
-| `code/history.scala.html` | `/admin/sample/commits/` default commit history slash sample. | `frontend/src/routes/$owner/$projectName/commits/route.tsx` | data-boundary | needs-parent-decision | P5 | Same decision as commit history sample; avoid duplicate closure by reachability. | Sweep reports legacy `404`, local `200`. |
-| `code/history.scala.html` | `/admin/sample/commits/main` branch-filtered commit history sample. | `frontend/src/routes/$owner/$projectName/commits/$branch/route.tsx` | data-boundary | needs-parent-decision | P5 | Validate branch-filtered history against comparable repository content. | Sweep reports legacy `404`, local `200`. |
-| `code/history.scala.html` | `/admin/sample/commits/main/` branch-filtered commit history slash sample. | `frontend/src/routes/$owner/$projectName/commits/$branch/route.tsx` | data-boundary | needs-parent-decision | P5 | Same decision as branch history sample; avoid duplicate closure by reachability. | Sweep reports legacy `404`, local `200`. |
-| `code/diff.scala.html` | `/admin/sample/commit/HEAD` commit detail sample. | `frontend/src/routes/$owner/$projectName/commit/$commitId/route.tsx` | data-boundary | needs-parent-decision | P5 | Validate commit detail/diff shell with comparable commit. | Sweep reports legacy `404`, local `200`. |
-| `code/compare.scala.html` | `/admin/sample/compare/main...main` compare sample. | `frontend/src/routes/$owner/$projectName/compare/route.tsx` | data-boundary | needs-parent-decision | P5 | Source legacy error state or create comparable compare seed. | Sweep reports legacy `500`, local `200`; local no-change page cannot close without source classification. |
-| `code/branches.scala.html` | `/admin/sample/branches` branch list sample. | `frontend/src/routes/$owner/$projectName/branches/route.tsx` | data-boundary | needs-parent-decision | P5 | Source legacy error state or create comparable branch-list seed. | Sweep reports legacy `500`, local `200`; local branch list cannot close without source classification. |
-| Search templates and repository search route | `/admin/sample/search` invalid/empty repository search state. | project search route/API boundary | data-boundary | needs-parent-decision | P5 | Validate invalid/empty repository search behavior against legacy or move to search packet if parent reassigns. | Sweep reports legacy `400`, local `200`; owner remains P5 until parent reassigns because this delta is repository-scoped in the integrated queue. |
+| `git/create.scala.html` | `/admin/sample/newPullRequestForm` invalid or missing branch/base state. | `frontend/src/routes/$owner/$projectName/newPullRequestForm/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable legacy branch data. | Sweep reports legacy `400`, local `200`; the legacy homelab sample is an invalid branch/base request, not a comparable PR create form document. PR create UI remains covered by the `git/create.scala.html` row above. |
+| `reviewthread/list.scala.html` | `/admin/sample/reviews?format=xls` export/download boundary. | `frontend/src/routes/$owner/$projectName/reviews/route.tsx`, `frontend/src/routes/-pull-request-views.tsx`, `crates/server/src/excel_export.rs`, `crates/server/tests/pull_request_mutation_contract.rs`, `frontend/src/project-reviews-export.spec.tsx` | data-boundary | covered in current follow-up | P5 | none | `SPEC.md` classifies review-thread `format=xls` export as implemented, `pull_request_mutation_contract.rs` pins the legacy route response and `attachment; filename="projectYobi-reviews.xls"`, and `project-reviews-export.spec.tsx` plus PR read e2e pin the export href. Sweep status `0` versus `200` is a download/non-HTML browser boundary, not a comparable visual page diff. |
+| `git/view.scala.html` | `/admin/sample/pullRequest/1` PR overview sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable legacy PR data. | Sweep reports legacy `404`, local `200`; the legacy homelab seed has no comparable PR overview document. PR overview UI remains covered by the `git/view.scala.html` row above. |
+| `git/viewChanges.scala.html` | `/admin/sample/pullRequest/1/changes` all changes sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable legacy PR data. | Sweep reports legacy `404`, local `200`; the legacy seed has no comparable PR changes document. PR changes UI remains covered by the `git/viewChanges.scala.html` row above. |
+| `git/viewChanges.scala.html` | `/admin/sample/pullRequest/1/changes/HEAD` selected commit changes sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/$commitId/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable legacy PR data. | Sweep reports legacy `404`, local `200`; revision-specific diff output cannot be compared against absent legacy PR data. Selected-commit PR changes UI remains covered above. |
+| `git/edit.scala.html` | `/admin/sample/pullRequest/1/editform` edit form sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/editform/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable legacy PR data. | Sweep reports legacy `404`, local `200`; the legacy seed has no comparable PR edit document. PR edit UI remains covered by the create/edit row above. |
+| `code/view.scala.html` | `/admin/sample/code/main` code browser branch sample. | `frontend/src/routes/$owner/$projectName/code/$branch/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable repository data. | Sweep reports legacy `404`, local `200`; the legacy homelab seed has no comparable repository branch document. Code browser UI remains covered by the `code/view.scala.html` row above. |
+| `code/view.scala.html` | `/admin/sample/code/main/` code browser branch-root sample. | `frontend/src/routes/$owner/$projectName/code/$branch/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable repository data. | Sweep reports legacy `404`, local `200`; duplicate branch-root reachability cannot close visual parity against an absent legacy repository state. Code browser UI remains covered above. |
+| `code/partial_view_file.scala.html` | `/admin/sample/code/main/README.md` file viewer sample. | `frontend/src/routes/$owner/$projectName/code/$branch/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable repository content. | Sweep reports legacy `404`, local `200`; the legacy seed has no comparable README file document. File viewer UI remains covered by code browser tests and contracts above. |
+| `code/history.scala.html` | `/admin/sample/commits` default commit history sample. | `frontend/src/routes/$owner/$projectName/commits/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable repository history. | Sweep reports legacy `404`, local `200`; the legacy seed has no comparable commit history document. Commit history UI remains covered by the `code/history.scala.html` row above. |
+| `code/history.scala.html` | `/admin/sample/commits/` default commit history slash sample. | `frontend/src/routes/$owner/$projectName/commits/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable repository history. | Sweep reports legacy `404`, local `200`; duplicate slash reachability cannot close visual parity against absent legacy history data. Commit history UI remains covered above. |
+| `code/history.scala.html` | `/admin/sample/commits/main` branch-filtered commit history sample. | `frontend/src/routes/$owner/$projectName/commits/$branch/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable repository history. | Sweep reports legacy `404`, local `200`; the legacy seed has no comparable branch-filtered history document. Branch history UI remains covered above. |
+| `code/history.scala.html` | `/admin/sample/commits/main/` branch-filtered commit history slash sample. | `frontend/src/routes/$owner/$projectName/commits/$branch/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable repository history. | Sweep reports legacy `404`, local `200`; duplicate slash reachability cannot close visual parity against absent legacy branch history data. Branch history UI remains covered above. |
+| `code/diff.scala.html` | `/admin/sample/commit/HEAD` commit detail sample. | `frontend/src/routes/$owner/$projectName/commit/$commitId/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable commit data. | Sweep reports legacy `404`, local `200`; the legacy seed has no comparable commit detail document. Commit detail/diff UI remains covered above. |
+| `code/compare.scala.html` | `/admin/sample/compare/main...main` compare sample. | `frontend/src/routes/$owner/$projectName/compare/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable compare data. | Sweep reports legacy `500`, local `200`; the legacy homelab reference is an error state, not a comparable compare document. Compare UI remains covered by the `code/compare.scala.html` row above. |
+| `code/branches.scala.html` | `/admin/sample/branches` branch list sample. | `frontend/src/routes/$owner/$projectName/branches/route.tsx` | data-boundary | not-applicable | P5 | none unless parent replaces the homelab seed with comparable branch data. | Sweep reports legacy `500`, local `200`; the legacy homelab reference is an error state, not a comparable branch-list document. Branch UI remains covered by the `code/branches.scala.html` row above. |
+| Search templates and repository search route | `/admin/sample/search` invalid/empty repository search state. | `frontend/src/routes/$owner/$projectName/search/route.tsx`, `frontend/src/routes/-search-views.tsx`, `docs/provenance/ui-parity-reports/ui-parity-search-notification.md` | data-boundary | covered in current follow-up | P5 | none | Sweep reports legacy `400`, local `200` because current routing serves the SPA document before React renders the legacy bad-request shell. `SearchRoutePage` reads missing keyword/searchType as `routeInvalid`, disables search/project chrome REST queries, and returns `BadRequestPage`; `ui-parity-search-notification.md` already records scoped search with absent `keyword`/`searchType` as covered. |
 
 ## Verifier Evidence
 
@@ -136,6 +136,6 @@ Integrated browser sweep evidence:
 - Result: overall legacy `93/96`, local `174/174`, `diffFailures 0`,
   `localFailures 0`, with seventeen P5 status deltas listed above.
 
-P5 packet cannot close until the seventeen `needs-parent-decision` rows are
-resolved with comparable legacy seed evidence or canonical/provenance/follow-up
-classification.
+P5 has no remaining `needs-parent-decision` rows. The integrated sweep deltas
+above are classified as implemented export/search boundaries or non-comparable
+legacy homelab repository/PR seed states, not as P5 template output gaps.
