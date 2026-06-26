@@ -21,6 +21,44 @@
 
 ## Windows MSVC 빌드
 
+### macOS xwin cross build
+
+macOS에서 Windows MSVC binary를 만들 때는 `xwin`으로 MSVC CRT/Windows SDK
+sysroot를 만들고 Homebrew LLVM의 `clang-cl`/`llvm-lib`/`lld-link`를 사용한다.
+
+전제:
+
+- macOS
+- Rust target: `rustup target add x86_64-pc-windows-msvc`
+- `xwin`: `cargo install xwin`
+- Homebrew LLVM: `brew install llvm`
+- Node.js와 `pnpm`
+
+기본 빌드:
+
+```bash
+pnpm build:windows-msvc:xwin
+```
+
+기본값은 `x86_64-pc-windows-msvc`, `release`, `db-matrix` feature다. SQLite
+전용 smoke binary가 필요하면:
+
+```bash
+pnpm build:windows-msvc:xwin -- --features none
+```
+
+산출물:
+
+- `dist/windows-msvc-x86_64-pc-windows-msvc/yoram.exe`
+- `dist/windows-msvc-x86_64-pc-windows-msvc/yoram.toml`
+- `dist/yoram-windows-msvc-x86_64-pc-windows-msvc.zip`
+
+스크립트는 기본적으로 `.xwin-cache/`에 xwin sysroot를 보관한다. 다시 받고 싶으면
+`-- --refresh-xwin`을 붙인다. Homebrew LLVM 위치를 자동 탐지하지 못하면
+`LLVM_BIN=/path/to/llvm/bin`을 지정한다.
+
+### Windows native build
+
 전제:
 
 - Windows 10/11

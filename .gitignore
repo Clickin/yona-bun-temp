@@ -10,6 +10,8 @@ node_modules
 .netlify
 .wrangler
 /target/
+/dist/
+/.xwin-cache/
 /apps/app/dist
 /frontend/dist/
 

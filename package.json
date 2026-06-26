@@ -6,6 +6,7 @@
     "agent:cargo": "node tools/agent-cargo.mjs",
     "agent:cargo-test": "node tools/agent-cargo-test.mjs",
     "agent:turn-commit": "node tools/agent-turn-commit.mjs",
+    "build:windows-msvc:xwin": "node scripts/build-windows-msvc-xwin.mjs",
     "dev": "node scripts/dev.mjs",
     "dev:backend": "node scripts/dev-backend.mjs",
     "dev:frontend": "pnpm --dir frontend dev",
