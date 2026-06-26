@@ -51,6 +51,11 @@
   route with TanStack Router instead of the full document reload helper.
   Focused guards: `frontend/src/route-parity.spec.tsx` and
   `frontend/src/pull-request-list-form-review-i18n.spec.tsx`.
+- React-owned project and organization leave actions preserve the legacy
+  anchors and REST mutation behavior, but route redirect-path responses through
+  the owning TanStack layout with base-path-aware navigation instead of a full
+  document reload helper. Focused guards: `frontend/src/route-parity.spec.tsx`
+  and `frontend/src/organization-home-parity.spec.tsx`.
 - Direct `window.location` navigation in route source is limited to shared app-base fallback helpers; route-owned filter, pagination, code branch, and history transitions use TanStack navigation. Focused guard: `frontend/src/route-parity.spec.tsx`.
 - React-owned project/organization leave, enrollment, and project-watch click
   mutations keep legacy `href`/`data-href` anchors for parity, but clicks call

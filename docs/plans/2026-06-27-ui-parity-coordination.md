@@ -754,3 +754,10 @@ A slice is closed only when:
   PR detail route through TanStack Router navigation instead of a full document
   reload helper. Focused guards cover the PR form route sources and mutation
   error fallbacks.
+- M56 continues nested-layout mutation SPA navigation: project and organization
+  leave actions keep their legacy anchors/REST mutations, then route
+  redirect-path responses through TanStack Router navigation from the layout
+  owner instead of reloading the document.
+- Follow-up modernization after parity slices: introduce a Vite/TypeScript
+  import alias for frontend source imports and mechanically rewrite deep
+  relative imports in a separate no-behavior-change migration.

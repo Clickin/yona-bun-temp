@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   cancelEnrollOrganization,
   enrollOrganization,
@@ -10,18 +10,13 @@ import {
 import { useAppRuntime } from "../../../app-runtime-context";
 import { toOrganizationContainerView } from "../../../app-view-models";
 import { RestApiError } from "../../../api/rest-client";
+import { prefixBasePath } from "../../../runtime-config";
 import {
   OrganizationDetailPage,
   OrganizationHeader,
   OrganizationMenu,
 } from "../../-organization-views";
-import {
-  BadRequestPage,
-  classifyConnectFailure,
-  ForbiddenPage,
-  navigateToAppHref,
-  NotFoundPage,
-} from "../../-shared";
+import { BadRequestPage, classifyConnectFailure, ForbiddenPage, NotFoundPage } from "../../-shared";
 
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationLayoutRouteComponent,
@@ -215,6 +210,7 @@ function OrganizationRouteShellLayout({
 export function OrganizationDetailRouteComponent(props: { renderShell?: boolean } = {}) {
   const { organizationName } = Route.useParams();
   const { csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const navigate = useNavigate();
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationContainerView> | null>(
     null,
   );
@@ -271,7 +267,7 @@ export function OrganizationDetailRouteComponent(props: { renderShell?: boolean 
         try {
           const result = await leaveOrganization(runtimeConfig, csrfToken, nextOrganizationName);
           if (result.redirectPath) {
-            navigateToAppHref(runtimeConfig.basePath, result.redirectPath);
+            void navigate({ href: prefixBasePath(runtimeConfig.basePath, result.redirectPath) });
             return;
           }
           await refreshContainer();

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   cancelEnrollProject,
   enrollProject,
@@ -15,12 +15,12 @@ import {
 import { RestApiError } from "../../../api/rest-client";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { toProjectContainerView } from "../../../app-view-models";
+import { prefixBasePath } from "../../../runtime-config";
 import { ProjectDetailPage, ProjectHeader, ProjectMenu } from "../../-project-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   RedirectPage,
   useCurrentHref,
@@ -440,6 +440,7 @@ function legacyAdminAliasPath(owner: string, projectName: string): string | null
 export function ProjectDetailRouteComponent(props: { renderShell?: boolean } = {}) {
   const { owner, projectName } = Route.useParams();
   const href = useCurrentHref();
+  const navigate = useNavigate();
   const {
     bootstrapping,
     csrfToken,
@@ -516,7 +517,9 @@ export function ProjectDetailRouteComponent(props: { renderShell?: boolean } = {
           if (currentSession && !currentSession.isAnonymous) {
             await refreshWorkspace(currentSession);
           }
-          navigateToAppHref(runtimeConfig.basePath, response.redirectPath ?? "/");
+          void navigate({
+            href: prefixBasePath(runtimeConfig.basePath, response.redirectPath ?? "/"),
+          });
         } catch (error) {
           setErrorMessage(
             error instanceof Error

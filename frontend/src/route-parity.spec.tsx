@@ -247,6 +247,9 @@ describe("file-route parity harness", () => {
     expect(projectHomeRouteSource).toContain("user.enroll.failed.network");
     expect(projectHomeRouteSource).toContain("user.enroll.failed.client");
     expect(projectHomeRouteSource).toContain("user.enroll.failed.server");
+    expect(projectHomeRouteSource).toContain("useNavigate");
+    expect(projectHomeRouteSource).toContain("prefixBasePath");
+    expect(projectHomeRouteSource).not.toContain("navigateToAppHref");
     expect(projectHomeRouteSource).not.toContain("Cancel enrollment failed.");
     expect(projectHomeRouteSource).not.toContain("Enroll failed.");
     expect(projectHomeRouteSource).not.toContain("Server Error");
