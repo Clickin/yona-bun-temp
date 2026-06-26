@@ -875,6 +875,7 @@ export function CodeCommitDetailPage(props: {
     contentsMarkdown: string,
     attachmentIds?: number[],
   ) => Promise<void> | void;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
@@ -889,76 +890,82 @@ export function CodeCommitDetailPage(props: {
     selectedPath,
   );
 
+  const pageBody = (
+    <div className="project-page-wrap">
+      <div className="code-browse-wrap" id="code-browse-wrap">
+        <nav aria-label="Code tabs" className="nav nav-tabs">
+          <a
+            href={codeHref(
+              props.runtimeConfig,
+              detail.ownerName,
+              detail.projectName,
+              selectedBranch,
+            )}
+          >
+            {legacyMessage(props.messages, "code.files")}
+          </a>
+          <a
+            aria-current="page"
+            href={codeHistoryHref(
+              props.runtimeConfig,
+              detail.ownerName,
+              detail.projectName,
+              selectedBranch,
+            )}
+          >
+            {legacyMessage(props.messages, "code.commits")}
+          </a>
+          <a
+            href={buildProjectHref(
+              props.runtimeConfig,
+              detail.ownerName,
+              detail.projectName,
+              "branches",
+            )}
+          >
+            {legacyMessage(props.messages, "title.branches")}
+          </a>
+        </nav>
+        {commitDetail?.noHead ? (
+          <CodeNoHeadBlock
+            detail={detail}
+            messages={props.messages}
+            runtimeConfig={props.runtimeConfig}
+          />
+        ) : (
+          <CodeCommitDiffView
+            commitDetail={commitDetail}
+            csrfToken={props.csrfToken}
+            runtimeConfig={props.runtimeConfig}
+            onCloseThread={props.onCloseThread}
+            onCreateComment={props.onCreateComment}
+            onDeleteComment={props.onDeleteComment}
+            onOpenThread={props.onOpenThread}
+            onUpdateComment={props.onUpdateComment}
+            messages={props.messages}
+          />
+        )}
+      </div>
+      <CommitWatchButton
+        isWatching={commitDetail?.isWatching === true}
+        messages={props.messages}
+        onToggleCommitWatch={props.onToggleCommitWatch}
+      />
+      <a className="ybtn pull-right" href={listHref}>
+        {legacyMessage(props.messages, "button.list")}
+      </a>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="code" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="code-browse-wrap" id="code-browse-wrap">
-            <nav aria-label="Code tabs" className="nav nav-tabs">
-              <a
-                href={codeHref(
-                  props.runtimeConfig,
-                  detail.ownerName,
-                  detail.projectName,
-                  selectedBranch,
-                )}
-              >
-                {legacyMessage(props.messages, "code.files")}
-              </a>
-              <a
-                aria-current="page"
-                href={codeHistoryHref(
-                  props.runtimeConfig,
-                  detail.ownerName,
-                  detail.projectName,
-                  selectedBranch,
-                )}
-              >
-                {legacyMessage(props.messages, "code.commits")}
-              </a>
-              <a
-                href={buildProjectHref(
-                  props.runtimeConfig,
-                  detail.ownerName,
-                  detail.projectName,
-                  "branches",
-                )}
-              >
-                {legacyMessage(props.messages, "title.branches")}
-              </a>
-            </nav>
-            {commitDetail?.noHead ? (
-              <CodeNoHeadBlock
-                detail={detail}
-                messages={props.messages}
-                runtimeConfig={props.runtimeConfig}
-              />
-            ) : (
-              <CodeCommitDiffView
-                commitDetail={commitDetail}
-                csrfToken={props.csrfToken}
-                runtimeConfig={props.runtimeConfig}
-                onCloseThread={props.onCloseThread}
-                onCreateComment={props.onCreateComment}
-                onDeleteComment={props.onDeleteComment}
-                onOpenThread={props.onOpenThread}
-                onUpdateComment={props.onUpdateComment}
-                messages={props.messages}
-              />
-            )}
-          </div>
-          <CommitWatchButton
-            isWatching={commitDetail?.isWatching === true}
-            messages={props.messages}
-            onToggleCommitWatch={props.onToggleCommitWatch}
-          />
-          <a className="ybtn pull-right" href={listHref}>
-            {legacyMessage(props.messages, "button.list")}
-          </a>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

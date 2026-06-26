@@ -307,6 +307,18 @@ M21 continues code shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "code browser shell"`.
 
+M22 continues code shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/commit/:commitId`, with the code menu
+  active.
+- `CodeCommitDetailPage` supports `renderShell={false}` so the commit detail
+  leaf route keeps its commit discussion/watch REST boundaries but renders only
+  the legacy `project-page-wrap` commit diff body under the project layout
+  `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "commit detail shell"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

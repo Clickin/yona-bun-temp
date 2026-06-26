@@ -195,6 +195,7 @@ function CodeCommitDetailRouteComponent() {
       csrfToken={csrfToken}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       messages={messages}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       onCloseThread={async (threadId) => {
         await closeThreadMutation.mutateAsync(threadId);

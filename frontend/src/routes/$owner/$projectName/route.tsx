@@ -126,6 +126,9 @@ function projectLayoutShell(
   ) {
     return { activeMenu: "code" };
   }
+  if (isCodeCommitPath(appPath, owner, projectName)) {
+    return { activeMenu: "code" };
+  }
   if (appPath === `/${owner}/${projectName}/posts`) {
     return { activeMenu: "board", keymapMode: "list", shellClassName: "board-page" };
   }
@@ -174,6 +177,16 @@ function isIssueEditFormPath(appPath: string, owner: string, projectName: string
     segments[1] === projectName &&
     segments[2] === "issue" &&
     segments[4] === "editform"
+  );
+}
+
+function isCodeCommitPath(appPath: string, owner: string, projectName: string): boolean {
+  const segments = appPath.split("/").filter(Boolean);
+  return (
+    segments.length === 4 &&
+    segments[0] === owner &&
+    segments[1] === projectName &&
+    segments[2] === "commit"
   );
 }
 

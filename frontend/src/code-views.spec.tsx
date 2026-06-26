@@ -31,6 +31,12 @@ const branchesRouteSource = readFileSync(
   fileURLToPath(new URL("./routes/$owner/$projectName/branches/route.tsx", import.meta.url)),
   "utf8",
 );
+const commitRouteSource = readFileSync(
+  fileURLToPath(
+    new URL("./routes/$owner/$projectName/commit/$commitId/route.tsx", import.meta.url),
+  ),
+  "utf8",
+);
 
 const projectDetail: ProjectDetailViewModel = {
   enrollmentRequested: false,
@@ -1791,5 +1797,27 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="code-browse-wrap"');
     expect(html).toContain('id="showCode"');
+  });
+
+  it("lets the project layout route own the commit detail shell", () => {
+    const html = renderToStaticMarkup(
+      <CodeCommitDetailPage
+        commitDetail={commitDetail}
+        detail={projectDetail}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(projectRouteSource).toContain("isCodeCommitPath");
+    expect(projectRouteSource).toContain('activeMenu: "code"');
+    expect(commitRouteSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="app-shell"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="code-browse-wrap"');
+    expect(html).toContain('class="codediff-wrap"');
   });
 });
