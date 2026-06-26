@@ -532,6 +532,15 @@ M41 continues directory SPA navigation:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "directory"`.
 
+M42 continues PR list SPA navigation:
+
+- Project and organization PR list search forms keep the legacy GET form markup,
+  tabs, rows, and pagination.
+- Search submit now calls TanStack navigation, and each PR list route subscribes
+  to router location state so same-page filter changes refetch inside the SPA.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "pull request list pagination"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

@@ -4344,6 +4344,17 @@ describe("file-route parity harness", () => {
 
   it("renders pull request list pagination with legacy pageNum controls", () => {
     const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const pullRequestViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-pull-request-views.tsx"),
+      "utf8",
+    );
+    const prRouteSources = [
+      "routes/$owner/$projectName/pullRequests/route.tsx",
+      "routes/$owner/$projectName/closedPullRequests/route.tsx",
+      "routes/$owner/$projectName/sentPullRequests/route.tsx",
+      "routes/organizations/$organizationName/pullrequests/route.tsx",
+      "routes/organizations/$organizationName/closedPullrequests/route.tsx",
+    ].map((routePath) => fs.readFileSync(path.resolve(__dirname, routePath), "utf8"));
     const item = {
       closedCommentThreadCount: 1,
       commentThreadCount: 2,
@@ -4566,6 +4577,14 @@ describe("file-route parity harness", () => {
     expect(organizationHtml).toContain(
       'href="/yona/organizations/acme/pullrequests?filter=read&amp;pageNum=3"',
     );
+    expect(pullRequestViewsSource).toContain("onNavigate?: (href: string) => void");
+    expect(pullRequestViewsSource).toContain("new FormData(event.currentTarget)");
+    expect(pullRequestViewsSource).toContain("event.preventDefault();");
+    for (const routeSource of prRouteSources) {
+      expect(routeSource).toContain("useNavigate");
+      expect(routeSource).toContain("useRouterState");
+      expect(routeSource).toContain("navigate({ href })");
+    }
   });
 
   it("renders project review list with the legacy reviewthread shell", () => {

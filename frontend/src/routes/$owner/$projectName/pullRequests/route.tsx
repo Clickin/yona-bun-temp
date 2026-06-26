@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { apiQueryKeys } from "../../../../api/query-keys";
 import {
   deleteProjectPushedBranchRest,
@@ -26,6 +26,8 @@ function ProjectPullRequestsRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  useRouterState({ select: (state) => state.location.href });
   const searchParams = new URLSearchParams(window.location.search);
   const filter = searchParams.get("filter") ?? "";
   const pageNum = Number(searchParams.get("pageNum") || "1");
@@ -93,6 +95,9 @@ function ProjectPullRequestsRouteComponent() {
       list={listQuery.data}
       messages={messages}
       onDeletePushedBranch={(branch) => deletePushedBranchMutation.mutate(branch.id)}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       query={{ category: "open", contributorId, filter, pageNum }}
       renderShell={false}
       runtimeConfig={runtimeConfig}

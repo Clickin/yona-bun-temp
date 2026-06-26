@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { organizationPullRequestListQueryOptions } from "../../../../api/pull-requests";
 import { readOrganizationContainer } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
@@ -21,6 +21,8 @@ export const Route = createFileRoute("/organizations/$organizationName/closedPul
 function OrganizationClosedPullRequestsRouteComponent() {
   const { organizationName } = Route.useParams();
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
+  useRouterState({ select: (state) => state.location.href });
   const searchParams = new URLSearchParams(window.location.search);
   const filter = searchParams.get("filter") ?? "";
   const pageNum = Number(searchParams.get("pageNum") || "1");
@@ -64,6 +66,9 @@ function OrganizationClosedPullRequestsRouteComponent() {
       detail={containerQuery.data ? toOrganizationContainerView(containerQuery.data) : null}
       list={listQuery.data}
       messages={messages}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       organizationName={organizationName}
       query={{ category: "closed", filter, pageNum }}
       renderShell={false}

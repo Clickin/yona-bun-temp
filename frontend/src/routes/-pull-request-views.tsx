@@ -572,10 +572,11 @@ function PullRequestTabs(props: {
 }
 
 function ProjectPullRequestSearchForm(props: {
-  category: PullRequestListCategory | string;
+  category: PullRequestListCategory;
   detail: ProjectDetailViewModel;
   list: PullRequestListResponse | undefined;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   query: PullRequestListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -606,6 +607,25 @@ function ProjectPullRequestSearchForm(props: {
       id="search"
       method="get"
       name="search"
+      onSubmit={(event) => {
+        if (!props.onNavigate) {
+          return;
+        }
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const filter = String(formData.get("filter") ?? "");
+        const contributorId = Number(formData.get("contributorId") || "0");
+        const queryString = pullRequestQueryString(props.query, props.category, {
+          contributorId,
+          filter,
+          pageNum: undefined,
+        });
+        props.onNavigate(
+          [projectCategoryHref(props.runtimeConfig, props.detail, props.category), queryString]
+            .filter(Boolean)
+            .join("?"),
+        );
+      }}
     >
       <div className="search">
         <div className="search-bar">
@@ -662,6 +682,7 @@ function OrganizationPullRequestSearchForm(props: {
   category: "closed" | "open";
   detail: OrganizationDetailViewModel;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   query: OrganizationPullRequestListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -675,6 +696,30 @@ function OrganizationPullRequestSearchForm(props: {
       id="search"
       method="get"
       name="search"
+      onSubmit={(event) => {
+        if (!props.onNavigate) {
+          return;
+        }
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const filter = String(formData.get("filter") ?? "");
+        const queryString = organizationPullRequestQueryString(props.query, {
+          filter,
+          pageNum: undefined,
+        });
+        props.onNavigate(
+          [
+            organizationCategoryHref(
+              props.runtimeConfig,
+              props.detail.organizationName,
+              props.category,
+            ),
+            queryString,
+          ]
+            .filter(Boolean)
+            .join("?"),
+        );
+      }}
     >
       <div className="search">
         <div className="search-bar">
@@ -1027,6 +1072,7 @@ export function ProjectPullRequestListPage(props: {
   detail: ProjectDetailViewModel | null;
   list: PullRequestListResponse | undefined;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   query: PullRequestListQuery;
   renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
@@ -1047,6 +1093,7 @@ export function ProjectPullRequestListPage(props: {
             detail={detail}
             list={list}
             messages={props.messages}
+            onNavigate={props.onNavigate}
             query={props.query}
             runtimeConfig={props.runtimeConfig}
           />
@@ -1180,6 +1227,7 @@ export function OrganizationPullRequestListPage(props: {
   detail: OrganizationDetailViewModel | null;
   list: PullRequestListResponse | undefined;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   organizationName: string;
   query: OrganizationPullRequestListQuery;
   renderShell?: boolean;
@@ -1202,6 +1250,7 @@ export function OrganizationPullRequestListPage(props: {
             category={props.category}
             detail={detail}
             messages={props.messages}
+            onNavigate={props.onNavigate}
             query={props.query}
             runtimeConfig={props.runtimeConfig}
           />

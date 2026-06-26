@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { projectPullRequestListQueryOptions } from "../../../../api/pull-requests";
 import { readProjectContainer } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
@@ -21,6 +21,8 @@ export const Route = createFileRoute("/$owner/$projectName/closedPullRequests")(
 function ClosedPullRequestsRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
+  useRouterState({ select: (state) => state.location.href });
   const searchParams = new URLSearchParams(window.location.search);
   const filter = searchParams.get("filter") ?? "";
   const pageNum = Number(searchParams.get("pageNum") || "1");
@@ -67,6 +69,9 @@ function ClosedPullRequestsRouteComponent() {
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       list={listQuery.data}
       messages={messages}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       query={{ category: "closed", contributorId, filter, pageNum }}
       renderShell={false}
       runtimeConfig={runtimeConfig}

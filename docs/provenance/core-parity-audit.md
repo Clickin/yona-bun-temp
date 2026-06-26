@@ -156,6 +156,15 @@
   `index/allOrganizationList*.scala.html` output. Focused coverage:
   `frontend/src/route-parity.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 pull request list SPA navigation continuation:
+  project PR lists (`/pullRequests`, `/closedPullRequests`, and
+  `/sentPullRequests`) plus organization PR aggregate lists (`/pullrequests`
+  and `/closedPullrequests`) keep the legacy GET form, tab, row, and pagination
+  markup, but search submits now call TanStack navigation. Each list route
+  subscribes to router location state, so same-route filter changes refetch
+  without native document navigation. Focused coverage:
+  `frontend/src/route-parity.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle
