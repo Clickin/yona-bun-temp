@@ -175,6 +175,7 @@ export function CodeHistoryRouteView(props: {
       detail={detail}
       history={history}
       messages={messages}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

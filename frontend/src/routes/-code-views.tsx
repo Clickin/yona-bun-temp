@@ -2031,6 +2031,7 @@ export function CodeHistoryPage(props: {
   detail: ProjectDetailViewModel | null;
   history: CodeHistoryViewModel | null;
   messages?: LegacyMessageLookup;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
@@ -2041,123 +2042,129 @@ export function CodeHistoryPage(props: {
     ? codeHistoryHref(props.runtimeConfig, detail.ownerName, detail.projectName, selectedBranch)
     : "";
 
+  const pageBody = (
+    <div className="project-page-wrap">
+      <section className="code-browse-wrap">
+        {history?.noHead ? (
+          <CodeNoHeadBlock
+            detail={detail}
+            messages={props.messages}
+            runtimeConfig={props.runtimeConfig}
+          />
+        ) : (
+          <>
+            {selectedPath ? (
+              <nav aria-label="Breadcrumbs" className="code-breadcrumb-wrap">
+                <a
+                  href={codeHistoryHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    selectedBranch,
+                  )}
+                >
+                  {detail.projectName}
+                </a>
+                {(history?.breadcrumbs ?? []).map((breadcrumb) => (
+                  <a
+                    href={codeHistoryHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                      breadcrumb.path,
+                    )}
+                    key={breadcrumb.path}
+                  >
+                    {breadcrumb.name}
+                  </a>
+                ))}
+              </nav>
+            ) : (
+              <div className="code-browse-header">
+                <select
+                  className="pull-right"
+                  data-dropdown-css-class="branches"
+                  data-format="branch"
+                  data-toggle="select2"
+                  id="branches"
+                  onChange={(event) => {
+                    window.location.assign(event.currentTarget.value);
+                  }}
+                  value={selectedHistoryBranchHref}
+                >
+                  {(history?.branches ?? []).map((branch) => {
+                    const branchHref = codeHistoryHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      branch.name,
+                    );
+                    return (
+                      <option key={branch.name} value={branchHref}>
+                        {branch.name}
+                      </option>
+                    );
+                  })}
+                </select>
+                <nav aria-label="Code tabs">
+                  <a
+                    href={codeHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                    )}
+                  >
+                    {legacyMessage(props.messages, "code.files")}
+                  </a>
+                  <a
+                    aria-current="page"
+                    href={codeHistoryHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                    )}
+                  >
+                    {legacyMessage(props.messages, "code.commits")}
+                  </a>
+                  <a
+                    href={buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      "branches",
+                    )}
+                  >
+                    {legacyMessage(props.messages, "title.branches")}
+                  </a>
+                </nav>
+              </div>
+            )}
+            <CodeHistoryTable
+              history={history}
+              ownerName={detail.ownerName}
+              projectName={detail.projectName}
+              runtimeConfig={props.runtimeConfig}
+              selectedBranch={selectedBranch}
+              messages={props.messages}
+            />
+          </>
+        )}
+      </section>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="code" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <section className="code-browse-wrap">
-            {history?.noHead ? (
-              <CodeNoHeadBlock
-                detail={detail}
-                messages={props.messages}
-                runtimeConfig={props.runtimeConfig}
-              />
-            ) : (
-              <>
-                {selectedPath ? (
-                  <nav aria-label="Breadcrumbs" className="code-breadcrumb-wrap">
-                    <a
-                      href={codeHistoryHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        selectedBranch,
-                      )}
-                    >
-                      {detail.projectName}
-                    </a>
-                    {(history?.breadcrumbs ?? []).map((breadcrumb) => (
-                      <a
-                        href={codeHistoryHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          selectedBranch,
-                          breadcrumb.path,
-                        )}
-                        key={breadcrumb.path}
-                      >
-                        {breadcrumb.name}
-                      </a>
-                    ))}
-                  </nav>
-                ) : (
-                  <div className="code-browse-header">
-                    <select
-                      className="pull-right"
-                      data-dropdown-css-class="branches"
-                      data-format="branch"
-                      data-toggle="select2"
-                      id="branches"
-                      onChange={(event) => {
-                        window.location.assign(event.currentTarget.value);
-                      }}
-                      value={selectedHistoryBranchHref}
-                    >
-                      {(history?.branches ?? []).map((branch) => {
-                        const branchHref = codeHistoryHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          branch.name,
-                        );
-                        return (
-                          <option key={branch.name} value={branchHref}>
-                            {branch.name}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <nav aria-label="Code tabs">
-                      <a
-                        href={codeHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          selectedBranch,
-                        )}
-                      >
-                        {legacyMessage(props.messages, "code.files")}
-                      </a>
-                      <a
-                        aria-current="page"
-                        href={codeHistoryHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          selectedBranch,
-                        )}
-                      >
-                        {legacyMessage(props.messages, "code.commits")}
-                      </a>
-                      <a
-                        href={buildProjectHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          "branches",
-                        )}
-                      >
-                        {legacyMessage(props.messages, "title.branches")}
-                      </a>
-                    </nav>
-                  </div>
-                )}
-                <CodeHistoryTable
-                  history={history}
-                  ownerName={detail.ownerName}
-                  projectName={detail.projectName}
-                  runtimeConfig={props.runtimeConfig}
-                  selectedBranch={selectedBranch}
-                  messages={props.messages}
-                />
-              </>
-            )}
-          </section>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

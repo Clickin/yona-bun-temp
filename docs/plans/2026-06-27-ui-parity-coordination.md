@@ -330,6 +330,18 @@ M23 continues code shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "compare shell"`.
 
+M24 completes current code shell migration pass:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/commits` and `/commits/:branch/*path`, with
+  the code menu active.
+- `CodeHistoryPage` supports `renderShell={false}` so the shared commits route
+  view keeps its history data-loading and keyboard behavior but renders only
+  the legacy `project-page-wrap` commit history body under the project layout
+  `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "history shell"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

@@ -132,6 +132,12 @@ function projectLayoutShell(
   if (isCodeComparePath(appPath, owner, projectName)) {
     return { activeMenu: "code" };
   }
+  if (
+    appPath === `/${owner}/${projectName}/commits` ||
+    appPath.startsWith(`/${owner}/${projectName}/commits/`)
+  ) {
+    return { activeMenu: "code" };
+  }
   if (appPath === `/${owner}/${projectName}/posts`) {
     return { activeMenu: "board", keymapMode: "list", shellClassName: "board-page" };
   }

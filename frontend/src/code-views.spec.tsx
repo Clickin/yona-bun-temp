@@ -10,8 +10,10 @@ import {
   CodeBrowserPage,
   CodeComparePage,
   CodeCommitDetailPage,
+  CodeHistoryPage,
   type CodeBranchListViewModel,
   type CodeCommitDetailViewModel,
+  type CodeHistoryViewModel,
 } from "./routes/-code-views";
 import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./routes/-view-models";
 
@@ -41,6 +43,12 @@ const commitRouteSource = readFileSync(
 const compareRouteSource = readFileSync(
   fileURLToPath(
     new URL("./routes/$owner/$projectName/compare/$revisionRange/route.tsx", import.meta.url),
+  ),
+  "utf8",
+);
+const historyRouteSource = readFileSync(
+  fileURLToPath(
+    new URL("./routes/$owner/$projectName/commits/-code-history-route.tsx", import.meta.url),
   ),
   "utf8",
 );
@@ -99,6 +107,31 @@ const commitDetail: CodeCommitDetailViewModel = {
   projectName: "projectYobi",
   selectedBranch: "main",
   threads: [],
+};
+
+const codeHistory: CodeHistoryViewModel = {
+  branches: [{ name: "main" }],
+  breadcrumbs: [],
+  commits: [
+    {
+      authorDate: "2026-05-25",
+      authorEmail: "author@example.com",
+      authorName: "Author",
+      commentCount: 1,
+      commitId: "be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2",
+      commitShortId: "be6a8cc",
+      message: "Update file",
+      shortMessage: "Update file",
+    },
+  ],
+  hasNewer: false,
+  hasOlder: false,
+  noHead: false,
+  ownerName: "owner",
+  page: 0,
+  path: "",
+  projectName: "projectYobi",
+  selectedBranch: "main",
 };
 
 const branchList: CodeBranchListViewModel = {
@@ -1856,5 +1889,27 @@ describe("CodeCommitDetailPage", () => {
     expect(html).not.toContain('class="project-menu-outer"');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="diff-body discommentable"');
+  });
+
+  it("lets the project layout route own the history shell", () => {
+    const html = renderToStaticMarkup(
+      <CodeHistoryPage
+        detail={projectDetail}
+        history={codeHistory}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(projectRouteSource).toContain("appPath === `/${owner}/${projectName}/commits`");
+    expect(projectRouteSource).toContain("appPath.startsWith(`/${owner}/${projectName}/commits/`)");
+    expect(projectRouteSource).toContain('activeMenu: "code"');
+    expect(historyRouteSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="app-shell"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="code-table commits"');
   });
 });
