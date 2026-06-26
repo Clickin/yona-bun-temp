@@ -675,6 +675,83 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('data-allowed-update="true"');
   });
 
+  it("renders legacy full comment voter avatars and overflow modal shell", () => {
+    const voters = Array.from({ length: 6 }, (_, index) => ({
+      avatarUrl: `/avatar/voter-${index + 1}.png`,
+      loginId: `voter${index + 1}`,
+      userId: index + 1,
+      userLabel: `Voter ${index + 1}`,
+    }));
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          commentCount: 2,
+          timeline: [
+            {
+              comment: {
+                authorAvatarUrl: "https://cdn.yona/avatar-commenter.png",
+                authorLabel: "Commenter",
+                authorLoginId: "commenter",
+                contentsMarkdown: "Small voter list",
+                createdLabel: "now",
+                id: 57,
+                viewerCanDelete: false,
+                viewerCanUpdate: false,
+                viewerHasVoted: false,
+                voterCount: 2,
+                voters: voters.slice(0, 2),
+              },
+              createdLabel: "now",
+              eventType: "",
+              id: 57,
+              kind: "comment",
+              newValue: "",
+              oldValue: "",
+              senderLoginId: "",
+            },
+            {
+              comment: {
+                authorAvatarUrl: "https://cdn.yona/avatar-commenter.png",
+                authorLabel: "Commenter",
+                authorLoginId: "commenter",
+                contentsMarkdown: "Overflow voter list",
+                createdLabel: "now",
+                id: 58,
+                viewerCanDelete: false,
+                viewerCanUpdate: false,
+                viewerHasVoted: false,
+                voterCount: 6,
+                voters,
+              },
+              createdLabel: "now",
+              eventType: "",
+              id: 58,
+              kind: "comment",
+              newValue: "",
+              oldValue: "",
+              senderLoginId: "",
+            },
+          ],
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('class="avatar-wrap smaller"');
+    expect(html).toContain('href="/yona/voter1"');
+    expect(html).toContain('title="Voter 1"');
+    expect(html).toContain('class="vote-description-people"');
+    expect(html).toContain('href="#voters-58"');
+    expect(html).toContain('id="voters-58"');
+    expect(html).toContain('class="modal hide voters-dialog"');
+    expect(html).toContain('class="avatar-wrap mlarge"');
+    expect(html).toContain('class="usf-group"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('class="loginid"');
+  });
+
   it("renders the legacy writable and disabled issue comment form shells", () => {
     const writableHtml = renderToStaticMarkup(
       <ProjectIssueDetailPage

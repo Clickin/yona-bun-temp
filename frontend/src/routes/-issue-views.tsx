@@ -613,6 +613,111 @@ function IssueCommentAvatar(props: {
   );
 }
 
+function IssueCommentVoters(props: {
+  basePath: string;
+  comment: IssueTimelineCommentViewModel;
+  messages?: LegacyMessageLookup;
+}) {
+  const voters = props.comment.voters;
+  if (voters.length === 0) {
+    return null;
+  }
+
+  if (voters.length > 5) {
+    const modalId = `voters-${props.comment.id}`;
+    return (
+      <>
+        <span
+          data-html="true"
+          data-toggle="tooltip"
+          style={{ marginRight: "2px" }}
+          title={`${voters
+            .slice(0, 5)
+            .map((voter) => voter.userLabel || voter.loginId)
+            .join("<br>")}<br>...`}
+        >
+          <a className="vote-description-people" data-toggle="modal" href={`#${modalId}`}>
+            {commentAgreementLabel(voters.length)}
+          </a>
+        </span>
+        <div className="modal hide voters-dialog" id={modalId}>
+          <div className="modal-header">
+            <button
+              aria-hidden="true"
+              aria-label={legacyMessage(props.messages, "button.close")}
+              className="close"
+              data-dismiss="modal"
+              type="button"
+            >
+              ×
+            </button>
+            <h5 className="nm">{legacyMessage(props.messages, "issue.voters")}</h5>
+          </div>
+          <div className="modal-body">
+            <ul className="unstyled">
+              {voters.map((voter) => (
+                <li key={voter.userId}>
+                  <a
+                    className="usf-group"
+                    href={prefixBasePath(props.basePath, `/${voter.loginId}`)}
+                    target="_blank"
+                  >
+                    <span className="avatar-wrap mlarge">
+                      {voter.avatarUrl ? (
+                        <img
+                          alt={voter.userLabel || voter.loginId}
+                          height={40}
+                          src={voter.avatarUrl}
+                          width={40}
+                        />
+                      ) : null}
+                    </span>
+                    <strong className="name">{voter.userLabel || voter.loginId}</strong>
+                    <span className="loginid">
+                      {" "}
+                      <strong>@</strong>
+                      {voter.loginId}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="modal-footer">
+            <button
+              aria-hidden="true"
+              className="ybtn ybtn-info ybtn-small"
+              data-dismiss="modal"
+              type="button"
+            >
+              {legacyMessage(props.messages, "button.close")}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {voters.map((voter) => (
+        <a
+          className="avatar-wrap smaller"
+          data-placement="top"
+          data-toggle="tooltip"
+          href={prefixBasePath(props.basePath, `/${voter.loginId}`)}
+          key={voter.userId}
+          title={voter.userLabel || voter.loginId}
+        >
+          {voter.avatarUrl ? (
+            <img alt={voter.userLabel || voter.loginId} src={voter.avatarUrl} />
+          ) : null}
+        </a>
+      ))}
+    </>
+  );
+}
+
 export function ProjectIssueListPage(props: {
   detail: ProjectDetailViewModel | null;
   labels?: IssueListFilterLabel[];
@@ -2531,26 +2636,11 @@ export function ProjectIssueDetailPage(props: {
                                     </a>
                                   </span>
                                   <span className="comment-vote-row">
-                                    {comment.voterCount > 0 ? (
-                                      <span className="comment-vote-count">
-                                        {commentAgreementLabel(comment.voterCount)}
-                                      </span>
-                                    ) : null}
-                                    {comment.voters.map((voter) => (
-                                      <span
-                                        className="comment-voter"
-                                        key={voter.userId}
-                                        title={voter.userLabel}
-                                      >
-                                        {voter.avatarUrl ? (
-                                          <img
-                                            alt={`${voter.userLabel} avatar`}
-                                            src={voter.avatarUrl}
-                                          />
-                                        ) : null}
-                                        <span>{voter.userLabel || voter.loginId}</span>
-                                      </span>
-                                    ))}
+                                    <IssueCommentVoters
+                                      basePath={props.runtimeConfig.basePath}
+                                      comment={comment}
+                                      messages={messages}
+                                    />
                                     {issue?.viewerCanComment && props.onCommentVoteToggle ? (
                                       <button
                                         aria-label={

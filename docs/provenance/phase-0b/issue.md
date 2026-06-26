@@ -292,3 +292,11 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   `notificationMail=yes`, and server/frontend propagation of `authorId` plus
   `viewerUserId` for the legacy authored condition. Focused coverage:
   `frontend/src/issue-detail-shell.spec.tsx`.
+- 2026-06-26 template-first P3 full comment voter correction: issue comment
+  action rows now follow `issue/partial_comment.scala.html` and
+  `issue/partial_voter_list.scala.html` for voter display, rendering
+  `.avatar-wrap.smaller` links at the inline threshold and
+  `.vote-description-people[href=#voters-$id]` with
+  `#voters-$id.modal.hide.voters-dialog` for overflow voters. Focused
+  coverage: `frontend/src/issue-detail-shell.spec.tsx` and
+  `frontend/src/auth-workspace-shell.spec.tsx`.

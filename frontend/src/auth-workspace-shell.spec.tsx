@@ -1900,7 +1900,10 @@ describe("auth and workspace views", () => {
     expect(html).toContain('href="/yona/owner"');
     expect(html).toContain('class="comment_author"');
     expect(html).toContain('class="ago"');
-    expect(html).toContain("2 Agreements");
+    expect(html).not.toContain("2 Agreements");
+    expect(html).toContain('class="avatar-wrap smaller"');
+    expect(html).toContain('href="/yona/guest"');
+    expect(html).toContain('title="Guest User"');
     expect(html).toContain("Guest User");
     expect(html).toContain("comment-vote");
     expect(html).toContain('data-via-email="true"');
@@ -1950,7 +1953,10 @@ describe("auth and workspace views", () => {
       },
     );
 
-    expect(html).toContain("1 Agreement");
+    expect(html).not.toContain("1 Agreement");
+    expect(html).toContain('class="avatar-wrap smaller"');
+    expect(html).toContain('href="/yona/door"');
+    expect(html).toContain('title="Door User"');
     expect(html).toContain('aria-label="Withdraw"');
     expect(html).not.toContain('aria-label="Withdraw comment agreement"');
     expect(html).toContain("vote-heart-on");
