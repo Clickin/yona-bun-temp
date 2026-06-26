@@ -138,6 +138,9 @@ integrated visual sweep covers all packet reports.
   `OrganizationBoardListPage`, and `OrganizationPullRequestListPage` render only
   their legacy aggregate list bodies through `renderShell={false}` for those
   child routes while preserving direct-render shell output for existing specs.
+  The organization issue search form now preserves legacy markup but routes
+  same-page query changes through TanStack navigation and reloads data from route
+  location state instead of native document GET.
   Focused coverage:
   `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx`.
 - 2026-06-27 organization scoped search shell follow-up:

@@ -324,6 +324,10 @@ describe("organization shell legacy i18n opt-in", () => {
     expect(layoutSource).toContain("appPath === `/organizations/${organizationName}/issues`");
     expect(layoutSource).toContain('active: "issues"');
     expect(routeSource).toContain("renderShell={false}");
+    expect(routeSource).toContain("useRouterState");
+    expect(routeSource).toContain("location.href");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("onNavigate=");
     expect(html).toContain('class="page-wrap"');
     expect(html).toContain('class="row-fluid issue-list-wrap"');
     expect(html).not.toContain("project-header-outer");

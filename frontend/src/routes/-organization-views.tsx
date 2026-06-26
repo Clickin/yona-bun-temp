@@ -42,6 +42,17 @@ function buildOrganizationIssueHref(
   query: OrganizationIssueListQuery,
   updates: Partial<OrganizationIssueListQuery>,
 ) {
+  return prefixBasePath(
+    runtimeConfig.basePath,
+    buildOrganizationIssuePath(organizationName, query, updates),
+  );
+}
+
+function buildOrganizationIssuePath(
+  organizationName: string,
+  query: OrganizationIssueListQuery,
+  updates: Partial<OrganizationIssueListQuery>,
+) {
   const nextQuery = { ...query, ...updates };
   const search = new URLSearchParams();
   if (nextQuery.state) {
@@ -69,8 +80,7 @@ function buildOrganizationIssueHref(
     search.append("projectNames", projectName);
   }
   search.set("pageNum", String(nextQuery.pageNum || 1));
-  const suffix = `issues?${search.toString()}`;
-  return buildOrganizationHref(runtimeConfig, organizationName, suffix);
+  return `/organizations/${organizationName}/issues?${search.toString()}`;
 }
 
 function legacyMessageWithKeyFallback(
@@ -804,6 +814,7 @@ export function OrganizationIssueListPage(props: {
   detail: OrganizationDetailViewModel | null | undefined;
   issueList: OrganizationIssueListViewModel | null | undefined;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   query: OrganizationIssueListQuery;
   renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
@@ -932,6 +943,28 @@ export function OrganizationIssueListPage(props: {
               id="search"
               method="get"
               name="search"
+              onSubmit={(event) => {
+                if (!props.onNavigate) {
+                  return;
+                }
+                event.preventDefault();
+                const formData = new FormData(event.currentTarget);
+                props.onNavigate(
+                  buildOrganizationIssuePath(organizationName, query, {
+                    assigneeId: Number(formData.get("assigneeId") || "0"),
+                    authorId: Number(formData.get("authorId") || "0"),
+                    filter: String(formData.get("filter") ?? ""),
+                    mentionId: Number(formData.get("mentionId") || "0"),
+                    orderBy: String(formData.get("orderBy") ?? ""),
+                    orderDir: String(formData.get("orderDir") ?? ""),
+                    pageNum: 1,
+                    projectNames: formData
+                      .getAll("projectNames[]")
+                      .flatMap((value) => (String(value) ? [String(value)] : [])),
+                    state: String(formData.get("state") || "open"),
+                  }),
+                );
+              }}
             >
               <select
                 data-container-css-class="fullsize"

@@ -114,6 +114,14 @@
   `renderShell={false}`, avoiding duplicate chrome and redundant org container
   fetches. Focused coverage: `frontend/src/route-parity.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 organization issue query navigation continuation:
+  organization issue list filtering keeps the legacy form/action/field markup
+  but routes same-page query changes through TanStack navigation. The route
+  reloads aggregate issue data from router location state, so filtering no
+  longer falls back to a native document GET while preserving
+  `organization/group_issue_list*.scala.html` output. Focused coverage:
+  `frontend/src/organization-shell-i18n.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

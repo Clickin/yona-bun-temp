@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   listOrganizationIssues,
   readOrganizationContainer,
@@ -27,6 +27,8 @@ export const Route = createFileRoute("/organizations/$organizationName/issues")(
 
 function OrganizationIssuesRouteComponent() {
   const { organizationName } = Route.useParams();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const navigate = useNavigate();
   const { bootstrapping, currentSession, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/organizations/${organizationName}/issues`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationContainerView> | null>(
@@ -97,7 +99,7 @@ function OrganizationIssuesRouteComponent() {
     return () => {
       cancelled = true;
     };
-  }, [organizationName, runtimeConfig]);
+  }, [locationHref, organizationName, runtimeConfig]);
 
   if (bootstrapping) {
     return (
@@ -122,6 +124,9 @@ function OrganizationIssuesRouteComponent() {
       detail={detail}
       issueList={issueList}
       messages={messages}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       query={query}
       renderShell={false}
       runtimeConfig={runtimeConfig}
