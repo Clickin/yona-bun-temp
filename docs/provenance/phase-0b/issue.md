@@ -326,3 +326,11 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   `.markdown-preview.markdown-wrap`, and `.notification-receiver`, with
   clear-temporary behavior implemented in React rather than legacy JavaScript.
   Focused coverage: `frontend/src/markdown-renderer.spec.tsx`.
+- 2026-06-26 template-first P3 uploader correction: issue create and comment
+  upload shells now have selector evidence for `common/uploadForm.scala.html`
+  and `common/fileUploader.scala.html`, including `#upload.upload-wrap`,
+  `.attach-wrap`, `input.file[name=filePath][multiple]`,
+  `.attached-files.unstyled`, `#tplAttachedFile`, `.attached-file`,
+  `.progress.upload-progress`, `.btn-insert`, and `#tplDropFilesHere`.
+  Focused coverage: `frontend/src/issue-detail-shell.spec.tsx` and
+  `frontend/src/route-parity.spec.tsx`.

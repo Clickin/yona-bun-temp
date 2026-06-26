@@ -4688,33 +4688,47 @@ function LegacyIssueFileUploaderShell(props: {
   resourceType: string;
 }) {
   return (
-    <div
-      className="upload-wrap content-footer"
-      data-resource-id={props.resourceId ?? undefined}
-      data-resource-type={props.resourceType}
-      id="upload"
-    >
-      <div className="attach-wrap">
-        <span className="help help-droppable">
-          {legacyMessage(props.messages, "common.attach.drophere")}
-        </span>
-        <div className="btn-wrap">
-          <div className="nbtn medium white fake-file-wrap">
-            <i className="yobicon-upload"></i> {legacyMessage(props.messages, "button.upload")}
-            <input className="file" multiple name="filePath" type="file" />
+    <>
+      <div
+        className="upload-wrap content-footer"
+        data-resource-id={props.resourceId ?? undefined}
+        data-resource-type={props.resourceType}
+        id="upload"
+      >
+        <div className="attach-wrap">
+          <span className="help help-droppable">
+            {legacyMessage(props.messages, "common.attach.drophere")}
+          </span>
+          <div className="btn-wrap">
+            <div className="nbtn medium white fake-file-wrap">
+              <i className="yobicon-upload"></i> {legacyMessage(props.messages, "button.upload")}
+              <input className="file" multiple name="filePath" type="file" />
+            </div>
           </div>
+          <span className="plain">
+            {legacyMessage(props.messages, "common.attach.clickbutton")}
+          </span>
+          <span className="help help-pastable">
+            {legacyMessage(props.messages, "common.attach.pastehere")}
+          </span>
         </div>
-        <span className="plain">{legacyMessage(props.messages, "common.attach.clickbutton")}</span>
-        <span className="help help-pastable">
-          {legacyMessage(props.messages, "common.attach.pastehere")}
-        </span>
+        <ul className="attached-files unstyled"></ul>
+        <p className="right-txt help">
+          <i className="yobicon-supportrequest"></i>{" "}
+          {legacyMessage(props.messages, "common.attach.attachIfYouSave")}
+        </p>
       </div>
-      <ul className="attached-files unstyled"></ul>
-      <p className="right-txt help">
-        <i className="yobicon-supportrequest"></i>{" "}
-        {legacyMessage(props.messages, "common.attach.attachIfYouSave")}
-      </p>
-    </div>
+      <script id="tplAttachedFile" type="text/x-jquery-tmpl">
+        {'<li class="attached-file" data-id="${fileId}" data-name="${fileName}" data-href="${fileHref}" data-mime="${mimeType}" data-size="${fileSize}"><i class="yobicon-supportrequest"></i><i class="mimetype"></i><strong class="name">${fileName}</strong><span class="size">${fileSizeReadable}</span><div class="pull-right"><div class="progress upload-progress"><div class="bar orange"></div></div></div><button type="button" class="btn-transparent btn-delete pull-right">&times;</button><span class="pull-right nbtn small white btn-insert">' +
+          legacyMessage(props.messages, "common.attach.clickToPost") +
+          "</span></li>"}
+      </script>
+      <script id="tplDropFilesHere" type="text/x-jquery-tmpl">
+        {'<div class="upload-drop-here"><div class="msg-wrap"><div class="msg">' +
+          legacyMessage(props.messages, "common.attach.dropFilesHere") +
+          "</div></div></div>"}
+      </script>
+    </>
   );
 }
 

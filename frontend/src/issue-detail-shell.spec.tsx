@@ -1047,6 +1047,16 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('name="filePath"');
     expect(html).toContain('multiple=""');
     expect(html).toContain('class="attached-files unstyled"');
+    expect(html).toContain('id="tplAttachedFile"');
+    expect(html).toContain('type="text/x-jquery-tmpl"');
+    expect(html).toContain('class="attached-file"');
+    expect(html).toContain('data-id="${fileId}"');
+    expect(html).toContain('class="progress upload-progress"');
+    expect(html).toContain('class="bar orange"');
+    expect(html).toContain('class="btn-transparent btn-delete pull-right"');
+    expect(html).toContain('class="pull-right nbtn small white btn-insert"');
+    expect(html).toContain('id="tplDropFilesHere"');
+    expect(html).toContain('class="upload-drop-here"');
     expect(html).toContain("Drag &amp; Drop files to attach here or");
     expect(html).toContain("Click upload button");
     expect(html).toContain("Paste the clipboard image");
