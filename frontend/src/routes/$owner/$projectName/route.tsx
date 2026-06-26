@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 import {
   cancelEnrollProject,
   enrollProject,
@@ -15,7 +15,7 @@ import {
 import { RestApiError } from "../../../api/rest-client";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { toProjectContainerView } from "../../../app-view-models";
-import { ProjectDetailPage } from "../../-project-views";
+import { ProjectDetailPage, ProjectHeader, ProjectMenu } from "../../-project-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
@@ -50,7 +50,8 @@ function legacyProjectEnrollFallback(error: unknown): string {
 
 function ProjectLayoutRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { runtimeConfig } = useAppRuntime();
+  const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const legacyAdminAlias = legacyAdminAliasPath(owner, projectName);
 
   if (legacyAdminAlias) {
@@ -58,7 +59,100 @@ function ProjectLayoutRouteComponent() {
     return null;
   }
 
-  return <Outlet />;
+  if (!projectLayoutOwnsShell(pathname, runtimeConfig.basePath, owner, projectName)) {
+    return <Outlet />;
+  }
+
+  return (
+    <ProjectSettingsLayout
+      bootstrapping={bootstrapping}
+      messages={messages}
+      owner={owner}
+      projectName={projectName}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+}
+
+function stripProjectLayoutBasePath(pathname: string, basePath: string): string {
+  const normalizedBasePath = basePath && basePath !== "/" ? basePath.replace(/\/+$/u, "") : "";
+  if (!normalizedBasePath) {
+    return pathname || "/";
+  }
+  if (pathname === normalizedBasePath) {
+    return "/";
+  }
+  if (pathname.startsWith(`${normalizedBasePath}/`)) {
+    return pathname.slice(normalizedBasePath.length) || "/";
+  }
+  return pathname || "/";
+}
+
+function projectLayoutOwnsShell(
+  pathname: string,
+  basePath: string,
+  owner: string,
+  projectName: string,
+): boolean {
+  const appPath = stripProjectLayoutBasePath(pathname, basePath);
+  return appPath === `/${owner}/${projectName}/settingform`;
+}
+
+function ProjectSettingsLayout({
+  bootstrapping,
+  messages,
+  owner,
+  projectName,
+  runtimeConfig,
+}: {
+  bootstrapping: boolean;
+  messages: ReturnType<typeof useAppRuntime>["messages"];
+  owner: string;
+  projectName: string;
+  runtimeConfig: ReturnType<typeof useAppRuntime>["runtimeConfig"];
+}) {
+  const detailQuery = useQuery({
+    ...readProjectContainerQueryOptions(runtimeConfig, {
+      ownerName: owner,
+      projectName,
+    }),
+    enabled: !bootstrapping,
+  });
+  const readError = detailQuery.error;
+  const failureKind = classifyConnectFailure(readError);
+  const routeHref = `/${owner}/${projectName}/settingform`;
+
+  if (failureKind === "forbidden") {
+    return <ForbiddenPage href={routeHref} />;
+  }
+  if (failureKind === "not-found") {
+    return <NotFoundPage href={routeHref} />;
+  }
+  if (readError) {
+    return <BadRequestPage href={routeHref} />;
+  }
+  if (bootstrapping || !detailQuery.data) {
+    return (
+      <main className="app-shell">
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
+      </main>
+    );
+  }
+
+  const detail = toProjectContainerView(detailQuery.data);
+  return (
+    <main className="app-shell">
+      <ProjectHeader detail={detail} runtimeConfig={runtimeConfig} />
+      <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={runtimeConfig} />
+      <div className="page-wrap-outer">
+        <Outlet />
+      </div>
+    </main>
+  );
+}
+
+export function useProjectLayoutRouteContext() {
+  return Route.useRouteContext();
 }
 
 function legacyAdminAliasPath(owner: string, projectName: string): string | null {

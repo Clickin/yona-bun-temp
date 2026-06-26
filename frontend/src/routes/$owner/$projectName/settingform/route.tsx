@@ -99,6 +99,7 @@ function ProjectSettingsRouteComponent() {
       defaultBranch={branchList?.defaultBranch}
       defaultBranchOptions={branchList?.branches ?? []}
       messages={messages}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       onUpdateProjectSettings={async (input) => {
         try {

@@ -83,6 +83,18 @@ M0/M1 verification:
   `Rust foundation and runtime bootstrap still tracks a legacy gap or partial slice and has not yet landed a full parity closure.`
 - The blocker is triggered because this milestone touches `frontend/src/routes/__root.tsx`, which the parity gate maps to the partial runtime-bootstrap slice. Do not bypass the hook without an explicit maintainer decision.
 
+M2 starts project shell ownership migration:
+
+- `/$owner/$projectName/route.tsx` owns the legacy project header/menu/page-wrap
+  shell for `/settingform`.
+- `ProjectSettingsPage` supports `renderShell={false}` so the layout route can
+  render the shell while the leaf keeps the legacy inner `project-page-wrap`
+  body.
+- Other project children still keep their existing leaf-owned shell until they
+  are migrated one vertical slice at a time.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx src/project-home-tabs.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit
@@ -146,6 +158,7 @@ Queued for M2:
 - Project header/menu ownership should move into
   `/$owner/$projectName/route.tsx` as a TanStack nested layout where possible,
   leaving leaf routes to render their page bodies.
+- First migrated child: `/settingform`.
 - Mobile project menu must stay horizontal and preserve legacy short-menu/count
   badge positioning.
 - Site-admin sidebar/layout needs a separate pass against

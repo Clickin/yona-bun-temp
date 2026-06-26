@@ -176,6 +176,38 @@ describe("project settings parity", () => {
     expect(routeSource).toContain("input.defaultBranch !== branchList.defaultBranch");
   });
 
+  it("lets the project layout route own the settings shell without changing the inner body", () => {
+    const html = renderToStaticMarkup(
+      <ProjectSettingsPage
+        defaultBranch="main"
+        defaultBranchOptions={[{ name: "main" }]}
+        detail={projectDetail}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/settingform/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain(
+      "<ProjectHeader detail={detail} runtimeConfig={runtimeConfig} />",
+    );
+    expect(layoutSource).toContain(
+      '<ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={runtimeConfig} />',
+    );
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="saveSetting"');
+  });
+
   it("preserves legacy visibility for protected and Git-only project setting controls", () => {
     const userOwnedHtml = renderToStaticMarkup(
       <ProjectSettingsPage

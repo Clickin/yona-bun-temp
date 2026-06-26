@@ -1110,6 +1110,7 @@ export function ProjectHeader(props: {
                   event.preventDefault();
                   props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName);
                 }}
+                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- legacy header star is a span; button picks up global button chrome.
                 role="button"
                 tabIndex={0}
               >
@@ -3857,6 +3858,7 @@ export function ProjectSettingsPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
   messages?: LegacyMessageLookup;
   pending?: boolean;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   onUpdateProjectSettings?: (input: {
     board: boolean;
@@ -3933,417 +3935,416 @@ export function ProjectSettingsPage(props: {
     { id: "private", label: "project.private", value: "PRIVATE" },
   ];
 
+  const content = (
+    <div className="project-page-wrap">
+      <ProjectSettingsSubMenu
+        active="setting"
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <form
+        className="nm"
+        encType="multipart/form-data"
+        id="saveSetting"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!PROJECT_NAME_PATTERN.test(formState.projectName)) {
+            setValidationMessage("project.name.alert");
+            return;
+          }
+          if (PROJECT_RESERVED_NAMES.includes(formState.projectName)) {
+            setValidationMessage("project.name.reserved.alert");
+            return;
+          }
+          setValidationMessage(null);
+          props.onUpdateProjectSettings?.({
+            board: formState.board,
+            code: formState.code,
+            defaultBranch: formState.defaultBranch,
+            defaultReviewerCount: formState.defaultReviewerCount,
+            issue: formState.issue,
+            isCodeAccessibleMemberOnly: formState.isCodeAccessibleMemberOnly,
+            isUsingReviewerCount: formState.isUsingReviewerCount,
+            milestone: formState.milestone,
+            overview: formState.overview,
+            ownerName: detail.ownerName,
+            pullRequest: formState.pullRequest,
+            projectName: formState.projectName,
+            projectScope: formState.projectScope,
+            review: formState.review,
+          });
+        }}
+      >
+        <div className="bubble-wrap gray" style={{ overflow: "visible" }}>
+          <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: 20 }}>
+            <div className="setting-box left">
+              <div className="logo-wrap" style={{ backgroundImage: `url('${logoUrl}')` }} />
+              <div className="logo-desc">
+                <ul className="unstyled descs">
+                  <li>
+                    <strong>{legacyMessage(props.messages, "project.logo")}</strong>
+                  </li>
+                  <li>
+                    {legacyMessage(props.messages, "project.logo.type")}{" "}
+                    <span className="point">bmp, jpg, gif, png</span>
+                  </li>
+                  <li>
+                    {legacyMessage(props.messages, "project.logo.maxFileSize")}{" "}
+                    <span className="point">5MB</span>
+                  </li>
+                  <li>
+                    <div className="btn-wrap">
+                      <div className="nbtn medium white fake-file-wrap">
+                        <i className="yobicon-upload" />{" "}
+                        {legacyMessage(props.messages, "button.upload")}
+                        <input
+                          accept="image/*"
+                          className="file"
+                          id="logoPath"
+                          name="logoPath"
+                          onChange={(event) => {
+                            const file = event.currentTarget.files?.[0];
+                            if (file && !isProjectLogoImageFile(file)) {
+                              setValidationMessage("project.logo.alert");
+                              event.currentTarget.value = "";
+                            } else {
+                              setValidationMessage(null);
+                            }
+                          }}
+                          type="file"
+                        />
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <dl className="setting-box right">
+              <dt>
+                <label htmlFor="project-name">
+                  {legacyMessage(props.messages, "project.name.placeholder")}
+                </label>
+              </dt>
+              <dd>
+                <input
+                  data-content={legacyMessage(props.messages, "project.transfer.description6")}
+                  data-placement="left"
+                  data-trigger="focus"
+                  id="project-name"
+                  maxLength={250}
+                  name="name"
+                  value={formState.projectName}
+                  onChange={(event) => {
+                    setFormState((current) => ({
+                      ...current,
+                      projectName: event.target.value,
+                    }));
+                    setValidationMessage(null);
+                  }}
+                />
+                <br />
+              </dd>
+              <dt>
+                <label htmlFor="project-desc">
+                  {legacyMessage(props.messages, "project.description.placeholder")}
+                </label>
+              </dt>
+              <dd>
+                <textarea
+                  className="textarea"
+                  id="project-desc"
+                  maxLength={250}
+                  name="overview"
+                  value={formState.overview}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      overview: event.target.value,
+                    }))
+                  }
+                />
+              </dd>
+            </dl>
+          </div>
+          {validationMessage ? (
+            <div className="alert alert-error" role="alert">
+              {legacyMessage(props.messages, validationMessage)}
+            </div>
+          ) : null}
+
+          <div className="box-wrap middle">
+            <div className="cu-label">{legacyMessage(props.messages, "project.shareOption")}</div>
+            <div className="cu-desc">
+              {projectScopes.map((scope) => (
+                <React.Fragment key={scope.id}>
+                  <input
+                    checked={formState.projectScope === scope.id}
+                    className="radio-btn"
+                    id={scope.id}
+                    name="projectScope"
+                    type="radio"
+                    value={scope.value}
+                    onChange={() =>
+                      setFormState((current) => ({
+                        ...current,
+                        projectScope: scope.id,
+                      }))
+                    }
+                  />
+                  <label className={`bg-radiobtn label-${scope.id}`} htmlFor={scope.id}>
+                    {legacyMessage(props.messages, scope.label)}
+                  </label>
+                </React.Fragment>
+              ))}
+              <span className="note">
+                {legacyMessage(props.messages, "project.private.notice")}
+              </span>
+            </div>
+          </div>
+
+          {isGitProject ? (
+            <div className="box-wrap middle">
+              <div className="cu-label">{legacyMessage(props.messages, "issue.template")}</div>
+              <div className="cu-desc">
+                <a
+                  className="ybtn"
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "postform?issueTemplate=true",
+                  )}
+                  target="_blank"
+                >
+                  {legacyMessage(props.messages, "issue.template.edit")}
+                </a>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="box-wrap middle">
+            <div className="cu-label">
+              {legacyMessage(props.messages, "project.codeAccessible")}
+            </div>
+            <div className="cu-desc">
+              <input
+                checked={formState.isCodeAccessibleMemberOnly}
+                className="radio-btn"
+                id="codeAccessibleMemberOnly"
+                name="isCodeAccessibleMemberOnly"
+                type="radio"
+                value="true"
+                onChange={() =>
+                  setFormState((current) => ({
+                    ...current,
+                    isCodeAccessibleMemberOnly: true,
+                  }))
+                }
+              />
+              <label className="bg-radiobtn label-public" htmlFor="codeAccessibleMemberOnly">
+                {legacyMessage(props.messages, "button.yes")}
+              </label>
+              <input
+                checked={!formState.isCodeAccessibleMemberOnly}
+                className="radio-btn"
+                id="codeAccessibleAnyone"
+                name="isCodeAccessibleMemberOnly"
+                type="radio"
+                value="false"
+                onChange={() =>
+                  setFormState((current) => ({
+                    ...current,
+                    isCodeAccessibleMemberOnly: false,
+                  }))
+                }
+              />
+              <label className="bg-radiobtn label-private" htmlFor="codeAccessibleAnyone">
+                {legacyMessage(props.messages, "button.no")}
+              </label>
+              <span className="note" />
+            </div>
+          </div>
+
+          {isGitProject ? (
+            <div
+              className="box-wrap middle reviewer-count-wrap"
+              id="reviewerCountSettingPanel"
+              style={formState.code ? undefined : { display: "none" }}
+            >
+              <div className="cu-label vmiddle">
+                {legacyMessage(props.messages, "project.reviewer.count")}
+              </div>
+              <div className="cu-desc">
+                <input
+                  checked={formState.isUsingReviewerCount}
+                  className="radio-btn"
+                  data-action="show"
+                  data-toggle="reviewer-count"
+                  id="reviewerCountEnable"
+                  name="isUsingReviewerCount"
+                  type="radio"
+                  value="true"
+                  onChange={() =>
+                    setFormState((current) => ({
+                      ...current,
+                      isUsingReviewerCount: true,
+                    }))
+                  }
+                />
+                <label className="bg-radiobtn label-public" htmlFor="reviewerCountEnable">
+                  {legacyMessage(props.messages, "project.reviewer.count.enable")}
+                </label>
+                <input
+                  checked={!formState.isUsingReviewerCount}
+                  className="radio-btn"
+                  data-action="hide"
+                  data-toggle="reviewer-count"
+                  id="reviewerCountDisable"
+                  name="isUsingReviewerCount"
+                  type="radio"
+                  value="false"
+                  onChange={() =>
+                    setFormState((current) => ({
+                      ...current,
+                      isUsingReviewerCount: false,
+                    }))
+                  }
+                />
+                <label className="bg-radiobtn label-private" htmlFor="reviewerCountDisable">
+                  {legacyMessage(props.messages, "project.reviewer.count.disable")}
+                </label>
+                <div
+                  className={formState.isUsingReviewerCount ? undefined : "hide"}
+                  data-value={formState.isUsingReviewerCount ? "true" : "false"}
+                  id="welReviewerCount"
+                >
+                  <div
+                    className="btn-group branches"
+                    data-id="project-reviewer-count"
+                    data-name="defaultReviewerCount"
+                  >
+                    <button
+                      className="btn dropdown-toggle large"
+                      data-toggle="dropdown"
+                      type="button"
+                    >
+                      <span className="d-label">{formState.defaultReviewerCount}</span>
+                      <span className="d-caret">
+                        <span className="caret" />
+                      </span>
+                    </button>
+                    <ul className="dropdown-menu">
+                      {reviewerCountOptions.map((count) => (
+                        <li data-value={count} key={count}>
+                          <a
+                            href="#reviewer-count"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              setFormState((current) => ({
+                                ...current,
+                                defaultReviewerCount: count,
+                              }));
+                            }}
+                          >
+                            {count}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <span className="note ml10">
+                    {legacyMessage(props.messages, "project.reviewer.count.description")}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {isGitProject ? (
+            <div
+              className="box-wrap middle"
+              id="defaultBranceSettingPanel"
+              style={formState.code ? undefined : { display: "none" }}
+            >
+              <div className="cu-label vmiddle">
+                {legacyMessage(props.messages, "code.branches.defaultBranch")}
+              </div>
+              <div className="cu-desc">
+                <select
+                  data-dropdown-css-class="branches"
+                  data-format="branch"
+                  data-toggle="select2"
+                  id="project-default-branch"
+                  name="defaultBranch"
+                  style={{ minWidth: 220 }}
+                  value={formState.defaultBranch}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      defaultBranch: event.target.value,
+                    }))
+                  }
+                >
+                  {(props.defaultBranchOptions ?? []).map((branch) => (
+                    <option key={branch.name} value={branch.name}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="box-wrap middle">
+            <div className="cu-label vmiddle">
+              {legacyMessage(props.messages, "project.menu.setting")}
+            </div>
+            <div className="cu-desc">
+              {PROJECT_MENU_SETTINGS.map((item) => (
+                <label
+                  className="bg-radiobtn label-public inline-list"
+                  htmlFor={item.id}
+                  key={item.key}
+                >
+                  <input
+                    checked={formState[item.key]}
+                    className="radio-btn"
+                    id={item.id}
+                    name={item.name}
+                    type="checkbox"
+                    value="true"
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        [item.key]: event.target.checked,
+                      }))
+                    }
+                  />
+                  {legacyMessage(props.messages, item.label)}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="box-wrap bottom">
+          <button className="ybtn ybtn-success" disabled={props.pending} id="save" type="submit">
+            {legacyMessage(props.messages, "button.save")}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <ProjectSettingsSubMenu
-            active="setting"
-            detail={detail}
-            messages={props.messages}
-            runtimeConfig={props.runtimeConfig}
-          />
-          <form
-            className="nm"
-            encType="multipart/form-data"
-            id="saveSetting"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!PROJECT_NAME_PATTERN.test(formState.projectName)) {
-                setValidationMessage("project.name.alert");
-                return;
-              }
-              if (PROJECT_RESERVED_NAMES.includes(formState.projectName)) {
-                setValidationMessage("project.name.reserved.alert");
-                return;
-              }
-              setValidationMessage(null);
-              props.onUpdateProjectSettings?.({
-                board: formState.board,
-                code: formState.code,
-                defaultBranch: formState.defaultBranch,
-                defaultReviewerCount: formState.defaultReviewerCount,
-                issue: formState.issue,
-                isCodeAccessibleMemberOnly: formState.isCodeAccessibleMemberOnly,
-                isUsingReviewerCount: formState.isUsingReviewerCount,
-                milestone: formState.milestone,
-                overview: formState.overview,
-                ownerName: detail.ownerName,
-                pullRequest: formState.pullRequest,
-                projectName: formState.projectName,
-                projectScope: formState.projectScope,
-                review: formState.review,
-              });
-            }}
-          >
-            <div className="bubble-wrap gray" style={{ overflow: "visible" }}>
-              <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: 20 }}>
-                <div className="setting-box left">
-                  <div className="logo-wrap" style={{ backgroundImage: `url('${logoUrl}')` }} />
-                  <div className="logo-desc">
-                    <ul className="unstyled descs">
-                      <li>
-                        <strong>{legacyMessage(props.messages, "project.logo")}</strong>
-                      </li>
-                      <li>
-                        {legacyMessage(props.messages, "project.logo.type")}{" "}
-                        <span className="point">bmp, jpg, gif, png</span>
-                      </li>
-                      <li>
-                        {legacyMessage(props.messages, "project.logo.maxFileSize")}{" "}
-                        <span className="point">5MB</span>
-                      </li>
-                      <li>
-                        <div className="btn-wrap">
-                          <div className="nbtn medium white fake-file-wrap">
-                            <i className="yobicon-upload" />{" "}
-                            {legacyMessage(props.messages, "button.upload")}
-                            <input
-                              accept="image/*"
-                              className="file"
-                              id="logoPath"
-                              name="logoPath"
-                              onChange={(event) => {
-                                const file = event.currentTarget.files?.[0];
-                                if (file && !isProjectLogoImageFile(file)) {
-                                  setValidationMessage("project.logo.alert");
-                                  event.currentTarget.value = "";
-                                } else {
-                                  setValidationMessage(null);
-                                }
-                              }}
-                              type="file"
-                            />
-                          </div>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <dl className="setting-box right">
-                  <dt>
-                    <label htmlFor="project-name">
-                      {legacyMessage(props.messages, "project.name.placeholder")}
-                    </label>
-                  </dt>
-                  <dd>
-                    <input
-                      data-content={legacyMessage(props.messages, "project.transfer.description6")}
-                      data-placement="left"
-                      data-trigger="focus"
-                      id="project-name"
-                      maxLength={250}
-                      name="name"
-                      value={formState.projectName}
-                      onChange={(event) => {
-                        setFormState((current) => ({
-                          ...current,
-                          projectName: event.target.value,
-                        }));
-                        setValidationMessage(null);
-                      }}
-                    />
-                    <br />
-                  </dd>
-                  <dt>
-                    <label htmlFor="project-desc">
-                      {legacyMessage(props.messages, "project.description.placeholder")}
-                    </label>
-                  </dt>
-                  <dd>
-                    <textarea
-                      className="textarea"
-                      id="project-desc"
-                      maxLength={250}
-                      name="overview"
-                      value={formState.overview}
-                      onChange={(event) =>
-                        setFormState((current) => ({
-                          ...current,
-                          overview: event.target.value,
-                        }))
-                      }
-                    />
-                  </dd>
-                </dl>
-              </div>
-              {validationMessage ? (
-                <div className="alert alert-error" role="alert">
-                  {legacyMessage(props.messages, validationMessage)}
-                </div>
-              ) : null}
-
-              <div className="box-wrap middle">
-                <div className="cu-label">
-                  {legacyMessage(props.messages, "project.shareOption")}
-                </div>
-                <div className="cu-desc">
-                  {projectScopes.map((scope) => (
-                    <React.Fragment key={scope.id}>
-                      <input
-                        checked={formState.projectScope === scope.id}
-                        className="radio-btn"
-                        id={scope.id}
-                        name="projectScope"
-                        type="radio"
-                        value={scope.value}
-                        onChange={() =>
-                          setFormState((current) => ({
-                            ...current,
-                            projectScope: scope.id,
-                          }))
-                        }
-                      />
-                      <label className={`bg-radiobtn label-${scope.id}`} htmlFor={scope.id}>
-                        {legacyMessage(props.messages, scope.label)}
-                      </label>
-                    </React.Fragment>
-                  ))}
-                  <span className="note">
-                    {legacyMessage(props.messages, "project.private.notice")}
-                  </span>
-                </div>
-              </div>
-
-              {isGitProject ? (
-                <div className="box-wrap middle">
-                  <div className="cu-label">{legacyMessage(props.messages, "issue.template")}</div>
-                  <div className="cu-desc">
-                    <a
-                      className="ybtn"
-                      href={buildProjectHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        "postform?issueTemplate=true",
-                      )}
-                      target="_blank"
-                    >
-                      {legacyMessage(props.messages, "issue.template.edit")}
-                    </a>
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="box-wrap middle">
-                <div className="cu-label">
-                  {legacyMessage(props.messages, "project.codeAccessible")}
-                </div>
-                <div className="cu-desc">
-                  <input
-                    checked={formState.isCodeAccessibleMemberOnly}
-                    className="radio-btn"
-                    id="codeAccessibleMemberOnly"
-                    name="isCodeAccessibleMemberOnly"
-                    type="radio"
-                    value="true"
-                    onChange={() =>
-                      setFormState((current) => ({
-                        ...current,
-                        isCodeAccessibleMemberOnly: true,
-                      }))
-                    }
-                  />
-                  <label className="bg-radiobtn label-public" htmlFor="codeAccessibleMemberOnly">
-                    {legacyMessage(props.messages, "button.yes")}
-                  </label>
-                  <input
-                    checked={!formState.isCodeAccessibleMemberOnly}
-                    className="radio-btn"
-                    id="codeAccessibleAnyone"
-                    name="isCodeAccessibleMemberOnly"
-                    type="radio"
-                    value="false"
-                    onChange={() =>
-                      setFormState((current) => ({
-                        ...current,
-                        isCodeAccessibleMemberOnly: false,
-                      }))
-                    }
-                  />
-                  <label className="bg-radiobtn label-private" htmlFor="codeAccessibleAnyone">
-                    {legacyMessage(props.messages, "button.no")}
-                  </label>
-                  <span className="note" />
-                </div>
-              </div>
-
-              {isGitProject ? (
-                <div
-                  className="box-wrap middle reviewer-count-wrap"
-                  id="reviewerCountSettingPanel"
-                  style={formState.code ? undefined : { display: "none" }}
-                >
-                  <div className="cu-label vmiddle">
-                    {legacyMessage(props.messages, "project.reviewer.count")}
-                  </div>
-                  <div className="cu-desc">
-                    <input
-                      checked={formState.isUsingReviewerCount}
-                      className="radio-btn"
-                      data-action="show"
-                      data-toggle="reviewer-count"
-                      id="reviewerCountEnable"
-                      name="isUsingReviewerCount"
-                      type="radio"
-                      value="true"
-                      onChange={() =>
-                        setFormState((current) => ({
-                          ...current,
-                          isUsingReviewerCount: true,
-                        }))
-                      }
-                    />
-                    <label className="bg-radiobtn label-public" htmlFor="reviewerCountEnable">
-                      {legacyMessage(props.messages, "project.reviewer.count.enable")}
-                    </label>
-                    <input
-                      checked={!formState.isUsingReviewerCount}
-                      className="radio-btn"
-                      data-action="hide"
-                      data-toggle="reviewer-count"
-                      id="reviewerCountDisable"
-                      name="isUsingReviewerCount"
-                      type="radio"
-                      value="false"
-                      onChange={() =>
-                        setFormState((current) => ({
-                          ...current,
-                          isUsingReviewerCount: false,
-                        }))
-                      }
-                    />
-                    <label className="bg-radiobtn label-private" htmlFor="reviewerCountDisable">
-                      {legacyMessage(props.messages, "project.reviewer.count.disable")}
-                    </label>
-                    <div
-                      className={formState.isUsingReviewerCount ? undefined : "hide"}
-                      data-value={formState.isUsingReviewerCount ? "true" : "false"}
-                      id="welReviewerCount"
-                    >
-                      <div
-                        className="btn-group branches"
-                        data-id="project-reviewer-count"
-                        data-name="defaultReviewerCount"
-                      >
-                        <button
-                          className="btn dropdown-toggle large"
-                          data-toggle="dropdown"
-                          type="button"
-                        >
-                          <span className="d-label">{formState.defaultReviewerCount}</span>
-                          <span className="d-caret">
-                            <span className="caret" />
-                          </span>
-                        </button>
-                        <ul className="dropdown-menu">
-                          {reviewerCountOptions.map((count) => (
-                            <li data-value={count} key={count}>
-                              <a
-                                href="#reviewer-count"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  setFormState((current) => ({
-                                    ...current,
-                                    defaultReviewerCount: count,
-                                  }));
-                                }}
-                              >
-                                {count}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <span className="note ml10">
-                        {legacyMessage(props.messages, "project.reviewer.count.description")}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              {isGitProject ? (
-                <div
-                  className="box-wrap middle"
-                  id="defaultBranceSettingPanel"
-                  style={formState.code ? undefined : { display: "none" }}
-                >
-                  <div className="cu-label vmiddle">
-                    {legacyMessage(props.messages, "code.branches.defaultBranch")}
-                  </div>
-                  <div className="cu-desc">
-                    <select
-                      data-dropdown-css-class="branches"
-                      data-format="branch"
-                      data-toggle="select2"
-                      id="project-default-branch"
-                      name="defaultBranch"
-                      style={{ minWidth: 220 }}
-                      value={formState.defaultBranch}
-                      onChange={(event) =>
-                        setFormState((current) => ({
-                          ...current,
-                          defaultBranch: event.target.value,
-                        }))
-                      }
-                    >
-                      {(props.defaultBranchOptions ?? []).map((branch) => (
-                        <option key={branch.name} value={branch.name}>
-                          {branch.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="box-wrap middle">
-                <div className="cu-label vmiddle">
-                  {legacyMessage(props.messages, "project.menu.setting")}
-                </div>
-                <div className="cu-desc">
-                  {PROJECT_MENU_SETTINGS.map((item) => (
-                    <label
-                      className="bg-radiobtn label-public inline-list"
-                      htmlFor={item.id}
-                      key={item.key}
-                    >
-                      <input
-                        checked={formState[item.key]}
-                        className="radio-btn"
-                        id={item.id}
-                        name={item.name}
-                        type="checkbox"
-                        value="true"
-                        onChange={(event) =>
-                          setFormState((current) => ({
-                            ...current,
-                            [item.key]: event.target.checked,
-                          }))
-                        }
-                      />
-                      {legacyMessage(props.messages, item.label)}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="box-wrap bottom">
-              <button
-                className="ybtn ybtn-success"
-                disabled={props.pending}
-                id="save"
-                type="submit"
-              >
-                {legacyMessage(props.messages, "button.save")}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }
