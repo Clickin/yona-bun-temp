@@ -300,6 +300,47 @@ describe("project settings parity", () => {
     expect(changeVcsHtml).toContain(">Changing the repository to Subversion.</strong>");
   });
 
+  it("renders existing webhook rows with the legacy list shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectWebhooksPage
+        detail={{
+          deliveries: [],
+          ownerName: "admin",
+          projectName: "projectYobi",
+          viewerCanUpdate: true,
+          webhookTypes: ["SIMPLE", "JSON"],
+          webhooks: [
+            {
+              gitPush: true,
+              id: 7,
+              payloadUrl: "https://example.test/hook",
+              secret: "",
+              webhookType: "JSON",
+            },
+          ],
+        }}
+        projectDetail={projectDetail}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-project-views.tsx"),
+      "utf8",
+    );
+
+    expect(html).toContain('class="webhook-list-wrap" id="webhooksList"');
+    expect(html).toContain('class="row-fluid list-head"');
+    expect(html).toContain('class="row-fluid list-item vertical-align" data-webhook-id="7"');
+    expect(html).toContain('<h6 class="mr20 truncate">https://example.test/hook</h6>');
+    expect(html).toContain("<h6>NONE</h6>");
+    expect(html).toContain("<h6>JSON</h6>");
+    expect(html).toContain('<input readOnly="" type="checkbox" checked=""/>');
+    expect(html).toContain('data-request-method="delete"');
+    expect(html).toContain('data-request-uri="/yona/admin/projectYobi/webhooks/7"');
+    expect(viewSource).toContain("onClick={(event) => event.preventDefault()}");
+    expect(viewSource).not.toContain('onclick="return false;"');
+  });
+
   it("uses Korean legacy messages for project settings controls when lookup is provided", () => {
     const runtime = createLegacyI18nRuntime(["en-US", "ko-KR"]);
     runtime.setLanguage("ko-KR");

@@ -2965,9 +2965,16 @@ export function ProjectWebhooksPage(props: {
                       <div className="span2 text-center">
                         <h6>{webhook.secret || "NONE"}</h6>
                       </div>
-                      <div className="span2 text-center">{webhook.webhookType}</div>
                       <div className="span2 text-center">
-                        <input checked={webhook.gitPush} readOnly type="checkbox" />
+                        <h6>{webhook.webhookType}</h6>
+                      </div>
+                      <div className="span2 text-center">
+                        <input
+                          checked={webhook.gitPush}
+                          onClick={(event) => event.preventDefault()}
+                          readOnly
+                          type="checkbox"
+                        />
                       </div>
                       <div className="span1 text-center">
                         <button
