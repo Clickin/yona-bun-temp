@@ -2125,6 +2125,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `ProjectPullRequestFormPage` renders only the legacy form body through
   `renderShell={false}`. Focused coverage:
   `pnpm --dir frontend exec vitest run src/pull-request-list-form-review-i18n.spec.tsx -t "PR form chrome"`.
+- 2026-06-27 project nested-layout PR detail follow-up:
+  `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
+  header/menu/page-wrap shell for `/pullRequest/:pullRequestNumber` with the
+  pull request menu active and the legacy `pull-request-page` shell class,
+  while `ProjectPullRequestDetailPage` renders only the legacy overview body
+  through `renderShell={false}`. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/pull-request-review-i18n.spec.tsx -t "PR detail chrome"`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

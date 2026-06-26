@@ -188,6 +188,9 @@ function projectLayoutShell(
   ) {
     return { activeMenu: "pullRequest", shellClassName: "pull-request-page" };
   }
+  if (isPullRequestDetailPath(appPath, owner, projectName)) {
+    return { activeMenu: "pullRequest", shellClassName: "pull-request-page" };
+  }
   return null;
 }
 
@@ -210,6 +213,16 @@ function isPullRequestEditFormPath(appPath: string, owner: string, projectName: 
     segments[1] === projectName &&
     segments[2] === "pullRequest" &&
     segments[4] === "editform"
+  );
+}
+
+function isPullRequestDetailPath(appPath: string, owner: string, projectName: string): boolean {
+  const segments = appPath.split("/").filter(Boolean);
+  return (
+    segments.length === 4 &&
+    segments[0] === owner &&
+    segments[1] === projectName &&
+    segments[2] === "pullRequest"
   );
 }
 

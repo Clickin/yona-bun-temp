@@ -362,6 +362,7 @@ function PullRequestDetailLeafRouteComponent() {
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       messages={messages}
       pullRequest={pullRequestQuery.data}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       viewerId={currentSession ? Number(currentSession.actorId) : undefined}
       viewerLabel={currentSession?.userLabel}

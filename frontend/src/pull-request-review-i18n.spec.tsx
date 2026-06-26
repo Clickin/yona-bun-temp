@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -87,6 +89,44 @@ function renderPullRequestDetail(messages?: ReturnType<typeof createLegacyI18nRu
 }
 
 describe("pull request review legacy i18n opt-in", () => {
+  it("lets the project layout own PR detail chrome without changing the legacy body", () => {
+    const html = renderToStaticMarkup(
+      <ProjectPullRequestDetailPage
+        detail={detail}
+        pullRequest={pullRequest}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+        viewerId={1}
+        onClose={async () => {}}
+        onReview={async () => {}}
+        onWatchToggle={async () => {}}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const detailRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx",
+      ),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("isPullRequestDetailPath(appPath, owner, projectName)");
+    expect(layoutSource).toContain('activeMenu: "pullRequest"');
+    expect(layoutSource).toContain('shellClassName: "pull-request-page"');
+    expect(detailRouteSource).toContain("renderShell={false}");
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="board-header issue"');
+    expect(html).toContain('class="board-body"');
+    expect(html).not.toContain("app-shell pull-request-page");
+    expect(html).not.toContain("project-header-outer");
+    expect(html).not.toContain("project-menu-outer");
+    expect(html).not.toContain("page-wrap-outer");
+  });
+
   it("uses default legacy messages without runtime messages", () => {
     const html = renderPullRequestDetail();
 

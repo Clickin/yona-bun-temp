@@ -2379,6 +2379,7 @@ export function ProjectPullRequestDetailPage(props: {
   detail: ProjectDetailViewModel | null;
   messages?: LegacyMessageLookup;
   pullRequest: PullRequestDetailResponse | undefined;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   viewerId?: number;
   viewerLabel?: string;
@@ -2403,153 +2404,159 @@ export function ProjectPullRequestDetailPage(props: {
   const detail = props.detail ?? fallbackProjectDetail();
   const pr = props.pullRequest;
 
+  const pageBody = (
+    <div className="project-page-wrap">
+      {pr ? (
+        <>
+          <div className="board-header issue">
+            <div className="pull-right mr10 mt10">
+              <div className="date" title={pr.createdLabel}>
+                {pr.createdLabel}
+              </div>
+              <span
+                className={`pullRequest-stateInfo ${pr.conflict ? "conflict" : pr.state} badge nm ${
+                  pr.conflict ? "badge-issue-conflict" : `badge-issue-${pr.state}`
+                }`}
+              >
+                {legacyMessage(
+                  props.messages,
+                  pr.conflict ? "pullRequest.state.conflict" : `pullRequest.state.${pr.state}`,
+                )}
+              </span>
+            </div>
+            <div className="title">
+              <strong className="board-id">{`#${pr.pullRequestNumber}`}</strong> {pr.title}
+            </div>
+          </div>
+          <div className="pull-right">
+            <PullRequestReviewMergeControls
+              pullRequest={pr}
+              messages={props.messages}
+              runtimeConfig={props.runtimeConfig}
+              viewerId={props.viewerId}
+              onAccept={props.onAccept}
+              onReview={props.onReview}
+              onUnreview={props.onUnreview}
+            />
+          </div>
+          <PullRequestOverviewTabs
+            active="overview"
+            messages={props.messages}
+            pullRequest={pr}
+            runtimeConfig={props.runtimeConfig}
+          />
+          <div className="board-body">
+            <div className="author-info left-txt">
+              <a
+                className="usf-group pull-left"
+                href={`${props.runtimeConfig.basePath}/${encodeURIComponent(
+                  pr.contributor.loginId,
+                )}`}
+              >
+                <span className="avatar-wrap smaller">
+                  <img
+                    alt={pr.contributor.userLabel || pr.contributor.loginId}
+                    height={32}
+                    src={pr.contributor.avatarUrl}
+                    width={32}
+                  />
+                </span>
+                <strong className="name">
+                  {pr.contributor.userLabel || pr.contributor.loginId}
+                </strong>
+                <span className="loginid">
+                  {" "}
+                  <strong>@</strong>
+                  {pr.contributor.loginId}
+                </span>
+              </a>
+              <PullRequestBranchInfo
+                messages={props.messages}
+                pullRequest={pr}
+                runtimeConfig={props.runtimeConfig}
+              />
+            </div>
+            <MarkdownRenderer
+              className="content markdown-wrap"
+              basePath={props.runtimeConfig.basePath}
+              commitReferences={pullRequestMarkdownCommitReferences(pr)}
+              currentUserLabel={props.viewerLabel}
+              currentUserLoginId={props.viewerLoginId}
+              issueReferences={pr.issueReferences}
+              markdown={pr.bodyMarkdown}
+              mentionReferences={pr.mentionReferences}
+              ownerName={pr.ownerName}
+              projectName={pr.projectName}
+            />
+            <div className="attachments" data-attachments="[]"></div>
+          </div>
+          <div id="state" className="pullRequest-stateInfo">
+            <PullRequestStateNotice
+              pullRequest={pr}
+              messages={props.messages}
+              runtimeConfig={props.runtimeConfig}
+              onDeleteSourceBranch={props.onDeleteSourceBranch}
+              onRestoreSourceBranch={props.onRestoreSourceBranch}
+              viewerId={props.viewerId}
+            />
+          </div>
+          <div className="board-footer board-actrow">
+            <PullRequestActionBar
+              pullRequest={pr}
+              messages={props.messages}
+              runtimeConfig={props.runtimeConfig}
+              onClose={props.onClose}
+              onOpen={props.onOpen}
+              onWatchToggle={props.onWatchToggle}
+            />
+          </div>
+          <hr className="nm" />
+          <PullRequestEventTimeline
+            events={pr.events}
+            messages={props.messages}
+            pullRequest={pr}
+            runtimeConfig={props.runtimeConfig}
+          />
+          <div className="right-txt">
+            <a className="ybtn ybtn-inverse ybtn-mini" data-toggle="modal" href="#helpMessage">
+              {legacyMessage(props.messages, "title.help")}
+            </a>
+          </div>
+          <div id="helpMessage" className="modal hide fade pullreq-info">
+            <div className="modal-header">
+              <h5>{legacyMessage(props.messages, "pullRequest.merge.help.1")}</h5>
+            </div>
+            <div className="modal-body">
+              <div className="row-fluid">
+                <div className="pull-left help-messages mt10">
+                  <p>{legacyMessage(props.messages, "pullRequest.merge.help.2")}</p>
+                  <p>{legacyMessage(props.messages, "pullRequest.merge.help.3")}</p>
+                  <p>{legacyMessage(props.messages, "pullRequest.merge.help.4")}</p>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
+                {legacyMessage(props.messages, "button.confirm")}
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="warning-none"></div>
+      )}
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
   return (
     <main className="app-shell pull-request-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          {pr ? (
-            <>
-              <div className="board-header issue">
-                <div className="pull-right mr10 mt10">
-                  <div className="date" title={pr.createdLabel}>
-                    {pr.createdLabel}
-                  </div>
-                  <span
-                    className={`pullRequest-stateInfo ${pr.conflict ? "conflict" : pr.state} badge nm ${
-                      pr.conflict ? "badge-issue-conflict" : `badge-issue-${pr.state}`
-                    }`}
-                  >
-                    {legacyMessage(
-                      props.messages,
-                      pr.conflict ? "pullRequest.state.conflict" : `pullRequest.state.${pr.state}`,
-                    )}
-                  </span>
-                </div>
-                <div className="title">
-                  <strong className="board-id">{`#${pr.pullRequestNumber}`}</strong> {pr.title}
-                </div>
-              </div>
-              <div className="pull-right">
-                <PullRequestReviewMergeControls
-                  pullRequest={pr}
-                  messages={props.messages}
-                  runtimeConfig={props.runtimeConfig}
-                  viewerId={props.viewerId}
-                  onAccept={props.onAccept}
-                  onReview={props.onReview}
-                  onUnreview={props.onUnreview}
-                />
-              </div>
-              <PullRequestOverviewTabs
-                active="overview"
-                messages={props.messages}
-                pullRequest={pr}
-                runtimeConfig={props.runtimeConfig}
-              />
-              <div className="board-body">
-                <div className="author-info left-txt">
-                  <a
-                    className="usf-group pull-left"
-                    href={`${props.runtimeConfig.basePath}/${encodeURIComponent(
-                      pr.contributor.loginId,
-                    )}`}
-                  >
-                    <span className="avatar-wrap smaller">
-                      <img
-                        alt={pr.contributor.userLabel || pr.contributor.loginId}
-                        height={32}
-                        src={pr.contributor.avatarUrl}
-                        width={32}
-                      />
-                    </span>
-                    <strong className="name">
-                      {pr.contributor.userLabel || pr.contributor.loginId}
-                    </strong>
-                    <span className="loginid">
-                      {" "}
-                      <strong>@</strong>
-                      {pr.contributor.loginId}
-                    </span>
-                  </a>
-                  <PullRequestBranchInfo
-                    messages={props.messages}
-                    pullRequest={pr}
-                    runtimeConfig={props.runtimeConfig}
-                  />
-                </div>
-                <MarkdownRenderer
-                  className="content markdown-wrap"
-                  basePath={props.runtimeConfig.basePath}
-                  commitReferences={pullRequestMarkdownCommitReferences(pr)}
-                  currentUserLabel={props.viewerLabel}
-                  currentUserLoginId={props.viewerLoginId}
-                  issueReferences={pr.issueReferences}
-                  markdown={pr.bodyMarkdown}
-                  mentionReferences={pr.mentionReferences}
-                  ownerName={pr.ownerName}
-                  projectName={pr.projectName}
-                />
-                <div className="attachments" data-attachments="[]"></div>
-              </div>
-              <div id="state" className="pullRequest-stateInfo">
-                <PullRequestStateNotice
-                  pullRequest={pr}
-                  messages={props.messages}
-                  runtimeConfig={props.runtimeConfig}
-                  onDeleteSourceBranch={props.onDeleteSourceBranch}
-                  onRestoreSourceBranch={props.onRestoreSourceBranch}
-                  viewerId={props.viewerId}
-                />
-              </div>
-              <div className="board-footer board-actrow">
-                <PullRequestActionBar
-                  pullRequest={pr}
-                  messages={props.messages}
-                  runtimeConfig={props.runtimeConfig}
-                  onClose={props.onClose}
-                  onOpen={props.onOpen}
-                  onWatchToggle={props.onWatchToggle}
-                />
-              </div>
-              <hr className="nm" />
-              <PullRequestEventTimeline
-                events={pr.events}
-                messages={props.messages}
-                pullRequest={pr}
-                runtimeConfig={props.runtimeConfig}
-              />
-              <div className="right-txt">
-                <a className="ybtn ybtn-inverse ybtn-mini" data-toggle="modal" href="#helpMessage">
-                  {legacyMessage(props.messages, "title.help")}
-                </a>
-              </div>
-              <div id="helpMessage" className="modal hide fade pullreq-info">
-                <div className="modal-header">
-                  <h5>{legacyMessage(props.messages, "pullRequest.merge.help.1")}</h5>
-                </div>
-                <div className="modal-body">
-                  <div className="row-fluid">
-                    <div className="pull-left help-messages mt10">
-                      <p>{legacyMessage(props.messages, "pullRequest.merge.help.2")}</p>
-                      <p>{legacyMessage(props.messages, "pullRequest.merge.help.3")}</p>
-                      <p>{legacyMessage(props.messages, "pullRequest.merge.help.4")}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
-                    {legacyMessage(props.messages, "button.confirm")}
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="warning-none"></div>
-          )}
-        </div>
-      </div>
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }
