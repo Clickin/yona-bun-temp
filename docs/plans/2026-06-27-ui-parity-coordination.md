@@ -656,7 +656,8 @@ Queued for M2:
 
 Queued for M2/M3:
 
-- Issue detail header should match legacy `.board-header .title` density.
+- Issue detail header title, board-id, and date CSS now match the legacy
+  `.board-header` selectors; continue with body/sidebar/comment geometry.
 - Detail layout should restore the legacy Bootstrap `span9/span3` behavior and
   `.issue-info` spacing.
 - Comment boxes and write-comment editor need legacy bubble, avatar, metadata,

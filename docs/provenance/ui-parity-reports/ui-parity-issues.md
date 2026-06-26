@@ -8,8 +8,9 @@ Mode: read-only audit, no files edited by the explorer
 ## 2026-06-27 Visual Follow-Up
 
 - Restored issue detail header/body/comment/timeline CSS toward the legacy selectors and geometry from `yona-original/app/assets/stylesheets/less/_page.less:2868` and `:3005`.
-- Scope: `frontend/src/app.css` only. The existing React markup already carries the legacy issue detail classes, so this follow-up avoids JSX churn and keeps REST/React behavior unchanged.
-- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx src/issue-list-filter.spec.tsx`.
+- Scope: `frontend/src/app.css` plus a focused CSS source guard in `frontend/src/issue-detail-shell.spec.tsx`. The existing React markup already carries the legacy issue detail classes, so this follow-up avoids JSX churn and keeps REST/React behavior unchanged.
+- Continuation: board-id/date header styling now matches legacy `_page.less` color, spacing, and line-height selectors under the `issue-detail-page` shell.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx`.
 
 ## 2026-06-27 Nested Layout Follow-Up
 

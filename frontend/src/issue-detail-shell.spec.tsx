@@ -230,6 +230,12 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="project-page-wrap board-view"');
     expect(html).toContain('class="board-header issue"');
     expect(html).toContain('class="board-id"');
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+    expect(appCss).toContain(".issue-detail-page .board-id");
+    expect(appCss).toContain("color: #939393;");
+    expect(appCss).toContain(".issue-detail-page .board-header .date");
+    expect(appCss).toContain("line-height: 29px;");
+    expect(appCss).toContain("margin-right: 20px;");
     expect(html).toContain("#1");
     expect(html).toContain('class="badge badge-issue-open"');
     expect(html).toContain('class="board-body row-fluid"');

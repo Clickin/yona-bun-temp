@@ -407,6 +407,11 @@
   jQuery post-render mutation. Focused evidence: `issue-detail-shell.spec.tsx`,
   `issue-list-filter.spec.tsx`, `route-parity.spec.tsx`,
   `organization-shell-i18n.spec.tsx`, and `pnpm --dir frontend check`.
+- 2026-06-27 issue detail header CSS continuation: React issue detail now
+  keeps the legacy `_page.less` board-id/date color, spacing, and line-height
+  under the `issue-detail-page` shell without changing JSX or REST behavior.
+  Focused evidence: `issue-detail-shell.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 issue sharer picker continuation: React issue detail now mirrors
   the legacy `issue/view.scala.html` `#issue-share-button` click behavior that
   reveals `#sharer-list` and adds `.sharer-list-border` to `.sharer-list`.

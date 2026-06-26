@@ -2035,9 +2035,17 @@ h1 {
 }
 
 .issue-detail-page .board-id {
-  color: #777;
+  color: #939393;
   font-size: 14px;
   padding-right: 10px;
+}
+
+.issue-detail-page .board-header .date {
+  display: inline-block;
+  margin-right: 20px;
+  color: #999;
+  line-height: 29px;
+  vertical-align: top;
 }
 
 .badge[class*="badge-issue-"] {
