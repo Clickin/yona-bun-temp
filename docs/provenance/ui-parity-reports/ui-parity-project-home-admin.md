@@ -35,6 +35,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectChangeVcsPage`; the change-VCS leaf route passes that flag while retaining its existing REST mutation/query boundary.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx`.
 
+## 2026-06-27 Issue-Labels Layout Follow-Up
+
+- Moved project issue-label settings shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/issue/labelsform`, keeping the settings menu active and rendering `IssueLabelsFormPage` through the TanStack Router `<Outlet />`.
+- Scope: `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx` adds `renderShell={false}` for the page while retaining its existing label/category REST mutation/query boundary.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-label-settings-i18n.spec.tsx src/project-settings-parity.spec.tsx`.
+
 ## Legacy Evidence Checked
 
 - `yona-original/app/views/project/home.scala.html`

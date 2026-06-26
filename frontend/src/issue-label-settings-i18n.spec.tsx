@@ -21,7 +21,7 @@ const detail: ProjectDetailViewModel = {
   viewerCanUpdate: true,
 };
 
-function renderIssueLabelSettings(messages?: LegacyMessageLookup) {
+function renderIssueLabelSettings(messages?: LegacyMessageLookup, renderShell = true) {
   return renderToStaticMarkup(
     <IssueLabelsFormPage
       categories={[{ id: 10, isExclusive: true, name: "Priority" }]}
@@ -41,6 +41,7 @@ function renderIssueLabelSettings(messages?: LegacyMessageLookup) {
       onChanged={() => Promise.resolve()}
       owner="yobi"
       projectName="yona"
+      renderShell={renderShell}
       runtimeConfig={testRuntimeConfig}
     />,
   );
@@ -111,5 +112,28 @@ describe("project issue label settings legacy i18n opt-in", () => {
     expect(html).not.toContain(">label.copy</button>");
     expect(html).not.toContain(">label.add</button>");
     expect(html).not.toContain(">button.delete</button>");
+  });
+
+  it("lets the project layout route own the issue label settings shell", () => {
+    const html = renderIssueLabelSettings(undefined, false);
+    const layoutSource = readFileSync(
+      new URL("./routes/$owner/$projectName/route.tsx", import.meta.url),
+      "utf8",
+    );
+    const routeSource = readFileSync(
+      new URL("./routes/$owner/$projectName/issue/labelsform/route.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/issue/labelsform`");
+    expect(layoutSource).toContain('return { activeMenu: "settings" };');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap label-editor-wrap"');
+    expect(html).toContain('id="subMenuIssueLabel"');
+    expect(html).toContain('id="labelsList"');
+    expect(html).toContain('id="editLabel"');
   });
 });

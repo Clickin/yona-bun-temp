@@ -217,6 +217,7 @@ function IssueLabelsFormRouteComponent() {
       onChanged={reload}
       owner={owner}
       projectName={projectName}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );
@@ -254,6 +255,7 @@ export function IssueLabelsFormPage(props: {
   onChanged: () => Promise<void>;
   owner: string;
   projectName: string;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? {
@@ -273,161 +275,156 @@ export function IssueLabelsFormPage(props: {
   );
   const [editingLabel, setEditingLabel] = React.useState<LabelView | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<LabelGroup | null>(null);
-  return (
-    <main className="app-shell">
-      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap label-editor-wrap">
-          <ProjectSettingsSubMenu
-            active="labels"
-            detail={detail}
-            messages={props.messages}
-            runtimeConfig={props.runtimeConfig}
-          />
-          <IssueLabelCopyForm {...props} />
-          <IssueLabelCreateForm {...props} />
-          {deleteErrorMessage ? (
-            <div className="alert alert-error" role="alert">
-              {legacyLabelFormMessage(props.messages, deleteErrorMessage)}
-            </div>
-          ) : null}
-
-          <div id="labelsList" className="issue-label-list-wrap">
-            {props.labels.length === 0 ? (
-              <div className="error-wrap">
-                <i className="ico ico-err1" />
-                <p>{legacyMessage(props.messages, "label.list.empty")}</p>
-              </div>
-            ) : (
-              <>
-                <div className="row-fluid list-head">
-                  <div className="span3 category">
-                    <strong>{legacyMessage(props.messages, "label.category")}</strong>
-                  </div>
-                  <div className="span9 name">
-                    <strong>{legacyMessage(props.messages, "label.name")}</strong>
-                  </div>
-                </div>
-                {grouped.map((group) => (
-                  <div
-                    className="row-fluid list-item category-wrap"
-                    data-category={group.categoryId}
-                    data-category-name={group.categoryName}
-                    key={group.categoryId}
-                  >
-                    <div className="span3">
-                      <h5 className="right-txt mr20">
-                        <span className="category-name">{group.categoryName}</span>
-                        <p className="mt5">
-                          <i
-                            className={`category-exclusive ${
-                              group.categoryIsExclusive
-                                ? "yobicon-tag single"
-                                : "yobicon-tags multiple"
-                            }`}
-                            data-html="true"
-                            data-toggle="tooltip"
-                            title={`${legacyMessage(props.messages, "label.category.option")}<br>${
-                              group.categoryIsExclusive
-                                ? legacyMessage(props.messages, "label.category.option.single")
-                                : legacyMessage(props.messages, "label.category.option.multiple")
-                            }`}
-                          />
-                          <IssueCategoryEditButton
-                            category={group}
-                            messages={props.messages}
-                            onEdit={setEditingCategory}
-                            owner={props.owner}
-                            projectName={props.projectName}
-                            runtimeConfig={props.runtimeConfig}
-                          />
-                        </p>
-                      </h5>
-                    </div>
-                    <div className="span9">
-                      <table className="table nm">
-                        <tbody>
-                          {group.labels.map((label) => (
-                            <tr data-label-id={label.id} key={label.id}>
-                              <td>
-                                <span
-                                  className="issue-label active"
-                                  data-label-id={label.id}
-                                  data-label-name={label.name}
-                                  style={{ backgroundColor: label.color }}
-                                >
-                                  {label.name}
-                                </span>
-                              </td>
-                              <td className="actions">
-                                <button
-                                  className="ybtn ybtn-danger ybtn-small"
-                                  data-category-name={group.categoryName}
-                                  data-delete-uri={buildProjectHref(
-                                    props.runtimeConfig,
-                                    props.owner,
-                                    props.projectName,
-                                    `issue/labels/${label.id}`,
-                                  )}
-                                  data-label-id={label.id}
-                                  onClick={() => {
-                                    if (
-                                      !window.confirm(
-                                        legacyMessage(props.messages, "label.confirm.delete"),
-                                      )
-                                    ) {
-                                      return;
-                                    }
-                                    setDeleteErrorMessage(null);
-                                    void deleteProjectLabel(props.runtimeConfig, props.csrfToken, {
-                                      labelId: BigInt(label.id),
-                                      ownerName: props.owner,
-                                      projectName: props.projectName,
-                                    })
-                                      .then(props.onChanged)
-                                      .catch((error: unknown) =>
-                                        setDeleteErrorMessage(
-                                          formatLegacyLabelRequestFailure(error, "label.delete"),
-                                        ),
-                                      );
-                                  }}
-                                  type="button"
-                                >
-                                  {legacyMessage(props.messages, "button.delete")}
-                                </button>
-                                <IssueLabelEditButton
-                                  label={label}
-                                  messages={props.messages}
-                                  onEdit={setEditingLabel}
-                                  owner={props.owner}
-                                  projectName={props.projectName}
-                                  runtimeConfig={props.runtimeConfig}
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-                <link
-                  href={buildProjectHref(
-                    props.runtimeConfig,
-                    props.owner,
-                    props.projectName,
-                    "issue/labels.css",
-                  )}
-                  rel="stylesheet"
-                  type="text/css"
-                />
-              </>
-            )}
-          </div>
+  const pageBody = (
+    <div className="project-page-wrap label-editor-wrap">
+      <ProjectSettingsSubMenu
+        active="labels"
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <IssueLabelCopyForm {...props} />
+      <IssueLabelCreateForm {...props} />
+      {deleteErrorMessage ? (
+        <div className="alert alert-error" role="alert">
+          {legacyLabelFormMessage(props.messages, deleteErrorMessage)}
         </div>
-      </div>
+      ) : null}
 
+      <div id="labelsList" className="issue-label-list-wrap">
+        {props.labels.length === 0 ? (
+          <div className="error-wrap">
+            <i className="ico ico-err1" />
+            <p>{legacyMessage(props.messages, "label.list.empty")}</p>
+          </div>
+        ) : (
+          <>
+            <div className="row-fluid list-head">
+              <div className="span3 category">
+                <strong>{legacyMessage(props.messages, "label.category")}</strong>
+              </div>
+              <div className="span9 name">
+                <strong>{legacyMessage(props.messages, "label.name")}</strong>
+              </div>
+            </div>
+            {grouped.map((group) => (
+              <div
+                className="row-fluid list-item category-wrap"
+                data-category={group.categoryId}
+                data-category-name={group.categoryName}
+                key={group.categoryId}
+              >
+                <div className="span3">
+                  <h5 className="right-txt mr20">
+                    <span className="category-name">{group.categoryName}</span>
+                    <p className="mt5">
+                      <i
+                        className={`category-exclusive ${
+                          group.categoryIsExclusive ? "yobicon-tag single" : "yobicon-tags multiple"
+                        }`}
+                        data-html="true"
+                        data-toggle="tooltip"
+                        title={`${legacyMessage(props.messages, "label.category.option")}<br>${
+                          group.categoryIsExclusive
+                            ? legacyMessage(props.messages, "label.category.option.single")
+                            : legacyMessage(props.messages, "label.category.option.multiple")
+                        }`}
+                      />
+                      <IssueCategoryEditButton
+                        category={group}
+                        messages={props.messages}
+                        onEdit={setEditingCategory}
+                        owner={props.owner}
+                        projectName={props.projectName}
+                        runtimeConfig={props.runtimeConfig}
+                      />
+                    </p>
+                  </h5>
+                </div>
+                <div className="span9">
+                  <table className="table nm">
+                    <tbody>
+                      {group.labels.map((label) => (
+                        <tr data-label-id={label.id} key={label.id}>
+                          <td>
+                            <span
+                              className="issue-label active"
+                              data-label-id={label.id}
+                              data-label-name={label.name}
+                              style={{ backgroundColor: label.color }}
+                            >
+                              {label.name}
+                            </span>
+                          </td>
+                          <td className="actions">
+                            <button
+                              className="ybtn ybtn-danger ybtn-small"
+                              data-category-name={group.categoryName}
+                              data-delete-uri={buildProjectHref(
+                                props.runtimeConfig,
+                                props.owner,
+                                props.projectName,
+                                `issue/labels/${label.id}`,
+                              )}
+                              data-label-id={label.id}
+                              onClick={() => {
+                                if (
+                                  !window.confirm(
+                                    legacyMessage(props.messages, "label.confirm.delete"),
+                                  )
+                                ) {
+                                  return;
+                                }
+                                setDeleteErrorMessage(null);
+                                void deleteProjectLabel(props.runtimeConfig, props.csrfToken, {
+                                  labelId: BigInt(label.id),
+                                  ownerName: props.owner,
+                                  projectName: props.projectName,
+                                })
+                                  .then(props.onChanged)
+                                  .catch((error: unknown) =>
+                                    setDeleteErrorMessage(
+                                      formatLegacyLabelRequestFailure(error, "label.delete"),
+                                    ),
+                                  );
+                              }}
+                              type="button"
+                            >
+                              {legacyMessage(props.messages, "button.delete")}
+                            </button>
+                            <IssueLabelEditButton
+                              label={label}
+                              messages={props.messages}
+                              onEdit={setEditingLabel}
+                              owner={props.owner}
+                              projectName={props.projectName}
+                              runtimeConfig={props.runtimeConfig}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+            <link
+              href={buildProjectHref(
+                props.runtimeConfig,
+                props.owner,
+                props.projectName,
+                "issue/labels.css",
+              )}
+              rel="stylesheet"
+              type="text/css"
+            />
+          </>
+        )}
+      </div>
+    </div>
+  );
+  const modals = (
+    <>
       <IssueLabelEditModal
         categories={props.categories}
         csrfToken={props.csrfToken}
@@ -450,6 +447,24 @@ export function IssueLabelsFormPage(props: {
         projectName={props.projectName}
         runtimeConfig={props.runtimeConfig}
       />
+    </>
+  );
+
+  if (props.renderShell === false) {
+    return (
+      <>
+        {pageBody}
+        {modals}
+      </>
+    );
+  }
+
+  return (
+    <main className="app-shell">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">{pageBody}</div>
+      {modals}
     </main>
   );
 }

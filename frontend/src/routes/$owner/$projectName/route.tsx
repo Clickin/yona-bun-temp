@@ -100,6 +100,7 @@ function projectLayoutShell(
   if (
     appPath === `/${owner}/${projectName}/changeVCS` ||
     appPath === `/${owner}/${projectName}/deleteform` ||
+    appPath === `/${owner}/${projectName}/issue/labelsform` ||
     appPath === `/${owner}/${projectName}/settingform` ||
     appPath === `/${owner}/${projectName}/members` ||
     appPath === `/${owner}/${projectName}/transfer` ||

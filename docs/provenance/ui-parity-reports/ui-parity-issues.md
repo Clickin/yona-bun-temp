@@ -17,6 +17,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/-issue-views.tsx` adds `renderShell={false}` for `ProjectIssueFormPage`; create/edit leaf routes pass that flag while retaining their existing REST submit/data loading boundaries.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx src/project-settings-parity.spec.tsx`.
 
+## 2026-06-27 Issue Label Layout Follow-Up
+
+- Moved project issue-label settings shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/issue/labelsform`, keeping the settings menu active and rendering the leaf through the TanStack Router `<Outlet />`.
+- Scope: `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx` adds `renderShell={false}` while retaining the existing label/category REST mutation boundary.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-label-settings-i18n.spec.tsx src/project-settings-parity.spec.tsx`.
+
 ## Evidence Checked
 
 Legacy evidence:

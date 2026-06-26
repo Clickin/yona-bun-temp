@@ -158,6 +158,18 @@ M8 continues settings-family shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx`.
 
+M9 continues settings-family shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/issue/labelsform`, with the settings menu
+  active.
+- `IssueLabelsFormPage` supports `renderShell={false}` so the leaf route keeps
+  its label/category REST mutation boundary but renders only the legacy
+  `project-page-wrap label-editor-wrap` body and modals under the project
+  layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/issue-label-settings-i18n.spec.tsx src/project-settings-parity.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit
