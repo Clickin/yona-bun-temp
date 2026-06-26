@@ -2190,6 +2190,7 @@ function CodeHistoryTable(props: {
   const history = props.history;
   const commits = history?.commits ?? [];
   const path = history?.path ?? "";
+  const onNavigate = props.onNavigate;
   const newerHref =
     history && history.hasNewer
       ? codeHistoryHref(
@@ -2228,15 +2229,15 @@ function CodeHistoryTable(props: {
       }
       const key = event.key.toLowerCase();
       if (key === "a" && newerHref) {
-        props.onNavigate?.(newerHref);
+        onNavigate?.(newerHref);
       }
       if (key === "s" && olderHref) {
-        props.onNavigate?.(olderHref);
+        onNavigate?.(olderHref);
       }
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [newerHref, olderHref, props.onNavigate]);
+  }, [newerHref, olderHref, onNavigate]);
   return (
     <>
       <div id="history" className="commit-wrap">

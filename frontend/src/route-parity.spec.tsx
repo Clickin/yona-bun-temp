@@ -981,7 +981,7 @@ describe("file-route parity harness", () => {
     expect(commitsRouteHelperSource).toContain("useRouterState");
     expect(commitsRouteHelperSource).toContain("navigate({ href })");
     expect(codeViewsSource).toContain("data-via-email");
-    expect(codeViewsSource).toContain("props.onNavigate?.(newerHref)");
+    expect(codeViewsSource).toContain("onNavigate?.(newerHref)");
     expect(codeViewsSource).not.toContain("window.location.assign(");
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/commits/'");
