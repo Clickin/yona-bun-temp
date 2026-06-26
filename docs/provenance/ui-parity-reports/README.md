@@ -62,6 +62,40 @@ Rules:
   classify legacy sample-data or homelab-reference differences before whole UI
   parity can be claimed.
 
+## Integrated Status Delta Queue
+
+These rows are from `output/playwright/visual-sweep/latest.json` checked at
+`2026-06-26T16:21:36.680Z`. They had no screenshot diff failure, but they still
+block whole-UI closure until the owning packet records `covered`, `deferred`,
+`not-applicable`, `gap`, or `deviation` with source evidence. Status `0` means
+the browser saw no regular document response, usually because legacy produced a
+download/navigation boundary instead of a comparable HTML page.
+
+| owner packet | route | legacy status | local status | required decision |
+| --- | --- | ---: | ---: | --- |
+| P3 issue/editor/comments | `/admin/sample/issues?format=xls` | 0 | 200 | Decide export/download parity versus deferred import/export scope; P3 report now tracks this as `needs-parent-decision`. |
+| P4 board/milestone/post | `/admin/sample/post/1` | 404 | 200 | Create P4 report row; distinguish missing legacy sample post from local placeholder/rendered detail behavior. |
+| P4 board/milestone/post | `/admin/sample/post/1/editform` | 500 | 200 | Create P4 report row; legacy sample errors must not be treated as visual parity proof. |
+| P4 board/milestone/post | `/admin/sample/milestone/1` | 404 | 200 | Create P4 report row; verify milestone detail data state against an existing legacy seed or classify seed gap. |
+| P4 board/milestone/post | `/admin/sample/milestone/1/editform` | 404 | 200 | Create P4 report row; verify edit form against legacy template/state once comparable data exists. |
+| P5 code/git/pr/review | `/admin/sample/newPullRequestForm` | 400 | 200 | Create P5 report row; compare invalid branch/base behavior, not just rendered local form reachability. |
+| P5 code/git/pr/review | `/admin/sample/reviews?format=xls` | 0 | 200 | Decide export/download parity versus deferred import/export scope in P5. |
+| P5 code/git/pr/review | `/admin/sample/pullRequest/1` | 404 | 200 | Create P5 report row; compare against valid legacy PR seed or classify local placeholder route. |
+| P5 code/git/pr/review | `/admin/sample/pullRequest/1/changes` | 404 | 200 | Create P5 report row; validate diff tab data-boundary with comparable PR data. |
+| P5 code/git/pr/review | `/admin/sample/pullRequest/1/changes/HEAD` | 404 | 200 | Create P5 report row; validate revision-specific diff state with comparable data. |
+| P5 code/git/pr/review | `/admin/sample/pullRequest/1/editform` | 404 | 200 | Create P5 report row; validate edit form only after comparable PR seed. |
+| P5 code/git/pr/review | `/admin/sample/code/main` | 404 | 200 | Create P5 report row; distinguish missing legacy repo/branch from local repository browser UI. |
+| P5 code/git/pr/review | `/admin/sample/code/main/` | 404 | 200 | Same as code browser row; avoid duplicate closure by reachability. |
+| P5 code/git/pr/review | `/admin/sample/code/main/README.md` | 404 | 200 | Create P5 report row; validate file viewer against comparable repository content. |
+| P5 code/git/pr/review | `/admin/sample/commits` | 404 | 200 | Create P5 report row; validate commit list against comparable repository content. |
+| P5 code/git/pr/review | `/admin/sample/commits/` | 404 | 200 | Same as commit list row; avoid duplicate closure by reachability. |
+| P5 code/git/pr/review | `/admin/sample/commits/main` | 404 | 200 | Create P5 report row; validate branch-filtered commit list. |
+| P5 code/git/pr/review | `/admin/sample/commits/main/` | 404 | 200 | Same as branch commit-list row; avoid duplicate closure by reachability. |
+| P5 code/git/pr/review | `/admin/sample/commit/HEAD` | 404 | 200 | Create P5 report row; validate commit detail/diff shell with comparable commit. |
+| P5 code/git/pr/review | `/admin/sample/compare/main...main` | 500 | 200 | Create P5 report row; legacy error state needs source classification before local 200 can be accepted. |
+| P5 code/git/pr/review | `/admin/sample/branches` | 500 | 200 | Create P5 report row; legacy branch page error state needs source classification before local 200 can be accepted. |
+| P5 code/git/pr/review | `/admin/sample/search` | 400 | 200 | Create P5/search report row; validate invalid or empty repository search behavior against legacy. |
+
 Round 2 report rows must additionally include:
 
 - `viewport`: desktop or mobile viewport used for the assertion.

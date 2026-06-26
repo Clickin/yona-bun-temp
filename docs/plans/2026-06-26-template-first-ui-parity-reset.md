@@ -152,7 +152,7 @@ Every finding goes into the owning packet report using this row shape:
 | legacy route/state | URL, user role, project visibility, data state, interaction state |
 | current file | exact React/API/test path |
 | defect class | `layout`, `css`, `copy`, `route`, `interaction`, `permission`, `data-boundary`, `asset`, or `test-gap` |
-| status | `gap`, `deviation`, `weak evidence`, `covered`, `not-applicable`, `deferred` |
+| status | `gap`, `deviation`, `weak evidence`, `covered`, `not-applicable`, `deferred`, `needs-parent-decision` |
 | owner packet | P0-P7 |
 | proposed write scope | exact files/modules a worker may touch |
 | verification evidence | screenshot path, Playwright spec, curl/proxy artifact, or selector assertion |
@@ -206,17 +206,33 @@ Update 2026-06-27:
   versus local rendered pages. The sweep now ignores only Vite dev
   `ERR_ABORTED` module-load noise for framed `/sidebar` pages while preserving
   real request failures.
+- The remaining `22` integrated status deltas are now packet-owned in
+  `docs/provenance/ui-parity-reports/README.md#integrated-status-delta-queue`.
+  Current split: P3 issue export/download boundary `1`, P4
+  board/milestone/post sample-data states `4`, and P5 code/git/PR/review/search
+  states `17`. P3 also records `/admin/sample/issues?format=xls` as
+  `needs-parent-decision`; do not close P3 or whole UI parity until this route
+  is either implemented, deferred with canonical/provenance/follow-up entries,
+  or classified as not-applicable with legacy source evidence.
 
 1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
    header/menu, issue/editor/comment surfaces define most repeated visual
    contracts.
-2. Parent updates existing `docs/provenance/ui-parity-reports/*.md` to use the
+2. Parent decides whether P3 `/admin/sample/issues?format=xls` belongs to
+   current issue functional parity or to deferred import/export scope, then
+   updates root canonical docs, provenance, and this plan with the same
+   classification.
+3. Subagent B creates the P4 board/milestone/post template-first report and
+   resolves the four P4 integrated status deltas against comparable legacy
+   sample data or documented seed gaps.
+4. Subagent C creates the P5 code/git/PR/review template-first report and
+   resolves the seventeen P5 integrated status deltas, including Git/SVN-visible
+   UI states, export/download routes, PR diff tabs, repository browser, branch,
+   compare, commit, and search behavior.
+5. Parent updates existing `docs/provenance/ui-parity-reports/*.md` to use the
    audit queue format above and reopens rows that were closed by reachability
    rather than pixel-visible parity.
-3. Subagent D creates the first verifier baseline for P0 global shell and P2
-   project shell before implementation begins. The baseline must show why the
-   current React output differs from legacy.
-4. Workers then port shell components and route families from templates in
+6. Workers then port shell components and route families from templates in
    packet order. A packet can be split further only after its template mapping
    is complete.
 
