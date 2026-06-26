@@ -52,7 +52,11 @@ import {
 } from "./routes/-issue-views";
 import { ProjectNewPage, ProjectSettingsPage } from "./routes/-project-views";
 import type { ProjectIssueDetailViewModel } from "./routes/-view-models";
-import { framedIframeSrcFromSearch } from "./routes/__root";
+import {
+  framedIframeSrcFromSearch,
+  legacyCommonScriptsExternalLinkTarget,
+  legacyCommonScriptsShouldStartProgressForLink,
+} from "./routes/__root";
 
 describe("auth and workspace views", () => {
   it("keeps the legacy global navigation shell in the root route", () => {
@@ -173,11 +177,21 @@ describe("auth and workspace views", () => {
     expect(source).toContain('className="main"');
     expect(source).toContain('id="main"');
     expect(source).toContain("<LegacyGlobalContainers />");
+    expect(source).toContain("<LegacyCommonScriptsBridge />");
     expect(source).toContain('id="yobiDialog"');
     expect(source).toContain('className="modal hide yobiDialog"');
     expect(source).toContain('id="yobiToasts"');
     expect(source).toContain('id="tplYobiToast"');
     expect(source).toContain('type="text/x-jquery-tmpl"');
+    expect(source).toContain("legacyRenderFlashNotifications(document)");
+    expect(source).toContain(
+      "legacyApplyMarkdownExternalLinkTargets(document, window.location.origin)",
+    );
+    expect(source).toContain('document.addEventListener("keydown", onKeyDown)');
+    expect(source).toContain('window.dispatchEvent(new CustomEvent("legacy:nprogress:start"))');
+    expect(source).toContain('[data-toggle="yobi-notify"]');
+    expect(source).toContain(".markdown-wrap a[href]");
+    expect(source).toContain("form.requestSubmit()");
     expect(source).toContain('className="page-footer-outer"');
     expect(source).toContain('className="page-footer"');
     expect(source).toContain('className="provider"');
@@ -227,6 +241,26 @@ describe("auth and workspace views", () => {
     expect(appCss).toContain("left: -6px;");
     expect(appCss).toContain(".pin-move-to-right");
     expect(appCss).toContain("left: 270px;");
+  });
+
+  it("pins pure contracts for legacy common/scripts link handling", () => {
+    expect(
+      legacyCommonScriptsExternalLinkTarget("https://example.test/path", "https://yona.test"),
+    ).toBe("_blank");
+    expect(
+      legacyCommonScriptsExternalLinkTarget("https://yona.test/path", "https://yona.test"),
+    ).toBe(undefined);
+    expect(legacyCommonScriptsExternalLinkTarget("/relative", "https://yona.test")).toBe(undefined);
+    expect(legacyCommonScriptsExternalLinkTarget("#anchor", "https://yona.test")).toBe(undefined);
+
+    const progressLink = {
+      closest: (selector: string) => (selector.includes(".project-name > a") ? progressLink : null),
+    } as unknown as Element;
+    const plainLink = {
+      closest: () => null,
+    } as unknown as Element;
+    expect(legacyCommonScriptsShouldStartProgressForLink(progressLink)).toBe(true);
+    expect(legacyCommonScriptsShouldStartProgressForLink(plainLink)).toBe(false);
   });
 
   it("builds the legacy framed iframe src from /sidebar query params", () => {

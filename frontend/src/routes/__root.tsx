@@ -55,6 +55,7 @@ function RootRouteComponent() {
             <Outlet />
             <RootFooter />
             <LegacyGlobalContainers />
+            <LegacyCommonScriptsBridge />
             <RootLoginDialog open={loginDialogOpen} onClose={() => setLoginDialogOpen(false)} />
           </div>
         )}
@@ -184,6 +185,149 @@ function LegacyGlobalContainers() {
       </script>
     </>
   );
+}
+
+export function legacyYobiToastElement(message: string, documentRef: Document): HTMLElement {
+  const toast = documentRef.createElement("div");
+  toast.className = "toast";
+  toast.tabIndex = -1;
+
+  const dismiss = documentRef.createElement("div");
+  dismiss.className = "btn-dismiss";
+  const dismissButton = documentRef.createElement("button");
+  dismissButton.className = "btn-transparent";
+  dismissButton.type = "button";
+  dismissButton.textContent = "×";
+  dismiss.append(dismissButton);
+
+  const centerText = documentRef.createElement("div");
+  centerText.className = "center-text";
+  const marker = documentRef.createElement("span");
+  marker.className = "v";
+  const messageNode = documentRef.createElement("div");
+  messageNode.className = "msg";
+  messageNode.textContent = message;
+  centerText.append(marker, messageNode);
+  toast.append(dismiss, centerText);
+  dismissButton.addEventListener("click", () => toast.remove());
+  return toast;
+}
+
+export function legacyRenderFlashNotifications(documentRef: Document): number {
+  const container = documentRef.querySelector("#yobiToasts");
+  if (!container) {
+    return 0;
+  }
+  let renderedCount = 0;
+  for (const source of Array.from(
+    documentRef.querySelectorAll<HTMLElement>('[data-toggle="yobi-notify"]'),
+  )) {
+    if (source.dataset.yobiNotified === "true") {
+      continue;
+    }
+    const message = source.textContent?.trim();
+    if (!message) {
+      continue;
+    }
+    container.append(legacyYobiToastElement(message, documentRef));
+    source.dataset.yobiNotified = "true";
+    renderedCount += 1;
+  }
+  return renderedCount;
+}
+
+export function legacyCommonScriptsExternalLinkTarget(
+  href: string,
+  origin: string,
+): "_blank" | undefined {
+  if (!href || !/^[^./#]/.test(href)) {
+    return undefined;
+  }
+  return href.startsWith(`${origin}`) ? undefined : "_blank";
+}
+
+export function legacyApplyMarkdownExternalLinkTargets(documentRef: Document, origin: string) {
+  for (const link of Array.from(
+    documentRef.querySelectorAll<HTMLAnchorElement>(".markdown-wrap a[href]"),
+  )) {
+    const target = legacyCommonScriptsExternalLinkTarget(link.getAttribute("href") ?? "", origin);
+    if (target) {
+      link.target = target;
+    }
+  }
+}
+
+export function legacyCommonScriptsShouldSubmitShortcut(event: {
+  ctrlKey: boolean;
+  key: string;
+  metaKey?: boolean;
+  target: EventTarget | null;
+}): boolean {
+  if ((!event.ctrlKey && !event.metaKey) || event.key !== "Enter") {
+    return false;
+  }
+  const target = event.target;
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+}
+
+export function legacyCommonScriptsShouldStartProgressForLink(element: Element): boolean {
+  return Boolean(
+    element.closest(
+      ".logo, .title > a, .project-menu-nav > li > a, .show-progress-bar, .project-breadcrumb > span > a, .project-name > a, a.title",
+    ),
+  );
+}
+
+function legacySubmitClosestForm(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
+    return false;
+  }
+  const form = target.closest("form");
+  if (!form) {
+    return false;
+  }
+  if (typeof form.requestSubmit === "function") {
+    form.requestSubmit();
+  } else {
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  }
+  return true;
+}
+
+function LegacyCommonScriptsBridge() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  React.useEffect(() => {
+    legacyRenderFlashNotifications(document);
+    legacyApplyMarkdownExternalLinkTargets(document, window.location.origin);
+  }, [pathname]);
+
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!legacyCommonScriptsShouldSubmitShortcut(event)) {
+        return;
+      }
+      if (legacySubmitClosestForm(event.target)) {
+        event.preventDefault();
+      }
+    };
+    const onProgressLinkClick = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) {
+        return;
+      }
+      if (legacyCommonScriptsShouldStartProgressForLink(event.target)) {
+        window.dispatchEvent(new CustomEvent("legacy:nprogress:start"));
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("click", onProgressLinkClick);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("click", onProgressLinkClick);
+    };
+  }, []);
+
+  return null;
 }
 
 function SiteAdminLoggedInAffix() {
