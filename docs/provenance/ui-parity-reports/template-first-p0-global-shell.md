@@ -65,15 +65,44 @@ Source comparison by Subagent P0 found concrete reset blockers:
 | `common/footer.scala.html` | Normal pages. | `frontend/src/routes/__root.tsx`, `frontend/src/app.css`, `scripts/visual-parity-sweep.mjs` | layout | covered in current follow-up | P0 | none | Source/E2E assert `.page-footer-outer .page-footer` and provider copy. The 2026-06-26 P0 visual follow-up restored legacy footer CSS from `_page.less`: `.page-footer-outer` padding/background and `.page-footer` centered `line-height:34px`. Focused post-fix Playwright metrics show normal checked routes render `footer.page-footer-outer` at 1366x56 with white background, matching the legacy visual sweep metric. |
 | `common/navbar.scala.html` | Anonymous/authenticated header basics/search scope. | `frontend/src/routes/__root.tsx`, `frontend/src/app.css`, `scripts/visual-parity-sweep.mjs`, `scripts/visual-parity-comparison.spec.mjs`, `frontend/src/auth-workspace-shell.spec.tsx` | test-gap | covered in current follow-up | P0 | none | The visual sweep now records computed-style metrics for `.gnb-outer`, `.gnb-inner`, `.gnb-usermenu`, `#mySidenav`, and `footer.page-footer-outer`, fails normal pages missing the inner/user-menu navbar containers, exempts framed `/sidebar` from normal navbar requirements, and always writes desktop screenshots for `/`, `/admin/sample`, and `/users/loginform`. The 2026-06-26T15:03Z legacy-proxy/current run through `output/playwright/visual-sweep/latest.json` proved legacy and current both render `.gnb-outer` and `.gnb-inner` at 1366px desktop width on `/`, `/admin/sample`, and `/users/loginform`, with screenshots at `output/playwright/visual-sweep/legacy-_.png`, `local-_.png`, `legacy-_admin_sample.png`, `local-_admin_sample.png`, `legacy-_users_loginform.png`, and `local-_users_loginform.png`. That run exposed P0 chrome drift bugs in current output: closed create dropdowns inflated `.gnb-usermenu` to 477x270, avatar images rendered at source size, `/admin/sample` used the global dark nav instead of the translucent project-route header, and footer height collapsed to 18px. Current follow-up restored legacy Bootstrap dropdown hiding, `.gnb-usermenu-dropdown`/toggle/caret rules, `.avatar-wrap.smaller` sizing, legacy footer baseline rules, and root route classification so `/admin/sample` is a project route while `/admin` remains a user/profile root. Focused post-fix Playwright metrics show authenticated `/` and `/admin/sample` render `.gnb-usermenu` at 40px high, `.avatar-wrap.smaller` at 20x20, `.dropdwon-box-btn` as a 30px-high inline-block create button, and `/admin/sample` renders `header.gnb-outer.project-header` with `position:absolute` and `rgba(0,0,0,0.35)` background. Broader full-sweep failures remain outside this P0 navbar row: legacy homelab/sample-data status deltas, site-admin authorization state, and local seeded fixture/public-origin data rows. |
 
-## Verifier Baseline Required
+## Verifier Evidence
 
-P0 cannot close until Subagent D or the parent records:
+P0 baseline verifier evidence is now recorded, with root-shell interaction proof
+and visual sweep metrics split by responsibility.
 
-- desktop and mobile legacy/current screenshots for `/`, a project route, an
-  authenticated root route with side menu open, and login dialog open/error;
-- computed-style proof for `.gnb-outer`, `.gnb-inner`, `.gnb-usermenu`,
-  `#mySidenav`, `#loginDialog`, and `footer.page-footer-outer`;
-- asset proof that the final CSS baseline is legacy Bootstrap/Yobi-equivalent,
-  not a replacement app stylesheet;
-- base-path proof under `/yona`;
-- raw-key absence as supporting evidence only, not closure evidence.
+Root shell/browser verifier run:
+
+- Command: `pnpm --dir frontend test:e2e -- root-shell-parity.e2e.ts`
+- Checked at: `2026-06-27`
+- Result: `6 passed`.
+- Coverage: anonymous desktop root shell, login dialog open/error state, mobile
+  login dialog at `390x844`, authenticated site-admin root shell, side menu
+  tabs, create dropdown hidden/open states, guest navbar restrictions,
+  standalone legacy pages, project-route search scope actions, `/yona` base-path
+  anchors, and visible raw legacy key absence.
+
+Visual sweep verifier evidence:
+
+- Desktop screenshots from the 2026-06-26 sweep remain the rendered
+  legacy/current evidence for `/`, `/admin/sample`, and `/users/loginform`:
+  `output/playwright/visual-sweep/legacy-_.png`,
+  `output/playwright/visual-sweep/local-_.png`,
+  `output/playwright/visual-sweep/legacy-_admin_sample.png`,
+  `output/playwright/visual-sweep/local-_admin_sample.png`,
+  `output/playwright/visual-sweep/legacy-_users_loginform.png`, and
+  `output/playwright/visual-sweep/local-_users_loginform.png`.
+- The same sweep records computed-style proof for `.gnb-outer`, `.gnb-inner`,
+  `.gnb-usermenu`, `#mySidenav`, `#loginDialog`, and
+  `footer.page-footer-outer`, and it records raw-key scan failures as verifier
+  errors.
+- Asset-chain proof is covered by the first reset row: `index.html` links the
+  legacy Bootstrap/Yobi/Select2/Pikaday/NProgress/Viewer CSS baseline through
+  `frontend/public/legacy-assets/**`, generated by `build:legacy-css` without
+  importing legacy JavaScript.
+
+Closure note:
+
+- P0 has zero recorded `gap`, `deviation`, and `weak evidence` rows. It remains
+  subject to the top-level integrated browser sweep before whole UI parity can
+  be claimed, but this packet no longer has a standalone verifier-baseline
+  blocker.

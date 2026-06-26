@@ -199,7 +199,7 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
   await page.locator("#loginDialog input[name='password']").fill("wrong-password");
   await page.locator("#remember-meD").uncheck();
   await page.locator("#loginDialog button[type='submit']").click();
-  await expect(page.locator(".runtime-error-banner")).toContainText(
+  await expect(page.locator("#loginDialog .error .error-message")).toContainText(
     "Failed to log in. The request is invalid.",
   );
   expect(submittedBody).toMatchObject({
@@ -258,6 +258,8 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   await expect(page.locator("#myOrganizationList")).toContainText("sample");
   await expect(page.locator("#myProjectList")).toContainText("sample");
   await expect(page.locator("#myRecentIssueList")).toContainText("Recent issue");
+  await expect(page.locator("#gnb-create-menu")).not.toBeVisible();
+  await page.locator(".dropdwon-box-btn[href='#gnb-create-menu']").click();
   await expect(page.locator("#gnb-create-menu a[href='/yona/user/issues/new']")).toBeVisible();
   await expect(page.locator("#gnb-create-menu a[href='/yona/projects/new']")).toBeVisible();
   await expect(page.locator("#gnb-create-menu a[href='/yona/organizations/new']")).toBeVisible();
@@ -276,6 +278,8 @@ test("guest root shell hides project listing and organization creation like lega
   await expectNoVisibleRawLegacyKeys(page);
 
   await expect(page.locator('a[href="/yona/projects"]')).toHaveCount(0);
+  await expect(page.locator("#gnb-create-menu")).not.toBeVisible();
+  await page.locator(".dropdwon-box-btn[href='#gnb-create-menu']").click();
   await expect(page.locator("#gnb-create-menu a[href='/yona/projects/new']")).toBeVisible();
   await expect(page.locator("#gnb-create-menu a[href='/yona/organizations/new']")).toHaveCount(0);
   await expect(page.locator(".gnb-usermenu a[href='/yona/user/issues']")).toBeVisible();

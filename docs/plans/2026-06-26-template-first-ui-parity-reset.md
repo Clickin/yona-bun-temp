@@ -189,6 +189,13 @@ Update 2026-06-27:
   comment edit/delete, child comments, and sidebar metadata updates. P3 still
   requires an integrated packet closure audit against all P3 route/state rows
   before the whole packet can close.
+- P0 root-shell verifier evidence is now recorded from
+  `pnpm --dir frontend test:e2e -- root-shell-parity.e2e.ts` (`6 passed`):
+  anonymous desktop shell, mobile login dialog, authenticated side menu, create
+  dropdown hidden/open state, guest navbar restrictions, project search scope,
+  `/yona` base-path anchors, and raw-key absence. P0 no longer has a standalone
+  verifier-baseline blocker, though whole UI parity still requires the
+  integrated browser sweep.
 
 1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
    header/menu, issue/editor/comment surfaces define most repeated visual

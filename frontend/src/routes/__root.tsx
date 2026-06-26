@@ -1208,6 +1208,7 @@ function SidebarIssueList({
 
 function RootUserMenu() {
   const { currentSession, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
+  const [createMenuOpen, setCreateMenuOpen] = React.useState(false);
 
   if (!currentSession || currentSession.isAnonymous) {
     return null;
@@ -1278,11 +1279,15 @@ function RootUserMenu() {
           <span className="caret"></span>
         </a>
       </li>
-      <li className="gnb-usermenu-dropdown">
+      <li className={createMenuOpen ? "gnb-usermenu-dropdown open" : "gnb-usermenu-dropdown"}>
         <a
           className="gnb-dropdown-toggle dropdwon-box-btn"
           data-toggle="dropdown"
           href="#gnb-create-menu"
+          onClick={(event) => {
+            event.preventDefault();
+            setCreateMenuOpen((current) => !current);
+          }}
         >
           <i className="yobicon-plus"></i>
           <span className="caret"></span>
