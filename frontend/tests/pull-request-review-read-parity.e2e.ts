@@ -437,6 +437,163 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
   );
 });
 
+test("preserves /reviews filter, sort, state, export, and search query interactions", async ({
+  page,
+}) => {
+  const reviewApiUrls: string[] = [];
+
+  await page.route(
+    /\/api\/v1\/owners\/admin\/projects\/projectYobi\/reviews(?:\?.*)?$/,
+    async (route) => {
+      const url = new URL(route.request().url());
+      reviewApiUrls.push(`${url.pathname.replace(/^\/yona/u, "")}${url.search}`);
+      const state = url.searchParams.get("state") || "open";
+      await route.fulfill({
+        body: JSON.stringify({
+          allCount: 3,
+          authorCount: 1,
+          closedCount: state === "closed" ? 1 : 0,
+          items: [
+            {
+              ...reviewThread,
+              comments: [
+                {
+                  ...reviewThread.comments[0],
+                  contentsMarkdown: `${state} review filter body`,
+                },
+              ],
+              state,
+            },
+          ],
+          openCount: state === "open" ? 2 : 1,
+          pageNum: Number(url.searchParams.get("pageNum") || "1"),
+          pageSize: 15,
+          participantCount: 2,
+          state,
+          totalCount: state === "closed" ? 1 : 45,
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
+  await page.goto(
+    "/yona/admin/projectYobi/reviews?state=open&filter=src&authorId=2&orderBy=createdDate&orderDir=desc&pageNum=3",
+  );
+  await expect(page.locator(".lst-stacked li", { hasText: "Created" })).toHaveClass(/active/);
+  await expect(page.locator('form#search input[name="filter"]')).toHaveValue("src");
+  await expect(page.locator('form#search input[name="authorId"]')).toHaveValue("2");
+  await expect(page.locator('form#search input[name="orderDir"]')).toHaveValue("desc");
+  await expect(page.locator(".issue-list-wrap .nav-tabs li.active")).toContainText("Open");
+  await expect(page.locator("#pagination input[name='pageNum']")).toHaveValue("3");
+  await expect(reviewApiUrls.at(-1)).toBe(
+    "/api/v1/owners/admin/projects/projectYobi/reviews?state=open&filter=src&authorId=2&orderBy=createdDate&orderDir=desc&pageNum=3",
+  );
+
+  const allReviewsLink = page.locator(".lst-stacked li").first().locator("a");
+  await expect(allReviewsLink).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/reviews?state=open&filter=src&orderBy=createdDate&orderDir=desc",
+  );
+  await Promise.all([
+    page.waitForURL(
+      "/yona/admin/projectYobi/reviews?state=open&filter=src&orderBy=createdDate&orderDir=desc",
+    ),
+    allReviewsLink.click(),
+  ]);
+  await expect(page.locator(".lst-stacked li").first()).toHaveClass(/active/);
+  await expect(reviewApiUrls.at(-1)).toBe(
+    "/api/v1/owners/admin/projects/projectYobi/reviews?state=open&filter=src&orderBy=createdDate&orderDir=desc&pageNum=1",
+  );
+
+  const involvingYouLink = page.locator('[data-type="participantId"]');
+  await expect(involvingYouLink).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/reviews?state=open&filter=src&participantId=2&orderBy=createdDate&orderDir=desc",
+  );
+  await Promise.all([
+    page.waitForURL(
+      "/yona/admin/projectYobi/reviews?state=open&filter=src&participantId=2&orderBy=createdDate&orderDir=desc",
+    ),
+    involvingYouLink.click(),
+  ]);
+  await expect(page.locator(".lst-stacked li", { hasText: "Participated." })).toHaveClass(/active/);
+  await expect(reviewApiUrls.at(-1)).toBe(
+    "/api/v1/owners/admin/projects/projectYobi/reviews?state=open&filter=src&participantId=2&orderBy=createdDate&orderDir=desc&pageNum=1",
+  );
+
+  const sortLink = page.locator(".filters a.filter");
+  await expect(sortLink).toHaveAttribute("data-field", "createdDate");
+  await expect(sortLink).toHaveAttribute("data-value", "asc");
+  await expect(sortLink).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/reviews?state=open&filter=src&participantId=2&orderBy=createdDate&orderDir=asc",
+  );
+  const [sortRequest] = await Promise.all([
+    page.waitForRequest(
+      (request) =>
+        request.url().includes("/api/v1/owners/admin/projects/projectYobi/reviews?") &&
+        request.url().includes("participantId=2") &&
+        request.url().includes("orderDir=asc") &&
+        request.url().includes("pageNum=1"),
+    ),
+    page.waitForURL(
+      "/yona/admin/projectYobi/reviews?state=open&filter=src&participantId=2&orderBy=createdDate&orderDir=asc",
+    ),
+    sortLink.click(),
+  ]);
+  const sortRequestUrl = new URL(sortRequest.url());
+  expect(`${sortRequestUrl.pathname.replace(/^\/yona/u, "")}${sortRequestUrl.search}`).toBe(
+    "/api/v1/owners/admin/projects/projectYobi/reviews?state=open&filter=src&participantId=2&orderBy=createdDate&orderDir=asc&pageNum=1",
+  );
+
+  const closedTab = page.locator('.nav-tabs a[data-type="state"][data-value="closed"]');
+  await expect(closedTab).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/reviews?state=closed&filter=src&participantId=2&orderBy=createdDate&orderDir=asc",
+  );
+  await Promise.all([
+    page.waitForURL(
+      "/yona/admin/projectYobi/reviews?state=closed&filter=src&participantId=2&orderBy=createdDate&orderDir=asc",
+    ),
+    closedTab.click(),
+  ]);
+  await expect(page.locator(".issue-list-wrap .nav-tabs li.active")).toContainText("Closed");
+  await expect(reviewApiUrls.at(-1)).toBe(
+    "/api/v1/owners/admin/projects/projectYobi/reviews?state=closed&filter=src&participantId=2&orderBy=createdDate&orderDir=asc&pageNum=1",
+  );
+
+  const exportLink = page.locator(".pull-left .ybtn.small");
+  await expect(exportLink).toContainText("Download as Excel file");
+  await expect(exportLink).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/reviews?state=closed&filter=src&participantId=2&orderBy=createdDate&orderDir=asc&format=xls",
+  );
+
+  await page.locator('form#search input[name="filter"]').fill("commit abc");
+  const [searchRequest] = await Promise.all([
+    page.waitForRequest(
+      (request) =>
+        request.url().includes("/api/v1/owners/admin/projects/projectYobi/reviews?") &&
+        request.url().includes("filter=commit+abc") &&
+        request.url().includes("participantId=2") &&
+        request.url().includes("state=closed"),
+    ),
+    page.waitForURL(/\/yona\/admin\/projectYobi\/reviews\?/),
+    page.locator("form#search").evaluate((form) => {
+      (form as HTMLFormElement).requestSubmit();
+    }),
+  ]);
+  await expect(page).toHaveURL(
+    "/yona/admin/projectYobi/reviews?authorId=0&participantId=2&orderDir=asc&orderBy=createdDate&state=closed&filter=commit+abc",
+  );
+  const searchRequestUrl = new URL(searchRequest.url());
+  expect(`${searchRequestUrl.pathname.replace(/^\/yona/u, "")}${searchRequestUrl.search}`).toBe(
+    "/api/v1/owners/admin/projects/projectYobi/reviews?state=closed&filter=commit+abc&participantId=2&orderBy=createdDate&orderDir=asc&pageNum=1",
+  );
+});
+
 test("renders organization PR lists and REST error shells", async ({ page }) => {
   await page.goto("/yona/organizations/acme/pullrequests?pageNum=1");
   await expect(page.locator(".post-list-wrap")).toContainText("Organization read surface");

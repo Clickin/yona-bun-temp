@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import {
   projectReviewsQueryOptions,
   type ReviewThreadListQuery,
@@ -24,6 +24,7 @@ function ProjectReviewsRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, currentSession, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/reviews`;
+  useRouterState({ select: (state) => state.location.href });
   const searchParams = new URLSearchParams(window.location.search);
   const query: ReviewThreadListQuery = {
     authorId: Number(searchParams.get("authorId") || "0"),

@@ -681,7 +681,9 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
 
   await expect(page.locator("#pullRequestState")).toHaveAttribute("data-value", "open");
-  await expect(page.locator("#status")).toContainText("Now, it's checking the code.");
+  await expect(page.locator("#status")).toContainText(
+    "We are checking if the code is safe. Please wait for a while to complete this process.",
+  );
   await page.locator("#title").fill("Created interaction parity");
   await page.locator("#editor-body-content-body").fill("Create PR body");
   await page.getByRole("button", { name: "Send pull request" }).click();
@@ -708,7 +710,7 @@ test("covers create/edit forms and PR interaction actions without placeholders",
     "src",
     "/yona/avatar/reviewer.png",
   );
-  await page.getByRole("button", { name: "Unreview" }).click();
+  await page.getByRole("button", { name: "Cancel review" }).click();
   await expect(page.locator("#reviewers")).toContainText("<strong>0</strong> participants");
   await page.getByRole("button", { name: "Approve" }).click();
 
@@ -845,19 +847,19 @@ test("covers create/edit forms and PR interaction actions without placeholders",
     "src",
     "/yona/avatar/reviewer.png",
   );
-  await expect(sourceBranchActions).toContainText("You can delete the branch.");
+  await expect(sourceBranchActions).toContainText("You can delete branch.");
   await expect(sourceBranchActions.locator("[data-request-method='delete']")).toHaveAttribute(
     "data-request-uri",
     "/yona/admin/projectYobi/pullRequest/9/deletefrombranch",
   );
   await sourceBranchActions.getByRole("button", { name: "Delete branch" }).click();
-  await expect(sourceBranchActions).toContainText("The branch cannot be restored.");
+  await expect(sourceBranchActions).toContainText("Branch can be restored.");
   await expect(sourceBranchActions.getByRole("link", { name: "Restore branch" })).toHaveAttribute(
     "href",
     "/yona/admin/projectYobi/pullRequest/9/restorefrombranch",
   );
   await sourceBranchActions.getByRole("link", { name: "Restore branch" }).click();
-  await expect(sourceBranchActions).toContainText("You can delete the branch.");
+  await expect(sourceBranchActions).toContainText("You can delete branch.");
   await expect(page.locator("ul#comments .state.merged")).toContainText("Merged");
   await expect(page.locator("ul#comments")).toContainText("merged commit");
 
@@ -873,6 +875,88 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page.locator(".board-header.issue .title")).toContainText(
     "Updated interaction parity",
   );
+});
+
+test("covers recently pushed branch PR link and close delete request", async ({ page }) => {
+  let recentlyPushedBranches = [
+    {
+      branchName: "feature/recent-ui-proof",
+      defaultBranch: "main",
+      id: 41,
+      ownerName: "admin",
+      projectName: "projectYobi",
+      pushedLabel: "2026-06-26",
+      shortName: "feature/recent-ui-proof",
+    },
+  ];
+
+  await page.route(
+    /\/api\/v1\/owners\/admin\/projects\/projectYobi\/pull-requests(?:\?.*)?$/,
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          acceptedCount: 0,
+          category: "open",
+          closedCount: 0,
+          contributors: [],
+          items: [],
+          openCount: 0,
+          pageNum: 1,
+          pageSize: 15,
+          recentlyPushedBranches,
+          sentCount: 0,
+          totalCount: 0,
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+  await page.route(
+    apiV1Route("/owners/admin/projects/projectYobi/pushed-branches/41"),
+    async (route) => {
+      expect(route.request().method()).toBe("DELETE");
+      expect(route.request().headers()["x-csrf-token"]).toBe("csrf-123");
+      recentlyPushedBranches = [];
+      await route.fulfill({ body: JSON.stringify({}), headers: restJsonHeaders, status: 200 });
+    },
+  );
+
+  await page.goto("/yona/admin/projectYobi/pullRequests?pageNum=1");
+  await expect(page.locator("h5", { hasText: "Recently pushed branch" })).toBeVisible();
+  const pushedBranchAlert = page.locator(".alert.alert-info");
+  await expect(pushedBranchAlert).toContainText(
+    "admin/projectYobi:feature/recent-ui-proof ( 2026-06-26 )",
+  );
+  await expect(pushedBranchAlert.locator(".yobicon-split")).toHaveCount(1);
+  await expect(pushedBranchAlert.getByRole("link", { name: "Pull request" })).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/newPullRequestForm?fromBranch=feature%2Frecent-ui-proof&toBranch=main",
+  );
+  const closeLink = pushedBranchAlert.locator("a.close");
+  await expect(closeLink).toHaveAttribute("data-dismiss", "alert");
+  await expect(closeLink).toHaveAttribute("data-request-method", "delete");
+  await expect(closeLink).toHaveAttribute(
+    "data-request-uri",
+    "/yona/admin/projectYobi/pushedBranch/41/delete",
+  );
+  await expect(closeLink).toHaveAttribute("href", "/yona/admin/projectYobi/pushedBranch/41/delete");
+
+  await pushedBranchAlert.getByRole("link", { name: "Pull request" }).click();
+  await expect(page).toHaveURL(
+    "/yona/admin/projectYobi/newPullRequestForm?fromBranch=feature%2Frecent-ui-proof&toBranch=main",
+  );
+
+  await page.goto("/yona/admin/projectYobi/pullRequests?pageNum=1");
+  const deleteRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith("/api/v1/owners/admin/projects/projectYobi/pushed-branches/41") &&
+      request.method() === "DELETE",
+  );
+  await closeLink.click();
+  await deleteRequest;
+  await expect(page.locator(".alert.alert-info")).toHaveCount(0);
+  await expect(page.locator("h5", { hasText: "Recently pushed branch" })).toHaveCount(0);
 });
 
 test("creates a multi-line inline review from selected diff text", async ({ page }) => {
@@ -995,8 +1079,10 @@ test("shows legacy conflict guidance and disables merge accept for conflicted pu
   await expect(page.locator(".board-header .pullRequest-stateInfo.conflict")).toBeVisible();
   await expect(page.locator("#btnAccept")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Merge" })).toBeDisabled();
-  await expect(page.locator(".merge-conflict-help")).toContainText("Resolve conflicts manually.");
-  await expect(page.locator(".howto-resolve-conflict")).toContainText("Resolve conflicts");
+  await expect(page.locator(".pull-request-conflict-guide")).toContainText(
+    "A conflict occurred when merging. This pull request cannot be merged safely.",
+  );
+  await expect(page.locator(".howto-resolve-conflict")).toContainText("Resolving conflicts");
   await expect(page.locator(".howto-resolve-conflict")).toContainText("git checkout topic/pr");
   await expect(page.locator(".howto-resolve-conflict")).toContainText(
     "git remote add upstream /yona/admin/projectYobi.git",

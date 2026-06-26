@@ -38,13 +38,27 @@ function boardListItem(overrides: Record<string, unknown> = {}) {
 function boardDetail(overrides: Record<string, unknown> = {}) {
   return {
     ...boardListItem(overrides),
-    attachments: [],
+    attachments: [
+      {
+        id: "501",
+        mimeType: "text/plain",
+        name: "board-spec.txt",
+        size: 42,
+      },
+    ],
     authorId: "11",
     bodyHtml: "",
     bodyMarkdown: "Board body from markdown",
     comments: [
       {
-        attachments: [],
+        attachments: [
+          {
+            id: "502",
+            mimeType: "image/png",
+            name: "comment-proof.png",
+            size: 77,
+          },
+        ],
         authorId: "12",
         authorLabel: "Mona",
         authorLoginId: "mona",
@@ -489,6 +503,33 @@ test("project board detail supports watch and comment create update delete", asy
   await expect(page.locator(".board-header .title")).toContainText("Board parity announcement");
   await expect(page.getByText("#1")).toBeVisible();
   await expect(page.locator("#post-body-1")).toContainText("Board body from markdown");
+  await expect(page.locator("#attachments")).toHaveAttribute(
+    "data-attachments",
+    JSON.stringify([
+      {
+        fileHref: "/yona/files/501",
+        fileId: "501",
+        fileName: "board-spec.txt",
+        fileSize: 42,
+        mimeType: "text/plain",
+      },
+    ]),
+  );
+  await expect(page.locator("#attachments .attached-file")).toHaveAttribute("data-id", "501");
+  await expect(page.locator("#attachments .attached-file .name")).toHaveText("board-spec.txt");
+  await expect(page.locator("#comment-77 .attachments")).toHaveAttribute(
+    "data-attachments",
+    JSON.stringify([
+      {
+        fileHref: "/yona/files/502",
+        fileId: "502",
+        fileName: "comment-proof.png",
+        fileSize: 77,
+        mimeType: "image/png",
+      },
+    ]),
+  );
+  await expect(page.locator("#comment-77 .attached-file .name")).toHaveText("comment-proof.png");
   await expect(page.locator("#labelIds")).toHaveAttribute("data-toggle", "select2");
   await expect(page.locator('#labelIds option[value="5"]')).toHaveText("guide");
   await expect(page.locator(".posting-history a")).toHaveAttribute(
