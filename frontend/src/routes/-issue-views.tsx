@@ -3821,7 +3821,11 @@ export function UserIssueListPage(props: {
             messages={messages}
             onSetDefaultLoginPage={props.onSetDefaultLoginPage}
           />
-          <div className="row-fluid issue-list-wrap" data-pjax-container="">
+          <div
+            className="row-fluid issue-list-wrap"
+            data-pjax-container=""
+            {...{ "pjax-container": "" }}
+          >
             <aside className="left-menu span2 span-hard-wrap">
               <div className="inner advanced">
                 <ul className="lst-stacked unstyled">
@@ -3840,6 +3844,7 @@ export function UserIssueListPage(props: {
                         data-pjax-filter=""
                         data-sharer-id={filter.value === "shared" ? viewerUserId : ""}
                         href={filterHref(filter.value)}
+                        {...{ "pjax-filter": "" }}
                       >
                         <span className={filter.className}>
                           <i className={filter.icon} /> {messages(filter.label)}
@@ -3912,13 +3917,13 @@ export function UserIssueListPage(props: {
             <section className="span10 span-hard-wrap" id="span10">
               <ul className="nav nav-tabs nm">
                 <li className={state === "open" ? "active" : undefined} data-pjax="">
-                  <a data-state="open" href={stateHref("open")}>
+                  <a data-state="open" href={stateHref("open")} {...{ state: "open" }}>
                     {legacyMessage(messages, "issue.state.open")}{" "}
                     <span className="num-badge">{issueList?.openIssueCount ?? 0}</span>
                   </a>
                 </li>
                 <li className={state === "closed" ? "active" : undefined} data-pjax="">
-                  <a data-state="closed" href={stateHref("closed")}>
+                  <a data-state="closed" href={stateHref("closed")} {...{ state: "closed" }}>
                     {legacyMessage(messages, "issue.state.closed")}{" "}
                     <span className="num-badge">{issueList?.closedIssueCount ?? 0}</span>
                   </a>
@@ -3947,6 +3952,7 @@ export function UserIssueListPage(props: {
                             data-order-dir={orderDirFor(orderBy)}
                             href={orderHref(orderBy)}
                             key={orderBy}
+                            {...{ orderBy, orderDir: orderDirFor(orderBy) }}
                           >
                             <i
                               className={`ico btn-gray-arrow ${
@@ -3980,6 +3986,7 @@ export function UserIssueListPage(props: {
                           data-href={issueHref}
                           id={`issue-item-${legacyIssueId}`}
                           key={`${item.ownerName}/${item.projectName}/${item.issueNumber}`}
+                          {...{ href: issueHref }}
                         >
                           <div className="span12 span-hard-wrap">
                             <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">

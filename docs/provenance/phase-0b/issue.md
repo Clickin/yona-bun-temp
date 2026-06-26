@@ -346,3 +346,12 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   add/delete direction matches the previous timeline event, while
   opposite-direction changes still render their label state. Focused coverage:
   `frontend/src/issue-detail-shell.spec.tsx`.
+- 2026-06-26 template-first P3 user issue list mapper pass: `/user/issues`
+  now has selector evidence against `issue/my_list.scala.html`,
+  `my_partial_search.scala.html`, `my_partial_list.scala.html`, and
+  `my_partial_list_quicksearch.scala.html`, including `[pjax-container]`,
+  `[pjax-filter]`, quick-filter data ids, hidden `data-search` fields,
+  state/order custom attrs, `.post-list-wrap.my-issues`, `li.post-item.title`
+  `href`, `.project-name-in-my-issues`, item count, label, meta, assignee,
+  pagination, and empty-state anchors. Focused coverage:
+  `frontend/src/route-parity.spec.tsx`.
