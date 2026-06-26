@@ -581,7 +581,13 @@ function organizationSearchDetail(
   return detail ?? null;
 }
 
-export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
+export function SearchRoutePage({
+  renderShell,
+  scope,
+}: {
+  renderShell?: boolean;
+  scope: SearchRouteScope;
+}) {
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
@@ -625,7 +631,7 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
     queryKey,
   });
   const projectChromeQuery = useQuery<ProjectDetailViewModel>({
-    enabled: !bootstrapping && scope.type === "project" && !routeInvalid,
+    enabled: !bootstrapping && scope.type === "project" && !routeInvalid && renderShell !== false,
     queryFn: async () => {
       if (scope.type !== "project") {
         throw new Error("project chrome query requires project scope");
@@ -640,7 +646,8 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
         : ["api", "v1", "owners", "", "projects", "", "container"],
   });
   const organizationChromeQuery = useQuery<OrganizationDetailViewModel>({
-    enabled: !bootstrapping && scope.type === "organization" && !routeInvalid,
+    enabled:
+      !bootstrapping && scope.type === "organization" && !routeInvalid && renderShell !== false,
     queryFn: async () => {
       if (scope.type !== "organization") {
         throw new Error("organization chrome query requires organization scope");
@@ -698,8 +705,8 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
     return <BadRequestPage href={prefixBasePath(runtimeConfig.basePath, "/")} />;
   }
 
-  return (
-    <main className="app-shell search-page">
+  const content = (
+    <>
       {projectDetail ? (
         <>
           <ProjectHeader detail={projectDetail} runtimeConfig={runtimeConfig} />
@@ -779,6 +786,12 @@ export function SearchRoutePage({ scope }: { scope: SearchRouteScope }) {
           </div>
         </div>
       </div>
-    </main>
+    </>
   );
+
+  if (renderShell === false) {
+    return content;
+  }
+
+  return <main className="app-shell search-page">{content}</main>;
 }

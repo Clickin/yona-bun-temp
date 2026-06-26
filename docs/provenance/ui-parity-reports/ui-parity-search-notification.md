@@ -113,6 +113,13 @@ Total rows: 23
 
 ## Notes
 
+- 2026-06-27 project search nested-layout follow-up:
+  `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
+  header/menu shell for `/search` with the legacy `search-page` class while
+  leaving the search page's existing `site-breadcrumb-outer` and
+  `page-wrap-outer` order intact. The project search child route passes
+  `renderShell={false}` to `SearchRoutePage`. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real search routes"`.
 - No raw visible i18n-key failure was found in the audited search/notification evidence. `frontend/src/search-i18n.spec.tsx`, `frontend/src/directory-home-user-files-notification-i18n.spec.tsx`, and the 2026-06-25 visual sweep raw-key scan are the strongest current evidence.
 - The notification direct route has two separate statuses by design: JSON/API-return plus React-render is covered, while retaining legacy server-rendered fragment injection as a runtime data source is not applicable under the phase rule.
 - Search scoped chrome is now covered by real project/organization container data rather than synthesized detail, so REST scope, ACL, counts, and visible header/menu state are tracked as one closed parity area.

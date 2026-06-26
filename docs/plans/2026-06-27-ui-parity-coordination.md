@@ -423,6 +423,16 @@ M31 continues project shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/project-home-tabs.spec.tsx -t "project layout route own project home"`.
 
+M32 continues project shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project header/menu shell
+  for `/search`, with the legacy `search-page` class.
+- Because legacy search puts `site-breadcrumb-outer` before `page-wrap-outer`,
+  the project layout skips its own page-wrap for this route and lets
+  `SearchRoutePage renderShell={false}` keep the existing search body order.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real search routes"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

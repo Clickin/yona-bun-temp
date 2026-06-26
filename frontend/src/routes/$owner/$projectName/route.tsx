@@ -74,6 +74,7 @@ function ProjectLayoutRouteComponent() {
       projectName={projectName}
       runtimeConfig={runtimeConfig}
       shellClassName={layoutShell.shellClassName}
+      wrapPageOuter={layoutShell.wrapPageOuter}
     />
   );
 }
@@ -109,6 +110,7 @@ function projectLayoutShell(
     | "settings";
   keymapMode?: "detail" | "list";
   shellClassName?: string;
+  wrapPageOuter?: boolean;
 } | null {
   const appPath = stripProjectLayoutBasePath(pathname, basePath).replace(/\/+$/u, "");
   if (appPath === `/${owner}/${projectName}`) {
@@ -210,6 +212,9 @@ function projectLayoutShell(
   }
   if (appPath === `/${owner}/${projectName}/newFork`) {
     return { activeMenu: "pullRequest" };
+  }
+  if (appPath === `/${owner}/${projectName}/search`) {
+    return { shellClassName: "search-page", wrapPageOuter: false };
   }
   return null;
 }
@@ -338,6 +343,7 @@ function ProjectRouteShellLayout({
   projectName,
   runtimeConfig,
   shellClassName,
+  wrapPageOuter = true,
 }: {
   activeMenu?:
     | "board"
@@ -355,6 +361,7 @@ function ProjectRouteShellLayout({
   projectName: string;
   runtimeConfig: ReturnType<typeof useAppRuntime>["runtimeConfig"];
   shellClassName?: string;
+  wrapPageOuter?: boolean;
 }) {
   const detailQuery = useQuery({
     ...readProjectContainerQueryOptions(runtimeConfig, {
@@ -394,9 +401,13 @@ function ProjectRouteShellLayout({
         keymapMode={keymapMode}
         runtimeConfig={runtimeConfig}
       />
-      <div className="page-wrap-outer">
+      {wrapPageOuter ? (
+        <div className="page-wrap-outer">
+          <Outlet />
+        </div>
+      ) : (
         <Outlet />
-      </div>
+      )}
     </main>
   );
 }

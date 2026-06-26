@@ -1443,6 +1443,10 @@ describe("file-route parity harness", () => {
       path.resolve(__dirname, "routes/-search-views.tsx"),
       "utf8",
     );
+    const projectLayoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
 
     expect(globalSearchRouteSource).not.toContain("PlaceholderPage");
     expect(projectSearchRouteSource).not.toContain("PlaceholderPage");
@@ -1468,19 +1472,17 @@ describe("file-route parity harness", () => {
       expect(searchViewsSource).toContain(anchor);
     }
     expect(searchViewsSource).toContain('snippet.truncated ? " ....." : null');
-    expect(searchViewsSource).toContain('props.scope.type === "project"');
+    expect(searchViewsSource).toContain('scope.type === "project"');
     expect(searchViewsSource).toContain('category.type === "project"');
     expect(searchViewsSource).toContain("readProjectSearch");
     expect(searchViewsSource).toContain("ProjectHeader");
     expect(searchViewsSource).toContain("ProjectMenu");
     expect(searchViewsSource).toContain("projectSearchDetail");
     expect(searchViewsSource).toContain('scope.type !== "project"');
-    expect(searchViewsSource).toContain(
-      "<ProjectHeader detail={projectDetail} runtimeConfig={runtimeConfig} />",
-    );
-    expect(searchViewsSource).toContain(
-      "<ProjectMenu detail={projectDetail} runtimeConfig={runtimeConfig} />",
-    );
+    expect(projectLayoutSource).toContain("appPath === `/${owner}/${projectName}/search`");
+    expect(projectLayoutSource).toContain('shellClassName: "search-page"');
+    expect(projectLayoutSource).toContain("wrapPageOuter: false");
+    expect(projectSearchRouteSource).toContain("renderShell={false}");
     expect(searchViewsSource).toContain("OrganizationHeader");
     expect(searchViewsSource).toContain("OrganizationMenu");
     expect(searchViewsSource).toContain("organizationSearchDetail");

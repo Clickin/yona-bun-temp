@@ -7,5 +7,10 @@ export const Route = createFileRoute("/$owner/$projectName/search")({
 
 function ProjectSearchRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  return <SearchRoutePage scope={{ ownerName: owner, projectName, type: "project" }} />;
+  return (
+    <SearchRoutePage
+      renderShell={false}
+      scope={{ ownerName: owner, projectName, type: "project" }}
+    />
+  );
 }
