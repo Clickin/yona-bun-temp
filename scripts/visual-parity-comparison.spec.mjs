@@ -104,6 +104,13 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
 
   assert.match(source, /const requestedSweepPaths = parseRequestedSweepPaths/u);
   assert.match(source, /process\.env\.YORAM_SWEEP_PATHS/u);
+  assert.match(source, /const viewportProfile = parseViewportProfile/u);
+  assert.match(source, /process\.env\.YORAM_SWEEP_VIEWPORT/u);
+  assert.match(source, /latest-\$\{viewportProfile\.name\}\.json/u);
+  assert.match(source, /name: "mobile", width: 390, height: 844/u);
+  assert.match(source, /viewport: \{ width: viewportProfile\.width, height: viewportProfile\.height \}/u);
+  assert.match(source, /viewportProfile: viewportProfile\.name/u);
+  assert.match(source, /const screenshotLabel =/u);
   assert.match(source, /function localSettledSelectorForPath/u);
   assert.match(source, /label === "local" && loggedIn && !useRequestedPaths/u);
   assert.match(source, /waitUntil: "domcontentloaded"/u);

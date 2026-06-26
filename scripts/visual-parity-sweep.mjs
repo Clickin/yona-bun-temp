@@ -24,8 +24,22 @@ const loginId = process.env.YONA_LEGACY_LOGIN_ID ?? "admin";
 const password = process.env.YONA_LEGACY_PASSWORD ?? "admin";
 const sweepTarget = process.env.YORAM_SWEEP_TARGET ?? "both";
 const requestedSweepPaths = parseRequestedSweepPaths(process.env.YORAM_SWEEP_PATHS);
+const viewportProfile = parseViewportProfile(process.env.YORAM_SWEEP_VIEWPORT);
+const latestOutputName =
+  viewportProfile.name === "desktop" ? "latest.json" : `latest-${viewportProfile.name}.json`;
 
 mkdirSync(outputDir, { recursive: true });
+
+function parseViewportProfile(input) {
+  const name = (input ?? "desktop").trim().toLowerCase();
+  if (name === "mobile") {
+    return { name: "mobile", width: 390, height: 844 };
+  }
+  if (name === "desktop" || name === "") {
+    return { name: "desktop", width: 1366, height: 900 };
+  }
+  throw new Error(`Unsupported YORAM_SWEEP_VIEWPORT: ${input}`);
+}
 
 function parseRequestedSweepPaths(input) {
   return [
@@ -952,8 +966,13 @@ async function inspectPage(page, baseUrl, path, label) {
     errors.push(`${requestFailures.length} request failure(s)`);
   }
   if (errors.length > 0 || alwaysScreenshotPaths.has(path)) {
+    const screenshotLabel =
+      viewportProfile.name === "desktop" ? label : `${label}-${viewportProfile.name}`;
     await page.screenshot({
-      path: resolve(outputDir, `${label}-${path.replace(/[^a-z0-9]+/giu, "_") || "root"}.png`),
+      path: resolve(
+        outputDir,
+        `${screenshotLabel}-${path.replace(/[^a-z0-9]+/giu, "_") || "root"}.png`,
+      ),
       fullPage: true,
     });
   }
@@ -971,6 +990,7 @@ async function inspectPage(page, baseUrl, path, label) {
       bodyTextLength: metrics.bodyTextLength,
       scrollWidth: metrics.scrollWidth,
       viewportWidth: metrics.viewportWidth,
+      viewportProfile: viewportProfile.name,
       stylesheetCount: metrics.stylesheetCount,
       stylesheetRules: metrics.stylesheetRules,
       gnb: metrics.gnb,
@@ -1026,6 +1046,7 @@ function failedTargetResult(label, baseUrl, error) {
   return {
     label,
     baseUrl,
+    viewportProfile,
     status: targetFailureStatus(error),
     loggedIn: false,
     total: 0,
@@ -1053,7 +1074,9 @@ async function launchBrowser() {
 async function runTarget(label, baseUrl) {
   const browser = await launchBrowser();
   try {
-    const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+    const context = await browser.newContext({
+      viewport: { width: viewportProfile.width, height: viewportProfile.height },
+    });
     const page = await context.newPage();
     const loggedIn = label === "local" ? await apiLogin(page, baseUrl) : await login(page, baseUrl);
     const useRequestedPaths = requestedSweepPaths.length > 0;
@@ -1093,6 +1116,7 @@ async function runTarget(label, baseUrl) {
     return {
       label,
       baseUrl,
+      viewportProfile,
       status: "ok",
       loggedIn,
       total: results.length,
@@ -1128,12 +1152,13 @@ const comparison = buildVisualComparison({
 });
 const summary = {
   checkedAt: new Date().toISOString(),
+  viewportProfile,
   legacy,
   local,
   comparison,
   comparisonSummary: summarizeVisualComparison(comparison),
 };
-writeFileSync(resolve(outputDir, "latest.json"), `${JSON.stringify(summary, null, 2)}\n`);
+writeFileSync(resolve(outputDir, latestOutputName), `${JSON.stringify(summary, null, 2)}\n`);
 console.log(JSON.stringify(summary, null, 2));
 const comparisonFailures = comparison.filter((result) => result.diffErrors.length > 0);
 const missingLegacyAuditPages = [legacy, local].flatMap((target) =>

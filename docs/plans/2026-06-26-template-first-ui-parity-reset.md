@@ -177,8 +177,14 @@ Update 2026-06-27:
 - P3 live `/admin/sample/issue/1` weak evidence was reclassified after the
   visual sweep began waiting for the local issue body selector; current
   evidence shows the sampled zero-comment detail route rendering after async
-  data load. P3 still requires mobile screenshots and interaction-state proof
-  before the whole packet can close.
+  data load.
+- `scripts/visual-parity-sweep.mjs` now supports `YORAM_SWEEP_VIEWPORT=mobile`
+  and writes mobile evidence to `output/playwright/visual-sweep/latest-mobile.json`
+  plus `legacy-mobile-*` / `local-mobile-*` screenshots. P3 mobile screenshot
+  evidence for issue list, user issue list, issue create/edit forms, and issue
+  detail is recorded in
+  `docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md`.
+  P3 still requires interaction-state proof before the whole packet can close.
 
 1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
    header/menu, issue/editor/comment surfaces define most repeated visual

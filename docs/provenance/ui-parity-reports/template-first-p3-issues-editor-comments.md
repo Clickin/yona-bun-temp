@@ -95,10 +95,49 @@ Computed-style/layout proof now covers the sampled P3 shell/grid selectors.
 | `/admin/sample/issue/1` | issue body text length | 12 | 17 |
 | `/admin/sample/issue/1` | `#issueUpdateForm` width | 305 | 260 |
 
+Focused mobile verifier run:
+
+- Command:
+  `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both YORAM_SWEEP_VIEWPORT=mobile YORAM_SWEEP_PATHS=/admin/sample/issues,/user/issues,/admin/sample/issueform,/admin/sample/issue/1/editform,/admin/sample/issue/1 node scripts/visual-parity-sweep.mjs`
+- Artifact: `output/playwright/visual-sweep/latest-mobile.json`
+- Screenshots:
+  `output/playwright/visual-sweep/legacy-mobile-_admin_sample_issues.png`,
+  `output/playwright/visual-sweep/local-mobile-_admin_sample_issues.png`,
+  `output/playwright/visual-sweep/legacy-mobile-_user_issues.png`,
+  `output/playwright/visual-sweep/local-mobile-_user_issues.png`,
+  `output/playwright/visual-sweep/legacy-mobile-_admin_sample_issueform.png`,
+  `output/playwright/visual-sweep/local-mobile-_admin_sample_issueform.png`,
+  `output/playwright/visual-sweep/legacy-mobile-_admin_sample_issue_1_editform.png`,
+  `output/playwright/visual-sweep/local-mobile-_admin_sample_issue_1_editform.png`,
+  `output/playwright/visual-sweep/legacy-mobile-_admin_sample_issue_1.png`,
+  `output/playwright/visual-sweep/local-mobile-_admin_sample_issue_1.png`.
+- Checked at: `2026-06-26T15:45:03.918Z`
+- Result: legacy `5/5` passed, local `5/5` passed, `diffFailures 0`,
+  `localFailures 0`, `statusDeltas []`.
+
+Mobile computed-style/layout proof now covers the sampled P3 list, form, edit,
+and detail routes at `390x844`.
+
+| Route | selector/metric | legacy | local |
+| --- | --- | ---: | ---: |
+| `/admin/sample/issues` | `.project-page-wrap` width | 390 | 390 |
+| `/admin/sample/issues` | `.row-fluid.issue-list-wrap` width | 390 | 390 |
+| `/admin/sample/issues` | scroll width | 390 | 390 |
+| `/user/issues` | `.page-wrap` width | 390 | 390 |
+| `/user/issues` | `.row-fluid.issue-list-wrap` width | 390 | 370 |
+| `/admin/sample/issueform` | `.project-page-wrap` width | 390 | 390 |
+| `/admin/sample/issueform` | `[data-toggle=markdown-editor]` width | 390 | 350 |
+| `/admin/sample/issueform` | `.upload-wrap.content-footer` width | 390 | 390 |
+| `/admin/sample/issue/1/editform` | `.project-page-wrap` width | 390 | 390 |
+| `/admin/sample/issue/1/editform` | `[data-toggle=markdown-editor]` width | 390 | 350 |
+| `/admin/sample/issue/1` | `.project-page-wrap` width | 390 | 390 |
+| `/admin/sample/issue/1` | `[data-toggle=markdown-editor]` width | 386 | 390 |
+| `/admin/sample/issue/1` | issue body text length | 12 | 17 |
+
 Remaining verifier work:
 
-- Add mobile screenshot evidence and interaction proof for filter/search,
-  pagination, mass update, editor preview, upload/drop, comment edit/delete,
-  child comments, and sidebar metadata updates.
+- Add interaction proof for filter/search, pagination, mass update, editor
+  preview, upload/drop, comment edit/delete, child comments, and sidebar
+  metadata updates.
 - Preserve the reset rule that REST JSON/API-return remains the data boundary
   while the visible DOM follows the legacy template shape.

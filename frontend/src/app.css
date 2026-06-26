@@ -1596,6 +1596,11 @@ h1 {
   font-weight: 700;
 }
 
+.markdown-help .markdwon-syntax pre {
+  max-width: 100%;
+  overflow: auto;
+}
+
 .milesion-wrap #issues .filter-wrap {
   height: auto;
   min-height: 30px;
@@ -1659,16 +1664,41 @@ h1 {
 }
 
 @media (max-width: 900px) {
+  .gnb-outer,
+  .page-wrap-outer,
+  .project-header-outer,
+  .project-menu-outer,
+  .page-footer-outer {
+    min-width: 10px !important;
+  }
+
+  .page-wrap-outer {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0 !important;
+  }
+
+  .project-page-wrap {
+    width: 100%;
+    margin-top: 5px !important;
+  }
+
   .project-header-outer {
     height: 70px;
   }
 
   .project-header-avatar {
-    display: none;
+    bottom: -6px !important;
+    left: 0 !important;
+    display: block;
+    width: 50px !important;
+    height: 50px !important;
+    border-width: 1px !important;
   }
 
   .project-breadcrumb-wrap {
-    left: 0;
+    bottom: 5px !important;
+    left: 52px !important;
     max-width: calc(100% - 20px);
   }
 
@@ -1687,6 +1717,30 @@ h1 {
 
   .project-menu-nav > li > a {
     display: block;
+    padding: 5px 12px 4px !important;
+  }
+
+  .span-hard-wrap {
+    min-width: 95%;
+    width: 100vw;
+  }
+
+  #mySidenav .span-hard-wrap {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .markdown-help .markdwon-syntax pre {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .span-left-pane {
+    width: 100% !important;
+  }
+
+  .span-right-pane {
+    display: none !important;
   }
 }
 
