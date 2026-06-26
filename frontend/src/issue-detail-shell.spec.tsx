@@ -301,6 +301,57 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain("<code>React</code>");
   });
 
+  it("renders legacy tasklist bars before issue and comment markdown bodies", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          bodyMarkdown: "- [ ] issue open\n- [x] issue done",
+          commentCount: 1,
+          timeline: [
+            {
+              comment: {
+                authorAvatarUrl: "https://cdn.yona/avatar-commenter.png",
+                authorLabel: "Commenter",
+                authorLoginId: "commenter",
+                contentsMarkdown:
+                  "- [ ] comment open\n- [x] comment done\n- [X] comment done upper",
+                createdLabel: "now",
+                id: 59,
+                viewerCanDelete: false,
+                viewerCanUpdate: true,
+                viewerHasVoted: false,
+                voterCount: 0,
+                voters: [],
+              },
+              createdLabel: "now",
+              eventType: "",
+              id: 59,
+              kind: "comment",
+              newValue: "",
+              oldValue: "",
+              senderLoginId: "",
+            },
+          ],
+          viewerCanUpdate: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('id="issue-body-1"');
+    expect(html).toContain('class="tasklist task-show"');
+    expect(html).toContain('class="task-title" style="width:50%"');
+    expect(html).toContain('Tasks<span class="done-counter">(1/2)</span>');
+    expect(html).toContain('class="task-progress"');
+    expect(html).toContain('class="bar red" style="width:50%" title="Tasklist"');
+    expect(html).toContain('id="comment-body-59"');
+    expect(html).toContain('class="task-title" style="width:66.66666666666666%"');
+    expect(html).toContain('Tasks<span class="done-counter">(2/3)</span>');
+    expect(html).toContain('class="bar red" style="width:66.66666666666666%" title="Tasklist"');
+  });
+
   it("renders legacy issue next-state button labels", () => {
     const openHtml = renderToStaticMarkup(
       <ProjectIssueDetailPage

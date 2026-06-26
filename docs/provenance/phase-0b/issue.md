@@ -300,3 +300,10 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   `#voters-$id.modal.hide.voters-dialog` for overflow voters. Focused
   coverage: `frontend/src/issue-detail-shell.spec.tsx` and
   `frontend/src/auth-workspace-shell.spec.tsx`.
+- 2026-06-26 template-first P3 tasklist bar evidence: issue and comment
+  markdown bodies now have route-level selector proof for the legacy
+  `common/tasklistBar.scala.html` shell before rendered markdown, including
+  `.tasklist.task-show`, `.task-title .done-counter`, `.task-progress`, and
+  `.bar.red[title=Tasklist]`. Focused coverage:
+  `frontend/src/issue-detail-shell.spec.tsx`; renderer coverage remains in
+  `frontend/src/markdown-renderer.spec.tsx`.
