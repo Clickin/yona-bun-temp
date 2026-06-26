@@ -5,6 +5,12 @@ Date: 2026-06-26
 Agent: `019effaa-67d8-7581-860a-b08920fd073e` (`Linnaeus`)
 Mode: read-only audit, no files edited by the explorer
 
+## 2026-06-27 Visual Follow-Up
+
+- Restored issue detail header/body/comment/timeline CSS toward the legacy selectors and geometry from `yona-original/app/assets/stylesheets/less/_page.less:2868` and `:3005`.
+- Scope: `frontend/src/app.css` only. The existing React markup already carries the legacy issue detail classes, so this follow-up avoids JSX churn and keeps REST/React behavior unchanged.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx src/issue-list-filter.spec.tsx`.
+
 ## Evidence Checked
 
 Legacy evidence:
