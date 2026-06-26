@@ -139,6 +139,15 @@
   `frontend/src/user-files-parity.spec.tsx`,
   `frontend/src/form-submit-boundary.spec.tsx`, and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 user issues SPA navigation continuation:
+  `/user/issues` keeps the legacy my-issues side filters, search form, open/closed
+  tabs, sort links, and pagination markup, but same-page query changes now use
+  TanStack navigation. The route refetches from router location state so issue
+  filtering, state changes, search, sorting, and page changes no longer perform
+  native document navigation. Focused coverage:
+  `frontend/src/route-parity.spec.tsx`,
+  `frontend/src/form-submit-boundary.spec.tsx`, and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

@@ -512,6 +512,16 @@ M39 continues workspace files SPA navigation:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/user-files-parity.spec.tsx src/form-submit-boundary.spec.tsx`.
 
+M40 continues workspace issues SPA navigation:
+
+- `/user/issues` keeps the legacy my-issues shell, side filters, search form,
+  tabs, sort links, and pagination markup, but same-page query changes now call
+  TanStack navigation instead of native document navigation.
+- The route reads issue query state from router location changes so filter,
+  state, search, sort, and page changes refetch the list inside the SPA.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real user issue route" src/form-submit-boundary.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

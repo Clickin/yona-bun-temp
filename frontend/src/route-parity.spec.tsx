@@ -1881,6 +1881,10 @@ describe("file-route parity harness", () => {
 
   it("requires a real user issue route instead of a placeholder page", () => {
     const userIssueRoutePath = path.resolve(__dirname, "routes/user/issues/route.tsx");
+    const issueViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-issue-views.tsx"),
+      "utf8",
+    );
 
     expect(fs.existsSync(userIssueRoutePath)).toBe(true);
     const userIssueRouteSource = fs.readFileSync(userIssueRoutePath, "utf8");
@@ -1890,6 +1894,13 @@ describe("file-route parity harness", () => {
     expect(userIssueRouteSource).not.toContain("set Default page failed.");
     expect(userIssueRouteSource).toContain("BadRequestPage");
     expect(userIssueRouteSource).toContain("listUserIssues");
+    expect(userIssueRouteSource).toContain("useNavigate");
+    expect(userIssueRouteSource).toContain("useRouterState");
+    expect(userIssueRouteSource).toContain("state.location.href");
+    expect(userIssueRouteSource).toContain("navigate({ href })");
+    expect(issueViewsSource).toContain("onNavigate?: (href: string) => void");
+    expect(issueViewsSource).toContain("event.preventDefault();");
+    expect(issueViewsSource).toContain("new FormData(event.currentTarget)");
   });
 
   it("preserves the legacy user issue list shell", () => {

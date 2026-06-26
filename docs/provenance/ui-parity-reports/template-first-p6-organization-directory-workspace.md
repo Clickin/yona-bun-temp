@@ -165,3 +165,9 @@ integrated visual sweep covers all packet reports.
   pagination clicks now route through TanStack navigation and refetch from
   router location state instead of native document navigation. Focused coverage:
   `pnpm --dir frontend exec vitest run src/user-files-parity.spec.tsx src/form-submit-boundary.spec.tsx`.
+- 2026-06-27 user issues SPA navigation follow-up:
+  `/user/issues` preserves the legacy `issue/my_partial_search.scala.html` and
+  `issue/my_partial_list.scala.html` shell, filters, tabs, search form, sort
+  links, and pagination markup, but same-page query changes now route through
+  TanStack navigation and refetch from router location state. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real user issue route" src/form-submit-boundary.spec.tsx`.

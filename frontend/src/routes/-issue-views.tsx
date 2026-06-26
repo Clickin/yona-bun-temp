@@ -3702,6 +3702,7 @@ export interface UserIssueListQuery {
 export function UserIssueListPage(props: {
   canSetDefaultLoginPage?: boolean;
   issueList: UserIssueListViewModel | null;
+  onNavigate?: (href: string) => void;
   onSetDefaultLoginPage?: () => void;
   query: UserIssueListQuery;
   runtimeConfig: RuntimeConfig;
@@ -3752,7 +3753,40 @@ export function UserIssueListPage(props: {
       value: "favorite",
     },
   ];
-  const filterHref = (filter: string) => `${action}?filter=${filter}&state=${state}&pageNum=1`;
+  const userIssuePath = (updates: Partial<UserIssueListQuery> = {}) => {
+    const nextQuery = { ...query, ...updates };
+    const search = new URLSearchParams();
+    if (nextQuery.filter) {
+      search.set("filter", nextQuery.filter);
+    }
+    if (nextQuery.state) {
+      search.set("state", nextQuery.state);
+    }
+    if (nextQuery.query) {
+      search.set("query", nextQuery.query);
+    }
+    if (nextQuery.orderBy) {
+      search.set("orderBy", nextQuery.orderBy);
+    }
+    if (nextQuery.orderDir) {
+      search.set("orderDir", nextQuery.orderDir);
+    }
+    if (nextQuery.pageNum && nextQuery.pageNum > 1) {
+      search.set("pageNum", String(nextQuery.pageNum));
+    }
+    const queryString = search.toString();
+    return `/user/issues${queryString ? `?${queryString}` : ""}`;
+  };
+  const hrefFor = (updates: Partial<UserIssueListQuery> = {}) =>
+    prefixBasePath(props.runtimeConfig.basePath, userIssuePath(updates));
+  const navigateIssueList = (href: string, event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!props.onNavigate) {
+      return;
+    }
+    event.preventDefault();
+    props.onNavigate(href);
+  };
+  const filterHref = (filter: string) => hrefFor({ filter, pageNum: 1, state });
   const sideFilterCountFor = (filter: string) => {
     if (!issueList || query.query.trim()) {
       return null;
@@ -3769,13 +3803,11 @@ export function UserIssueListPage(props: {
     return null;
   };
   const stateHref = (nextState: string) =>
-    `${action}?filter=${query.filter}&state=${nextState}&query=${encodeURIComponent(query.query)}`;
+    hrefFor({ filter: query.filter, pageNum: 1, state: nextState });
   const orderDirFor = (orderBy: string) =>
     query.orderBy === orderBy && query.orderDir === "desc" ? "asc" : "desc";
   const orderHref = (orderBy: string) =>
-    `${action}?filter=${query.filter}&state=${state}&orderBy=${orderBy}&orderDir=${orderDirFor(
-      orderBy,
-    )}&pageNum=1`;
+    hrefFor({ orderBy, orderDir: orderDirFor(orderBy), pageNum: 1 });
   const legacyFilterUserId = (filter: string) => (query.filter === filter ? viewerUserId : "");
 
   return (
@@ -3811,6 +3843,12 @@ export function UserIssueListPage(props: {
                         data-pjax-filter=""
                         data-sharer-id={filter.value === "shared" ? viewerUserId : ""}
                         href={filterHref(filter.value)}
+                        onClick={(event) =>
+                          navigateIssueList(
+                            userIssuePath({ filter: filter.value, pageNum: 1, state }),
+                            event,
+                          )
+                        }
                         {...{ "pjax-filter": "" }}
                       >
                         <span className={filter.className}>
@@ -3823,7 +3861,29 @@ export function UserIssueListPage(props: {
                     </li>
                   ))}
                 </ul>
-                <form action={action} id="search" method="get" name="search">
+                <form
+                  action={action}
+                  id="search"
+                  method="get"
+                  name="search"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (!props.onNavigate) {
+                      return;
+                    }
+                    const formData = new FormData(event.currentTarget);
+                    props.onNavigate(
+                      userIssuePath({
+                        filter: String(formData.get("filter") || "assigned"),
+                        orderBy: String(formData.get("orderBy") || "updatedDate"),
+                        orderDir: String(formData.get("orderDir") || "desc"),
+                        pageNum: 1,
+                        query: String(formData.get("query") ?? ""),
+                        state: String(formData.get("state") || "open"),
+                      }),
+                    );
+                  }}
+                >
                   <input name="filter" type="hidden" value={query.filter} />
                   <input name="orderBy" type="hidden" value={query.orderBy} />
                   <input name="orderDir" type="hidden" value={query.orderDir} />
@@ -3884,13 +3944,33 @@ export function UserIssueListPage(props: {
             <section className="span10 span-hard-wrap" id="span10">
               <ul className="nav nav-tabs nm">
                 <li className={state === "open" ? "active" : undefined} data-pjax="">
-                  <a data-state="open" href={stateHref("open")} {...{ state: "open" }}>
+                  <a
+                    data-state="open"
+                    href={stateHref("open")}
+                    onClick={(event) =>
+                      navigateIssueList(
+                        userIssuePath({ filter: query.filter, pageNum: 1, state: "open" }),
+                        event,
+                      )
+                    }
+                    {...{ state: "open" }}
+                  >
                     {legacyMessage(messages, "issue.state.open")}{" "}
                     <span className="num-badge">{issueList?.openIssueCount ?? 0}</span>
                   </a>
                 </li>
                 <li className={state === "closed" ? "active" : undefined} data-pjax="">
-                  <a data-state="closed" href={stateHref("closed")} {...{ state: "closed" }}>
+                  <a
+                    data-state="closed"
+                    href={stateHref("closed")}
+                    onClick={(event) =>
+                      navigateIssueList(
+                        userIssuePath({ filter: query.filter, pageNum: 1, state: "closed" }),
+                        event,
+                      )
+                    }
+                    {...{ state: "closed" }}
+                  >
                     {legacyMessage(messages, "issue.state.closed")}{" "}
                     <span className="num-badge">{issueList?.closedIssueCount ?? 0}</span>
                   </a>
@@ -3919,6 +3999,16 @@ export function UserIssueListPage(props: {
                             data-order-dir={orderDirFor(orderBy)}
                             href={orderHref(orderBy)}
                             key={orderBy}
+                            onClick={(event) =>
+                              navigateIssueList(
+                                userIssuePath({
+                                  orderBy,
+                                  orderDir: orderDirFor(orderBy),
+                                  pageNum: 1,
+                                }),
+                                event,
+                              )
+                            }
                             {...{ orderBy, orderDir: orderDirFor(orderBy) }}
                           >
                             <i
@@ -4124,7 +4214,13 @@ export function UserIssueListPage(props: {
                   <div id="pagination" data-total={totalPageCount}>
                     <a
                       className="pageNum active"
-                      href={`${action}?pageNum=${issueList?.pageNum ?? 1}`}
+                      href={hrefFor({ pageNum: issueList?.pageNum ?? 1 })}
+                      onClick={(event) =>
+                        navigateIssueList(
+                          userIssuePath({ pageNum: issueList?.pageNum ?? 1 }),
+                          event,
+                        )
+                      }
                     >
                       {issueList?.pageNum ?? 1}
                     </a>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { setDefaultLandingPathRest } from "../../../api/workspace";
 import { listUserIssues } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
@@ -29,6 +29,8 @@ function UserIssuesLeafRouteComponent() {
     setErrorMessage,
     syncWorkspaceFromOverview,
   } = useAppRuntime();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const navigate = useNavigate();
   const canRender = useRequireAuthenticatedRoute("/user/issues");
   const [issueList, setIssueList] = React.useState<ReturnType<typeof toUserIssueListView> | null>(
     null,
@@ -76,7 +78,7 @@ function UserIssuesLeafRouteComponent() {
     return () => {
       cancelled = true;
     };
-  }, [canRender, runtimeConfig, setErrorMessage]);
+  }, [canRender, locationHref, runtimeConfig, setErrorMessage]);
 
   if (bootstrapping || !canRender) {
     return (
@@ -109,6 +111,9 @@ function UserIssuesLeafRouteComponent() {
     <UserIssueListPage
       canSetDefaultLoginPage={canSetDefaultLoginPage}
       issueList={issueList}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       onSetDefaultLoginPage={setDefaultLoginPage}
       query={query}
       runtimeConfig={runtimeConfig}
