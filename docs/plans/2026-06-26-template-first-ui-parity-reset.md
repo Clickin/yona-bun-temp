@@ -220,6 +220,12 @@ Update 2026-06-27:
   evidence, but keeps the four integrated sample route deltas open as
   `needs-parent-decision`; P4 is not closed until those rows have comparable
   legacy seed evidence or canonical/provenance/follow-up classification.
+- P5 code/git/PR/review now has a template-first reset report at
+  `docs/provenance/ui-parity-reports/template-first-p5-code-git-pr-review.md`.
+  The report preserves existing code browser, Git/SVN no-head, commit/diff,
+  branch, compare, pull request, and review-thread implementation evidence, but
+  keeps the seventeen integrated repository/PR/search/export sample route
+  deltas open as `needs-parent-decision`.
 
 1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
    header/menu, issue/editor/comment surfaces define most repeated visual
@@ -231,9 +237,9 @@ Update 2026-06-27:
 3. Subagent B resolves the four P4 integrated status deltas in
    `template-first-p4-board-milestone-post.md` against comparable legacy sample
    data or documented seed gaps.
-4. Subagent C creates the P5 code/git/PR/review template-first report and
-   resolves the seventeen P5 integrated status deltas, including Git/SVN-visible
-   UI states, export/download routes, PR diff tabs, repository browser, branch,
+4. Subagent C resolves the seventeen P5 integrated status deltas in
+   `template-first-p5-code-git-pr-review.md`, including Git/SVN-visible UI
+   states, export/download routes, PR diff tabs, repository browser, branch,
    compare, commit, and search behavior.
 5. Parent updates existing `docs/provenance/ui-parity-reports/*.md` to use the
    audit queue format above and reopens rows that were closed by reachability

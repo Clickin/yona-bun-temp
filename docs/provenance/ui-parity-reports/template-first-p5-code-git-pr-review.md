@@ -1,0 +1,141 @@
+# Template-First UI Parity Report: P5 Code/Git/PR/Review
+
+Status: current reset baseline
+Date: 2026-06-27
+Owner packet: P5 code/git/pr/review
+Mode: template-first mapper baseline; implementation evidence reviewed, packet not closed
+
+## Scope
+
+This report reopens repository browser, commit/diff, branch, compare, pull
+request, and review-thread parity under
+`docs/plans/2026-06-26-template-first-ui-parity-reset.md`.
+
+The older `ui-parity-code-vcs.md` and `ui-parity-pull-request-review.md`
+reports remain useful worker evidence. They do not close the template-first
+reset by themselves because the integrated desktop sweep still has seventeen
+P5-owned status deltas that need comparable legacy repository/PR/search/export
+data-state classification.
+
+## Legacy Template Call Graph
+
+| Legacy source | Role | Required anchors |
+| --- | --- | --- |
+| `yona-original/app/views/code/view.scala.html`, `partial_view_folder.scala.html`, `partial_view_file.scala.html` | Code browser, branch selector, breadcrumbs, folder/file rows, raw/open/download/new-file links. | `.code-browse-wrap`, `.nav.nav-tabs`, `#branches[data-toggle=select2]`, `#breadcrumbs`, `.code-viewer-wrap`, `.list-wrap`, `.listitem`, `#fileInfo`, `#codeVal`, `#showCode`, `#new-file-link`. |
+| `code/nohead.scala.html`, `code/nohead_svn.scala.html` | Empty Git/SVN repository setup guidance. | no-head warning copy, clone/init/remote/pull-push or SVN checkout/add/commit guidance, update-permission gates. |
+| `code/history.scala.html` | Commit history for branch/path. | `.bubble-wrap.repo-wrap`, `#branches`, `.nav.nav-tabs`, `#history.commit-wrap`, `.code-table.commits`, `.btn-copy-commitId`, `.number-of-comments`, `.browse`, newer/older action row. |
+| `code/diff.scala.html`, `code/svnDiff.scala.html`, `partial_nonrange_codecomment_thread.scala.html`, `common/reviewForm.scala.html` | Commit detail, Git/SVN diff, non-ranged comments, inline review, review cards, watch button. | `#code-browse-wrap`, `.codediff-wrap`, `.commitInfo`, `.diff-body`, `.btnPop`, `.board-comment-wrap`, `.non-ranged-threads-wrap`, `.review-wrap`, `#reviewcards-open`, `#reviewcards-closed`, `#watch-button`. |
+| `code/compare.scala.html`, `code/compare_svn.scala.html` | Compare range output. | `.project-page-wrap`, `.code-browse-wrap`, `.commitInfo`, `.diff-body.discommentable`, `.alert` with `code.noChanges`. |
+| `code/branches.scala.html`, `partial_branchrow.scala.html` | Branch list and branch actions. | `.branch-list-wrap`, `.head`, `.headBranch`, PR link/state cells, set-default/delete action visibility. |
+| `git/list.scala.html`, `partial_search.scala.html`, `partial_list.scala.html`, `partial_recently_pushed_branches.scala.html` | Project PR list, tabs, filters, contributors, recently pushed branch prompt, rows, pagination. | `.pullrequeset-tab-menu`, `form#search`, `input[name=filter]`, `#contributors`, `.post-list-wrap`, `#pagination`, recently pushed branch block and close/delete link. |
+| `organization/group_pullrequest_list.scala.html`, `group_pullrequest_list_partial.scala.html` | Organization PR aggregate. | organization header/menu, open/closed tabs, search controls, project-name rows, pagination. |
+| `git/create.scala.html`, `git/edit.scala.html`, `partial_merge_result.scala.html` | PR create/edit branch selectors, merge result, title/body editor, uploader, commit tab. | `#fromProjectId`, `#fromBranch`, `#toProjectId`, `#toBranch`, `#pullRequestState`, `#status`, `#title`, common editor, `.upload-wrap.content-footer[data-resource-type=PULL_REQUEST]`, `#__commits`, `#mergeResult`. |
+| `git/view.scala.html`, `partial_info.scala.html`, `partial_branch.scala.html`, `partial_state.scala.html`, `partial_pull_request_event.scala.html` | PR overview, state, branch info, actions, timeline. | `.board-header.issue`, `.pullRequest-branchInfo`, `#state.pullRequest-stateInfo`, `#watch-button`, `#reviewers`, `#btnAccept`, source-branch delete/restore controls, `ul#comments`. |
+| `git/viewChanges.scala.html`, `partial_reviewlist.scala.html`, `common/reviewForm.scala.html` | PR changes, commit dropdown, diff, comments, review threads/cards. | `#commits`, `.diff-body.diffs-wrap-scroll`, `.non-ranged-threads-wrap`, `.comment-thread-wrap`, `.btnPop`, `.review-wrap`, `#reviewcards-open`, `#reviewcards-closed`, `.review-card`. |
+| `reviewthread/list.scala.html`, `reviewthread/partial_list.scala.html` | Project review-thread list, filters, state tabs, export link, rows. | `.row-fluid.issue-list-wrap`, `.lst-stacked`, `form#search`, `.nav.nav-tabs.nm`, `.review-list-wrap`, `.post-list-wrap`, `.post-item`, `.title-wrap`, `.infos`, `#pagination`, `format=xls` export link. |
+
+## Current React/CSS Targets
+
+| Current source | Current responsibility |
+| --- | --- |
+| `frontend/src/routes/-code-views.tsx` | Code browser, no-head states, history, commit detail/diff/comment threads, compare, branches. |
+| `frontend/src/routes/-pull-request-views.tsx` | PR lists/forms/detail/changes, organization PR list, review-thread list, review cards/comments. |
+| `frontend/src/routes/$owner/$projectName/code/**`, `commits/**`, `commit/**`, `compare/**`, `branches/**` | Repository route entrypoints. |
+| `frontend/src/routes/$owner/$projectName/pullRequests/**`, `closedPullRequests`, `sentPullRequests`, `newPullRequestForm`, `pullRequest/**`, `reviews/route.tsx` | Pull request and review route entrypoints. |
+| `frontend/src/routes/organizations/$organizationName/pullrequests/**`, `closedPullrequests/**` | Organization PR aggregate route entrypoints. |
+| `frontend/src/api/code-branches.ts`, `code-commits.ts`, `pull-requests.ts` | REST JSON boundaries for code, commit comments/watch, branches, PR/review states. |
+| `frontend/src/app.css` | Shared legacy code/diff/PR/review list and form styling. |
+| `frontend/src/code-views.spec.tsx`, `project-code-browser-routing.spec.ts`, `pull-request-list-form-review-i18n.spec.tsx`, `pull-request-review-i18n.spec.tsx`, `project-reviews-export.spec.tsx` | Static selector/source proof. |
+| `frontend/tests/project-code-comment-upload-parity.e2e.ts`, `pull-request-interaction-parity.e2e.ts`, `pull-request-review-read-parity.e2e.ts` | Browser interaction proof. |
+
+## Open Reset Queue Summary
+
+Source comparison by P5 reset pass found implementation evidence for the older
+code/vcs and PR/review rows, but the integrated sweep still has seventeen
+P5-owned route/data-state decisions.
+
+| status | count |
+| --- | ---: |
+| gap | 0 |
+| deviation | 0 |
+| weak evidence | 0 |
+| covered | 39 |
+| not-applicable | 3 |
+| needs-parent-decision | 17 |
+
+## Covered Template Groups
+
+| legacy template group | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `code/view.scala.html`, `partial_view_folder.scala.html`, `partial_view_file.scala.html` | Git/SVN code browser for default branch, folder, text file, Markdown file, raw/open/download links. | `frontend/src/routes/-code-views.tsx`, code route files, `crates/server/src/routes/code.rs` | layout | covered in current follow-up | P5 | none | `frontend/src/code-views.spec.tsx`, `frontend/src/project-code-browser-routing.spec.ts`, `crates/server/tests/code_browser_contract.rs`, and code browser e2e evidence prove `#branches`, `#breadcrumbs`, `.list-wrap`, `.listitem`, `#codeVal`, `#showCode`, raw/open/download anchors, Markdown rendering, and local image route behavior. |
+| `code/nohead.scala.html`, `code/nohead_svn.scala.html` | Empty Git/SVN repository guidance. | `frontend/src/routes/-code-views.tsx` | copy | covered in current follow-up | P5 | none | `frontend/tests/project-code-comment-upload-parity.e2e.ts` proves Git and SVN no-head browser states, update-permission guidance, and no visible raw `code.nohead` keys. |
+| `code/history.scala.html` | Commit history for branch/path, author fallback, comments, pagination. | `frontend/src/routes/-code-views.tsx`, commits route files | layout | covered in current follow-up | P5 | none | Static and browser evidence prove `#history`, `.code-table.commits`, `#branches`, path breadcrumbs, newer/older links, copy commit id, email-only author fallback, and `code.nocommits` empty state. |
+| `code/diff.scala.html`, `code/svnDiff.scala.html`, `partial_nonrange_codecomment_thread.scala.html` | Commit detail, Git/SVN diff, comment forms, inline/ranged comments, review cards, watch state. | `frontend/src/routes/-code-views.tsx`, `frontend/src/api/code-commits.ts`, `crates/server/src/routes/code.rs` | interaction | covered in current follow-up | P5 | none | `frontend/src/code-views.spec.tsx` and `frontend/tests/project-code-comment-upload-parity.e2e.ts` prove `#code-browse-wrap`, `.codediff-wrap`, `.commitInfo`, `.diff-body`, `.btnPop`, `.board-comment-form`, `.review-wrap`, `#watch-button` POST/DELETE with CSRF, line/multi-line comments, reply/edit/delete, and SVN comment contract. |
+| `code/compare.scala.html`, `code/compare_svn.scala.html` | Compare range. | `frontend/src/routes/-code-views.tsx`, compare route files | layout | covered in current follow-up | P5 | none | Static and contract evidence prove `.commitInfo`, `.diff-body.discommentable`, and `code.noChanges` alert for no-change compare. |
+| `code/branches.scala.html`, `partial_branchrow.scala.html` | Branch list, default/head/action permission states. | `frontend/src/routes/-code-views.tsx`, `frontend/src/api/code-branches.ts` | interaction | covered in current follow-up | P5 | none | `frontend/src/code-views.spec.tsx` and backend branch contracts prove `.branch-list-wrap`, `.headBranch`, PR link/state cells, set-default/delete hidden states, and read/update/delete/admin permission variants. |
+| Legacy direct code ajax/raw/open/archive routes | App runtime replacement boundary. | REST JSON plus direct compatibility routes | data-boundary | not-applicable | P5 | none unless parent reclassifies | `code/!` ajax JSON, raw/open/archive are compatibility/direct byte routes; React app runtime remains REST JSON/API-return plus React render. |
+| `git/list.scala.html`, `partial_search.scala.html`, `partial_list.scala.html`, `partial_recently_pushed_branches.scala.html` | Project PR list open/closed/sent, filters, contributor special option, recently pushed branch prompt, empty/pagination states. | `frontend/src/routes/-pull-request-views.tsx`, PR list route files | layout | covered in current follow-up | P5 | none | PR read/interaction e2e and render specs prove `#search`, `.pullrequeset-tab-menu`, `#contributors`, current-user `pullRequest.sentByMe`, `.post-list-wrap`, `#pagination`, empty state, recently pushed branch navigation/delete, and raw-key absence. |
+| `organization/group_pullrequest_list.scala.html`, `group_pullrequest_list_partial.scala.html` | Organization PR aggregate open/closed/search/project-name rows. | `frontend/src/routes/-pull-request-views.tsx`, organization PR route files | layout | covered in current follow-up | P5 | none | Existing PR report records org aggregate selector and route proof for tabs, search, project rows, and pagination. |
+| `git/create.scala.html`, `git/edit.scala.html`, `partial_merge_result.scala.html` | PR create/edit selectors, merge result, title/body validation, disabled edit controls, uploader, commit tab. | `frontend/src/routes/-pull-request-views.tsx`, `newPullRequestForm/route.tsx`, `pullRequest/$n/editform/route.tsx` | interaction | covered in current follow-up | P5 | none | `frontend/tests/pull-request-interaction-parity.e2e.ts` and render specs prove selector IDs, hidden `#pullRequestState`, visible `#status`, `#title`, body editor, legacy validation copy with zero invalid REST mutation, disabled edit selects, and `#__commits` merge-result block. |
+| `git/view.scala.html`, `partial_info.scala.html`, `partial_branch.scala.html`, `partial_state.scala.html`, `partial_pull_request_event.scala.html` | PR overview/detail state, branch info, watch, close/reopen, review/unreview, accept, source branch actions, event timeline. | `frontend/src/routes/-pull-request-views.tsx`, PR detail route | interaction | covered in current follow-up | P5 | none | PR detail e2e proves `.board-header.issue`, `.pullRequest-branchInfo`, `#state`, overview/changes tabs, `#watch-button`, `#reviewers`, `#btnAccept`, close/reopen, accept, delete/restore source branch, conflict/reviewer-disabled copy, interpolated event timeline, and no raw keys. |
+| `git/viewChanges.scala.html`, `partial_reviewlist.scala.html`, `common/reviewForm.scala.html` | PR changes, commit dropdown, diff, general/inline comments, thread reply/edit/delete/open/close, review cards. | `frontend/src/routes/-pull-request-views.tsx`, PR changes route files | interaction | covered in current follow-up | P5 | none | PR interaction/read e2e proves `#commits`, current/outdated selected commit labels, `.diff-body.diffs-wrap-scroll`, `.non-ranged-threads-wrap`, `.comment-thread-wrap`, `.btnPop`, `.review-wrap`, `#reviewcards-open`, `#reviewcards-closed`, `.review-card`, and all review thread mutations. |
+| `reviewthread/list.scala.html`, `reviewthread/partial_list.scala.html` | Project review-thread list filters/search/state/sort/export row shell. | `frontend/src/routes/-pull-request-views.tsx`, `frontend/src/routes/$owner/$projectName/reviews/route.tsx` | layout | covered in current follow-up | P5 | none | `frontend/src/project-reviews-export.spec.tsx` and PR read e2e prove `.lst-stacked`, `form#search`, hidden fields, state tabs, date sort, `.review-list-wrap .post-list-wrap`, `.post-item`, `.title-wrap` nowrap ellipsis, pagination, and Excel export href preservation. |
+| Direct legacy PR/review form/fragment routes | App runtime replacement boundary. | REST JSON plus React render | data-boundary | not-applicable | P5 | none unless parent reclassifies | Legacy create/edit/comment/review routes are server form/fragment endpoints. Current app runtime uses REST JSON/API-return plus React render; direct legacy HTML fragments are compatibility evidence, not a new frontend data source. |
+| PR delete action | Legacy PR behavior. | PR detail route | route | not-applicable | P5 | none unless parent reclassifies | Legacy exposes source-branch delete/restore, not a pull-request delete route. Current UI preserves source-branch actions only. |
+
+## Integrated Status Delta Findings
+
+These rows come from `output/playwright/visual-sweep/latest.json` checked at
+`2026-06-26T16:21:36.680Z`. They had no screenshot diff failure, but they are
+not covered until comparable legacy repository/PR/search/export state is
+available or the parent records a canonical classification.
+
+| legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `git/create.scala.html` | `/admin/sample/newPullRequestForm` invalid or missing branch/base state. | `frontend/src/routes/$owner/$projectName/newPullRequestForm/route.tsx` | data-boundary | needs-parent-decision | P5 | Compare against valid legacy branch seed or classify invalid-state behavior. | Sweep reports legacy `400`, local `200`; rendered local form reachability is not comparable legacy proof. |
+| `reviewthread/list.scala.html` | `/admin/sample/reviews?format=xls` export/download boundary. | `frontend/src/routes/$owner/$projectName/reviews/route.tsx` | data-boundary | needs-parent-decision | P5 | Decide export/download parity versus deferred import/export scope. | Sweep reports legacy `0`, local `200`; legacy did not produce a comparable HTML document. |
+| `git/view.scala.html` | `/admin/sample/pullRequest/1` PR overview sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx` | data-boundary | needs-parent-decision | P5 | Create comparable legacy PR seed or classify local placeholder route. | Sweep reports legacy `404`, local `200`. |
+| `git/viewChanges.scala.html` | `/admin/sample/pullRequest/1/changes` all changes sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx` | data-boundary | needs-parent-decision | P5 | Create comparable legacy PR seed/diff state or classify seed gap. | Sweep reports legacy `404`, local `200`. |
+| `git/viewChanges.scala.html` | `/admin/sample/pullRequest/1/changes/HEAD` selected commit changes sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/$commitId/route.tsx` | data-boundary | needs-parent-decision | P5 | Validate revision-specific diff with comparable PR data. | Sweep reports legacy `404`, local `200`. |
+| `git/edit.scala.html` | `/admin/sample/pullRequest/1/editform` edit form sample. | `frontend/src/routes/$owner/$projectName/pullRequest/$pullRequestNumber/editform/route.tsx` | data-boundary | needs-parent-decision | P5 | Create comparable legacy PR edit seed or classify local placeholder route. | Sweep reports legacy `404`, local `200`. |
+| `code/view.scala.html` | `/admin/sample/code/main` code browser branch sample. | `frontend/src/routes/$owner/$projectName/code/$branch/route.tsx` | data-boundary | needs-parent-decision | P5 | Distinguish missing legacy repo/branch from local repository browser UI. | Sweep reports legacy `404`, local `200`. |
+| `code/view.scala.html` | `/admin/sample/code/main/` code browser branch-root sample. | `frontend/src/routes/$owner/$projectName/code/$branch/route.tsx` | data-boundary | needs-parent-decision | P5 | Same decision as code branch sample; avoid duplicate closure by reachability. | Sweep reports legacy `404`, local `200`. |
+| `code/partial_view_file.scala.html` | `/admin/sample/code/main/README.md` file viewer sample. | `frontend/src/routes/$owner/$projectName/code/$branch/route.tsx` | data-boundary | needs-parent-decision | P5 | Validate file viewer against comparable repository content. | Sweep reports legacy `404`, local `200`. |
+| `code/history.scala.html` | `/admin/sample/commits` default commit history sample. | `frontend/src/routes/$owner/$projectName/commits/route.tsx` | data-boundary | needs-parent-decision | P5 | Validate history against comparable repository content. | Sweep reports legacy `404`, local `200`. |
+| `code/history.scala.html` | `/admin/sample/commits/` default commit history slash sample. | `frontend/src/routes/$owner/$projectName/commits/route.tsx` | data-boundary | needs-parent-decision | P5 | Same decision as commit history sample; avoid duplicate closure by reachability. | Sweep reports legacy `404`, local `200`. |
+| `code/history.scala.html` | `/admin/sample/commits/main` branch-filtered commit history sample. | `frontend/src/routes/$owner/$projectName/commits/$branch/route.tsx` | data-boundary | needs-parent-decision | P5 | Validate branch-filtered history against comparable repository content. | Sweep reports legacy `404`, local `200`. |
+| `code/history.scala.html` | `/admin/sample/commits/main/` branch-filtered commit history slash sample. | `frontend/src/routes/$owner/$projectName/commits/$branch/route.tsx` | data-boundary | needs-parent-decision | P5 | Same decision as branch history sample; avoid duplicate closure by reachability. | Sweep reports legacy `404`, local `200`. |
+| `code/diff.scala.html` | `/admin/sample/commit/HEAD` commit detail sample. | `frontend/src/routes/$owner/$projectName/commit/$commitId/route.tsx` | data-boundary | needs-parent-decision | P5 | Validate commit detail/diff shell with comparable commit. | Sweep reports legacy `404`, local `200`. |
+| `code/compare.scala.html` | `/admin/sample/compare/main...main` compare sample. | `frontend/src/routes/$owner/$projectName/compare/route.tsx` | data-boundary | needs-parent-decision | P5 | Source legacy error state or create comparable compare seed. | Sweep reports legacy `500`, local `200`; local no-change page cannot close without source classification. |
+| `code/branches.scala.html` | `/admin/sample/branches` branch list sample. | `frontend/src/routes/$owner/$projectName/branches/route.tsx` | data-boundary | needs-parent-decision | P5 | Source legacy error state or create comparable branch-list seed. | Sweep reports legacy `500`, local `200`; local branch list cannot close without source classification. |
+| Search templates and repository search route | `/admin/sample/search` invalid/empty repository search state. | project search route/API boundary | data-boundary | needs-parent-decision | P5 | Validate invalid/empty repository search behavior against legacy or move to search packet if parent reassigns. | Sweep reports legacy `400`, local `200`; owner remains P5 until parent reassigns because this delta is repository-scoped in the integrated queue. |
+
+## Verifier Evidence
+
+Static/component proof:
+
+- `frontend/src/code-views.spec.tsx`
+- `frontend/src/project-code-browser-routing.spec.ts`
+- `frontend/src/pull-request-list-form-review-i18n.spec.tsx`
+- `frontend/src/pull-request-review-i18n.spec.tsx`
+- `frontend/src/pull-request-route-loading-shell-i18n.spec.tsx`
+- `frontend/src/project-reviews-export.spec.tsx`
+
+Browser interaction proof:
+
+- `frontend/tests/project-code-comment-upload-parity.e2e.ts`
+- `frontend/tests/pull-request-interaction-parity.e2e.ts`
+- `frontend/tests/pull-request-review-read-parity.e2e.ts`
+
+Integrated browser sweep evidence:
+
+- Command from parent plan:
+  `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both node scripts/visual-parity-sweep.mjs`
+- Artifact: `output/playwright/visual-sweep/latest.json`
+- Checked at: `2026-06-26T16:21:36.680Z`
+- Result: overall legacy `93/96`, local `174/174`, `diffFailures 0`,
+  `localFailures 0`, with seventeen P5 status deltas listed above.
+
+P5 packet cannot close until the seventeen `needs-parent-decision` rows are
+resolved with comparable legacy seed evidence or canonical/provenance/follow-up
+classification.
