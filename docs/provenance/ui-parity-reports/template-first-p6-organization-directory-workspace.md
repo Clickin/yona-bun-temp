@@ -122,3 +122,11 @@ packet reports.
   `renderShell={false}` for that child route while preserving direct-render
   shell output for existing specs. Focused coverage:
   `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx -t "settings chrome"`.
+- 2026-06-27 organization members/delete shell follow-up:
+  `frontend/src/routes/organizations/$organizationName/route.tsx` now owns the
+  organization header/menu/page-wrap shell for `/members` and `/deleteForm`.
+  `OrganizationMembersPage` and `OrganizationDeletePage` render only their
+  legacy settings-tab bodies through `renderShell={false}` for those child
+  routes while preserving direct-render shell output for existing specs.
+  Focused coverage:
+  `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx -t "members chrome|delete chrome"`.

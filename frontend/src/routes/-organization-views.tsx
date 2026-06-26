@@ -1449,6 +1449,7 @@ export function OrganizationMembersPage(props: {
   detail: OrganizationAdminViewModel | null | undefined;
   messages?: LegacyMessageLookup;
   pending?: boolean;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   onAcceptEnrollment?: (organizationName: string, userId: string) => void;
   onAddMember?: (organizationName: string, loginId: string) => void;
@@ -1512,6 +1513,268 @@ export function OrganizationMembersPage(props: {
     setTypeaheadOpen(response.items.length > 0);
   }
 
+  const content = (
+    <div className="project-page-wrap">
+      <OrganizationSettingsSubMenu
+        active="members"
+        messages={props.messages}
+        organizationName={detail.organizationName}
+        runtimeConfig={props.runtimeConfig}
+      />
+
+      <div className="inner-bubble">
+        <form
+          className="nm"
+          id="addNewMember"
+          onSubmit={(event) => {
+            event.preventDefault();
+            props.onAddMember?.(detail.organizationName, loginId);
+          }}
+        >
+          <input
+            autoComplete="off"
+            className="text uname"
+            data-provider="typeahead"
+            id="loginId"
+            name="loginId"
+            onBlur={() => {
+              window.setTimeout(() => setTypeaheadOpen(false), 100);
+            }}
+            onChange={(event) => {
+              void updateTypeahead(event.target.value);
+            }}
+            onFocus={() => {
+              if (typeaheadItems.length > 0) {
+                setTypeaheadOpen(true);
+              }
+            }}
+            pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
+            placeholder={legacyMessage(props.messages, "project.members.addMember")}
+            required
+            title={legacyMessage(props.messages, "user.wrongloginId.alert")}
+            type="text"
+            value={loginId}
+          />
+          {typeaheadOpen && typeaheadItems.length > 0 ? (
+            <ul className="typeahead dropdown-menu" style={{ display: "block" }}>
+              {typeaheadItems.map((item, index) => (
+                <li
+                  className={index === 0 ? "active" : undefined}
+                  data-value={item.info}
+                  key={`${item.loginId}:${item.info}`}
+                >
+                  <a
+                    href={prefixBasePath(props.runtimeConfig.basePath, `/${item.loginId}`)}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setLoginId(item.loginId);
+                      setTypeaheadOpen(false);
+                    }}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      setLoginId(item.loginId);
+                      setTypeaheadOpen(false);
+                    }}
+                  >
+                    {item.info}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <button className="ybtn ybtn-success" disabled={props.pending} type="submit">
+            <i className="yobicon-addfriend" /> {legacyMessage(props.messages, "button.add")}
+          </button>
+        </form>
+      </div>
+
+      <ul className="members project row-fluid">
+        {detail.members.map((member) => (
+          <li className="member span6 span-hard-wrap" key={member.userId}>
+            <a
+              className="avatar-wrap mlarge pull-left mr10"
+              href={prefixBasePath(props.runtimeConfig.basePath, `/${member.loginId}`)}
+            >
+              {member.avatarUrl ? (
+                <img
+                  alt={`${member.userLabel || member.loginId} avatar`}
+                  height={64}
+                  src={member.avatarUrl}
+                  width={64}
+                />
+              ) : null}
+            </a>
+            <div className="member-name">{member.userLabel || member.loginId}</div>
+            <div className="member-id">{`@${member.loginId}`}</div>
+            <div className="member-setting">
+              <div className="btn-group" data-name={`roleof-${member.loginId}`}>
+                <button className="btn dropdown-toggle large" data-toggle="dropdown" type="button">
+                  <span className="d-label">
+                    {legacyMessage(props.messages, `user.role.${member.role}`)}
+                  </span>
+                  <span className="d-caret">
+                    <span className="caret" />
+                  </span>
+                </button>
+                <ul className="dropdown-menu">
+                  {detail.roleOptions.map((roleOption) => (
+                    <li
+                      className={roleOption.role === member.role ? "active" : undefined}
+                      data-selected={roleOption.role === member.role ? "true" : undefined}
+                      data-value={roleOption.role}
+                      key={`${member.userId}-${roleOption.role}`}
+                    >
+                      <a
+                        data-action="apply"
+                        data-href={buildOrganizationHref(
+                          props.runtimeConfig,
+                          detail.organizationName,
+                          `member/${member.userId}/edit`,
+                        )}
+                        href={buildOrganizationHref(
+                          props.runtimeConfig,
+                          detail.organizationName,
+                          `member/${member.userId}/edit`,
+                        )}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          props.onUpdateMemberRole?.(
+                            detail.organizationName,
+                            member.userId,
+                            roleOption.role,
+                          );
+                        }}
+                        data-loginid={member.loginId}
+                      >
+                        {legacyMessage(props.messages, `user.role.${roleOption.role}`)}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <a
+                className="ybtn ybtn-danger ybtn-small"
+                data-action="delete"
+                data-href={buildOrganizationHref(
+                  props.runtimeConfig,
+                  detail.organizationName,
+                  `member/${member.userId}/delete`,
+                )}
+                href={buildOrganizationHref(
+                  props.runtimeConfig,
+                  detail.organizationName,
+                  `member/${member.userId}/delete`,
+                )}
+                onClick={(event) => {
+                  event.preventDefault();
+                  setDeleteTarget(member.userId);
+                }}
+              >
+                {legacyMessage(props.messages, "button.delete")}
+              </a>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div
+        aria-hidden={deleteTarget ? "false" : "true"}
+        className={`modal hide${deleteTarget ? " in" : ""}`}
+        id="alertDeletion"
+        style={deleteTarget ? { display: "block" } : undefined}
+      >
+        <div className="modal-header">
+          <button
+            aria-label={legacyMessage(props.messages, "button.close")}
+            className="close"
+            data-dismiss="modal"
+            onClick={() => setDeleteTarget(null)}
+            type="button"
+          >
+            ×
+          </button>
+          <h3>{legacyMessage(props.messages, "organization.member.delete")}</h3>
+        </div>
+        <div className="modal-body">
+          <p>{legacyMessage(props.messages, "organization.member.deleteConfirm")}</p>
+        </div>
+        <div className="modal-footer">
+          <button
+            className="ybtn ybtn-info ybtn-mini"
+            id="deleteBtn"
+            onClick={() => {
+              if (deleteTarget) {
+                props.onDeleteMember?.(detail.organizationName, deleteTarget);
+              }
+              setDeleteTarget(null);
+            }}
+            type="button"
+          >
+            {legacyMessage(props.messages, "button.yes")}
+          </button>
+          <button
+            className="ybtn ybtn-mini"
+            data-dismiss="modal"
+            onClick={() => setDeleteTarget(null)}
+            type="button"
+          >
+            {legacyMessage(props.messages, "button.no")}
+          </button>
+        </div>
+      </div>
+
+      {detail.enrollmentRequests.length > 0 ? (
+        <>
+          <legend>
+            <h3>{`${legacyMessage(props.messages, "project.member.enrollment.request")} (${detail.enrollmentRequests.length})`}</h3>
+          </legend>
+          <div className="row-fluid">
+            {detail.enrollmentRequests.map((request) => (
+              <div className="span2" key={request.userId}>
+                <div className="pull-left mr10">
+                  <a href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}>
+                    {request.avatarUrl ? (
+                      <img
+                        alt={`${request.userLabel || request.loginId} avatar`}
+                        className="img-circle"
+                        height={65}
+                        src={request.avatarUrl}
+                        width={65}
+                      />
+                    ) : null}
+                  </a>
+                </div>
+                <div className="pull-left organization-member-enrollment-info">
+                  <span>
+                    <a href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}>
+                      <strong>{request.userLabel || request.loginId}</strong>
+                    </a>
+                  </span>
+                  <span>{`(${request.loginId})`}</span>
+                  <button
+                    className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
+                    onClick={() =>
+                      props.onAcceptEnrollment?.(detail.organizationName, request.userId)
+                    }
+                    type="button"
+                    data-loginid={request.loginId}
+                  >
+                    <i className="yobicon-addfriend" />{" "}
+                    {legacyMessage(props.messages, "button.add")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main className="app-shell">
       <OrganizationHeader
@@ -1524,269 +1787,7 @@ export function OrganizationMembersPage(props: {
         messages={props.messages}
         runtimeConfig={props.runtimeConfig}
       />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <OrganizationSettingsSubMenu
-            active="members"
-            messages={props.messages}
-            organizationName={detail.organizationName}
-            runtimeConfig={props.runtimeConfig}
-          />
-
-          <div className="inner-bubble">
-            <form
-              className="nm"
-              id="addNewMember"
-              onSubmit={(event) => {
-                event.preventDefault();
-                props.onAddMember?.(detail.organizationName, loginId);
-              }}
-            >
-              <input
-                autoComplete="off"
-                className="text uname"
-                data-provider="typeahead"
-                id="loginId"
-                name="loginId"
-                onBlur={() => {
-                  window.setTimeout(() => setTypeaheadOpen(false), 100);
-                }}
-                onChange={(event) => {
-                  void updateTypeahead(event.target.value);
-                }}
-                onFocus={() => {
-                  if (typeaheadItems.length > 0) {
-                    setTypeaheadOpen(true);
-                  }
-                }}
-                pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
-                placeholder={legacyMessage(props.messages, "project.members.addMember")}
-                required
-                title={legacyMessage(props.messages, "user.wrongloginId.alert")}
-                type="text"
-                value={loginId}
-              />
-              {typeaheadOpen && typeaheadItems.length > 0 ? (
-                <ul className="typeahead dropdown-menu" style={{ display: "block" }}>
-                  {typeaheadItems.map((item, index) => (
-                    <li
-                      className={index === 0 ? "active" : undefined}
-                      data-value={item.info}
-                      key={`${item.loginId}:${item.info}`}
-                    >
-                      <a
-                        href={prefixBasePath(props.runtimeConfig.basePath, `/${item.loginId}`)}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          setLoginId(item.loginId);
-                          setTypeaheadOpen(false);
-                        }}
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                          setLoginId(item.loginId);
-                          setTypeaheadOpen(false);
-                        }}
-                      >
-                        {item.info}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              <button className="ybtn ybtn-success" disabled={props.pending} type="submit">
-                <i className="yobicon-addfriend" /> {legacyMessage(props.messages, "button.add")}
-              </button>
-            </form>
-          </div>
-
-          <ul className="members project row-fluid">
-            {detail.members.map((member) => (
-              <li className="member span6 span-hard-wrap" key={member.userId}>
-                <a
-                  className="avatar-wrap mlarge pull-left mr10"
-                  href={prefixBasePath(props.runtimeConfig.basePath, `/${member.loginId}`)}
-                >
-                  {member.avatarUrl ? (
-                    <img
-                      alt={`${member.userLabel || member.loginId} avatar`}
-                      height={64}
-                      src={member.avatarUrl}
-                      width={64}
-                    />
-                  ) : null}
-                </a>
-                <div className="member-name">{member.userLabel || member.loginId}</div>
-                <div className="member-id">{`@${member.loginId}`}</div>
-                <div className="member-setting">
-                  <div className="btn-group" data-name={`roleof-${member.loginId}`}>
-                    <button
-                      className="btn dropdown-toggle large"
-                      data-toggle="dropdown"
-                      type="button"
-                    >
-                      <span className="d-label">
-                        {legacyMessage(props.messages, `user.role.${member.role}`)}
-                      </span>
-                      <span className="d-caret">
-                        <span className="caret" />
-                      </span>
-                    </button>
-                    <ul className="dropdown-menu">
-                      {detail.roleOptions.map((roleOption) => (
-                        <li
-                          className={roleOption.role === member.role ? "active" : undefined}
-                          data-selected={roleOption.role === member.role ? "true" : undefined}
-                          data-value={roleOption.role}
-                          key={`${member.userId}-${roleOption.role}`}
-                        >
-                          <a
-                            data-action="apply"
-                            data-href={buildOrganizationHref(
-                              props.runtimeConfig,
-                              detail.organizationName,
-                              `member/${member.userId}/edit`,
-                            )}
-                            href={buildOrganizationHref(
-                              props.runtimeConfig,
-                              detail.organizationName,
-                              `member/${member.userId}/edit`,
-                            )}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              props.onUpdateMemberRole?.(
-                                detail.organizationName,
-                                member.userId,
-                                roleOption.role,
-                              );
-                            }}
-                            data-loginid={member.loginId}
-                          >
-                            {legacyMessage(props.messages, `user.role.${roleOption.role}`)}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <a
-                    className="ybtn ybtn-danger ybtn-small"
-                    data-action="delete"
-                    data-href={buildOrganizationHref(
-                      props.runtimeConfig,
-                      detail.organizationName,
-                      `member/${member.userId}/delete`,
-                    )}
-                    href={buildOrganizationHref(
-                      props.runtimeConfig,
-                      detail.organizationName,
-                      `member/${member.userId}/delete`,
-                    )}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setDeleteTarget(member.userId);
-                    }}
-                  >
-                    {legacyMessage(props.messages, "button.delete")}
-                  </a>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          <div
-            aria-hidden={deleteTarget ? "false" : "true"}
-            className={`modal hide${deleteTarget ? " in" : ""}`}
-            id="alertDeletion"
-            style={deleteTarget ? { display: "block" } : undefined}
-          >
-            <div className="modal-header">
-              <button
-                aria-label={legacyMessage(props.messages, "button.close")}
-                className="close"
-                data-dismiss="modal"
-                onClick={() => setDeleteTarget(null)}
-                type="button"
-              >
-                ×
-              </button>
-              <h3>{legacyMessage(props.messages, "organization.member.delete")}</h3>
-            </div>
-            <div className="modal-body">
-              <p>{legacyMessage(props.messages, "organization.member.deleteConfirm")}</p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="ybtn ybtn-info ybtn-mini"
-                id="deleteBtn"
-                onClick={() => {
-                  if (deleteTarget) {
-                    props.onDeleteMember?.(detail.organizationName, deleteTarget);
-                  }
-                  setDeleteTarget(null);
-                }}
-                type="button"
-              >
-                {legacyMessage(props.messages, "button.yes")}
-              </button>
-              <button
-                className="ybtn ybtn-mini"
-                data-dismiss="modal"
-                onClick={() => setDeleteTarget(null)}
-                type="button"
-              >
-                {legacyMessage(props.messages, "button.no")}
-              </button>
-            </div>
-          </div>
-
-          {detail.enrollmentRequests.length > 0 ? (
-            <>
-              <legend>
-                <h3>{`${legacyMessage(props.messages, "project.member.enrollment.request")} (${detail.enrollmentRequests.length})`}</h3>
-              </legend>
-              <div className="row-fluid">
-                {detail.enrollmentRequests.map((request) => (
-                  <div className="span2" key={request.userId}>
-                    <div className="pull-left mr10">
-                      <a href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}>
-                        {request.avatarUrl ? (
-                          <img
-                            alt={`${request.userLabel || request.loginId} avatar`}
-                            className="img-circle"
-                            height={65}
-                            src={request.avatarUrl}
-                            width={65}
-                          />
-                        ) : null}
-                      </a>
-                    </div>
-                    <div className="pull-left organization-member-enrollment-info">
-                      <span>
-                        <a
-                          href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}
-                        >
-                          <strong>{request.userLabel || request.loginId}</strong>
-                        </a>
-                      </span>
-                      <span>{`(${request.loginId})`}</span>
-                      <button
-                        className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
-                        onClick={() =>
-                          props.onAcceptEnrollment?.(detail.organizationName, request.userId)
-                        }
-                        type="button"
-                        data-loginid={request.loginId}
-                      >
-                        <i className="yobicon-addfriend" />{" "}
-                        {legacyMessage(props.messages, "button.add")}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : null}
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }
@@ -1795,6 +1796,7 @@ export function OrganizationDeletePage(props: {
   detail: OrganizationAdminViewModel | null | undefined;
   messages?: LegacyMessageLookup;
   pending?: boolean;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   onDeleteOrganization?: (organizationName: string) => void;
 }) {
@@ -1813,6 +1815,75 @@ export function OrganizationDeletePage(props: {
     viewerCanUpdate: detail.viewerCanUpdate,
   };
 
+  const content = (
+    <div className="project-page-wrap">
+      <OrganizationSettingsSubMenu
+        active="delete"
+        messages={props.messages}
+        organizationName={detail.organizationName}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <div className="box-wrap bottom">
+        <button
+          className="ybtn ybtn-danger"
+          data-toggle="modal"
+          disabled={!detail.deleteAllowed || props.pending}
+          id="btnDelete"
+          onClick={() => setModalOpen(true)}
+          type="button"
+        >
+          {legacyMessage(props.messages, "organization.delete.this")}
+        </button>
+      </div>
+
+      <div
+        aria-hidden={modalOpen ? "false" : "true"}
+        className={`modal hide${modalOpen ? " in" : ""}`}
+        id="alertDeletion"
+        style={modalOpen ? { display: "block" } : undefined}
+      >
+        <div className="modal-header">
+          <button
+            aria-label={legacyMessage(props.messages, "button.close")}
+            className="close"
+            data-dismiss="modal"
+            onClick={() => setModalOpen(false)}
+            type="button"
+          >
+            ×
+          </button>
+          <h3>{legacyMessage(props.messages, "organization.delete.requestion")}</h3>
+        </div>
+        <div className="modal-body">
+          <p> {legacyMessage(props.messages, "organization.delete.reaccept")} </p>
+        </div>
+        <div className="modal-footer">
+          <button
+            className="ybtn ybtn-danger"
+            disabled={!detail.deleteAllowed || props.pending}
+            id="btnDeleteExec"
+            onClick={() => props.onDeleteOrganization?.(detail.organizationName)}
+            type="button"
+          >
+            {legacyMessage(props.messages, "button.yes")}
+          </button>
+          <button
+            className="ybtn"
+            data-dismiss="modal"
+            onClick={() => setModalOpen(false)}
+            type="button"
+          >
+            {legacyMessage(props.messages, "button.no")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main className="app-shell">
       <OrganizationHeader
@@ -1825,70 +1896,7 @@ export function OrganizationDeletePage(props: {
         messages={props.messages}
         runtimeConfig={props.runtimeConfig}
       />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <OrganizationSettingsSubMenu
-            active="delete"
-            messages={props.messages}
-            organizationName={detail.organizationName}
-            runtimeConfig={props.runtimeConfig}
-          />
-          <div className="box-wrap bottom">
-            <button
-              className="ybtn ybtn-danger"
-              data-toggle="modal"
-              disabled={!detail.deleteAllowed || props.pending}
-              id="btnDelete"
-              onClick={() => setModalOpen(true)}
-              type="button"
-            >
-              {legacyMessage(props.messages, "organization.delete.this")}
-            </button>
-          </div>
-
-          <div
-            aria-hidden={modalOpen ? "false" : "true"}
-            className={`modal hide${modalOpen ? " in" : ""}`}
-            id="alertDeletion"
-            style={modalOpen ? { display: "block" } : undefined}
-          >
-            <div className="modal-header">
-              <button
-                aria-label={legacyMessage(props.messages, "button.close")}
-                className="close"
-                data-dismiss="modal"
-                onClick={() => setModalOpen(false)}
-                type="button"
-              >
-                ×
-              </button>
-              <h3>{legacyMessage(props.messages, "organization.delete.requestion")}</h3>
-            </div>
-            <div className="modal-body">
-              <p> {legacyMessage(props.messages, "organization.delete.reaccept")} </p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="ybtn ybtn-danger"
-                disabled={!detail.deleteAllowed || props.pending}
-                id="btnDeleteExec"
-                onClick={() => props.onDeleteOrganization?.(detail.organizationName)}
-                type="button"
-              >
-                {legacyMessage(props.messages, "button.yes")}
-              </button>
-              <button
-                className="ybtn"
-                data-dismiss="modal"
-                onClick={() => setModalOpen(false)}
-                type="button"
-              >
-                {legacyMessage(props.messages, "button.no")}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }

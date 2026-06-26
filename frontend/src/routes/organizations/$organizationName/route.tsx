@@ -77,6 +77,12 @@ function organizationLayoutShell(
   if (appPath === `/organizations/${organizationName}/settingform`) {
     return { active: "settings", shellClassName: "organization-settings-shell" };
   }
+  if (
+    appPath === `/organizations/${organizationName}/members` ||
+    appPath === `/organizations/${organizationName}/deleteForm`
+  ) {
+    return {};
+  }
   return null;
 }
 

@@ -2180,6 +2180,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `OrganizationSettingsPage` renders only the legacy settings body through
   `renderShell={false}`. Focused coverage:
   `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx -t "settings chrome"`.
+- 2026-06-27 organization nested-layout members/delete follow-up:
+  `frontend/src/routes/organizations/$organizationName/route.tsx` now owns the
+  organization header/menu/page-wrap shell for `/members` and `/deleteForm`,
+  while `OrganizationMembersPage` and `OrganizationDeletePage` render only
+  their legacy settings-tab bodies through `renderShell={false}`. Focused
+  coverage:
+  `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx -t "members chrome|delete chrome"`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

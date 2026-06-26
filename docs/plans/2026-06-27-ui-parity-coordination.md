@@ -456,6 +456,17 @@ M34 continues organization shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx -t "settings chrome"`.
 
+M35 continues organization shell migration:
+
+- `/organizations/$organizationName/route.tsx` now owns the legacy organization
+  header/menu/page-wrap shell for `/members` and `/deleteForm`.
+- `OrganizationMembersPage` and `OrganizationDeletePage` support
+  `renderShell={false}` so those child routes keep their existing mutation
+  boundaries but render only the legacy settings-tab bodies under the
+  organization layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx -t "members chrome|delete chrome"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

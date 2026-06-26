@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { createLegacyI18nRuntime } from "./i18n";
 import { testRuntimeConfig } from "./auth-workspace-shell.test-helpers";
 import {
+  OrganizationDeletePage,
   OrganizationDetailPage,
   OrganizationIssueListPage,
   OrganizationMembersPage,
@@ -204,6 +205,76 @@ describe("organization shell legacy i18n opt-in", () => {
     expect(html).toContain('id="saveSetting"');
     expect(html).toContain('id="logoPath"');
     expect(html).not.toContain("app-shell organization-settings-shell");
+    expect(html).not.toContain("project-header-outer");
+    expect(html).not.toContain("project-menu-outer");
+    expect(html).not.toContain("page-wrap-outer");
+  });
+
+  it("lets the organization layout route own members chrome without changing the inner body", () => {
+    const html = renderToStaticMarkup(
+      <OrganizationMembersPage
+        detail={{
+          deleteAllowed: true,
+          enrollmentRequests: [],
+          members: [],
+          organizationName: "yona-org",
+          roleOptions: [],
+          viewerCanUpdate: true,
+        }}
+        renderShell={false}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/members/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/organizations/${organizationName}/members`");
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="addNewMember"');
+    expect(html).toContain('class="members project row-fluid"');
+    expect(html).not.toContain('class="app-shell"');
+    expect(html).not.toContain("project-header-outer");
+    expect(html).not.toContain("project-menu-outer");
+    expect(html).not.toContain("page-wrap-outer");
+  });
+
+  it("lets the organization layout route own delete chrome without changing the inner body", () => {
+    const html = renderToStaticMarkup(
+      <OrganizationDeletePage
+        detail={{
+          deleteAllowed: true,
+          enrollmentRequests: [],
+          members: [],
+          organizationName: "yona-org",
+          roleOptions: [],
+          viewerCanUpdate: true,
+        }}
+        renderShell={false}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/deleteForm/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/organizations/${organizationName}/deleteForm`");
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="btnDelete"');
+    expect(html).toContain('id="alertDeletion"');
+    expect(html).not.toContain('class="app-shell"');
     expect(html).not.toContain("project-header-outer");
     expect(html).not.toContain("project-menu-outer");
     expect(html).not.toContain("page-wrap-outer");

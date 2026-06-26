@@ -85,6 +85,7 @@ function OrganizationMembersRouteComponent() {
     <OrganizationMembersPage
       detail={detail}
       messages={messages}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       onAcceptEnrollment={async (nextOrganizationName, userId) => {
         try {

@@ -79,6 +79,7 @@ function OrganizationDeleteRouteComponent() {
     <OrganizationDeletePage
       detail={detail}
       messages={messages}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       onDeleteOrganization={async (nextOrganizationName) => {
         try {
