@@ -2656,18 +2656,18 @@ export function ProjectMembersPage(props: {
                               data-value={roleOption.role}
                               key={`${member.userId}-${roleOption.role}`}
                             >
-                              <button
+                              <a
                                 data-action="apply"
                                 data-href={`/${detail.ownerName}/${detail.projectName}/member/${member.userId}/edit`}
-                                data-loginid={member.loginId}
+                                data-loginId={member.loginId}
+                                href="#member-role"
                                 onClick={(event) => {
                                   event.preventDefault();
                                   props.onUpdateMemberRole?.(member.userId, roleOption.role);
                                 }}
-                                type="button"
                               >
                                 {legacyMessage(props.messages, `user.role.${roleOption.label}`)}
-                              </button>
+                              </a>
                             </li>
                           ))}
                         </ul>

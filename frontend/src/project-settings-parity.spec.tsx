@@ -289,7 +289,7 @@ describe("project settings parity", () => {
     expect(membersHtml).toContain('title="Enter Valid ID"');
     expect(membersHtml).toContain('class="label owner">Project owner</span>');
     expect(membersHtml).toContain('class="d-label">Member</span>');
-    expect(membersHtml).toContain(">Manager</button>");
+    expect(membersHtml).toContain(">Manager</a>");
     expect(webhooksHtml).toContain(">Create new webhook</strong>");
     expect(webhooksHtml).not.toContain("project.webhook.delivery.");
     expect(webhooksHtml).not.toContain("webhookDeliveryHistory");
@@ -606,7 +606,7 @@ describe("project settings parity", () => {
     expect(membersHtml).toContain('title="WRONG_LOGIN_LOOKUP"');
     expect(membersHtml).toContain(">ROLE_OWNER_LOOKUP</span>");
     expect(membersHtml).toContain(">ROLE_MEMBER_LOOKUP</span>");
-    expect(membersHtml).toContain(">ROLE_MANAGER_LOOKUP</button>");
+    expect(membersHtml).toContain(">ROLE_MANAGER_LOOKUP</a>");
     expect(webhooksHtml).not.toContain("project.webhook.delivery.");
     expect(webhooksHtml).not.toContain("webhookDeliveryHistory");
     expect(forkHelpHtml).toContain(">FORK_HELP_TITLE_LOOKUP</p>");

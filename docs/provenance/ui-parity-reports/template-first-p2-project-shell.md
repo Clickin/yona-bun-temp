@@ -44,8 +44,8 @@ Source comparison by Subagent P2 found concrete reset blockers:
 | --- | ---: |
 | gap | 5 |
 | deviation | 0 |
-| weak evidence | 2 |
-| covered | 9 |
+| weak evidence | 1 |
+| covered | 10 |
 
 ## Reset Findings
 
@@ -65,7 +65,7 @@ Source comparison by Subagent P2 found concrete reset blockers:
 | `project/home.scala.html` | Project home sidebar. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-home-tabs.spec.tsx` | layout | covered in current follow-up | P2 | none | Removed the non-legacy `section > h3 Project dashboard` / `.runtime-grid` sidebar block; watch/enroll controls now live in `project/header.scala.html`'s util dropdown position, and the sidebar preserves legacy button wrap, optional milestone summary, and member info order. |
 | `project/home.scala.html` | SVN project with code menu enabled. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-home-tabs.spec.tsx` | interaction | covered in current follow-up | P2 | none | Fork CTA now renders only when `detail.showCode` is true and `vcs` is Git/unspecified, matching the legacy `project.vcs.equals("GIT")` guard under `project.menuSetting.code`. |
 | `project/create.scala.html` | New project form, SVN selected. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-create-parity.spec.tsx` | layout | covered in current follow-up | P2 | none | Removed the React-only `display:none` branch for `#menuSettingPullRequest`; the create form now keeps the legacy template checkbox label/input in the DOM regardless of SVN warning state, with a source guard preventing the old `svnSelected` hide condition from returning. |
-| `project/members.scala.html` | Role dropdown. | `frontend/src/routes/-project-views.tsx` | layout | weak evidence | P2 | `ProjectMembersPage` | Legacy dropdown items are `<a data-loginId>`; current uses `<button data-loginid>`. |
+| `project/members.scala.html` | Role dropdown. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-members-parity.spec.tsx`, `frontend/src/project-settings-parity.spec.tsx` | layout | covered in current follow-up | P2 | none | Member role dropdown items now render as `<a data-action="apply" data-href=... data-loginId=...>` inside the legacy `.btn-group > button.dropdown-toggle.large + ul.dropdown-menu > li[data-value]` shell. The legacy `javascript:void(0)` href is intentionally represented as a React `preventDefault()` anchor target to preserve behavior without copying legacy JavaScript. |
 | `project/partial_webhooks_list.scala.html` | Existing webhook row. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-settings-parity.spec.tsx` | interaction | covered in current follow-up | P2 | none | Existing webhook rows now preserve the legacy `.row-fluid.list-item.vertical-align[data-webhook-id]` shell, `<h6>` wrappers for payload/secret/type, delete button request attributes, and checked read-only git-push checkbox. The legacy inline `onclick="return false;"` is intentionally implemented as React `event.preventDefault()` to keep the same no-toggle UX without copying legacy JavaScript. |
 
 ## Verifier Baseline Required

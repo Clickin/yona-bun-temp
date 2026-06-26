@@ -73,6 +73,10 @@ describe("project members parity", () => {
     expect(html).toContain('data-name="roleof-member"');
     expect(html).toContain('data-action="apply"');
     expect(html).toContain('data-href="/owner/projectYobi/member/2/edit"');
+    expect(html).toContain('data-loginId="member"');
+    expect(html).toContain('href="#member-role"');
+    expect(html).not.toContain('data-loginid="member"');
+    expect(html).not.toContain('href="javascript:void(0)"');
     expect(html).toContain('data-action="delete"');
     expect(html).toContain('data-href="/owner/projectYobi/member/2/delete"');
     expect(html).toContain("Sign-up request");
