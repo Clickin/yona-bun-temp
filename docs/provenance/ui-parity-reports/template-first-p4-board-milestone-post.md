@@ -1,0 +1,101 @@
+# Template-First UI Parity Report: P4 Board/Milestone/Post
+
+Status: current reset baseline
+Date: 2026-06-27
+Owner packet: P4 board/milestone/post
+Mode: template-first mapper baseline; implementation evidence reviewed, packet not closed
+
+## Scope
+
+This report reopens board posting and milestone parity under
+`docs/plans/2026-06-26-template-first-ui-parity-reset.md`.
+
+The older `ui-parity-board-milestone.md` report remains useful worker evidence.
+It does not close the template-first reset by itself because the integrated
+desktop sweep still has four P4-owned status deltas that need comparable legacy
+data-state classification.
+
+## Legacy Template Call Graph
+
+| Legacy source | Role | Required anchors |
+| --- | --- | --- |
+| `yona-original/app/views/board/list.scala.html`, `board/partial_list.scala.html` | Project board list, search, label filter, notices, sort, rows, pagination. | `.post-list.project-page-wrap`, `form#option_form`, `.search-bar`, `.board-labels select`, `.filter-wrap.board`, `.notice-wrap`, `.post-list-wrap`, `#pagination`, `.title-prefix`. |
+| `board/create.scala.html`, `board/edit.scala.html` | Board post create/edit and online commit variant. | `.content-wrap.frm-wrap`, `form.nm`, `#title`, common editor, `.upload-wrap.content-footer[data-resource-type=BOARD_POST]`, `#notice`, `#readme`, hidden `#issueTemplate`, `#branch`, `#path`, `#lineEnding`, `.send-notification-check`. |
+| `board/view.scala.html`, `board/partial_comments.scala.html` | Board detail, labels, body, tasklist, attachments, watch, history, comments, delete modal. | `.project-page-wrap.board-view`, `.board-header.issue`, `.board-id`, `.board-body.row-fluid`, `.span-left-pane`, `.span-right-pane`, `#post-body-$number`, `.attachments#attachments`, `#watch-button`, `.board-actrow`, `.issue-info.board-labels`, `#labelIds`, `#comments.board-comment-wrap`, `#deleteConfirm`. |
+| `organization/group_board_list.scala.html`, `organization/group_board_list_partial.scala.html` | Organization board aggregate. | Organization header/menu, `#projects[name="projectNames[]"]`, `.textbox.group-board`, `.group-project-name`, `.post-list-wrap`, pagination controls. |
+| `milestone/list.scala.html`, `milestone/partial_status.scala.html` | Milestone list, state tabs, sort, search, linked issue preview. | `.project-page-wrap`, `.tab-wrap`, `.nav.nav-tabs`, `.filter-wrap.milestone`, `.pull-left.search.search-bar`, `ul.milestones`, `li.milestone`, `.completion-rate`, `.progress .bar`, `.issue-link`, `.label.issue-label`. |
+| `milestone/view.scala.html` | Milestone detail, progress, markdown, attachments, actions, linked issues. | `.milesion-wrap`, `h4 .title`, `.badge-issue-*`, `.milestone-desc`, `.attachments[data-attachments]`, `.actrow.right-txt`, `#issues`, `.nav.nav-tabs`, `issue.partial_massupdate`, `[data-toggle=item-search]`, `issue.partial_list`, `#deleteConfirm`. |
+| `milestone/create.scala.html`, `milestone/edit.scala.html` | Milestone form. | `#milestone-form`, `.content-wrap.frm-wrap`, `#title`, common editor, `.upload-wrap.content-footer[data-resource-type=MILESTONE]`, `.issue-option`, `#milestone-open`, `#milestone-close`, `#dueDate`, `#datepicker`, field-adjacent `.message`. |
+
+## Current React/CSS Targets
+
+| Current source | Current responsibility |
+| --- | --- |
+| `frontend/src/routes/-board-views.tsx` | Project board list, organization board aggregate, post form, board detail, comments, labels, attachments, delete modal. |
+| `frontend/src/routes/-milestone-views.tsx` | Milestone list, form, detail, linked issue list, mass update, validation, attachments. |
+| `frontend/src/routes/$owner/$projectName/posts/route.tsx`, `postform/route.tsx`, `post/$postNumber/**` | Project board route entrypoints. |
+| `frontend/src/routes/organizations/$organizationName/boards/route.tsx` | Organization board aggregate route entrypoint. |
+| `frontend/src/routes/$owner/$projectName/milestones/route.tsx`, `newMilestoneForm/route.tsx`, `milestone/$milestoneId/**` | Milestone route entrypoints. |
+| `frontend/src/app.css` | Shared legacy board/milestone shell, grid, form, modal, list styling. |
+| `frontend/src/board-milestone-parity.spec.tsx` | Static selector and source-contract proof for board/milestone components. |
+| `frontend/tests/board-posting-parity.e2e.ts`, `frontend/tests/milestone-delete-modal-parity.e2e.ts` | Browser interaction proof for board post attachments/delete/labels and milestone validation/delete/state actions. |
+
+## Open Reset Queue Summary
+
+Source comparison by P4 reset pass found implementation evidence for the
+documented board/milestone rows, but the integrated sweep still has four
+P4-owned route/data-state decisions.
+
+| status | count |
+| --- | ---: |
+| gap | 0 |
+| deviation | 0 |
+| weak evidence | 0 |
+| covered | 19 |
+| not-applicable | 1 |
+| needs-parent-decision | 4 |
+
+## Reset Findings
+
+| legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `board/list.scala.html`, `board/partial_list.scala.html` | Project board list `/admin/sample/posts` with search, label, notice, sort, pagination states. | `frontend/src/routes/-board-views.tsx`, `frontend/src/routes/$owner/$projectName/posts/route.tsx` | layout | covered in current follow-up | P4 | none | Older worker evidence plus `frontend/src/board-milestone-parity.spec.tsx` and `frontend/tests/board-posting-parity.e2e.ts` prove `#option_form`, `.board-labels`, `.filter-wrap.board`, `.notice-wrap`, `.post-list-wrap`, row anchors, comment counts, and pagination shell. |
+| `organization/group_board_list.scala.html`, `group_board_list_partial.scala.html` | Organization board aggregate `/organizations/:name/boards` with project filter and keyword search. | `frontend/src/routes/-board-views.tsx`, `frontend/src/routes/organizations/$organizationName/boards/route.tsx` | layout | covered in current follow-up | P4 | none | Existing board/milestone report records `#projects[name="projectNames[]"]`, `.textbox.group-board`, `.group-project-name`, aggregate row and pagination parity; route is mapped to board ownership. |
+| `organization/group_board_list.scala.html` | Organization board aggregate notice pinning. | `frontend/src/routes/-board-views.tsx` | data-boundary | not-applicable | P4 | none unless parent reclassifies | Legacy aggregate does not have a separate org-level notice pinning behavior; project board notice rows remain covered by the project board list row. |
+| `board/create.scala.html`, `board/edit.scala.html` | Board create/edit forms, including online commit/readme/issue-template variants and no label picker. | `frontend/src/routes/-board-views.tsx`, `frontend/src/routes/$owner/$projectName/postform/route.tsx`, `post/$postNumber/editform/route.tsx` | layout | covered in current follow-up | P4 | none | `frontend/src/board-milestone-parity.spec.tsx` proves no `.board-label-picker`, legacy `BOARD_POST` uploader shell, title/editor/notice/readme hidden fields, and notification checkbox/source contract. |
+| `board/view.scala.html`, `board/partial_comments.scala.html` | Board detail with body/tasklist/history/watch/delete modal/comments/child comments. | `frontend/src/routes/-board-views.tsx`, `frontend/src/routes/$owner/$projectName/post/$postNumber/route.tsx` | interaction | covered in current follow-up | P4 | none | Static and browser evidence prove `.project-page-wrap.board-view`, `.board-header.issue`, `.board-body.row-fluid`, tasklist/body shell, `#watch-button`, `#comments.board-comment-wrap`, `#deleteConfirm`, and modal-confirm REST delete behavior. |
+| `board/view.scala.html`, `issue.partial_select_label` | Board detail label Select2 update/read-only states. | `frontend/src/routes/-board-views.tsx`, `frontend/src/api/boards.ts`, `crates/server/src/routes/boards.rs` | data-boundary | covered in current follow-up | P4 | none | React keeps legacy `#labelIds[data-toggle=select2][data-format=issuelabel]` and compatibility `data-request-uri`, while update calls canonical REST JSON `PATCH /api/v1/projects/:owner/:project/posts/:number/labels`; `frontend/tests/board-posting-parity.e2e.ts` covers browser mutation and returned DTO refresh. |
+| `board/view.scala.html`, `common.fileUploader`, comment partials | Board post/comment attachment metadata and visible rows. | `frontend/src/routes/-board-views.tsx`, board REST detail DTO | data-boundary | covered in current follow-up | P4 | none | `frontend/src/board-milestone-parity.spec.tsx` and `frontend/tests/board-posting-parity.e2e.ts` prove `.attachments[data-attachments]`, `.attached-file`, post/comment file ids, names, hrefs, and `NONISSUE_COMMENT` uploader shell from REST fixtures. |
+| `milestone/list.scala.html`, `milestone/partial_status.scala.html` | Milestone list tabs, empty state, sort, search, counts, progress, issue previews. | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/routes/$owner/$projectName/milestones/route.tsx` | layout | covered in current follow-up | P4 | none | `frontend/src/board-milestone-parity.spec.tsx` proves state tabs, inactive sort links using `orderDir=asc`, `.pull-left.search.search-bar`, `.due-date.over`, `untilLabel`, `.completion-rate`, progress bars, and client filtering of `.issue-link` rows. |
+| `milestone/create.scala.html`, `milestone/edit.scala.html` | Milestone create/edit form, editor, uploader, state radios, due-date picker, field errors. | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/routes/$owner/$projectName/newMilestoneForm/route.tsx`, `milestone/$milestoneId/editform/route.tsx` | interaction | covered in current follow-up | P4 | none | `frontend/src/board-milestone-parity.spec.tsx` and `frontend/tests/milestone-delete-modal-parity.e2e.ts` prove `#milestone-form`, legacy `MILESTONE` uploader, state radios, `#dueDate`, field-adjacent `.error`/`.message`, invalid-submit no REST POST, and no generic alert substitution. |
+| `milestone/view.scala.html`, `issue.partial_massupdate`, `issue.partial_list` | Milestone detail, markdown, attachments, actions, issue tabs, linked issue list, mass update. | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx` | data-boundary | covered in current follow-up | P4 | none | Static and browser evidence prove `.milesion-wrap`, `.milestone-desc .attachments[data-attachments]`, `.actrow.right-txt`, `#deleteConfirm`, close/reopen REST callbacks, `#issues .nav.nav-tabs`, `#mass-update-form`, state/assignee/milestone/label dropdown options, `[data-toggle=item-search]`, `.post-list-wrap.row-fluid`, and `issue.partial_list` row selectors. |
+| `board/view.scala.html` | Integrated sweep sample `/admin/sample/post/1`. | `frontend/src/routes/$owner/$projectName/post/$postNumber/route.tsx`, board detail REST/view-model boundary | data-boundary | needs-parent-decision | P4 | Create comparable legacy sample post, update sweep seed, or classify local placeholder behavior as gap/deferred/deviation. | Integrated desktop sweep `output/playwright/visual-sweep/latest.json` checked at `2026-06-26T16:21:36.680Z` reports legacy status `404` and local status `200`. This is not visual parity proof because legacy did not render the target post. |
+| `board/edit.scala.html` | Integrated sweep sample `/admin/sample/post/1/editform`. | `frontend/src/routes/$owner/$projectName/post/$postNumber/editform/route.tsx`, board edit REST/view-model boundary | data-boundary | needs-parent-decision | P4 | Create comparable legacy sample post/edit state, update sweep seed, or classify route behavior explicitly. | Integrated desktop sweep reports legacy status `500` and local status `200`; legacy error state must be sourced before local rendered form can be accepted as covered. |
+| `milestone/view.scala.html` | Integrated sweep sample `/admin/sample/milestone/1`. | `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx`, milestone detail REST/view-model boundary | data-boundary | needs-parent-decision | P4 | Create comparable legacy milestone seed or classify sample-data mismatch before closing P4. | Integrated desktop sweep reports legacy status `404` and local status `200`; local detail reachability does not prove legacy template parity for this seed. |
+| `milestone/edit.scala.html` | Integrated sweep sample `/admin/sample/milestone/1/editform`. | `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/editform/route.tsx`, milestone edit REST/view-model boundary | data-boundary | needs-parent-decision | P4 | Create comparable legacy milestone edit seed or classify sample-data mismatch before closing P4. | Integrated desktop sweep reports legacy status `404` and local status `200`; local edit form reachability does not prove comparable legacy output. |
+
+## Verifier Evidence
+
+Static/component proof:
+
+- `frontend/src/board-milestone-parity.spec.tsx`
+- `frontend/src/issue-board-pr-milestone-i18n.spec.tsx`
+- `frontend/src/site-admin-route-parity.spec.tsx` for site-admin post list row reuse.
+
+Browser interaction proof:
+
+- `frontend/tests/board-posting-parity.e2e.ts`
+- `frontend/tests/milestone-delete-modal-parity.e2e.ts`
+
+Integrated browser sweep evidence:
+
+- Command from parent plan:
+  `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both node scripts/visual-parity-sweep.mjs`
+- Artifact: `output/playwright/visual-sweep/latest.json`
+- Checked at: `2026-06-26T16:21:36.680Z`
+- Result: overall legacy `93/96`, local `174/174`, `diffFailures 0`,
+  `localFailures 0`, with four P4 status deltas listed above.
+
+P4 packet cannot close until the four `needs-parent-decision` rows are resolved
+with comparable legacy seed evidence or canonical/provenance/follow-up
+classification.

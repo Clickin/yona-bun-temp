@@ -214,6 +214,12 @@ Update 2026-06-27:
   `needs-parent-decision`; do not close P3 or whole UI parity until this route
   is either implemented, deferred with canonical/provenance/follow-up entries,
   or classified as not-applicable with legacy source evidence.
+- P4 board/milestone/post now has a template-first reset report at
+  `docs/provenance/ui-parity-reports/template-first-p4-board-milestone-post.md`.
+  The report preserves existing board/milestone implementation and interaction
+  evidence, but keeps the four integrated sample route deltas open as
+  `needs-parent-decision`; P4 is not closed until those rows have comparable
+  legacy seed evidence or canonical/provenance/follow-up classification.
 
 1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
    header/menu, issue/editor/comment surfaces define most repeated visual
@@ -222,9 +228,9 @@ Update 2026-06-27:
    current issue functional parity or to deferred import/export scope, then
    updates root canonical docs, provenance, and this plan with the same
    classification.
-3. Subagent B creates the P4 board/milestone/post template-first report and
-   resolves the four P4 integrated status deltas against comparable legacy
-   sample data or documented seed gaps.
+3. Subagent B resolves the four P4 integrated status deltas in
+   `template-first-p4-board-milestone-post.md` against comparable legacy sample
+   data or documented seed gaps.
 4. Subagent C creates the P5 code/git/PR/review template-first report and
    resolves the seventeen P5 integrated status deltas, including Git/SVN-visible
    UI states, export/download routes, PR diff tabs, repository browser, branch,

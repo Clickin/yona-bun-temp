@@ -22,6 +22,7 @@ Current template-first reset reports:
 - `template-first-p0-global-shell.md`
 - `template-first-p2-project-shell.md`
 - `template-first-p3-issues-editor-comments.md`
+- `template-first-p4-board-milestone-post.md`
 
 Rules:
 
