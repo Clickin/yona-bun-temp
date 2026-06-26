@@ -1,7 +1,5 @@
 use super::*;
-use yoram_integrations::{
-    deliver_webhook_with_config, OutboundWebhook, WebhookDeliveryOutcome,
-};
+use yoram_integrations::{deliver_webhook_with_config, OutboundWebhook, WebhookDeliveryOutcome};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

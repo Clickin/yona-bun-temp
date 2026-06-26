@@ -146,10 +146,7 @@ pub(crate) fn inherited_props(item: &yoram_vcs::SvnInheritedPropertySet) -> Stri
         .collect()
 }
 
-pub(crate) fn proppatch_multistatus(
-    href: &str,
-    patches: &[yoram_vcs::SvnPropertyPatch],
-) -> String {
+pub(crate) fn proppatch_multistatus(href: &str, patches: &[yoram_vcs::SvnPropertyPatch]) -> String {
     let mut properties = String::new();
     for patch in patches {
         properties.push_str(&format!(

@@ -255,8 +255,7 @@ async fn fork_project_after_auth(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    let source_repo_path =
-        yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let source_repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
     let fork_repo_path = yoram_vcs::repository_path(&service.data_root, fork.id);
     let clone_result = {
         let _guard = repository_provisioning_lock()

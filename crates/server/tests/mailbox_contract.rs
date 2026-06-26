@@ -4,6 +4,7 @@ use sea_orm::{
 };
 use std::collections::BTreeMap;
 use yoram_integrations::{MailboxMimePart, MailboxParsedMessageInput};
+use yoram_migration::Migrator;
 use yoram_persistence::{
     comment_thread, email, original_email, AppRepository, CreateIssueCommentViaEmailInput,
     CreateIssueViaEmailInput, CreatePostingCommentViaEmailInput, CreatePostingInput,
@@ -11,7 +12,6 @@ use yoram_persistence::{
     MailboxActionExecutionInput, MailboxNormalizedMessageInput, MailboxReplyTargetRecord,
     PostingMutationInput,
 };
-use yoram_migration::Migrator;
 use yoram_server::runtime_config::load_startup_config;
 use yoram_server::{
     mailbox_polling_config_from_startup, poll_mailbox_scheduler_tick,

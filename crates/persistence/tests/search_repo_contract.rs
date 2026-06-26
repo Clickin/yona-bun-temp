@@ -1,9 +1,9 @@
 use sea_orm::{ConnectionTrait, Database, DatabaseBackend, Statement};
+use yoram_migration::Migrator;
 use yoram_persistence::{
     AppRepository, CreateIssueInput, CreateProjectInput, CreateUserInput, IssueMutationInput,
     SearchRepositoryInput, SearchScope,
 };
-use yoram_migration::Migrator;
 
 #[tokio::test]
 async fn search_repository_preserves_literal_matches_when_sqlite_fts_candidates_are_narrower() {

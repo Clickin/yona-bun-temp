@@ -1,11 +1,11 @@
 use sea_orm::{ConnectionTrait, Database, DbBackend, EntityTrait, Schema, Statement};
 use sea_orm_migration::{prelude::SchemaManager, seaql_migrations};
 use serde::Deserialize;
-use yoram_persistence_entities::play_evolutions;
 use yoram_migration::{
     entity_schema, optional_legacy_table_names, required_runtime_table_names, seed_pilot_data,
     Migrator, RuntimeSchemaPolicy,
 };
+use yoram_persistence_entities::play_evolutions;
 
 const MANIFEST_JSON: &str = include_str!("../legacy-final-schema-manifest.json");
 const P0B_LEGACY_LIKE_SQLITE_ADOPT_SQL: &str =

@@ -288,25 +288,24 @@ pub(super) fn lock(
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "Yona WebDAV lock".to_string());
     let token = lock_helpers::new_token();
-    let lock =
-        match yoram_vcs::svn_lock_path(repo_path, &path, &actor.login_id, &comment, &token) {
-            Ok(lock) => lock,
-            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
-            Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
-            }
-            Err(VcsError::SvnAdminUnavailable) | Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "LOCK");
-            }
-            Err(VcsError::SvnAdminFailed(_)) => {
-                return svn_protocol_status_response(
-                    StatusCode::from_u16(423).expect("valid WebDAV Locked status"),
-                );
-            }
-            Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response();
-            }
-        };
+    let lock = match yoram_vcs::svn_lock_path(repo_path, &path, &actor.login_id, &comment, &token) {
+        Ok(lock) => lock,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => {
+            return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+        }
+        Err(VcsError::SvnAdminUnavailable) | Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "LOCK");
+        }
+        Err(VcsError::SvnAdminFailed(_)) => {
+            return svn_protocol_status_response(
+                StatusCode::from_u16(423).expect("valid WebDAV Locked status"),
+            );
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
+        }
+    };
     let body = lock_helpers::discovery_body(&href::project(route), &lock);
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);

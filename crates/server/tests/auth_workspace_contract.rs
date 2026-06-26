@@ -1259,13 +1259,11 @@ async fn secret_admin_setup_rest_updates_legacy_default_admin_and_form_post_is_n
         admin_after_form_post.email.as_deref(),
         Some("root@example.com")
     );
-    assert!(
-        bcrypt::verify(
-            "rootpass1",
-            admin_after_form_post.password.as_deref().unwrap()
-        )
-        .unwrap()
-    );
+    assert!(bcrypt::verify(
+        "rootpass1",
+        admin_after_form_post.password.as_deref().unwrap()
+    )
+    .unwrap());
 
     let capabilities_after_setup = app
         .clone()

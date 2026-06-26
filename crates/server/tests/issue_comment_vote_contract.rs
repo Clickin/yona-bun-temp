@@ -5,8 +5,8 @@ use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
 use serde_json::json;
 use tower::ServiceExt;
 use yoram_migration::Migrator;
-use yoram_persistence::{AppRepository, issue, original_email};
-use yoram_server::{RuntimeConfig, create_router_with_app_repository};
+use yoram_persistence::{issue, original_email, AppRepository};
+use yoram_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
 

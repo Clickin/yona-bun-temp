@@ -1,16 +1,13 @@
 use sea_orm::{ActiveModelTrait, Database, EntityName, Set};
+use yoram_migration::Migrator;
 use yoram_persistence::{
     user_enrolled_organization, AppRepository, CreateOrganizationInput, CreateProjectInput,
     CreateUserInput, UpdateOrganizationInput,
 };
-use yoram_migration::Migrator;
 
 #[test]
 fn project_entity_reexport_preserves_legacy_table_name() {
-    assert_eq!(
-        yoram_persistence::project::Entity.table_name(),
-        "project"
-    );
+    assert_eq!(yoram_persistence::project::Entity.table_name(), "project");
 }
 
 #[tokio::test]

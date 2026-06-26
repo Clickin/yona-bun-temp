@@ -1,7 +1,7 @@
 use axum::{
     extract::{Path, Query},
-    http::{HeaderMap, Method},
     http::StatusCode,
+    http::{HeaderMap, Method},
     response::{IntoResponse, Redirect, Response},
     routing::{get, post},
     Json, Router,
@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 use crate::assets::serve_frontend_page;
 use crate::{
     base_path_href, direct_toggle_workspace_notification, format_project_date_label,
-    internal_error, persistence, redirect_to, require_project_read, require_session, ConnectError,
-    AssetMode, BrowserRuntimeConfig, PilotBackend, PilotServiceImpl, RestRouteError,
+    internal_error, persistence, redirect_to, require_project_read, require_session, AssetMode,
+    BrowserRuntimeConfig, ConnectError, PilotBackend, PilotServiceImpl, RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -226,7 +226,11 @@ async fn direct_notification_api(
     let wants_html = headers
         .get(axum::http::header::ACCEPT)
         .and_then(|value| value.to_str().ok())
-        .is_some_and(|value| value.split(',').any(|part| part.trim().starts_with("text/html")));
+        .is_some_and(|value| {
+            value
+                .split(',')
+                .any(|part| part.trim().starts_with("text/html"))
+        });
     if wants_html {
         return serve_frontend_page(assets, Method::GET, browser_runtime).await;
     }

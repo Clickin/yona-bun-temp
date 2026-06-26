@@ -80,9 +80,7 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn asset_mode_label(
-    startup: &yoram_server::runtime_config::StartupConfig,
-) -> &'static str {
+fn asset_mode_label(startup: &yoram_server::runtime_config::StartupConfig) -> &'static str {
     if startup.use_embedded_assets {
         "embedded"
     } else if startup.asset_root.is_some() {

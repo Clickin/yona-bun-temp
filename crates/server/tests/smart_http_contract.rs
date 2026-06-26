@@ -12,12 +12,12 @@ use tempfile::tempdir;
 use tokio::sync::oneshot;
 use tower::ServiceExt;
 use yoram_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
+use yoram_migration::Migrator;
 use yoram_persistence::{
     notification_event, project_pushed_branch, pull_request_commit, AppRepository,
     CreateProjectInput, CreateProjectWebhookInput, CreatePullRequestInput, CreatePullRequestResult,
     CreateUserInput, PullRequestMutationInput,
 };
-use yoram_migration::Migrator;
 use yoram_server::{
     create_router_with_repository_and_app_config, AppRuntimeConfig, AuthUiConfig, LdapFixtureUser,
     LdapRuntimeConfig, RuntimeConfig,

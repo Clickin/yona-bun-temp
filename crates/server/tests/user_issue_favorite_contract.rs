@@ -4,8 +4,8 @@ use http_body_util::BodyExt;
 use sea_orm::Database;
 use serde_json::json;
 use tower::ServiceExt;
-use yoram_persistence::AppRepository;
 use yoram_migration::Migrator;
+use yoram_persistence::AppRepository;
 use yoram_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;

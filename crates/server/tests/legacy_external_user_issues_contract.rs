@@ -3,10 +3,8 @@ use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
 use serde_json::{json, Value};
 use tower::ServiceExt;
-use yoram_persistence::{
-    AppRepository, CreateIssueInput, CreateProjectInput, IssueMutationInput,
-};
 use yoram_migration::Migrator;
+use yoram_persistence::{AppRepository, CreateIssueInput, CreateProjectInput, IssueMutationInput};
 use yoram_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;

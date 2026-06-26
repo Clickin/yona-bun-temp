@@ -6,8 +6,8 @@ use sea_orm::{
 };
 use serde_json::{json, Value};
 use tower::ServiceExt;
-use yoram_persistence::{project, AppRepository};
 use yoram_migration::Migrator;
+use yoram_persistence::{project, AppRepository};
 use yoram_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;

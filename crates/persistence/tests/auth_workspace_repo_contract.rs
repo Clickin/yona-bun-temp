@@ -1,6 +1,6 @@
 use sea_orm::Database;
-use yoram_persistence::{AppRepository, CreateUserInput};
 use yoram_migration::Migrator;
+use yoram_persistence::{AppRepository, CreateUserInput};
 
 #[tokio::test]
 async fn creates_users_reads_them_by_identifier_and_stores_default_landing() {

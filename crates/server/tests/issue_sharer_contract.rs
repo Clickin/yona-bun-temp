@@ -7,11 +7,11 @@ use sea_orm::{
 };
 use serde_json::json;
 use tower::ServiceExt;
+use yoram_migration::Migrator;
 use yoram_persistence::{
     issue, issue_event, n4user, notification_event, notification_event_n4user, AppRepository,
     CreateProjectInput,
 };
-use yoram_migration::Migrator;
 use yoram_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;

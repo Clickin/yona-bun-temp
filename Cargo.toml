@@ -58,3 +58,9 @@ incremental = true
 codegen-units = 256
 debug = 0
 incremental = true
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+panic = "abort"
+strip = "symbols"

@@ -6,8 +6,8 @@ use serde_json::{json, Value};
 use tempfile::tempdir;
 use tower::ServiceExt;
 use yoram_integrations::{clear_test_outbox, snapshot_test_outbox};
-use yoram_persistence::{project_transfer, AppRepository};
 use yoram_migration::Migrator;
+use yoram_persistence::{project_transfer, AppRepository};
 use yoram_server::{
     create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
     SmtpRuntimeConfig,

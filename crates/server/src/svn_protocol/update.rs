@@ -224,10 +224,7 @@ pub(crate) fn inline_text_deltas(request: &str) -> bool {
             .is_some_and(|value| value.eq_ignore_ascii_case("no"))
 }
 
-pub(crate) fn entry_props(
-    revision_log: &yoram_vcs::SvnLogEntry,
-    indent_level: usize,
-) -> String {
+pub(crate) fn entry_props(revision_log: &yoram_vcs::SvnLogEntry, indent_level: usize) -> String {
     let indent = "  ".repeat(indent_level);
     let mut props = format!(
         r#"{indent}<S:set-prop name="svn:entry:committed-rev">{}</S:set-prop>

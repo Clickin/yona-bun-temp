@@ -4,8 +4,8 @@ use http_body_util::BodyExt;
 use sea_orm::{Database, DatabaseConnection};
 use std::fs;
 use tower::ServiceExt;
-use yoram_persistence::AppRepository;
 use yoram_migration::Migrator;
+use yoram_persistence::AppRepository;
 use yoram_server::{
     create_router, create_router_with_filesystem_assets,
     create_router_with_repository_and_app_config,

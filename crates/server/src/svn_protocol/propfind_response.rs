@@ -571,9 +571,7 @@ pub(super) fn file(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str)
         &path,
         &properties,
         lock.as_ref().map(|lock| (route, lock)),
-        yoram_vcs::svn_repository_uuid(repo_path)
-            .ok()
-            .as_deref(),
+        yoram_vcs::svn_repository_uuid(repo_path).ok().as_deref(),
         provenance.as_ref(),
         request,
     )
@@ -627,9 +625,7 @@ pub(super) fn tree(
         &tree,
         version_revision,
         include_children,
-        yoram_vcs::svn_repository_uuid(repo_path)
-            .ok()
-            .as_deref(),
+        yoram_vcs::svn_repository_uuid(repo_path).ok().as_deref(),
         provenance.as_ref(),
         request,
     ))

@@ -70,20 +70,19 @@ pub(crate) fn location_segments(
         .map(|(_, path)| path)
         .unwrap_or_default();
     let location_path = path::join_report_path(&base_path, &requested_path);
-    let exists =
-        match yoram_vcs::svn_path_exists(repo_path, Some(start_revision), &location_path) {
-            Ok(exists) => exists,
-            Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
-            }
-            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
-            Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT");
-            }
-            Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response();
-            }
-        };
+    let exists = match yoram_vcs::svn_path_exists(repo_path, Some(start_revision), &location_path) {
+        Ok(exists) => exists,
+        Err(VcsError::InvalidPath) => {
+            return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+        }
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "REPORT");
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
+        }
+    };
     let segment = if exists {
         match report_filters::location_segments(
             repo_path,

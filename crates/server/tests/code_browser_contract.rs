@@ -13,11 +13,9 @@ use std::path::Path;
 use std::process::Command;
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yoram_persistence::{original_email, AppRepository};
 use yoram_migration::Migrator;
-use yoram_server::{
-    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
-};
+use yoram_persistence::{original_email, AppRepository};
+use yoram_server::{create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig};
 
 mod rest_test_support;
 

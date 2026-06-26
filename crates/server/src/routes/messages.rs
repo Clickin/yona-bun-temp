@@ -86,12 +86,12 @@ mod tests {
     #[test]
     fn parses_legacy_default_messages_without_new_keyspace() {
         let messages = parse_legacy_messages(LEGACY_DEFAULT_MESSAGES);
-        assert!(messages.iter().any(|(key, value)| {
-            *key == "title.no.results" && *value == "No results"
-        }));
-        assert!(messages.iter().any(|(key, value)| {
-            *key == "button.login" && *value == "Log in"
-        }));
+        assert!(messages
+            .iter()
+            .any(|(key, value)| { *key == "title.no.results" && *value == "No results" }));
+        assert!(messages
+            .iter()
+            .any(|(key, value)| { *key == "button.login" && *value == "Log in" }));
         assert!(!messages
             .iter()
             .any(|(key, _)| key.starts_with("yoram.") || key.starts_with("react.")));

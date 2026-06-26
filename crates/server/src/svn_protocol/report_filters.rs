@@ -73,10 +73,7 @@ pub(crate) fn log_path_included(changed_path: &str, filter_path: &str) -> bool {
         || filter_path.starts_with(&format!("{changed_path}/"))
 }
 
-pub(crate) fn replay_operation(
-    path: &yoram_vcs::SvnChangedPath,
-    low_water_mark: i64,
-) -> String {
+pub(crate) fn replay_operation(path: &yoram_vcs::SvnChangedPath, low_water_mark: i64) -> String {
     let name = xml_escape(path.path.trim_matches('/'));
     match (&path.action, path.is_dir) {
         (yoram_vcs::SvnChangedAction::Added, true)

@@ -16,12 +16,10 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
     seed_pilot_data(&db).await.expect("seed pilot data");
 
     let repo = PilotRepository::new(db);
-    repo.create_organization(
-        yoram_server::persistence::CreateOrganizationInput {
-            description: Some("Seeded pilot organization".to_string()),
-            organization_name: "weblabs".to_string(),
-        },
-    )
+    repo.create_organization(yoram_server::persistence::CreateOrganizationInput {
+        description: Some("Seeded pilot organization".to_string()),
+        organization_name: "weblabs".to_string(),
+    })
     .await
     .expect("create seeded organization");
     let app = create_router_with_repository(

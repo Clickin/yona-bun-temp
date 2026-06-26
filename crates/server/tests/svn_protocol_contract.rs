@@ -17,8 +17,8 @@ use std::process::Command;
 use tempfile::tempdir;
 use tokio::sync::oneshot;
 use tower::ServiceExt;
-use yoram_persistence::AppRepository;
 use yoram_migration::Migrator;
+use yoram_persistence::AppRepository;
 use yoram_server::{
     create_router_with_repository_and_app_config, AppRuntimeConfig, LdapFixtureUser,
     LdapRuntimeConfig, RuntimeConfig,
@@ -4696,8 +4696,7 @@ async fn svn_protocol_external_client_can_mkdir_and_commit() {
     )
     .await;
 
-    let tree =
-        yoram_vcs::svn_list_tree(&repo_path, None, "trunk").expect("read committed tree");
+    let tree = yoram_vcs::svn_list_tree(&repo_path, None, "trunk").expect("read committed tree");
     assert!(
         tree.entries
             .iter()
@@ -4753,8 +4752,7 @@ async fn svn_protocol_external_client_can_mkdir_direct_url() {
         String::from_utf8_lossy(&mkdir_output.stderr)
     );
 
-    let tree =
-        yoram_vcs::svn_list_tree(&repo_path, None, "trunk").expect("read committed tree");
+    let tree = yoram_vcs::svn_list_tree(&repo_path, None, "trunk").expect("read committed tree");
     assert!(
         tree.entries
             .iter()

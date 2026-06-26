@@ -4,9 +4,7 @@ use std::fs;
 use tempfile::tempdir;
 use yoram_migration::RuntimeSchemaPolicy;
 use yoram_server::repository_config_from_startup;
-use yoram_server::runtime_config::{
-    join_base_path, load_startup_config, normalize_base_path,
-};
+use yoram_server::runtime_config::{join_base_path, load_startup_config, normalize_base_path};
 
 #[test]
 fn normalizes_base_paths_like_the_go_pilot() {

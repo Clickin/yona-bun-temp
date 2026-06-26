@@ -394,13 +394,11 @@ pub(crate) async fn issue_sharer_mutation(
             .await
             .map_err(internal_error)?
     } else if normalized_target_type.is_empty() || normalized_target_type == "user" {
-        vec![
-            repository
-                .find_user_by_login_id(&request.login_id)
-                .await
-                .map_err(internal_error)?
-                .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?,
-        ]
+        vec![repository
+            .find_user_by_login_id(&request.login_id)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?]
     } else {
         return Err(ConnectError::invalid_argument(
             "unsupported issue sharer target type",

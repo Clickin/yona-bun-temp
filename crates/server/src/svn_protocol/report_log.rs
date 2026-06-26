@@ -26,20 +26,19 @@ pub(crate) fn log(repo_path: &StdPath, route: &SvnProtocolRoute, request: &str) 
     let limit = xml::i64(request, "limit")
         .and_then(|value| usize::try_from(value).ok())
         .unwrap_or(0);
-    let entries =
-        match yoram_vcs::svn_log_entries(repo_path, start_revision, end_revision, limit) {
-            Ok(entries) => entries,
-            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
-            Err(VcsError::InvalidPath) => {
-                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
-            }
-            Err(VcsError::SvnLookUnavailable) => {
-                return svn_protocol_not_implemented_response(route, "REPORT");
-            }
-            Err(error) => {
-                return RestRouteError::from_connect_error(internal_error(error)).into_response();
-            }
-        };
+    let entries = match yoram_vcs::svn_log_entries(repo_path, start_revision, end_revision, limit) {
+        Ok(entries) => entries,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => {
+            return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+        }
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "REPORT");
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
+        }
+    };
     let include_changed_paths = request.contains("discover-changed-paths");
     let path_filter = xml::text(request, "path")
         .map(|path| path.trim_matches('/').to_string())

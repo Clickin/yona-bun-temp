@@ -1,30 +1,30 @@
 use crate::api_types::OwnedView;
 use axum::{
-    Json, Router,
     extract::{Form, Path, Query},
     http::{HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Redirect, Response},
     routing::{delete, get, patch, post, put},
+    Json, Router,
 };
-use bcrypt::{DEFAULT_COST, hash, verify};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use http::header::SET_COOKIE;
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use yoram_domain::{
-    ProjectAccessFacts, ProjectOperation, ProjectScope, authorize_project_access,
-    normalize_default_landing_path,
+    authorize_project_access, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
+    ProjectScope,
 };
 
 use crate::api_types::*;
 use crate::persistence::{self, PilotRepository};
 use crate::{
-    ConnectError, Context, LEGACY_MIN_PASSWORD_LENGTH, PilotBackend, PilotServiceImpl,
-    RestRouteError, anonymous_current_session_response, attach_session_headers, base_path_href,
-    gravatar_url, headers_with_form_csrf, internal_error, normalize_identifier, project_logo_url,
-    redirect_to, require_authenticated_user, require_session, require_valid_csrf,
+    anonymous_current_session_response, attach_session_headers, base_path_href, gravatar_url,
+    headers_with_form_csrf, internal_error, normalize_identifier, project_logo_url, redirect_to,
+    require_authenticated_user, require_session, require_valid_csrf,
     resolve_current_session_response, rest_json_response, rest_owned_view,
-    send_workspace_email_validation_mail, session, workspace_invalid_argument,
+    send_workspace_email_validation_mail, session, workspace_invalid_argument, ConnectError,
+    Context, PilotBackend, PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::rest_delete_project_member;
@@ -37,7 +37,7 @@ use legacy_favorites::{
     legacy_external_favorite_projects, legacy_external_toggle_favorite_issue,
     legacy_external_toggle_favorite_organization, legacy_external_toggle_favorite_project,
 };
-use sidebar::{DirectUserSidebarQuery, direct_user_menu_tab_content_list, direct_user_sidebar};
+use sidebar::{direct_user_menu_tab_content_list, direct_user_sidebar, DirectUserSidebarQuery};
 
 #[derive(Deserialize)]
 struct DirectDefaultLoginPageQuery {

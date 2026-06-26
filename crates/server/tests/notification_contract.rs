@@ -15,12 +15,12 @@ use std::sync::{Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
 use yoram_integrations::{clear_test_outbox, snapshot_test_outbox};
+use yoram_migration::Migrator;
 use yoram_persistence::{
     comment_thread, issue, issue_comment, issue_event, n4user, notification_event,
     notification_event_n4user, notification_mail, posting, posting_comment, project,
     review_comment, unwatch, user_project_notification, watch, AppRepository, RepositoryConfig,
 };
-use yoram_migration::Migrator;
 use yoram_server::runtime_config::load_startup_config;
 use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_filesystem_assets,

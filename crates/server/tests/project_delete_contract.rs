@@ -8,15 +8,13 @@ use sea_orm::{
 use serde_json::{json, Value};
 use tempfile::tempdir;
 use tower::ServiceExt;
+use yoram_migration::Migrator;
 use yoram_persistence::{
     comment_thread, commit_comment, favorite_project, issue, issue_label, issue_label_category,
     posting, project_label, project_pushed_branch, project_transfer, project_user, pull_request,
     user_enrolled_project, webhook, AppRepository,
 };
-use yoram_migration::Migrator;
-use yoram_server::{
-    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
-};
+use yoram_server::{create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig};
 
 mod rest_test_support;
 

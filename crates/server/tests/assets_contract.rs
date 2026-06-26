@@ -10,16 +10,17 @@ use tempfile::tempdir;
 use tower::ServiceExt;
 use yoram_migration::Migrator;
 use yoram_persistence::{
-    AppRepository, CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput,
-    CreatePostingInput, CreateProjectInput, CreatePullRequestCommentInput, CreatePullRequestInput,
-    CreatePullRequestResult, IssueMutationInput, MilestoneMutationInput, PostingMutationInput,
-    PullRequestMutationInput, UpdateIssueCommentInput, UpdateIssueInput, UpdatePostingCommentInput,
-    UpdatePostingInput, UpdatePullRequestInput, attachment, site_admin,
+    attachment, site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
+    CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
+    CreatePullRequestCommentInput, CreatePullRequestInput, CreatePullRequestResult,
+    IssueMutationInput, MilestoneMutationInput, PostingMutationInput, PullRequestMutationInput,
+    UpdateIssueCommentInput, UpdateIssueInput, UpdatePostingCommentInput, UpdatePostingInput,
+    UpdatePullRequestInput,
 };
 use yoram_server::{
-    AppRuntimeConfig, RuntimeConfig, create_router_with_app_repository,
-    create_router_with_embedded_assets, create_router_with_embedded_assets_and_app_config,
-    create_router_with_filesystem_assets, create_router_with_repository_and_app_config,
+    create_router_with_app_repository, create_router_with_embedded_assets,
+    create_router_with_embedded_assets_and_app_config, create_router_with_filesystem_assets,
+    create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig,
 };
 
 async fn build_auth_router() -> (axum::Router, AppRepository, DatabaseConnection) {
@@ -679,11 +680,8 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
     assert!(script.contains(
         "\"error.toolargefile\": \"Wow, that's huge!<br>Please submit file smaller than {0}.\""
     ));
-    assert!(
-        script.contains(
-            "\"error.badrequest\": \"The request cannot be fulfilled due to bad syntax\""
-        )
-    );
+    assert!(script
+        .contains("\"error.badrequest\": \"The request cannot be fulfilled due to bad syntax\""));
     assert!(script.contains("\"error.failedTo\": \"Failed to {0}<br>({1} {2})\""));
     assert!(script.contains("\"error.forbidden\": \"You are not authorized\""));
     assert!(script.contains("\"error.notfound\": \"Page not found\""));
@@ -695,11 +693,8 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
         "\"issue.error.beforeunload\": \"Issue is not saved yet. Would you like to exit this page without saving?\""
     ));
     assert!(script.contains("\"issue.error.emptyTitle\": \"Issue title is a required field.\""));
-    assert!(
-        script.contains(
-            "\"issue.error.invalid.duedate\": \"Issue due date is not valid date type.\""
-        )
-    );
+    assert!(script
+        .contains("\"issue.error.invalid.duedate\": \"Issue due date is not valid date type.\""));
     assert!(script.contains("\"issue.menu.new\": \"New issue\""));
     assert!(script.contains("\"issue.unwatch\": \"Unsubscribe from this issue\""));
     assert!(script.contains(
@@ -713,10 +708,8 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
     assert!(script.contains("\"issue.update.milestone.id\": \"Update milestone\""));
     assert!(script.contains("\"issue.update.state\": \"Update status\""));
     assert!(script.contains("\"issue.watch\": \"Subscribe\""));
-    assert!(
-        script
-            .contains("\"issue.watch.start\": \"Now you will get notifications about this issue\"")
-    );
+    assert!(script
+        .contains("\"issue.watch.start\": \"Now you will get notifications about this issue\""));
     assert!(script.contains("\"label.add\": \"Add label\""));
     assert!(script.contains(
         "\"label.category.new.confirm\": \"{0} is a new category.<br>In this category, you can choose\""
@@ -739,16 +732,12 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
     assert!(script.contains(
         "\"label.error.duplicated.in.category\": \"A label with the same name already exists in the category {0}.\""
     ));
-    assert!(
-        script
-            .contains("\"label.error.empty\": \"Category, Color, and Name are required fields.\"")
-    );
+    assert!(script
+        .contains("\"label.error.empty\": \"Category, Color, and Name are required fields.\""));
     assert!(script.contains("\"label.failedTo\": \"Failed to {0}.\""));
     assert!(script.contains("\"menu.home\": \"Home\""));
-    assert!(
-        script
-            .contains("\"milestone.error.content\": \"Milestone description is a required field\"")
-    );
+    assert!(script
+        .contains("\"milestone.error.content\": \"Milestone description is a required field\""));
     assert!(script.contains(
         "\"milestone.error.duedateFormat\": \"Invalid format. Enter the due date in YYYY-MM-DD format.\""
     ));
@@ -789,11 +778,8 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
     assert!(
         script.contains("\"project.delete.error\": \"Error occurred while deleting a project.\"")
     );
-    assert!(
-        script.contains(
-            "\"project.import.error.empty.url\": \"Please type the Git repository URL.\""
-        )
-    );
+    assert!(script
+        .contains("\"project.import.error.empty.url\": \"Please type the Git repository URL.\""));
     assert!(script.contains("\"project.logo.alert\": \"This is not an image file.\""));
     assert!(script.contains(
         "\"project.member.deleteConfirm\": \"Are you sure you want this user to leave this project?\""
@@ -802,10 +788,8 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
         "\"project.member.ownerCannotLeave\": \"Project owner cannot leave his own project.\""
     ));
     assert!(script.contains("\"project.member.notExist\": \"User does not exist.\""));
-    assert!(
-        script
-            .contains("\"project.webhook.payloadUrl.empty\": \"Payload URL is a required field.\"")
-    );
+    assert!(script
+        .contains("\"project.webhook.payloadUrl.empty\": \"Payload URL is a required field.\""));
     assert!(script.contains(
         "\"project.name.alert\": \"Enter name in alphabetnumerical or symbol characters(_-.)\""
     ));
@@ -833,9 +817,7 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
     assert!(script.contains(
         "\"pullRequest.is.not.safe\": \"A conflict occurred when merging. This pull request cannot be merged safely.\""
     ));
-    assert!(
-        script.contains("\"pullRequest.is.safe\": \"This pull request can be merged safely.\"")
-    );
+    assert!(script.contains("\"pullRequest.is.safe\": \"This pull request can be merged safely.\""));
     assert!(script.contains("\"pullRequest.title.required\": \"Title is a required field.\""));
     assert!(script.contains(
         "\"pullRequest.toBranch.required\": \"Select branch that will receive code to be sent.\""
@@ -868,16 +850,10 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
     assert!(script.contains(
         "\"user.login.failed.server\": \"Failed to log in because a server error has occurred.\\nPlease ask site admin.\""
     ));
-    assert!(
-        script.contains(
-            "\"user.avatar.fileSizeAlert\": \"Images should be less than 1MB in size..\""
-        )
-    );
-    assert!(
-        script.contains(
-            "\"user.avatar.onlyImage\": \"Only image files are allowed to be uploaded.\""
-        )
-    );
+    assert!(script
+        .contains("\"user.avatar.fileSizeAlert\": \"Images should be less than 1MB in size..\""));
+    assert!(script
+        .contains("\"user.avatar.onlyImage\": \"Only image files are allowed to be uploaded.\""));
     assert!(
         script.contains("\"user.avatar.uploadError\": \"Failed to upload. Please ask site admin\"")
     );
@@ -895,11 +871,8 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
     ));
     assert!(script.contains("\"userinfo.changeNotifications\": \"Notification settings\""));
     assert!(script.contains("\"userinfo.leaveProject.confirm\": \"Are you sure to leave {0}?\""));
-    assert!(
-        script.contains(
-            "\"user.login.invalid\": \"Your log in ID, E-mail or password is not valid.\""
-        )
-    );
+    assert!(script
+        .contains("\"user.login.invalid\": \"Your log in ID, E-mail or password is not valid.\""));
     assert!(script.contains("\"user.loginId.duplicate\": \"This log in ID already exists.\""));
     assert!(script.contains(
         "\"user.login.required\": \"Login ID or E-mail and password is required field.\""
@@ -2814,12 +2787,11 @@ async fn uploaded_file_delete_requires_author_or_site_admin_and_removes_attachme
         .await
         .unwrap();
     assert_eq!(trailing_slash_post_delete.status(), StatusCode::OK);
-    assert!(
-        repo.read_attachment_by_id(trailing_slash_delete_file_id)
-            .await
-            .unwrap()
-            .is_none()
-    );
+    assert!(repo
+        .read_attachment_by_id(trailing_slash_delete_file_id)
+        .await
+        .unwrap()
+        .is_none());
 
     let deleted_get = app
         .clone()
@@ -2861,10 +2833,9 @@ async fn uploaded_file_delete_requires_author_or_site_admin_and_removes_attachme
         .await
         .unwrap();
     assert_eq!(admin_delete.status(), StatusCode::OK);
-    assert!(
-        repo.read_attachment_by_id(admin_deleted_file_id)
-            .await
-            .unwrap()
-            .is_none()
-    );
+    assert!(repo
+        .read_attachment_by_id(admin_deleted_file_id)
+        .await
+        .unwrap()
+        .is_none());
 }

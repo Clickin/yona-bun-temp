@@ -1507,8 +1507,7 @@ async fn rest_code_commit_detail_response(
             yoram_vcs::svn_repository_path(&service.data_root, authorization.project.id);
         yoram_vcs::read_svn_commit_detail(&repo_path, commit_id, &query.path)
     } else {
-        let repo_path =
-            yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+        let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
         yoram_vcs::read_commit_detail(
             &repo_path,
             commit_id,
