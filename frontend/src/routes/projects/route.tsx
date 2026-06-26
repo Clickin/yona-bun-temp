@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { listProjects } from "../../auth-workspace-client";
 import { useAppRuntime } from "../../app-runtime-context";
 import { toProjectDirectoryView } from "../../app-view-models";
@@ -20,8 +20,11 @@ export const Route = createFileRoute("/projects")({
 function ProjectsRouteComponent() {
   const { runtimeConfig } = useAppRuntime();
   const currentHref = useCurrentHref();
+  const navigate = useNavigate();
   useDocumentTitle("title.projectList");
-  const [projectDirectory, setProjectDirectory] = React.useState<ReturnType<typeof toProjectDirectoryView> | null>(null);
+  const [projectDirectory, setProjectDirectory] = React.useState<ReturnType<
+    typeof toProjectDirectoryView
+  > | null>(null);
   const [failureKind, setFailureKind] = React.useState<null | RouteFailureKind>(null);
 
   React.useEffect(() => {
@@ -56,6 +59,9 @@ function ProjectsRouteComponent() {
     <ProjectDirectoryPage
       directory={projectDirectory}
       href={currentHref}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       runtimeConfig={runtimeConfig}
     />
   );

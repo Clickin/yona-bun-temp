@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { listOrganizations } from "../../auth-workspace-client";
 import { useAppRuntime } from "../../app-runtime-context";
 import { toOrganizationDirectoryView } from "../../app-view-models";
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/orgs")({
 function OrganizationsRouteComponent() {
   const { runtimeConfig } = useAppRuntime();
   const currentHref = useCurrentHref();
+  const navigate = useNavigate();
   useDocumentTitle("title.organization.list");
   const [organizationDirectory, setOrganizationDirectory] = React.useState<ReturnType<
     typeof toOrganizationDirectoryView
@@ -58,6 +59,9 @@ function OrganizationsRouteComponent() {
     <OrganizationDirectoryPage
       directory={organizationDirectory}
       href={currentHref}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       runtimeConfig={runtimeConfig}
     />
   );

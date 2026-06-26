@@ -135,11 +135,13 @@ export function ProjectDirectoryPage({
   directory,
   href,
   messages: providedMessages,
+  onNavigate,
   runtimeConfig,
 }: {
   directory: ProjectDirectoryViewModel | null | undefined;
   href: string;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   runtimeConfig: RuntimeConfig;
 }) {
   const runtimeMessages = useLegacyMessages().t;
@@ -187,7 +189,21 @@ export function ProjectDirectoryPage({
         <div className="project-page-wrap">
           <div className="search-wrap">
             <div className="pull-left" id="search">
-              <form action={appHref(runtimeConfig, "/projects")} method="get">
+              <form
+                action={appHref(runtimeConfig, "/projects")}
+                method="get"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (!onNavigate) {
+                    return;
+                  }
+                  const formData = new FormData(event.currentTarget);
+                  const nextFilter = String(formData.get("filter") ?? "").trim();
+                  onNavigate(
+                    `/projects${nextFilter ? `?filter=${encodeURIComponent(nextFilter)}` : ""}`,
+                  );
+                }}
+              >
                 <div className="search-bar">
                   <input
                     className="textbox"
@@ -302,11 +318,13 @@ export function OrganizationDirectoryPage({
   directory,
   href,
   messages: providedMessages,
+  onNavigate,
   runtimeConfig,
 }: {
   directory: OrganizationDirectoryViewModel | null | undefined;
   href: string;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   runtimeConfig: RuntimeConfig;
 }) {
   const runtimeMessages = useLegacyMessages().t;
@@ -354,7 +372,21 @@ export function OrganizationDirectoryPage({
         <div className="project-page-wrap">
           <div className="search-wrap">
             <div className="pull-left" id="search">
-              <form action={appHref(runtimeConfig, "/orgs")} method="get">
+              <form
+                action={appHref(runtimeConfig, "/orgs")}
+                method="get"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (!onNavigate) {
+                    return;
+                  }
+                  const formData = new FormData(event.currentTarget);
+                  const nextFilter = String(formData.get("filter") ?? "").trim();
+                  onNavigate(
+                    `/orgs${nextFilter ? `?filter=${encodeURIComponent(nextFilter)}` : ""}`,
+                  );
+                }}
+              >
                 <div className="search-bar">
                   <input
                     className="textbox"

@@ -148,6 +148,14 @@
   `frontend/src/route-parity.spec.tsx`,
   `frontend/src/form-submit-boundary.spec.tsx`, and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 directory SPA navigation continuation:
+  `/projects` and `/orgs` keep the legacy directory GET forms, tabs, row
+  structures, empty states, and pagination, but filter submits now call
+  TanStack navigation. Directory search no longer performs native document
+  navigation while preserving `index/allProjectList*.scala.html` and
+  `index/allOrganizationList*.scala.html` output. Focused coverage:
+  `frontend/src/route-parity.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

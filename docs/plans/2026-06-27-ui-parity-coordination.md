@@ -522,6 +522,16 @@ M40 continues workspace issues SPA navigation:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real user issue route" src/form-submit-boundary.spec.tsx`.
 
+M41 continues directory SPA navigation:
+
+- `/projects` and `/orgs` keep the legacy directory GET form markup, tabs,
+  rows, empty states, and pagination.
+- Directory search submit now calls TanStack navigation so public project/org
+  filtering updates the existing SPA route instead of performing native
+  document navigation.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "directory"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

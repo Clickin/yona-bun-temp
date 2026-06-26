@@ -6229,6 +6229,14 @@ describe("file-route parity harness", () => {
 
   it("pins project directory empty state and search CTA", () => {
     const html = renderProjectDirectory({ items: [] }, "/projects?pageNum=1");
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/projects/route.tsx"),
+      "utf8",
+    );
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-directory-views.tsx"),
+      "utf8",
+    );
 
     expect(html).toContain(">PUBLIC Project list<");
     expect(html).toContain(">Group List<");
@@ -6239,6 +6247,11 @@ describe("file-route parity harness", () => {
     );
     expect(html).toContain('class="ico ico-err1"');
     expect(html).toContain(">Project is non existent<");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("navigate({ href })");
+    expect(viewSource).toContain("onNavigate?: (href: string) => void");
+    expect(viewSource).toContain("new FormData(event.currentTarget)");
+    expect(viewSource).toContain("event.preventDefault();");
     expect(html).not.toContain(">Search<");
     expect(html).not.toContain("No public projects found.");
   });
@@ -6310,6 +6323,7 @@ describe("file-route parity harness", () => {
 
   it("pins organization directory empty state and search CTA", () => {
     const html = renderOrganizationDirectory({ items: [] }, "/orgs?pageNum=1");
+    const routeSource = fs.readFileSync(path.resolve(__dirname, "routes/orgs/route.tsx"), "utf8");
 
     expect(html).toContain(">PUBLIC Project list<");
     expect(html).toContain(">Group List<");
@@ -6320,6 +6334,8 @@ describe("file-route parity harness", () => {
     );
     expect(html).toContain('class="ico ico-err1"');
     expect(html).toContain(">You do not belong to any group<");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("navigate({ href })");
     expect(html).not.toContain(">Search<");
     expect(html).not.toContain("No organizations found.");
   });
