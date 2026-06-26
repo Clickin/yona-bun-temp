@@ -912,6 +912,10 @@ describe("auth and workspace views", () => {
       const source = fs.readFileSync(path.resolve(__dirname, routeFile), "utf8");
       expect(source, routeFile).toContain(`import { ${restWrapper} }`);
       expect(source, routeFile).toContain(`await ${restWrapper}(runtimeConfig, csrfToken, input)`);
+      expect(source, routeFile).toContain("useNavigate");
+      expect(source, routeFile).toContain("prefixBasePath");
+      expect(source, routeFile).toContain("void navigate({ href:");
+      expect(source, routeFile).not.toContain("navigateToAppHref");
       expect(source, routeFile).not.toContain("fetch(");
       expect(source, routeFile).not.toContain('method: "POST"');
     }
@@ -1545,6 +1549,17 @@ describe("auth and workspace views", () => {
     expect(routeSources).not.toContain("Delete email failed.");
     expect(routeSources).not.toContain("Send validation email failed.");
     expect(routeSources).not.toContain("Set main email failed.");
+
+    const passwordRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/user/editform/password/route.tsx"),
+      "utf8",
+    );
+    expect(passwordRouteSource).toContain("useNavigate");
+    expect(passwordRouteSource).toContain("prefixBasePath");
+    expect(passwordRouteSource).toContain(
+      'void navigate({ href: prefixBasePath(runtimeConfig.basePath, "/users/loginform") });',
+    );
+    expect(passwordRouteSource).not.toContain("navigateToAppHref");
   });
 
   it("keeps REST workspace settings submit handlers primary without legacy direct form fallbacks", () => {

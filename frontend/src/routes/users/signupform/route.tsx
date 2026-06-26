@@ -1,10 +1,11 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RestApiError } from "../../../api/rest-client";
 import { registerWithPassword } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
+import { prefixBasePath } from "../../../runtime-config";
 import { RegisterPage } from "../../-auth-views";
-import { navigateToAppHref, useDocumentTitle } from "../../-shared";
+import { useDocumentTitle } from "../../-shared";
 
 export const Route = createFileRoute("/users/signupform")({
   component: RegisterRouteComponent,
@@ -44,6 +45,7 @@ function RegisterRouteComponent() {
     setErrorMessage,
   } = useAppRuntime();
   const [pending, setPending] = React.useState(false);
+  const navigate = useNavigate();
   useDocumentTitle("title.signup");
 
   if (bootstrapping) {
@@ -68,15 +70,17 @@ function RegisterRouteComponent() {
           setCurrentSession(session);
           if (!session.isAnonymous) {
             await refreshWorkspace(session);
-            navigateToAppHref(runtimeConfig.basePath, session.defaultLandingPath || "/me");
+            void navigate({
+              href: prefixBasePath(runtimeConfig.basePath, session.defaultLandingPath || "/me"),
+            });
             return;
           }
           if (authUiCapabilities?.signupRequireConfirm) {
-            navigateToAppHref(runtimeConfig.basePath, "/?signup=requested");
+            void navigate({ href: prefixBasePath(runtimeConfig.basePath, "/?signup=requested") });
             return;
           }
           if (authUiCapabilities?.emailVerificationEnabled) {
-            navigateToAppHref(runtimeConfig.basePath, "/?verify=sent");
+            void navigate({ href: prefixBasePath(runtimeConfig.basePath, "/?verify=sent") });
             return;
           }
         } catch (error) {

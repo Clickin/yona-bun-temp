@@ -1,10 +1,11 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RestApiError } from "../../../api/rest-client";
 import { signInWithPassword } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
+import { prefixBasePath } from "../../../runtime-config";
 import { LoginPage, resolveAuthRedirectPath, resolvePostAuthHref } from "../../-auth-views";
-import { navigateToAppHref, useCurrentHref, useDocumentTitle } from "../../-shared";
+import { useCurrentHref, useDocumentTitle } from "../../-shared";
 
 export const Route = createFileRoute("/users/loginform")({
   component: LoginRouteComponent,
@@ -44,6 +45,7 @@ function LoginRouteComponent() {
     setErrorMessage,
   } = useAppRuntime();
   const [pending, setPending] = React.useState(false);
+  const navigate = useNavigate();
   const currentHref = useCurrentHref();
   useDocumentTitle("title.login");
 
@@ -75,7 +77,7 @@ function LoginRouteComponent() {
             resolveAuthRedirectPath(searchParams),
             session.defaultLandingPath,
           );
-          navigateToAppHref(runtimeConfig.basePath, nextHref);
+          void navigate({ href: prefixBasePath(runtimeConfig.basePath, nextHref) });
         } catch (error) {
           setErrorMessage(legacyLoginFailureMessage(error));
         } finally {

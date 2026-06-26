@@ -205,6 +205,13 @@
   `user-profile-route-loading-shell-i18n.spec.tsx`,
   `issue-detail-shell.spec.tsx`, `route-parity.spec.tsx`, and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 auth/password SPA navigation continuation: login, signup,
+  lost-password, reset-password, and workspace password-change routes keep the
+  React REST JSON submit boundary while success/error redirects now call
+  TanStack navigation with base-path-prefixed hrefs instead of
+  `navigateToAppHref`. Focused coverage: `auth-workspace-shell.spec.tsx`,
+  `route-parity.spec.tsx`, `form-submit-boundary.spec.tsx`, and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

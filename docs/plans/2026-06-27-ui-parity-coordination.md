@@ -590,6 +590,15 @@ M47 continues root/shared SPA navigation:
   focused `auth-workspace-shell`, `user-profile-route-loading-shell-i18n`,
   `issue-detail-shell`, and `route-parity` vitest guards.
 
+M48 continues auth/password SPA navigation:
+
+- Login, signup, lost-password, reset-password, and workspace password-change
+  success/error redirects now keep the existing REST JSON submit boundary but
+  use TanStack navigation instead of `navigateToAppHref` document navigation.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  focused `auth-workspace-shell`, `route-parity`, and
+  `form-submit-boundary` guards.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

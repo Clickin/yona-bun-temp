@@ -1,13 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { changePassword } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
+import { prefixBasePath } from "../../../../runtime-config";
 import { WorkspaceSettingsPage } from "../../../-workspace-settings-view";
-import {
-  navigateToAppHref,
-  useCurrentHref,
-  useDocumentTitle,
-  useRequireAuthenticatedRoute,
-} from "../../../-shared";
+import { useCurrentHref, useDocumentTitle, useRequireAuthenticatedRoute } from "../../../-shared";
 
 export const Route = createFileRoute("/user/editform/password")({
   component: EditPasswordRouteComponent,
@@ -25,6 +21,7 @@ function EditPasswordRouteComponent() {
     setWorkspaceOverview,
   } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/user/editform/password");
+  const navigate = useNavigate();
   const currentHref = useCurrentHref();
   useDocumentTitle("userinfo.accountSetting");
 
@@ -50,7 +47,7 @@ function EditPasswordRouteComponent() {
           const session = await changePassword(runtimeConfig, csrfToken, input);
           setCurrentSession(session);
           setWorkspaceOverview(null);
-          navigateToAppHref(runtimeConfig.basePath, "/users/loginform");
+          void navigate({ href: prefixBasePath(runtimeConfig.basePath, "/users/loginform") });
         } catch (error) {
           setErrorMessage(
             error instanceof Error

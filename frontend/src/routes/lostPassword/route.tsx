@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAppRuntime } from "../../app-runtime-context";
 import { requestPasswordReset } from "../../auth-workspace-client";
+import { prefixBasePath } from "../../runtime-config";
 import { LostPasswordPage } from "../-auth-views";
-import { navigateToAppHref, useCurrentHref, useDocumentTitle } from "../-shared";
+import { useCurrentHref, useDocumentTitle } from "../-shared";
 
 export const Route = createFileRoute("/lostPassword")({
   component: LostPasswordRouteComponent,
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/lostPassword")({
 
 function LostPasswordRouteComponent() {
   const { csrfToken, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
   const currentHref = useCurrentHref();
   useDocumentTitle("site.resetPasswordEmail.title");
   return (
@@ -20,9 +22,11 @@ function LostPasswordRouteComponent() {
       onRequestReset={async (input) => {
         try {
           const result = await requestPasswordReset(runtimeConfig, csrfToken, input);
-          navigateToAppHref(runtimeConfig.basePath, result.redirectPath);
+          void navigate({ href: prefixBasePath(runtimeConfig.basePath, result.redirectPath) });
         } catch {
-          navigateToAppHref(runtimeConfig.basePath, "/lostPassword?error=invalid");
+          void navigate({
+            href: prefixBasePath(runtimeConfig.basePath, "/lostPassword?error=invalid"),
+          });
         }
       }}
     />

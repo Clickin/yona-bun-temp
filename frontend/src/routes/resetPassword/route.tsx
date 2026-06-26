@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAppRuntime } from "../../app-runtime-context";
 import { completePasswordReset } from "../../auth-workspace-client";
+import { prefixBasePath } from "../../runtime-config";
 import { ResetPasswordPage } from "../-auth-views";
-import { navigateToAppHref, useCurrentHref, useDocumentTitle } from "../-shared";
+import { useCurrentHref, useDocumentTitle } from "../-shared";
 
 export const Route = createFileRoute("/resetPassword")({
   component: ResetPasswordRouteComponent,
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/resetPassword")({
 
 function ResetPasswordRouteComponent() {
   const { csrfToken, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
   const currentHref = useCurrentHref();
   useDocumentTitle("title.resetPassword");
   return (
@@ -20,10 +22,12 @@ function ResetPasswordRouteComponent() {
       onResetPassword={async (input) => {
         try {
           const result = await completePasswordReset(runtimeConfig, csrfToken, input);
-          navigateToAppHref(runtimeConfig.basePath, result.redirectPath);
+          void navigate({ href: prefixBasePath(runtimeConfig.basePath, result.redirectPath) });
         } catch {
           const suffix = input.hashString ? `&s=${encodeURIComponent(input.hashString)}` : "";
-          navigateToAppHref(runtimeConfig.basePath, `/resetPassword?error=invalid${suffix}`);
+          void navigate({
+            href: prefixBasePath(runtimeConfig.basePath, `/resetPassword?error=invalid${suffix}`),
+          });
         }
       }}
     />
