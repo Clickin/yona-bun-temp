@@ -211,6 +211,8 @@ const localDirectApiSurfaces = [
   },
 ];
 
+const alwaysScreenshotPaths = new Set(["/", "/admin/sample", "/users/loginform"]);
+
 const routeSampleValues = {
   $branch: "main",
   $commitId: "HEAD",
@@ -771,10 +773,14 @@ async function inspectPage(page, baseUrl, path, label) {
       stylesheetRules: stylesheets.reduce((sum, sheet) => sum + Math.max(0, sheet.rules), 0),
       hasStylesheetError: stylesheets.some((sheet) => sheet.rules === -1),
       gnb: selectorState(".gnb-outer"),
+      gnbInner: selectorState(".gnb-inner"),
+      gnbUsermenu: selectorState(".gnb-usermenu"),
+      sidenav: selectorState("#mySidenav"),
       projectHeader: selectorState(".project-header-outer"),
       projectMenu: selectorState(".project-menu-outer"),
       pageWrap: selectorState(".page-wrap-outer, .project-page-wrap"),
       loginDialog: selectorState("#loginDialog, .loginDialog"),
+      footer: selectorState("footer.page-footer-outer"),
       userProfile: selectorState(".user-profile-page"),
       isErrorPage: [document.title, body.innerText].some(
         (text) =>
@@ -792,6 +798,7 @@ async function inspectPage(page, baseUrl, path, label) {
   });
   const isProjectPage = /^\/[^/?#]+\/[^/?#]+/u.test(path) && !rootNames.has(path.split("/")[1]);
   const isLegacyFragment = label === "legacy" && path.startsWith("/notification?");
+  const isFramedShell = path === "/sidebar" || path.startsWith("/sidebar?");
   const errors = [];
   const status = response?.status() ?? 0;
   if (status >= 500) {
@@ -819,11 +826,18 @@ async function inspectPage(page, baseUrl, path, label) {
     errors.push("non-legacy default document title visible");
   }
   if (
+    !isFramedShell &&
     !isLegacyFragment &&
     !metrics.isErrorPage &&
     (!metrics.gnb || metrics.gnb.width < metrics.viewportWidth * 0.8)
   ) {
     errors.push("missing global navigation");
+  }
+  if (!isFramedShell && !isLegacyFragment && !metrics.isErrorPage && !metrics.gnbInner) {
+    errors.push("missing global navigation inner container");
+  }
+  if (!isFramedShell && !isLegacyFragment && !metrics.isErrorPage && !metrics.gnbUsermenu) {
+    errors.push("missing global user menu container");
   }
   if (
     path === "/" &&
@@ -847,7 +861,7 @@ async function inspectPage(page, baseUrl, path, label) {
   if (requestFailures.length > 0) {
     errors.push(`${requestFailures.length} request failure(s)`);
   }
-  if (errors.length > 0) {
+  if (errors.length > 0 || alwaysScreenshotPaths.has(path)) {
     await page.screenshot({
       path: resolve(outputDir, `${label}-${path.replace(/[^a-z0-9]+/giu, "_") || "root"}.png`),
       fullPage: true,
@@ -870,10 +884,14 @@ async function inspectPage(page, baseUrl, path, label) {
       stylesheetCount: metrics.stylesheetCount,
       stylesheetRules: metrics.stylesheetRules,
       gnb: metrics.gnb,
+      gnbInner: metrics.gnbInner,
+      gnbUsermenu: metrics.gnbUsermenu,
+      sidenav: metrics.sidenav,
       projectHeader: metrics.projectHeader,
       projectMenu: metrics.projectMenu,
       pageWrap: metrics.pageWrap,
       loginDialog: metrics.loginDialog,
+      footer: metrics.footer,
       userProfile: metrics.userProfile,
       isErrorPage: metrics.isErrorPage,
     },

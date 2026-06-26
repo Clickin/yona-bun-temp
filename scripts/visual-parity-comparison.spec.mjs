@@ -98,3 +98,16 @@ test("visual sweep scans chrome text and attributes for visible raw legacy keys"
   );
   assert.match(source, /raw i18n key visible/u);
 });
+
+test("visual sweep records P0 global shell computed-style metrics", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /gnbInner: selectorState\("\.gnb-inner"\)/u);
+  assert.match(source, /gnbUsermenu: selectorState\("\.gnb-usermenu"\)/u);
+  assert.match(source, /sidenav: selectorState\("#mySidenav"\)/u);
+  assert.match(source, /footer: selectorState\("footer\.page-footer-outer"\)/u);
+  assert.match(source, /const alwaysScreenshotPaths = new Set\(\["\/", "\/admin\/sample", "\/users\/loginform"\]\)/u);
+  assert.match(source, /const isFramedShell = path === "\/sidebar"/u);
+  assert.match(source, /missing global navigation inner container/u);
+  assert.match(source, /missing global user menu container/u);
+});

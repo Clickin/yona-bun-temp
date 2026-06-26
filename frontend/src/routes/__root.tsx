@@ -68,7 +68,6 @@ const STANDALONE_FOOTER_PATHS = new Set(["/_UIKit", "/restart", "/secret"]);
 const NON_PROJECT_TOP_LEVEL_PATHS = new Set([
   "_UIKit",
   "_import",
-  "admin",
   "api",
   "assets",
   "authenticate",

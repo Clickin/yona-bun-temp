@@ -446,6 +446,48 @@ button[type="submit"]:focus {
   color: #333;
 }
 
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  display: none;
+  float: left;
+  min-width: 160px;
+  padding: 5px 0;
+  margin: 2px 0 0;
+  list-style: none;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border: 1px solid rgb(0 0 0 / 20%);
+  border-radius: 2px;
+  box-shadow: -2px 2px 1px rgb(0 0 0 / 10%);
+}
+
+.open > .dropdown-menu {
+  display: block;
+}
+
+.avatar-wrap {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  vertical-align: middle;
+  background: #ddd;
+  border-radius: 3px !important;
+}
+
+.avatar-wrap.smaller {
+  width: 20px;
+  height: 20px;
+}
+
+.avatar-wrap img {
+  width: 100%;
+  vertical-align: top;
+}
+
 .gnb-inner::after {
   display: block;
   clear: both;
@@ -600,6 +642,7 @@ button[type="submit"]:focus {
 
 .gnb-usermenu {
   float: right;
+  height: 40px;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -622,6 +665,56 @@ button[type="submit"]:focus {
   text-decoration: none;
 }
 
+.gnb-usermenu-dropdown {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.gnb-usermenu-dropdown > a {
+  padding: 0 10px;
+}
+
+.gnb-usermenu-dropdown .gnb-dropdown-toggle {
+  display: inline-block;
+  line-height: 30px;
+  transition: all 0.15s ease;
+}
+
+.gnb-usermenu-dropdown .gnb-dropdown-toggle .caret {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 5px;
+  vertical-align: middle !important;
+  border-top: 4px solid rgba(255, 255, 255, 0.7);
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+  transition: all 0.15s ease;
+  content: "";
+}
+
+.gnb-usermenu-dropdown .gnb-dropdown-toggle:hover,
+.gnb-usermenu-dropdown .gnb-dropdown-toggle:focus {
+  color: #51aacc;
+  text-decoration: none;
+}
+
+.gnb-usermenu-dropdown .gnb-dropdown-toggle:hover .caret,
+.gnb-usermenu-dropdown .gnb-dropdown-toggle:focus .caret {
+  border-top-color: #51aacc;
+}
+
+.gnb-usermenu-dropdown .gnb-dropdown-toggle.dropdwon-box-btn {
+  padding: 0 10px;
+  color: #fff;
+  background-color: #51aacc;
+  border-radius: 3px;
+}
+
+.gnb-usermenu-dropdown .gnb-dropdown-toggle.dropdwon-box-btn .caret {
+  border-top-color: #fff;
+}
+
 .siteintro {
   border-bottom: 1px solid #333;
   background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), #333;
@@ -635,6 +728,31 @@ button[type="submit"]:focus {
   margin: 0 auto;
   overflow: auto;
   text-align: center;
+}
+
+.page-footer-outer {
+  padding: 10px 0;
+  background-color: #fff;
+}
+
+.page-footer-outer .page-footer {
+  margin: 0 auto;
+  line-height: 34px;
+  text-align: center;
+}
+
+.page-footer-outer .provider {
+  margin-left: 4px;
+  color: #333;
+  font-family: Verdana, sans-serif;
+  font-size: 9px;
+}
+
+.page-footer-outer .provider a {
+  padding: 0 2px;
+  color: #444;
+  font-family: Tahoma, sans-serif;
+  font-weight: bold;
 }
 
 .siteintro .site-heading {

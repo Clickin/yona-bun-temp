@@ -267,6 +267,17 @@ describe("auth and workspace views", () => {
     expect(appCss).toContain("width: 50px;");
     expect(appCss).toContain('.gnb-search-form input[type="text"]:focus');
     expect(appCss).toContain("width: 200px;");
+    expect(appCss).toContain(".dropdown-menu {");
+    expect(appCss).toContain("display: none;");
+    expect(appCss).toContain(".gnb-usermenu {");
+    expect(appCss).toContain("height: 40px;");
+    expect(appCss).toContain(".gnb-usermenu-dropdown .gnb-dropdown-toggle");
+    expect(appCss).toContain(".avatar-wrap.smaller");
+    expect(appCss).toContain("width: 20px;");
+    expect(appCss).toContain(".page-footer-outer {");
+    expect(appCss).toContain("padding: 10px 0;");
+    expect(appCss).toContain(".page-footer-outer .page-footer");
+    expect(appCss).toContain("line-height: 34px;");
     expect(appCss).toContain(".framed-body {");
     expect(appCss).toContain("overflow: hidden;");
     expect(appCss).toContain(".sidebar {");
