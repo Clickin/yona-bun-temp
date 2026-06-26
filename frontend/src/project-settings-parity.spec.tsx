@@ -187,7 +187,8 @@ describe("project settings parity", () => {
     expect(svnHtml).not.toContain("postform?issueTemplate=true");
     expect(svnHtml).not.toContain('id="reviewerCountSettingPanel"');
     expect(codeMenuOffHtml).toContain('id="reviewerCountSettingPanel" style="display:none"');
-    expect(codeMenuOffHtml).not.toContain('id="project-default-branch"');
+    expect(codeMenuOffHtml).toContain('id="defaultBranceSettingPanel" style="display:none"');
+    expect(codeMenuOffHtml).toContain('id="project-default-branch"');
   });
 
   it("uses default legacy messages without AppRuntimeContext messages", () => {

@@ -42,10 +42,10 @@ Source comparison by Subagent P2 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 6 |
+| gap | 5 |
 | deviation | 1 |
 | weak evidence | 3 |
-| covered | 6 |
+| covered | 7 |
 
 ## Reset Findings
 
@@ -60,7 +60,7 @@ Source comparison by Subagent P2 found concrete reset blockers:
 | `project/members.scala.html` | `/owner/project/members`, custom-menu project. | `frontend/src/routes/$owner/$projectName/members/route.tsx` | data-boundary | gap | P2 | `members/route.tsx`, `-project-views.tsx` | Current shell detail is synthesized from members response. |
 | `project/webhooks.scala.html` | Webhook list, viewer can read but cannot create. | `frontend/src/routes/$owner/$projectName/webhooks/route.tsx` | permission | gap | P2 | `webhooks/route.tsx` | Legacy hides create form only; current route returns `ForbiddenPage` when `!viewerCanUpdate`. |
 | `project/setting.scala.html` | Settings form with logo. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-settings-parity.spec.tsx` | asset | covered in current follow-up | P2 | none | `ProjectSettingsPage` now renders `.logo-wrap` with legacy inline `background-image:url(...)`, using `detail.logoUrl` or the legacy `/assets/images/project_default_logo.png` fallback; focused settings parity asserts the style and `#logoPath` upload anchor. |
-| `project/setting.scala.html` | Git project, code menu off. | `frontend/src/routes/-project-views.tsx` | layout | gap | P2 | `ProjectSettingsPage` | Legacy keeps `#defaultBranceSettingPanel` hidden; current omits it when code is off or no branches exist. |
+| `project/setting.scala.html` | Git project, code menu off. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-settings-parity.spec.tsx` | layout | covered in current follow-up | P2 | none | Git settings now always render `#defaultBranceSettingPanel` with the legacy branch select and hide the wrapper with `style="display:none"` when code menu is off; the panel no longer disappears when code is off or branch options are empty. |
 | `project/setting.scala.html` | Reviewer count dropdown. | `frontend/src/routes/-project-views.tsx` | layout | deviation | P2 | `ProjectSettingsPage` | Legacy uses `.btn-group.branches > button + ul.dropdown-menu`; current uses native `select`. |
 | `project/home.scala.html` | Project home sidebar. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-home-tabs.spec.tsx` | layout | covered in current follow-up | P2 | none | Removed the non-legacy `section > h3 Project dashboard` / `.runtime-grid` sidebar block; watch/enroll controls now live in `project/header.scala.html`'s util dropdown position, and the sidebar preserves legacy button wrap, optional milestone summary, and member info order. |
 | `project/home.scala.html` | SVN project with code menu enabled. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-home-tabs.spec.tsx` | interaction | covered in current follow-up | P2 | none | Fork CTA now renders only when `detail.showCode` is true and `vcs` is Git/unspecified, matching the legacy `project.vcs.equals("GIT")` guard under `project.menuSetting.code`. |

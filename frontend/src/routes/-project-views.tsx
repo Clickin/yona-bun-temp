@@ -4222,8 +4222,12 @@ export function ProjectSettingsPage(props: {
                 </div>
               ) : null}
 
-              {isGitProject && formState.code && props.defaultBranchOptions?.length ? (
-                <div className="box-wrap middle" id="defaultBranceSettingPanel">
+              {isGitProject ? (
+                <div
+                  className="box-wrap middle"
+                  id="defaultBranceSettingPanel"
+                  style={formState.code ? undefined : { display: "none" }}
+                >
                   <div className="cu-label vmiddle">
                     {legacyMessage(props.messages, "code.branches.defaultBranch")}
                   </div>
@@ -4243,7 +4247,7 @@ export function ProjectSettingsPage(props: {
                         }))
                       }
                     >
-                      {props.defaultBranchOptions.map((branch) => (
+                      {(props.defaultBranchOptions ?? []).map((branch) => (
                         <option key={branch.name} value={branch.name}>
                           {branch.name}
                         </option>
