@@ -60,6 +60,15 @@ Worker update, 2026-06-26:
   the existing form and REST submit boundaries. Verification:
   `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
   src/board-milestone-parity.spec.tsx`.
+- Worker update, 2026-06-27 milestone detail layout follow-up: project
+  milestone detail shell ownership moved into
+  `frontend/src/routes/$owner/$projectName/route.tsx` for
+  `/milestone/:milestoneId`, keeping the milestone menu active.
+  `ProjectMilestoneDetailPage` now supports `renderShell={false}` while
+  retaining the legacy label stylesheet, `milesion-wrap` body, issue
+  mass-update controls, and delete modal. Verification:
+  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
+  src/board-milestone-parity.spec.tsx`.
 
 ## Evidence Checked
 

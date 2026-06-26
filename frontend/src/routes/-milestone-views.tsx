@@ -981,6 +981,7 @@ export function ProjectMilestoneDetailPage(props: {
   onOpen?: () => Promise<void>;
   owner: string;
   projectName: string;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail(props.owner, props.projectName);
@@ -1039,295 +1040,303 @@ export function ProjectMilestoneDetailPage(props: {
     [props, selectedIssueNumbers],
   );
 
-  return (
-    <main className="app-shell">
-      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu activeMenu="milestone" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <link
-        href={buildProjectHref(
-          props.runtimeConfig,
-          detail.ownerName,
-          detail.projectName,
-          "issue/labels.css",
-        )}
-        rel="stylesheet"
-        type="text/css"
-      />
-      {milestone ? (
-        <>
-          <div className="page-wrap-outer">
-            <div className="project-page-wrap">
-              <section className="milesion-wrap">
-                <h4>
-                  <a
-                    className="title"
-                    href={buildProjectHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      `milestone/${milestone.id}`,
-                    )}
-                  >
-                    {milestone.title}
-                  </a>
-                  <small className="ml10">
-                    {milestone.dueDateLabel ? (
-                      <>
-                        <span className="due-date">
-                          {legacyMessage(props.messages, "label.dueDate")}{" "}
-                          <strong>{milestone.dueDateLabel}</strong>
-                        </span>
-                        {milestone.state !== "closed" && milestone.untilLabel ? (
-                          <span className="date">({milestone.untilLabel})</span>
-                        ) : null}
-                      </>
-                    ) : null}
-                    <span className={`badge badge-issue-${milestone.state} margin-left-5`}>
-                      {legacyMessage(props.messages, stateLabel(milestone.state))}
-                    </span>
-                  </small>
-                </h4>
-                <MilestoneProgress percent={milestone.completionPercent} />
-                {milestone.contentsMarkdown.trim() ? (
-                  <div className="milestone-desc">
-                    <MarkdownRenderer
-                      className="markdown-wrap"
-                      basePath={props.runtimeConfig.basePath}
-                      issueReferences={milestone.issueReferences}
-                      markdown={milestone.contentsMarkdown}
-                      mentionReferences={milestone.mentionReferences}
-                      ownerName={detail.ownerName}
-                      projectName={detail.projectName}
-                    />
-                    <div
-                      className="attachments"
-                      data-attachments={JSON.stringify(
-                        milestoneAttachmentMetadata(milestone.attachments),
-                      )}
-                    >
-                      <LegacyMilestoneAttachmentList attachments={milestone.attachments} />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="content empty-content" />
-                )}
-                <div
-                  className="actrow right-txt row-fluid"
-                  style={{ clear: "both", padding: "15px 0" }}
-                >
-                  <a
-                    className="ybtn pull-left"
-                    href={buildProjectHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      "milestones",
-                    )}
-                  >
-                    {legacyMessage(props.messages, "button.list")}
-                  </a>
-                  {milestone.viewerCanDelete && props.onDelete ? (
-                    <a
-                      className="ybtn ybtn-danger"
-                      data-toggle="modal"
-                      href="#deleteConfirm"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        setDeleteConfirmOpen(true);
-                      }}
-                    >
-                      {legacyMessage(props.messages, "button.delete")}
-                    </a>
-                  ) : null}
-                  {milestone.viewerCanUpdate ? (
-                    <>
-                      <a
-                        className="ybtn"
-                        href={buildProjectHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          `milestone/${milestone.id}/editform`,
-                        )}
-                      >
-                        {legacyMessage(props.messages, "button.edit")}
-                      </a>
-                      {milestone.state === "open" && props.onClose ? (
-                        <button
-                          className="ybtn"
-                          data-request-method="post"
-                          data-request-uri={milestoneActionHref(
-                            props.runtimeConfig,
-                            detail,
-                            milestone.id,
-                            "close",
-                          )}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            void props.onClose?.();
-                          }}
-                          type="button"
-                        >
-                          {legacyMessage(props.messages, "milestone.close")}
-                        </button>
-                      ) : null}
-                      {milestone.state === "closed" && props.onOpen ? (
-                        <button
-                          className="ybtn"
-                          data-request-method="post"
-                          data-request-uri={milestoneActionHref(
-                            props.runtimeConfig,
-                            detail,
-                            milestone.id,
-                            "open",
-                          )}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            void props.onOpen?.();
-                          }}
-                          type="button"
-                        >
-                          {legacyMessage(props.messages, "milestone.open")}
-                        </button>
-                      ) : null}
-                    </>
-                  ) : null}
-                </div>
-                <div id="issues">
-                  <ul className="nav nav-tabs">
-                    {["open", "closed", "all"].map((state) => (
-                      <li className={issueState === state ? "active" : ""} key={state}>
-                        <a
-                          href={`${tabHref(
-                            props.runtimeConfig,
-                            detail,
-                            `milestone/${milestone.id}`,
-                            state,
-                          )}#issues`}
-                        >
-                          {legacyMessage(
-                            props.messages,
-                            state === "open"
-                              ? "issue.state.open"
-                              : state === "closed"
-                                ? "issue.state.closed"
-                                : "issue.state.all",
-                          )}
-                          <span className="num-badge">
-                            {state === "open"
-                              ? milestone.openIssueCount
-                              : state === "closed"
-                                ? milestone.closedIssueCount
-                                : milestone.openIssueCount + milestone.closedIssueCount}
-                          </span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="issues">
-                    <div className="filter-wrap">
-                      <LegacyMilestoneMassUpdateShell
-                        detail={detail}
-                        messages={props.messages}
-                        onCheckAll={setAllVisibleIssueSelection}
-                        onMassUpdate={submitMassUpdate}
-                        runtimeConfig={props.runtimeConfig}
-                        selectedCount={
-                          selectedIssueNumbers.filter((issueNumber) =>
-                            visibleIssueNumbers.includes(issueNumber),
-                          ).length
-                        }
-                        totalCount={visibleIssueNumbers.length}
-                      />
-                      <div className="pull-right search search-bar">
-                        <input
-                          className="textbox"
-                          data-items="issue-item"
-                          data-toggle="item-search"
-                          name="filter"
-                          onChange={(event) => setFilter(event.currentTarget.value)}
-                          placeholder={legacyMessage(props.messages, "milestone.searchPlaceholder")}
-                          type="text"
-                          value={filter}
-                        />
-                        <button className="search-btn" type="submit">
-                          <i className="yobicon-search" />
-                        </button>
-                      </div>
-                    </div>
-                    <ul className="post-list-wrap row-fluid">
-                      {issues.map((issue) => (
-                        <LegacyMilestoneIssuePartialRow
-                          detail={detail}
-                          hidden={milestoneIssueHidden(issue, filter)}
-                          issue={issue}
-                          key={`${issue.state}-${issue.issueNumber}`}
-                          messages={props.messages}
-                          onIssueSelectionChange={toggleIssueSelection}
-                          runtimeConfig={props.runtimeConfig}
-                          selectedIssueNumbers={selectedIssueNumbers}
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </section>
+  const labelStylesheet = (
+    <link
+      href={buildProjectHref(
+        props.runtimeConfig,
+        detail.ownerName,
+        detail.projectName,
+        "issue/labels.css",
+      )}
+      rel="stylesheet"
+      type="text/css"
+    />
+  );
+  const pageBody = milestone ? (
+    <div className="project-page-wrap">
+      <section className="milesion-wrap">
+        <h4>
+          <a
+            className="title"
+            href={buildProjectHref(
+              props.runtimeConfig,
+              detail.ownerName,
+              detail.projectName,
+              `milestone/${milestone.id}`,
+            )}
+          >
+            {milestone.title}
+          </a>
+          <small className="ml10">
+            {milestone.dueDateLabel ? (
+              <>
+                <span className="due-date">
+                  {legacyMessage(props.messages, "label.dueDate")}{" "}
+                  <strong>{milestone.dueDateLabel}</strong>
+                </span>
+                {milestone.state !== "closed" && milestone.untilLabel ? (
+                  <span className="date">({milestone.untilLabel})</span>
+                ) : null}
+              </>
+            ) : null}
+            <span className={`badge badge-issue-${milestone.state} margin-left-5`}>
+              {legacyMessage(props.messages, stateLabel(milestone.state))}
+            </span>
+          </small>
+        </h4>
+        <MilestoneProgress percent={milestone.completionPercent} />
+        {milestone.contentsMarkdown.trim() ? (
+          <div className="milestone-desc">
+            <MarkdownRenderer
+              className="markdown-wrap"
+              basePath={props.runtimeConfig.basePath}
+              issueReferences={milestone.issueReferences}
+              markdown={milestone.contentsMarkdown}
+              mentionReferences={milestone.mentionReferences}
+              ownerName={detail.ownerName}
+              projectName={detail.projectName}
+            />
+            <div
+              className="attachments"
+              data-attachments={JSON.stringify(milestoneAttachmentMetadata(milestone.attachments))}
+            >
+              <LegacyMilestoneAttachmentList attachments={milestone.attachments} />
             </div>
           </div>
+        ) : (
+          <div className="content empty-content" />
+        )}
+        <div className="actrow right-txt row-fluid" style={{ clear: "both", padding: "15px 0" }}>
+          <a
+            className="ybtn pull-left"
+            href={buildProjectHref(
+              props.runtimeConfig,
+              detail.ownerName,
+              detail.projectName,
+              "milestones",
+            )}
+          >
+            {legacyMessage(props.messages, "button.list")}
+          </a>
           {milestone.viewerCanDelete && props.onDelete ? (
-            <div
-              aria-hidden={deleteConfirmOpen ? "false" : "true"}
-              className={`modal hide fade${deleteConfirmOpen ? " in" : ""}`}
-              id="deleteConfirm"
-              style={deleteConfirmOpen ? { display: "block" } : undefined}
+            <a
+              className="ybtn ybtn-danger"
+              data-toggle="modal"
+              href="#deleteConfirm"
+              onClick={(event) => {
+                event.preventDefault();
+                setDeleteConfirmOpen(true);
+              }}
             >
-              <div className="modal-header">
+              {legacyMessage(props.messages, "button.delete")}
+            </a>
+          ) : null}
+          {milestone.viewerCanUpdate ? (
+            <>
+              <a
+                className="ybtn"
+                href={buildProjectHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  `milestone/${milestone.id}/editform`,
+                )}
+              >
+                {legacyMessage(props.messages, "button.edit")}
+              </a>
+              {milestone.state === "open" && props.onClose ? (
                 <button
-                  aria-label={legacyMessage(props.messages, "button.close")}
-                  className="close"
-                  data-dismiss="modal"
-                  onClick={() => setDeleteConfirmOpen(false)}
-                  type="button"
-                >
-                  ×
-                </button>
-                <h3>{legacyMessage(props.messages, "milestone.delete")}</h3>
-              </div>
-              <div className="modal-body">
-                <p>{legacyMessage(props.messages, "post.delete.confirm")}</p>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="ybtn ybtn-danger"
-                  data-request-method="delete"
+                  className="ybtn"
+                  data-request-method="post"
                   data-request-uri={milestoneActionHref(
                     props.runtimeConfig,
                     detail,
                     milestone.id,
-                    "delete",
+                    "close",
                   )}
                   onClick={(event) => {
                     event.preventDefault();
-                    setDeleteConfirmOpen(false);
-                    void props.onDelete?.();
+                    void props.onClose?.();
                   }}
                   type="button"
                 >
-                  {legacyMessage(props.messages, "button.yes")}
+                  {legacyMessage(props.messages, "milestone.close")}
                 </button>
+              ) : null}
+              {milestone.state === "closed" && props.onOpen ? (
                 <button
                   className="ybtn"
-                  data-dismiss="modal"
-                  onClick={() => setDeleteConfirmOpen(false)}
+                  data-request-method="post"
+                  data-request-uri={milestoneActionHref(
+                    props.runtimeConfig,
+                    detail,
+                    milestone.id,
+                    "open",
+                  )}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void props.onOpen?.();
+                  }}
                   type="button"
                 >
-                  {legacyMessage(props.messages, "button.no")}
+                  {legacyMessage(props.messages, "milestone.open")}
+                </button>
+              ) : null}
+            </>
+          ) : null}
+        </div>
+        <div id="issues">
+          <ul className="nav nav-tabs">
+            {["open", "closed", "all"].map((state) => (
+              <li className={issueState === state ? "active" : ""} key={state}>
+                <a
+                  href={`${tabHref(
+                    props.runtimeConfig,
+                    detail,
+                    `milestone/${milestone.id}`,
+                    state,
+                  )}#issues`}
+                >
+                  {legacyMessage(
+                    props.messages,
+                    state === "open"
+                      ? "issue.state.open"
+                      : state === "closed"
+                        ? "issue.state.closed"
+                        : "issue.state.all",
+                  )}
+                  <span className="num-badge">
+                    {state === "open"
+                      ? milestone.openIssueCount
+                      : state === "closed"
+                        ? milestone.closedIssueCount
+                        : milestone.openIssueCount + milestone.closedIssueCount}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="issues">
+            <div className="filter-wrap">
+              <LegacyMilestoneMassUpdateShell
+                detail={detail}
+                messages={props.messages}
+                onCheckAll={setAllVisibleIssueSelection}
+                onMassUpdate={submitMassUpdate}
+                runtimeConfig={props.runtimeConfig}
+                selectedCount={
+                  selectedIssueNumbers.filter((issueNumber) =>
+                    visibleIssueNumbers.includes(issueNumber),
+                  ).length
+                }
+                totalCount={visibleIssueNumbers.length}
+              />
+              <div className="pull-right search search-bar">
+                <input
+                  className="textbox"
+                  data-items="issue-item"
+                  data-toggle="item-search"
+                  name="filter"
+                  onChange={(event) => setFilter(event.currentTarget.value)}
+                  placeholder={legacyMessage(props.messages, "milestone.searchPlaceholder")}
+                  type="text"
+                  value={filter}
+                />
+                <button className="search-btn" type="submit">
+                  <i className="yobicon-search" />
                 </button>
               </div>
             </div>
-          ) : null}
-        </>
-      ) : null}
+            <ul className="post-list-wrap row-fluid">
+              {issues.map((issue) => (
+                <LegacyMilestoneIssuePartialRow
+                  detail={detail}
+                  hidden={milestoneIssueHidden(issue, filter)}
+                  issue={issue}
+                  key={`${issue.state}-${issue.issueNumber}`}
+                  messages={props.messages}
+                  onIssueSelectionChange={toggleIssueSelection}
+                  runtimeConfig={props.runtimeConfig}
+                  selectedIssueNumbers={selectedIssueNumbers}
+                />
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+  ) : null;
+  const deleteModal =
+    milestone?.viewerCanDelete && props.onDelete ? (
+      <div
+        aria-hidden={deleteConfirmOpen ? "false" : "true"}
+        className={`modal hide fade${deleteConfirmOpen ? " in" : ""}`}
+        id="deleteConfirm"
+        style={deleteConfirmOpen ? { display: "block" } : undefined}
+      >
+        <div className="modal-header">
+          <button
+            aria-label={legacyMessage(props.messages, "button.close")}
+            className="close"
+            data-dismiss="modal"
+            onClick={() => setDeleteConfirmOpen(false)}
+            type="button"
+          >
+            ×
+          </button>
+          <h3>{legacyMessage(props.messages, "milestone.delete")}</h3>
+        </div>
+        <div className="modal-body">
+          <p>{legacyMessage(props.messages, "post.delete.confirm")}</p>
+        </div>
+        <div className="modal-footer">
+          <button
+            className="ybtn ybtn-danger"
+            data-request-method="delete"
+            data-request-uri={milestoneActionHref(
+              props.runtimeConfig,
+              detail,
+              milestone.id,
+              "delete",
+            )}
+            onClick={(event) => {
+              event.preventDefault();
+              setDeleteConfirmOpen(false);
+              void props.onDelete?.();
+            }}
+            type="button"
+          >
+            {legacyMessage(props.messages, "button.yes")}
+          </button>
+          <button
+            className="ybtn"
+            data-dismiss="modal"
+            onClick={() => setDeleteConfirmOpen(false)}
+            type="button"
+          >
+            {legacyMessage(props.messages, "button.no")}
+          </button>
+        </div>
+      </div>
+    ) : null;
+
+  if (props.renderShell === false) {
+    return (
+      <>
+        {labelStylesheet}
+        {pageBody}
+        {deleteModal}
+      </>
+    );
+  }
+
+  return (
+    <main className="app-shell">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="milestone" detail={detail} runtimeConfig={props.runtimeConfig} />
+      {labelStylesheet}
+      <div className="page-wrap-outer">{pageBody}</div>
+      {deleteModal}
     </main>
   );
 }

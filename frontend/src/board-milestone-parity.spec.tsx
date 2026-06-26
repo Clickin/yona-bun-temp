@@ -313,6 +313,40 @@ describe("board/milestone UI parity closure", () => {
     expect(html).toContain('id="editor-contents-content-body"');
   });
 
+  it("lets the project layout route own the milestone detail shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectMilestoneDetailPage
+        detail={detail}
+        issueState="open"
+        milestone={milestone}
+        onDelete={async () => undefined}
+        owner="owner"
+        projectName="projectYobi"
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/milestone/$milestoneId/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("isMilestoneDetailPath");
+    expect(layoutSource).toContain('return { activeMenu: "milestone" };');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('rel="stylesheet" type="text/css"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="milesion-wrap"');
+    expect(html).toContain('id="deleteConfirm"');
+  });
+
   it("renders milestone form/detail uploader, attachment metadata, mass-update shell, and field-level validation source", () => {
     const formHtml = renderToStaticMarkup(
       <ProjectMilestoneFormPage

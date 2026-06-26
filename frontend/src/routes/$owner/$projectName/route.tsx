@@ -116,6 +116,7 @@ function projectLayoutShell(
   }
   if (
     appPath === `/${owner}/${projectName}/newMilestoneForm` ||
+    isMilestoneDetailPath(appPath, owner, projectName) ||
     isMilestoneEditFormPath(appPath, owner, projectName)
   ) {
     return { activeMenu: "milestone" };
@@ -148,6 +149,16 @@ function isMilestoneEditFormPath(appPath: string, owner: string, projectName: st
     segments[1] === projectName &&
     segments[2] === "milestone" &&
     segments[4] === "editform"
+  );
+}
+
+function isMilestoneDetailPath(appPath: string, owner: string, projectName: string): boolean {
+  const segments = appPath.split("/").filter(Boolean);
+  return (
+    segments.length === 4 &&
+    segments[0] === owner &&
+    segments[1] === projectName &&
+    segments[2] === "milestone"
   );
 }
 

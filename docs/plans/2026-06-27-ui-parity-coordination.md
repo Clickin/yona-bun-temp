@@ -203,6 +203,18 @@ M12 continues milestone shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
 
+M13 continues milestone shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/milestone/:milestoneId`, with the milestone
+  menu active.
+- `ProjectMilestoneDetailPage` supports `renderShell={false}` so the detail
+  leaf route keeps its REST close/open/delete/mass-update boundaries but renders
+  only the legacy stylesheet link, `project-page-wrap` detail body, and delete
+  modal under the project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

@@ -138,6 +138,7 @@ function ProjectMilestoneDetailRouteComponent() {
       }}
       owner={owner}
       projectName={projectName}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );
