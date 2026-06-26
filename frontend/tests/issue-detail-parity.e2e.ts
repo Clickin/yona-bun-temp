@@ -413,18 +413,24 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
 
   await page.goto("/yona/admin/projectYobi/issue/1");
 
-  await expect(page.locator("#event-17")).toContainText("Closed");
-  await expect(page.locator("#event-17")).toContainText("owner closed this issue");
-  await expect(page.locator("#event-17 a.usf-group")).toHaveAttribute("href", "/yona/owner");
-  await expect(page.locator("#event-18")).toContainText("Added");
-  await expect(page.locator("#event-18 .issue-label")).toContainText("bug");
-  await expect(page.locator("#event-20")).toContainText("Owner User assigned this issue to");
-  await expect(page.locator("#event-20 a.usf-group").nth(1)).toHaveAttribute(
+  const fullTimeline = page.locator("section#comments #timeline");
+  await expect(fullTimeline.locator("#event-17")).toContainText("Closed");
+  await expect(fullTimeline.locator("#event-17")).toContainText("owner closed this issue");
+  await expect(fullTimeline.locator("#event-17 a.usf-group")).toHaveAttribute(
+    "href",
+    "/yona/owner",
+  );
+  await expect(fullTimeline.locator("#event-18")).toContainText("Added");
+  await expect(fullTimeline.locator("#event-18 .issue-label")).toContainText("bug");
+  await expect(fullTimeline.locator("#event-20")).toContainText(
+    "Owner User assigned this issue to",
+  );
+  await expect(fullTimeline.locator("#event-20 a.usf-group").nth(1)).toHaveAttribute(
     "href",
     "/yona/assignee",
   );
-  await expect(page.locator("#event-19")).toHaveCount(0);
-  await expect(page.locator("#timeline")).not.toContainText("issue.event.");
+  await expect(fullTimeline.locator("#event-19")).toHaveCount(0);
+  await expect(fullTimeline).not.toContainText("issue.event.");
 
   await page.locator(".favorite-issue").click();
   await expect(page.locator(".favorite-issue .star")).toHaveClass(/starred/);

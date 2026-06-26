@@ -492,6 +492,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
 
   it("preserves the legacy issue detail left and right pane ordering", () => {
     const comment = {
+      authorAvatarUrl: "",
       authorLabel: "Commenter",
       authorLoginId: "commenter",
       contentsMarkdown: "Parent comment",
@@ -512,6 +513,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
             {
               assigneeLabel: "",
               createdLabel: "now",
+              isDraft: false,
               issueNumber: 2,
               labels: [],
               state: "open",

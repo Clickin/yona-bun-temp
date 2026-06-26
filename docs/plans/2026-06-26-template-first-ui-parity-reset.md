@@ -184,7 +184,11 @@ Update 2026-06-27:
   evidence for issue list, user issue list, issue create/edit forms, and issue
   detail is recorded in
   `docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md`.
-  P3 still requires interaction-state proof before the whole packet can close.
+- P3 interaction-state proof is now recorded for focused issue list/detail/form
+  routes: filter/search, pagination, mass update, editor preview, upload/drop,
+  comment edit/delete, child comments, and sidebar metadata updates. P3 still
+  requires an integrated packet closure audit against all P3 route/state rows
+  before the whole packet can close.
 
 1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
    header/menu, issue/editor/comment surfaces define most repeated visual

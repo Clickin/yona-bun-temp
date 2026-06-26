@@ -976,6 +976,7 @@ test("project issue routes render data-backed issue list filters and detail scre
   page,
 }) => {
   let issueListUrl = "";
+  const issueListRequests: URLSearchParams[] = [];
   const massUpdateRequests: unknown[] = [];
   await page.route(
     /\/api\/v1\/projects\/admin\/projectYobi\/issues\/mass-update$/,
@@ -990,6 +991,7 @@ test("project issue routes render data-backed issue list filters and detail scre
   );
   await page.route(/\/api\/v1\/projects\/admin\/projectYobi\/issues(?:\?.*)?$/, async (route) => {
     issueListUrl = route.request().url();
+    issueListRequests.push(new URL(issueListUrl).searchParams);
     await route.fulfill({
       body: JSON.stringify({
         items: [
@@ -1044,7 +1046,7 @@ test("project issue routes render data-backed issue list filters and detail scre
         pageNum: 2,
         pageSize: 15,
         projectName: "projectYobi",
-        totalCount: 1,
+        totalCount: 31,
       }),
       headers: restJsonHeaders,
       status: 200,
@@ -1087,6 +1089,9 @@ test("project issue routes render data-backed issue list filters and detail scre
   const issueListSearchParams = new URL(issueListUrl).searchParams;
   expect(issueListSearchParams.get("labelIds")).toBe("5");
   expect(issueListSearchParams.get("milestoneId")).toBe("7");
+  await expect(page.locator("#pagination.page-navigation-wrap")).toBeVisible();
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
+  await expect(page.locator("#pagination")).toContainText("Next page");
   await expect(page.locator("#mass-update-form")).toBeVisible();
   await page.locator("#check-all").check();
   await expect(page.locator("#state button.dropdown-toggle")).toBeEnabled();
@@ -1097,6 +1102,31 @@ test("project issue routes render data-backed issue list filters and detail scre
     issueNumbers: [1],
     state: "closed",
   });
+
+  const searchRequestCount = issueListRequests.length;
+  await page.locator('#search input[name="filter"]').fill("pilot keyword");
+  await page.locator('#search button[type="submit"]').click();
+  await expect(page).toHaveURL(/filter=pilot\+keyword/);
+  await expect.poll(() => issueListRequests.length).toBeGreaterThan(searchRequestCount);
+  await expect
+    .poll(() =>
+      issueListRequests.some(
+        (params) => params.get("filter") === "pilot keyword" && params.get("pageNum") === "1",
+      ),
+    )
+    .toBe(true);
+
+  const pageRequestCount = issueListRequests.length;
+  await page.locator("#pagination a", { hasText: "Next page" }).click();
+  await expect(page).toHaveURL(/pageNum=3/);
+  await expect.poll(() => issueListRequests.length).toBeGreaterThan(pageRequestCount);
+  await expect
+    .poll(() =>
+      issueListRequests.some(
+        (params) => params.get("filter") === "pilot keyword" && params.get("pageNum") === "3",
+      ),
+    )
+    .toBe(true);
 
   await page.goto("/yona/admin/projectYobi/issue/1");
   await expect(page.getByRole("heading", { name: "Pilot issue" })).toBeVisible();
@@ -1147,63 +1177,65 @@ test("project issue routes render data-backed issue list filters and detail scre
   );
   await expect(page.locator(".assignee-info .name")).toContainText("Door");
   await expect(page.locator(".assignee-info .loginid")).toContainText("@door");
-  await expect(page.locator("#comments.board-comment-wrap")).toBeVisible();
-  await expect(page.locator("#comments .comment-header .num")).toHaveText("1");
-  await expect(page.locator("#comment-55 .comment-avatar a.avatar-wrap")).toHaveAttribute(
+  const fullComments = page.locator("section#comments.board-comment-wrap");
+  const fullComment = fullComments.locator("#comment-55");
+  await expect(fullComments).toBeVisible();
+  await expect(fullComments.locator(".comment-header .num")).toHaveText("1");
+  await expect(fullComment.locator(".comment-avatar a.avatar-wrap")).toHaveAttribute(
     "href",
     "/yona/nori",
   );
-  await expect(page.locator("#comment-55 .comment-avatar img")).toHaveAttribute(
+  await expect(fullComment.locator(".comment-avatar img")).toHaveAttribute(
     "src",
     "/avatars/nori.png",
   );
-  await expect(page.locator("#comment-55 .comment_author")).toContainText("Nori");
-  await expect(page.locator('#comment-55 .ago-date a.ago[href="#comment-55"]')).toContainText(
-    "now",
-  );
-  await expect(page.locator('#comment-55 .ago-date a.share-link[href="#comment-55"]')).toHaveCSS(
+  await expect(fullComment.locator(".comment_author")).toContainText("Nori");
+  await expect(fullComment.locator('.ago-date a.ago[href="#comment-55"]')).toContainText("now");
+  await expect(fullComment.locator('.ago-date a.share-link[href="#comment-55"]')).toHaveCSS(
     "display",
     "none",
   );
-  await expect(page.locator("#comment-55 .act-row.pull-right")).toBeVisible();
-  await expect(page.locator("#comment-55 .new-issue-by a")).toHaveAttribute(
+  await expect(fullComment.locator(".act-row.pull-right")).toBeVisible();
+  await expect(fullComment.locator(".new-issue-by a")).toHaveAttribute(
     "href",
     "/yona/user/issues/new?commentId=55",
   );
-  await expect(page.locator("#comment-55 .comment-vote")).toHaveAttribute(
+  await expect(fullComment.locator(".comment-vote")).toHaveAttribute(
     "data-request-type",
     "comment-vote",
   );
-  await expect(page.locator("#comment-55 .comment-vote")).toHaveAttribute(
+  await expect(fullComment.locator(".comment-vote")).toHaveAttribute(
     "data-request-uri",
     "/yona/admin/projectYobi/issue/1/comment/55/vote",
   );
-  await expect(page.locator("#comment-body-55 .comment-body")).toHaveAttribute(
+  await expect(fullComments.locator("#comment-body-55 .comment-body")).toHaveAttribute(
     "data-allowed-update",
     "true",
   );
-  await expect(page.locator("#comment-body-55 .comment-body")).toContainText("First issue comment");
-  await expect(page.locator('#comment-55 [data-toggle="comment-edit"]')).toHaveAttribute(
+  await expect(fullComments.locator("#comment-body-55 .comment-body")).toContainText(
+    "First issue comment",
+  );
+  await expect(fullComment.locator('[data-toggle="comment-edit"]')).toHaveAttribute(
     "data-comment-id",
     "55",
   );
-  await page.locator('#comment-55 [data-toggle="comment-edit"]').click();
-  await expect(page.locator("#comment-editform-55.comment-update-form")).toBeVisible();
-  await expect(page.locator("#comment-editform-55 form")).toHaveAttribute(
+  await fullComment.locator('[data-toggle="comment-edit"]').click();
+  await expect(fullComments.locator("#comment-editform-55.comment-update-form")).toBeVisible();
+  await expect(fullComments.locator("#comment-editform-55 form")).toHaveAttribute(
     "action",
     "/yona/admin/projectYobi/issue/1/comments/55",
   );
-  await expect(page.locator("#comment-editform-55 .ybtn-cancel")).toHaveAttribute(
+  await expect(fullComments.locator("#comment-editform-55 .ybtn-cancel")).toHaveAttribute(
     "data-comment-id",
     "55",
   );
-  await expect(page.locator("#comment-editform-55 .ybtn-info")).toContainText("Save");
-  await expect(page.locator("#comment-body-55")).toHaveCSS("display", "none");
-  await expect(page.locator('#comment-55 [data-toggle="comment-delete"]')).toHaveAttribute(
+  await expect(fullComments.locator("#comment-editform-55 .ybtn-info")).toContainText("Save");
+  await expect(fullComments.locator("#comment-body-55")).toHaveCSS("display", "none");
+  await expect(fullComment.locator('[data-toggle="comment-delete"]')).toHaveAttribute(
     "data-request-uri",
     "/yona/admin/projectYobi/issue/1/comment/55/delete",
   );
-  await page.locator('#comment-55 [data-toggle="comment-delete"]').click();
+  await fullComment.locator('[data-toggle="comment-delete"]').click();
   await expect(page.locator("#comment-delete-modal.modal.hide.fade.in")).toBeVisible();
   await expect(page.locator("#comment-delete-modal")).toContainText(
     "Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?",

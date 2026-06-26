@@ -1,5 +1,14 @@
 import type { IssueReferenceMetadata, MentionReferenceMetadata } from "../api/issue-meta";
 
+export interface IssueLabelViewModel {
+  categoryId?: number | null;
+  categoryIsExclusive?: boolean;
+  categoryName?: string;
+  color: string;
+  id: number;
+  name: string;
+}
+
 export interface WorkspaceOverviewViewModel {
   apiToken?: string;
   defaultLandingPath: string;
@@ -144,7 +153,7 @@ export interface OrganizationIssueListItemViewModel {
     createdLabel: string;
     isDraft?: boolean;
     issueNumber: number;
-    labels: Array<{ color: string; id: number; name: string }>;
+    labels: IssueLabelViewModel[];
     state: string;
     title: string;
     voterCount?: number;
@@ -362,7 +371,7 @@ export interface ProjectIssueListItemViewModel {
   dueDateOverdue?: boolean;
   id?: number;
   issueNumber: number;
-  labels: Array<{ color: string; id: number; name: string }>;
+  labels: IssueLabelViewModel[];
   milestoneTitle: string;
   ownerName: string;
   parentIssueNumber?: number;
@@ -448,7 +457,7 @@ export interface ProjectIssueDetailViewModel {
     createdLabel: string;
     isDraft: boolean;
     issueNumber: number;
-    labels: Array<{ color: string; id: number; name: string }>;
+    labels: IssueLabelViewModel[];
     state: string;
     title: string;
     voterCount?: number;
@@ -463,7 +472,7 @@ export interface ProjectIssueDetailViewModel {
   isDraft: boolean;
   isWatching: boolean;
   issueNumber: number;
-  labels: Array<{ color: string; id: number; name: string }>;
+  labels: IssueLabelViewModel[];
   milestoneId: number;
   milestoneTitle: string;
   ownerName: string;

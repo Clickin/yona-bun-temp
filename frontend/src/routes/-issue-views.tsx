@@ -1775,7 +1775,8 @@ function IssueMassUpdateToolbar(props: {
 
 type IssueMassUpdateDropdownOption =
   | {
-      assignee?: NonNullable<ProjectDetailViewModel["dashboard"]>["assignees"][number];
+      assignee?: NonNullable<NonNullable<ProjectDetailViewModel["dashboard"]>["assignees"]>[number];
+      kind?: "option";
       label: string;
       onSelect: () => Promise<void>;
       value: string;
@@ -1824,12 +1825,20 @@ function IssueMassUpdateDropdown(props: {
   name: string;
   options: IssueMassUpdateDropdownOption[];
 }) {
+  const [open, setOpen] = React.useState(false);
+  const selectOption = (
+    option: Extract<IssueMassUpdateDropdownOption, { onSelect: () => Promise<void> }>,
+  ) => {
+    setOpen(false);
+    void option.onSelect();
+  };
   return (
-    <div className="btn-group" data-name={props.name} id={props.id}>
+    <div className={open ? "btn-group open" : "btn-group"} data-name={props.name} id={props.id}>
       <button
         className="btn dropdown-toggle medium"
         data-toggle="dropdown"
         disabled={props.disabled}
+        onClick={() => setOpen((current) => !current)}
         type="button"
       >
         <span className="d-label">{props.label}</span>
@@ -1878,7 +1887,7 @@ function IssueMassUpdateDropdown(props: {
                 <button
                   className="btn-transparent"
                   disabled={props.disabled}
-                  onClick={() => void option.onSelect()}
+                  onClick={() => selectOption(option)}
                   type="button"
                 >
                   <span
@@ -1900,7 +1909,7 @@ function IssueMassUpdateDropdown(props: {
               <button
                 className="btn-transparent"
                 disabled={props.disabled}
-                onClick={() => void option.onSelect()}
+                onClick={() => selectOption(option)}
                 type="button"
               >
                 {option.assignee ? (
@@ -2945,7 +2954,7 @@ export function ProjectIssueDetailPage(props: {
                                     runtimeConfig={props.runtimeConfig}
                                     showNotificationMail={
                                       Boolean(comment.authorId) &&
-                                      comment.authorId === props.issue.viewerUserId
+                                      comment.authorId === issue?.viewerUserId
                                     }
                                   />
                                 </div>

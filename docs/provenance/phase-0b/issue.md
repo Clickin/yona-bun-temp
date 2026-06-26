@@ -361,3 +361,12 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   `.board-actrow` and before the full comments timeline, while the right pane
   keeps `.issue-info`, `#issueUpdateForm`, and compact comment index only.
   Focused coverage: `frontend/src/issue-detail-shell.spec.tsx`.
+- 2026-06-27 template-first P3 interaction proof: focused browser evidence now
+  covers issue list filter/search submit, pagination, mass update dropdown
+  open/select, detail sidebar metadata updates, comment edit/delete, editor
+  preview, paste/drop upload, child comments, and issue create/edit submit
+  paths without importing legacy JavaScript. Canonical packet evidence is in
+  `docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md`.
+  Focused coverage: `frontend/tests/shell-routing-smoke.e2e.ts`,
+  `frontend/tests/issue-detail-parity.e2e.ts`, and
+  `frontend/tests/issue-form-parity.e2e.ts`.

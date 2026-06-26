@@ -134,10 +134,41 @@ and detail routes at `390x844`.
 | `/admin/sample/issue/1` | `[data-toggle=markdown-editor]` width | 386 | 390 |
 | `/admin/sample/issue/1` | issue body text length | 12 | 17 |
 
+Focused interaction verifier runs:
+
+- Command:
+  `pnpm --dir frontend test:e2e -- shell-routing-smoke.e2e.ts -g "project issue routes render data-backed issue list filters and detail screens"`
+- Checked at: `2026-06-27`
+- Result: `1 passed`.
+- Coverage: issue list filter/search submit URL and REST query proof,
+  pagination next-page URL and REST query proof, mass update dropdown open/select
+  and REST payload proof, child issue list shell, full comment edit/delete
+  controls, child-comment/new-issue anchors, and sidebar metadata rendering.
+
+- Command:
+  `pnpm --dir frontend test:e2e -- issue-detail-parity.e2e.ts issue-form-parity.e2e.ts`
+- Checked at: `2026-06-27`
+- Result: `4 passed`.
+- Coverage: issue detail favorite/watch/vote/share/delete modal actions,
+  metadata sidebar updates through REST, comment editor paste/drop upload plus
+  preview insertion and REST submit, issue create/edit validation, draft/publish
+  intent fields, and REST JSON form submit.
+
+- Command:
+  `pnpm --dir frontend test -- issue-list-filter.spec.tsx issue-detail-shell.spec.tsx`
+- Checked at: `2026-06-27`
+- Result: Vitest completed the frontend suite with `52` files and `919` tests
+  passed.
+- Coverage: static DOM/class proof for issue list filters, pagination,
+  mass-update dropdown categories, compact/full comments, child comments,
+  event timeline rows, editor/upload shells, and sidebar issue metadata.
+
 Remaining verifier work:
 
-- Add interaction proof for filter/search, pagination, mass update, editor
-  preview, upload/drop, comment edit/delete, child comments, and sidebar
-  metadata updates.
+- Interaction proof is now recorded for filter/search, pagination, mass update,
+  editor preview, upload/drop, comment edit/delete, child comments, and sidebar
+  metadata updates. Remaining P3 packet work is an integrated closure audit
+  against all P3 route/state rows and current packet reports before declaring
+  P3 closed.
 - Preserve the reset rule that REST JSON/API-return remains the data boundary
   while the visible DOM follows the legacy template shape.
