@@ -98,7 +98,7 @@ function projectLayoutShell(
   owner: string,
   projectName: string,
 ): {
-  activeMenu?: "board" | "issue" | "milestone" | "settings";
+  activeMenu?: "board" | "code" | "issue" | "milestone" | "settings";
   keymapMode?: "detail" | "list";
   shellClassName?: string;
 } | null {
@@ -116,6 +116,9 @@ function projectLayoutShell(
   }
   if (appPath === `/${owner}/${projectName}/watchers`) {
     return {};
+  }
+  if (appPath === `/${owner}/${projectName}/branches`) {
+    return { activeMenu: "code" };
   }
   if (appPath === `/${owner}/${projectName}/posts`) {
     return { activeMenu: "board", keymapMode: "list", shellClassName: "board-page" };
@@ -230,7 +233,7 @@ function ProjectRouteShellLayout({
   runtimeConfig,
   shellClassName,
 }: {
-  activeMenu?: "board" | "issue" | "milestone" | "settings";
+  activeMenu?: "board" | "code" | "issue" | "milestone" | "settings";
   bootstrapping: boolean;
   keymapMode?: "detail" | "list";
   messages: ReturnType<typeof useAppRuntime>["messages"];

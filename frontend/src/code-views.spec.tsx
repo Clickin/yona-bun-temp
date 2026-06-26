@@ -23,6 +23,14 @@ const codeViewsSource = readFileSync(
   fileURLToPath(new URL("./routes/-code-views.tsx", import.meta.url)),
   "utf8",
 );
+const projectRouteSource = readFileSync(
+  fileURLToPath(new URL("./routes/$owner/$projectName/route.tsx", import.meta.url)),
+  "utf8",
+);
+const branchesRouteSource = readFileSync(
+  fileURLToPath(new URL("./routes/$owner/$projectName/branches/route.tsx", import.meta.url)),
+  "utf8",
+);
 
 const projectDetail: ProjectDetailViewModel = {
   enrollmentRequested: false,
@@ -1733,5 +1741,28 @@ describe("CodeCommitDetailPage", () => {
     expect(readOnlyHtml).not.toContain('class="actions"');
     expect(readOnlyHtml).not.toContain("Set as default");
     expect(readOnlyHtml).not.toContain(">Delete</a>");
+  });
+
+  it("lets the project layout route own the branch list shell", () => {
+    const html = renderToStaticMarkup(
+      <CodeBranchListPage
+        branchList={branchList}
+        detail={projectDetail}
+        onDeleteBranch={async () => undefined}
+        onSetDefaultBranch={async () => undefined}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(projectRouteSource).toContain("appPath === `/${owner}/${projectName}/branches`");
+    expect(projectRouteSource).toContain('activeMenu: "code"');
+    expect(branchesRouteSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="app-shell"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="table branch-list-wrap"');
   });
 });

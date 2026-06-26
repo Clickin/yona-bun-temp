@@ -285,6 +285,17 @@ M19 continues project shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -- --testNamePattern "project statistics"`.
 
+M20 starts code shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/branches`, with the code menu active.
+- `CodeBranchListPage` supports `renderShell={false}` so the branches leaf route
+  keeps its branch list query/default/delete REST boundaries but renders only
+  the legacy `project-page-wrap` branch list body under the project layout
+  `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "branch list shell"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

@@ -111,6 +111,7 @@ function CodeBranchesRouteComponent() {
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       messages={messages}
       pendingBranchName={pendingBranchName}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       onDeleteBranch={async (branchName) => {
         setPendingBranchName(branchName);

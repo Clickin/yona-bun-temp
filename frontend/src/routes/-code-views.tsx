@@ -1058,80 +1058,87 @@ export function CodeBranchListPage(props: {
   onDeleteBranch: (branchName: string) => Promise<void>;
   onSetDefaultBranch: (branchName: string) => Promise<void>;
   pendingBranchName?: string;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const branchList = props.branchList;
   const defaultBranch = branchList?.defaultBranch || "HEAD";
 
+  const pageBody = (
+    <div className="project-page-wrap">
+      <div className="bubble-wrap dark-gray repo-wrap">
+        <div className="code-browse-wrap">
+          <ul className="nav nav-tabs">
+            <li>
+              <a
+                href={codeHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  defaultBranch,
+                )}
+              >
+                {legacyMessage(props.messages, "code.files")}
+              </a>
+            </li>
+            <li>
+              <a
+                href={codeHistoryHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  defaultBranch,
+                )}
+              >
+                {legacyMessage(props.messages, "code.commits")}
+              </a>
+            </li>
+            <li className="active">
+              <a
+                aria-current="page"
+                href={buildProjectHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  "branches",
+                )}
+              >
+                {legacyMessage(props.messages, "title.branches")}
+              </a>
+            </li>
+          </ul>
+          {branchList?.noHead ? (
+            <CodeNoHeadBlock
+              detail={detail}
+              messages={props.messages}
+              runtimeConfig={props.runtimeConfig}
+            />
+          ) : (
+            <CodeBranchTable
+              branchList={branchList}
+              detail={detail}
+              onDeleteBranch={props.onDeleteBranch}
+              onSetDefaultBranch={props.onSetDefaultBranch}
+              pendingBranchName={props.pendingBranchName}
+              runtimeConfig={props.runtimeConfig}
+              messages={props.messages}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="code" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="bubble-wrap dark-gray repo-wrap">
-            <div className="code-browse-wrap">
-              <ul className="nav nav-tabs">
-                <li>
-                  <a
-                    href={codeHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      defaultBranch,
-                    )}
-                  >
-                    {legacyMessage(props.messages, "code.files")}
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href={codeHistoryHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      defaultBranch,
-                    )}
-                  >
-                    {legacyMessage(props.messages, "code.commits")}
-                  </a>
-                </li>
-                <li className="active">
-                  <a
-                    aria-current="page"
-                    href={buildProjectHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      "branches",
-                    )}
-                  >
-                    {legacyMessage(props.messages, "title.branches")}
-                  </a>
-                </li>
-              </ul>
-              {branchList?.noHead ? (
-                <CodeNoHeadBlock
-                  detail={detail}
-                  messages={props.messages}
-                  runtimeConfig={props.runtimeConfig}
-                />
-              ) : (
-                <CodeBranchTable
-                  branchList={branchList}
-                  detail={detail}
-                  onDeleteBranch={props.onDeleteBranch}
-                  onSetDefaultBranch={props.onSetDefaultBranch}
-                  pendingBranchName={props.pendingBranchName}
-                  runtimeConfig={props.runtimeConfig}
-                  messages={props.messages}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

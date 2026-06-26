@@ -2080,6 +2080,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   legacy message table before rendering. Focused coverage:
   `frontend/src/issue-detail-shell.spec.tsx` and full
   `pnpm --dir frontend exec vitest run`.
+- 2026-06-27 project nested-layout code branch follow-up:
+  `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
+  header/menu/page-wrap shell for `/branches` with the code menu active, while
+  `CodeBranchListPage` renders only the legacy branch body through
+  `renderShell={false}`. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "branch list shell"`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and
