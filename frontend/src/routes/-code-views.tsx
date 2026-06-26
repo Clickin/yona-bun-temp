@@ -2835,7 +2835,7 @@ function CodeHistoryAuthorCell(props: {
       </a>
     );
   }
-  if (commit.authorEmail) {
+  if (commit.authorEmail && commit.authorAvatarUrl) {
     return (
       <span
         className="avatar-wrap"
