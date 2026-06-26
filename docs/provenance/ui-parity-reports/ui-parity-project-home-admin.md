@@ -11,6 +11,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectMembersPage`; the members leaf route passes that flag while retaining its existing member REST mutation/query boundaries.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/project-members-parity.spec.tsx src/project-settings-parity.spec.tsx`.
 
+## 2026-06-27 Webhooks Layout Follow-Up
+
+- Moved project webhooks settings shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/webhooks`, keeping the settings menu active and rendering `ProjectWebhooksPage` through the TanStack Router `<Outlet />`.
+- Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectWebhooksPage`; the webhooks leaf route passes that flag while retaining its existing webhook REST mutation/query boundaries.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx`.
+
 ## Legacy Evidence Checked
 
 - `yona-original/app/views/project/home.scala.html`

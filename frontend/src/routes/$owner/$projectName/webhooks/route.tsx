@@ -132,6 +132,7 @@ function ProjectWebhooksRouteComponent() {
       onDeleteWebhook={(webhookId) => deleteMutation.mutate(webhookId)}
       pending={createMutation.isPending || deleteMutation.isPending}
       projectDetail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

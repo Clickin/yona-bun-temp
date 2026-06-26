@@ -117,6 +117,17 @@ M4 continues settings-family shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/project-members-parity.spec.tsx src/project-settings-parity.spec.tsx`.
 
+M5 continues settings-family shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/webhooks`, with the settings menu active.
+- `ProjectWebhooksPage` supports `renderShell={false}` so the webhooks leaf
+  route keeps its REST webhook management boundary but renders only the legacy
+  `project-page-wrap webhook-editor-wrap` body under the project layout
+  `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit
