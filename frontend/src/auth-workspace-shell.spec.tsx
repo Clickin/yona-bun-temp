@@ -159,6 +159,22 @@ describe("auth and workspace views", () => {
 
     const indexHtml = fs.readFileSync(path.resolve(__dirname, "../index.html"), "utf8");
     expect(indexHtml).toContain('<body id="html-body">');
+
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+    expect(appCss).toContain(".gnb-outer {");
+    expect(appCss).toContain("background-color: #1b1b1b;");
+    expect(appCss).toContain(".gnb-outer.project-header");
+    expect(appCss).toContain("background-color: rgb(0 0 0 / 35%);");
+    expect(appCss).toContain(".gnb-inner {");
+    expect(appCss).toContain("width: 98%;");
+    expect(appCss).toContain("margin: 0 auto;");
+    expect(appCss).toContain(".gnb-nav .logo-letter");
+    expect(appCss).toContain("background: #ff5722;");
+    expect(appCss).toContain("color: #803131 !important;");
+    expect(appCss).toContain('.gnb-search-form input[type="text"]');
+    expect(appCss).toContain("width: 50px;");
+    expect(appCss).toContain('.gnb-search-form input[type="text"]:focus');
+    expect(appCss).toContain("width: 200px;");
   });
 
   it("renders the canonical login shell with legacy field names and recovery link", () => {
