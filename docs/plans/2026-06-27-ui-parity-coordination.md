@@ -541,6 +541,16 @@ M42 continues PR list SPA navigation:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "pull request list pagination"`.
 
+M43 continues board list SPA navigation:
+
+- Project and organization board list search/filter forms keep the legacy GET
+  `#option_form` markup, row output, sort links, and pagination.
+- Search/filter submit now calls TanStack navigation, and each board list route
+  subscribes to router location state so same-page filtering refetches inside
+  the SPA.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "board permission gates"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

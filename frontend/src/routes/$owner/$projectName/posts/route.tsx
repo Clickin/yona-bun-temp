@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   listProjectPostsQueryOptions,
   readProjectPostFormOptionsQueryOptions,
@@ -31,6 +31,8 @@ function readSearchParams() {
 function ProjectBoardsRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
+  useRouterState({ select: (state) => state.location.href });
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
@@ -120,6 +122,9 @@ function ProjectBoardsRouteComponent() {
       labelIds={labelIds}
       labels={formOptionsQuery.data?.labels ?? []}
       messages={messages}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       orderBy={orderBy}
       orderDir={orderDir}
       posts={postsQuery.data}

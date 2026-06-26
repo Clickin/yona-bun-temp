@@ -165,6 +165,14 @@
   without native document navigation. Focused coverage:
   `frontend/src/route-parity.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 board list SPA navigation continuation:
+  project board lists (`/posts`) and organization board aggregates (`/boards`)
+  keep the legacy `#option_form` GET markup, search/select controls, sort rows,
+  and pagination output, but filter submits now call TanStack navigation. Each
+  route subscribes to router location state, so same-route board filtering
+  refetches without native document navigation. Focused coverage:
+  `frontend/src/route-parity.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

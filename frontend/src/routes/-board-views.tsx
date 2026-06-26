@@ -793,6 +793,7 @@ export function ProjectBoardListPage(props: {
   labelIds: string[];
   labels: BoardLabel[];
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   orderBy: string;
   orderDir: string;
   posts: ProjectPostsResponse | null | undefined;
@@ -821,6 +822,21 @@ export function ProjectBoardListPage(props: {
           className="pull-left"
           id="option_form"
           method="get"
+          onSubmit={(event) => {
+            if (!props.onNavigate) {
+              return;
+            }
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            props.onNavigate(
+              boardListHref(props.runtimeConfig, `/${ownerName}/${projectName}/posts`, {
+                filter: String(formData.get("filter") ?? ""),
+                "labelIds[]": formData.getAll("labelIds[]").map(String),
+                orderBy: String(formData.get("orderBy") ?? ""),
+                orderDir: String(formData.get("orderDir") ?? ""),
+              }),
+            );
+          }}
         >
           <input defaultValue={props.orderBy} name="orderBy" type="hidden" />
           <input defaultValue={props.orderDir} name="orderDir" type="hidden" />
@@ -2227,6 +2243,7 @@ export function OrganizationBoardListPage(props: {
   detail?: OrganizationDetailViewModel | null;
   filter: string;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   organizationName: string;
   orderBy: string;
   orderDir: string;
@@ -2248,7 +2265,31 @@ export function OrganizationBoardListPage(props: {
   const content = (
     <div className="project-page-wrap">
       <div className="search-wrap underline board-toolbar">
-        <form action={action} className="pull-left" id="option_form" method="get">
+        <form
+          action={action}
+          className="pull-left"
+          id="option_form"
+          method="get"
+          onSubmit={(event) => {
+            if (!props.onNavigate) {
+              return;
+            }
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            props.onNavigate(
+              boardListHref(
+                props.runtimeConfig,
+                `/organizations/${props.organizationName}/boards`,
+                {
+                  filter: String(formData.get("filter") ?? ""),
+                  orderBy: String(formData.get("orderBy") ?? ""),
+                  orderDir: String(formData.get("orderDir") ?? ""),
+                  "projectNames[]": formData.getAll("projectNames[]").map(String),
+                },
+              ),
+            );
+          }}
+        >
           <input defaultValue={props.orderBy} name="orderBy" type="hidden" />
           <input defaultValue={props.orderDir} name="orderDir" type="hidden" />
           <div className="project-selects span7">

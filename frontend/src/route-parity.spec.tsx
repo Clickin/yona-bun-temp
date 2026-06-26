@@ -2346,6 +2346,14 @@ describe("file-route parity harness", () => {
 
   it("preserves board permission gates and pagination controls in static markup", () => {
     const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const boardViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-board-views.tsx"),
+      "utf8",
+    );
+    const boardRouteSources = [
+      "routes/$owner/$projectName/posts/route.tsx",
+      "routes/organizations/$organizationName/boards/route.tsx",
+    ].map((routePath) => fs.readFileSync(path.resolve(__dirname, routePath), "utf8"));
     const boardItem = {
       authorAvatarUrl: "/yona/avatar/owner.png",
       authorLabel: "Owner",
@@ -2934,6 +2942,14 @@ describe("file-route parity harness", () => {
     );
     expect(emptyOrgHtml).toContain('<div class="error-wrap">');
     expect(emptyOrgHtml).toContain("No post has been added.");
+    expect(boardViewsSource).toContain("onNavigate?: (href: string) => void");
+    expect(boardViewsSource).toContain("new FormData(event.currentTarget)");
+    expect(boardViewsSource).toContain("event.preventDefault();");
+    for (const routeSource of boardRouteSources) {
+      expect(routeSource).toContain("useNavigate");
+      expect(routeSource).toContain("useRouterState");
+      expect(routeSource).toContain("navigate({ href })");
+    }
   });
 
   it("preserves legacy board create and edit form shells", () => {
