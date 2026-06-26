@@ -3,8 +3,25 @@
 Status: current evidence workspace
 Date: 2026-06-26
 
-This directory stores read-only explorer reports for
+This directory stores read-only explorer reports and template-first reset
+packet reports.
+
+Current UI parity execution directive:
+`docs/plans/2026-06-26-template-first-ui-parity-reset.md`.
+
+Superseded route/API inventory baseline:
 `docs/plans/2026-06-26-full-ui-parity-subagent-phase.md`.
+
+The older `ui-parity-*.md` reports remain useful as route, REST-boundary, and
+interaction evidence. They do not close UI parity unless the matching
+`template-first-p*.md` report has zero `gap`, `deviation`, and `weak evidence`
+rows with verifier evidence against legacy templates/rendered output.
+
+Current template-first reset reports:
+
+- `template-first-p0-global-shell.md`
+- `template-first-p2-project-shell.md`
+- `template-first-p3-issues-editor-comments.md`
 
 Rules:
 

@@ -1,0 +1,84 @@
+# Template-First UI Parity Report: P3 Issue/Editor/Comments
+
+Status: current reset baseline
+Date: 2026-06-26
+Owner packet: P3 issue/editor/comments
+Mode: template-first mapper baseline; implementation not started
+
+## Scope
+
+This report reopens issue/editor/comment parity under
+`docs/plans/2026-06-26-template-first-ui-parity-reset.md`.
+
+The older `ui-parity-issues.md` report remains useful route/API evidence. It
+does not prove the legacy issue templates, editor partials, comment partials,
+and issue list density are visually equivalent.
+
+## Legacy Template Call Graph
+
+| Legacy source | Role | Required anchors |
+| --- | --- | --- |
+| `yona-original/app/views/issue/list.scala.html` | Project issue list wrapper. Calls `projectLayout`, `projectMenu(..., "main-menu-only")`, loads project label stylesheet, wraps partial list/search. | `.page-wrap-outer`, `.project-page-wrap`, `.row-fluid.issue-list-wrap`, label CSS link. |
+| `issue/partial_searchform.scala.html`, `partial_list_wrap.scala.html`, `partial_list.scala.html`, `partial_list_quicksearch.scala.html`, `partial_massupdate.scala.html` | Project issue filters, quick search, list rows, mass update toolbar. | `.left-menu.span2`, `form#search`, `.search-bar`, `.labels-wrap`, `.nav.nav-tabs.nm`, `.filter-wrap`, `#pagination`, `.post-list-wrap`, `.post-item.title`, `label.mass-update-check`, `#mass-update-form`, `#check-all`, `#state`, `#attaching-label`, `#detaching-label`. |
+| `issue/my_list.scala.html`, `my_partial_search.scala.html`, `my_partial_list.scala.html`, `my_partial_list_quicksearch.scala.html` | User issue list. | `.page-wrap`, `.row-fluid.issue-list-wrap`, `.myissues-search-input`, `.post-list-wrap.my-issues`, `.project-name-in-my-issues`. |
+| `issue/create.scala.html`, `issue/edit.scala.html` | Issue form. | `.content-wrap.frm-wrap`, `form#issue-form`, `#title`, `#notificationMail`, hidden draft/publish/author fields, `#targetProjectId`, `#parentId`, `#assignee`, `#milestoneId`, `#issueDueDate`, `#labelIds`, draft/save buttons. |
+| `common/editor.scala.html` | Markdown editor shell. | `[data-toggle=markdown-editor]`, `.nav.nav-tabs.nm.small`, `a[data-mode=edit]`, `a[data-mode=preview]`, `.task-list-button`, `#button-clear-temporary`, `.textarea-box`, `textarea.editorSeries.content.comment.nm`, `.markdown-preview.markdown-wrap`, `.notification-receiver`. |
+| `common/fileUploader.scala.html`, `common/tasklistBar.scala.html` | Upload/checklist helpers. | `.upload-wrap.content-footer`, `.attach-wrap`, upload button/input, `.attached-files.unstyled`, checklist toolbar. |
+| `issue/view.scala.html`, `partial_comments.scala.html`, `partial_comment.scala.html`, `partial_event_timeline.scala.html`, common comment partials | Detail, metadata sidebar, comments, timeline. | `#issueUpdateForm`, `.content.markdown-wrap`, `.comment-header`, `ul.comments`, `li.comment`, `.comment-avatar`, `.media-body`, `.meta-info`, `.comment-body.markdown-wrap`, `#comment-delete-modal`, child comment anchors/forms, event timeline rows. |
+
+## Current React/CSS Targets
+
+| Current source | Current responsibility |
+| --- | --- |
+| `frontend/src/routes/-issue-views.tsx` | Project/user issue lists, issue forms, detail, sidebar metadata, comments, timeline, mass update. |
+| `frontend/src/routes/-markdown-renderer.tsx` | Markdown renderer and editor shell. |
+| `frontend/src/routes/$owner/$projectName/issues/route.tsx`, `issueform/route.tsx`, `issue/$issueNumber/**`, `user/issues/**` | Route entrypoints. |
+| `frontend/src/app.css` | Issue list/form/comment visual approximation. |
+| `frontend/tests/issue-form-parity.e2e.ts`, `issue-detail-parity.e2e.ts`, `shell-routing-smoke.e2e.ts` | Browser route/interaction proof. |
+| `frontend/src/issue-list-filter.spec.tsx`, `frontend/src/issue-detail-shell.spec.tsx`, `frontend/src/route-parity.spec.tsx` | Static selector proof. |
+
+## Open Reset Queue Summary
+
+Source comparison by Subagent P3 found concrete reset blockers:
+
+| status | count |
+| --- | ---: |
+| gap | 2 |
+| deviation | 1 |
+| weak evidence | 9 |
+| not-applicable | 1 |
+
+## Reset Findings
+
+| legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `issue/view.scala.html`, `issue/partial_index_comments.scala.html`, `issue/partial_index_comment.scala.html` | Issue detail right `issue-info` compact comment index. | `frontend/src/routes/-issue-views.tsx` | layout | gap | P3 | issue detail component and tests | Selector assertion for `.issue-info #comments .index-comment` is missing/weak. |
+| `issue/partial_comment.scala.html` | Full comment timeline with voter avatars/modal threshold. | `frontend/src/routes/-issue-views.tsx` | layout | weak evidence | P3 | comment components and issue detail tests | Need selector proof for `.vote-description-people`, `#voters-$id`, `.avatar-wrap.smaller`. |
+| `common/commentUpdateForm.scala.html` | Comment edit with upload label/input and notification mail checkbox. | `frontend/src/routes/-issue-views.tsx` | interaction | gap | P3 | comment edit/upload components and tests | Need selector proof for `.file-upload__label`, `.file-upload__input`, `.send-notification-check`. |
+| `common/fileUploader.scala.html`, `common/uploadForm.scala.html` | Issue/comment create upload, drag/drop, attached file template. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/routes/-markdown-attachment-textarea.tsx` | data-boundary | weak evidence | P3 | upload/editor components and upload specs | Need selector proof for `#tplAttachedFile`, `.attached-file`, `.btn-insert`, `.upload-progress`. |
+| `common/editor.scala.html` | Markdown editor edit/preview/checklist/clear temporary/receiver list. | `frontend/src/routes/-markdown-renderer.tsx`, `frontend/src/routes/-issue-views.tsx` | interaction | weak evidence | P3 | markdown editor shell and comment tests | Need tab-switching and `#button-clear-temporary` behavior proof. |
+| `issue/view.scala.html`, `common/tasklistBar.scala.html` | Issue/comment tasklist progress bar before markdown content. | `frontend/src/routes/-markdown-renderer.tsx` | layout | weak evidence | P3 | markdown renderer and markdown tests | Need selector proof for `.tasklist .task-title .done-counter` and `.task-progress .bar.red`. |
+| `issue/partial_massupdate.scala.html` | Mass update dropdowns with category dividers and assign-to-me row. | `frontend/src/routes/-issue-views.tsx` | layout | weak evidence | P3 | issue list components and `issue-list-filter.spec.tsx` | Need selector proof for `.mass-update-list li.disabled[data-category]`, `.divider`, and avatar user rows. |
+| `issue/partial_list.scala.html` | Issue list labels, child issue hidden block, count icons. | `frontend/src/routes/-issue-views.tsx` | css | weak evidence | P3 | issue list components and tests | Need selector proof for `.child-issue-list.hide`, common count icon classes, and title prefix hover behavior. |
+| `issue/view.scala.html` | Detail sidebar order: issue-info compact comments; left pane watcher/subtasks/sharer before comments. | `frontend/src/routes/-issue-views.tsx` | layout | deviation | P3 | issue detail component and detail parity test | Need DOM order assertion against legacy template. |
+| `issue/create.scala.html`, `issue/edit.scala.html` | Save/draft/publish double-submit guard and draft tooltip. | `frontend/src/routes/-issue-views.tsx` | interaction | weak evidence | P3 | issue form component and `issue-form-parity.e2e.ts` | Need interaction proof for disabled 3s guard and draft save description. |
+| `issue/view.scala.html`, `issue/partial_event_timeline.scala.html` | Repeated same-type timeline event suppresses duplicate state label. | `frontend/src/routes/-issue-views.tsx` | copy | weak evidence | P3 | timeline component and detail timeline test | Need fixture assertion for consecutive label/sharer events. |
+| `issue/my_list.scala.html`, `my_partial_list.scala.html`, `my_partial_search.scala.html` | User issue list and quick search route states. | `frontend/src/routes/user/issues/route.tsx`, `frontend/src/routes/-issue-views.tsx` | layout | weak evidence | P3 | user issue route/shared issue list views/tests | Needs a separate mapper pass for `my_*` template visual parity. |
+| Legacy PJAX/timeline fragment paths | XHR list/timeline fragments return server-rendered HTML in legacy. | React route plus REST JSON | data-boundary | not-applicable | P3 | none unless parent reclassifies | Keep as React-rendered API conversion per reset; rendered DOM still needs template shape parity. |
+
+## Verifier Baseline Required
+
+P3 cannot close until verifier evidence includes:
+
+- desktop/mobile legacy/current screenshots for project issue list,
+  user issue list, create form, edit form, issue detail with comments/timeline,
+  and at least one empty-state list;
+- computed-style/layout proof for `.row-fluid.issue-list-wrap`, `.left-menu`,
+  `.post-list-wrap`, `.post-item.title`, `.content-wrap.frm-wrap`,
+  `[data-toggle=markdown-editor]`, `.markdown-preview.markdown-wrap`,
+  `.upload-wrap.content-footer`, `#issueUpdateForm`, `ul.comments`,
+  `li.comment`, `.comment-body.markdown-wrap`, and `#comment-delete-modal`;
+- interaction proof for filter/search/pagination, mass update, editor preview,
+  upload/drop, comment edit/delete, child comment, and sidebar metadata updates;
+- confirmation that REST JSON/API-return remains the data boundary while the
+  visible DOM follows legacy template shape.
