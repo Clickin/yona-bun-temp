@@ -319,6 +319,17 @@ M22 continues code shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "commit detail shell"`.
 
+M23 continues code shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/compare/:revisionRange`, with the code menu
+  active.
+- `CodeComparePage` supports `renderShell={false}` so the compare leaf route
+  keeps its compare data-loading boundary but renders only the legacy
+  `project-page-wrap` compare body under the project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "compare shell"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

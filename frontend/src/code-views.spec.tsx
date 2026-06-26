@@ -8,6 +8,7 @@ import { resolveRuntimeConfig } from "./runtime-config";
 import {
   CodeBranchListPage,
   CodeBrowserPage,
+  CodeComparePage,
   CodeCommitDetailPage,
   type CodeBranchListViewModel,
   type CodeCommitDetailViewModel,
@@ -34,6 +35,12 @@ const branchesRouteSource = readFileSync(
 const commitRouteSource = readFileSync(
   fileURLToPath(
     new URL("./routes/$owner/$projectName/commit/$commitId/route.tsx", import.meta.url),
+  ),
+  "utf8",
+);
+const compareRouteSource = readFileSync(
+  fileURLToPath(
+    new URL("./routes/$owner/$projectName/compare/$revisionRange/route.tsx", import.meta.url),
   ),
   "utf8",
 );
@@ -1819,5 +1826,35 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('id="code-browse-wrap"');
     expect(html).toContain('class="codediff-wrap"');
+  });
+
+  it("lets the project layout route own the compare shell", () => {
+    const html = renderToStaticMarkup(
+      <CodeComparePage
+        compare={{
+          commitA: null,
+          commitB: null,
+          files: [{ path: "src/main.rs", patch: "diff --git a/src/main.rs b/src/main.rs" }],
+          noHead: false,
+          ownerName: "owner",
+          projectName: "projectYobi",
+          revA: "main",
+          revB: "topic",
+        }}
+        detail={projectDetail}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(projectRouteSource).toContain("isCodeComparePath");
+    expect(projectRouteSource).toContain('activeMenu: "code"');
+    expect(compareRouteSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="app-shell"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="diff-body discommentable"');
   });
 });

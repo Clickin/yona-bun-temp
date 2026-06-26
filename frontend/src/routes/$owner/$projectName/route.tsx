@@ -129,6 +129,9 @@ function projectLayoutShell(
   if (isCodeCommitPath(appPath, owner, projectName)) {
     return { activeMenu: "code" };
   }
+  if (isCodeComparePath(appPath, owner, projectName)) {
+    return { activeMenu: "code" };
+  }
   if (appPath === `/${owner}/${projectName}/posts`) {
     return { activeMenu: "board", keymapMode: "list", shellClassName: "board-page" };
   }
@@ -187,6 +190,16 @@ function isCodeCommitPath(appPath: string, owner: string, projectName: string): 
     segments[0] === owner &&
     segments[1] === projectName &&
     segments[2] === "commit"
+  );
+}
+
+function isCodeComparePath(appPath: string, owner: string, projectName: string): boolean {
+  const segments = appPath.split("/").filter(Boolean);
+  return (
+    segments.length === 4 &&
+    segments[0] === owner &&
+    segments[1] === projectName &&
+    segments[2] === "compare"
   );
 }
 

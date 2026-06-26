@@ -2098,6 +2098,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   active, while `CodeCommitDetailPage` renders only the legacy commit diff body
   through `renderShell={false}`. Focused coverage:
   `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "commit detail shell"`.
+- 2026-06-27 project nested-layout compare follow-up:
+  `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
+  header/menu/page-wrap shell for `/compare/:revisionRange` with the code menu
+  active, while `CodeComparePage` renders only the legacy compare body through
+  `renderShell={false}`. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "compare shell"`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

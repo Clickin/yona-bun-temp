@@ -124,6 +124,7 @@ function CodeCompareRouteComponent() {
       compare={compare}
       detail={detail}
       messages={messages}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

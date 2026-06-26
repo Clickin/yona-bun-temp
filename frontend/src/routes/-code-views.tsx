@@ -1016,6 +1016,7 @@ export function CodeComparePage(props: {
   compare: CodeCompareViewModel | null;
   detail: ProjectDetailViewModel | null;
   messages?: LegacyMessageLookup;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
@@ -1024,43 +1025,49 @@ export function CodeComparePage(props: {
   const revA = compare?.commitA?.commitId ?? compare?.revA ?? "";
   const revB = compare?.commitB?.commitId ?? compare?.revB ?? "";
 
+  const pageBody = (
+    <div className="project-page-wrap">
+      <div className="code-browse-wrap">
+        {compare?.noHead ? (
+          <CodeNoHeadBlock
+            detail={detail}
+            messages={props.messages}
+            runtimeConfig={props.runtimeConfig}
+          />
+        ) : (
+          <>
+            <p className="commitInfo">
+              <strong className="commitId">{revA && revB ? `@${revA}..${revB}` : ""}</strong>
+            </p>
+            {files.length === 0 ? (
+              <div className="alert">{legacyMessage(props.messages, "code.noChanges")}</div>
+            ) : (
+              <div className="diff-body discommentable">
+                {files.map((file) => (
+                  <article className="diff-file" id={diffAnchorId(file.path)} key={file.path}>
+                    <h2>{file.path}</h2>
+                    <pre className="diff-code">
+                      <code>{file.patch}</code>
+                    </pre>
+                  </article>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="code" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="code-browse-wrap">
-            {compare?.noHead ? (
-              <CodeNoHeadBlock
-                detail={detail}
-                messages={props.messages}
-                runtimeConfig={props.runtimeConfig}
-              />
-            ) : (
-              <>
-                <p className="commitInfo">
-                  <strong className="commitId">{revA && revB ? `@${revA}..${revB}` : ""}</strong>
-                </p>
-                {files.length === 0 ? (
-                  <div className="alert">{legacyMessage(props.messages, "code.noChanges")}</div>
-                ) : (
-                  <div className="diff-body discommentable">
-                    {files.map((file) => (
-                      <article className="diff-file" id={diffAnchorId(file.path)} key={file.path}>
-                        <h2>{file.path}</h2>
-                        <pre className="diff-code">
-                          <code>{file.patch}</code>
-                        </pre>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }
