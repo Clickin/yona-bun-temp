@@ -480,6 +480,8 @@ pub struct ProjectContainer {
     #[serde(default)]
     pub enrollment_requested: bool,
     #[serde(default)]
+    pub enrollment_request_count: u32,
+    #[serde(default)]
     pub is_favorited: bool,
     #[serde(default)]
     pub viewer_can_watch: bool,
@@ -548,6 +550,8 @@ pub struct ProjectDetail {
     pub viewer_can_enroll: bool,
     #[serde(default)]
     pub enrollment_requested: bool,
+    #[serde(default)]
+    pub enrollment_request_count: u32,
     #[serde(default)]
     pub is_favorited: bool,
     #[serde(default)]

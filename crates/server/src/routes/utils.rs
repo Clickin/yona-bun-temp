@@ -1269,6 +1269,15 @@ pub(crate) async fn project_detail_with_logo_from_record(
     let mut detail =
         project_detail_from_record(authorization, viewer_can_update, viewer_can_enroll);
     detail.logo_url = project_logo_url(repository, base_path, authorization.project.id).await?;
+    detail.enrollment_request_count = repository
+        .read_project_members(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .await
+        .map_err(internal_error)?
+        .enrollment_requests
+        .len() as u32;
     Ok(detail)
 }
 
@@ -1663,6 +1672,7 @@ pub(crate) async fn build_project_container_response(
         code_member_only: authorization.project.is_code_accessible_member_only,
         current_milestone,
         default_tab: "readme".to_string(),
+        enrollment_request_count: project_directory.enrollment_requests.len() as u32,
         enrollment_requested: authorization.enrollment_requested,
         is_favorited: authorization.is_favorited,
         is_forked: authorization.project.original_project_id.is_some(),

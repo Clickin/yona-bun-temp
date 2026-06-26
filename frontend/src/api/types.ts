@@ -113,6 +113,7 @@ export type OrganizationContainer = YonaRecord & {
 };
 
 export type ProjectDetail = YonaRecord & {
+  enrollmentRequestCount: number;
   members: YonaUserItem[];
 };
 

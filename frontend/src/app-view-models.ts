@@ -318,6 +318,7 @@ export function toProjectDetailView(
   detail: Awaited<ReturnType<typeof readProjectDetail>>,
 ): ProjectDetailViewModel {
   return {
+    enrollmentRequestCount: detail.enrollmentRequestCount ?? 0,
     enrollmentRequested: detail.enrollmentRequested,
     isFavorited: detail.isFavorited,
     organizationName: detail.organizationName,
@@ -444,6 +445,7 @@ export function toProjectContainerView(
     },
     defaultTab: detail.defaultTab,
     defaultReviewerCount: detailWithReadme.defaultReviewerCount ?? 1,
+    enrollmentRequestCount: detail.enrollmentRequestCount ?? 0,
     enrollmentRequested: detail.enrollmentRequested,
     history: {
       items: (detailWithReadme.history?.items ?? []).map((item) => ({

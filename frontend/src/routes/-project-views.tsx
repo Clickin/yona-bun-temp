@@ -709,11 +709,13 @@ function projectMenuSettingsFromDetail(
 }
 
 function projectShellDetail(input: {
+  enrollmentRequestCount?: number;
   ownerName: string;
   projectName: string;
   viewerCanUpdate?: boolean;
 }): ProjectDetailViewModel {
   return {
+    enrollmentRequestCount: input.enrollmentRequestCount ?? 0,
     enrollmentRequested: false,
     isFavorited: false,
     organizationName: "",
@@ -846,6 +848,9 @@ export function ProjectMenu(props: {
                       {messages.t("menu.admin", { fallback: "menu.admin" })}
                     </span>
                   </span>
+                  {(detail.enrollmentRequestCount ?? 0) > 0 ? (
+                    <span className="project-menu-count">{detail.enrollmentRequestCount}</span>
+                  ) : null}
                 </a>
               </li>
             </ul>
@@ -2568,6 +2573,7 @@ export function ProjectMembersPage(props: {
   };
   const [loginId, setLoginId] = React.useState("");
   const shellDetail = projectShellDetail({
+    enrollmentRequestCount: detail.enrollmentRequests.length,
     ownerName: detail.ownerName,
     projectName: detail.projectName,
     viewerCanUpdate: detail.viewerCanUpdate,
@@ -3628,7 +3634,10 @@ export function ProjectStatisticsPage(props: {
 
 export function ProjectSettingsSubMenu(props: {
   active: "delete" | "labels" | "members" | "setting" | "transfer" | "vcs" | "webhooks";
-  detail: Pick<ProjectDetailViewModel, "ownerName" | "projectName" | "showCode">;
+  detail: Pick<
+    ProjectDetailViewModel,
+    "enrollmentRequestCount" | "ownerName" | "projectName" | "showCode"
+  >;
   messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -3652,6 +3661,9 @@ export function ProjectSettingsSubMenu(props: {
       <li className={itemClass("members")} id="subMenuProjectMember">
         <a href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "members")}>
           {legacyMessage(props.messages, "project.member")}
+          {(detail.enrollmentRequestCount ?? 0) > 0 ? (
+            <span className="num-badge">{detail.enrollmentRequestCount}</span>
+          ) : null}
         </a>
       </li>
       <li className={itemClass("labels")} id="subMenuIssueLabel">

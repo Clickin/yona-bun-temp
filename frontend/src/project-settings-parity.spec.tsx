@@ -22,6 +22,7 @@ const projectDetail = {
   boardCount: 0,
   codeMemberOnly: true,
   defaultReviewerCount: 2,
+  enrollmentRequestCount: 2,
   enrollmentRequested: false,
   isFavorited: false,
   isUsingReviewerCount: true,
@@ -111,8 +112,12 @@ describe("project settings parity", () => {
     expect(html).toContain(
       '<li class="active"><a href="/yona/admin/projectYobi/settingform"><i class="yobicon-cog"></i>',
     );
+    expect(html).toContain('<span class="project-menu-count">2</span>');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('id="saveSetting"');
+    expect(html).toContain(
+      'id="subMenuProjectMember"><a href="/yona/admin/projectYobi/members">Member<span class="num-badge">2</span></a>',
+    );
     expect(html).not.toContain('action="/yona/admin/projectYobi/setting"');
     expect(html).not.toContain('method="post"');
     expect(html).toContain('class="bubble-wrap gray"');

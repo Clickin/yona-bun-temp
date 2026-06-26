@@ -230,6 +230,7 @@ export interface ProjectDetailViewModel {
   };
   defaultTab?: string;
   defaultReviewerCount?: number;
+  enrollmentRequestCount?: number;
   enrollmentRequested: boolean;
   isUsingReviewerCount?: boolean;
   history?: {

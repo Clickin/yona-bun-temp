@@ -42,10 +42,10 @@ Source comparison by Subagent P2 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 5 |
+| gap | 3 |
 | deviation | 0 |
 | weak evidence | 0 |
-| covered | 11 |
+| covered | 13 |
 
 ## Reset Findings
 
@@ -53,9 +53,9 @@ Source comparison by Subagent P2 found concrete reset blockers:
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `project/header.scala.html` | Any project page, viewer can watch/enroll. | `frontend/src/routes/-project-views.tsx`, `frontend/src/app.css`, `frontend/src/project-home-tabs.spec.tsx`, `frontend/src/wave2a-container-parity.spec.tsx` | layout | covered in current follow-up | P2 | none | `ProjectHeader` now renders legacy `.project-util-wrap > ul.project-util` with enrollment dropdown, `#enrollBtn`, `.watch-btn`, `.watcher-count`, `.watch-on`, and `.watchBtn` anchors; React handlers keep current REST mutations instead of importing legacy JS. CSS restores the legacy absolute header placement and watcher/down-arrow classes. |
 | `project/header.scala.html` | Any project page. | `frontend/src/routes/-project-views.tsx`, `frontend/src/route-parity.spec.tsx` | layout | covered in current follow-up | P2 | none | Removed the non-legacy `.project-title-text` wrapper from `ProjectHeader`; focused route parity now asserts that the class is absent while preserving legacy owner/project breadcrumb anchors. |
-| `projectMenu.scala.html` | Project menu with admin update permission and enrollment requests. | `frontend/src/routes/-project-views.tsx` | data-boundary | gap | P2 | `ProjectMenu`, project view model | Legacy admin cog includes `project.enrolledUsers.size` badge; current cog has no badge. |
+| `projectMenu.scala.html` | Project menu with admin update permission and enrollment requests. | `crates/server/src/api_types.rs`, `crates/server/src/routes/utils.rs`, `frontend/src/api/types.ts`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-project-views.tsx`, `frontend/src/project-settings-parity.spec.tsx` | data-boundary | covered in current follow-up | P2 | none | Project detail/container DTOs and the frontend view model now carry `enrollmentRequestCount` from existing project membership directory data. `ProjectMenu` renders the legacy admin cog `<span class="project-menu-count">N</span>` when the count is positive. |
 | `projectMenu.scala.html` | Any project page. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-keymap.spec.tsx` | layout | covered in current follow-up | P2 | none | `ProjectMenu` no longer renders visible `ProjectKeymapHelp` by default because `projectMenu.scala.html` does not include `help.keymap`. Pages whose legacy templates explicitly call `@help.keymap(...)` keep passing `keymapMode` and still render the legacy `#helpKeys` modal. |
-| `project/partial_settingmenu.scala.html` | Settings submenu with enroll requests. | `frontend/src/routes/-project-views.tsx` | data-boundary | gap | P2 | settings tab component, project settings/member API data | Legacy member tab shows `.num-badge`; current submenu cannot render the count. |
+| `project/partial_settingmenu.scala.html` | Settings submenu with enroll requests. | `crates/server/src/api_types.rs`, `crates/server/src/routes/utils.rs`, `frontend/src/api/types.ts`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-project-views.tsx`, `frontend/src/project-settings-parity.spec.tsx` | data-boundary | covered in current follow-up | P2 | none | `ProjectSettingsSubMenu` now renders the legacy member tab `<span class="num-badge">N</span>` from `enrollmentRequestCount` when the count is positive, matching `project.enrolledUsers.size`. |
 | `project/watchers.scala.html` | `/owner/project/watchers`, private/protected/custom-menu project. | `frontend/src/routes/$owner/$projectName/watchers/route.tsx` | data-boundary | gap | P2 | `watchers/route.tsx`, `-project-views.tsx` | Current uses synthetic `projectShellDetail`, losing logo/background/scope/menu/count state. |
 | `project/members.scala.html` | `/owner/project/members`, custom-menu project. | `frontend/src/routes/$owner/$projectName/members/route.tsx` | data-boundary | gap | P2 | `members/route.tsx`, `-project-views.tsx` | Current shell detail is synthesized from members response. |
 | `project/webhooks.scala.html` | Webhook list, viewer can read but cannot create. | `frontend/src/routes/$owner/$projectName/webhooks/route.tsx` | permission | gap | P2 | `webhooks/route.tsx` | Legacy hides create form only; current route returns `ForbiddenPage` when `!viewerCanUpdate`. |
