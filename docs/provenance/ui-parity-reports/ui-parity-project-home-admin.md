@@ -5,6 +5,12 @@ Date: 2026-06-26
 Agent: `019effaa-4c2c-7a91-8845-ea0edd3d5d48` (`Socrates`)
 Mode: read-only audit, no files edited by the explorer
 
+## 2026-06-27 Nested Layout Follow-Up
+
+- Moved project members settings shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/members`, keeping the settings menu active and rendering `ProjectMembersPage` through the TanStack Router `<Outlet />`.
+- Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectMembersPage`; the members leaf route passes that flag while retaining its existing member REST mutation/query boundaries.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/project-members-parity.spec.tsx src/project-settings-parity.spec.tsx`.
+
 ## Legacy Evidence Checked
 
 - `yona-original/app/views/project/home.scala.html`

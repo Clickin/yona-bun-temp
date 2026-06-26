@@ -130,4 +130,51 @@ describe("project members parity", () => {
     expect(routeSource).not.toContain("window.location.assign(");
     expect(routeSource).not.toContain("`${runtimeConfig.basePath}${detail.redirectPath}`");
   });
+
+  it("lets the project layout route own the members settings shell", () => {
+    const html = renderToString(
+      <ProjectMembersPage
+        detail={{
+          enrollmentRequests: [],
+          members: [],
+          ownerName: "owner",
+          projectName: "projectYobi",
+          roleOptions: [],
+          viewerCanUpdate: true,
+        }}
+        projectDetail={{
+          enrollmentRequestCount: 0,
+          enrollmentRequested: false,
+          isFavorited: false,
+          organizationName: "",
+          overview: "",
+          ownerName: "owner",
+          projectName: "projectYobi",
+          projectScope: "private",
+          viewerCanEnroll: false,
+          viewerCanUpdate: true,
+        }}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = readFileSync(
+      resolve(process.cwd(), "src/routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = readFileSync(
+      resolve(process.cwd(), "src/routes/$owner/$projectName/members/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/members`");
+    expect(layoutSource).toContain('return { activeMenu: "settings" };');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="subMenuProjectMember"');
+    expect(html).toContain('id="addNewMember"');
+  });
 });

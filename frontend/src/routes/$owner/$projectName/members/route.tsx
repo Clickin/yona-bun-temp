@@ -163,6 +163,7 @@ function ProjectMembersRouteComponent() {
       onUpdateMemberRole={(userId, role) => updateRoleMutation.mutate({ role, userId })}
       pending={addMutation.isPending || updateRoleMutation.isPending || deleteMutation.isPending}
       projectDetail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

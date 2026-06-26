@@ -97,7 +97,10 @@ function projectLayoutShell(
   projectName: string,
 ): { activeMenu: "issue" | "settings" } | null {
   const appPath = stripProjectLayoutBasePath(pathname, basePath).replace(/\/+$/u, "");
-  if (appPath === `/${owner}/${projectName}/settingform`) {
+  if (
+    appPath === `/${owner}/${projectName}/settingform` ||
+    appPath === `/${owner}/${projectName}/members`
+  ) {
     return { activeMenu: "settings" };
   }
   if (

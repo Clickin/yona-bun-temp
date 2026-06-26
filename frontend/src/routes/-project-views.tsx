@@ -2563,6 +2563,7 @@ export function ProjectMembersPage(props: {
   messages?: LegacyMessageLookup;
   pending?: boolean;
   projectDetail?: ProjectDetailViewModel | null | undefined;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   onAddMember?: (loginId: string) => void;
   onDeleteMember?: (userId: number) => void;
@@ -2586,6 +2587,176 @@ export function ProjectMembersPage(props: {
       viewerCanUpdate: detail.viewerCanUpdate,
     });
 
+  const content = (
+    <div className="project-page-wrap">
+      <ProjectSettingsSubMenu
+        active="members"
+        detail={shellDetail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <div className="inner-bubble">
+        <form
+          className="nm"
+          id="addNewMember"
+          onSubmit={(event) => {
+            event.preventDefault();
+            props.onAddMember?.(loginId);
+          }}
+        >
+          <input
+            autoComplete="off"
+            className="text uname"
+            data-provider="typeahead"
+            id="loginId"
+            name="loginId"
+            onChange={(event) => setLoginId(event.target.value)}
+            pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
+            placeholder={legacyMessage(props.messages, "project.members.addMember")}
+            required
+            title={legacyMessage(props.messages, "user.wrongloginId.alert")}
+            type="text"
+            value={loginId}
+          />
+          <button className="ybtn ybtn-success" type="submit">
+            <i className="yobicon-addfriend" /> {legacyMessage(props.messages, "button.add")}
+          </button>
+        </form>
+      </div>
+
+      <ul className="members project row-fluid">
+        {detail.members.map((member) => (
+          <li className="member span6 span-hard-wrap" key={member.userId}>
+            <a
+              className="avatar-wrap mlarge pull-left mr10"
+              href={prefixBasePath(props.runtimeConfig.basePath, `/${member.loginId}`)}
+            >
+              {member.avatarUrl ? (
+                <img
+                  alt={`${member.userLabel || member.loginId} avatar`}
+                  height={64}
+                  src={member.avatarUrl}
+                  width={64}
+                />
+              ) : null}
+            </a>
+            <div className="member-name">{member.userLabel || member.loginId}</div>
+            <div className="member-id">{`@${member.loginId}`}</div>
+            <div className="member-setting">
+              {member.isOwner ? (
+                <span className="label owner">
+                  {legacyMessage(props.messages, "user.role.owner")}
+                </span>
+              ) : (
+                <>
+                  <div className="btn-group" data-name={`roleof-${member.loginId}`}>
+                    <button
+                      className="btn dropdown-toggle large"
+                      data-toggle="dropdown"
+                      type="button"
+                    >
+                      <span className="d-label">
+                        {legacyMessage(props.messages, `user.role.${member.role}`)}
+                      </span>
+                      <span className="d-caret">
+                        <span className="caret" />
+                      </span>
+                    </button>
+                    <ul className="dropdown-menu">
+                      {detail.roleOptions.map((roleOption) => (
+                        <li
+                          className={roleOption.role === member.role ? "active" : undefined}
+                          data-selected={roleOption.role === member.role ? "true" : undefined}
+                          data-value={roleOption.role}
+                          key={`${member.userId}-${roleOption.role}`}
+                        >
+                          <a
+                            data-action="apply"
+                            data-href={`/${detail.ownerName}/${detail.projectName}/member/${member.userId}/edit`}
+                            data-loginId={member.loginId}
+                            href="#member-role"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              props.onUpdateMemberRole?.(member.userId, roleOption.role);
+                            }}
+                          >
+                            {legacyMessage(props.messages, `user.role.${roleOption.label}`)}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <button
+                    className="ybtn ybtn-danger ybtn-small"
+                    data-action="delete"
+                    data-href={`/${detail.ownerName}/${detail.projectName}/member/${member.userId}/delete`}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      props.onDeleteMember?.(member.userId);
+                    }}
+                    type="button"
+                  >
+                    {legacyMessage(props.messages, "button.delete")}
+                  </button>
+                </>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {detail.enrollmentRequests.length > 0 ? (
+        <>
+          <legend>
+            <h3>
+              {`${legacyMessage(props.messages, "project.member.enrollment.request")} (${detail.enrollmentRequests.length})`}
+            </h3>
+          </legend>
+          <div className="row-fluid">
+            {detail.enrollmentRequests.map((request) => (
+              <div className="span2" key={request.userId}>
+                <div className="pull-left mr10">
+                  <a href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}>
+                    {request.avatarUrl ? (
+                      <img
+                        alt={`${request.userLabel || request.loginId} avatar`}
+                        className="img-circle"
+                        height={65}
+                        src={request.avatarUrl}
+                        width={65}
+                      />
+                    ) : null}
+                  </a>
+                </div>
+                <div className="pull-left project-member-enrollment-info">
+                  <span>
+                    <a href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}>
+                      <strong>{request.userLabel || request.loginId}</strong>
+                    </a>
+                  </span>
+                  <span>{`(${request.loginId})`}</span>
+                  <button
+                    className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
+                    data-loginid={request.loginId}
+                    onClick={() => props.onAddMember?.(request.loginId)}
+                    type="button"
+                  >
+                    <i className="yobicon-addfriend" />{" "}
+                    {legacyMessage(props.messages, "button.add")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader
@@ -2594,173 +2765,7 @@ export function ProjectMembersPage(props: {
         runtimeConfig={props.runtimeConfig}
       />
       <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <ProjectSettingsSubMenu
-            active="members"
-            detail={shellDetail}
-            messages={props.messages}
-            runtimeConfig={props.runtimeConfig}
-          />
-          <div className="inner-bubble">
-            <form
-              className="nm"
-              id="addNewMember"
-              onSubmit={(event) => {
-                event.preventDefault();
-                props.onAddMember?.(loginId);
-              }}
-            >
-              <input
-                autoComplete="off"
-                className="text uname"
-                data-provider="typeahead"
-                id="loginId"
-                name="loginId"
-                onChange={(event) => setLoginId(event.target.value)}
-                pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
-                placeholder={legacyMessage(props.messages, "project.members.addMember")}
-                required
-                title={legacyMessage(props.messages, "user.wrongloginId.alert")}
-                type="text"
-                value={loginId}
-              />
-              <button className="ybtn ybtn-success" type="submit">
-                <i className="yobicon-addfriend" /> {legacyMessage(props.messages, "button.add")}
-              </button>
-            </form>
-          </div>
-
-          <ul className="members project row-fluid">
-            {detail.members.map((member) => (
-              <li className="member span6 span-hard-wrap" key={member.userId}>
-                <a
-                  className="avatar-wrap mlarge pull-left mr10"
-                  href={prefixBasePath(props.runtimeConfig.basePath, `/${member.loginId}`)}
-                >
-                  {member.avatarUrl ? (
-                    <img
-                      alt={`${member.userLabel || member.loginId} avatar`}
-                      height={64}
-                      src={member.avatarUrl}
-                      width={64}
-                    />
-                  ) : null}
-                </a>
-                <div className="member-name">{member.userLabel || member.loginId}</div>
-                <div className="member-id">{`@${member.loginId}`}</div>
-                <div className="member-setting">
-                  {member.isOwner ? (
-                    <span className="label owner">
-                      {legacyMessage(props.messages, "user.role.owner")}
-                    </span>
-                  ) : (
-                    <>
-                      <div className="btn-group" data-name={`roleof-${member.loginId}`}>
-                        <button
-                          className="btn dropdown-toggle large"
-                          data-toggle="dropdown"
-                          type="button"
-                        >
-                          <span className="d-label">
-                            {legacyMessage(props.messages, `user.role.${member.role}`)}
-                          </span>
-                          <span className="d-caret">
-                            <span className="caret" />
-                          </span>
-                        </button>
-                        <ul className="dropdown-menu">
-                          {detail.roleOptions.map((roleOption) => (
-                            <li
-                              className={roleOption.role === member.role ? "active" : undefined}
-                              data-selected={roleOption.role === member.role ? "true" : undefined}
-                              data-value={roleOption.role}
-                              key={`${member.userId}-${roleOption.role}`}
-                            >
-                              <a
-                                data-action="apply"
-                                data-href={`/${detail.ownerName}/${detail.projectName}/member/${member.userId}/edit`}
-                                data-loginId={member.loginId}
-                                href="#member-role"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  props.onUpdateMemberRole?.(member.userId, roleOption.role);
-                                }}
-                              >
-                                {legacyMessage(props.messages, `user.role.${roleOption.label}`)}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <button
-                        className="ybtn ybtn-danger ybtn-small"
-                        data-action="delete"
-                        data-href={`/${detail.ownerName}/${detail.projectName}/member/${member.userId}/delete`}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          props.onDeleteMember?.(member.userId);
-                        }}
-                        type="button"
-                      >
-                        {legacyMessage(props.messages, "button.delete")}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          {detail.enrollmentRequests.length > 0 ? (
-            <>
-              <legend>
-                <h3>
-                  {`${legacyMessage(props.messages, "project.member.enrollment.request")} (${detail.enrollmentRequests.length})`}
-                </h3>
-              </legend>
-              <div className="row-fluid">
-                {detail.enrollmentRequests.map((request) => (
-                  <div className="span2" key={request.userId}>
-                    <div className="pull-left mr10">
-                      <a href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}>
-                        {request.avatarUrl ? (
-                          <img
-                            alt={`${request.userLabel || request.loginId} avatar`}
-                            className="img-circle"
-                            height={65}
-                            src={request.avatarUrl}
-                            width={65}
-                          />
-                        ) : null}
-                      </a>
-                    </div>
-                    <div className="pull-left project-member-enrollment-info">
-                      <span>
-                        <a
-                          href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}
-                        >
-                          <strong>{request.userLabel || request.loginId}</strong>
-                        </a>
-                      </span>
-                      <span>{`(${request.loginId})`}</span>
-                      <button
-                        className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
-                        data-loginid={request.loginId}
-                        onClick={() => props.onAddMember?.(request.loginId)}
-                        type="button"
-                      >
-                        <i className="yobicon-addfriend" />{" "}
-                        {legacyMessage(props.messages, "button.add")}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : null}
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }
