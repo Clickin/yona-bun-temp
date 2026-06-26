@@ -25,6 +25,7 @@ Current template-first reset reports:
 - `template-first-p3-issues-editor-comments.md`
 - `template-first-p4-board-milestone-post.md`
 - `template-first-p5-code-git-pr-review.md`
+- `template-first-p6-organization-directory-workspace.md`
 
 Rules:
 

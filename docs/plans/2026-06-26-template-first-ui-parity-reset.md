@@ -232,6 +232,11 @@ Update 2026-06-27:
   branch, compare, pull request, and review-thread implementation evidence, but
   keeps the seventeen integrated repository/PR/search/export sample route
   deltas open as `needs-parent-decision`.
+- P6 organization/directory/workspace now has a template-first reset report at
+  `docs/provenance/ui-parity-reports/template-first-p6-organization-directory-workspace.md`.
+  The report records organization shell/admin, directory, workspace/profile,
+  user files/settings, notification stream, and scoped search chrome evidence,
+  and has no standalone `needs-parent-decision` row.
 
 1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
    header/menu, issue/editor/comment surfaces define most repeated visual
@@ -247,10 +252,12 @@ Update 2026-06-27:
    `template-first-p5-code-git-pr-review.md`, including Git/SVN-visible UI
    states, export/download routes, PR diff tabs, repository browser, branch,
    compare, commit, and search behavior.
-5. Parent updates existing `docs/provenance/ui-parity-reports/*.md` to use the
+5. Subagent D creates the P7 site-admin/error/security template-first report
+   from `site/**`, `siteLayout*`, `error/**`, and `restricted` legacy templates.
+6. Parent updates existing `docs/provenance/ui-parity-reports/*.md` to use the
    audit queue format above and reopens rows that were closed by reachability
    rather than pixel-visible parity.
-6. Workers then port shell components and route families from templates in
+7. Workers then port shell components and route families from templates in
    packet order. A packet can be split further only after its template mapping
    is complete.
 
