@@ -197,6 +197,9 @@ function projectLayoutShell(
   if (appPath === `/${owner}/${projectName}/reviews`) {
     return { activeMenu: "review", shellClassName: "pull-request-page" };
   }
+  if (appPath === `/${owner}/${projectName}/newFork`) {
+    return { activeMenu: "pullRequest" };
+  }
   return null;
 }
 

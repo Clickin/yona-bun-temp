@@ -159,3 +159,13 @@ Total rows: 18
 | `/:owner/:project/deleteform` | unchecked destructive flow | `#accept`, `#btnDelete`, modal `#alertDeletion` | same IDs/copy, alert then modal after accept | click unchecked, then checked | REST `DELETE /project` only on confirm | covered |
 | `/:owner/:project/newFork` | fork form | `#helpMessage`, `#project-owner`, `#inputName`, project scope radios, fork button; existing-fork notice/link | same help/form/scope/button shell; existing-fork notice/link and disabled submit when unavailable | empty name no-submit, existing-fork no-submit, fill name, submit | REST `POST /fork` with CSRF and legacy payload only when enabled | covered in current follow-up |
 | `/:owner/:project/statistics` | statistics page | `<h1>Under Construction</h1>` | `<h1>Under Construction</h1>` | load page | REST container read only | covered |
+
+## Nested Layout Follow-Ups
+
+- 2026-06-27 project fork shell follow-up:
+  `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
+  header/menu/page-wrap shell for `/newFork` with the pull request menu active.
+  `ProjectForkPage` renders only the legacy fork form body through
+  `renderShell={false}` for that TanStack child route while preserving
+  direct-render shell output for existing specs. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx -t "fork shell"`.

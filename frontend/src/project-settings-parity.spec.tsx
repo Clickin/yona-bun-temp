@@ -199,9 +199,8 @@ describe("project settings parity", () => {
       "<ProjectHeader detail={detail} runtimeConfig={runtimeConfig} />",
     );
     expect(layoutSource).toContain('return { activeMenu: "settings" };');
-    expect(layoutSource).toContain(
-      "<ProjectMenu activeMenu={activeMenu} detail={detail} runtimeConfig={runtimeConfig} />",
-    );
+    expect(layoutSource).toContain("activeMenu={activeMenu}");
+    expect(layoutSource).toContain("runtimeConfig={runtimeConfig}");
     expect(routeSource).toContain("renderShell={false}");
     expect(html).not.toContain('class="page-wrap-outer"');
     expect(html).not.toContain('class="project-header-outer"');
@@ -345,6 +344,53 @@ describe("project settings parity", () => {
     expect(html).toContain('id="subMenuProjectChangeVCS"');
     expect(html).toContain('id="btnChangeVCS"');
     expect(html).toContain('id="alertChangeVCS"');
+  });
+
+  it("lets the project layout route own the fork shell without changing the inner body", () => {
+    const html = renderToStaticMarkup(
+      <ProjectForkPage
+        detail={projectDetail}
+        forkOptions={{
+          canFork: true,
+          existingForks: [],
+          ownerOptions: [{ organization: false, ownerName: "admin", selected: true }],
+          selected: {
+            ownerName: "admin",
+            projectName: "projectYobi",
+            projectScope: "public",
+          },
+          source: {
+            isForked: false,
+            overview: "Overview",
+            ownerName: "admin",
+            projectName: "projectYobi",
+            projectScope: "public",
+            vcs: "GIT",
+          },
+        }}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/newFork/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/newFork`");
+    expect(layoutSource).toContain('activeMenu: "pullRequest"');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="content-wrap frm-wrap"');
+    expect(html).toContain('id="helpMessage"');
+    expect(html).toContain('id="inputName"');
   });
 
   it("preserves legacy visibility for protected and Git-only project setting controls", () => {

@@ -402,6 +402,16 @@ M29 completes current pull-request/review shell migration pass:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/pull-request-list-form-review-i18n.spec.tsx -t "review-list chrome"`.
 
+M30 continues project shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/newFork`, with the pull request menu active.
+- `ProjectForkPage` supports `renderShell={false}` so the fork child route keeps
+  its fork options query/mutation boundary but renders only the legacy
+  `project-page-wrap` fork form body under the project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx -t "fork shell"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

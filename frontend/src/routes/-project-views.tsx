@@ -3230,6 +3230,7 @@ export function ProjectForkPage(props: {
   messages?: LegacyMessageLookup;
   onFork?: (input: { name: string; owner: string; projectScope: string }) => Promise<void>;
   pending?: boolean;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t: contextMessages } = useLegacyMessages();
@@ -3278,197 +3279,201 @@ export function ProjectForkPage(props: {
   );
   const canSubmit =
     Boolean(props.forkOptions?.canFork) && owner.trim().length > 0 && name.trim().length > 0;
+  const content = (
+    <div className="project-page-wrap">
+      <div className="content-wrap frm-wrap">
+        <form
+          className="form-horizontal nm"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!canSubmit || props.pending) {
+              return;
+            }
+            void props.onFork?.({
+              name: name.trim(),
+              owner: owner.trim(),
+              projectScope,
+            });
+          }}
+        >
+          <input name="owner" type="hidden" value={owner} />
+          <fieldset>
+            <legend>
+              <h4>
+                {detail.ownerName} / {detail.projectName} {legacyMessage(messages, "fork")}
+              </h4>
+            </legend>
+            <div className="well" id="helpMessage">
+              <div className="row-fluid">
+                {existingForks.length === 0 ? (
+                  <>
+                    <div className="pull-left">
+                      <img
+                        alt={legacyMessage(messages, "fork")}
+                        className="img-polaroid"
+                        src={prefixBasePath(
+                          props.runtimeConfig.basePath,
+                          "/images/fork-pull/fork.jpg",
+                        )}
+                      />
+                      <br />
+                    </div>
+                    <div className="pull-left help-messages">
+                      <p className="lead">{legacyMessage(messages, "fork.help.title")}</p>
+                      <p>{legacyMessage(messages, "fork.help.message.1")}</p>
+                      <p>{legacyMessage(messages, "fork.help.message.2")}</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="help-messages center-txt">
+                    <i className="ico ico-err2" />
+                    <p>{legacyMessage(messages, "fork.already.exist")}</p>
+                    {existingForks.map((fork) => (
+                      <p key={`${fork.ownerName}/${fork.projectName}`}>
+                        <strong className="vmiddle">
+                          {`${detail.ownerName} / ${detail.projectName}`}
+                        </strong>
+                        <i className="yobicon-right vmiddle" />
+                        <a
+                          className="vmiddle primary-txt"
+                          href={buildProjectHref(
+                            props.runtimeConfig,
+                            fork.ownerName,
+                            fork.projectName,
+                          )}
+                        >
+                          {`${fork.ownerName} / ${fork.projectName}`}
+                        </a>
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="control-group">
+              <label className="control-label" htmlFor="project-owner">
+                {legacyMessage(messages, "project.owner")}
+              </label>
+              <div className="controls">
+                <select
+                  id="project-owner"
+                  name="owner"
+                  onChange={(event) => setOwner(event.currentTarget.value)}
+                  value={owner}
+                >
+                  {ownerOptions.map((option) => (
+                    <option
+                      data-owner-type={option.organization ? "organization" : "user"}
+                      data-url={buildProjectHref(
+                        props.runtimeConfig,
+                        option.ownerName,
+                        detail.projectName,
+                      )}
+                      key={option.ownerName}
+                      value={option.ownerName}
+                    >
+                      {option.ownerName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="control-group">
+              <label className="control-label" htmlFor="inputName">
+                {legacyMessage(messages, "project.name")}
+              </label>
+              <div className="controls">
+                <input
+                  className="text"
+                  id="inputName"
+                  maxLength={250}
+                  name="name"
+                  onChange={(event) => setName(event.currentTarget.value)}
+                  type="text"
+                  value={name}
+                />
+                <span className="help-inline">{legacyMessage(messages, "project.name.alert")}</span>
+              </div>
+            </div>
+
+            <div className="control-group project-share-option">
+              <label className="control-label" htmlFor="public">
+                {legacyMessage(messages, "project.shareOption")}
+              </label>
+              <div className="controls">
+                {[
+                  {
+                    className: "bg-radiobtn label-public",
+                    id: "public",
+                    label: "project.public",
+                  },
+                  ...(selectedOwnerIsOrganization
+                    ? [
+                        {
+                          className: "bg-radiobtn label-protected",
+                          id: "protected",
+                          label: "project.protected",
+                        },
+                      ]
+                    : []),
+                  {
+                    className: "bg-radiobtn label-private",
+                    id: "private",
+                    label: "project.private",
+                  },
+                ].map((scope) => (
+                  <label className={scope.className} htmlFor={scope.id} key={scope.id}>
+                    <input
+                      checked={projectScope === scope.id}
+                      id={scope.id}
+                      name="projectScope"
+                      onChange={() => setProjectScope(scope.id)}
+                      type="radio"
+                      value={scope.id.toUpperCase()}
+                    />
+                    {legacyMessage(messages, scope.label)}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="actions">
+              <button
+                className="ybtn ybtn-info"
+                disabled={!canSubmit || props.pending}
+                type="submit"
+              >
+                <i className="yobicon-fork" /> {legacyMessage(messages, "fork")}
+              </button>
+              <a
+                className="ybtn"
+                href={buildProjectHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  "pullRequests",
+                )}
+              >
+                {legacyMessage(messages, "button.cancel")}
+              </a>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} messages={messages} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="content-wrap frm-wrap">
-            <form
-              className="form-horizontal nm"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!canSubmit || props.pending) {
-                  return;
-                }
-                void props.onFork?.({
-                  name: name.trim(),
-                  owner: owner.trim(),
-                  projectScope,
-                });
-              }}
-            >
-              <input name="owner" type="hidden" value={owner} />
-              <fieldset>
-                <legend>
-                  <h4>
-                    {detail.ownerName} / {detail.projectName} {legacyMessage(messages, "fork")}
-                  </h4>
-                </legend>
-                <div className="well" id="helpMessage">
-                  <div className="row-fluid">
-                    {existingForks.length === 0 ? (
-                      <>
-                        <div className="pull-left">
-                          <img
-                            alt={legacyMessage(messages, "fork")}
-                            className="img-polaroid"
-                            src={prefixBasePath(
-                              props.runtimeConfig.basePath,
-                              "/images/fork-pull/fork.jpg",
-                            )}
-                          />
-                          <br />
-                        </div>
-                        <div className="pull-left help-messages">
-                          <p className="lead">{legacyMessage(messages, "fork.help.title")}</p>
-                          <p>{legacyMessage(messages, "fork.help.message.1")}</p>
-                          <p>{legacyMessage(messages, "fork.help.message.2")}</p>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="help-messages center-txt">
-                        <i className="ico ico-err2" />
-                        <p>{legacyMessage(messages, "fork.already.exist")}</p>
-                        {existingForks.map((fork) => (
-                          <p key={`${fork.ownerName}/${fork.projectName}`}>
-                            <strong className="vmiddle">
-                              {`${detail.ownerName} / ${detail.projectName}`}
-                            </strong>
-                            <i className="yobicon-right vmiddle" />
-                            <a
-                              className="vmiddle primary-txt"
-                              href={buildProjectHref(
-                                props.runtimeConfig,
-                                fork.ownerName,
-                                fork.projectName,
-                              )}
-                            >
-                              {`${fork.ownerName} / ${fork.projectName}`}
-                            </a>
-                          </p>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="control-group">
-                  <label className="control-label" htmlFor="project-owner">
-                    {legacyMessage(messages, "project.owner")}
-                  </label>
-                  <div className="controls">
-                    <select
-                      id="project-owner"
-                      name="owner"
-                      onChange={(event) => setOwner(event.currentTarget.value)}
-                      value={owner}
-                    >
-                      {ownerOptions.map((option) => (
-                        <option
-                          data-owner-type={option.organization ? "organization" : "user"}
-                          data-url={buildProjectHref(
-                            props.runtimeConfig,
-                            option.ownerName,
-                            detail.projectName,
-                          )}
-                          key={option.ownerName}
-                          value={option.ownerName}
-                        >
-                          {option.ownerName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="control-group">
-                  <label className="control-label" htmlFor="inputName">
-                    {legacyMessage(messages, "project.name")}
-                  </label>
-                  <div className="controls">
-                    <input
-                      className="text"
-                      id="inputName"
-                      maxLength={250}
-                      name="name"
-                      onChange={(event) => setName(event.currentTarget.value)}
-                      type="text"
-                      value={name}
-                    />
-                    <span className="help-inline">
-                      {legacyMessage(messages, "project.name.alert")}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="control-group project-share-option">
-                  <label className="control-label" htmlFor="public">
-                    {legacyMessage(messages, "project.shareOption")}
-                  </label>
-                  <div className="controls">
-                    {[
-                      {
-                        className: "bg-radiobtn label-public",
-                        id: "public",
-                        label: "project.public",
-                      },
-                      ...(selectedOwnerIsOrganization
-                        ? [
-                            {
-                              className: "bg-radiobtn label-protected",
-                              id: "protected",
-                              label: "project.protected",
-                            },
-                          ]
-                        : []),
-                      {
-                        className: "bg-radiobtn label-private",
-                        id: "private",
-                        label: "project.private",
-                      },
-                    ].map((scope) => (
-                      <label className={scope.className} htmlFor={scope.id} key={scope.id}>
-                        <input
-                          checked={projectScope === scope.id}
-                          id={scope.id}
-                          name="projectScope"
-                          onChange={() => setProjectScope(scope.id)}
-                          type="radio"
-                          value={scope.id.toUpperCase()}
-                        />
-                        {legacyMessage(messages, scope.label)}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="actions">
-                  <button
-                    className="ybtn ybtn-info"
-                    disabled={!canSubmit || props.pending}
-                    type="submit"
-                  >
-                    <i className="yobicon-fork" /> {legacyMessage(messages, "fork")}
-                  </button>
-                  <a
-                    className="ybtn"
-                    href={buildProjectHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      "pullRequests",
-                    )}
-                  >
-                    {legacyMessage(messages, "button.cancel")}
-                  </a>
-                </div>
-              </fieldset>
-            </form>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }

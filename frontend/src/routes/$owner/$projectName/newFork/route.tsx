@@ -117,6 +117,7 @@ function ProjectForkRouteComponent() {
         await forkMutation.mutateAsync(input);
       }}
       pending={forkMutation.isPending}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );
