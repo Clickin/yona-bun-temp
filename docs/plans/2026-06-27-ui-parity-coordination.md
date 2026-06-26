@@ -491,6 +491,17 @@ M37 continues organization shell migration for scoped search:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real search routes"`.
 
+M38 starts workspace settings shell migration:
+
+- `/user/editform/route.tsx` now owns the legacy account-settings
+  breadcrumb/tabs/page-wrap shell for `/user/editform/**`.
+- `WorkspaceSettingsPage` supports `renderShell={false}` so profile, password,
+  notifications, emails, and token leaf routes keep their mutation boundaries
+  but render only their legacy section bodies under the editform layout
+  `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/workspace-settings-parity.spec.tsx src/workspace-settings-i18n.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

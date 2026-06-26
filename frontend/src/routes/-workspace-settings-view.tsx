@@ -185,6 +185,7 @@ export function WorkspaceSettingsPage(props: {
   onUploadAvatar?: (blob: Blob, filename: string) => Promise<string>;
   onUpdateProfile?: (input: ProfileUpdateInput) => void;
   pending?: boolean;
+  renderShell?: boolean;
   messages?: LegacyMessageLookup;
   runtimeConfig: RuntimeConfig;
   routeHref: string;
@@ -777,6 +778,27 @@ export function WorkspaceSettingsPage(props: {
       break;
   }
 
+  if (props.renderShell === false) {
+    return sectionBody;
+  }
+
+  return (
+    <WorkspaceSettingsShell
+      messages={props.messages}
+      runtimeConfig={props.runtimeConfig}
+      section={props.section}
+    >
+      {sectionBody}
+    </WorkspaceSettingsShell>
+  );
+}
+
+export function WorkspaceSettingsShell(props: {
+  children: React.ReactNode;
+  messages?: LegacyMessageLookup;
+  runtimeConfig: RuntimeConfig;
+  section: WorkspaceSettingsSection;
+}) {
   return (
     <main className="app-shell">
       <div className="site-breadcrumb-outer">
@@ -803,7 +825,7 @@ export function WorkspaceSettingsPage(props: {
               </li>
             ))}
           </ul>
-          {sectionBody}
+          {props.children}
         </div>
       </div>
     </main>

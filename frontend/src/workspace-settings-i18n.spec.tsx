@@ -153,4 +153,32 @@ describe("workspace settings legacy i18n opt-in", () => {
       expect(source).toContain(`fallback: "${key}"`);
     }
   });
+
+  it("lets the editform layout route own settings chrome without changing leaf bodies", () => {
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/user/editform/route.tsx"),
+      "utf8",
+    );
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-workspace-settings-view.tsx"),
+      "utf8",
+    );
+    const routeFiles = [
+      "routes/user/editform/index.tsx",
+      "routes/user/editform/password/route.tsx",
+      "routes/user/editform/notifications/route.tsx",
+      "routes/user/editform/emails/route.tsx",
+      "routes/user/editform/token/route.tsx",
+    ];
+
+    expect(layoutSource).toContain("WorkspaceSettingsShell");
+    expect(layoutSource).toContain("<Outlet />");
+    expect(layoutSource).toContain("workspaceSettingsSectionFromPath");
+    expect(viewSource).toContain("renderShell?: boolean");
+    expect(viewSource).toContain("props.renderShell === false");
+    for (const routeFile of routeFiles) {
+      const source = fs.readFileSync(path.resolve(__dirname, routeFile), "utf8");
+      expect(source).toContain("renderShell={false}");
+    }
+  });
 });

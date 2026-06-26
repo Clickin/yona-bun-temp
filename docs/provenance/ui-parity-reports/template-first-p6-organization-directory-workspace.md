@@ -151,3 +151,11 @@ integrated visual sweep covers all packet reports.
   breadcrumb/results body and avoids duplicate organization chrome queries.
   Focused coverage:
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real search routes"`.
+- 2026-06-27 workspace settings shell follow-up:
+  `frontend/src/routes/user/editform/route.tsx` now owns the legacy
+  account-settings breadcrumb/tabs/page-wrap shell for `/user/editform/**`.
+  `WorkspaceSettingsPage` renders only profile, password, notification, email,
+  and token section bodies through `renderShell={false}` for those child routes
+  while preserving direct-render shell output for existing specs. Focused
+  coverage:
+  `pnpm --dir frontend exec vitest run src/workspace-settings-parity.spec.tsx src/workspace-settings-i18n.spec.tsx`.

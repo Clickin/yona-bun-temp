@@ -37,6 +37,7 @@ function EditProfileRouteComponent() {
     <WorkspaceSettingsPage
       csrfToken={csrfToken}
       messages={messages}
+      renderShell={false}
       routeHref={currentHref}
       runtimeConfig={runtimeConfig}
       section="profile"

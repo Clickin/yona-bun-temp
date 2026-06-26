@@ -122,6 +122,15 @@
   `organization/group_issue_list*.scala.html` output. Focused coverage:
   `frontend/src/organization-shell-i18n.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 workspace settings layout continuation:
+  `/user/editform/route.tsx` now owns the legacy account-settings
+  breadcrumb/tabs/page-wrap shell while the profile, password, notifications,
+  emails, and token leaves render only their legacy section bodies through
+  `renderShell={false}`. This keeps the React mutation boundaries intact while
+  moving shell ownership to the TanStack Router nested layout. Focused coverage:
+  `frontend/src/workspace-settings-i18n.spec.tsx`,
+  `frontend/src/workspace-settings-parity.spec.tsx`, and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

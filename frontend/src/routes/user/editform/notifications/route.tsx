@@ -33,6 +33,7 @@ function EditNotificationsRouteComponent() {
     <WorkspaceSettingsPage
       csrfToken={csrfToken}
       messages={messages}
+      renderShell={false}
       routeHref={currentHref}
       runtimeConfig={runtimeConfig}
       section="notifications"
