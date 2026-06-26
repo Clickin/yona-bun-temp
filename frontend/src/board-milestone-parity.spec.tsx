@@ -237,6 +237,42 @@ describe("board/milestone UI parity closure", () => {
     expect(html).toContain('<span class="date">(5 days left)</span>');
   });
 
+  it("lets the project layout route own the milestone list shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectMilestoneListPage
+        detail={detail}
+        list={{
+          milestones: [milestone],
+          orderBy: "dueDate",
+          orderDir: "asc",
+          state: "open",
+        }}
+        owner="owner"
+        projectName="projectYobi"
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/milestones/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/milestones`");
+    expect(layoutSource).toContain('return { activeMenu: "milestone" };');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('rel="stylesheet" type="text/css"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="milestones"');
+  });
+
   it("renders milestone form/detail uploader, attachment metadata, mass-update shell, and field-level validation source", () => {
     const formHtml = renderToStaticMarkup(
       <ProjectMilestoneFormPage

@@ -94,6 +94,7 @@ function ProjectMilestonesRouteComponent() {
       messages={messages}
       owner={owner}
       projectName={projectName}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

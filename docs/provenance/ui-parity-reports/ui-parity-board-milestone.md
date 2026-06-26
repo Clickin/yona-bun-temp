@@ -44,6 +44,14 @@ Worker update, 2026-06-26:
   field-adjacent validation with no REST POST, and milestone close/reopen
   buttons issuing REST JSON callbacks before rendering the returned open/closed
   state.
+- Worker update, 2026-06-27 layout follow-up: project milestone list shell
+  ownership moved into `frontend/src/routes/$owner/$projectName/route.tsx` for
+  `/milestones`, keeping the milestone menu active and rendering
+  `ProjectMilestoneListPage` through the TanStack Router `<Outlet />`.
+  `ProjectMilestoneListPage` now supports `renderShell={false}` while retaining
+  the legacy label stylesheet link and list markup. Verification:
+  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
+  src/board-milestone-parity.spec.tsx`.
 
 ## Evidence Checked
 

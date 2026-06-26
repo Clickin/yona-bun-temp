@@ -95,7 +95,7 @@ function projectLayoutShell(
   basePath: string,
   owner: string,
   projectName: string,
-): { activeMenu?: "issue" | "settings" } | null {
+): { activeMenu?: "issue" | "milestone" | "settings" } | null {
   const appPath = stripProjectLayoutBasePath(pathname, basePath).replace(/\/+$/u, "");
   if (
     appPath === `/${owner}/${projectName}/changeVCS` ||
@@ -110,6 +110,9 @@ function projectLayoutShell(
   }
   if (appPath === `/${owner}/${projectName}/watchers`) {
     return {};
+  }
+  if (appPath === `/${owner}/${projectName}/milestones`) {
+    return { activeMenu: "milestone" };
   }
   if (
     appPath === `/${owner}/${projectName}/issueform` ||
@@ -139,7 +142,7 @@ function ProjectRouteShellLayout({
   projectName,
   runtimeConfig,
 }: {
-  activeMenu?: "issue" | "settings";
+  activeMenu?: "issue" | "milestone" | "settings";
   bootstrapping: boolean;
   messages: ReturnType<typeof useAppRuntime>["messages"];
   owner: string;

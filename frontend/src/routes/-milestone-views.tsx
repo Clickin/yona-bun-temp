@@ -757,6 +757,7 @@ export function ProjectMilestoneListPage(props: {
   messages?: LegacyMessageLookup;
   owner: string;
   projectName: string;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail(props.owner, props.projectName);
@@ -767,191 +768,202 @@ export function ProjectMilestoneListPage(props: {
     state: "open",
   };
   const [filter, setFilter] = React.useState("");
+  const labelStylesheet = (
+    <link
+      href={buildProjectHref(
+        props.runtimeConfig,
+        detail.ownerName,
+        detail.projectName,
+        "issue/labels.css",
+      )}
+      rel="stylesheet"
+      type="text/css"
+    />
+  );
+  const content = (
+    <div className="project-page-wrap">
+      <div className="tab-wrap">
+        {detail.viewerCanUpdate ? (
+          <div className="pull-right btns">
+            <a
+              className="ybtn ybtn-success"
+              href={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "newMilestoneForm",
+              )}
+            >
+              {legacyMessage(props.messages, "milestone.menu.new")}
+            </a>
+          </div>
+        ) : null}
+        <ul className="nav nav-tabs">
+          {["open", "closed", "all"].map((state) => (
+            <li className={list.state === state ? "active" : ""} key={state}>
+              <a href={tabHref(props.runtimeConfig, detail, "milestones", state)}>
+                {legacyMessage(props.messages, stateLabel(state))}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {list.milestones.length === 0 ? (
+        <div className="error-wrap">
+          <i className="ico ico-err1" />
+          <p>{legacyMessage(props.messages, "milestone.is.empty")}</p>
+        </div>
+      ) : (
+        <>
+          <div className="filter-wrap milestone">
+            {list.milestones.length > 1 ? (
+              <>
+                <div className="filters">
+                  <a
+                    className={list.orderBy === "dueDate" ? "filter active" : "filter"}
+                    href={sortHref(props.runtimeConfig, detail, list, "dueDate")}
+                  >
+                    <i
+                      className={`ico btn-gray-arrow${
+                        list.orderBy === "dueDate" && list.orderDir === "desc" ? " down" : ""
+                      }`}
+                    />
+                    {legacyMessage(props.messages, "common.order.dueDate")}
+                  </a>
+                  <a
+                    className={list.orderBy === "completionRate" ? "filter active" : "filter"}
+                    href={sortHref(props.runtimeConfig, detail, list, "completionRate")}
+                  >
+                    <i
+                      className={`ico btn-gray-arrow${
+                        list.orderBy === "completionRate" && list.orderDir === "desc" ? " down" : ""
+                      }`}
+                    />
+                    {legacyMessage(props.messages, "common.order.completionRate")}
+                  </a>
+                </div>
+                <MilestoneSearchBox
+                  onChange={setFilter}
+                  placeholder={legacyMessage(props.messages, "search.title")}
+                  value={filter}
+                />
+              </>
+            ) : null}
+          </div>
+          <div className="row-fluid">
+            <div>
+              <ul className="milestones">
+                {list.milestones.map((milestone) => (
+                  <li className="milestone" key={milestone.id}>
+                    <div className="infos">
+                      <div className="meta-info">
+                        <strong className="version" />
+                        <a
+                          className="milestone-name"
+                          href={buildProjectHref(
+                            props.runtimeConfig,
+                            detail.ownerName,
+                            detail.projectName,
+                            `milestone/${milestone.id}`,
+                          )}
+                        >
+                          {milestone.title}
+                        </a>
+                        <span className="sp">|</span>
+                        <span className="issue-item">{`${milestone.closedIssueCount} / ${
+                          milestone.openIssueCount + milestone.closedIssueCount
+                        }`}</span>
+                        {list.state === "all" ? (
+                          <>
+                            <span className="sp">|</span>
+                            <span className={`state nm ${milestone.state}`}>
+                              {legacyMessage(props.messages, stateLabel(milestone.state))}
+                            </span>
+                          </>
+                        ) : null}
+                        {milestone.dueDateLabel ? (
+                          <>
+                            <span className="sp">|</span>
+                            <span
+                              className={`due-date${
+                                milestone.state === "closed"
+                                  ? " ml5"
+                                  : milestone.dueDateOverdue
+                                    ? " over"
+                                    : ""
+                              }`}
+                            >
+                              {legacyMessage(props.messages, "label.dueDate")}{" "}
+                              <strong>{milestone.dueDateLabel}</strong>
+                              {milestone.state !== "closed" && milestone.untilLabel ? (
+                                <span className="date">({milestone.untilLabel})</span>
+                              ) : null}
+                            </span>
+                          </>
+                        ) : null}
+                        <div className="pull-right">
+                          <span className="number completion-rate">
+                            {milestone.openIssueCount + milestone.closedIssueCount > 0
+                              ? `${milestone.completionPercent}%`
+                              : ""}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="progress-wrap">
+                        <MilestoneProgress percent={milestone.completionPercent} />
+                      </div>
+                    </div>
+                    <div>
+                      <div />
+                      <div>
+                        {milestone.openIssues.map((issue) => (
+                          <MilestoneIssueLink
+                            detail={detail}
+                            hidden={milestoneIssueHidden(issue, filter)}
+                            issue={issue}
+                            key={`open-${issue.issueNumber}`}
+                            runtimeConfig={props.runtimeConfig}
+                          />
+                        ))}
+                      </div>
+                      <div />
+                      <div>
+                        {milestone.closedIssues.map((issue) => (
+                          <MilestoneIssueLink
+                            detail={detail}
+                            hidden={milestoneIssueHidden(issue, filter)}
+                            issue={issue}
+                            key={`closed-${issue.issueNumber}`}
+                            runtimeConfig={props.runtimeConfig}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return (
+      <>
+        {labelStylesheet}
+        {content}
+      </>
+    );
+  }
 
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="milestone" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <link
-        href={buildProjectHref(
-          props.runtimeConfig,
-          detail.ownerName,
-          detail.projectName,
-          "issue/labels.css",
-        )}
-        rel="stylesheet"
-        type="text/css"
-      />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="tab-wrap">
-            {detail.viewerCanUpdate ? (
-              <div className="pull-right btns">
-                <a
-                  className="ybtn ybtn-success"
-                  href={buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    "newMilestoneForm",
-                  )}
-                >
-                  {legacyMessage(props.messages, "milestone.menu.new")}
-                </a>
-              </div>
-            ) : null}
-            <ul className="nav nav-tabs">
-              {["open", "closed", "all"].map((state) => (
-                <li className={list.state === state ? "active" : ""} key={state}>
-                  <a href={tabHref(props.runtimeConfig, detail, "milestones", state)}>
-                    {legacyMessage(props.messages, stateLabel(state))}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          {list.milestones.length === 0 ? (
-            <div className="error-wrap">
-              <i className="ico ico-err1" />
-              <p>{legacyMessage(props.messages, "milestone.is.empty")}</p>
-            </div>
-          ) : (
-            <>
-              <div className="filter-wrap milestone">
-                {list.milestones.length > 1 ? (
-                  <>
-                    <div className="filters">
-                      <a
-                        className={list.orderBy === "dueDate" ? "filter active" : "filter"}
-                        href={sortHref(props.runtimeConfig, detail, list, "dueDate")}
-                      >
-                        <i
-                          className={`ico btn-gray-arrow${
-                            list.orderBy === "dueDate" && list.orderDir === "desc" ? " down" : ""
-                          }`}
-                        />
-                        {legacyMessage(props.messages, "common.order.dueDate")}
-                      </a>
-                      <a
-                        className={list.orderBy === "completionRate" ? "filter active" : "filter"}
-                        href={sortHref(props.runtimeConfig, detail, list, "completionRate")}
-                      >
-                        <i
-                          className={`ico btn-gray-arrow${
-                            list.orderBy === "completionRate" && list.orderDir === "desc"
-                              ? " down"
-                              : ""
-                          }`}
-                        />
-                        {legacyMessage(props.messages, "common.order.completionRate")}
-                      </a>
-                    </div>
-                    <MilestoneSearchBox
-                      onChange={setFilter}
-                      placeholder={legacyMessage(props.messages, "search.title")}
-                      value={filter}
-                    />
-                  </>
-                ) : null}
-              </div>
-              <div className="row-fluid">
-                <div>
-                  <ul className="milestones">
-                    {list.milestones.map((milestone) => (
-                      <li className="milestone" key={milestone.id}>
-                        <div className="infos">
-                          <div className="meta-info">
-                            <strong className="version" />
-                            <a
-                              className="milestone-name"
-                              href={buildProjectHref(
-                                props.runtimeConfig,
-                                detail.ownerName,
-                                detail.projectName,
-                                `milestone/${milestone.id}`,
-                              )}
-                            >
-                              {milestone.title}
-                            </a>
-                            <span className="sp">|</span>
-                            <span className="issue-item">{`${milestone.closedIssueCount} / ${
-                              milestone.openIssueCount + milestone.closedIssueCount
-                            }`}</span>
-                            {list.state === "all" ? (
-                              <>
-                                <span className="sp">|</span>
-                                <span className={`state nm ${milestone.state}`}>
-                                  {legacyMessage(props.messages, stateLabel(milestone.state))}
-                                </span>
-                              </>
-                            ) : null}
-                            {milestone.dueDateLabel ? (
-                              <>
-                                <span className="sp">|</span>
-                                <span
-                                  className={`due-date${
-                                    milestone.state === "closed"
-                                      ? " ml5"
-                                      : milestone.dueDateOverdue
-                                        ? " over"
-                                        : ""
-                                  }`}
-                                >
-                                  {legacyMessage(props.messages, "label.dueDate")}{" "}
-                                  <strong>{milestone.dueDateLabel}</strong>
-                                  {milestone.state !== "closed" && milestone.untilLabel ? (
-                                    <span className="date">({milestone.untilLabel})</span>
-                                  ) : null}
-                                </span>
-                              </>
-                            ) : null}
-                            <div className="pull-right">
-                              <span className="number completion-rate">
-                                {milestone.openIssueCount + milestone.closedIssueCount > 0
-                                  ? `${milestone.completionPercent}%`
-                                  : ""}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="progress-wrap">
-                            <MilestoneProgress percent={milestone.completionPercent} />
-                          </div>
-                        </div>
-                        <div>
-                          <div />
-                          <div>
-                            {milestone.openIssues.map((issue) => (
-                              <MilestoneIssueLink
-                                detail={detail}
-                                hidden={milestoneIssueHidden(issue, filter)}
-                                issue={issue}
-                                key={`open-${issue.issueNumber}`}
-                                runtimeConfig={props.runtimeConfig}
-                              />
-                            ))}
-                          </div>
-                          <div />
-                          <div>
-                            {milestone.closedIssues.map((issue) => (
-                              <MilestoneIssueLink
-                                detail={detail}
-                                hidden={milestoneIssueHidden(issue, filter)}
-                                issue={issue}
-                                key={`closed-${issue.issueNumber}`}
-                                runtimeConfig={props.runtimeConfig}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      {labelStylesheet}
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }

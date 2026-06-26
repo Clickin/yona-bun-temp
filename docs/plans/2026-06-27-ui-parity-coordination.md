@@ -181,6 +181,17 @@ M10 continues project shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/project-watchers-parity.spec.tsx`.
 
+M11 starts milestone shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/milestones`, with the milestone menu active.
+- `ProjectMilestoneListPage` supports `renderShell={false}` so the list leaf
+  route keeps its milestone list read boundary but renders only the legacy
+  stylesheet link plus `project-page-wrap` body under the project layout
+  `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit
