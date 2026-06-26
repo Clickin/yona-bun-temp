@@ -2153,6 +2153,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   while `ProjectForkPage` renders only the legacy fork form body through
   `renderShell={false}`. Focused coverage:
   `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx -t "fork shell"`.
+- 2026-06-27 project nested-layout home follow-up:
+  `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
+  header/menu/page-wrap shell for the project index route with the home menu
+  active, while `ProjectDetailPage` renders only the legacy project home body
+  through `renderShell={false}`. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/project-home-tabs.spec.tsx -t "project layout route own project home"`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

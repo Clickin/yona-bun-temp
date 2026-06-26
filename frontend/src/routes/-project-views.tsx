@@ -2079,6 +2079,7 @@ export function ProjectDetailPage(props: {
   readmePost?: BoardPostDetail | null;
   routeHref?: string;
   messages?: LegacyMessageLookup;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   onEnrollProject?: (ownerName: string, projectName: string) => void;
   onCancelEnrollProject?: (ownerName: string, projectName: string) => void;
@@ -2127,6 +2128,353 @@ export function ProjectDetailPage(props: {
   );
   const isGitProject = !detail.vcs || detail.vcs.toLowerCase() === "git";
 
+  const content = (
+    <div className="project-page-wrap">
+      <div className="project-breadcrumb hide show-in-mobile">
+        <span className="project-author">
+          <a href={prefixBasePath(props.runtimeConfig.basePath, `/${detail.ownerName}`)}>
+            {detail.ownerName}
+          </a>
+        </span>
+        <span className="project-separator">/</span>
+        <span className="project-name">
+          <a href={projectHref}>{detail.projectName}</a>
+        </span>
+        {detail.projectScope === "private" ? (
+          <span className="project-private">
+            <i className="yobicon-lock" />
+          </span>
+        ) : null}
+      </div>
+      <div className="project-home-header row-fluid">
+        <div className="project-overview span9 span-hard-wrap">
+          <div className="project-description" data-toggle="project-description-tab">
+            <h3>
+              {detail.overview ? (
+                <MarkdownRenderer
+                  className="markdown-wrap"
+                  containerElement="span"
+                  id="project-description"
+                  markdown={detail.overview}
+                  mentionReferences={[]}
+                />
+              ) : (
+                <span className="markdown-wrap" id="project-description">
+                  {legacyMessage(messages, "project.description.placeholder")}
+                </span>
+              )}
+              {detail.overviewEditable || detail.viewerCanUpdate ? (
+                <button
+                  aria-label={legacyMessage(messages, "button.edit")}
+                  className="ybtn ybtn-minimum"
+                  data-toggle="description-edit"
+                  title={legacyMessage(messages, "button.edit")}
+                  type="button"
+                  onClick={() => setEditingOverview(true)}
+                >
+                  <i className="yobicon-edit" />
+                </button>
+              ) : null}
+            </h3>
+          </div>
+          {editingOverview ? (
+            <div className="project-description-edit" data-toggle="project-description-tab">
+              <form
+                action={projectHref}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  props.onUpdateProjectOverview?.(
+                    detail.ownerName,
+                    detail.projectName,
+                    overviewDraft,
+                  );
+                  setEditingOverview(false);
+                }}
+              >
+                <input
+                  className="span6"
+                  id="project-description-input"
+                  name="overview"
+                  placeholder={legacyMessage(messages, "project.description.placeholder")}
+                  type="text"
+                  value={overviewDraft}
+                  onChange={(event) => setOverviewDraft(event.target.value)}
+                />
+                <button className="ybtn ybtn-success" id="descriptionSaveBtn" type="submit">
+                  {legacyMessage(messages, "button.save")}
+                </button>{" "}
+                <button
+                  className="ybtn"
+                  data-toggle="description-cancel"
+                  type="button"
+                  onClick={() => setEditingOverview(false)}
+                >
+                  {legacyMessage(messages, "button.cancel")}
+                </button>
+              </form>
+            </div>
+          ) : null}
+        </div>
+        {detail.showCode ? (
+          <div className="project-clone-wrap span3 hide-in-mobile">
+            <input
+              aria-label={legacyMessage(messages, "code.copyUrl")}
+              className="project-clone-url"
+              id="cloneURL"
+              readOnly
+              title={legacyMessage(messages, "code.copyUrl")}
+              type="text"
+              value={detail.cloneUrl ?? ""}
+            />
+            <button
+              className="ybtn project-clone-button"
+              data-clipboard-target="cloneURL"
+              id="cloneURLBtn"
+              type="button"
+            >
+              {legacyMessage(messages, "code.copyUrl")}
+            </button>
+          </div>
+        ) : null}
+      </div>
+      <div className="row-fluid">
+        <div className="span9 span-left-pane">
+          <ul className="nav nav-tabs">
+            <li className={activeTab === "readme" ? "active" : undefined}>
+              <a href={projectHref}>README</a>
+            </li>
+            <li className={activeTab === "history" ? "active" : undefined}>
+              <a href={`${projectHref}?tabId=history`}>
+                {legacyMessage(messages, "project.history.recent")}
+              </a>
+            </li>
+            <li className={activeTab === "dashboard" ? "active" : undefined}>
+              <a href={`${projectHref}?tabId=dashboard`}>
+                {legacyMessage(messages, "project.dashboard")}
+              </a>
+            </li>
+          </ul>
+          <div className="tab-content">
+            <div className="tab-pane active">
+              {activeTab === "readme" ? (
+                props.readmePost ? (
+                  <article className="board-view project-readme-post">
+                    <h3>{props.readmePost.title || "README"}</h3>
+                    <MarkdownRenderer
+                      className="readme-body markdown-wrap"
+                      basePath={props.runtimeConfig?.basePath}
+                      issueReferences={props.readmePost.issueReferences}
+                      markdown={props.readmePost.bodyMarkdown}
+                      mentionReferences={props.readmePost.mentionReferences}
+                      ownerName={props.readmePost.ownerName}
+                      projectName={props.readmePost.projectName}
+                    />
+                  </article>
+                ) : detail.readmeFile ? (
+                  <article className="readme-wrap project-git-readme">
+                    <header>
+                      <strong>{detail.readmeFile.name || "README.md"}</strong>
+                    </header>
+                    <MarkdownRenderer
+                      className="readme-body markdown-wrap"
+                      basePath={props.runtimeConfig?.basePath}
+                      markdown={detail.readmeFile.bodyMarkdown}
+                      mentionReferences={detail.readmeFile.mentionReferences}
+                      ownerName={detail.ownerName}
+                      projectName={detail.projectName}
+                    />
+                  </article>
+                ) : (
+                  <div className="bubble-wrap gray readme">
+                    <p className="default">
+                      {isGitProject ? (
+                        <>
+                          <span>{legacyMessage(messages, "project.readme")}</span>
+                          <br />
+                          <br />
+                          {detail.viewerCanUpdate ? (
+                            <a className="ybtn" href={`${projectHref}/postform?readme=true`}>
+                              {legacyMessage(messages, "project.readme.create")}
+                            </a>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span>{legacyMessage(messages, "project.svn.readme")}</span>
+                      )}
+                    </p>
+                  </div>
+                )
+              ) : null}
+              {activeTab === "history" ? (
+                <ProjectHomeHistoryPane detail={detail} messages={props.messages} />
+              ) : null}
+              {activeTab === "dashboard" ? (
+                <ProjectHomeDashboardPane
+                  detail={detail}
+                  messages={messages}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              ) : null}
+            </div>
+          </div>
+        </div>
+        <div className="span3 span-right-pane">
+          <div className="bubble-wrap gray project-home">
+            <div className="project-btn-wrap">
+              {detail.showIssue ? (
+                <span className="project-btn-item">
+                  <a className="ybtn ybtn-success" href={`${projectHref}/issues/new`}>
+                    {legacyMessage(messages, "button.newIssue")}
+                  </a>
+                </span>
+              ) : null}
+              {detail.showCode && isGitProject ? (
+                <span className="project-btn-item">
+                  <a className="ybtn ybtn-inverse" href={`${projectHref}/newFork`}>
+                    {legacyMessage(messages, "fork")}
+                  </a>
+                </span>
+              ) : null}
+            </div>
+            {detail.showMilestone && detail.currentMilestone ? (
+              <div className="milestone-info">
+                <div className="meta-info">
+                  <a
+                    className="title"
+                    href={buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      `milestone/${detail.currentMilestone.id}`,
+                    )}
+                  >
+                    {detail.currentMilestone.title}
+                  </a>
+                  {detail.currentMilestone.dueDateLabel ? (
+                    <span className="due-date">
+                      {legacyMessage(messages, "label.dueDate")}{" "}
+                      <strong>{detail.currentMilestone.dueDateLabel}</strong>
+                    </span>
+                  ) : null}
+                </div>
+                <div className="progress-wrap">
+                  <div className="progress progress-success nm">
+                    <div
+                      className="bar"
+                      style={{ width: `${detail.currentMilestone.completionPercent}%` }}
+                    />
+                  </div>
+                  <div className="progress-info">
+                    <span className="pull-right">
+                      <strong>{`${detail.currentMilestone.closedIssueCount} / ${
+                        detail.currentMilestone.openIssueCount +
+                        detail.currentMilestone.closedIssueCount
+                      }`}</strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            <section className="inner member-info">
+              <header>
+                <h3>{legacyMessage(messages, "project.members")}</h3>
+                {detail.viewerCanUpdate ? (
+                  <a
+                    className="ybtn ybtn-minimum"
+                    href={buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      "members",
+                    )}
+                    id="member-add-link"
+                  >
+                    <i className="yobicon-addfriend" /> {legacyMessage(messages, "button.add")}
+                  </a>
+                ) : null}
+              </header>
+              <div className="member-wrap">
+                <ul className="project-members">
+                  {(detail.members ?? []).map((member) => (
+                    <li className="member" key={member.loginId}>
+                      <a
+                        className="avatar-wrap img-rounded pull-left small"
+                        href={prefixBasePath(props.runtimeConfig.basePath, `/${member.loginId}`)}
+                      >
+                        <img alt={member.loginId} height="24" src={member.avatarUrl} width="24" />
+                      </a>
+                      <a
+                        className="name"
+                        href={prefixBasePath(props.runtimeConfig.basePath, `/${member.loginId}`)}
+                      >
+                        <strong>{`${member.userLabel} (${member.loginId})`}</strong>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {detail.viewerCanLeave && detail.viewerUserId ? (
+                <button
+                  className="ybtn ybtn-minimum ybtn-danger pull-right"
+                  data-href={projectLeaveHref}
+                  id="projectLeaveBtn"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setLeaveModalOpen(true);
+                  }}
+                  type="button"
+                >
+                  {legacyMessage(messages, "project.member.leave")}
+                </button>
+              ) : null}
+            </section>
+          </div>
+        </div>
+      </div>
+      <div className={`modal${leaveModalOpen ? "" : " hide"}`} id="alertLeave">
+        <div className="modal-header">
+          <button
+            aria-label={legacyMessage(messages, "button.close")}
+            className="close"
+            data-dismiss="modal"
+            onClick={() => setLeaveModalOpen(false)}
+            type="button"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h3>{legacyMessage(messages, "project.member.leave")}</h3>
+        </div>
+        <div className="modal-body">
+          <p>{legacyMessage(messages, "project.member.leaveConfirm")}</p>
+        </div>
+        <div className="modal-footer">
+          <button
+            className="ybtn ybtn-info ybtn-mini"
+            id="leaveBtn"
+            onClick={() =>
+              props.onLeaveProject?.(detail.ownerName, detail.projectName, detail.viewerUserId ?? 0)
+            }
+            type="button"
+          >
+            {legacyMessage(messages, "button.yes")}
+          </button>
+          <button
+            className="ybtn ybtn-mini"
+            data-dismiss="modal"
+            onClick={() => setLeaveModalOpen(false)}
+            type="button"
+          >
+            {legacyMessage(messages, "button.no")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader
@@ -2139,363 +2487,7 @@ export function ProjectDetailPage(props: {
         runtimeConfig={props.runtimeConfig}
       />
       <ProjectMenu activeMenu="home" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="project-breadcrumb hide show-in-mobile">
-            <span className="project-author">
-              <a href={prefixBasePath(props.runtimeConfig.basePath, `/${detail.ownerName}`)}>
-                {detail.ownerName}
-              </a>
-            </span>
-            <span className="project-separator">/</span>
-            <span className="project-name">
-              <a href={projectHref}>{detail.projectName}</a>
-            </span>
-            {detail.projectScope === "private" ? (
-              <span className="project-private">
-                <i className="yobicon-lock" />
-              </span>
-            ) : null}
-          </div>
-          <div className="project-home-header row-fluid">
-            <div className="project-overview span9 span-hard-wrap">
-              <div className="project-description" data-toggle="project-description-tab">
-                <h3>
-                  {detail.overview ? (
-                    <MarkdownRenderer
-                      className="markdown-wrap"
-                      containerElement="span"
-                      id="project-description"
-                      markdown={detail.overview}
-                      mentionReferences={[]}
-                    />
-                  ) : (
-                    <span className="markdown-wrap" id="project-description">
-                      {legacyMessage(messages, "project.description.placeholder")}
-                    </span>
-                  )}
-                  {detail.overviewEditable || detail.viewerCanUpdate ? (
-                    <button
-                      aria-label={legacyMessage(messages, "button.edit")}
-                      className="ybtn ybtn-minimum"
-                      data-toggle="description-edit"
-                      title={legacyMessage(messages, "button.edit")}
-                      type="button"
-                      onClick={() => setEditingOverview(true)}
-                    >
-                      <i className="yobicon-edit" />
-                    </button>
-                  ) : null}
-                </h3>
-              </div>
-              {editingOverview ? (
-                <div className="project-description-edit" data-toggle="project-description-tab">
-                  <form
-                    action={projectHref}
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      props.onUpdateProjectOverview?.(
-                        detail.ownerName,
-                        detail.projectName,
-                        overviewDraft,
-                      );
-                      setEditingOverview(false);
-                    }}
-                  >
-                    <input
-                      className="span6"
-                      id="project-description-input"
-                      name="overview"
-                      placeholder={legacyMessage(messages, "project.description.placeholder")}
-                      type="text"
-                      value={overviewDraft}
-                      onChange={(event) => setOverviewDraft(event.target.value)}
-                    />
-                    <button className="ybtn ybtn-success" id="descriptionSaveBtn" type="submit">
-                      {legacyMessage(messages, "button.save")}
-                    </button>{" "}
-                    <button
-                      className="ybtn"
-                      data-toggle="description-cancel"
-                      type="button"
-                      onClick={() => setEditingOverview(false)}
-                    >
-                      {legacyMessage(messages, "button.cancel")}
-                    </button>
-                  </form>
-                </div>
-              ) : null}
-            </div>
-            {detail.showCode ? (
-              <div className="project-clone-wrap span3 hide-in-mobile">
-                <input
-                  aria-label={legacyMessage(messages, "code.copyUrl")}
-                  className="project-clone-url"
-                  id="cloneURL"
-                  readOnly
-                  title={legacyMessage(messages, "code.copyUrl")}
-                  type="text"
-                  value={detail.cloneUrl ?? ""}
-                />
-                <button
-                  className="ybtn project-clone-button"
-                  data-clipboard-target="cloneURL"
-                  id="cloneURLBtn"
-                  type="button"
-                >
-                  {legacyMessage(messages, "code.copyUrl")}
-                </button>
-              </div>
-            ) : null}
-          </div>
-          <div className="row-fluid">
-            <div className="span9 span-left-pane">
-              <ul className="nav nav-tabs">
-                <li className={activeTab === "readme" ? "active" : undefined}>
-                  <a href={projectHref}>README</a>
-                </li>
-                <li className={activeTab === "history" ? "active" : undefined}>
-                  <a href={`${projectHref}?tabId=history`}>
-                    {legacyMessage(messages, "project.history.recent")}
-                  </a>
-                </li>
-                <li className={activeTab === "dashboard" ? "active" : undefined}>
-                  <a href={`${projectHref}?tabId=dashboard`}>
-                    {legacyMessage(messages, "project.dashboard")}
-                  </a>
-                </li>
-              </ul>
-              <div className="tab-content">
-                <div className="tab-pane active">
-                  {activeTab === "readme" ? (
-                    props.readmePost ? (
-                      <article className="board-view project-readme-post">
-                        <h3>{props.readmePost.title || "README"}</h3>
-                        <MarkdownRenderer
-                          className="readme-body markdown-wrap"
-                          basePath={props.runtimeConfig?.basePath}
-                          issueReferences={props.readmePost.issueReferences}
-                          markdown={props.readmePost.bodyMarkdown}
-                          mentionReferences={props.readmePost.mentionReferences}
-                          ownerName={props.readmePost.ownerName}
-                          projectName={props.readmePost.projectName}
-                        />
-                      </article>
-                    ) : detail.readmeFile ? (
-                      <article className="readme-wrap project-git-readme">
-                        <header>
-                          <strong>{detail.readmeFile.name || "README.md"}</strong>
-                        </header>
-                        <MarkdownRenderer
-                          className="readme-body markdown-wrap"
-                          basePath={props.runtimeConfig?.basePath}
-                          markdown={detail.readmeFile.bodyMarkdown}
-                          mentionReferences={detail.readmeFile.mentionReferences}
-                          ownerName={detail.ownerName}
-                          projectName={detail.projectName}
-                        />
-                      </article>
-                    ) : (
-                      <div className="bubble-wrap gray readme">
-                        <p className="default">
-                          {isGitProject ? (
-                            <>
-                              <span>{legacyMessage(messages, "project.readme")}</span>
-                              <br />
-                              <br />
-                              {detail.viewerCanUpdate ? (
-                                <a className="ybtn" href={`${projectHref}/postform?readme=true`}>
-                                  {legacyMessage(messages, "project.readme.create")}
-                                </a>
-                              ) : null}
-                            </>
-                          ) : (
-                            <span>{legacyMessage(messages, "project.svn.readme")}</span>
-                          )}
-                        </p>
-                      </div>
-                    )
-                  ) : null}
-                  {activeTab === "history" ? (
-                    <ProjectHomeHistoryPane detail={detail} messages={props.messages} />
-                  ) : null}
-                  {activeTab === "dashboard" ? (
-                    <ProjectHomeDashboardPane
-                      detail={detail}
-                      messages={messages}
-                      runtimeConfig={props.runtimeConfig}
-                    />
-                  ) : null}
-                </div>
-              </div>
-            </div>
-            <div className="span3 span-right-pane">
-              <div className="bubble-wrap gray project-home">
-                <div className="project-btn-wrap">
-                  {detail.showIssue ? (
-                    <span className="project-btn-item">
-                      <a className="ybtn ybtn-success" href={`${projectHref}/issues/new`}>
-                        {legacyMessage(messages, "button.newIssue")}
-                      </a>
-                    </span>
-                  ) : null}
-                  {detail.showCode && isGitProject ? (
-                    <span className="project-btn-item">
-                      <a className="ybtn ybtn-inverse" href={`${projectHref}/newFork`}>
-                        {legacyMessage(messages, "fork")}
-                      </a>
-                    </span>
-                  ) : null}
-                </div>
-                {detail.showMilestone && detail.currentMilestone ? (
-                  <div className="milestone-info">
-                    <div className="meta-info">
-                      <a
-                        className="title"
-                        href={buildProjectHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          `milestone/${detail.currentMilestone.id}`,
-                        )}
-                      >
-                        {detail.currentMilestone.title}
-                      </a>
-                      {detail.currentMilestone.dueDateLabel ? (
-                        <span className="due-date">
-                          {legacyMessage(messages, "label.dueDate")}{" "}
-                          <strong>{detail.currentMilestone.dueDateLabel}</strong>
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="progress-wrap">
-                      <div className="progress progress-success nm">
-                        <div
-                          className="bar"
-                          style={{ width: `${detail.currentMilestone.completionPercent}%` }}
-                        />
-                      </div>
-                      <div className="progress-info">
-                        <span className="pull-right">
-                          <strong>{`${detail.currentMilestone.closedIssueCount} / ${
-                            detail.currentMilestone.openIssueCount +
-                            detail.currentMilestone.closedIssueCount
-                          }`}</strong>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-                <section className="inner member-info">
-                  <header>
-                    <h3>{legacyMessage(messages, "project.members")}</h3>
-                    {detail.viewerCanUpdate ? (
-                      <a
-                        className="ybtn ybtn-minimum"
-                        href={buildProjectHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          "members",
-                        )}
-                        id="member-add-link"
-                      >
-                        <i className="yobicon-addfriend" /> {legacyMessage(messages, "button.add")}
-                      </a>
-                    ) : null}
-                  </header>
-                  <div className="member-wrap">
-                    <ul className="project-members">
-                      {(detail.members ?? []).map((member) => (
-                        <li className="member" key={member.loginId}>
-                          <a
-                            className="avatar-wrap img-rounded pull-left small"
-                            href={prefixBasePath(
-                              props.runtimeConfig.basePath,
-                              `/${member.loginId}`,
-                            )}
-                          >
-                            <img
-                              alt={member.loginId}
-                              height="24"
-                              src={member.avatarUrl}
-                              width="24"
-                            />
-                          </a>
-                          <a
-                            className="name"
-                            href={prefixBasePath(
-                              props.runtimeConfig.basePath,
-                              `/${member.loginId}`,
-                            )}
-                          >
-                            <strong>{`${member.userLabel} (${member.loginId})`}</strong>
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  {detail.viewerCanLeave && detail.viewerUserId ? (
-                    <button
-                      className="ybtn ybtn-minimum ybtn-danger pull-right"
-                      data-href={projectLeaveHref}
-                      id="projectLeaveBtn"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        setLeaveModalOpen(true);
-                      }}
-                      type="button"
-                    >
-                      {legacyMessage(messages, "project.member.leave")}
-                    </button>
-                  ) : null}
-                </section>
-              </div>
-            </div>
-          </div>
-          <div className={`modal${leaveModalOpen ? "" : " hide"}`} id="alertLeave">
-            <div className="modal-header">
-              <button
-                aria-label={legacyMessage(messages, "button.close")}
-                className="close"
-                data-dismiss="modal"
-                onClick={() => setLeaveModalOpen(false)}
-                type="button"
-              >
-                <span aria-hidden="true">&times;</span>
-              </button>
-              <h3>{legacyMessage(messages, "project.member.leave")}</h3>
-            </div>
-            <div className="modal-body">
-              <p>{legacyMessage(messages, "project.member.leaveConfirm")}</p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="ybtn ybtn-info ybtn-mini"
-                id="leaveBtn"
-                onClick={() =>
-                  props.onLeaveProject?.(
-                    detail.ownerName,
-                    detail.projectName,
-                    detail.viewerUserId ?? 0,
-                  )
-                }
-                type="button"
-              >
-                {legacyMessage(messages, "button.yes")}
-              </button>
-              <button
-                className="ybtn ybtn-mini"
-                data-dismiss="modal"
-                onClick={() => setLeaveModalOpen(false)}
-                type="button"
-              >
-                {legacyMessage(messages, "button.no")}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }

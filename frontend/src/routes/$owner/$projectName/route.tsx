@@ -98,11 +98,22 @@ function projectLayoutShell(
   owner: string,
   projectName: string,
 ): {
-  activeMenu?: "board" | "code" | "issue" | "milestone" | "pullRequest" | "review" | "settings";
+  activeMenu?:
+    | "board"
+    | "code"
+    | "home"
+    | "issue"
+    | "milestone"
+    | "pullRequest"
+    | "review"
+    | "settings";
   keymapMode?: "detail" | "list";
   shellClassName?: string;
 } | null {
   const appPath = stripProjectLayoutBasePath(pathname, basePath).replace(/\/+$/u, "");
+  if (appPath === `/${owner}/${projectName}`) {
+    return { activeMenu: "home" };
+  }
   if (
     appPath === `/${owner}/${projectName}/changeVCS` ||
     appPath === `/${owner}/${projectName}/deleteform` ||
@@ -328,7 +339,15 @@ function ProjectRouteShellLayout({
   runtimeConfig,
   shellClassName,
 }: {
-  activeMenu?: "board" | "code" | "issue" | "milestone" | "pullRequest" | "review" | "settings";
+  activeMenu?:
+    | "board"
+    | "code"
+    | "home"
+    | "issue"
+    | "milestone"
+    | "pullRequest"
+    | "review"
+    | "settings";
   bootstrapping: boolean;
   keymapMode?: "detail" | "list";
   messages: ReturnType<typeof useAppRuntime>["messages"];
@@ -407,7 +426,7 @@ function legacyAdminAliasPath(owner: string, projectName: string): string | null
   }
 }
 
-export function ProjectDetailRouteComponent() {
+export function ProjectDetailRouteComponent(props: { renderShell?: boolean } = {}) {
   const { owner, projectName } = Route.useParams();
   const href = useCurrentHref();
   const {
@@ -451,6 +470,7 @@ export function ProjectDetailRouteComponent() {
     <ProjectDetailPage
       detail={detailQuery.data ? toProjectContainerView(detailQuery.data) : null}
       readmePost={postsQuery.data?.readme ?? null}
+      renderShell={props.renderShell}
       routeHref={href}
       runtimeConfig={runtimeConfig}
       onCancelEnrollProject={async (nextOwnerName, nextProjectName) => {

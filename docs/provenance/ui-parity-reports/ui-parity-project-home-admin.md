@@ -162,6 +162,13 @@ Total rows: 18
 
 ## Nested Layout Follow-Ups
 
+- 2026-06-27 project home shell follow-up:
+  `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
+  header/menu/page-wrap shell for the index project route with the home menu
+  active. `ProjectDetailPage` renders only the legacy project home body through
+  `renderShell={false}` for `/$owner/$projectName/` while preserving
+  direct-render shell output for existing specs. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/project-home-tabs.spec.tsx -t "project layout route own project home"`.
 - 2026-06-27 project fork shell follow-up:
   `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
   header/menu/page-wrap shell for `/newFork` with the pull request menu active.

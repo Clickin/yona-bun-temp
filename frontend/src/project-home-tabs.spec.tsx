@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { testRuntimeConfig } from "./auth-workspace-shell.test-helpers";
@@ -43,6 +45,53 @@ function renderProjectHome(routeHref: string, overrides: Partial<ProjectDetailVi
 }
 
 describe("project home tab parity", () => {
+  it("lets the project layout route own project home chrome without changing the inner body", () => {
+    const html = renderToString(
+      <ProjectDetailPage
+        detail={{
+          boardCount: 2,
+          defaultTab: "readme",
+          enrollmentRequested: false,
+          isFavorited: false,
+          organizationName: "",
+          overview: "Project home parity",
+          ownerName: "yona",
+          projectName: "projectYobi",
+          projectScope: "public",
+          showBoard: true,
+          showCode: true,
+          showIssue: true,
+          showMilestone: true,
+          showPullRequest: true,
+          showReview: true,
+          viewerCanEnroll: false,
+          viewerCanUpdate: false,
+        }}
+        renderShell={false}
+        routeHref="/yona/yona/projectYobi"
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const indexSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/index.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}`");
+    expect(layoutSource).toContain('activeMenu: "home"');
+    expect(indexSource).toContain("renderShell={false}");
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="project-home-header row-fluid"');
+    expect(html).toContain('class="span9 span-left-pane"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+  });
+
   it("renders the legacy project layout header and menu shell", () => {
     const html = renderProjectHome("/yona/yona/projectYobi", {
       backgroundUrl: "/yona/assets/bg.png",

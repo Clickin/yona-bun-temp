@@ -412,6 +412,17 @@ M30 continues project shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx -t "fork shell"`.
 
+M31 continues project shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for the project index route, with the home menu
+  active.
+- `ProjectDetailPage` supports `renderShell={false}` so the index child route
+  keeps the existing project home query/mutation callbacks but renders only the
+  legacy `project-page-wrap` home body under the project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/project-home-tabs.spec.tsx -t "project layout route own project home"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit
