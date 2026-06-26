@@ -133,39 +133,43 @@ test.beforeEach(async ({ page }) => {
   await routeRuntimeShell(page);
 });
 
-test("code browser renders the legacy no-head guidance without raw keys", async ({ page }) => {
+test("code browser renders the legacy Git and SVN no-head guidance without raw keys", async ({
+  page,
+}) => {
+  let projectContainer: Record<string, unknown> = {
+    cloneUrl: "https://example.com/admin/projectYobi.git",
+    codeMemberOnly: false,
+    defaultTab: "readme",
+    enrollmentRequested: false,
+    isFavorited: false,
+    isForked: false,
+    isWatching: false,
+    memberCount: 0,
+    members: [],
+    openIssueCount: 0,
+    openPullRequestCount: 0,
+    organizationName: "",
+    overview: "",
+    ownerName: "admin",
+    projectName: "projectYobi",
+    projectScope: "public",
+    reviewCount: 0,
+    showAdmin: false,
+    showBoard: true,
+    showCode: true,
+    showIssue: true,
+    showMilestone: true,
+    showPullRequest: true,
+    showReview: true,
+    viewerCanEnroll: false,
+    viewerCanUpdate: true,
+    viewerCanWatch: false,
+    watchCount: 0,
+  };
+
   await page.route(apiV1Route("/owners/admin/projects/projectYobi/container"), async (route) => {
     await route.fulfill({
-      body: JSON.stringify({
-        cloneUrl: "https://example.com/admin/projectYobi.git",
-        codeMemberOnly: false,
-        defaultTab: "readme",
-        enrollmentRequested: false,
-        isFavorited: false,
-        isForked: false,
-        isWatching: false,
-        memberCount: 0,
-        members: [],
-        openIssueCount: 0,
-        openPullRequestCount: 0,
-        organizationName: "",
-        overview: "",
-        ownerName: "admin",
-        projectName: "projectYobi",
-        projectScope: "public",
-        reviewCount: 0,
-        showAdmin: false,
-        showBoard: true,
-        showCode: true,
-        showIssue: true,
-        showMilestone: true,
-        showPullRequest: true,
-        showReview: true,
-        viewerCanEnroll: false,
-        viewerCanUpdate: true,
-        viewerCanWatch: false,
-        watchCount: 0,
-      }),
+      body: JSON.stringify(projectContainer),
       headers: restJsonHeaders,
       status: 200,
     });
@@ -202,6 +206,24 @@ test("code browser renders the legacy no-head guidance without raw keys", async 
   await expect(page.locator(".code-browse-wrap")).toContainText(
     "If you have already created a local git repository",
   );
+  await expect(page.locator(".code-browse-wrap")).not.toContainText("code.nohead");
+
+  projectContainer = {
+    ...projectContainer,
+    cloneUrl: "http://example.test/svn/admin/projectYobi",
+    vcs: "Subversion",
+  };
+  await page.goto("/yona/admin/projectYobi/code?variant=svn");
+
+  await expect(page.locator(".project-page-wrap")).toBeVisible();
+  await expect(page.locator(".code-browse-wrap")).toContainText("The repository is empty!");
+  await expect(page.locator(".code-browse-wrap")).toContainText(
+    "You can commit your code to this repository.",
+  );
+  await expect(page.locator(".code-browse-wrap")).toContainText(
+    "svn co http://example.test/svn/admin/projectYobi",
+  );
+  await expect(page.locator(".code-browse-wrap")).toContainText('svn commit -m "first commit"');
   await expect(page.locator(".code-browse-wrap")).not.toContainText("code.nohead");
 });
 
