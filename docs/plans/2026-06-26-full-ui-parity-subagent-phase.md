@@ -381,7 +381,7 @@ edit this phase file directly.
 | Code no-head Git/SVN browser proof refinement | `ui-parity-code-vcs` | `covered in current follow-up` | `frontend/tests/project-code-comment-upload-parity.e2e.ts` now opens `/code` under `/yona` with `noHead=true` and update permission for both Git and Subversion container variants, asserting the legacy empty-repository warning, setup command guidance, and absence of visible `code.nohead` raw keys. SVN commit discussions remain separately deferred. |
 | Project transfer unchecked-alert browser proof refinement | `ui-parity-project-home-admin` | `covered in current follow-up` | `frontend/tests/project-transfer-parity.e2e.ts` now clicks `#btnTransfer` while `#accept` is unchecked, asserts the legacy `project.transfer.alert` resolved copy, verifies `#alertTransfer` stays hidden and no REST POST occurs, then checks the box and proves the CSRF-backed transfer POST plus confirm modal. |
 | Project webhooks validation and permission-state browser proof | `ui-parity-project-home-admin` | `weak evidence` | Subagent reopen found `ProjectWebhooksPage` source/render evidence for permission-hidden form and JSON `gitPush` disabling, but focused Playwright currently covers only positive create/delete. Needed owner scope: `frontend/tests/project-webhooks-parity.e2e.ts` and, only if proof fails, `frontend/src/routes/$owner/$projectName/webhooks/route.tsx`. |
-| Project members REST/permission browser proof | `ui-parity-project-home-admin` | `weak evidence` | Subagent reopen found browser-visible member controls/mutations but no focused assertions for POST/PATCH/DELETE methods, CSRF headers, or non-updater/forbidden state. Needed owner scope: `frontend/tests/project-members-parity.e2e.ts`. |
+| Project members REST/permission browser proof | `ui-parity-project-home-admin` | `covered in current follow-up` | `frontend/tests/project-members-parity.e2e.ts` now browser-proves add-member, enrollment accept, role update, and delete visible mutations while asserting POST/PATCH/DELETE methods, CSRF headers, request paths/bodies, and the non-updater REST 403 legacy forbidden shell with management controls absent. |
 | Project settings validation and permission browser proof | `ui-parity-project-home-admin` | `weak evidence` | Subagent reopen found strong positive save/default-branch proof, but invalid project-name/logo validation and non-updater forbidden state are not yet browser-proved. Needed owner scope: `frontend/tests/project-settings-parity.e2e.ts` plus `frontend/src/routes/$owner/$projectName/settingform/route.tsx` only if proof fails. |
 | Project fork existing-fork and validation browser proof | `ui-parity-project-home-admin` | `weak evidence` | Subagent reopen found positive fork shell/POST/CSRF proof, but existing-fork notice and disabled/no-submit behavior remain source-only. Needed owner scope: `frontend/tests/project-fork-parity.e2e.ts`. |
 | Project admin/settings scoped raw-key browser absence | `ui-parity-project-home-admin` | `weak evidence` | Transfer now asserts no visible `project.transfer`, but the remaining focused project-admin E2Es do not consistently assert body-level absence of raw `project.*`/`button.*` keys. Needed owner scope: existing project admin focused E2E files only. |
@@ -580,6 +580,11 @@ Before this phase can close:
 
 ## Parent Integration Evidence
 
+- 2026-06-27 project members browser-proof refresh: `pnpm --dir frontend
+  test:e2e -- project-members-parity.e2e.ts` passed 2 Playwright tests after
+  adding POST/PATCH/DELETE method, CSRF, request body/path proof for add-member,
+  enrollment accept, role update, and delete, plus non-updater REST 403
+  forbidden-shell proof with management controls absent.
 - 2026-06-27 PR validation/raw-key browser-proof refresh: `pnpm --dir frontend
   test:e2e -- pull-request-interaction-parity.e2e.ts -g "blocks empty PR
   create/edit submissions"` passed 1 Playwright test for create/edit

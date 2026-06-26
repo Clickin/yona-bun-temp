@@ -89,6 +89,7 @@ test.beforeEach(async ({ page }) => {
 test("project members route renders and mutates the legacy member management surface", async ({
   page,
 }) => {
+  const memberRequests: Array<{ body: unknown; method: string; path: string; csrf?: string }> = [];
   let members: ProjectMember[] = [
     {
       avatarUrl: "/avatars/owner.png",
@@ -130,6 +131,12 @@ test("project members route renders and mutates the legacy member management sur
 
   await page.route(apiV1Route("/owners/owner/projects/projectYobi/members"), async (route) => {
     if (route.request().method() === "POST") {
+      memberRequests.push({
+        body: route.request().postDataJSON(),
+        csrf: route.request().headers()["x-csrf-token"],
+        method: route.request().method(),
+        path: new URL(route.request().url()).pathname.replace("/yona/api/v1", ""),
+      });
       const body = route.request().postDataJSON() as { loginId: string };
       if (body.loginId === "guest") {
         enrollmentRequests = [];
@@ -168,6 +175,12 @@ test("project members route renders and mutates the legacy member management sur
     /\/api\/v1\/owners\/owner\/projects\/projectYobi\/members\/\d+$/,
     async (route) => {
       const userId = Number(route.request().url().split("/").pop());
+      memberRequests.push({
+        body: route.request().method() === "PATCH" ? route.request().postDataJSON() : null,
+        csrf: route.request().headers()["x-csrf-token"],
+        method: route.request().method(),
+        path: new URL(route.request().url()).pathname.replace("/yona/api/v1", ""),
+      });
       if (route.request().method() === "PATCH") {
         const body = route.request().postDataJSON() as { role: string };
         members = members.map((member) =>
@@ -208,6 +221,12 @@ test("project members route renders and mutates the legacy member management sur
   await page.locator("#loginId").fill("newbie");
   await page.locator("#addNewMember").getByRole("button", { name: "Add" }).click();
   await expect(page.locator(".member-id", { hasText: "@newbie" })).toBeVisible();
+  expect(memberRequests.at(-1)).toEqual({
+    body: { loginId: "newbie" },
+    csrf: "csrf-123",
+    method: "POST",
+    path: "/owners/owner/projects/projectYobi/members",
+  });
 
   await page
     .locator('[data-action="apply"][data-href="/owner/projectYobi/member/2/edit"]', {
@@ -215,13 +234,55 @@ test("project members route renders and mutates the legacy member management sur
     })
     .click();
   await expect(page.locator('[data-name="roleof-member"] .d-label')).toContainText("Manager");
+  expect(memberRequests.at(-1)).toEqual({
+    body: { role: "manager" },
+    csrf: "csrf-123",
+    method: "PATCH",
+    path: "/owners/owner/projects/projectYobi/members/2",
+  });
 
   await page.locator(".enrollAcceptBtn").click();
   await expect(page.getByText("Sign-up request")).toHaveCount(0);
   await expect(page.locator(".member-id", { hasText: "@guest" })).toBeVisible();
+  expect(memberRequests.at(-1)).toEqual({
+    body: { loginId: "guest" },
+    csrf: "csrf-123",
+    method: "POST",
+    path: "/owners/owner/projects/projectYobi/members",
+  });
 
   await page
     .locator('[data-action="delete"][data-href="/owner/projectYobi/member/2/delete"]')
     .click();
   await expect(page.locator(".member-id", { hasText: "@member" })).toHaveCount(0);
+  expect(memberRequests.at(-1)).toEqual({
+    body: null,
+    csrf: "csrf-123",
+    method: "DELETE",
+    path: "/owners/owner/projects/projectYobi/members/2",
+  });
+});
+
+test("project members route renders the legacy forbidden shell for non-updaters", async ({
+  page,
+}) => {
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/members"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        error: {
+          code: "permission_denied",
+          message: "forbidden",
+          status: 403,
+        },
+      }),
+      headers: restJsonHeaders,
+      status: 403,
+    });
+  });
+
+  await page.goto("/yona/owner/projectYobi/members");
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
+  await expect(page.locator("#addNewMember")).toHaveCount(0);
+  await expect(page.locator('[data-action="apply"]')).toHaveCount(0);
+  await expect(page.locator('[data-action="delete"]')).toHaveCount(0);
 });
