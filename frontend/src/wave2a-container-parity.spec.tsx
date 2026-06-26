@@ -130,9 +130,12 @@ describe("wave 2A container parity", () => {
       watchCount: 8,
     } as never);
 
-    expect(html).toContain("weblabs / projectYobi");
-    expect(html).toContain("Original project: naver / legacyYobi");
-    expect(html).toContain("This project&#x27;s watcher list.");
+    expect(html).toContain('<span class="project-author hide-in-mobile"><a href="/yona/weblabs"');
+    expect(html).toContain('<span class="project-name"><a href="/yona/weblabs/projectYobi"');
+    expect(html).toContain('<span class="project-origin-title">Forked from</span>');
+    expect(html).toContain('class="project-origin-name" href="/yona/naver/legacyYobi"');
+    expect(html).toContain('class="btn watcher-count no-border watch-on"');
+    expect(html).toContain('title="number of watcher"');
     expect(html).toContain("Unwatch");
     expect(html).not.toContain("Unwatch project");
     expect(html).toContain('aria-label="Copy URL"');

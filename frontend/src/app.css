@@ -1150,11 +1150,6 @@ h1 {
   color: #fc491e;
 }
 
-.project-breadcrumb .project-title-text,
-.project-origin .project-origin-text {
-  display: none;
-}
-
 .project-private,
 .project-protected {
   margin-left: 5px;
@@ -1185,6 +1180,58 @@ h1 {
 .project-origin-name {
   margin-left: 5px;
   color: #5dbbe0;
+}
+
+.project-util-wrap {
+  position: absolute;
+  right: 0;
+  bottom: 20px;
+}
+
+.project-util {
+  margin: 0;
+  list-style: none;
+}
+
+.project-util > li {
+  position: relative;
+  float: left;
+  margin-left: 15px;
+}
+
+.project-util .icons-ul {
+  margin: 10px 0 10px 25px;
+}
+
+.watcher-count {
+  opacity: 0.9 !important;
+  border: 0 !important;
+  text-shadow: none;
+}
+
+.watch-on {
+  background-color: #b6da54 !important;
+  background-image: none !important;
+}
+
+.nofocus {
+  outline: 0 !important;
+}
+
+.watch-btn > button {
+  padding: 4px 10px;
+}
+
+.down-arrow::after {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 5px;
+  vertical-align: middle !important;
+  border-top: 4px solid #333;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+  content: "";
 }
 
 .project-menu-outer {

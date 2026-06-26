@@ -42,16 +42,16 @@ Source comparison by Subagent P2 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 9 |
-| deviation | 3 |
+| gap | 7 |
+| deviation | 2 |
 | weak evidence | 3 |
-| covered | 1 |
+| covered | 4 |
 
 ## Reset Findings
 
 | legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `project/header.scala.html` | Any project page, viewer can watch/enroll. | `frontend/src/routes/-project-views.tsx` | layout | gap | P2 | `ProjectHeader`, project container view model/API if needed | Legacy has `.project-util-wrap` and project util dropdown controls; current mapper found `ProjectHeader` lacks this wrapper. |
+| `project/header.scala.html` | Any project page, viewer can watch/enroll. | `frontend/src/routes/-project-views.tsx`, `frontend/src/app.css`, `frontend/src/project-home-tabs.spec.tsx`, `frontend/src/wave2a-container-parity.spec.tsx` | layout | covered in current follow-up | P2 | none | `ProjectHeader` now renders legacy `.project-util-wrap > ul.project-util` with enrollment dropdown, `#enrollBtn`, `.watch-btn`, `.watcher-count`, `.watch-on`, and `.watchBtn` anchors; React handlers keep current REST mutations instead of importing legacy JS. CSS restores the legacy absolute header placement and watcher/down-arrow classes. |
 | `project/header.scala.html` | Any project page. | `frontend/src/routes/-project-views.tsx`, `frontend/src/route-parity.spec.tsx` | layout | covered in current follow-up | P2 | none | Removed the non-legacy `.project-title-text` wrapper from `ProjectHeader`; focused route parity now asserts that the class is absent while preserving legacy owner/project breadcrumb anchors. |
 | `projectMenu.scala.html` | Project menu with admin update permission and enrollment requests. | `frontend/src/routes/-project-views.tsx` | data-boundary | gap | P2 | `ProjectMenu`, project view model | Legacy admin cog includes `project.enrolledUsers.size` badge; current cog has no badge. |
 | `projectMenu.scala.html` | Any project page. | `frontend/src/routes/-project-views.tsx` | layout | weak evidence | P2 | `ProjectMenu`, tests | Current always renders visible `ProjectKeymapHelp`; mapper found no matching visible markup in `projectMenu.scala.html`. |
@@ -62,8 +62,8 @@ Source comparison by Subagent P2 found concrete reset blockers:
 | `project/setting.scala.html` | Settings form with logo. | `frontend/src/routes/-project-views.tsx` | asset | gap | P2 | `ProjectSettingsPage` | Legacy `.logo-wrap` has `background-image:url(...)`; current `.logo-wrap` is empty. |
 | `project/setting.scala.html` | Git project, code menu off. | `frontend/src/routes/-project-views.tsx` | layout | gap | P2 | `ProjectSettingsPage` | Legacy keeps `#defaultBranceSettingPanel` hidden; current omits it when code is off or no branches exist. |
 | `project/setting.scala.html` | Reviewer count dropdown. | `frontend/src/routes/-project-views.tsx` | layout | deviation | P2 | `ProjectSettingsPage` | Legacy uses `.btn-group.branches > button + ul.dropdown-menu`; current uses native `select`. |
-| `project/home.scala.html` | Project home sidebar. | `frontend/src/routes/-project-views.tsx` | layout | deviation | P2 | `ProjectDetailPage` | Current adds `section > h3 Project dashboard` and `.runtime-grid`; legacy sidebar has button wrap, milestone, and member info only. |
-| `project/home.scala.html` | SVN project with code menu enabled. | `frontend/src/routes/-project-views.tsx` | interaction | gap | P2 | `ProjectDetailPage` | Legacy fork button only appears for Git; current shows fork whenever `detail.showCode`. |
+| `project/home.scala.html` | Project home sidebar. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-home-tabs.spec.tsx` | layout | covered in current follow-up | P2 | none | Removed the non-legacy `section > h3 Project dashboard` / `.runtime-grid` sidebar block; watch/enroll controls now live in `project/header.scala.html`'s util dropdown position, and the sidebar preserves legacy button wrap, optional milestone summary, and member info order. |
+| `project/home.scala.html` | SVN project with code menu enabled. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-home-tabs.spec.tsx` | interaction | covered in current follow-up | P2 | none | Fork CTA now renders only when `detail.showCode` is true and `vcs` is Git/unspecified, matching the legacy `project.vcs.equals("GIT")` guard under `project.menuSetting.code`. |
 | `project/create.scala.html` | New project form, SVN selected. | `frontend/src/routes/-project-views.tsx` | layout | deviation | P2 | project create form component | Legacy always renders PR menu checkbox; current hides the PR checkbox when SVN is selected. |
 | `project/members.scala.html` | Role dropdown. | `frontend/src/routes/-project-views.tsx` | layout | weak evidence | P2 | `ProjectMembersPage` | Legacy dropdown items are `<a data-loginId>`; current uses `<button data-loginid>`. |
 | `project/partial_webhooks_list.scala.html` | Existing webhook row. | `frontend/src/routes/-project-views.tsx` | interaction | weak evidence | P2 | `ProjectWebhooksPage` | Legacy checkbox has `onclick="return false;"`; current uses a read-only checkbox. |

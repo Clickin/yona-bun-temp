@@ -1043,6 +1043,10 @@ function projectKeymapSectionTitle(section: ProjectMenuActive, mode?: "detail" |
 export function ProjectHeader(props: {
   detail: ProjectDetailViewModel;
   messages?: LegacyMessageLookup;
+  onCancelEnrollProject?: (ownerName: string, projectName: string) => void;
+  onEnrollProject?: (ownerName: string, projectName: string) => void;
+  onToggleFavoriteProject?: (ownerName: string, projectName: string) => void;
+  onToggleProjectWatch?: (ownerName: string, projectName: string, watching: boolean) => void;
   runtimeConfig: RuntimeConfig;
 }) {
   const { detail, runtimeConfig } = props;
@@ -1050,10 +1054,23 @@ export function ProjectHeader(props: {
   const messages = props.messages ?? contextMessages;
   const projectHref = buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName);
   const ownerHref = prefixBasePath(runtimeConfig.basePath, `/${detail.ownerName}`);
+  const enrollmentHref = buildProjectHref(
+    runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    detail.enrollmentRequested ? "cancel/enroll" : "enroll",
+  );
   const favoriteClass = `${detail.isFavorited ? "starred " : ""}star material-icons va-text-top`;
+  const notificationsHref = prefixBasePath(runtimeConfig.basePath, "/user/editform/notifications");
   const breadcrumbClass = `project-breadcrumb-wrap${
     detail.originOwnerName && detail.originProjectName ? " fork" : ""
   }`;
+  const watchHref = buildProjectHref(
+    runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    detail.isWatching ? "unwatch" : "watch",
+  );
 
   return (
     <div
@@ -1074,7 +1091,21 @@ export function ProjectHeader(props: {
               <span className="project-name">
                 <a href={projectHref}>{detail.projectName}</a>
               </span>
-              <span className="user-project-list">
+              <span
+                className="user-project-list"
+                onClick={() =>
+                  props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName)
+                }
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") {
+                    return;
+                  }
+                  event.preventDefault();
+                  props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName);
+                }}
+                role="button"
+                tabIndex={0}
+              >
                 <i className={favoriteClass}>star</i>
               </span>
               {detail.projectScope === "private" ? (
@@ -1103,11 +1134,161 @@ export function ProjectHeader(props: {
                 >
                   {detail.originOwnerName} / {detail.originProjectName}
                 </a>
-                <span className="project-origin-text">
-                  {`Original project: ${detail.originOwnerName} / ${detail.originProjectName}`}
-                </span>
               </div>
             ) : null}
+          </div>
+          <div className="project-util-wrap">
+            <ul className="project-util">
+              {detail.viewerCanEnroll ? (
+                <li>
+                  <button
+                    className={`ybtn ybtn-small${detail.enrollmentRequested ? " ybtn-info" : ""} dropdown-toggle`}
+                    data-toggle="dropdown"
+                    type="button"
+                  >
+                    <i className="yobicon-addfriend" />
+                    {detail.enrollmentRequested
+                      ? null
+                      : legacyMessage(messages, "organization.member.enrollment.title")}
+                  </button>
+                  <div className="dropdown-menu flat right title">
+                    <div className="pop-title">
+                      {legacyMessage(
+                        messages,
+                        detail.enrollmentRequested
+                          ? "project.you.want.to.be.a.member"
+                          : "project.you.may.want.to.be.a.member",
+                        { args: [detail.projectName] },
+                      )}
+                    </div>
+                    <div className="pop-content">
+                      {legacyMessage(
+                        messages,
+                        detail.enrollmentRequested
+                          ? "project.member.enrollment.help"
+                          : "project.member.enrollment.will.help",
+                      )}
+                    </div>
+                    <div className="pop-content btn-wrap">
+                      <a
+                        className={`ybtn${detail.enrollmentRequested ? "" : " ybtn-info"} enrollBtn`}
+                        href={enrollmentHref}
+                        id="enrollBtn"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          const handler = detail.enrollmentRequested
+                            ? props.onCancelEnrollProject
+                            : props.onEnrollProject;
+                          if (!handler) {
+                            return;
+                          }
+                          handler(detail.ownerName, detail.projectName);
+                        }}
+                      >
+                        <i
+                          className={
+                            detail.enrollmentRequested
+                              ? "yobicon-removefriend"
+                              : "yobicon-addfriend"
+                          }
+                        />{" "}
+                        {legacyMessage(
+                          messages,
+                          detail.enrollmentRequested
+                            ? "button.cancel.enrollment"
+                            : "button.new.enrollment",
+                        )}
+                      </a>
+                    </div>
+                  </div>
+                </li>
+              ) : null}
+              {detail.viewerCanWatch ? (
+                <li>
+                  <div className="btn-group dropdown watch-btn">
+                    <a
+                      className={`btn watcher-count no-border${detail.isWatching ? " watch-on" : ""}`}
+                      data-toggle="tooltip"
+                      href={buildProjectHref(
+                        runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        "watchers",
+                      )}
+                      title={legacyMessage(messages, "project.watcher.number")}
+                    >
+                      {detail.watchCount ?? 0}
+                    </a>
+                    <div className="dropdown-menu flat right title">
+                      <div className="pop-title">
+                        {legacyMessage(
+                          messages,
+                          detail.isWatching
+                            ? "project.you.are.watching"
+                            : "project.you.are.not.watching",
+                          { args: [detail.projectName] },
+                        )}
+                      </div>
+                      <div className="pop-content">
+                        <p>{legacyMessage(messages, "notification.help")}</p>
+                        <ul className="icons-ul">
+                          <li>
+                            <i className="yobicon-li yobicon-ok" />
+                            {legacyMessage(messages, "notification.help.new")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok" />
+                            {legacyMessage(messages, "notification.help.new.comment")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok" />
+                            {legacyMessage(messages, "notification.help.update.issue")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok" />
+                            {legacyMessage(messages, "notification.help.update.pullrequest")}
+                          </li>
+                        </ul>
+                      </div>
+                      <div className="pop-content btn-wrap">
+                        <a className="ybtn" href={notificationsHref}>
+                          <i className="yobicon-alert2" />{" "}
+                          {legacyMessage(messages, "userinfo.changeNotifications")}
+                        </a>
+                        <a
+                          className="ybtn ybtn-watching watchBtn"
+                          href={watchHref}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            const handler = props.onToggleProjectWatch;
+                            if (!handler) {
+                              return;
+                            }
+                            handler(detail.ownerName, detail.projectName, !detail.isWatching);
+                          }}
+                        >
+                          <i className={detail.isWatching ? "yobicon-eye-off" : "yobicon-eye"} />{" "}
+                          {legacyMessage(
+                            messages,
+                            detail.isWatching ? "project.unwatch" : "project.watch",
+                          )}
+                        </a>
+                      </div>
+                    </div>
+                    <button
+                      className="btn nofocus no-border down-arrow"
+                      data-toggle="dropdown"
+                      type="button"
+                    >
+                      {legacyMessage(
+                        messages,
+                        detail.isWatching ? "project.unwatch" : "project.watch",
+                      )}
+                    </button>
+                  </div>
+                </li>
+              ) : null}
+            </ul>
           </div>
         </div>
       </div>
@@ -1933,18 +2114,6 @@ export function ProjectDetailPage(props: {
     normalizeProjectHomeTab(detail.defaultTab) ??
     "readme";
   const projectHref = buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName);
-  const enrollmentHref = buildProjectHref(
-    props.runtimeConfig,
-    detail.ownerName,
-    detail.projectName,
-    detail.enrollmentRequested ? "cancel/enroll" : "enroll",
-  );
-  const watchHref = buildProjectHref(
-    props.runtimeConfig,
-    detail.ownerName,
-    detail.projectName,
-    detail.isWatching ? "unwatch" : "watch",
-  );
   const projectLeaveHref = buildProjectHref(
     props.runtimeConfig,
     detail.ownerName,
@@ -1955,7 +2124,15 @@ export function ProjectDetailPage(props: {
 
   return (
     <main className="app-shell">
-      <ProjectHeader detail={detail} messages={messages} runtimeConfig={props.runtimeConfig} />
+      <ProjectHeader
+        detail={detail}
+        messages={messages}
+        onCancelEnrollProject={props.onCancelEnrollProject}
+        onEnrollProject={props.onEnrollProject}
+        onToggleFavoriteProject={props.onToggleFavoriteProject}
+        onToggleProjectWatch={props.onToggleProjectWatch}
+        runtimeConfig={props.runtimeConfig}
+      />
       <ProjectMenu activeMenu="home" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -2157,7 +2334,7 @@ export function ProjectDetailPage(props: {
                       </a>
                     </span>
                   ) : null}
-                  {detail.showCode ? (
+                  {detail.showCode && isGitProject ? (
                     <span className="project-btn-item">
                       <a className="ybtn ybtn-inverse" href={`${projectHref}/newFork`}>
                         {legacyMessage(messages, "fork")}
@@ -2165,89 +2342,45 @@ export function ProjectDetailPage(props: {
                     </span>
                   ) : null}
                 </div>
-                <section>
-                  <h3>{legacyMessage(messages, "project.dashboard")}</h3>
-                  <div className="runtime-grid">
-                    <button
-                      type="button"
-                      title={legacyMessage(messages, "title.favorite")}
-                      onClick={() =>
-                        props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName)
-                      }
-                    >
-                      <i
-                        className={`${detail.isFavorited ? "starred " : ""}star material-icons va-text-top`}
-                      >
-                        star
-                      </i>
-                    </button>
-                    {detail.viewerCanWatch ? (
+                {detail.showMilestone && detail.currentMilestone ? (
+                  <div className="milestone-info">
+                    <div className="meta-info">
                       <a
-                        className="ybtn ybtn-watching watchBtn"
-                        href={watchHref}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          props.onToggleProjectWatch?.(
-                            detail.ownerName,
-                            detail.projectName,
-                            !detail.isWatching,
-                          );
-                        }}
-                      >
-                        <i className={detail.isWatching ? "yobicon-eye-off" : "yobicon-eye"} />{" "}
-                        {legacyMessage(
-                          messages,
-                          detail.isWatching ? "project.unwatch" : "project.watch",
+                        className="title"
+                        href={buildProjectHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          `milestone/${detail.currentMilestone.id}`,
                         )}
-                      </a>
-                    ) : null}
-                    {detail.viewerCanEnroll ? (
-                      <a
-                        className={`ybtn${detail.enrollmentRequested ? "" : " ybtn-info"} enrollBtn`}
-                        href={enrollmentHref}
-                        id="enrollBtn"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          const handler = detail.enrollmentRequested
-                            ? props.onCancelEnrollProject
-                            : props.onEnrollProject;
-                          if (!handler) {
-                            return;
-                          }
-                          handler(detail.ownerName, detail.projectName);
-                        }}
                       >
-                        <i
-                          className={
-                            detail.enrollmentRequested
-                              ? "yobicon-removefriend"
-                              : "yobicon-addfriend"
-                          }
-                        />{" "}
-                        {legacyMessage(
-                          messages,
-                          detail.enrollmentRequested
-                            ? "button.cancel.enrollment"
-                            : "button.new.enrollment",
-                        )}
+                        {detail.currentMilestone.title}
                       </a>
-                    ) : null}
+                      {detail.currentMilestone.dueDateLabel ? (
+                        <span className="due-date">
+                          {legacyMessage(messages, "label.dueDate")}{" "}
+                          <strong>{detail.currentMilestone.dueDateLabel}</strong>
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="progress-wrap">
+                      <div className="progress progress-success nm">
+                        <div
+                          className="bar"
+                          style={{ width: `${detail.currentMilestone.completionPercent}%` }}
+                        />
+                      </div>
+                      <div className="progress-info">
+                        <span className="pull-right">
+                          <strong>{`${detail.currentMilestone.closedIssueCount} / ${
+                            detail.currentMilestone.openIssueCount +
+                            detail.currentMilestone.closedIssueCount
+                          }`}</strong>
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </section>
-                <section>
-                  <h3>{legacyMessage(messages, "project.watcher.title")}</h3>
-                  <a
-                    className="btn watcher-count no-border"
-                    href={buildProjectHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      "watchers",
-                    )}
-                  >
-                    {detail.watchCount ?? 0}
-                  </a>
-                </section>
+                ) : null}
                 <section className="inner member-info">
                   <header>
                     <h3>{legacyMessage(messages, "project.members")}</h3>
@@ -2312,45 +2445,6 @@ export function ProjectDetailPage(props: {
                     </button>
                   ) : null}
                 </section>
-                {detail.currentMilestone ? (
-                  <div className="milestone-info">
-                    <div className="meta-info">
-                      <a
-                        className="title"
-                        href={buildProjectHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          `milestone/${detail.currentMilestone.id}`,
-                        )}
-                      >
-                        {detail.currentMilestone.title}
-                      </a>
-                      {detail.currentMilestone.dueDateLabel ? (
-                        <span className="due-date">
-                          {legacyMessage(messages, "label.dueDate")}{" "}
-                          <strong>{detail.currentMilestone.dueDateLabel}</strong>
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="progress-wrap">
-                      <div className="progress progress-success nm">
-                        <div
-                          className="bar"
-                          style={{ width: `${detail.currentMilestone.completionPercent}%` }}
-                        />
-                      </div>
-                      <div className="progress-info">
-                        <span className="pull-right">
-                          <strong>{`${detail.currentMilestone.closedIssueCount} / ${
-                            detail.currentMilestone.openIssueCount +
-                            detail.currentMilestone.closedIssueCount
-                          }`}</strong>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
               </div>
             </div>
           </div>

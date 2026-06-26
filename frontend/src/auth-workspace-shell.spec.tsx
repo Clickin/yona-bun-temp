@@ -1067,7 +1067,7 @@ describe("auth and workspace views", () => {
     expect(projectHtml).toContain("admin/projectYobi");
     expect(projectHtml).toContain("Send sign-up request");
     expect(projectHtml).not.toContain("Request enrollment");
-    expect(projectHtml).toContain('title="Favorite"');
+    expect(projectHtml).toContain('class="user-project-list"');
     expect(projectHtml).toContain("material-icons va-text-top");
     expect(projectHtml).not.toContain("Favorite project");
   });

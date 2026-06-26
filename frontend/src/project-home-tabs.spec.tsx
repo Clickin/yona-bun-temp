@@ -68,6 +68,8 @@ describe("project home tab parity", () => {
     expect(html).toContain('class="user-project-list"');
     expect(html).toContain('class="starred star material-icons va-text-top"');
     expect(html).toContain('class="project-private"');
+    expect(html).toContain('class="project-util-wrap"');
+    expect(html).toContain('class="project-util"');
     expect(html).toContain('class="project-menu-outer"');
     expect(html).toContain('class="project-menu-inner"');
     expect(html).toContain('class="project-menu-nav project-menu-gruop"');
@@ -107,6 +109,7 @@ describe("project home tab parity", () => {
     expect(html).toContain('class="tab-pane active"');
     expect(html).toContain('class="span3 span-right-pane"');
     expect(html).toContain('class="bubble-wrap gray project-home"');
+    expect(html).not.toContain("runtime-grid");
   });
 
   it("renders project overview through Markdown like legacy project home", () => {
@@ -127,6 +130,8 @@ describe("project home tab parity", () => {
     expect(enrollHtml).toContain(
       'class="ybtn ybtn-info enrollBtn" href="/yona/yona/projectYobi/enroll" id="enrollBtn"',
     );
+    expect(enrollHtml).toContain('class="project-util-wrap"');
+    expect(enrollHtml).toContain('class="dropdown-menu flat right title"');
     expect(enrollHtml).toContain('class="yobicon-addfriend"');
 
     const cancelHtml = renderProjectHome("/yona/yona/projectYobi", {
@@ -146,6 +151,9 @@ describe("project home tab parity", () => {
     expect(watchHtml).toContain(
       'class="ybtn ybtn-watching watchBtn" href="/yona/yona/projectYobi/watch"',
     );
+    expect(watchHtml).toContain('class="btn-group dropdown watch-btn"');
+    expect(watchHtml).toContain('class="btn watcher-count no-border"');
+    expect(watchHtml).toContain('href="/yona/yona/projectYobi/watchers"');
     expect(watchHtml).toContain('class="yobicon-eye"');
 
     const unwatchHtml = renderProjectHome("/yona/yona/projectYobi", {
@@ -155,6 +163,7 @@ describe("project home tab parity", () => {
     expect(unwatchHtml).toContain(
       'class="ybtn ybtn-watching watchBtn" href="/yona/yona/projectYobi/unwatch"',
     );
+    expect(unwatchHtml).toContain('class="btn watcher-count no-border watch-on"');
     expect(unwatchHtml).toContain('class="yobicon-eye-off"');
   });
 

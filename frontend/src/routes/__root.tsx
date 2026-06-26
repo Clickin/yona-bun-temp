@@ -177,14 +177,11 @@ function LegacyGlobalContainers() {
         </div>
       </div>
       <div className="yobiToasts" id="yobiToasts"></div>
-      <script
-        dangerouslySetInnerHTML={{
-          __html:
-            '<div class="toast" tabindex="-1"><div class="btn-dismiss"><button type="button" class="btn-transparent">&times;</button></div><div class="center-text"><span class="v"></span><div class="msg"></div></div></div>',
-        }}
-        id="tplYobiToast"
-        type="text/x-jquery-tmpl"
-      />
+      <script id="tplYobiToast" type="text/x-jquery-tmpl">
+        {
+          '<div class="toast" tabindex="-1"><div class="btn-dismiss"><button type="button" class="btn-transparent">&times;</button></div><div class="center-text"><span class="v"></span><div class="msg"></div></div></div>'
+        }
+      </script>
     </>
   );
 }
@@ -237,7 +234,8 @@ function RootUpdateNotification() {
         className="ybtn ybtn-small"
         data-request-method="post"
         data-request-uri={unwatchUri}
-        onClick={async () => {
+        onClick={async (event) => {
+          event.preventDefault();
           try {
             const response = await fetch(unwatchUri, {
               credentials: "same-origin",
