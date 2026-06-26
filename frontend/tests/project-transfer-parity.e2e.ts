@@ -123,6 +123,7 @@ test.beforeEach(async ({ page }) => {
 
 test("project transfer route preserves the legacy request shell", async ({ page }) => {
   let requested = false;
+  let transferPostCount = 0;
 
   await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
     await route.fulfill({
@@ -133,6 +134,7 @@ test("project transfer route preserves the legacy request shell", async ({ page 
   });
   await page.route(apiV1Route("/owners/owner/projects/projectYobi/transfer"), async (route) => {
     if (route.request().method() === "POST") {
+      transferPostCount += 1;
       expect(route.request().headers()["x-csrf-token"]).toBe("csrf-123");
       expect(route.request().postDataJSON()).toEqual({
         destination: "recipient",
@@ -172,8 +174,16 @@ test("project transfer route preserves the legacy request shell", async ({ page 
   await expect(page.locator("#accept")).toBeVisible();
   await expect(page.locator("#btnTransfer")).toBeVisible();
   await expect(page.locator("#alertTransfer")).toHaveClass(/hide/);
+  await expect(page.locator("body")).not.toContainText("project.transfer");
 
   await page.locator("#owner").fill("recipient");
+  await page.locator("#btnTransfer").click();
+  await expect(page.locator(".alert.alert-error")).toContainText(
+    "You should agree with the transfer of this project.",
+  );
+  await expect(page.locator("#alertTransfer")).toHaveClass(/hide/);
+  await expect.poll(() => transferPostCount).toBe(0);
+
   await page.locator("#accept").check();
   await page.locator("#btnTransfer").click();
   await expect(page.locator("#alertTransfer")).not.toHaveClass(/hide/);
