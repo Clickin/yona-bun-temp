@@ -182,6 +182,8 @@ test("maps restricted sample route changes to the account lifecycle slice", () =
 
 test("accepts template-first P0 report as global shell implementation evidence", () => {
   const result = runGate([
+    "frontend/index.html",
+    "frontend/scripts/build-legacy-css.mjs",
     "frontend/src/main.tsx",
     "frontend/src/routes/__root.tsx",
     "frontend/src/routes/-auth-views.tsx",
@@ -195,6 +197,17 @@ test("accepts template-first P0 report as global shell implementation evidence",
     result.capabilities.map((entry) => entry.id).sort(),
     ["auth-account-lifecycle", "rust-foundation-and-runtime-bootstrap"].sort(),
   );
+});
+
+test("ignores static legacy asset payload files", () => {
+  const result = runGate([
+    "frontend/public/legacy-assets/images/project_default_logo.png",
+    "frontend/public/legacy-assets/stylesheets/yobi.css",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(result.implementationFiles.length, 0);
+  assert.match(result.summary, /No implementation files/);
 });
 
 test("maps shared frontend view model changes to shared view model evidence", () => {

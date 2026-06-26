@@ -39,6 +39,7 @@ const NON_IMPLEMENTATION_PREFIXES = [
   "crates/protocol/src/generated/",
   "crates/server/src/generated/",
   "frontend/src/gen/",
+  "frontend/public/legacy-assets/",
 ];
 
 const NON_IMPLEMENTATION_FILES = new Set([
@@ -532,7 +533,7 @@ const DOMAIN_BUCKETS = [
     label: "Attachment and asset ACL",
     status: "gap",
     implementationPatterns: [
-      /^frontend\/.*(asset|upload|attachment|resource)/i,
+      /^frontend\/(?!public\/legacy-assets\/).*(asset|upload|attachment|resource)/i,
       /^crates\/(?:server|persistence|domain)\/.*(asset|upload|attachment|resource)/i,
     ],
     testKeywords: ["asset", "upload", "attachment", "resource"],
@@ -565,6 +566,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/(?:main|router|runtime-config)\.tsx?$/i,
       /^frontend\/src\/routes\/__root\.tsx$/i,
       /^frontend\/src\/routes\/sidebar\/route\.tsx$/i,
+      /^frontend\/scripts\//i,
       /^reports\//i,
       /^scripts\//i,
     ],
@@ -844,8 +846,10 @@ export function evaluateParityGate({ changedFiles = [], repoRoot = DEFAULT_REPO_
     };
   }
 
-  const { implementationFiles, nonImplementationFiles } =
-    collectImplementationChanges(normalizedFiles, repoRoot);
+  const { implementationFiles, nonImplementationFiles } = collectImplementationChanges(
+    normalizedFiles,
+    repoRoot,
+  );
 
   if (implementationFiles.length === 0) {
     return {

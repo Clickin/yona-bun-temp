@@ -44,16 +44,16 @@ Source comparison by Subagent P0 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 1 |
+| gap | 0 |
 | deviation | 0 |
 | weak evidence | 3 |
-| covered | 7 |
+| covered | 8 |
 
 ## Reset Findings
 
 | legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `layout.scala.html` | Any normal route, anonymous/authenticated. Legacy loads Bootstrap, yobicon, Select2, Pikaday, `usermenu.css`, compiled `yobi.css`, NProgress, Viewer CSS/JS in a fixed asset chain. | `frontend/index.html`, `frontend/src/main.tsx`, `frontend/src/app.css` | asset | gap | P0 | `frontend/index.html`, `frontend/src/main.tsx`, `frontend/src/app.css`, asset copy/build config if approved | Current SPA imports only the Vite app bundle plus recreated CSS. Reset requires legacy Bootstrap/Yobi-equivalent asset baseline. |
+| `layout.scala.html` | Any normal route, anonymous/authenticated. Legacy loads Bootstrap, yobicon, Select2, Pikaday, `usermenu.css`, compiled `yobi.css`, NProgress, Viewer CSS/JS in a fixed asset chain. | `frontend/index.html`, `frontend/public/legacy-assets/**`, `frontend/scripts/build-legacy-css.mjs`, `frontend/src/app.css` | asset | covered in current follow-up | P0 | none | `index.html` now links the legacy CSS asset chain through `%BASE_URL%legacy-assets/...` in layout order: favicon, Bootstrap, yobicon, Select2, Pikaday, `usermenu.css`, compiled `yobi.css`, NProgress, Viewer, and framed-shell magnific-popup CSS. Static CSS/images/fonts are copied under `frontend/public/legacy-assets/**`; `build:legacy-css` regenerates `yobi.css` and `usermenu.css` from `yona-original/app/assets/stylesheets/*.less`. No legacy JS is linked or copied for this asset row. Static proof is in `auth-workspace-shell.spec.tsx`; visual closure remains under the verifier baseline rows. |
 | `layout.scala.html`, `partial_update_notification.scala.html` | Any normal route, site-admin update notification watched and update version available. | `frontend/index.html`, `frontend/src/main.tsx`, `frontend/src/routes/__root.tsx`, `frontend/src/auth-workspace-shell.spec.tsx` | layout | covered in current follow-up | P0 | none | `body#html-body`, `#main.main`, and the legacy site-admin `<p class="center-txt">` update notification are covered. `RootUpdateNotification` reads `/api/v1/site/update`, renders `site.update.notification`, preserves `data-request-method="post"` and `data-request-uri="/sites/unwatchUpdate"`, and POSTs the legacy hide action with CSRF. |
 | `common/scripts.scala.html` | Any route with common scripts. | `frontend/src/routes/__root.tsx`, `frontend/src/auth-workspace-shell.spec.tsx` | interaction | covered in current follow-up | P0 | none | `LegacyGlobalContainers` now renders global `#yobiDialog`, `#yobiToasts`, and `#tplYobiToast`; the toast template keeps its legacy `script[type="text/x-jquery-tmpl"]` anchor as a React string child rather than `dangerouslySetInnerHTML`. The navbar search-scope handler preserves legacy `href="#"`, `data-action`, form `action` update, and `#gnb-search-scope-title` text update behavior. Focused static proof is in `auth-workspace-shell.spec.tsx`. Behavior consumers remain tracked by the separate flash/shortcut/upload/viewer row. |
 | `common/navbar.scala.html` | Header on global/project/org routes. | `frontend/src/routes/__root.tsx`, `frontend/src/app.css`, `frontend/src/auth-workspace-shell.spec.tsx` | css | covered in current follow-up | P0 | none | Global nav CSS now follows legacy `_page.less` for dark `.gnb-outer`, translucent project-route header, `.gnb-inner` width/margins, muted orange `.logo-letter`, divider pipes, and collapsed/focused search input widths. Full asset-chain parity and visual screenshots remain tracked separately. |

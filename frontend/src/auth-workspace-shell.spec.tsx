@@ -213,6 +213,20 @@ describe("auth and workspace views", () => {
 
     const indexHtml = fs.readFileSync(path.resolve(__dirname, "../index.html"), "utf8");
     expect(indexHtml).toContain('<body id="html-body">');
+    expect(indexHtml).toContain("%BASE_URL%legacy-assets/images/favicon.ico");
+    expect(indexHtml).toContain("%BASE_URL%legacy-assets/bootstrap/css/bootstrap.css");
+    expect(indexHtml).toContain("%BASE_URL%legacy-assets/stylesheets/yobicon/style.css");
+    expect(indexHtml).toContain("%BASE_URL%legacy-assets/javascripts/lib/select2/select2.css");
+    expect(indexHtml).toContain("%BASE_URL%legacy-assets/javascripts/lib/pikaday/pikaday.css");
+    expect(indexHtml).toContain("%BASE_URL%legacy-assets/stylesheets/usermenu.css");
+    expect(indexHtml).toContain("%BASE_URL%legacy-assets/stylesheets/yobi.css");
+    expect(indexHtml).toContain("%BASE_URL%legacy-assets/javascripts/lib/nprogress/nprogress.css");
+    expect(indexHtml).toContain("%BASE_URL%legacy-assets/javascripts/lib/viewerjs/viewer.css");
+    expect(indexHtml).toContain(
+      "%BASE_URL%legacy-assets/javascripts/lib/magnific-popup/magnific-popup.css",
+    );
+    expect(indexHtml).not.toContain("legacy-assets/javascripts/yona-layout.js");
+    expect(indexHtml).not.toContain("legacy-assets/javascripts/common/yona.Usermenu.js");
 
     const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
     expect(appCss).toContain(".gnb-outer {");
