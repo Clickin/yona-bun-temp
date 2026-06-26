@@ -311,6 +311,42 @@ describe("project settings parity", () => {
     expect(html).toContain('id="alertDeletion"');
   });
 
+  it("lets the project layout route own the change VCS settings shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectChangeVcsPage
+        changeVcs={{
+          currentVcs: "GIT",
+          nextVcs: "Subversion",
+          ownerName: "admin",
+          projectName: "projectYobi",
+          viewerCanChange: true,
+        }}
+        detail={projectDetail}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/changeVCS/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/changeVCS`");
+    expect(layoutSource).toContain('return { activeMenu: "settings" };');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="subMenuProjectChangeVCS"');
+    expect(html).toContain('id="btnChangeVCS"');
+    expect(html).toContain('id="alertChangeVCS"');
+  });
+
   it("preserves legacy visibility for protected and Git-only project setting controls", () => {
     const userOwnedHtml = renderToStaticMarkup(
       <ProjectSettingsPage

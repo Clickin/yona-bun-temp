@@ -117,6 +117,7 @@ function ProjectChangeVcsRouteComponent() {
         await changeMutation.mutateAsync();
       }}
       pending={changeMutation.isPending}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

@@ -3472,6 +3472,7 @@ export function ProjectChangeVcsPage(props: {
   messages?: LegacyMessageLookup;
   onChangeVcs?: () => Promise<void>;
   pending?: boolean;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? {
@@ -3498,129 +3499,133 @@ export function ProjectChangeVcsPage(props: {
   const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
   const canOpenChangeVcsModal = accepted && changeVcs.viewerCanChange && !props.pending;
 
+  const content = (
+    <div className="project-page-wrap">
+      <ProjectSettingsSubMenu
+        active="vcs"
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <div className="bubble-wrap gray wp">
+        <div className="row-fluid">
+          <h3>
+            {changeVcs.currentVcs} <i className="yobicon-right-2 vmiddle" /> {changeVcs.nextVcs}
+          </h3>
+          <div className="cu-desc">
+            <ul>
+              <li className="notice">
+                <strong>
+                  {legacyMessage(props.messages, "project.changeVCS.description1", {
+                    args: [changeVcs.nextVcs],
+                    fallback: "project.changeVCS.description1",
+                  })}
+                </strong>
+              </li>
+              <li className="notice">
+                <strong>{legacyMessage(props.messages, "project.changeVCS.description2")}</strong>
+              </li>
+            </ul>
+            <p>
+              <input
+                autoComplete="off"
+                checked={accepted}
+                className="checkbox"
+                id="acceptChangeVCS"
+                onChange={(event) => {
+                  setAccepted(event.currentTarget.checked);
+                  setValidationMessage(null);
+                }}
+                type="checkbox"
+              />
+              <label className="bg-checkbox label-agreement" htmlFor="acceptChangeVCS">
+                {legacyMessage(props.messages, "project.changeVCS.accept")}
+              </label>
+            </p>
+          </div>
+        </div>
+      </div>
+      {validationMessage ? (
+        <div className="alert alert-error" role="alert">
+          {legacyMessage(props.messages, validationMessage)}
+        </div>
+      ) : null}
+      <div className="box-wrap bottom">
+        <a
+          className="ybtn ybtn-danger"
+          data-toggle="modal"
+          href="#alertChangeVCS"
+          id="btnChangeVCS"
+          onClick={(event) => {
+            event.preventDefault();
+            if (canOpenChangeVcsModal) {
+              setValidationMessage(null);
+              setModalOpen(true);
+            } else if (!accepted) {
+              setValidationMessage("project.changeVCS.alert");
+            }
+          }}
+        >
+          <i className="yobicon-database" />{" "}
+          {legacyMessage(props.messages, "project.changeVCS.this")}
+        </a>
+      </div>
+      <div className={modalOpen ? "modal" : "modal hide"} id="alertChangeVCS">
+        <div className="modal-header">
+          <button
+            aria-label={legacyMessage(props.messages, "button.close")}
+            className="close"
+            data-dismiss="modal"
+            onClick={() => setModalOpen(false)}
+            type="button"
+          >
+            ×
+          </button>
+          <h3>
+            {legacyMessage(props.messages, "project.changeVCS.requestion", {
+              args: [changeVcs.nextVcs],
+              fallback: "project.changeVCS.requestion",
+            })}
+          </h3>
+        </div>
+        <div className="modal-body">
+          <p>{legacyMessage(props.messages, "project.changeVCS.description2")}</p>
+          <p>{legacyMessage(props.messages, "project.changeVCS.reaccept")}</p>
+        </div>
+        <div className="modal-footer">
+          <button
+            className="ybtn ybtn-danger"
+            disabled={props.pending}
+            id="btnChangeVCSExec"
+            onClick={() => {
+              void props.onChangeVcs?.();
+            }}
+            type="button"
+          >
+            {legacyMessage(props.messages, "button.yes")}
+          </button>
+          <button
+            className="ybtn"
+            data-dismiss="modal"
+            onClick={() => setModalOpen(false)}
+            type="button"
+          >
+            {legacyMessage(props.messages, "button.no")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <ProjectSettingsSubMenu
-            active="vcs"
-            detail={detail}
-            messages={props.messages}
-            runtimeConfig={props.runtimeConfig}
-          />
-          <div className="bubble-wrap gray wp">
-            <div className="row-fluid">
-              <h3>
-                {changeVcs.currentVcs} <i className="yobicon-right-2 vmiddle" /> {changeVcs.nextVcs}
-              </h3>
-              <div className="cu-desc">
-                <ul>
-                  <li className="notice">
-                    <strong>
-                      {legacyMessage(props.messages, "project.changeVCS.description1", {
-                        args: [changeVcs.nextVcs],
-                        fallback: "project.changeVCS.description1",
-                      })}
-                    </strong>
-                  </li>
-                  <li className="notice">
-                    <strong>
-                      {legacyMessage(props.messages, "project.changeVCS.description2")}
-                    </strong>
-                  </li>
-                </ul>
-                <p>
-                  <input
-                    autoComplete="off"
-                    checked={accepted}
-                    className="checkbox"
-                    id="acceptChangeVCS"
-                    onChange={(event) => {
-                      setAccepted(event.currentTarget.checked);
-                      setValidationMessage(null);
-                    }}
-                    type="checkbox"
-                  />
-                  <label className="bg-checkbox label-agreement" htmlFor="acceptChangeVCS">
-                    {legacyMessage(props.messages, "project.changeVCS.accept")}
-                  </label>
-                </p>
-              </div>
-            </div>
-          </div>
-          {validationMessage ? (
-            <div className="alert alert-error" role="alert">
-              {legacyMessage(props.messages, validationMessage)}
-            </div>
-          ) : null}
-          <div className="box-wrap bottom">
-            <a
-              className="ybtn ybtn-danger"
-              data-toggle="modal"
-              href="#alertChangeVCS"
-              id="btnChangeVCS"
-              onClick={(event) => {
-                event.preventDefault();
-                if (canOpenChangeVcsModal) {
-                  setValidationMessage(null);
-                  setModalOpen(true);
-                } else if (!accepted) {
-                  setValidationMessage("project.changeVCS.alert");
-                }
-              }}
-            >
-              <i className="yobicon-database" />{" "}
-              {legacyMessage(props.messages, "project.changeVCS.this")}
-            </a>
-          </div>
-          <div className={modalOpen ? "modal" : "modal hide"} id="alertChangeVCS">
-            <div className="modal-header">
-              <button
-                aria-label={legacyMessage(props.messages, "button.close")}
-                className="close"
-                data-dismiss="modal"
-                onClick={() => setModalOpen(false)}
-                type="button"
-              >
-                ×
-              </button>
-              <h3>
-                {legacyMessage(props.messages, "project.changeVCS.requestion", {
-                  args: [changeVcs.nextVcs],
-                  fallback: "project.changeVCS.requestion",
-                })}
-              </h3>
-            </div>
-            <div className="modal-body">
-              <p>{legacyMessage(props.messages, "project.changeVCS.description2")}</p>
-              <p>{legacyMessage(props.messages, "project.changeVCS.reaccept")}</p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="ybtn ybtn-danger"
-                disabled={props.pending}
-                id="btnChangeVCSExec"
-                onClick={() => {
-                  void props.onChangeVcs?.();
-                }}
-                type="button"
-              >
-                {legacyMessage(props.messages, "button.yes")}
-              </button>
-              <button
-                className="ybtn"
-                data-dismiss="modal"
-                onClick={() => setModalOpen(false)}
-                type="button"
-              >
-                {legacyMessage(props.messages, "button.no")}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }
