@@ -296,6 +296,17 @@ M20 starts code shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "branch list shell"`.
 
+M21 continues code shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/code` and `/code/:branch/*path`, with the
+  code menu active.
+- `CodeBrowserPage` supports `renderShell={false}` so the shared code browser
+  route view keeps its REST/data-loading boundary but renders only the legacy
+  `project-page-wrap` code browser body under the project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "code browser shell"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

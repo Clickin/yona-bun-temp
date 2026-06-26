@@ -14,6 +14,12 @@ This audit is limited to legacy Yona code browser, commit history/detail, compar
 - Scope: `frontend/src/routes/-code-views.tsx` adds `renderShell={false}` for `CodeBranchListPage`; the branches leaf route passes that flag while retaining branch list query and default/delete REST mutation boundaries.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "branch list shell"`.
 
+## 2026-06-27 Code Browser Layout Follow-Up
+
+- Moved project code browser shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/code` and `/code/:branch/*path`, keeping the code menu active with no extra shell class or keymap.
+- Scope: `frontend/src/routes/-code-views.tsx` adds `renderShell={false}` for `CodeBrowserPage`; the shared code browser route view passes that flag while retaining code browser data loading and render behavior.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "code browser shell"`.
+
 Legacy evidence inspected:
 
 - `yona-original/app/views/code/view.scala.html`
@@ -66,7 +72,7 @@ Total rows: 20
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
-| `/:owner/:project/code` default branch | `code/view.scala.html` `CodeApp.codeBrowser`, `#branches`, `#breadcrumbs`, `code.files/code.commits/title.branches` tabs | `CodeBrowserRouteView`, `CodeBrowserPage`, `readCodeBrowser`, `shell-routing-smoke.e2e.ts`, visual sweep `/pilot/yona/code` 200 | covered | none |
+| `/:owner/:project/code` default branch | `code/view.scala.html` `CodeApp.codeBrowser`, `#branches`, `#breadcrumbs`, `code.files/code.commits/title.branches` tabs | Project layout owns the header/menu/page-wrap shell with active code menu; `CodeBrowserRouteView`, `CodeBrowserPage`, `readCodeBrowser`, `shell-routing-smoke.e2e.ts`, visual sweep `/pilot/yona/code` 200 preserve the code browser body under the outlet. | covered | `frontend/src/routes/$owner/$projectName/route.tsx`, `frontend/src/routes/$owner/$projectName/code/-code-route.tsx`, `frontend/src/routes/-code-views.tsx`, `frontend/src/code-views.spec.tsx` |
 | `/:owner/:project/code/:branch/*path` folder rows | `partial_view_folder.scala.html` `.list-wrap`, `.listitem`, `code.filename`, `code.commitMsg`, folders before files | `CodeFolderView`, `code-views.spec.tsx`, `project-code-browser-routing.spec.ts` | covered | none |
 | `/:owner/:project/code/:branch/*path` text file rows | `partial_view_file.scala.html` `#fileInfo`, `#revisionNo`, `#codeVal.hidden`, `#showCode` | `CodeFileView`, `CodeTextView`, `code-views.spec.tsx` checks `#showCode`, syntax tokens, line numbers | covered | none |
 | Markdown file rendering | `partial_view_file.scala.html` `#codeVal.markdown-wrap.codebrowser-markdown`, `Markdown.renderFileInCodeBrowser` | `CodeFileView` uses shared `MarkdownRenderer`; `project-code-browser-routing.spec.ts` checks `#codeVal`, local image rewrite, no `#showCode` | covered | none |

@@ -85,6 +85,7 @@ export function CodeBrowserRouteView(props: {
       code={code}
       detail={detail}
       messages={messages}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

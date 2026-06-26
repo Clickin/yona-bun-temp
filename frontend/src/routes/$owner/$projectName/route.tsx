@@ -120,6 +120,12 @@ function projectLayoutShell(
   if (appPath === `/${owner}/${projectName}/branches`) {
     return { activeMenu: "code" };
   }
+  if (
+    appPath === `/${owner}/${projectName}/code` ||
+    appPath.startsWith(`/${owner}/${projectName}/code/`)
+  ) {
+    return { activeMenu: "code" };
+  }
   if (appPath === `/${owner}/${projectName}/posts`) {
     return { activeMenu: "board", keymapMode: "list", shellClassName: "board-page" };
   }

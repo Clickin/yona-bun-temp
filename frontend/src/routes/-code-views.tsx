@@ -659,6 +659,7 @@ export function CodeBrowserPage(props: {
   code: CodeBrowserViewModel | null;
   detail: ProjectDetailViewModel | null;
   messages?: LegacyMessageLookup;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
@@ -675,180 +676,186 @@ export function CodeBrowserPage(props: {
       )
     : "";
 
+  const pageBody = (
+    <div className="project-page-wrap">
+      <section className="code-browse-wrap">
+        {!isFileView ? (
+          <nav aria-label="Code tabs">
+            <a
+              aria-current="page"
+              href={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "code",
+              )}
+            >
+              {legacyMessage(props.messages, "code.files")}
+            </a>
+            <a
+              href={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "commits",
+              )}
+            >
+              {legacyMessage(props.messages, "code.commits")}
+            </a>
+            <a
+              href={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "branches",
+              )}
+            >
+              {legacyMessage(props.messages, "title.branches")}
+            </a>
+          </nav>
+        ) : null}
+        {code?.noHead ? (
+          <CodeNoHeadBlock
+            detail={detail}
+            messages={props.messages}
+            runtimeConfig={props.runtimeConfig}
+          />
+        ) : (
+          <>
+            <div className="code-browse-header">
+              <select
+                className={code?.file ? "pull-left mb10" : "pull-left"}
+                data-dropdown-css-class="branches"
+                data-format="branch"
+                data-toggle="select2"
+                id="branches"
+                onChange={(event) => {
+                  window.location.assign(event.currentTarget.value);
+                }}
+                value={selectedBranchHref}
+              >
+                {(code?.branches ?? []).map((branch) => {
+                  const branchHref = codeHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    branch.name,
+                    code?.path ?? "",
+                  );
+                  return (
+                    <option key={branch.name} value={branchHref}>
+                      {branch.name}
+                    </option>
+                  );
+                })}
+              </select>
+              <div
+                aria-label="Breadcrumbs"
+                className="code-breadcrumb-wrap ml10 pull-left"
+                id="breadcrumbs"
+              >
+                <a
+                  href={
+                    selectedBranch
+                      ? codeHref(
+                          props.runtimeConfig,
+                          detail.ownerName,
+                          detail.projectName,
+                          selectedBranch,
+                        )
+                      : "#"
+                  }
+                >
+                  {detail.projectName}
+                </a>
+                {(code?.breadcrumbs ?? []).map((breadcrumb) => (
+                  <a
+                    href={codeHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                      breadcrumb.path,
+                    )}
+                    key={breadcrumb.path}
+                  >
+                    {breadcrumb.name}
+                  </a>
+                ))}
+              </div>
+              {selectedBranch ? (
+                <div className="pull-right">
+                  <a
+                    className="ybtn"
+                    href={codeArchiveHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                    )}
+                  >
+                    {legacyMessage(props.messages, "code.download")}
+                  </a>
+                </div>
+              ) : null}
+              {selectedBranch && detail.viewerCanUpdate ? (
+                <div className="pull-right">
+                  <a
+                    className="ybtn"
+                    href={codeNewFileHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                      code?.path ?? "",
+                      Boolean(code?.file),
+                    )}
+                    id="new-file-link"
+                  >
+                    {legacyMessage(props.messages, "code.new.file")}
+                  </a>
+                </div>
+              ) : null}
+            </div>
+            <div className="code-viewer-wrap">
+              <div id="spin" style={{ left: "50%", position: "fixed", top: "50%" }}></div>
+              {code?.file ? (
+                <CodeFileView
+                  file={code.file}
+                  ownerName={detail.ownerName}
+                  projectName={detail.projectName}
+                  runtimeConfig={props.runtimeConfig}
+                  selectedBranch={selectedBranch}
+                  viewerCanUpdate={detail.viewerCanUpdate}
+                  messages={props.messages}
+                />
+              ) : (
+                <CodeFolderView
+                  entries={code?.entries ?? []}
+                  listPath={code?.path ?? ""}
+                  ownerName={detail.ownerName}
+                  projectName={detail.projectName}
+                  runtimeConfig={props.runtimeConfig}
+                  selectedBranch={selectedBranch}
+                  messages={props.messages}
+                />
+              )}
+            </div>
+          </>
+        )}
+      </section>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="code" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <section className="code-browse-wrap">
-            {!isFileView ? (
-              <nav aria-label="Code tabs">
-                <a
-                  aria-current="page"
-                  href={buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    "code",
-                  )}
-                >
-                  {legacyMessage(props.messages, "code.files")}
-                </a>
-                <a
-                  href={buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    "commits",
-                  )}
-                >
-                  {legacyMessage(props.messages, "code.commits")}
-                </a>
-                <a
-                  href={buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    "branches",
-                  )}
-                >
-                  {legacyMessage(props.messages, "title.branches")}
-                </a>
-              </nav>
-            ) : null}
-            {code?.noHead ? (
-              <CodeNoHeadBlock
-                detail={detail}
-                messages={props.messages}
-                runtimeConfig={props.runtimeConfig}
-              />
-            ) : (
-              <>
-                <div className="code-browse-header">
-                  <select
-                    className={code?.file ? "pull-left mb10" : "pull-left"}
-                    data-dropdown-css-class="branches"
-                    data-format="branch"
-                    data-toggle="select2"
-                    id="branches"
-                    onChange={(event) => {
-                      window.location.assign(event.currentTarget.value);
-                    }}
-                    value={selectedBranchHref}
-                  >
-                    {(code?.branches ?? []).map((branch) => {
-                      const branchHref = codeHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        branch.name,
-                        code?.path ?? "",
-                      );
-                      return (
-                        <option key={branch.name} value={branchHref}>
-                          {branch.name}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <div
-                    aria-label="Breadcrumbs"
-                    className="code-breadcrumb-wrap ml10 pull-left"
-                    id="breadcrumbs"
-                  >
-                    <a
-                      href={
-                        selectedBranch
-                          ? codeHref(
-                              props.runtimeConfig,
-                              detail.ownerName,
-                              detail.projectName,
-                              selectedBranch,
-                            )
-                          : "#"
-                      }
-                    >
-                      {detail.projectName}
-                    </a>
-                    {(code?.breadcrumbs ?? []).map((breadcrumb) => (
-                      <a
-                        href={codeHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          selectedBranch,
-                          breadcrumb.path,
-                        )}
-                        key={breadcrumb.path}
-                      >
-                        {breadcrumb.name}
-                      </a>
-                    ))}
-                  </div>
-                  {selectedBranch ? (
-                    <div className="pull-right">
-                      <a
-                        className="ybtn"
-                        href={codeArchiveHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          selectedBranch,
-                        )}
-                      >
-                        {legacyMessage(props.messages, "code.download")}
-                      </a>
-                    </div>
-                  ) : null}
-                  {selectedBranch && detail.viewerCanUpdate ? (
-                    <div className="pull-right">
-                      <a
-                        className="ybtn"
-                        href={codeNewFileHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          selectedBranch,
-                          code?.path ?? "",
-                          Boolean(code?.file),
-                        )}
-                        id="new-file-link"
-                      >
-                        {legacyMessage(props.messages, "code.new.file")}
-                      </a>
-                    </div>
-                  ) : null}
-                </div>
-                <div className="code-viewer-wrap">
-                  <div id="spin" style={{ left: "50%", position: "fixed", top: "50%" }}></div>
-                  {code?.file ? (
-                    <CodeFileView
-                      file={code.file}
-                      ownerName={detail.ownerName}
-                      projectName={detail.projectName}
-                      runtimeConfig={props.runtimeConfig}
-                      selectedBranch={selectedBranch}
-                      viewerCanUpdate={detail.viewerCanUpdate}
-                      messages={props.messages}
-                    />
-                  ) : (
-                    <CodeFolderView
-                      entries={code?.entries ?? []}
-                      listPath={code?.path ?? ""}
-                      ownerName={detail.ownerName}
-                      projectName={detail.projectName}
-                      runtimeConfig={props.runtimeConfig}
-                      selectedBranch={selectedBranch}
-                      messages={props.messages}
-                    />
-                  )}
-                </div>
-              </>
-            )}
-          </section>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

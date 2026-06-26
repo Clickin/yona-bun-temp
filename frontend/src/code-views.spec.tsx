@@ -1765,4 +1765,31 @@ describe("CodeCommitDetailPage", () => {
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="table branch-list-wrap"');
   });
+
+  it("lets the project layout route own the code browser shell", () => {
+    const html = renderToStaticMarkup(
+      <CodeBrowserPage
+        code={codeBrowser}
+        detail={projectDetail}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const codeRouteSource = readFileSync(
+      fileURLToPath(new URL("./routes/$owner/$projectName/code/-code-route.tsx", import.meta.url)),
+      "utf8",
+    );
+
+    expect(projectRouteSource).toContain("appPath === `/${owner}/${projectName}/code`");
+    expect(projectRouteSource).toContain("appPath.startsWith(`/${owner}/${projectName}/code/`)");
+    expect(projectRouteSource).toContain('activeMenu: "code"');
+    expect(codeRouteSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="app-shell"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="code-browse-wrap"');
+    expect(html).toContain('id="showCode"');
+  });
 });
