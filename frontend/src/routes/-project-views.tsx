@@ -1074,7 +1074,6 @@ export function ProjectHeader(props: {
               <span className="project-name">
                 <a href={projectHref}>{detail.projectName}</a>
               </span>
-              <span className="project-title-text">{`${detail.ownerName} / ${detail.projectName}`}</span>
               <span className="user-project-list">
                 <i className={favoriteClass}>star</i>
               </span>

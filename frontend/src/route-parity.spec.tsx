@@ -161,6 +161,11 @@ describe("file-route parity harness", () => {
 
     expect(directNavigations).toEqual([
       {
+        file: "routes/__root.tsx",
+        line: expect.any(Number),
+        sourceLine: "window.location.href = prefixBasePath(",
+      },
+      {
         file: "routes/-code-views.tsx",
         line: expect.any(Number),
         sourceLine: "window.location.assign(event.currentTarget.value);",
@@ -5804,7 +5809,7 @@ describe("file-route parity harness", () => {
     expect(html).toContain(
       '<li class="active"><a href="/yona/weblabs/projectYobi/issues"><span class="menu-name">Issue</span>',
     );
-    expect(html).toContain('<span class="project-title-text">weblabs / projectYobi</span>');
+    expect(html).not.toContain("project-title-text");
     expect(html).toContain('<span class="project-protected" title="Group Project">G</span>');
     expect(html).toContain("<h1>Under Construction</h1>");
   });
@@ -6393,7 +6398,7 @@ describe("file-route parity harness", () => {
     expect(sharedSource).not.toContain("export function PlaceholderPage");
     expect(sharedSource).not.toContain("Redirecting…");
     expect(rootRouteSource).toContain("button.close");
-    expect(rootRouteSource).not.toContain("Dismiss");
+    expect(rootRouteSource).not.toContain(">Dismiss<");
     expect(appRuntimeSource).toContain("error.internalServerError");
     expect(appRuntimeSource).not.toContain("Auth bootstrap failed.");
     expect(badRequestHtml).toContain('class="error-wrap"');

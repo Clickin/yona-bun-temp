@@ -43,15 +43,16 @@ Source comparison by Subagent P2 found concrete reset blockers:
 | status | count |
 | --- | ---: |
 | gap | 9 |
-| deviation | 4 |
+| deviation | 3 |
 | weak evidence | 3 |
+| covered | 1 |
 
 ## Reset Findings
 
 | legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `project/header.scala.html` | Any project page, viewer can watch/enroll. | `frontend/src/routes/-project-views.tsx` | layout | gap | P2 | `ProjectHeader`, project container view model/API if needed | Legacy has `.project-util-wrap` and project util dropdown controls; current mapper found `ProjectHeader` lacks this wrapper. |
-| `project/header.scala.html` | Any project page. | `frontend/src/routes/-project-views.tsx` | layout | deviation | P2 | `ProjectHeader` | Current adds `.project-title-text`, which is not in the legacy header. |
+| `project/header.scala.html` | Any project page. | `frontend/src/routes/-project-views.tsx`, `frontend/src/route-parity.spec.tsx` | layout | covered in current follow-up | P2 | none | Removed the non-legacy `.project-title-text` wrapper from `ProjectHeader`; focused route parity now asserts that the class is absent while preserving legacy owner/project breadcrumb anchors. |
 | `projectMenu.scala.html` | Project menu with admin update permission and enrollment requests. | `frontend/src/routes/-project-views.tsx` | data-boundary | gap | P2 | `ProjectMenu`, project view model | Legacy admin cog includes `project.enrolledUsers.size` badge; current cog has no badge. |
 | `projectMenu.scala.html` | Any project page. | `frontend/src/routes/-project-views.tsx` | layout | weak evidence | P2 | `ProjectMenu`, tests | Current always renders visible `ProjectKeymapHelp`; mapper found no matching visible markup in `projectMenu.scala.html`. |
 | `project/partial_settingmenu.scala.html` | Settings submenu with enroll requests. | `frontend/src/routes/-project-views.tsx` | data-boundary | gap | P2 | settings tab component, project settings/member API data | Legacy member tab shows `.num-badge`; current submenu cannot render the count. |
