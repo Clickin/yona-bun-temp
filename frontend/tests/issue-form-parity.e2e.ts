@@ -271,6 +271,7 @@ test("project issue create form validates, submits REST JSON, and redirects to d
       method: request.method(),
       path: new URL(request.url()).pathname.replace("/yona/api/v1", ""),
     });
+    await new Promise((resolve) => setTimeout(resolve, 100));
     await route.fulfill({
       body: JSON.stringify(issueDetail({ issueNumber: "22", title: "Created issue" })),
       headers: restJsonHeaders,
@@ -300,6 +301,7 @@ test("project issue create form validates, submits REST JSON, and redirects to d
 
   await page.locator("#button-save").click();
   await expect(page.getByRole("alert")).toHaveText("Issue title is a required field.");
+  await expect(page.locator("#button-save")).toBeDisabled();
   expect(requests).toEqual([]);
 
   await page.locator("#title").fill("Created issue");
@@ -309,6 +311,8 @@ test("project issue create form validates, submits REST JSON, and redirects to d
   await page.locator("#milestoneId").selectOption("7");
   await page.locator('.issue-labels-fallback input[name="labelIds"][value="5"]').check();
   await page.locator("#draft-save-btn").click();
+  await expect(page.locator("#draft-save-btn")).toBeDisabled();
+  await expect(page.locator("#isDraft")).toHaveValue("true");
 
   await expect
     .poll(() => requests.some((request) => request.path === "/projects/admin/projectYobi/issues"))

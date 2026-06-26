@@ -773,6 +773,9 @@ describe("file-route parity harness", () => {
     expect(createHtml).toContain('id="button-save"');
     expect(createHtml).toContain('class="ybtn ybtn-success"');
     expect(createHtml).toContain('id="draft-save-btn"');
+    expect(createHtml).toContain('data-content="Only you can see it until you publish"');
+    expect(createHtml).toContain('data-placement="top"');
+    expect(createHtml).toContain('data-toggle="tooltip"');
     expect(createHtml).toContain('class="span3 span-hard-wrap right-menu"');
     expect(createHtml).toContain("<dt>Assignee</dt>");
     expect(createHtml).toContain('id="assignee"');
@@ -803,6 +806,9 @@ describe("file-route parity harness", () => {
     expect(issueViewsSource).toContain("legacyIssueValidationMessage");
     expect(issueViewsSource).toContain("issue.error.emptyTitle");
     expect(issueViewsSource).toContain("issue.error.invalid.duedate");
+    expect(issueViewsSource).toContain("legacyIssueFormSubmitGuardDurationMs = 3000");
+    expect(issueViewsSource).toContain("setSubmitGuardActive(true)");
+    expect(issueViewsSource).toContain("window.confirm(message)");
 
     const editHtml = renderToStaticMarkup(
       <ProjectIssueFormPage
@@ -877,7 +883,10 @@ describe("file-route parity harness", () => {
     expect(draftEditHtml).toContain('<span class="draft">Draft</span>');
     expect(draftEditHtml).toContain('id="button-draft-publish"');
     expect(draftEditHtml).toContain(">Publish</button>");
+    expect(draftEditHtml).toContain('data-content="Publish issue. Notification will be sent."');
+    expect(draftEditHtml).toContain('data-placement="top-start"');
     expect(draftEditHtml).toContain('id="draft-save-btn"');
+    expect(draftEditHtml).toContain('data-content="Only you can see it until you publish"');
     expect(draftEditHtml).not.toContain('id="button-save"');
     expect(draftEditHtml).not.toContain('id="notificationMail"');
   });

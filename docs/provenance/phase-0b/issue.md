@@ -334,3 +334,9 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   `.progress.upload-progress`, `.btn-insert`, and `#tplDropFilesHere`.
   Focused coverage: `frontend/src/issue-detail-shell.spec.tsx` and
   `frontend/src/route-parity.spec.tsx`.
+- 2026-06-26 template-first P3 issue form guard correction: issue create/edit
+  forms now preserve the legacy save/draft/publish 3 second submit guard,
+  draft-save and draft-publish tooltip copy anchors, `#isDraft` / `#isPublish`
+  hidden values, and publish confirmation without importing legacy JavaScript.
+  Focused coverage: `frontend/src/route-parity.spec.tsx` and browser proof in
+  `frontend/tests/issue-form-parity.e2e.ts`.

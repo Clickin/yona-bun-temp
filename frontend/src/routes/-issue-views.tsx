@@ -4682,6 +4682,8 @@ function markdownTextForAttachment(attachment: UploadedAttachment): string {
   return attachment.mimeType.toLowerCase().startsWith("image/") ? `!${link}` : link;
 }
 
+export const legacyIssueFormSubmitGuardDurationMs = 3000;
+
 function LegacyIssueFileUploaderShell(props: {
   messages?: LegacyMessageLookup;
   resourceId?: string | number | null;
@@ -5402,6 +5404,10 @@ export function ProjectIssueFormPage(props: {
     props.initialIssue?.parentIssueId ?? props.initialParentIssueId ?? 0,
   );
   const [submitting, setSubmitting] = React.useState(false);
+  const [submitGuardActive, setSubmitGuardActive] = React.useState(false);
+  const [legacySubmitIntent, setLegacySubmitIntent] = React.useState<"save" | "draft" | "publish">(
+    "save",
+  );
   const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
   const availableLabels = detail.dashboard?.labels ?? [];
   const milestoneOptions =
@@ -5419,6 +5425,8 @@ export function ProjectIssueFormPage(props: {
     setLabelIds((props.initialIssue?.labels ?? []).map((label) => label.id));
     setMilestoneId(props.initialIssue?.milestoneId ?? 0);
     setParentIssueId(props.initialIssue?.parentIssueId ?? props.initialParentIssueId ?? 0);
+    setSubmitGuardActive(false);
+    setLegacySubmitIntent("save");
     setValidationMessage(null);
   }, [
     props.initialIssue?.assigneeLoginId,
@@ -5431,6 +5439,17 @@ export function ProjectIssueFormPage(props: {
     props.initialBodyMarkdown,
     props.initialParentIssueId,
   ]);
+
+  React.useEffect(() => {
+    if (!submitGuardActive) {
+      return undefined;
+    }
+    const timer = window.setTimeout(
+      () => setSubmitGuardActive(false),
+      legacyIssueFormSubmitGuardDurationMs,
+    );
+    return () => window.clearTimeout(timer);
+  }, [submitGuardActive]);
 
   const selectAssigneeSuggestion = (suggestion: IssueAssignableUserItem) => {
     setAssigneeLoginId(suggestion.loginId);
@@ -5445,6 +5464,8 @@ export function ProjectIssueFormPage(props: {
   };
 
   const submitIssueForm = (intent: "save" | "draft" | "publish") => {
+    setLegacySubmitIntent(intent);
+    setSubmitGuardActive(true);
     const nextValidationMessage = legacyIssueValidationMessage({ dueDate, title });
     if (nextValidationMessage) {
       setValidationMessage(nextValidationMessage);
@@ -5470,6 +5491,16 @@ export function ProjectIssueFormPage(props: {
     void props.onSubmit(input).finally(() => setSubmitting(false));
   };
 
+  const submitDraftPublishIssueForm = () => {
+    const message = legacyMessage(messages, "button.draft.publish.description");
+    if (!window.confirm(message)) {
+      return;
+    }
+    submitIssueForm("publish");
+  };
+
+  const submitDisabled = submitting || submitGuardActive;
+
   return (
     <main className="app-shell issue-form-page">
       <h1 className="sr-only">
@@ -5494,11 +5525,23 @@ export function ProjectIssueFormPage(props: {
               {props.mode === "edit" && props.initialIssue ? (
                 <>
                   <input name="authorId" type="hidden" value={props.initialIssue.authorId || ""} />
-                  <input id="isPublish" name="isPublish" type="hidden" value="false" />
+                  <input
+                    id="isPublish"
+                    name="isPublish"
+                    type="hidden"
+                    value={legacySubmitIntent === "publish" ? "true" : "false"}
+                    readOnly
+                  />
                 </>
               ) : null}
               <input name="referCommentId" type="hidden" value={props.referCommentId ?? ""} />
-              <input id="isDraft" name="isDraft" type="hidden" value="false" />
+              <input
+                id="isDraft"
+                name="isDraft"
+                type="hidden"
+                value={legacySubmitIntent === "draft" ? "true" : "false"}
+                readOnly
+              />
               <div className="row-fluid">
                 <div className="span12">
                   <dl>
@@ -5659,7 +5702,7 @@ export function ProjectIssueFormPage(props: {
                           className={
                             props.mode === "create" ? "ybtn ybtn-success" : "ybtn ybtn-info"
                           }
-                          disabled={submitting}
+                          disabled={submitDisabled}
                           id="button-save"
                           type="submit"
                         >
@@ -5670,9 +5713,15 @@ export function ProjectIssueFormPage(props: {
                         <>
                           <button
                             className="ybtn ybtn-info"
-                            disabled={submitting}
+                            data-content={legacyMessage(
+                              messages,
+                              "button.draft.publish.description",
+                            )}
+                            data-placement="top-start"
+                            data-toggle="tooltip"
+                            disabled={submitDisabled}
                             id="button-draft-publish"
-                            onClick={() => submitIssueForm("publish")}
+                            onClick={submitDraftPublishIssueForm}
                             title={legacyMessage(messages, "button.draft.publish.description")}
                             type="button"
                           >
@@ -5680,7 +5729,10 @@ export function ProjectIssueFormPage(props: {
                           </button>
                           <button
                             className="ybtn ybtn-watching draft-save-btn"
-                            disabled={submitting}
+                            data-content={legacyMessage(messages, "button.draft.save.description")}
+                            data-placement="top"
+                            data-toggle="tooltip"
+                            disabled={submitDisabled}
                             id="draft-save-btn"
                             onClick={() => submitIssueForm("draft")}
                             title={legacyMessage(messages, "button.draft.save.description")}
@@ -5692,7 +5744,10 @@ export function ProjectIssueFormPage(props: {
                       ) : props.mode === "create" ? (
                         <button
                           className="ybtn ybtn-watching draft-save-btn"
-                          disabled={submitting}
+                          data-content={legacyMessage(messages, "button.draft.save.description")}
+                          data-placement="top"
+                          data-toggle="tooltip"
+                          disabled={submitDisabled}
                           id="draft-save-btn"
                           onClick={() => submitIssueForm("draft")}
                           title={legacyMessage(messages, "button.draft.save.description")}
