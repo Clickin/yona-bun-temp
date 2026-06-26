@@ -313,3 +313,9 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   rows, including `.mass-update-list li.disabled[data-category]`,
   `.divider[data-category]`, `.usf-group`, `.avatar-wrap.smaller`, `.name`,
   and `.loginid`. Focused coverage: `frontend/src/issue-list-filter.spec.tsx`.
+- 2026-06-26 template-first P3 issue list row correction: project issue list
+  rows now preserve `issue/partial_list.scala.html` selector evidence for
+  `.child-issue-list.hide`, `.num-comments`, `.num-hearts`, `.num-sharers`,
+  `.weight-up-arrow`, `.title-prefix`, and label `data-category-id` /
+  `data-label-id`, with label category metadata retained in the frontend view
+  model. Focused coverage: `frontend/src/issue-list-filter.spec.tsx`.

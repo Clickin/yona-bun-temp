@@ -155,7 +155,14 @@ export interface OrganizationIssueListItemViewModel {
   dueDateOverdue?: boolean;
   id?: number;
   issueNumber: number;
-  labels: Array<{ color: string; id: number; name: string }>;
+  labels: Array<{
+    categoryId?: number | null;
+    categoryIsExclusive?: boolean;
+    categoryName?: string;
+    color: string;
+    id: number;
+    name: string;
+  }>;
   milestoneTitle: string;
   ownerName: string;
   parentIssueNumber?: number;

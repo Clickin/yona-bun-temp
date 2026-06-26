@@ -60,6 +60,7 @@ describe("project issue list filters", () => {
               issueNumber: 4,
               labels: [
                 {
+                  categoryId: 11,
                   color: "#f44336",
                   id: 5,
                   name: "bug",
@@ -69,10 +70,11 @@ describe("project issue list filters", () => {
               ownerName: "admin",
               projectName: "projectYobi",
               state: "open",
-              title: "Open issue",
+              title: "[BE] Open issue",
               updatedLabel: "today",
               voterCount: 1,
               watcherCount: 1,
+              weight: 2,
             },
           ],
           ownerName: "admin",
@@ -199,7 +201,7 @@ describe("project issue list filters", () => {
     expect(html).toContain('class="post-list-wrap row-fluid"');
     expect(html).toContain('class="post-item title"');
     expect(html).toContain('id="issue-item-104"');
-    expect(html).toContain('data-value="admin 4 Open issue"');
+    expect(html).toContain('data-value="admin 4 [BE] Open issue"');
     expect(html).toContain('data-item="issue-item"');
     expect(html).toContain('class="mass-update-check hide-in-mobile"');
     expect(html).toContain('id="issue-104"');
@@ -207,15 +209,24 @@ describe("project issue list filters", () => {
     expect(html).toContain('data-toggle="issue-checkbox"');
     expect(html).toContain('class="issue-item-row"');
     expect(html).toContain('class="title-wrap"');
+    expect(html).toContain('class="weight-up-arrow"');
+    expect(html).toContain('title="Issue weight 2"');
+    expect(html).toContain('class="yobicon-angle-circled-up"');
+    expect(html).toContain('class="title-prefix"');
+    expect(html).toContain("[BE]");
     expect(html).toContain('class="draft-number"');
     expect(html).toContain("#Draft");
     expect(html).not.toContain("#issue.state.draft");
     expect(html).toContain("Draft issue");
-    expect(html).toContain("Open issue");
+    expect(html).toContain("> Open issue</a>");
     expect(html).toContain('class="infos-item item-count-groups"');
+    expect(html).toContain('class="num-comments"');
     expect(html).toContain('href="/yona/admin/projectYobi/issue/4#comments"');
+    expect(html).toContain('class="num-hearts"');
     expect(html).toContain('href="/yona/admin/projectYobi/issue/4#vote"');
+    expect(html).toContain('class="num-sharers"');
     expect(html).toContain('class="label issue-label list-label active white"');
+    expect(html).toContain('data-category-id="11"');
     expect(html).toContain('class="child-issue-list hide"');
     expect(html).toContain('class="avatar-wrap assinee"');
     expect(html).toContain('class="page-navigation-wrap"');

@@ -615,6 +615,9 @@ export function toProjectIssueListView(
     id: item.id ? Number(item.id) : undefined,
     issueNumber: Number(item.issueNumber),
     labels: item.labels.map((label) => ({
+      categoryId: Number(label.categoryId ?? 0) || null,
+      categoryIsExclusive: label.categoryIsExclusive ?? false,
+      categoryName: label.categoryName ?? "",
       color: label.color,
       id: Number(label.id),
       name: label.name,
@@ -664,6 +667,9 @@ export function toUserIssueListView(
       id: item.id ? Number(item.id) : undefined,
       issueNumber: Number(item.issueNumber),
       labels: item.labels.map((label) => ({
+        categoryId: Number(label.categoryId ?? 0) || null,
+        categoryIsExclusive: label.categoryIsExclusive ?? false,
+        categoryName: label.categoryName ?? "",
         color: label.color,
         id: Number(label.id),
         name: label.name,

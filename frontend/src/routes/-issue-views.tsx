@@ -1351,6 +1351,24 @@ function IssueMilestoneOptionGroups(props: {
   );
 }
 
+function splitIssueTitleHeaderWords(title: string) {
+  const segments = title.split(/(?<=\])/);
+  const prefixes = segments.filter((segment) => {
+    const trimmed = segment.trim();
+    return trimmed.startsWith("[") && trimmed.includes("]");
+  });
+  const prefixSource = prefixes.join("");
+  const titleWithoutPrefixes = prefixSource ? title.replace(prefixSource, "") : title;
+  const madeByHeaderWordsOnly =
+    title.trim().indexOf("]") + 1 === title.trim().length ||
+    titleWithoutPrefixes.trim().length === 0;
+
+  return {
+    prefixes: madeByHeaderWordsOnly ? [] : prefixes.map((prefix) => prefix.trim()),
+    title: madeByHeaderWordsOnly ? title : titleWithoutPrefixes,
+  };
+}
+
 function ProjectIssueRows(props: {
   items: ProjectIssueListViewModel["items"];
   listKind: "draft" | "normal";
@@ -1379,6 +1397,7 @@ function ProjectIssueRows(props: {
           href: issueHref,
         } as React.LiHTMLAttributes<HTMLLIElement> & { href: string };
         const weight = item.weight ?? 0;
+        const splitTitle = splitIssueTitleHeaderWords(item.title || "");
         return (
           <li
             className="post-item title"
@@ -1446,8 +1465,13 @@ function ProjectIssueRows(props: {
                       <i className="yobicon-angle-circled-down" />
                     </span>
                   ) : null}
+                  {splitTitle.prefixes.map((prefix) => (
+                    <span className="title-prefix" key={prefix}>
+                      {prefix}
+                    </span>
+                  ))}
                   <a className="title" href={issueHref}>
-                    {item.title}
+                    {splitTitle.title}
                   </a>
                 </div>
                 <div className="infos">
@@ -1516,6 +1540,7 @@ function ProjectIssueRows(props: {
                         "label issue-label list-label active",
                         label.color,
                       )}
+                      data-category-id={label.categoryId ?? ""}
                       data-label-id={label.id}
                       href={projectIssueListPageHref(
                         props.runtimeConfig,
