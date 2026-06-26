@@ -88,6 +88,20 @@ describe("auth and workspace views", () => {
     expect(source).toContain("`/sidebar?${searchParams.toString()}`");
     expect(source).toContain('className="pin-in-sidebar"');
     expect(source).toContain("target={target}");
+    expect(source).toContain('window.localStorage.getItem("sidebarActiveMenu")');
+    expect(source).toContain('window.localStorage.setItem("sidebarActiveMenu", nextMenu)');
+    expect(source).toContain(
+      'className={`myOrganizationList${selectedActiveMenu === "myOrganizationList"',
+    );
+    expect(source).toContain('className={`myProjectList${selectedActiveMenu === "myProjectList"');
+    expect(source).toContain(
+      'className={`myRecentIssueList${selectedActiveMenu === "myRecentIssueList"',
+    );
+    expect(source).toContain('onClick={() => selectActiveMenu("myOrganizationList")}');
+    expect(source).toContain('onClick={() => selectActiveMenu("myProjectList")}');
+    expect(source).toContain('onClick={() => selectActiveMenu("myRecentIssueList")}');
+    expect(source).toContain('display: activeMenu === "myRecentIssueList" ? undefined : "none"');
+    expect(source).toContain('className="yobicon-refresh refresh-button"');
     expect(source).toContain("siteUpdateQueryOptions");
     expect(source).toContain('className="center-txt"');
     expect(source).toContain('messages("site.update.notification"');

@@ -100,6 +100,14 @@ type RootSearchScope =
   | { type: "global" }
   | { organizationName: string; type: "organization" }
   | { ownerName: string; projectName: string; type: "project" };
+type SidebarActiveMenu = "myOrganizationList" | "myProjectList" | "myRecentIssueList";
+
+const DEFAULT_SIDEBAR_ACTIVE_MENU: SidebarActiveMenu = "myOrganizationList";
+const SIDEBAR_ACTIVE_MENUS = new Set<SidebarActiveMenu>([
+  "myOrganizationList",
+  "myProjectList",
+  "myRecentIssueList",
+]);
 
 function RootFooter() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -260,17 +268,21 @@ function RootUpdateNotification() {
 function RootFramedShell() {
   const { currentSession } = useAppRuntime();
   const iframeSrc = useFramedIframeSrc();
+  const [activeMenu, setActiveMenu] = useSidebarActiveMenu();
 
   return (
     <>
       <div className="sidebar hide-in-mobile" id="sidebar">
-        {currentSession && !currentSession.isAnonymous ? <RootSidebarContent framed /> : null}
+        {currentSession && !currentSession.isAnonymous ? (
+          <RootSidebarContent activeMenu={activeMenu} framed onActiveMenuChange={setActiveMenu} />
+        ) : null}
         <div
           className="sidebar-bottom"
           id="sidebar-bottom"
           style={{
             bottom: "8px",
             color: "gray",
+            display: activeMenu === "myRecentIssueList" ? undefined : "none",
             position: "absolute",
             right: "15px",
           }}
@@ -590,6 +602,29 @@ function rootSearchAction(basePath: string, scope: RootSearchScope): string {
   return prefixBasePath(basePath, "/search");
 }
 
+function readSidebarActiveMenu(): SidebarActiveMenu {
+  if (typeof window === "undefined") {
+    return DEFAULT_SIDEBAR_ACTIVE_MENU;
+  }
+
+  const stored = window.localStorage.getItem("sidebarActiveMenu");
+  return SIDEBAR_ACTIVE_MENUS.has(stored as SidebarActiveMenu)
+    ? (stored as SidebarActiveMenu)
+    : DEFAULT_SIDEBAR_ACTIVE_MENU;
+}
+
+function useSidebarActiveMenu(): [SidebarActiveMenu, (nextMenu: SidebarActiveMenu) => void] {
+  const [activeMenu, setActiveMenu] = React.useState<SidebarActiveMenu>(readSidebarActiveMenu);
+  const selectActiveMenu = React.useCallback((nextMenu: SidebarActiveMenu) => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("sidebarActiveMenu", nextMenu);
+    }
+    setActiveMenu(nextMenu);
+  }, []);
+
+  return [activeMenu, selectActiveMenu];
+}
+
 function RootSidebar() {
   const { currentSession } = useAppRuntime();
 
@@ -604,13 +639,24 @@ function RootSidebar() {
   );
 }
 
-function RootSidebarContent({ framed = false }: { framed?: boolean }) {
+function RootSidebarContent({
+  activeMenu,
+  framed = false,
+  onActiveMenuChange,
+}: {
+  activeMenu?: SidebarActiveMenu;
+  framed?: boolean;
+  onActiveMenuChange?: (nextMenu: SidebarActiveMenu) => void;
+}) {
   const { currentSession, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
+  const [internalActiveMenu, setInternalActiveMenu] = useSidebarActiveMenu();
 
   if (!currentSession || currentSession.isAnonymous) {
     return null;
   }
 
+  const selectedActiveMenu = activeMenu ?? internalActiveMenu;
+  const selectActiveMenu = onActiveMenuChange ?? setInternalActiveMenu;
   const profileHref = prefixBasePath(runtimeConfig.basePath, `/${currentSession.loginId}`);
   const accountHref = prefixBasePath(runtimeConfig.basePath, "/user/editform");
   const logoutHref = prefixBasePath(runtimeConfig.basePath, "/users/logout");
@@ -669,18 +715,34 @@ function RootSidebarContent({ framed = false }: { framed?: boolean }) {
           ) : null}
         </div>
         <ul className="nav nav-tabs nm">
-          <li className="myOrganizationList active">
-            <a data-toggle="tab" href="#myOrganizationList">
+          <li
+            className={`myOrganizationList${selectedActiveMenu === "myOrganizationList" ? " active" : ""}`}
+          >
+            <a
+              data-toggle="tab"
+              href="#myOrganizationList"
+              onClick={() => selectActiveMenu("myOrganizationList")}
+            >
               {messages("title.favorite", { fallback: "title.favorite" })}
             </a>
           </li>
-          <li className="myProjectList">
-            <a data-toggle="tab" href="#myProjectList">
+          <li className={`myProjectList${selectedActiveMenu === "myProjectList" ? " active" : ""}`}>
+            <a
+              data-toggle="tab"
+              href="#myProjectList"
+              onClick={() => selectActiveMenu("myProjectList")}
+            >
               {messages("title.project", { fallback: "title.project" })}
             </a>
           </li>
-          <li className="myRecentIssueList">
-            <a data-toggle="tab" href="#myRecentIssueList">
+          <li
+            className={`myRecentIssueList${selectedActiveMenu === "myRecentIssueList" ? " active" : ""}`}
+          >
+            <a
+              data-toggle="tab"
+              href="#myRecentIssueList"
+              onClick={() => selectActiveMenu("myRecentIssueList")}
+            >
               {messages("title.recently.visited.issue", {
                 fallback: "title.recently.visited.issue",
               })}
@@ -688,22 +750,31 @@ function RootSidebarContent({ framed = false }: { framed?: boolean }) {
           </li>
           {framed ? (
             <li>
-              <div>
+              <button
+                className="btn-transparent"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.location.reload();
+                  }
+                }}
+                type="button"
+              >
                 <i className="yobicon-refresh refresh-button"></i>
-              </div>
+              </button>
             </li>
           ) : null}
         </ul>
         <div className="tab-content tab-box">
           <div id="usermenu-tab-content-list" className="tab-content">
             <SidebarProjectList
-              active
+              active={selectedActiveMenu === "myOrganizationList"}
               id="myOrganizationList"
               noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
               projects={workspaceOverview?.favoriteProjects ?? []}
               runtimeConfig={runtimeConfig}
             />
             <SidebarProjectList
+              active={selectedActiveMenu === "myProjectList"}
               id="myProjectList"
               noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
               projects={[
@@ -713,6 +784,7 @@ function RootSidebarContent({ framed = false }: { framed?: boolean }) {
               runtimeConfig={runtimeConfig}
             />
             <SidebarIssueList
+              active={selectedActiveMenu === "myRecentIssueList"}
               issues={workspaceOverview?.issueItems ?? []}
               noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
               runtimeConfig={runtimeConfig}
@@ -783,24 +855,29 @@ function SidebarProjectList({
 }
 
 function SidebarIssueList({
+  active = false,
   issues,
   noResultsLabel,
   runtimeConfig,
 }: {
+  active?: boolean;
   issues: NonNullable<WorkspaceOverviewViewModel["issueItems"]>;
   noResultsLabel: string;
   runtimeConfig: RuntimeConfig;
 }) {
   if (issues.length === 0) {
     return (
-      <div className="no-result tab-pane user-ul" id="myRecentIssueList">
+      <div
+        className={`no-result tab-pane user-ul ${active ? "active" : ""}`}
+        id="myRecentIssueList"
+      >
         {noResultsLabel}
       </div>
     );
   }
 
   return (
-    <ul className="tab-pane user-ul" id="myRecentIssueList">
+    <ul className={`tab-pane user-ul ${active ? "active" : ""}`} id="myRecentIssueList">
       {issues.map((issue) => {
         const href = prefixBasePath(
           runtimeConfig.basePath,
