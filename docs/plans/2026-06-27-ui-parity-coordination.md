@@ -261,6 +261,19 @@ M17 starts issue list/detail shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/issue-list-filter.spec.tsx`.
 
+M18 continues issue list/detail shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/issue/:issueNumber`, with the issue menu
+  active, issue detail keymap mode, and `issue-detail-page` shell class
+  preserved.
+- `ProjectIssueDetailPage` supports `renderShell={false}` so the detail leaf
+  route keeps its REST detail/comment/action/metadata boundaries but renders
+  only the legacy `project-page-wrap board-view` body under the project layout
+  `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

@@ -145,6 +145,7 @@ function IssueDetailRouteComponent() {
       }
       issue={issue}
       milestoneOptions={milestones}
+      renderShell={false}
       onAssign={async (assigneeLoginId) => {
         const nextIssue = await assignIssue(runtimeConfig, csrfToken, {
           assigneeLoginId,

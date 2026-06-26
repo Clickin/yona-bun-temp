@@ -2212,6 +2212,7 @@ export function ProjectIssueDetailPage(props: {
   onWatchToggle?: () => Promise<void>;
   csrfToken?: string;
   messages?: LegacyI18nContextValue["t"];
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   viewerLabel?: string;
   viewerLoginId?: string;
@@ -2338,6 +2339,1088 @@ export function ProjectIssueDetailPage(props: {
   const issueLabels = detail.dashboard?.labels ?? [];
   const issueMilestones = props.milestoneOptions ?? [];
 
+  const pageBody = (
+    <div className="project-page-wrap board-view">
+      <header className="board-header issue">
+        <div className="pull-right mr10 mt10 hide-in-mobile">
+          {issue?.createdLabel ? (
+            <div className="date" title={issue.createdLabel}>
+              {issue.createdLabel}
+            </div>
+          ) : null}
+          {issueState ? (
+            <span className={`badge badge-issue-${issueStateClass}`}>{issueState}</span>
+          ) : null}
+        </div>
+        <div className="title">
+          {issueNumberLabel ? (
+            <strong className="board-id">
+              {issue?.isDraft ? (
+                <span className="draft-number">
+                  #{legacyMessage(messages, "issue.state.draft")}
+                </span>
+              ) : (
+                issueNumberLabel
+              )}
+            </strong>
+          ) : null}
+          <h1>
+            {issueTitle}
+            {issue && props.onFavoriteToggle ? (
+              <button
+                aria-label={legacyMessage(messages, "title.favorite")}
+                className="favorite-issue"
+                onClick={() => void props.onFavoriteToggle?.()}
+                type="button"
+              >
+                <span
+                  className={`${
+                    issue.isFavorited ? "starred " : ""
+                  }star material-icons va-text-top`}
+                >
+                  star
+                </span>
+              </button>
+            ) : null}
+          </h1>
+          {issueState ? (
+            <div className="pull-right hide show-in-mobile">
+              {issue?.createdLabel ? (
+                <span className="date" title={issue.createdLabel}>
+                  {issue.createdLabel}
+                </span>
+              ) : null}
+              <span className={`badge badge-small badge-issue-${issueStateClass}`}>
+                {issueState}
+              </span>
+            </div>
+          ) : null}
+          {issue?.isDraft ? (
+            <div className="draft">{legacyMessage(messages, "issue.draft.description")}</div>
+          ) : null}
+        </div>
+        {issue ? (
+          <PostingHistoryModal
+            basePath={props.runtimeConfig?.basePath}
+            historyMarkdown={issue.historyMarkdown}
+            issueReferences={issue.issueReferences}
+            linkLabel="change.edited"
+            messages={messages}
+            mentionReferences={issue.mentionReferences}
+            ownerName={issue.ownerName}
+            projectName={issue.projectName}
+            viewerLabel={props.viewerLabel}
+            viewerLoginId={props.viewerLoginId}
+          />
+        ) : null}
+      </header>
+      <div className="board-body row-fluid">
+        <div className="span9 span-left-pane">
+          <div className="author-info">
+            <a className="usf-group" href={issueAuthorHref}>
+              <span className="avatar-wrap smaller">
+                {issue?.authorAvatarUrl ? (
+                  <img alt={issueAuthorLabel} height={20} src={issue.authorAvatarUrl} width={20} />
+                ) : null}
+              </span>
+              <strong className="name">{issueAuthorLabel}</strong>
+              {issueAuthorLoginId ? (
+                <span className="loginid">
+                  {" "}
+                  <strong>@</strong>
+                  {issueAuthorLoginId}
+                </span>
+              ) : null}
+            </a>
+          </div>
+          {issue ? (
+            <div className="hide" id={`issue-${issue.issueNumber}`}>
+              <form
+                action={prefixBasePath(
+                  props.runtimeConfig.basePath,
+                  `/-_-api/v1/owners/${detail.ownerName}/projects/${detail.projectName}/issues/${issue.issueNumber}/content`,
+                )}
+                onSubmit={(event) => event.preventDefault()}
+              >
+                <textarea defaultValue={issue.bodyMarkdown} />
+              </form>
+            </div>
+          ) : null}
+          <div id={issue ? `issue-body-${issue.issueNumber}` : undefined}>
+            <MarkdownRenderer
+              className="content markdown-wrap"
+              basePath={props.runtimeConfig.basePath}
+              currentUserLabel={props.viewerLabel}
+              currentUserLoginId={props.viewerLoginId}
+              data-allowed-update={issue ? String(issue.viewerCanUpdate) : undefined}
+              issueReferences={issue?.issueReferences}
+              markdown={translatedIssueMarkdown ?? issue?.bodyMarkdown ?? ""}
+              mentionReferences={issue?.mentionReferences}
+              ownerName={detail.ownerName}
+              projectName={detail.projectName}
+              onTasklistToggle={props.onIssueContentUpdate}
+              showTasklistBar
+              tasklistSourceMarkdown={issue?.bodyMarkdown ?? ""}
+            />
+          </div>
+          <div className="attachments" id="attachments">
+            {(issue?.attachments ?? []).map((attachment) => (
+              <a href={attachment.url} key={attachment.id}>
+                {attachment.name}
+              </a>
+            ))}
+          </div>
+          <div className="board-actrow right-txt">
+            <div className="pull-left">
+              <div>
+                {issue && props.onWatchToggle ? (
+                  <button
+                    className={`ybtn${issue.isWatching ? " ybtn-watching" : ""}`}
+                    data-placement="top"
+                    data-toggle="tooltip"
+                    data-watching={String(issue.isWatching)}
+                    id="watch-button"
+                    onClick={() => void props.onWatchToggle?.()}
+                    title={legacyMessage(messages, "issue.watch.description")}
+                    type="button"
+                  >
+                    {legacyMessage(messages, issue.isWatching ? "issue.unwatch" : "issue.watch")}
+                  </button>
+                ) : null}
+                {issue?.viewerCanUpdate ? (
+                  <button
+                    className="ybtn"
+                    data-content={legacyMessage(messages, "issue.sharer.description")}
+                    data-placement="top"
+                    data-toggle="popover"
+                    data-trigger="hover"
+                    id="issue-share-button"
+                    onClick={() => setSharePickerOpen(true)}
+                    type="button"
+                  >
+                    {legacyMessage(messages, "button.share.issue")}
+                  </button>
+                ) : null}
+                {issue ? (
+                  <span className="project-btn-item hide show-in-mobile-inline ml4">
+                    <a
+                      className="ybtn ybtn-success"
+                      href={buildProjectHref(
+                        props.runtimeConfig,
+                        issue.ownerName,
+                        issue.projectName,
+                        `issueform?parentIssueId=${
+                          issue.parentIssueId || issue.issueId || issue.issueNumber
+                        }`,
+                      )}
+                    >
+                      {legacyMessage(messages, "button.newSubtask")}
+                    </a>
+                  </span>
+                ) : null}
+                {issue ? (
+                  <span className="issue-weight">
+                    <span className="divider">|</span>
+                    <button
+                      className="ybtn ybtn-small"
+                      data-toggle="tooltip"
+                      id="upvote-issue-weight"
+                      onClick={() => {
+                        void props.onIssueWeightChange?.(1);
+                      }}
+                      title={`${legacyMessage(messages, "issue.weight")}: Upvote`}
+                      type="button"
+                    >
+                      <i className="yobicon-arrow-up-alt"></i>
+                    </button>
+                    <button
+                      className="ybtn ybtn-small"
+                      data-toggle="tooltip"
+                      id="down-vote-issue-weight"
+                      onClick={() => {
+                        void props.onIssueWeightChange?.(-1);
+                      }}
+                      title={`${legacyMessage(messages, "issue.weight")}: Down vote`}
+                      type="button"
+                    >
+                      <i className="yobicon-arrow-down-alt"></i>
+                    </button>
+                    <span
+                      className="weight-number"
+                      data-content={legacyMessage(messages, "issue.weight.description")}
+                      data-placement="top"
+                      data-toggle="popover"
+                      data-trigger="hover"
+                    >
+                      {issue.weight ?? 0}
+                    </span>
+                  </span>
+                ) : null}
+              </div>
+            </div>
+            {issue ? (
+              <div className={voteWrapClass} id="vote">
+                {props.onVoteToggle ? (
+                  <a
+                    className={`ybtn${issue.hasVoted ? " ybtn-watching" : ""}`}
+                    data-request-method="post"
+                    data-toggle="tooltip"
+                    href={issueVoteHref}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      void props.onVoteToggle?.();
+                    }}
+                    title={legacyMessage(
+                      messages,
+                      issue.hasVoted ? "issue.unvote.description" : "issue.vote.description",
+                    )}
+                  >
+                    <span className="heart">
+                      <i className="yobicon-hearts"></i>
+                    </span>
+                  </a>
+                ) : null}
+                <IssueDetailVoters
+                  issue={issue}
+                  messages={messages}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              </div>
+            ) : null}
+            <span className="act-row">
+              {issue ? (
+                <button
+                  className="icon btn-transparent-with-fontsize-lineheight ml10"
+                  data-toggle="tooltip"
+                  disabled={translatingIssue || translatedIssueMarkdown !== null}
+                  id="translate"
+                  onClick={() => void translateIssue()}
+                  title={legacyMessage(messages, "button.translation")}
+                  type="button"
+                >
+                  <i className="yobicon-lang"></i>
+                </button>
+              ) : null}
+              {issue?.viewerCanUpdate ? (
+                <a
+                  className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    `issue/${issue.issueNumber}/editform`,
+                  )}
+                  title={legacyMessage(messages, "button.edit")}
+                >
+                  <i className="yobicon-edit-2"></i>
+                </a>
+              ) : issue ? (
+                <a
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    `issue/${issue.issueNumber}/editform`,
+                  )}
+                >
+                  <button
+                    className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+                    data-toggle="tooltip"
+                    title={legacyMessage(messages, "button.show.original")}
+                    type="button"
+                  >
+                    <i className="yobicon-edit-2"></i>
+                  </button>
+                </a>
+              ) : null}
+              {issue?.viewerCanUpdate && onStateChange ? (
+                <button
+                  className="ybtn"
+                  onClick={() => void onStateChange(issue.state === "open" ? "closed" : "open")}
+                  type="button"
+                >
+                  {legacyMessage(
+                    messages,
+                    issue.state === "open" ? "button.nextState.closed" : "button.nextState.open",
+                  )}
+                </button>
+              ) : null}
+              {issue?.viewerCanDelete && onDeleteIssue ? (
+                <a
+                  data-toggle="modal"
+                  href="#deleteConfirm"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setDeleteConfirmOpen(true);
+                  }}
+                >
+                  <button
+                    className="icon btn-transparent-with-fontsize-lineheight ml6"
+                    title={legacyMessage(messages, "button.delete")}
+                    type="button"
+                  >
+                    <i className="yobicon-trash"></i>
+                  </button>
+                </a>
+              ) : null}
+            </span>
+          </div>
+          {issue ? (
+            <IssueSharerPanel
+              issue={issue}
+              messages={messages}
+              onSearchSharableUsers={props.onSearchSharableUsers}
+              onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
+              onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
+              runtimeConfig={props.runtimeConfig}
+              sharePickerOpen={sharePickerOpen}
+            />
+          ) : null}
+          <div className="watcher-list"></div>
+          {issue ? (
+            <IssueSubtaskList
+              issue={issue}
+              messages={messages}
+              runtimeConfig={props.runtimeConfig}
+            />
+          ) : null}
+          <section className="board-comment-wrap" id="comments">
+            <div id="timeline">
+              <div className="timeline-list">
+                <div className="comment-header">
+                  <i></i>
+                  <strong>{legacyMessage(messages, "common.comment")}</strong>{" "}
+                  <strong className="num">{issue?.commentCount ?? 0}</strong>
+                </div>
+                <hr className="nm" />
+                <ul className="comments">
+                  {(issue?.timeline ?? []).map((item, index, timelineItems) => {
+                    if (item.kind !== "comment" || !item.comment) {
+                      const previousItem = timelineItems[index - 1];
+                      return (
+                        <IssueTimelineEvent
+                          basePath={props.runtimeConfig.basePath}
+                          item={item}
+                          key={`${item.kind}-${item.id}`}
+                          messages={messages}
+                          previousItem={previousItem?.kind === "event" ? previousItem : undefined}
+                        />
+                      );
+                    }
+
+                    const comment = item.comment;
+                    if (comment.parentCommentId) {
+                      return null;
+                    }
+                    const authorLoginId = comment.authorLoginId || comment.authorLabel;
+                    const commentEditAction = buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      `issue/${issueNumber}/comments/${comment.id}`,
+                    );
+                    const commentIsEditing = editingCommentIds.has(comment.id);
+                    const commentDeleteUri = buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      `issue/${issueNumber}/comment/${comment.id}/delete`,
+                    );
+                    const commentVoteUri = buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      `issue/${issueNumber}/comment/${comment.id}/${
+                        comment.viewerHasVoted ? "unvote" : "vote"
+                      }`,
+                    );
+                    const newIssueByCommentHref = `${prefixBasePath(
+                      props.runtimeConfig.basePath,
+                      "/user/issues/new",
+                    )}?commentId=${comment.id}`;
+                    const commentClassName = legacyCommentMentionsCurrentUser(
+                      comment.contentsMarkdown,
+                      props.viewerLabel,
+                      props.viewerLoginId,
+                      comment.mentionReferences,
+                    )
+                      ? "comment mentioned"
+                      : "comment";
+
+                    return (
+                      <li
+                        className={commentClassName}
+                        id={`comment-${comment.id}`}
+                        key={`${item.kind}-${item.id}`}
+                      >
+                        <div className="comment-avatar">
+                          <IssueCommentAvatar
+                            basePath={props.runtimeConfig.basePath}
+                            comment={comment}
+                          />
+                        </div>
+                        <div className="media-body">
+                          <div className="meta-info">
+                            <span className="comment_author">
+                              <span className="resp-comment-avatar">
+                                <IssueCommentAvatar
+                                  basePath={props.runtimeConfig.basePath}
+                                  comment={comment}
+                                />
+                              </span>
+                              <a
+                                data-placement="top"
+                                data-toggle="tooltip"
+                                href={
+                                  authorLoginId
+                                    ? prefixBasePath(
+                                        props.runtimeConfig.basePath,
+                                        `/${authorLoginId}`,
+                                      )
+                                    : "#"
+                                }
+                                title={comment.authorLoginId || comment.authorLabel}
+                              >
+                                <strong>{comment.authorLabel || comment.authorLoginId}</strong>
+                              </a>
+                            </span>
+                            <span className="ago-date">
+                              <a
+                                className="ago"
+                                href={`#comment-${comment.id}`}
+                                title={comment.createdLabel}
+                              >
+                                {comment.createdLabel}
+                              </a>
+                              <a
+                                className="share-link"
+                                href={`#comment-${comment.id}`}
+                                style={{ display: "none" }}
+                              >
+                                [Link]
+                              </a>
+                            </span>
+                            <span className="act-row pull-right">
+                              <span className="new-issue-by">
+                                <a href={newIssueByCommentHref}>
+                                  {legacyMessage(messages, "issue.menu.new.by")}
+                                </a>
+                              </span>
+                              <span className="comment-vote-row">
+                                <IssueCommentVoters
+                                  basePath={props.runtimeConfig.basePath}
+                                  comment={comment}
+                                  messages={messages}
+                                />
+                                {issue?.viewerCanComment && props.onCommentVoteToggle ? (
+                                  <button
+                                    aria-label={
+                                      comment.viewerHasVoted
+                                        ? legacyMessage(messages, "common.comment.unvote")
+                                        : legacyMessage(messages, "common.comment.vote")
+                                    }
+                                    className="comment-vote btn-transparent-with-fontsize-lineheight"
+                                    data-request-type="comment-vote"
+                                    data-request-uri={commentVoteUri}
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      void props.onCommentVoteToggle?.(
+                                        comment.id,
+                                        comment.viewerHasVoted,
+                                      );
+                                    }}
+                                    title={
+                                      comment.viewerHasVoted
+                                        ? legacyMessage(messages, "common.comment.unvote")
+                                        : legacyMessage(messages, "common.comment.vote")
+                                    }
+                                    type="button"
+                                  >
+                                    <span
+                                      className={`yobicon-hearts ${
+                                        comment.viewerHasVoted ? "vote-heart-on" : "vote-heart-off"
+                                      }`}
+                                    />
+                                  </button>
+                                ) : null}
+                              </span>
+                              <button
+                                className="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"
+                                data-comment-id={comment.id}
+                                data-toggle="tooltip"
+                                disabled={
+                                  translatingCommentIds.has(comment.id) ||
+                                  Boolean(translatedCommentMarkdownById[comment.id])
+                                }
+                                onClick={() => void translateIssueComment(comment)}
+                                title={legacyMessage(messages, "button.translation")}
+                                type="button"
+                              >
+                                <i className="yobicon-lang"></i>
+                              </button>
+                              {comment.viewerCanUpdate ? (
+                                <button
+                                  className="btn-transparent-with-fontsize-lineheight ml10"
+                                  data-comment-id={comment.id}
+                                  data-toggle="comment-edit"
+                                  onClick={() =>
+                                    setEditingCommentIds((current) => {
+                                      const next = new Set(current);
+                                      next.add(comment.id);
+                                      return next;
+                                    })
+                                  }
+                                  title={legacyMessage(messages, "common.comment.edit")}
+                                  type="button"
+                                >
+                                  <i className="yobicon-edit-2"></i>
+                                </button>
+                              ) : null}
+                              {comment.viewerCanDelete && props.onCommentDelete ? (
+                                <button
+                                  className="btn-transparent-with-fontsize-lineheight ml6"
+                                  data-request-uri={commentDeleteUri}
+                                  data-toggle="comment-delete"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    setCommentDeleteTargetId(comment.id);
+                                  }}
+                                  title={legacyMessage(messages, "common.comment.delete")}
+                                  type="button"
+                                >
+                                  <i className="yobicon-trash"></i>
+                                </button>
+                              ) : null}
+                            </span>
+                          </div>
+                          {comment.viewerCanUpdate ? (
+                            <div hidden={!commentIsEditing}>
+                              <IssueCommentEditForm
+                                action={commentEditAction}
+                                commentId={comment.id}
+                                csrfToken={props.csrfToken}
+                                getIssueReferencesQueryOptions={
+                                  props.getIssueReferencesQueryOptions
+                                }
+                                initialContents={comment.contentsMarkdown}
+                                messages={messages}
+                                onCancel={() =>
+                                  setEditingCommentIds((current) => {
+                                    const next = new Set(current);
+                                    next.delete(comment.id);
+                                    return next;
+                                  })
+                                }
+                                onSearchMentionUsers={props.onSearchMentionUsers}
+                                onSubmit={props.onCommentUpdate}
+                                runtimeConfig={props.runtimeConfig}
+                                showNotificationMail={
+                                  Boolean(comment.authorId) &&
+                                  comment.authorId === issue?.viewerUserId
+                                }
+                              />
+                            </div>
+                          ) : null}
+                          <div
+                            id={`comment-body-${comment.id}`}
+                            style={commentIsEditing ? { display: "none" } : undefined}
+                          >
+                            <MarkdownRenderer
+                              className="comment-body markdown-wrap"
+                              basePath={props.runtimeConfig.basePath}
+                              currentUserLabel={props.viewerLabel}
+                              currentUserLoginId={props.viewerLoginId}
+                              data-allowed-update={String(comment.viewerCanUpdate)}
+                              data-via-email={comment.viaEmail ? "true" : undefined}
+                              issueReferences={comment.issueReferences}
+                              markdown={
+                                translatedCommentMarkdownById[comment.id] ??
+                                comment.contentsMarkdown
+                              }
+                              mentionReferences={comment.mentionReferences}
+                              onTasklistToggle={
+                                comment.viewerCanUpdate && props.onCommentUpdate
+                                  ? async (input) =>
+                                      props.onCommentUpdate?.(comment.id, input.nextMarkdown)
+                                  : undefined
+                              }
+                              ownerName={detail.ownerName}
+                              projectName={detail.projectName}
+                              showTasklistBar
+                              tasklistSourceMarkdown={comment.contentsMarkdown}
+                            />
+                          </div>
+                        </div>
+                        <div className="add-a-comment pull-right">
+                          {legacyMessage(messages, "comment.oneline.comment.placeholder")}
+                        </div>
+                        <div className="subcomment-media-body">
+                          <div className="child-comments">
+                            {(childCommentsByParent.get(comment.id) ?? []).map((childComment) => {
+                              const childAuthorLoginId =
+                                childComment.authorLoginId || childComment.authorLabel;
+                              return (
+                                <div className="one-line-comment" key={childComment.id}>
+                                  <div className="contents">
+                                    <MarkdownRenderer
+                                      basePath={props.runtimeConfig.basePath}
+                                      containerElement="fragment"
+                                      currentUserLabel={props.viewerLabel}
+                                      currentUserLoginId={props.viewerLoginId}
+                                      markdown={childComment.contentsMarkdown}
+                                      ownerName={detail.ownerName}
+                                      projectName={detail.projectName}
+                                    />
+                                    <span className="subcomment-author hide">
+                                      {" - "}
+                                      <a
+                                        className="usf-group"
+                                        data-placement="top"
+                                        data-toggle="tooltip"
+                                        href={
+                                          childAuthorLoginId
+                                            ? prefixBasePath(
+                                                props.runtimeConfig.basePath,
+                                                `/${childAuthorLoginId}`,
+                                              )
+                                            : "#"
+                                        }
+                                        title={
+                                          childComment.authorLoginId || childComment.authorLabel
+                                        }
+                                      >
+                                        <strong>
+                                          {childComment.authorLabel || childComment.authorLoginId}
+                                        </strong>
+                                      </a>{" "}
+                                      <a
+                                        className="ago"
+                                        href={`#comment-${childComment.id}`}
+                                        title={childComment.createdLabel}
+                                      >
+                                        {childComment.createdLabel}
+                                      </a>
+                                      {childComment.viewerCanDelete && props.onCommentDelete ? (
+                                        <button
+                                          className="btn-transparent deleteButtonX"
+                                          data-request-uri={buildProjectHref(
+                                            props.runtimeConfig,
+                                            detail.ownerName,
+                                            detail.projectName,
+                                            `issue/${issueNumber}/comment/${childComment.id}/delete`,
+                                          )}
+                                          data-toggle="comment-delete"
+                                          onClick={(event) => {
+                                            event.preventDefault();
+                                            setCommentDeleteTargetId(childComment.id);
+                                          }}
+                                          title={legacyMessage(messages, "common.comment.delete")}
+                                          type="button"
+                                        >
+                                          x
+                                        </button>
+                                      ) : null}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {issue?.viewerCanComment ? (
+                            <div className="child-comment-input-form">
+                              <form
+                                action={buildProjectHref(
+                                  props.runtimeConfig,
+                                  detail.ownerName,
+                                  detail.projectName,
+                                  `issue/${issueNumber}/comments`,
+                                )}
+                                encType="multipart/form-data"
+                                onSubmit={(event) => {
+                                  event.preventDefault();
+                                  const contents = (childCommentDrafts[comment.id] ?? "").trim();
+                                  if (!contents) {
+                                    return;
+                                  }
+                                  void props.onCommentSubmit?.(contents, [], comment.id)?.then(() =>
+                                    setChildCommentDrafts((current) => ({
+                                      ...current,
+                                      [comment.id]: "",
+                                    })),
+                                  );
+                                }}
+                              >
+                                <input
+                                  className="parentCommentId"
+                                  name="parentCommentId"
+                                  type="hidden"
+                                  value={comment.id}
+                                />
+                                <div className="oneline-comment-box">
+                                  <textarea
+                                    className="editorSeries"
+                                    name="contents"
+                                    onChange={(event) =>
+                                      setChildCommentDrafts((current) => ({
+                                        ...current,
+                                        [comment.id]: event.target.value,
+                                      }))
+                                    }
+                                    placeholder={`${legacyMessage(
+                                      messages,
+                                      "comment.oneline.comment.placeholder",
+                                    )} (CTRL + ENTER)`}
+                                    rows={1}
+                                    value={childCommentDrafts[comment.id] ?? ""}
+                                    {...({
+                                      markdown: "true",
+                                    } as unknown as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+                                  />
+                                  <button
+                                    aria-label={legacyMessage(messages, "button.comment.new")}
+                                    className="ybtn ybtn-success"
+                                    data-legacy-label="OK"
+                                    type="submit"
+                                  >
+                                    <span aria-hidden="true">OK</span>
+                                    <span className="sr-only">
+                                      {legacyMessage(messages, "button.comment.new")}
+                                    </span>
+                                  </button>
+                                </div>
+                                <div className="notification-receiver">
+                                  <span className="notification-receiver-title">
+                                    {legacyMessage(messages, "notification.receiver.list.title")}
+                                  </span>
+                                  <span className="notification-receiver-list"></span>
+                                </div>
+                              </form>
+                            </div>
+                          ) : null}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+            {issue?.viewerCanComment ? (
+              <IssueCommentForm
+                action={buildProjectHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  `issue/${issue.issueNumber}/comments`,
+                )}
+                csrfToken={props.csrfToken}
+                getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
+                messages={messages}
+                onSearchMentionUsers={props.onSearchMentionUsers}
+                onSubmit={props.onCommentSubmit}
+                runtimeConfig={props.runtimeConfig}
+              />
+            ) : issue ? (
+              <DisabledIssueCommentBox messages={messages} />
+            ) : null}
+          </section>
+        </div>
+        <aside className="span3 right-menu">
+          <div className="issue-info">
+            <form
+              action={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "issues",
+              )}
+              id="issueUpdateForm"
+              onSubmit={(event) => event.preventDefault()}
+            >
+              {issue ? (
+                <input
+                  name="issues[0].id"
+                  type="hidden"
+                  value={issue.issueId || issue.issueNumber}
+                />
+              ) : null}
+              <dl>
+                <dt>{legacyMessage(messages, "issue.assignee")}</dt>
+                <dd>
+                  <div className="assignee-info">
+                    {issueAssigneeLoginId ? (
+                      <a className="usf-group" href={issueAssigneeHref}>
+                        <span className="avatar-wrap smaller">
+                          {issue?.assigneeAvatarUrl ? (
+                            <img
+                              alt={issueAssigneeLabel}
+                              height={20}
+                              src={issue.assigneeAvatarUrl}
+                              width={20}
+                            />
+                          ) : null}
+                        </span>
+                        <strong className="name">{issueAssigneeLabel}</strong>
+                        <span className="loginid">
+                          {" "}
+                          <strong>@</strong>
+                          {issueAssigneeLoginId}
+                        </span>
+                      </a>
+                    ) : (
+                      <div>{issueAssigneeLabel}</div>
+                    )}
+                  </div>
+                  {issue?.viewerCanUpdate && props.onAssign ? (
+                    <IssueAssignForm
+                      initialAssignee={issue.assigneeLoginId}
+                      messages={messages}
+                      onSearchAssignableUsers={props.onSearchAssignableUsers}
+                      onSubmit={props.onAssign}
+                    />
+                  ) : null}
+                </dd>
+              </dl>
+              <dl>
+                <dt>{legacyMessage(messages, "milestone")}</dt>
+                <dd>
+                  {issue?.viewerCanUpdate && props.onMetadataUpdate ? (
+                    <select
+                      data-container-css-class="fullsize"
+                      data-format="milestone"
+                      data-toggle="select2"
+                      id="milestone"
+                      name="milestone.id"
+                      onChange={(event) =>
+                        void props.onMetadataUpdate?.({
+                          milestoneId: Number(event.currentTarget.value),
+                          milestoneUpdate: true,
+                        })
+                      }
+                      value={issue.milestoneId ?? 0}
+                    >
+                      <option value={0}>{legacyMessage(messages, "issue.noMilestone")}</option>
+                      <IssueMilestoneOptionGroups
+                        messages={messages}
+                        milestones={issueMilestones}
+                      />
+                    </select>
+                  ) : issue?.milestoneTitle ? (
+                    <a
+                      href={buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        `milestone/${issue.milestoneId}`,
+                      )}
+                    >
+                      {issue.milestoneTitle}
+                    </a>
+                  ) : (
+                    legacyMessage(messages, "issue.noMilestone")
+                  )}
+                </dd>
+              </dl>
+              <dl>
+                <dt>{legacyMessage(messages, "issue.dueDate")}</dt>
+                <dd>
+                  {issue?.viewerCanUpdate && props.onMetadataUpdate ? (
+                    <div className="search search-bar">
+                      <input
+                        autoComplete="off"
+                        className="textbox full"
+                        data-toggle="calendar"
+                        name="dueDate"
+                        onBlur={(event) =>
+                          void props.onMetadataUpdate?.({
+                            dueDate: event.currentTarget.value,
+                            isDueDateChanged: true,
+                          })
+                        }
+                        type="text"
+                        defaultValue={issue.dueDateLabel ?? ""}
+                      />
+                      <button className="search-btn btn-calendar" type="button">
+                        <i className="yobicon-calendar2"></i>
+                      </button>
+                    </div>
+                  ) : (
+                    issue?.dueDateLabel || legacyMessage(messages, "issue.noDuedate")
+                  )}
+                </dd>
+              </dl>
+              {issueLabels.length > 0 && issue?.viewerCanUpdate && props.onMetadataUpdate ? (
+                <dl>
+                  <dt>
+                    {legacyMessage(messages, "label")}{" "}
+                    <a
+                      className="label-edit"
+                      href={buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        "issue/labelsform",
+                      )}
+                      target="_blank"
+                    >
+                      [{legacyMessage(messages, "button.edit")}]
+                    </a>
+                  </dt>
+                  <dd>
+                    <select
+                      className="hide"
+                      data-allow-clear="true"
+                      data-container-css-class="issue-labels bordered fullsize"
+                      data-dropdown-css-class="issue-labels"
+                      data-format="issuelabel"
+                      data-placeholder={legacyMessage(messages, "label.select")}
+                      data-search="labelIds"
+                      data-toggle="select2"
+                      id="labelIds"
+                      multiple
+                      name="labelIds"
+                      onChange={(event) => {
+                        const selected = Array.from(event.currentTarget.selectedOptions).map(
+                          (option) => Number(option.value),
+                        );
+                        const current = (issue.labels ?? []).map((label) => label.id);
+                        void props.onMetadataUpdate?.({
+                          addLabelIds: selected.filter((labelId) => !current.includes(labelId)),
+                          removeLabelIds: current.filter((labelId) => !selected.includes(labelId)),
+                        });
+                      }}
+                      value={(issue.labels ?? []).map((label) => String(label.id))}
+                    >
+                      <option></option>
+                      {issueLabels.map((label) => (
+                        <option
+                          data-category-id={label.categoryId ?? ""}
+                          data-category-is-exclusive={label.categoryIsExclusive ? "true" : "false"}
+                          key={label.id}
+                          value={label.id}
+                        >
+                          {label.name}
+                        </option>
+                      ))}
+                    </select>
+                  </dd>
+                </dl>
+              ) : (
+                <IssueDetailSelectedLabels
+                  issue={issue}
+                  messages={messages}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              )}
+            </form>
+            {issue ? (
+              <IssueCompactCommentIndex
+                commentsByParent={childCommentsByParent}
+                issue={issue}
+                messages={messages}
+                runtimeConfig={props.runtimeConfig}
+              />
+            ) : null}
+          </div>
+        </aside>
+      </div>
+      {issue?.viewerCanDelete && onDeleteIssue ? (
+        <div
+          aria-hidden={deleteConfirmOpen ? "false" : "true"}
+          className={`modal hide fade${deleteConfirmOpen ? " in" : ""}`}
+          id="deleteConfirm"
+          style={deleteConfirmOpen ? { display: "block" } : undefined}
+        >
+          <div className="modal-header">
+            <button
+              aria-label={legacyMessage(messages, "button.close")}
+              className="close"
+              onClick={() => setDeleteConfirmOpen(false)}
+              type="button"
+            >
+              ×
+            </button>
+            <h3>{legacyMessage(messages, "issue.delete")}</h3>
+          </div>
+          <div className="modal-body">
+            <p>{legacyMessage(messages, "post.delete.confirm")}</p>
+          </div>
+          <div className="modal-footer">
+            <button
+              className="ybtn ybtn-danger"
+              data-request-method="delete"
+              onClick={(event) => {
+                event.preventDefault();
+                void onDeleteIssue();
+              }}
+              type="button"
+            >
+              {legacyMessage(messages, "button.yes")}
+            </button>
+            <button className="ybtn" onClick={() => setDeleteConfirmOpen(false)} type="button">
+              {legacyMessage(messages, "button.no")}
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {issue ? (
+        <div
+          aria-hidden={commentDeleteTargetId === null ? "true" : "false"}
+          className={`modal hide fade${commentDeleteTargetId !== null ? " in" : ""}`}
+          id="comment-delete-modal"
+          style={commentDeleteTargetId !== null ? { display: "block" } : undefined}
+        >
+          <div className="modal-header">
+            <button
+              aria-label={legacyMessage(messages, "button.close")}
+              className="close"
+              data-dismiss="modal"
+              onClick={() => setCommentDeleteTargetId(null)}
+              type="button"
+            >
+              ×
+            </button>
+            <h3>{legacyMessage(messages, "common.comment.delete")}</h3>
+          </div>
+          <div className="modal-body">
+            <p>{legacyMessage(messages, "common.comment.delete.confirm")}</p>
+          </div>
+          <div className="modal-footer">
+            <button
+              className="ybtn ybtn-danger"
+              data-request-method="delete"
+              data-request-uri={commentDeleteRequestUri}
+              id="comment-delete-confirm"
+              onClick={(event) => {
+                event.preventDefault();
+                if (commentDeleteTargetId === null || !props.onCommentDelete) {
+                  return;
+                }
+                const targetId = commentDeleteTargetId;
+                setCommentDeleteTargetId(null);
+                void props.onCommentDelete(targetId);
+              }}
+              type="button"
+            >
+              {legacyMessage(messages, "button.yes")}
+            </button>
+            <button
+              className="ybtn"
+              data-dismiss="modal"
+              onClick={() => setCommentDeleteTargetId(null)}
+              type="button"
+            >
+              {legacyMessage(messages, "button.no")}
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
   return (
     <main className="app-shell issue-detail-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
@@ -2347,1116 +3430,7 @@ export function ProjectIssueDetailPage(props: {
         keymapMode="detail"
         runtimeConfig={props.runtimeConfig}
       />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap board-view">
-          <header className="board-header issue">
-            <div className="pull-right mr10 mt10 hide-in-mobile">
-              {issue?.createdLabel ? (
-                <div className="date" title={issue.createdLabel}>
-                  {issue.createdLabel}
-                </div>
-              ) : null}
-              {issueState ? (
-                <span className={`badge badge-issue-${issueStateClass}`}>{issueState}</span>
-              ) : null}
-            </div>
-            <div className="title">
-              {issueNumberLabel ? (
-                <strong className="board-id">
-                  {issue?.isDraft ? (
-                    <span className="draft-number">
-                      #{legacyMessage(messages, "issue.state.draft")}
-                    </span>
-                  ) : (
-                    issueNumberLabel
-                  )}
-                </strong>
-              ) : null}
-              <h1>
-                {issueTitle}
-                {issue && props.onFavoriteToggle ? (
-                  <button
-                    aria-label={legacyMessage(messages, "title.favorite")}
-                    className="favorite-issue"
-                    onClick={() => void props.onFavoriteToggle?.()}
-                    type="button"
-                  >
-                    <span
-                      className={`${
-                        issue.isFavorited ? "starred " : ""
-                      }star material-icons va-text-top`}
-                    >
-                      star
-                    </span>
-                  </button>
-                ) : null}
-              </h1>
-              {issueState ? (
-                <div className="pull-right hide show-in-mobile">
-                  {issue?.createdLabel ? (
-                    <span className="date" title={issue.createdLabel}>
-                      {issue.createdLabel}
-                    </span>
-                  ) : null}
-                  <span className={`badge badge-small badge-issue-${issueStateClass}`}>
-                    {issueState}
-                  </span>
-                </div>
-              ) : null}
-              {issue?.isDraft ? (
-                <div className="draft">{legacyMessage(messages, "issue.draft.description")}</div>
-              ) : null}
-            </div>
-            {issue ? (
-              <PostingHistoryModal
-                basePath={props.runtimeConfig?.basePath}
-                historyMarkdown={issue.historyMarkdown}
-                issueReferences={issue.issueReferences}
-                linkLabel="change.edited"
-                messages={messages}
-                mentionReferences={issue.mentionReferences}
-                ownerName={issue.ownerName}
-                projectName={issue.projectName}
-                viewerLabel={props.viewerLabel}
-                viewerLoginId={props.viewerLoginId}
-              />
-            ) : null}
-          </header>
-          <div className="board-body row-fluid">
-            <div className="span9 span-left-pane">
-              <div className="author-info">
-                <a className="usf-group" href={issueAuthorHref}>
-                  <span className="avatar-wrap smaller">
-                    {issue?.authorAvatarUrl ? (
-                      <img
-                        alt={issueAuthorLabel}
-                        height={20}
-                        src={issue.authorAvatarUrl}
-                        width={20}
-                      />
-                    ) : null}
-                  </span>
-                  <strong className="name">{issueAuthorLabel}</strong>
-                  {issueAuthorLoginId ? (
-                    <span className="loginid">
-                      {" "}
-                      <strong>@</strong>
-                      {issueAuthorLoginId}
-                    </span>
-                  ) : null}
-                </a>
-              </div>
-              {issue ? (
-                <div className="hide" id={`issue-${issue.issueNumber}`}>
-                  <form
-                    action={prefixBasePath(
-                      props.runtimeConfig.basePath,
-                      `/-_-api/v1/owners/${detail.ownerName}/projects/${detail.projectName}/issues/${issue.issueNumber}/content`,
-                    )}
-                    onSubmit={(event) => event.preventDefault()}
-                  >
-                    <textarea defaultValue={issue.bodyMarkdown} />
-                  </form>
-                </div>
-              ) : null}
-              <div id={issue ? `issue-body-${issue.issueNumber}` : undefined}>
-                <MarkdownRenderer
-                  className="content markdown-wrap"
-                  basePath={props.runtimeConfig.basePath}
-                  currentUserLabel={props.viewerLabel}
-                  currentUserLoginId={props.viewerLoginId}
-                  data-allowed-update={issue ? String(issue.viewerCanUpdate) : undefined}
-                  issueReferences={issue?.issueReferences}
-                  markdown={translatedIssueMarkdown ?? issue?.bodyMarkdown ?? ""}
-                  mentionReferences={issue?.mentionReferences}
-                  ownerName={detail.ownerName}
-                  projectName={detail.projectName}
-                  onTasklistToggle={props.onIssueContentUpdate}
-                  showTasklistBar
-                  tasklistSourceMarkdown={issue?.bodyMarkdown ?? ""}
-                />
-              </div>
-              <div className="attachments" id="attachments">
-                {(issue?.attachments ?? []).map((attachment) => (
-                  <a href={attachment.url} key={attachment.id}>
-                    {attachment.name}
-                  </a>
-                ))}
-              </div>
-              <div className="board-actrow right-txt">
-                <div className="pull-left">
-                  <div>
-                    {issue && props.onWatchToggle ? (
-                      <button
-                        className={`ybtn${issue.isWatching ? " ybtn-watching" : ""}`}
-                        data-placement="top"
-                        data-toggle="tooltip"
-                        data-watching={String(issue.isWatching)}
-                        id="watch-button"
-                        onClick={() => void props.onWatchToggle?.()}
-                        title={legacyMessage(messages, "issue.watch.description")}
-                        type="button"
-                      >
-                        {legacyMessage(
-                          messages,
-                          issue.isWatching ? "issue.unwatch" : "issue.watch",
-                        )}
-                      </button>
-                    ) : null}
-                    {issue?.viewerCanUpdate ? (
-                      <button
-                        className="ybtn"
-                        data-content={legacyMessage(messages, "issue.sharer.description")}
-                        data-placement="top"
-                        data-toggle="popover"
-                        data-trigger="hover"
-                        id="issue-share-button"
-                        onClick={() => setSharePickerOpen(true)}
-                        type="button"
-                      >
-                        {legacyMessage(messages, "button.share.issue")}
-                      </button>
-                    ) : null}
-                    {issue ? (
-                      <span className="project-btn-item hide show-in-mobile-inline ml4">
-                        <a
-                          className="ybtn ybtn-success"
-                          href={buildProjectHref(
-                            props.runtimeConfig,
-                            issue.ownerName,
-                            issue.projectName,
-                            `issueform?parentIssueId=${
-                              issue.parentIssueId || issue.issueId || issue.issueNumber
-                            }`,
-                          )}
-                        >
-                          {legacyMessage(messages, "button.newSubtask")}
-                        </a>
-                      </span>
-                    ) : null}
-                    {issue ? (
-                      <span className="issue-weight">
-                        <span className="divider">|</span>
-                        <button
-                          className="ybtn ybtn-small"
-                          data-toggle="tooltip"
-                          id="upvote-issue-weight"
-                          onClick={() => {
-                            void props.onIssueWeightChange?.(1);
-                          }}
-                          title={`${legacyMessage(messages, "issue.weight")}: Upvote`}
-                          type="button"
-                        >
-                          <i className="yobicon-arrow-up-alt"></i>
-                        </button>
-                        <button
-                          className="ybtn ybtn-small"
-                          data-toggle="tooltip"
-                          id="down-vote-issue-weight"
-                          onClick={() => {
-                            void props.onIssueWeightChange?.(-1);
-                          }}
-                          title={`${legacyMessage(messages, "issue.weight")}: Down vote`}
-                          type="button"
-                        >
-                          <i className="yobicon-arrow-down-alt"></i>
-                        </button>
-                        <span
-                          className="weight-number"
-                          data-content={legacyMessage(messages, "issue.weight.description")}
-                          data-placement="top"
-                          data-toggle="popover"
-                          data-trigger="hover"
-                        >
-                          {issue.weight ?? 0}
-                        </span>
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-                {issue ? (
-                  <div className={voteWrapClass} id="vote">
-                    {props.onVoteToggle ? (
-                      <a
-                        className={`ybtn${issue.hasVoted ? " ybtn-watching" : ""}`}
-                        data-request-method="post"
-                        data-toggle="tooltip"
-                        href={issueVoteHref}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          void props.onVoteToggle?.();
-                        }}
-                        title={legacyMessage(
-                          messages,
-                          issue.hasVoted ? "issue.unvote.description" : "issue.vote.description",
-                        )}
-                      >
-                        <span className="heart">
-                          <i className="yobicon-hearts"></i>
-                        </span>
-                      </a>
-                    ) : null}
-                    <IssueDetailVoters
-                      issue={issue}
-                      messages={messages}
-                      runtimeConfig={props.runtimeConfig}
-                    />
-                  </div>
-                ) : null}
-                <span className="act-row">
-                  {issue ? (
-                    <button
-                      className="icon btn-transparent-with-fontsize-lineheight ml10"
-                      data-toggle="tooltip"
-                      disabled={translatingIssue || translatedIssueMarkdown !== null}
-                      id="translate"
-                      onClick={() => void translateIssue()}
-                      title={legacyMessage(messages, "button.translation")}
-                      type="button"
-                    >
-                      <i className="yobicon-lang"></i>
-                    </button>
-                  ) : null}
-                  {issue?.viewerCanUpdate ? (
-                    <a
-                      className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
-                      href={buildProjectHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        `issue/${issue.issueNumber}/editform`,
-                      )}
-                      title={legacyMessage(messages, "button.edit")}
-                    >
-                      <i className="yobicon-edit-2"></i>
-                    </a>
-                  ) : issue ? (
-                    <a
-                      href={buildProjectHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        `issue/${issue.issueNumber}/editform`,
-                      )}
-                    >
-                      <button
-                        className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
-                        data-toggle="tooltip"
-                        title={legacyMessage(messages, "button.show.original")}
-                        type="button"
-                      >
-                        <i className="yobicon-edit-2"></i>
-                      </button>
-                    </a>
-                  ) : null}
-                  {issue?.viewerCanUpdate && onStateChange ? (
-                    <button
-                      className="ybtn"
-                      onClick={() => void onStateChange(issue.state === "open" ? "closed" : "open")}
-                      type="button"
-                    >
-                      {legacyMessage(
-                        messages,
-                        issue.state === "open"
-                          ? "button.nextState.closed"
-                          : "button.nextState.open",
-                      )}
-                    </button>
-                  ) : null}
-                  {issue?.viewerCanDelete && onDeleteIssue ? (
-                    <a
-                      data-toggle="modal"
-                      href="#deleteConfirm"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        setDeleteConfirmOpen(true);
-                      }}
-                    >
-                      <button
-                        className="icon btn-transparent-with-fontsize-lineheight ml6"
-                        title={legacyMessage(messages, "button.delete")}
-                        type="button"
-                      >
-                        <i className="yobicon-trash"></i>
-                      </button>
-                    </a>
-                  ) : null}
-                </span>
-              </div>
-              {issue ? (
-                <IssueSharerPanel
-                  issue={issue}
-                  messages={messages}
-                  onSearchSharableUsers={props.onSearchSharableUsers}
-                  onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
-                  onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
-                  runtimeConfig={props.runtimeConfig}
-                  sharePickerOpen={sharePickerOpen}
-                />
-              ) : null}
-              <div className="watcher-list"></div>
-              {issue ? (
-                <IssueSubtaskList
-                  issue={issue}
-                  messages={messages}
-                  runtimeConfig={props.runtimeConfig}
-                />
-              ) : null}
-              <section className="board-comment-wrap" id="comments">
-                <div id="timeline">
-                  <div className="timeline-list">
-                    <div className="comment-header">
-                      <i></i>
-                      <strong>{legacyMessage(messages, "common.comment")}</strong>{" "}
-                      <strong className="num">{issue?.commentCount ?? 0}</strong>
-                    </div>
-                    <hr className="nm" />
-                    <ul className="comments">
-                      {(issue?.timeline ?? []).map((item, index, timelineItems) => {
-                        if (item.kind !== "comment" || !item.comment) {
-                          const previousItem = timelineItems[index - 1];
-                          return (
-                            <IssueTimelineEvent
-                              basePath={props.runtimeConfig.basePath}
-                              item={item}
-                              key={`${item.kind}-${item.id}`}
-                              messages={messages}
-                              previousItem={
-                                previousItem?.kind === "event" ? previousItem : undefined
-                              }
-                            />
-                          );
-                        }
-
-                        const comment = item.comment;
-                        if (comment.parentCommentId) {
-                          return null;
-                        }
-                        const authorLoginId = comment.authorLoginId || comment.authorLabel;
-                        const commentEditAction = buildProjectHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          `issue/${issueNumber}/comments/${comment.id}`,
-                        );
-                        const commentIsEditing = editingCommentIds.has(comment.id);
-                        const commentDeleteUri = buildProjectHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          `issue/${issueNumber}/comment/${comment.id}/delete`,
-                        );
-                        const commentVoteUri = buildProjectHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          `issue/${issueNumber}/comment/${comment.id}/${
-                            comment.viewerHasVoted ? "unvote" : "vote"
-                          }`,
-                        );
-                        const newIssueByCommentHref = `${prefixBasePath(
-                          props.runtimeConfig.basePath,
-                          "/user/issues/new",
-                        )}?commentId=${comment.id}`;
-                        const commentClassName = legacyCommentMentionsCurrentUser(
-                          comment.contentsMarkdown,
-                          props.viewerLabel,
-                          props.viewerLoginId,
-                          comment.mentionReferences,
-                        )
-                          ? "comment mentioned"
-                          : "comment";
-
-                        return (
-                          <li
-                            className={commentClassName}
-                            id={`comment-${comment.id}`}
-                            key={`${item.kind}-${item.id}`}
-                          >
-                            <div className="comment-avatar">
-                              <IssueCommentAvatar
-                                basePath={props.runtimeConfig.basePath}
-                                comment={comment}
-                              />
-                            </div>
-                            <div className="media-body">
-                              <div className="meta-info">
-                                <span className="comment_author">
-                                  <span className="resp-comment-avatar">
-                                    <IssueCommentAvatar
-                                      basePath={props.runtimeConfig.basePath}
-                                      comment={comment}
-                                    />
-                                  </span>
-                                  <a
-                                    data-placement="top"
-                                    data-toggle="tooltip"
-                                    href={
-                                      authorLoginId
-                                        ? prefixBasePath(
-                                            props.runtimeConfig.basePath,
-                                            `/${authorLoginId}`,
-                                          )
-                                        : "#"
-                                    }
-                                    title={comment.authorLoginId || comment.authorLabel}
-                                  >
-                                    <strong>{comment.authorLabel || comment.authorLoginId}</strong>
-                                  </a>
-                                </span>
-                                <span className="ago-date">
-                                  <a
-                                    className="ago"
-                                    href={`#comment-${comment.id}`}
-                                    title={comment.createdLabel}
-                                  >
-                                    {comment.createdLabel}
-                                  </a>
-                                  <a
-                                    className="share-link"
-                                    href={`#comment-${comment.id}`}
-                                    style={{ display: "none" }}
-                                  >
-                                    [Link]
-                                  </a>
-                                </span>
-                                <span className="act-row pull-right">
-                                  <span className="new-issue-by">
-                                    <a href={newIssueByCommentHref}>
-                                      {legacyMessage(messages, "issue.menu.new.by")}
-                                    </a>
-                                  </span>
-                                  <span className="comment-vote-row">
-                                    <IssueCommentVoters
-                                      basePath={props.runtimeConfig.basePath}
-                                      comment={comment}
-                                      messages={messages}
-                                    />
-                                    {issue?.viewerCanComment && props.onCommentVoteToggle ? (
-                                      <button
-                                        aria-label={
-                                          comment.viewerHasVoted
-                                            ? legacyMessage(messages, "common.comment.unvote")
-                                            : legacyMessage(messages, "common.comment.vote")
-                                        }
-                                        className="comment-vote btn-transparent-with-fontsize-lineheight"
-                                        data-request-type="comment-vote"
-                                        data-request-uri={commentVoteUri}
-                                        onClick={(event) => {
-                                          event.preventDefault();
-                                          void props.onCommentVoteToggle?.(
-                                            comment.id,
-                                            comment.viewerHasVoted,
-                                          );
-                                        }}
-                                        title={
-                                          comment.viewerHasVoted
-                                            ? legacyMessage(messages, "common.comment.unvote")
-                                            : legacyMessage(messages, "common.comment.vote")
-                                        }
-                                        type="button"
-                                      >
-                                        <span
-                                          className={`yobicon-hearts ${
-                                            comment.viewerHasVoted
-                                              ? "vote-heart-on"
-                                              : "vote-heart-off"
-                                          }`}
-                                        />
-                                      </button>
-                                    ) : null}
-                                  </span>
-                                  <button
-                                    className="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"
-                                    data-comment-id={comment.id}
-                                    data-toggle="tooltip"
-                                    disabled={
-                                      translatingCommentIds.has(comment.id) ||
-                                      Boolean(translatedCommentMarkdownById[comment.id])
-                                    }
-                                    onClick={() => void translateIssueComment(comment)}
-                                    title={legacyMessage(messages, "button.translation")}
-                                    type="button"
-                                  >
-                                    <i className="yobicon-lang"></i>
-                                  </button>
-                                  {comment.viewerCanUpdate ? (
-                                    <button
-                                      className="btn-transparent-with-fontsize-lineheight ml10"
-                                      data-comment-id={comment.id}
-                                      data-toggle="comment-edit"
-                                      onClick={() =>
-                                        setEditingCommentIds((current) => {
-                                          const next = new Set(current);
-                                          next.add(comment.id);
-                                          return next;
-                                        })
-                                      }
-                                      title={legacyMessage(messages, "common.comment.edit")}
-                                      type="button"
-                                    >
-                                      <i className="yobicon-edit-2"></i>
-                                    </button>
-                                  ) : null}
-                                  {comment.viewerCanDelete && props.onCommentDelete ? (
-                                    <button
-                                      className="btn-transparent-with-fontsize-lineheight ml6"
-                                      data-request-uri={commentDeleteUri}
-                                      data-toggle="comment-delete"
-                                      onClick={(event) => {
-                                        event.preventDefault();
-                                        setCommentDeleteTargetId(comment.id);
-                                      }}
-                                      title={legacyMessage(messages, "common.comment.delete")}
-                                      type="button"
-                                    >
-                                      <i className="yobicon-trash"></i>
-                                    </button>
-                                  ) : null}
-                                </span>
-                              </div>
-                              {comment.viewerCanUpdate ? (
-                                <div hidden={!commentIsEditing}>
-                                  <IssueCommentEditForm
-                                    action={commentEditAction}
-                                    commentId={comment.id}
-                                    csrfToken={props.csrfToken}
-                                    getIssueReferencesQueryOptions={
-                                      props.getIssueReferencesQueryOptions
-                                    }
-                                    initialContents={comment.contentsMarkdown}
-                                    messages={messages}
-                                    onCancel={() =>
-                                      setEditingCommentIds((current) => {
-                                        const next = new Set(current);
-                                        next.delete(comment.id);
-                                        return next;
-                                      })
-                                    }
-                                    onSearchMentionUsers={props.onSearchMentionUsers}
-                                    onSubmit={props.onCommentUpdate}
-                                    runtimeConfig={props.runtimeConfig}
-                                    showNotificationMail={
-                                      Boolean(comment.authorId) &&
-                                      comment.authorId === issue?.viewerUserId
-                                    }
-                                  />
-                                </div>
-                              ) : null}
-                              <div
-                                id={`comment-body-${comment.id}`}
-                                style={commentIsEditing ? { display: "none" } : undefined}
-                              >
-                                <MarkdownRenderer
-                                  className="comment-body markdown-wrap"
-                                  basePath={props.runtimeConfig.basePath}
-                                  currentUserLabel={props.viewerLabel}
-                                  currentUserLoginId={props.viewerLoginId}
-                                  data-allowed-update={String(comment.viewerCanUpdate)}
-                                  data-via-email={comment.viaEmail ? "true" : undefined}
-                                  issueReferences={comment.issueReferences}
-                                  markdown={
-                                    translatedCommentMarkdownById[comment.id] ??
-                                    comment.contentsMarkdown
-                                  }
-                                  mentionReferences={comment.mentionReferences}
-                                  onTasklistToggle={
-                                    comment.viewerCanUpdate && props.onCommentUpdate
-                                      ? async (input) =>
-                                          props.onCommentUpdate?.(comment.id, input.nextMarkdown)
-                                      : undefined
-                                  }
-                                  ownerName={detail.ownerName}
-                                  projectName={detail.projectName}
-                                  showTasklistBar
-                                  tasklistSourceMarkdown={comment.contentsMarkdown}
-                                />
-                              </div>
-                            </div>
-                            <div className="add-a-comment pull-right">
-                              {legacyMessage(messages, "comment.oneline.comment.placeholder")}
-                            </div>
-                            <div className="subcomment-media-body">
-                              <div className="child-comments">
-                                {(childCommentsByParent.get(comment.id) ?? []).map(
-                                  (childComment) => {
-                                    const childAuthorLoginId =
-                                      childComment.authorLoginId || childComment.authorLabel;
-                                    return (
-                                      <div className="one-line-comment" key={childComment.id}>
-                                        <div className="contents">
-                                          <MarkdownRenderer
-                                            basePath={props.runtimeConfig.basePath}
-                                            containerElement="fragment"
-                                            currentUserLabel={props.viewerLabel}
-                                            currentUserLoginId={props.viewerLoginId}
-                                            markdown={childComment.contentsMarkdown}
-                                            ownerName={detail.ownerName}
-                                            projectName={detail.projectName}
-                                          />
-                                          <span className="subcomment-author hide">
-                                            {" - "}
-                                            <a
-                                              className="usf-group"
-                                              data-placement="top"
-                                              data-toggle="tooltip"
-                                              href={
-                                                childAuthorLoginId
-                                                  ? prefixBasePath(
-                                                      props.runtimeConfig.basePath,
-                                                      `/${childAuthorLoginId}`,
-                                                    )
-                                                  : "#"
-                                              }
-                                              title={
-                                                childComment.authorLoginId ||
-                                                childComment.authorLabel
-                                              }
-                                            >
-                                              <strong>
-                                                {childComment.authorLabel ||
-                                                  childComment.authorLoginId}
-                                              </strong>
-                                            </a>{" "}
-                                            <a
-                                              className="ago"
-                                              href={`#comment-${childComment.id}`}
-                                              title={childComment.createdLabel}
-                                            >
-                                              {childComment.createdLabel}
-                                            </a>
-                                            {childComment.viewerCanDelete &&
-                                            props.onCommentDelete ? (
-                                              <button
-                                                className="btn-transparent deleteButtonX"
-                                                data-request-uri={buildProjectHref(
-                                                  props.runtimeConfig,
-                                                  detail.ownerName,
-                                                  detail.projectName,
-                                                  `issue/${issueNumber}/comment/${childComment.id}/delete`,
-                                                )}
-                                                data-toggle="comment-delete"
-                                                onClick={(event) => {
-                                                  event.preventDefault();
-                                                  setCommentDeleteTargetId(childComment.id);
-                                                }}
-                                                title={legacyMessage(
-                                                  messages,
-                                                  "common.comment.delete",
-                                                )}
-                                                type="button"
-                                              >
-                                                x
-                                              </button>
-                                            ) : null}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    );
-                                  },
-                                )}
-                              </div>
-                              {issue?.viewerCanComment ? (
-                                <div className="child-comment-input-form">
-                                  <form
-                                    action={buildProjectHref(
-                                      props.runtimeConfig,
-                                      detail.ownerName,
-                                      detail.projectName,
-                                      `issue/${issueNumber}/comments`,
-                                    )}
-                                    encType="multipart/form-data"
-                                    onSubmit={(event) => {
-                                      event.preventDefault();
-                                      const contents = (
-                                        childCommentDrafts[comment.id] ?? ""
-                                      ).trim();
-                                      if (!contents) {
-                                        return;
-                                      }
-                                      void props
-                                        .onCommentSubmit?.(contents, [], comment.id)
-                                        ?.then(() =>
-                                          setChildCommentDrafts((current) => ({
-                                            ...current,
-                                            [comment.id]: "",
-                                          })),
-                                        );
-                                    }}
-                                  >
-                                    <input
-                                      className="parentCommentId"
-                                      name="parentCommentId"
-                                      type="hidden"
-                                      value={comment.id}
-                                    />
-                                    <div className="oneline-comment-box">
-                                      <textarea
-                                        className="editorSeries"
-                                        name="contents"
-                                        onChange={(event) =>
-                                          setChildCommentDrafts((current) => ({
-                                            ...current,
-                                            [comment.id]: event.target.value,
-                                          }))
-                                        }
-                                        placeholder={`${legacyMessage(
-                                          messages,
-                                          "comment.oneline.comment.placeholder",
-                                        )} (CTRL + ENTER)`}
-                                        rows={1}
-                                        value={childCommentDrafts[comment.id] ?? ""}
-                                        {...({
-                                          markdown: "true",
-                                        } as unknown as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
-                                      />
-                                      <button
-                                        aria-label={legacyMessage(messages, "button.comment.new")}
-                                        className="ybtn ybtn-success"
-                                        data-legacy-label="OK"
-                                        type="submit"
-                                      >
-                                        <span aria-hidden="true">OK</span>
-                                        <span className="sr-only">
-                                          {legacyMessage(messages, "button.comment.new")}
-                                        </span>
-                                      </button>
-                                    </div>
-                                    <div className="notification-receiver">
-                                      <span className="notification-receiver-title">
-                                        {legacyMessage(
-                                          messages,
-                                          "notification.receiver.list.title",
-                                        )}
-                                      </span>
-                                      <span className="notification-receiver-list"></span>
-                                    </div>
-                                  </form>
-                                </div>
-                              ) : null}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                </div>
-                {issue?.viewerCanComment ? (
-                  <IssueCommentForm
-                    action={buildProjectHref(
-                      props.runtimeConfig,
-                      detail.ownerName,
-                      detail.projectName,
-                      `issue/${issue.issueNumber}/comments`,
-                    )}
-                    csrfToken={props.csrfToken}
-                    getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
-                    messages={messages}
-                    onSearchMentionUsers={props.onSearchMentionUsers}
-                    onSubmit={props.onCommentSubmit}
-                    runtimeConfig={props.runtimeConfig}
-                  />
-                ) : issue ? (
-                  <DisabledIssueCommentBox messages={messages} />
-                ) : null}
-              </section>
-            </div>
-            <aside className="span3 right-menu">
-              <div className="issue-info">
-                <form
-                  action={buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    "issues",
-                  )}
-                  id="issueUpdateForm"
-                  onSubmit={(event) => event.preventDefault()}
-                >
-                  {issue ? (
-                    <input
-                      name="issues[0].id"
-                      type="hidden"
-                      value={issue.issueId || issue.issueNumber}
-                    />
-                  ) : null}
-                  <dl>
-                    <dt>{legacyMessage(messages, "issue.assignee")}</dt>
-                    <dd>
-                      <div className="assignee-info">
-                        {issueAssigneeLoginId ? (
-                          <a className="usf-group" href={issueAssigneeHref}>
-                            <span className="avatar-wrap smaller">
-                              {issue?.assigneeAvatarUrl ? (
-                                <img
-                                  alt={issueAssigneeLabel}
-                                  height={20}
-                                  src={issue.assigneeAvatarUrl}
-                                  width={20}
-                                />
-                              ) : null}
-                            </span>
-                            <strong className="name">{issueAssigneeLabel}</strong>
-                            <span className="loginid">
-                              {" "}
-                              <strong>@</strong>
-                              {issueAssigneeLoginId}
-                            </span>
-                          </a>
-                        ) : (
-                          <div>{issueAssigneeLabel}</div>
-                        )}
-                      </div>
-                      {issue?.viewerCanUpdate && props.onAssign ? (
-                        <IssueAssignForm
-                          initialAssignee={issue.assigneeLoginId}
-                          messages={messages}
-                          onSearchAssignableUsers={props.onSearchAssignableUsers}
-                          onSubmit={props.onAssign}
-                        />
-                      ) : null}
-                    </dd>
-                  </dl>
-                  <dl>
-                    <dt>{legacyMessage(messages, "milestone")}</dt>
-                    <dd>
-                      {issue?.viewerCanUpdate && props.onMetadataUpdate ? (
-                        <select
-                          data-container-css-class="fullsize"
-                          data-format="milestone"
-                          data-toggle="select2"
-                          id="milestone"
-                          name="milestone.id"
-                          onChange={(event) =>
-                            void props.onMetadataUpdate?.({
-                              milestoneId: Number(event.currentTarget.value),
-                              milestoneUpdate: true,
-                            })
-                          }
-                          value={issue.milestoneId ?? 0}
-                        >
-                          <option value={0}>{legacyMessage(messages, "issue.noMilestone")}</option>
-                          <IssueMilestoneOptionGroups
-                            messages={messages}
-                            milestones={issueMilestones}
-                          />
-                        </select>
-                      ) : issue?.milestoneTitle ? (
-                        <a
-                          href={buildProjectHref(
-                            props.runtimeConfig,
-                            detail.ownerName,
-                            detail.projectName,
-                            `milestone/${issue.milestoneId}`,
-                          )}
-                        >
-                          {issue.milestoneTitle}
-                        </a>
-                      ) : (
-                        legacyMessage(messages, "issue.noMilestone")
-                      )}
-                    </dd>
-                  </dl>
-                  <dl>
-                    <dt>{legacyMessage(messages, "issue.dueDate")}</dt>
-                    <dd>
-                      {issue?.viewerCanUpdate && props.onMetadataUpdate ? (
-                        <div className="search search-bar">
-                          <input
-                            autoComplete="off"
-                            className="textbox full"
-                            data-toggle="calendar"
-                            name="dueDate"
-                            onBlur={(event) =>
-                              void props.onMetadataUpdate?.({
-                                dueDate: event.currentTarget.value,
-                                isDueDateChanged: true,
-                              })
-                            }
-                            type="text"
-                            defaultValue={issue.dueDateLabel ?? ""}
-                          />
-                          <button className="search-btn btn-calendar" type="button">
-                            <i className="yobicon-calendar2"></i>
-                          </button>
-                        </div>
-                      ) : (
-                        issue?.dueDateLabel || legacyMessage(messages, "issue.noDuedate")
-                      )}
-                    </dd>
-                  </dl>
-                  {issueLabels.length > 0 && issue?.viewerCanUpdate && props.onMetadataUpdate ? (
-                    <dl>
-                      <dt>
-                        {legacyMessage(messages, "label")}{" "}
-                        <a
-                          className="label-edit"
-                          href={buildProjectHref(
-                            props.runtimeConfig,
-                            detail.ownerName,
-                            detail.projectName,
-                            "issue/labelsform",
-                          )}
-                          target="_blank"
-                        >
-                          [{legacyMessage(messages, "button.edit")}]
-                        </a>
-                      </dt>
-                      <dd>
-                        <select
-                          className="hide"
-                          data-allow-clear="true"
-                          data-container-css-class="issue-labels bordered fullsize"
-                          data-dropdown-css-class="issue-labels"
-                          data-format="issuelabel"
-                          data-placeholder={legacyMessage(messages, "label.select")}
-                          data-search="labelIds"
-                          data-toggle="select2"
-                          id="labelIds"
-                          multiple
-                          name="labelIds"
-                          onChange={(event) => {
-                            const selected = Array.from(event.currentTarget.selectedOptions).map(
-                              (option) => Number(option.value),
-                            );
-                            const current = (issue.labels ?? []).map((label) => label.id);
-                            void props.onMetadataUpdate?.({
-                              addLabelIds: selected.filter((labelId) => !current.includes(labelId)),
-                              removeLabelIds: current.filter(
-                                (labelId) => !selected.includes(labelId),
-                              ),
-                            });
-                          }}
-                          value={(issue.labels ?? []).map((label) => String(label.id))}
-                        >
-                          <option></option>
-                          {issueLabels.map((label) => (
-                            <option
-                              data-category-id={label.categoryId ?? ""}
-                              data-category-is-exclusive={
-                                label.categoryIsExclusive ? "true" : "false"
-                              }
-                              key={label.id}
-                              value={label.id}
-                            >
-                              {label.name}
-                            </option>
-                          ))}
-                        </select>
-                      </dd>
-                    </dl>
-                  ) : (
-                    <IssueDetailSelectedLabels
-                      issue={issue}
-                      messages={messages}
-                      runtimeConfig={props.runtimeConfig}
-                    />
-                  )}
-                </form>
-                {issue ? (
-                  <IssueCompactCommentIndex
-                    commentsByParent={childCommentsByParent}
-                    issue={issue}
-                    messages={messages}
-                    runtimeConfig={props.runtimeConfig}
-                  />
-                ) : null}
-              </div>
-            </aside>
-          </div>
-          {issue?.viewerCanDelete && onDeleteIssue ? (
-            <div
-              aria-hidden={deleteConfirmOpen ? "false" : "true"}
-              className={`modal hide fade${deleteConfirmOpen ? " in" : ""}`}
-              id="deleteConfirm"
-              style={deleteConfirmOpen ? { display: "block" } : undefined}
-            >
-              <div className="modal-header">
-                <button
-                  aria-label={legacyMessage(messages, "button.close")}
-                  className="close"
-                  onClick={() => setDeleteConfirmOpen(false)}
-                  type="button"
-                >
-                  ×
-                </button>
-                <h3>{legacyMessage(messages, "issue.delete")}</h3>
-              </div>
-              <div className="modal-body">
-                <p>{legacyMessage(messages, "post.delete.confirm")}</p>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="ybtn ybtn-danger"
-                  data-request-method="delete"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    void onDeleteIssue();
-                  }}
-                  type="button"
-                >
-                  {legacyMessage(messages, "button.yes")}
-                </button>
-                <button className="ybtn" onClick={() => setDeleteConfirmOpen(false)} type="button">
-                  {legacyMessage(messages, "button.no")}
-                </button>
-              </div>
-            </div>
-          ) : null}
-          {issue ? (
-            <div
-              aria-hidden={commentDeleteTargetId === null ? "true" : "false"}
-              className={`modal hide fade${commentDeleteTargetId !== null ? " in" : ""}`}
-              id="comment-delete-modal"
-              style={commentDeleteTargetId !== null ? { display: "block" } : undefined}
-            >
-              <div className="modal-header">
-                <button
-                  aria-label={legacyMessage(messages, "button.close")}
-                  className="close"
-                  data-dismiss="modal"
-                  onClick={() => setCommentDeleteTargetId(null)}
-                  type="button"
-                >
-                  ×
-                </button>
-                <h3>{legacyMessage(messages, "common.comment.delete")}</h3>
-              </div>
-              <div className="modal-body">
-                <p>{legacyMessage(messages, "common.comment.delete.confirm")}</p>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="ybtn ybtn-danger"
-                  data-request-method="delete"
-                  data-request-uri={commentDeleteRequestUri}
-                  id="comment-delete-confirm"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    if (commentDeleteTargetId === null || !props.onCommentDelete) {
-                      return;
-                    }
-                    const targetId = commentDeleteTargetId;
-                    setCommentDeleteTargetId(null);
-                    void props.onCommentDelete(targetId);
-                  }}
-                  type="button"
-                >
-                  {legacyMessage(messages, "button.yes")}
-                </button>
-                <button
-                  className="ybtn"
-                  data-dismiss="modal"
-                  onClick={() => setCommentDeleteTargetId(null)}
-                  type="button"
-                >
-                  {legacyMessage(messages, "button.no")}
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      </div>
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

@@ -145,6 +145,9 @@ function projectLayoutShell(
   ) {
     return { activeMenu: "issue" };
   }
+  if (isIssueDetailPath(appPath, owner, projectName)) {
+    return { activeMenu: "issue", keymapMode: "detail", shellClassName: "issue-detail-page" };
+  }
   if (appPath === `/${owner}/${projectName}/issues`) {
     return { activeMenu: "issue", keymapMode: "list", shellClassName: "issue-list-page" };
   }
@@ -159,6 +162,16 @@ function isIssueEditFormPath(appPath: string, owner: string, projectName: string
     segments[1] === projectName &&
     segments[2] === "issue" &&
     segments[4] === "editform"
+  );
+}
+
+function isIssueDetailPath(appPath: string, owner: string, projectName: string): boolean {
+  const segments = appPath.split("/").filter(Boolean);
+  return (
+    segments.length === 4 &&
+    segments[0] === owner &&
+    segments[1] === projectName &&
+    segments[2] === "issue"
   );
 }
 

@@ -1350,6 +1350,37 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="child-issue-date" title="now"');
   });
 
+  it("lets the project layout route own the issue detail shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={issueDetail}
+        renderShell={false}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/issue/$issueNumber/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("isIssueDetailPath");
+    expect(layoutSource).toContain('activeMenu: "issue"');
+    expect(layoutSource).toContain('keymapMode: "detail"');
+    expect(layoutSource).toContain('shellClassName: "issue-detail-page"');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="app-shell issue-detail-page"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap board-view"');
+    expect(html).toContain('class="board-header issue"');
+  });
+
   it("lets the project layout route own issue form shells without changing the form body", () => {
     const html = renderToStaticMarkup(
       <ProjectIssueFormPage
