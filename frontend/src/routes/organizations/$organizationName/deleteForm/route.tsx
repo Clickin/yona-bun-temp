@@ -1,14 +1,14 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { deleteOrganization, readOrganizationAdmin } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toOrganizationAdminView } from "../../../../app-view-models";
+import { prefixBasePath } from "../../../../runtime-config";
 import { OrganizationDeletePage } from "../../../-organization-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useRequireAuthenticatedRoute,
 } from "../../../-shared";
@@ -22,6 +22,7 @@ function OrganizationDeleteRouteComponent() {
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/organizations/${organizationName}/deleteForm`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
+  const navigate = useNavigate();
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationAdminView> | null>(
     null,
   );
@@ -84,7 +85,9 @@ function OrganizationDeleteRouteComponent() {
       onDeleteOrganization={async (nextOrganizationName) => {
         try {
           const result = await deleteOrganization(runtimeConfig, csrfToken, nextOrganizationName);
-          navigateToAppHref(runtimeConfig.basePath, result.redirectPath || "/");
+          void navigate({
+            href: prefixBasePath(runtimeConfig.basePath, result.redirectPath || "/"),
+          });
         } catch (error) {
           setErrorMessage(
             error instanceof Error

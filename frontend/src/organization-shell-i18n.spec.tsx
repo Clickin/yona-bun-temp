@@ -665,4 +665,19 @@ describe("organization shell legacy i18n opt-in", () => {
       expect(source).toContain(`messages("${key}", { fallback: "${key}" })`);
     }
   });
+
+  it("keeps organization create/settings/delete mutation redirects in the SPA", () => {
+    const routeFiles = [
+      "routes/organizations/new/route.tsx",
+      "routes/organizations/$organizationName/settingform/route.tsx",
+      "routes/organizations/$organizationName/deleteForm/route.tsx",
+    ];
+
+    for (const routeFile of routeFiles) {
+      const source = fs.readFileSync(path.resolve(__dirname, routeFile), "utf8");
+      expect(source, routeFile).toContain("useNavigate");
+      expect(source, routeFile).toContain("prefixBasePath");
+      expect(source, routeFile).not.toContain("navigateToAppHref");
+    }
+  });
 });

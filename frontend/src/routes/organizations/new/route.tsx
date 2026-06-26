@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createOrganization } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
+import { prefixBasePath } from "../../../runtime-config";
 import { OrganizationNewPage } from "../../-organization-views";
-import { navigateToAppHref, useRequireAuthenticatedRoute } from "../../-shared";
+import { useRequireAuthenticatedRoute } from "../../-shared";
 
 export const Route = createFileRoute("/organizations/new")({
   component: OrganizationNewRouteComponent,
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/organizations/new")({
 function OrganizationNewRouteComponent() {
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/organizations/new");
+  const navigate = useNavigate();
 
   if (bootstrapping || !canRender) {
     return (
@@ -25,7 +27,12 @@ function OrganizationNewRouteComponent() {
       onCreateOrganization={async (input) => {
         try {
           const detail = await createOrganization(runtimeConfig, csrfToken, input);
-          navigateToAppHref(runtimeConfig.basePath, `/organizations/${detail.organizationName}`);
+          void navigate({
+            href: prefixBasePath(
+              runtimeConfig.basePath,
+              `/organizations/${detail.organizationName}`,
+            ),
+          });
         } catch (error) {
           setErrorMessage(
             error instanceof Error

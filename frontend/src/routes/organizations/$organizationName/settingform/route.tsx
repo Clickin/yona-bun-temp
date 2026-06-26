@@ -1,13 +1,13 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { readOrganizationContainer, updateOrganization } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
+import { prefixBasePath } from "../../../../runtime-config";
 import { OrganizationSettingsPage } from "../../../-organization-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useRequireAuthenticatedRoute,
 } from "../../../-shared";
@@ -21,6 +21,7 @@ function OrganizationSettingsRouteComponent() {
   const { organizationName } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(`/organizations/${organizationName}/settingform`);
+  const navigate = useNavigate();
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationContainerView> | null>(
     null,
   );
@@ -88,10 +89,12 @@ function OrganizationSettingsRouteComponent() {
             ...input,
             logoAttachmentId: input.logoAttachmentId ? BigInt(input.logoAttachmentId) : undefined,
           });
-          navigateToAppHref(
-            runtimeConfig.basePath,
-            `/organizations/${nextDetail.organizationName}/settingform`,
-          );
+          void navigate({
+            href: prefixBasePath(
+              runtimeConfig.basePath,
+              `/organizations/${nextDetail.organizationName}/settingform`,
+            ),
+          });
         } catch (error) {
           setErrorMessage(
             error instanceof Error

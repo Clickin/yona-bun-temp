@@ -41,6 +41,11 @@
 - React-owned project/organization member management forms keep the legacy `#addNewMember`, role dropdown, `data-action`, and `data-href` anchors, but add/member-role mutations remain inside the React callback/API boundary with unconditional `preventDefault()` and no `if (!props.onAddMember)` / `if (!props.onUpdateMemberRole)` direct-submit fallback guards. Focused guard: `frontend/src/form-submit-boundary.spec.tsx`.
 - React-owned project/organization create, settings, project-webhook, and fork forms keep legacy wrappers, validation messages, and file/multipart-compatible markup, but create/update/fork mutations remain inside the React callback/API boundary with unconditional `preventDefault()` and no direct-submit fallback guards for missing callbacks. Focused guard: `frontend/src/form-submit-boundary.spec.tsx`.
 - React-owned project fork and project-member self-leave redirects use the shared app base-path navigation helper after REST mutations so `/yona` or other subdirectory reverse-proxy deployments remain inside the mounted SPA path.
+- React-owned organization create, settings, and delete redirects now use
+  TanStack Router navigation after REST mutations instead of
+  `navigateToAppHref`, preserving the mounted base path while avoiding full
+  document reloads. Focused guards: `frontend/src/route-parity.spec.tsx` and
+  `frontend/src/organization-shell-i18n.spec.tsx`.
 - Direct `window.location` navigation in route source is limited to shared app-base fallback helpers; route-owned filter, pagination, code branch, and history transitions use TanStack navigation. Focused guard: `frontend/src/route-parity.spec.tsx`.
 - React-owned project/organization leave, enrollment, and project-watch click
   mutations keep legacy `href`/`data-href` anchors for parity, but clicks call

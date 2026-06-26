@@ -741,3 +741,11 @@ A slice is closed only when:
 - focused tests or Playwright evidence cover the corrected behavior,
 - provenance reflects the new evidence,
 - no undocumented `gap` remains inside the slice.
+
+## Milestones
+
+- M54 continues organization mutation SPA navigation: organization create,
+  settings save, and delete keep their REST mutation boundaries and now redirect
+  through TanStack Router navigation instead of `navigateToAppHref`. Focused
+  guards cover the organization route sources and keep the legacy visual
+  shells/mutation fallbacks unchanged.

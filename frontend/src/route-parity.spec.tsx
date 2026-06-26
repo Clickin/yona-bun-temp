@@ -5324,6 +5324,9 @@ describe("file-route parity harness", () => {
     );
     expect(newRouteSource).toContain("createOrganization");
     expect(newRouteSource).toContain("error.badrequest");
+    expect(newRouteSource).toContain("useNavigate");
+    expect(newRouteSource).toContain("prefixBasePath");
+    expect(newRouteSource).not.toContain("navigateToAppHref");
     expect(newRouteSource).not.toContain("Create organization failed.");
 
     const settingsRouteSource = fs.readFileSync(
@@ -5336,6 +5339,9 @@ describe("file-route parity harness", () => {
     expect(settingsRouteSource).toContain("readOrganizationContainer");
     expect(settingsRouteSource).toContain("updateOrganization");
     expect(settingsRouteSource).toContain("error.badrequest");
+    expect(settingsRouteSource).toContain("useNavigate");
+    expect(settingsRouteSource).toContain("prefixBasePath");
+    expect(settingsRouteSource).not.toContain("navigateToAppHref");
     expect(settingsRouteSource).not.toContain("Update organization failed.");
 
     const viewSource = fs.readFileSync(
@@ -5376,7 +5382,9 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readOrganizationAdmin");
     expect(routeSource).toContain("deleteOrganization");
-    expect(routeSource).toContain("navigateToAppHref");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("prefixBasePath");
+    expect(routeSource).not.toContain("navigateToAppHref");
     expect(routeSource).toContain("organization.delete.error");
     expect(routeSource).not.toContain("Delete organization failed.");
 
