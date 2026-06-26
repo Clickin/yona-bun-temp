@@ -1,0 +1,112 @@
+# Template-First UI Parity Report: P7 Site-Admin/Error/Security
+
+Status: current reset baseline
+Date: 2026-06-27
+Owner packet: P7 site-admin/error/security
+Mode: template-first mapper baseline; implementation evidence reviewed
+
+## Scope
+
+This report reopens site administration, admin-only route security, legacy
+error/restricted pages, first-run restart/admin setup overlap, migration
+operator shell, and converted security/fragment boundaries under
+`docs/plans/2026-06-26-template-first-ui-parity-reset.md`.
+
+The older `ui-parity-site-admin-setup.md` and
+`ui-parity-fragment-security-db.md` reports remain useful evidence. This report
+restates their P7-owned portions in the template-first reset format and keeps
+the app-runtime boundary explicit: legacy admin forms and server-rendered
+fragments are implemented as REST JSON/API-return plus React-rendered legacy
+DOM, not copied legacy Play templates or legacy JavaScript modules.
+
+## Legacy Template Call Graph
+
+| Legacy source | Role | Required anchors |
+| --- | --- | --- |
+| `yona-original/app/views/site/siteMngLayout.scala.html` | Site-admin layout/sidebar. | `.site-breadcrumb-outer`, `.site-setting-wrap`, `.site-setting-nav`, active `li`, update `.notification-badge`, `.span10` content area. |
+| `site/userList.scala.html`, `partial_paginationForUserList.scala.html` | User list, state tabs, user actions, reset password, delete modal. | `.title_area`, `.form-search`, `.nav.nav-tabs`, `.user-list-wrap`, `.listitem`, action buttons, `#alertDeletionWrap`, `#pagination`. |
+| `site/projectList.scala.html`, `site/postList.scala.html`, `site/issueList.scala.html`, `partial_pagination.scala.html` | Site-wide project/post/issue read/delete/admin lists. | `.project-list-wrap`, `.post-list-wrap`, `.nav.nav-tabs`, list rows, project/author/comment links, delete modals, pagination. |
+| `site/mail.scala.html`, `site/massMail.scala.html` | Test mail and mass mail tools. | `#mailForm`, `.alert.alert-error`, `.alert.alert-success`, `#mailtoAll`, `#mailtoPrj`, `#input-project`, `#select-project`, `#selected-projects`, `#write-email`. |
+| `site/update.scala.html`, `site/diagnostic.scala.html`, `site/data.scala.html` | Update, diagnostics, export/import data. | update current/available/error branches, download link, diagnostic `<pre>` list, `.cu-desc .notice`, export button, file `input[name=data]`. |
+| `siteLayout.scala.html`, `error/*.scala.html`, `restricted.scala.html` | Global error/restricted surfaces. | `.gnb-outer` or site layout shell, `.page-wrap-outer`, `.project-page-wrap`, `.error-wrap`, `.ico-err2`/`.ico-404`, Home button. |
+| `welcome/secret.scala.html`, `welcome/restart.scala.html` | First-run admin setup and restart notice. | `.secret-wrap`, `.secret-box`, readonly `#loginId=admin`, `#uname`, `#email`, `#password`, `#retypedPassword`, restart copy. |
+| `project/importing.scala.html`, `migration/home.scala.html` | Git import and outbound GitHub migration operator shell. | `#importGit`, `#url`, `#useRepoAuth`, `#repoAuth`, `.yobi-migration`, source/destination panels, disabled migration actions. |
+| Legacy fragment/security routes | Issue/comment/notification/sidebar fragments, Markdown rendering, direct compatibility endpoints. | Converted route-owned fragments must remain API-return plus React render; no route-owned HTML injection. |
+
+## Current React/API Targets
+
+| Current source | Current responsibility |
+| --- | --- |
+| `frontend/src/routes/sites/$pageName/route.tsx` | Site-admin page routing, admin guard, sidebar, page selection. |
+| `frontend/src/api/site-admin.ts` | Site-admin REST JSON boundary. |
+| `frontend/src/routes/-restricted-view.tsx`, `frontend/src/routes/restricted/route.tsx` | Restricted/security page. |
+| Error route/shared views | NotFound/Forbidden/BadRequest/Internal error shells. |
+| `frontend/src/routes/secret/route.tsx`, `frontend/src/routes/restart/route.tsx` | First-run setup/restart overlap with P1. |
+| `frontend/src/routes/migration/route.tsx`, `frontend/src/routes/[_]import/route.tsx` | Migration/import operator surfaces. |
+| `crates/server/src/routes/site_admin.rs`, `site_admin/update.rs`, `legacy_runtime.rs`, `notifications.rs`, `issues.rs` | Admin REST/direct compatibility and converted fragment/security boundaries. |
+| `frontend/src/site-admin-route-parity.spec.tsx`, `site-admin-data-parity.spec.tsx`, `restricted-route-parity.spec.tsx` | Static selector/source proof. |
+| `frontend/tests/site-admin-*.e2e.ts`, `frontend/tests/auth-public-entry-parity.e2e.ts`, `frontend/tests/legacy-rendered-page-audit.e2e.ts` | Browser-visible admin/error/security proof. |
+
+## Open Reset Queue Summary
+
+| status | count |
+| --- | ---: |
+| gap | 0 |
+| deviation | 0 |
+| weak evidence | 0 |
+| covered | 18 |
+| not-applicable | 2 |
+| needs-parent-decision | 0 |
+
+## Reset Findings
+
+| legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `site/siteMngLayout.scala.html` | `/sites/**` admin-only layout/sidebar/update badge. | `frontend/src/routes/sites/$pageName/route.tsx` | layout | covered in current follow-up | P7 | none | `ui-parity-site-admin-setup.md` records site-admin rows as covered. Static and browser evidence prove `.site-setting-nav`, active sidebar, update badge, admin-only guard, and forbidden state for non-admin users. |
+| `site/userList.scala.html` | `/sites/userList` state tabs, search, user rows, toggles, reset-password alert, delete modal. | site admin route/view and site-admin API | interaction | covered in current follow-up | P7 | none | `frontend/tests/site-admin-user-list-parity.e2e.ts`, `site-admin-route-parity.spec.tsx`, and server site-admin contracts prove tabs, list rows, guest/lock/site-admin toggles, reset password success alert, delete modal open/cancel/confirm, and REST/direct compatibility. |
+| `site/projectList.scala.html` | `/sites/projectList` search, project rows, delete modal. | site admin project page/API | interaction | covered in current follow-up | P7 | none | `frontend/tests/site-admin-project-list-parity.e2e.ts` and server contracts prove row selectors, filtering, delete modal, and direct alias behavior. |
+| `site/postList.scala.html` | `/sites/postList` site-wide read-only post rows. | site admin post list page/API | layout | covered in current follow-up | P7 | none | `frontend/tests/site-admin-post-list-parity.e2e.ts` proves `.post-list-wrap`, `.post-project`, `.post-title`, author avatar, comments link, and pagination without ad-hoc empty messages. |
+| `site/issueList.scala.html` | `/sites/issueList` open/closed issue tabs and read-only issue rows. | site admin issue list page/API | layout | covered in current follow-up | P7 | none | `frontend/tests/site-admin-issue-list-parity.e2e.ts` proves `.nav.nav-tabs`, open/closed state tabs, `.post-list-wrap`, and issue row shell. |
+| `site/mail.scala.html` | `/sites/mail` test mail configured/not-configured/sent states. | site admin mail page/API | interaction | covered in current follow-up | P7 | none | `frontend/tests/site-admin-mail-parity.e2e.ts` proves `#mailForm`, sender/from/to/subject/body fields, not-configured alert, sent alert, and REST test-mail submit. |
+| `site/massMail.scala.html` | `/sites/massmail` all/project recipient selection and mailto launch. | site admin mass mail page/API | interaction | covered in current follow-up | P7 | none | Browser proof covers `#mailtoAll`, `#mailtoPrj`, `#input-project`, `#select-project`, selected project labels, and `#write-email`/mailto generation through REST recipient lookup. |
+| `site/update.scala.html` | `/sites/update` no-update/update-available/error branches and download link. | site admin update page/API/direct download | layout | covered in current follow-up | P7 | none | `frontend/tests/site-admin-update-parity.e2e.ts` and update contracts prove current/available/no-update/error branches, download link `/sites/update/download-file`, and sidebar badge. |
+| `site/diagnostic.scala.html` | `/sites/diagnostic` no-error and error-count/pre-list states. | site admin diagnostic page/API | layout | covered in current follow-up | P7 | none | `frontend/tests/site-admin-diagnostic-parity.e2e.ts` and server contracts prove `site.diagnostic.errorNotFound`, `site.diagnostic.errorFound`, and `<li><pre>` list output. |
+| `site/data.scala.html` | `/sites/data`, `/sites/export`, `/sites/import` data warning/export/import. | site admin data page/API/direct export/import | interaction | covered in current follow-up | P7 | none | `frontend/tests/site-admin-data-parity.e2e.ts` proves `.cu-desc .notice`, warning copy, export link click, file chooser, and REST import payload parsed from selected file; server contracts cover direct export/import and rollback/dry-run behavior. |
+| Concrete site route set | `/sites/:unknown`. | `SiteAdminRouteComponent` | route | not-applicable | P7 | none unless parent reclassifies | Legacy has no catch-all site route beyond concrete `conf/routes` entries; current unknown site-admin page returns `NotFoundPage`. |
+| `welcome/secret.scala.html`, `welcome/restart.scala.html` | `/secret` setup-required/configured and `/restart`. | `frontend/src/routes/secret/route.tsx`, `restart/route.tsx`, auth REST | interaction | covered in current follow-up | P7 | none | P1 owns public-auth UX; P7 records security/admin overlap. Browser proof covers setup form shell, readonly admin login, REST payload, restart redirect, configured `/secret` not-found behavior, and restart notice shell. |
+| `project/importing.scala.html` | `/_import` Git project import operator surface. | project import route/view/API | interaction | covered in current follow-up | P7 | none | Directory/P2 reports own project creation/import UX; P7 records site-admin/setup overlap. Existing specs prove `#importGit`, `#url`, `#useRepoAuth`, `#repoAuth .row-fluid`, auth labels/placeholders, project-name placeholder, and REST import boundary. |
+| `migration/home.scala.html` | `/migration` default-disabled outbound GitHub migration operator shell. | `frontend/src/routes/migration/route.tsx`, server migration route contracts | route | covered in current follow-up | P7 | none | Migration shell preserves `.yobi-migration`, source/destination panels, disabled milestone/issue/post actions, and legacy forbidden copy. Actual GitHub API migration remains external operator tooling per provenance, not frontend UI parity blocker. |
+| `restricted.scala.html` | `/restricted` secret/security sample page. | `frontend/src/routes/-restricted-view.tsx`, `restricted/route.tsx` | route | covered in current follow-up | P7 | none | `frontend/src/restricted-route-parity.spec.tsx` pins restricted page shell/copy and route mapping; security-sensitive direct behavior remains server/auth owned. |
+| `error/*.scala.html` | not-found, forbidden, bad-request, internal-server-error, entity-too-large shells. | shared error pages/routes | layout | covered in current follow-up | P7 | none | Static route/error specs and browser sweeps cover `.page-wrap-outer`, `.project-page-wrap`, `.error-wrap`, error icons, Home links, forbidden/not-found/bad-request shells, and raw-key absence where runtime i18n applies. |
+| Converted legacy HTML fragments | issue timeline/PJAX, notifications load-more, sidebar/usermenu fragments. | REST JSON/API-return plus React render | data-boundary | covered in current follow-up | P7 | none | `ui-parity-fragment-security-db.md`, server contracts, and e2e prove direct compatibility endpoints return API payloads or SPA shell while React renders legacy DOM from REST data. |
+| Legacy server-rendered issue-list PJAX fragment as React runtime data source | Legacy `IssueApp.issues` could return server-rendered PJAX rows. | REST JSON plus React render | data-boundary | not-applicable | P7 | none unless parent reclassifies | Parent conversion rule classifies this as compatibility evidence only. React runtime must not preserve legacy HTML injection as a data source. |
+| Security/DB stability probes | XSS, SQLi literal keyword, pathological Markdown, MariaDB dump/adopt, DB-native search matrix. | Markdown renderer/search/server DB tests and visual sweep artifacts | security | covered in current follow-up | P7 | none | `ui-parity-fragment-security-db.md` records 12 covered security/fragment/DB rows: route-owned HTML fragment guard, Markdown boundary, hostile rendered-page probes, SQLi literal keyword search, MariaDB adopt smoke, DB matrix, and DB-native search matrix. |
+| Raw visible i18n keys in P7 surfaces | Site-admin/error templates resolve `Messages(...)`; raw keys are failures. | site-admin route/i18n specs and browser proof | copy | covered in current follow-up | P7 | none | `site-admin-route-parity.spec.tsx`, `site-admin-data-parity.spec.tsx`, restricted/error specs, and e2e fixtures cover production raw-key absence; fixture-only fallback assertions are not used as production proof. |
+
+## Verifier Evidence
+
+Static/component proof:
+
+- `frontend/src/site-admin-route-parity.spec.tsx`
+- `frontend/src/site-admin-data-parity.spec.tsx`
+- `frontend/src/restricted-route-parity.spec.tsx`
+- `tests/server-spa-rest-boundary-contract.test.mjs`
+- `tests/rc-ux-checklist-contract.test.mjs`
+
+Browser proof:
+
+- `frontend/tests/site-admin-user-list-parity.e2e.ts`
+- `frontend/tests/site-admin-project-list-parity.e2e.ts`
+- `frontend/tests/site-admin-post-list-parity.e2e.ts`
+- `frontend/tests/site-admin-issue-list-parity.e2e.ts`
+- `frontend/tests/site-admin-mail-parity.e2e.ts`
+- `frontend/tests/site-admin-update-parity.e2e.ts`
+- `frontend/tests/site-admin-diagnostic-parity.e2e.ts`
+- `frontend/tests/site-admin-data-parity.e2e.ts`
+- `frontend/tests/auth-public-entry-parity.e2e.ts`
+- `frontend/tests/legacy-rendered-page-audit.e2e.ts`
+
+P7 has no remaining integrated desktop sweep status deltas in
+`output/playwright/visual-sweep/latest.json` checked at
+`2026-06-26T16:21:36.680Z`. Whole UI parity remains blocked by other packet
+reports with `needs-parent-decision` rows.

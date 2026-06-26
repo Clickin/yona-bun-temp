@@ -237,6 +237,11 @@ Update 2026-06-27:
   The report records organization shell/admin, directory, workspace/profile,
   user files/settings, notification stream, and scoped search chrome evidence,
   and has no standalone `needs-parent-decision` row.
+- P7 site-admin/error/security now has a template-first reset report at
+  `docs/provenance/ui-parity-reports/template-first-p7-site-admin-error-security.md`.
+  With this file, P0-P7 all have template-first packet reports. Whole UI parity
+  is still not closed because P3/P4/P5 retain integrated status-delta
+  `needs-parent-decision` rows.
 
 1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
    header/menu, issue/editor/comment surfaces define most repeated visual
@@ -252,12 +257,10 @@ Update 2026-06-27:
    `template-first-p5-code-git-pr-review.md`, including Git/SVN-visible UI
    states, export/download routes, PR diff tabs, repository browser, branch,
    compare, commit, and search behavior.
-5. Subagent D creates the P7 site-admin/error/security template-first report
-   from `site/**`, `siteLayout*`, `error/**`, and `restricted` legacy templates.
-6. Parent updates existing `docs/provenance/ui-parity-reports/*.md` to use the
+5. Parent updates existing `docs/provenance/ui-parity-reports/*.md` to use the
    audit queue format above and reopens rows that were closed by reachability
    rather than pixel-visible parity.
-7. Workers then port shell components and route families from templates in
+6. Workers then port shell components and route families from templates in
    packet order. A packet can be split further only after its template mapping
    is complete.
 

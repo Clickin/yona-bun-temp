@@ -26,6 +26,7 @@ Current template-first reset reports:
 - `template-first-p4-board-milestone-post.md`
 - `template-first-p5-code-git-pr-review.md`
 - `template-first-p6-organization-directory-workspace.md`
+- `template-first-p7-site-admin-error-security.md`
 
 Rules:
 
