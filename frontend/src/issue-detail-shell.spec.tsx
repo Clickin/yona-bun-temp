@@ -966,6 +966,46 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
             },
             {
               createdLabel: "now",
+              eventType: "ISSUE_LABEL_CHANGED",
+              id: 22,
+              kind: "event",
+              newValue: "ui",
+              oldValue: "",
+              senderLoginId: "owner",
+            },
+            {
+              createdLabel: "now",
+              eventType: "ISSUE_LABEL_CHANGED",
+              id: 23,
+              kind: "event",
+              newValue: "",
+              oldValue: "ui",
+              senderLoginId: "owner",
+            },
+            {
+              createdLabel: "now",
+              eventType: "ISSUE_SHARER_CHANGED",
+              id: 24,
+              kind: "event",
+              newValue: "door",
+              oldValue: "",
+              senderLoginId: "owner",
+              targetLabel: "Door User",
+              targetLoginId: "door",
+            },
+            {
+              createdLabel: "now",
+              eventType: "ISSUE_SHARER_CHANGED",
+              id: 25,
+              kind: "event",
+              newValue: "nori",
+              oldValue: "",
+              senderLoginId: "owner",
+              targetLabel: "Nori User",
+              targetLoginId: "nori",
+            },
+            {
+              createdLabel: "now",
               eventType: "ISSUE_ASSIGNEE_CHANGED",
               id: 20,
               kind: "event",
@@ -1017,6 +1057,22 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain("<strong>owner</strong></a> added ");
     expect(html).toContain('<div class="label issue-label">bug</div>');
     expect(html).not.toContain("issue.event.label.added");
+    expect(html).toContain('class="event" id="event-22"');
+    expect(html).toContain(
+      '<li class="event" id="event-22"><span class="state"></span> <span class="event-message">',
+    );
+    expect(html).toContain('<div class="label issue-label">ui</div>');
+    expect(html).toContain('class="event" id="event-23"');
+    expect(html).toContain('class="state label-deleted"');
+    expect(html).toContain(">Removed</span>");
+    expect(html).toContain('class="event" id="event-24"');
+    expect(html).toContain('class="state sharer-added"');
+    expect(html).toContain('href="/yona/door"');
+    expect(html).toContain('class="event" id="event-25"');
+    expect(html).toContain(
+      '<li class="event" id="event-25"><span class="state"></span> <span class="event-message">',
+    );
+    expect(html).toContain('href="/yona/nori"');
     expect(html).toContain('class="event" id="event-20"');
     expect(html).toContain('href="/yona/assignee"');
     expect(html).toContain("<strong>Owner User</strong></a> assigned this issue to ");

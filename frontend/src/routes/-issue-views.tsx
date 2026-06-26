@@ -2700,14 +2700,18 @@ export function ProjectIssueDetailPage(props: {
                     </div>
                     <hr className="nm" />
                     <ul className="comments">
-                      {(issue?.timeline ?? []).map((item) => {
+                      {(issue?.timeline ?? []).map((item, index, timelineItems) => {
                         if (item.kind !== "comment" || !item.comment) {
+                          const previousItem = timelineItems[index - 1];
                           return (
                             <IssueTimelineEvent
                               basePath={props.runtimeConfig.basePath}
                               item={item}
                               key={`${item.kind}-${item.id}`}
                               messages={messages}
+                              previousItem={
+                                previousItem?.kind === "event" ? previousItem : undefined
+                              }
                             />
                           );
                         }
@@ -3470,13 +3474,14 @@ function IssueTimelineEvent(props: {
   basePath: string;
   item: IssueTimelineEventItem;
   messages?: LegacyMessageLookup;
+  previousItem?: IssueTimelineEventItem;
 }) {
   const item = props.item;
   if (item.eventType === "ISSUE_BODY_CHANGED") {
     return null;
   }
 
-  const eventState = issueEventState(item);
+  const eventState = issueEventState(item, props.previousItem);
   const messageParts = issueEventMessageParts(item, props.basePath, props.messages);
 
   return (
@@ -3607,7 +3612,10 @@ function legacyMessageWithNodes(
   });
 }
 
-function issueEventState(item: IssueTimelineEventItem): { className: string; label: string } {
+function issueEventState(
+  item: IssueTimelineEventItem,
+  previousItem?: IssueTimelineEventItem,
+): { className: string; label: string } {
   switch (item.eventType) {
     case "ISSUE_STATE_CHANGED":
       return {
@@ -3623,10 +3631,17 @@ function issueEventState(item: IssueTimelineEventItem): { className: string; lab
     case "ISSUE_REFERRED_FROM_PULL_REQUEST":
       return { className: "state changed", label: issueEventMessageKey(item) };
     case "ISSUE_SHARER_CHANGED":
-      return issueAddDeleteState(item, "sharer-added", "sharer-deleted", "issue.sharer");
+      return issueAddDeleteState(
+        item,
+        previousItem,
+        "sharer-added",
+        "sharer-deleted",
+        "issue.sharer",
+      );
     case "ISSUE_LABEL_CHANGED":
       return issueAddDeleteState(
         item,
+        previousItem,
         "label-added",
         "label-deleted",
         issueIsAddingEvent(item)
@@ -3640,10 +3655,14 @@ function issueEventState(item: IssueTimelineEventItem): { className: string; lab
 
 function issueAddDeleteState(
   item: IssueTimelineEventItem,
+  previousItem: IssueTimelineEventItem | undefined,
   addClassName: string,
   deleteClassName: string,
   label: string,
 ): { className: string; label: string } {
+  if (issueIsSameEventTypeAndSameAction(item, previousItem)) {
+    return { className: "state", label: "" };
+  }
   if (issueIsAddingEvent(item)) {
     return { className: `state ${addClassName}`, label };
   }
@@ -3651,6 +3670,18 @@ function issueAddDeleteState(
     return { className: `state ${deleteClassName}`, label };
   }
   return { className: "state", label: "" };
+}
+
+function issueIsSameEventTypeAndSameAction(
+  item: IssueTimelineEventItem,
+  previousItem: IssueTimelineEventItem | undefined,
+): boolean {
+  return (
+    !!previousItem &&
+    item.eventType === previousItem.eventType &&
+    ((issueIsAddingEvent(item) && issueIsAddingEvent(previousItem)) ||
+      (issueIsDeletingEvent(item) && issueIsDeletingEvent(previousItem)))
+  );
 }
 
 function issueIsAddingEvent(item: IssueTimelineEventItem): boolean {

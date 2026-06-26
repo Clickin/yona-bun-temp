@@ -45,8 +45,8 @@ Source comparison by Subagent P3 found concrete reset blockers:
 | --- | ---: |
 | gap | 0 |
 | deviation | 1 |
-| weak evidence | 2 |
-| covered | 9 |
+| weak evidence | 1 |
+| covered | 10 |
 | not-applicable | 1 |
 
 ## Reset Findings
@@ -63,7 +63,7 @@ Source comparison by Subagent P3 found concrete reset blockers:
 | `issue/partial_list.scala.html` | Issue list labels, child issue hidden block, count icons. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/routes/-view-models.ts`, `frontend/src/app-view-models.ts`, `frontend/src/issue-list-filter.spec.tsx` | css | covered in current follow-up | P3 | none | Issue list rows now have selector proof for legacy `.child-issue-list.hide`, `.num-comments`, `.num-hearts`, `.num-sharers`, `.weight-up-arrow`, `.title-prefix`, and label `data-category-id`/`data-label-id` while preserving title prefix separation and count anchors. |
 | `issue/view.scala.html` | Detail sidebar order: issue-info compact comments; left pane watcher/subtasks/sharer before comments. | `frontend/src/routes/-issue-views.tsx` | layout | deviation | P3 | issue detail component and detail parity test | Need DOM order assertion against legacy template. |
 | `issue/create.scala.html`, `issue/edit.scala.html` | Save/draft/publish double-submit guard and draft tooltip. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/route-parity.spec.tsx`, `frontend/tests/issue-form-parity.e2e.ts` | interaction | covered in current follow-up | P3 | none | Issue create/edit forms now preserve the legacy submit contract with a React-side 3 second disabled guard, draft-save and draft-publish tooltip anchors/copy, hidden `#isDraft` / `#isPublish` values, and publish confirmation. Browser proof clicks save/draft paths, asserts invalid-submit guard state without REST mutation, draft hidden value, REST JSON intent flags, and mounted-base redirect behavior. |
-| `issue/view.scala.html`, `issue/partial_event_timeline.scala.html` | Repeated same-type timeline event suppresses duplicate state label. | `frontend/src/routes/-issue-views.tsx` | copy | weak evidence | P3 | timeline component and detail timeline test | Need fixture assertion for consecutive label/sharer events. |
+| `issue/view.scala.html`, `issue/partial_event_timeline.scala.html` | Repeated same-type timeline event suppresses duplicate state label. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/issue-detail-shell.spec.tsx` | copy | covered in current follow-up | P3 | none | Issue event timeline now mirrors legacy `previousEvent` behavior for adjacent `ISSUE_LABEL_CHANGED` and `ISSUE_SHARER_CHANGED` add/delete runs: when the previous timeline item is the same event type and same add/delete direction, React renders the empty `<span class="state"></span>` instead of a duplicate state label; opposite-direction label changes still render `.state.label-deleted`. |
 | `issue/my_list.scala.html`, `my_partial_list.scala.html`, `my_partial_search.scala.html` | User issue list and quick search route states. | `frontend/src/routes/user/issues/route.tsx`, `frontend/src/routes/-issue-views.tsx` | layout | weak evidence | P3 | user issue route/shared issue list views/tests | Needs a separate mapper pass for `my_*` template visual parity. |
 | Legacy PJAX/timeline fragment paths | XHR list/timeline fragments return server-rendered HTML in legacy. | React route plus REST JSON | data-boundary | not-applicable | P3 | none unless parent reclassifies | Keep as React-rendered API conversion per reset; rendered DOM still needs template shape parity. |
 

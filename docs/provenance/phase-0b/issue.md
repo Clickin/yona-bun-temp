@@ -340,3 +340,9 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   hidden values, and publish confirmation without importing legacy JavaScript.
   Focused coverage: `frontend/src/route-parity.spec.tsx` and browser proof in
   `frontend/tests/issue-form-parity.e2e.ts`.
+- 2026-06-26 template-first P3 event timeline correction: adjacent same-type
+  `ISSUE_LABEL_CHANGED` and `ISSUE_SHARER_CHANGED` events now follow legacy
+  `previousEvent` suppression by rendering an empty `.state` span when the
+  add/delete direction matches the previous timeline event, while
+  opposite-direction changes still render their label state. Focused coverage:
+  `frontend/src/issue-detail-shell.spec.tsx`.
