@@ -643,7 +643,6 @@ function IssueCommentVoters(props: {
         <div className="modal hide voters-dialog" id={modalId}>
           <div className="modal-header">
             <button
-              aria-hidden="true"
               aria-label={legacyMessage(props.messages, "button.close")}
               className="close"
               data-dismiss="modal"
@@ -684,12 +683,7 @@ function IssueCommentVoters(props: {
             </ul>
           </div>
           <div className="modal-footer">
-            <button
-              aria-hidden="true"
-              className="ybtn ybtn-info ybtn-small"
-              data-dismiss="modal"
-              type="button"
-            >
+            <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
               {legacyMessage(props.messages, "button.close")}
             </button>
           </div>

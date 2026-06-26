@@ -884,6 +884,9 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('href="#voters-58"');
     expect(html).toContain('id="voters-58"');
     expect(html).toContain('class="modal hide voters-dialog"');
+    expect(html).toContain('aria-label="Close" class="close"');
+    expect(html).not.toContain('aria-hidden="true" aria-label="Close" class="close"');
+    expect(html).not.toContain('aria-hidden="true" class="ybtn ybtn-info ybtn-small"');
     expect(html).toContain('class="avatar-wrap mlarge"');
     expect(html).toContain('class="usf-group"');
     expect(html).toContain('target="_blank"');
