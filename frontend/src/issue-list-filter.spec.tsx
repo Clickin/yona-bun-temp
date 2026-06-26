@@ -236,6 +236,15 @@ describe("project issue list filters", () => {
     expect(html).toContain('data-category-id="11"');
     expect(html).toContain('class="child-issue-list hide"');
     expect(html).toContain('class="avatar-wrap assinee"');
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+    expect(appCss).toContain(".issue-list-page .post-item");
+    expect(appCss).toContain("padding: 10px;");
+    expect(appCss).toContain(".issue-list-page .post-item .title-wrap");
+    expect(appCss).toContain("white-space: nowrap;");
+    expect(appCss).toContain(".issue-list-page .post-item .infos");
+    expect(appCss).toContain("font-size: 12px;");
+    expect(appCss).toContain(".issue-list-page .item-count-groups");
+    expect(appCss).toContain(".issue-list-page .mileston-tag");
     expect(html).toContain('class="page-navigation-wrap"');
     expect(html).toContain('id="pagination"');
     expect(html).toContain('<ul class="page-nums">');

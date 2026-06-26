@@ -12,6 +12,7 @@ Mode: read-only audit, no files edited by the explorer
 - Continuation: board-id/date header styling now matches legacy `_page.less` color, spacing, and line-height selectors under the `issue-detail-page` shell.
 - Continuation: issue detail right pane now uses the legacy `span3 span-right-pane mb20` shell from `issue/view.scala.html`, restoring the existing `.span-right-pane` responsive behavior.
 - Continuation: project issue list comment/vote/sharer counts now reuse the legacy `common/commentCount.scala.html`, `voteCount.scala.html`, and `sharerCount.scala.html` class/icon structure.
+- Continuation: project issue list rows now restore the legacy `_page.less` `.post-item`, `.title-wrap`, `.infos`, `.item-count-groups`, `.empty-avatar-wrap`, and `.mileston-tag` geometry under the `issue-list-page` shell.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx src/issue-list-filter.spec.tsx`.
 
 ## 2026-06-27 Nested Layout Follow-Up
