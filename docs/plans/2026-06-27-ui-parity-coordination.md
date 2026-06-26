@@ -192,6 +192,17 @@ M11 starts milestone shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
 
+M12 continues milestone shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/newMilestoneForm` and
+  `/milestone/:milestoneId/editform`, with the milestone menu active.
+- `ProjectMilestoneFormPage` supports `renderShell={false}` so create/edit leaf
+  routes keep their REST submit boundaries but render only the legacy
+  `project-page-wrap` form body under the project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

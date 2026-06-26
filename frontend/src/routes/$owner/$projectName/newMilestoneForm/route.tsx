@@ -97,6 +97,7 @@ function NewMilestoneFormRouteComponent() {
       }}
       owner={owner}
       projectName={projectName}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

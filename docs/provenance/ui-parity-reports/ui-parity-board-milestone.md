@@ -52,6 +52,14 @@ Worker update, 2026-06-26:
   the legacy label stylesheet link and list markup. Verification:
   `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
   src/board-milestone-parity.spec.tsx`.
+- Worker update, 2026-06-27 milestone form layout follow-up: project milestone
+  create/edit shell ownership moved into
+  `frontend/src/routes/$owner/$projectName/route.tsx` for `/newMilestoneForm`
+  and `/milestone/:milestoneId/editform`, keeping the milestone menu active.
+  `ProjectMilestoneFormPage` now supports `renderShell={false}` while retaining
+  the existing form and REST submit boundaries. Verification:
+  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
+  src/board-milestone-parity.spec.tsx`.
 
 ## Evidence Checked
 

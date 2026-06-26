@@ -114,6 +114,7 @@ function ProjectMilestoneEditFormRouteComponent() {
       }}
       owner={owner}
       projectName={projectName}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

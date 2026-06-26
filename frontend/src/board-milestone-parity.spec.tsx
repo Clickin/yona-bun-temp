@@ -273,6 +273,46 @@ describe("board/milestone UI parity closure", () => {
     expect(html).toContain('class="milestones"');
   });
 
+  it("lets the project layout route own milestone form shells", () => {
+    const html = renderToStaticMarkup(
+      <ProjectMilestoneFormPage
+        detail={detail}
+        mode="create"
+        owner="owner"
+        projectName="projectYobi"
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const createRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/newMilestoneForm/route.tsx"),
+      "utf8",
+    );
+    const editRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/milestone/$milestoneId/editform/route.tsx",
+      ),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/newMilestoneForm`");
+    expect(layoutSource).toContain("isMilestoneEditFormPath");
+    expect(layoutSource).toContain('return { activeMenu: "milestone" };');
+    expect(createRouteSource).toContain("renderShell={false}");
+    expect(editRouteSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="milestone-form"');
+    expect(html).toContain('id="editor-contents-content-body"');
+  });
+
   it("renders milestone form/detail uploader, attachment metadata, mass-update shell, and field-level validation source", () => {
     const formHtml = renderToStaticMarkup(
       <ProjectMilestoneFormPage

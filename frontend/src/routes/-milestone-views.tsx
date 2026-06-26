@@ -1347,6 +1347,7 @@ export function ProjectMilestoneFormPage(props: {
   }) => Promise<void>;
   owner: string;
   projectName: string;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail(props.owner, props.projectName);
@@ -1371,202 +1372,210 @@ export function ProjectMilestoneFormPage(props: {
     setValidationMessage(null);
   }, [initial]);
 
-  return (
-    <main className="app-shell milestone-form-page">
+  const content = (
+    <>
       <h1 className="sr-only">
         {legacyMessage(
           props.messages,
           props.mode === "create" ? "title.newMilestone" : "title.editMilestone",
         )}
       </h1>
-      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu activeMenu="milestone" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="content-wrap frm-wrap">
-            <form
-              id="milestone-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const nextValidationMessage = legacyMilestoneValidationMessage({
-                  contentsMarkdown,
-                  dueDate,
-                  title,
-                });
-                if (nextValidationMessage) {
-                  setValidationMessage(nextValidationMessage);
-                  return;
-                }
-                const submitMilestone = props.onSubmit;
-                if (!submitMilestone) {
-                  return;
-                }
-                setValidationMessage(null);
-                setPending(true);
-                void submitMilestone({
-                  attachmentIds,
-                  contentsMarkdown,
-                  dueDate,
-                  state,
-                  title,
-                }).finally(() => setPending(false));
-              }}
-            >
+      <div className="project-page-wrap">
+        <div className="content-wrap frm-wrap">
+          <form
+            id="milestone-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const nextValidationMessage = legacyMilestoneValidationMessage({
+                contentsMarkdown,
+                dueDate,
+                title,
+              });
+              if (nextValidationMessage) {
+                setValidationMessage(nextValidationMessage);
+                return;
+              }
+              const submitMilestone = props.onSubmit;
+              if (!submitMilestone) {
+                return;
+              }
+              setValidationMessage(null);
+              setPending(true);
+              void submitMilestone({
+                attachmentIds,
+                contentsMarkdown,
+                dueDate,
+                state,
+                title,
+              }).finally(() => setPending(false));
+            }}
+          >
+            <div className="row-fluid">
+              <div className="span12">
+                <dl>
+                  <dd>
+                    <input
+                      className={`zen-mode text title${
+                        validationMessage?.field === "title" ? " error" : ""
+                      }`}
+                      id="title"
+                      maxLength={250}
+                      name="title"
+                      onChange={(event) => {
+                        setTitle(event.currentTarget.value);
+                        setValidationMessage(null);
+                      }}
+                      placeholder={legacyMessage(props.messages, "title.text")}
+                      data-legacy-tabindex="1"
+                      type="text"
+                      value={title}
+                    />
+                    {validationMessage?.field === "title" ? (
+                      <div className="message">
+                        <div>{legacyMessage(props.messages, validationMessage.key)}</div>
+                      </div>
+                    ) : null}
+                  </dd>
+                </dl>
+              </div>
               <div className="row-fluid">
-                <div className="span12">
+                <div className="span9 span-left-pane">
                   <dl>
-                    <dd>
-                      <input
-                        className={`zen-mode text title${
-                          validationMessage?.field === "title" ? " error" : ""
-                        }`}
-                        id="title"
-                        maxLength={250}
-                        name="title"
-                        onChange={(event) => {
-                          setTitle(event.currentTarget.value);
-                          setValidationMessage(null);
-                        }}
-                        placeholder={legacyMessage(props.messages, "title.text")}
-                        data-legacy-tabindex="1"
-                        type="text"
-                        value={title}
-                      />
-                      {validationMessage?.field === "title" ? (
+                    <dd style={{ position: "relative" }}>
+                      <LegacyMarkdownEditorShell
+                        editId="edit-content-body"
+                        editorMode="content-body"
+                        messages={props.messages}
+                        previewId="preview-content-body"
+                      >
+                        <MarkdownAttachmentTextarea
+                          ariaLabel={legacyMessage(props.messages, "milestone.form.content")}
+                          className="editorSeries content comment nm"
+                          csrfToken={props.csrfToken}
+                          editorMode="content-body"
+                          id="editor-contents-content-body"
+                          name="contents"
+                          onAttachmentUpload={(attachment) =>
+                            setAttachmentIds((current) => [...current, attachment.id])
+                          }
+                          onChange={(nextValue) => {
+                            setContentsMarkdown(nextValue);
+                            setValidationMessage(null);
+                          }}
+                          runtimeConfig={props.runtimeConfig}
+                          value={contentsMarkdown}
+                        />
+                      </LegacyMarkdownEditorShell>
+                      {validationMessage?.field === "contents" ? (
                         <div className="message">
                           <div>{legacyMessage(props.messages, validationMessage.key)}</div>
                         </div>
                       ) : null}
                     </dd>
                   </dl>
+                  <LegacyMilestoneFileUploaderShell
+                    messages={props.messages}
+                    resourceId={props.mode === "edit" ? initial?.id : null}
+                  />
+                  <div className="actrow right-txt">
+                    <button className="ybtn ybtn-info" disabled={pending} type="submit">
+                      {legacyMessage(props.messages, "button.save")}
+                    </button>
+                    <a
+                      className="ybtn"
+                      href={buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        "milestones",
+                      )}
+                    >
+                      {legacyMessage(props.messages, "button.cancel")}
+                    </a>
+                  </div>
                 </div>
-                <div className="row-fluid">
-                  <div className="span9 span-left-pane">
-                    <dl>
-                      <dd style={{ position: "relative" }}>
-                        <LegacyMarkdownEditorShell
-                          editId="edit-content-body"
-                          editorMode="content-body"
-                          messages={props.messages}
-                          previewId="preview-content-body"
+                <div className="span3 span-hard-wrap">
+                  <dl className="issue-option">
+                    <dt>{legacyMessage(props.messages, "milestone.form.state")}</dt>
+                    <dd>
+                      <div>
+                        <input
+                          checked={state === "open"}
+                          className="radio-btn"
+                          id="milestone-open"
+                          name="state"
+                          onChange={() => setState("open")}
+                          type="radio"
+                          value="open"
+                        />
+                        <label className="bold" htmlFor="milestone-open">
+                          {legacyMessage(props.messages, "milestone.state.open")}
+                        </label>{" "}
+                        <input
+                          checked={state === "closed"}
+                          className="radio-btn"
+                          id="milestone-close"
+                          name="state"
+                          onChange={() => setState("closed")}
+                          type="radio"
+                          value="closed"
+                        />
+                        <label className="bold" htmlFor="milestone-close">
+                          {legacyMessage(props.messages, "milestone.state.closed")}
+                        </label>
+                      </div>
+                    </dd>
+                  </dl>
+                  <dl className="issue-option">
+                    <dt>{legacyMessage(props.messages, "milestone.form.dueDate")}</dt>
+                    <dd>
+                      <div>
+                        <label
+                          aria-label={legacyMessage(props.messages, "milestone.form.dueDate")}
+                          htmlFor="dueDate"
                         >
-                          <MarkdownAttachmentTextarea
-                            ariaLabel={legacyMessage(props.messages, "milestone.form.content")}
-                            className="editorSeries content comment nm"
-                            csrfToken={props.csrfToken}
-                            editorMode="content-body"
-                            id="editor-contents-content-body"
-                            name="contents"
-                            onAttachmentUpload={(attachment) =>
-                              setAttachmentIds((current) => [...current, attachment.id])
-                            }
-                            onChange={(nextValue) => {
-                              setContentsMarkdown(nextValue);
+                          <input
+                            autoComplete="off"
+                            className={`validate due-date${
+                              validationMessage?.field === "dueDate" ? " error" : ""
+                            }`}
+                            id="dueDate"
+                            name="dueDate"
+                            onChange={(event) => {
+                              setDueDate(event.currentTarget.value);
                               setValidationMessage(null);
                             }}
-                            runtimeConfig={props.runtimeConfig}
-                            value={contentsMarkdown}
+                            type="text"
+                            value={dueDate}
                           />
-                        </LegacyMarkdownEditorShell>
-                        {validationMessage?.field === "contents" ? (
+                        </label>
+                        {validationMessage?.field === "dueDate" ? (
                           <div className="message">
                             <div>{legacyMessage(props.messages, validationMessage.key)}</div>
                           </div>
                         ) : null}
-                      </dd>
-                    </dl>
-                    <LegacyMilestoneFileUploaderShell
-                      messages={props.messages}
-                      resourceId={props.mode === "edit" ? initial?.id : null}
-                    />
-                    <div className="actrow right-txt">
-                      <button className="ybtn ybtn-info" disabled={pending} type="submit">
-                        {legacyMessage(props.messages, "button.save")}
-                      </button>
-                      <a
-                        className="ybtn"
-                        href={buildProjectHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          "milestones",
-                        )}
-                      >
-                        {legacyMessage(props.messages, "button.cancel")}
-                      </a>
-                    </div>
-                  </div>
-                  <div className="span3 span-hard-wrap">
-                    <dl className="issue-option">
-                      <dt>{legacyMessage(props.messages, "milestone.form.state")}</dt>
-                      <dd>
-                        <div>
-                          <input
-                            checked={state === "open"}
-                            className="radio-btn"
-                            id="milestone-open"
-                            name="state"
-                            onChange={() => setState("open")}
-                            type="radio"
-                            value="open"
-                          />
-                          <label className="bold" htmlFor="milestone-open">
-                            {legacyMessage(props.messages, "milestone.state.open")}
-                          </label>{" "}
-                          <input
-                            checked={state === "closed"}
-                            className="radio-btn"
-                            id="milestone-close"
-                            name="state"
-                            onChange={() => setState("closed")}
-                            type="radio"
-                            value="closed"
-                          />
-                          <label className="bold" htmlFor="milestone-close">
-                            {legacyMessage(props.messages, "milestone.state.closed")}
-                          </label>
-                        </div>
-                      </dd>
-                    </dl>
-                    <dl className="issue-option">
-                      <dt>{legacyMessage(props.messages, "milestone.form.dueDate")}</dt>
-                      <dd>
-                        <div>
-                          <label
-                            aria-label={legacyMessage(props.messages, "milestone.form.dueDate")}
-                            htmlFor="dueDate"
-                          >
-                            <input
-                              autoComplete="off"
-                              className={`validate due-date${
-                                validationMessage?.field === "dueDate" ? " error" : ""
-                              }`}
-                              id="dueDate"
-                              name="dueDate"
-                              onChange={(event) => {
-                                setDueDate(event.currentTarget.value);
-                                setValidationMessage(null);
-                              }}
-                              type="text"
-                              value={dueDate}
-                            />
-                          </label>
-                          {validationMessage?.field === "dueDate" ? (
-                            <div className="message">
-                              <div>{legacyMessage(props.messages, validationMessage.key)}</div>
-                            </div>
-                          ) : null}
-                          <div className="date-picker" id="datepicker" />
-                        </div>
-                      </dd>
-                    </dl>
-                  </div>
+                        <div className="date-picker" id="datepicker" />
+                      </div>
+                    </dd>
+                  </dl>
                 </div>
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       </div>
+    </>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
+  return (
+    <main className="app-shell milestone-form-page">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="milestone" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }
