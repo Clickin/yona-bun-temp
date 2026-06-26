@@ -5,12 +5,7 @@ import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } fro
 import { useAppRuntime } from "../../app-runtime-context";
 import type { WorkspaceOverviewViewModel } from "../-view-models";
 import { PublicUserProfilePage } from "../-workspace-views";
-import {
-  BadRequestPage,
-  classifyConnectFailure,
-  navigateToAppHref,
-  NotFoundPage,
-} from "../-shared";
+import { BadRequestPage, classifyConnectFailure, NotFoundPage, RedirectPage } from "../-shared";
 
 export const Route = createFileRoute("/$user")({
   component: PublicUserProfileRouteComponent,
@@ -125,12 +120,6 @@ function PublicUserProfileRouteComponent() {
   });
 
   React.useEffect(() => {
-    if (profileQuery.data?.redirectPath) {
-      navigateToAppHref(runtimeConfig.basePath, profileQuery.data.redirectPath);
-    }
-  }, [profileQuery.data?.redirectPath, runtimeConfig.basePath]);
-
-  React.useEffect(() => {
     if (!profileQuery.error) {
       setFailureKind(null);
       return;
@@ -142,7 +131,11 @@ function PublicUserProfileRouteComponent() {
     setFailureKind("bad-request");
   }, [profileQuery.error]);
 
-  if (bootstrapping || profileQuery.isPending || profileQuery.data?.redirectPath) {
+  if (profileQuery.data?.redirectPath) {
+    return <RedirectPage basePath={runtimeConfig.basePath} to={profileQuery.data.redirectPath} />;
+  }
+
+  if (bootstrapping || profileQuery.isPending) {
     return (
       <main className="app-shell">
         <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>

@@ -623,6 +623,15 @@ M51 continues board post mutation SPA navigation:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "requires real board routes and board API wiring instead of placeholders"`.
 
+M52 continues workspace/profile SPA navigation:
+
+- Public profile redirect aliases now reuse the shared TanStack `RedirectPage`,
+  and workspace profile save redirects through TanStack navigation instead of
+  `navigateToAppHref`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  focused `auth-workspace-shell` / `user-profile-route-loading-shell-i18n`
+  guards.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

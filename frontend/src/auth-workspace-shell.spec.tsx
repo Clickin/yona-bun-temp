@@ -1554,6 +1554,16 @@ describe("auth and workspace views", () => {
       path.resolve(__dirname, "routes/user/editform/password/route.tsx"),
       "utf8",
     );
+    const profileRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/user/editform/index.tsx"),
+      "utf8",
+    );
+    expect(profileRouteSource).toContain("useNavigate");
+    expect(profileRouteSource).toContain("prefixBasePath");
+    expect(profileRouteSource).toContain(
+      'void navigate({ href: prefixBasePath(runtimeConfig.basePath, "/me") });',
+    );
+    expect(profileRouteSource).not.toContain("navigateToAppHref");
     expect(passwordRouteSource).toContain("useNavigate");
     expect(passwordRouteSource).toContain("prefixBasePath");
     expect(passwordRouteSource).toContain(

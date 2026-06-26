@@ -44,6 +44,13 @@ describe("route loading shell legacy i18n opt-in", () => {
     );
     expect(notificationSource).toContain('className="warning-none"');
     expect(notificationSource).not.toContain('<div className="warning-none">common.loading</div>');
+
+    const userRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$user/route.tsx"),
+      "utf8",
+    );
+    expect(userRouteSource).toContain("RedirectPage");
+    expect(userRouteSource).not.toContain("navigateToAppHref");
   });
 
   it("renders the shared redirect loading shell through legacy messages", () => {
