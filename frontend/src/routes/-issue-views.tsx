@@ -726,6 +726,7 @@ export function ProjectIssueListPage(props: {
   milestones?: IssueListFilterMilestone[];
   onMassUpdate?: (input: ProjectIssueMassUpdateInput) => Promise<void>;
   query?: ProjectIssueListQuery;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   viewerLoginId?: string;
   viewerUserId?: number;
@@ -827,6 +828,425 @@ export function ProjectIssueListPage(props: {
     setSelectedIssueNumbers([]);
   };
 
+  const pageBody = (
+    <div className="project-page-wrap">
+      <div className="row-fluid issue-list-wrap" {...pjaxContainerAttr}>
+        <div className=" left-menu span2 span-hard-wrap">
+          <ul className="lst-stacked unstyled">
+            <li className={!query.assigneeLoginId && !query.authorLoginId ? "active" : undefined}>
+              <a
+                data-assignee-id=""
+                data-author-id=""
+                data-commenter-id=""
+                data-milestone-id={query.milestoneId || ""}
+                href={allIssuesHref}
+                {...pjaxFilterAttr}
+              >
+                {legacyMessage(
+                  props.messages,
+                  query.state === "closed" ? "issue.list.all.closed" : "issue.list.all.open",
+                )}
+                <span className="num-badge pull-right">{issueList?.totalCount ?? 0}</span>
+              </a>
+            </li>
+            <li className={query.assigneeLoginId ? "active" : undefined}>
+              <a
+                data-assignee-id={query.assigneeLoginId}
+                data-author-id=""
+                data-commenter-id=""
+                data-milestone-id={query.milestoneId || ""}
+                href={assignedIssuesHref}
+                {...pjaxFilterAttr}
+              >
+                {legacyMessage(props.messages, "issue.list.assignedToMe")}
+                <span className="num-badge pull-right">
+                  {query.assigneeLoginId ? (issueList?.totalCount ?? 0) : 0}
+                </span>
+              </a>
+            </li>
+            <li className={query.authorLoginId ? "active" : undefined}>
+              <a
+                data-assignee-id=""
+                data-author-id={query.authorLoginId}
+                data-commenter-id=""
+                data-milestone-id={query.milestoneId || ""}
+                href={authoredIssuesHref}
+                {...pjaxFilterAttr}
+              >
+                {legacyMessage(props.messages, "issue.list.authoredByMe")}
+                <span className="num-badge pull-right">
+                  {query.authorLoginId ? (issueList?.totalCount ?? 0) : 0}
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                data-assignee-id=""
+                data-author-id=""
+                data-commenter-id=""
+                data-milestone-id={query.milestoneId || ""}
+                href={commentedIssuesHref}
+                {...pjaxFilterAttr}
+              >
+                {legacyMessage(props.messages, "issue.list.commentedByMe")}
+                <span className="num-badge pull-right">0</span>
+              </a>
+            </li>
+          </ul>
+          <form
+            action={buildProjectHref(
+              props.runtimeConfig,
+              detail.ownerName,
+              detail.projectName,
+              "issues",
+            )}
+            id="search"
+            method="get"
+            name="search"
+            onSubmit={(event) => {
+              if (!isLegacyIssueDueDateValid(dueDateFilter)) {
+                event.preventDefault();
+                setValidationMessage("issue.error.invalid.duedate");
+              }
+            }}
+          >
+            <input name="pageNum" type="hidden" value="1" />
+            <input name="orderBy" type="hidden" value={query.orderBy} />
+            <input name="orderDir" type="hidden" value={query.orderDir} />
+            <input name="state" type="hidden" value={query.state} />
+            {query.commenterId !== undefined ? (
+              <input
+                data-search="commenterId"
+                name="commenterId"
+                type="hidden"
+                value={query.commenterId}
+              />
+            ) : null}
+            {query.assigneeId !== undefined ? (
+              <input
+                data-search="assigneeId"
+                name="assigneeId"
+                type="hidden"
+                value={query.assigneeId}
+              />
+            ) : null}
+            <input
+              data-search="authorLoginId"
+              name="authorLoginId"
+              type="hidden"
+              value={query.authorLoginId}
+            />
+            {query.authorId !== undefined ? (
+              <input data-search="authorId" name="authorId" type="hidden" value={query.authorId} />
+            ) : null}
+            <input
+              data-search="assigneeLoginId"
+              name="assigneeLoginId"
+              type="hidden"
+              value={query.assigneeLoginId}
+            />
+            <hr className="hide-in-mobile" />
+            <div className="search">
+              <div className="search-bar">
+                <input
+                  className="textbox full"
+                  data-search="filter"
+                  name="filter"
+                  type="text"
+                  defaultValue={query.filter}
+                />
+                <button className="search-btn" data-submit="submit" type="submit">
+                  <i className="yobicon-search"></i>
+                </button>
+              </div>
+            </div>
+            <div className="srch-advanced hide-in-mobile" id="advanced-search-form">
+              <dl className="issue-option">
+                <dt>{legacyMessage(props.messages, "issue.author")}</dt>
+                <dd>
+                  <select
+                    data-container-css-class="fullsize"
+                    data-format="user"
+                    data-search="authorId"
+                    data-toggle="select2"
+                    id="authorId"
+                    name="authorLoginId"
+                    defaultValue={query.authorLoginId}
+                  >
+                    <option value="">{legacyMessage(props.messages, "common.order.all")}</option>
+                    {query.authorLoginId ? (
+                      <option value={query.authorLoginId}>{query.authorLoginId}</option>
+                    ) : null}
+                  </select>
+                </dd>
+              </dl>
+              <dl className="issue-option">
+                <dt>{legacyMessage(props.messages, "issue.assignee")}</dt>
+                <dd>
+                  <select
+                    data-container-css-class="fullsize"
+                    data-format="user"
+                    data-search="assigneeId"
+                    data-toggle="select2"
+                    id="assigneeId"
+                    name="assigneeLoginId"
+                    defaultValue={query.assigneeLoginId}
+                  >
+                    <option value="">{legacyMessage(props.messages, "common.order.all")}</option>
+                    <option value="anonymous">
+                      {legacyMessage(props.messages, "issue.noAssignee")}
+                    </option>
+                    {query.assigneeLoginId ? (
+                      <option value={query.assigneeLoginId}>{query.assigneeLoginId}</option>
+                    ) : null}
+                  </select>
+                </dd>
+              </dl>
+              <dl className="issue-option">
+                <dt>{legacyMessage(props.messages, "milestone")}</dt>
+                <dd>
+                  <select
+                    data-container-css-class="fullsize"
+                    data-format="milestone"
+                    data-search="milestoneId"
+                    data-toggle="select2"
+                    id="milestoneId"
+                    name="milestoneId"
+                    defaultValue={query.milestoneId ? String(query.milestoneId) : ""}
+                  >
+                    <option value="">{legacyMessage(props.messages, "milestone.state.all")}</option>
+                    <option value="0">{legacyMessage(props.messages, "issue.noMilestone")}</option>
+                    <IssueMilestoneOptionGroups
+                      messages={props.messages}
+                      milestones={props.milestones ?? []}
+                    />
+                  </select>
+                </dd>
+              </dl>
+              <dl className="issue-option">
+                <dt>{legacyMessage(props.messages, "issue.dueDate")}</dt>
+                <dd className="search search-bar">
+                  <input
+                    className="textbox full"
+                    data-toggle="calendar"
+                    id="issueDueDate"
+                    name="dueDate"
+                    onChange={(event) => {
+                      setValidationMessage(null);
+                      setDueDateFilter(event.currentTarget.value);
+                    }}
+                    type="text"
+                    value={dueDateFilter}
+                  />
+                  <button className="search-btn btn-calendar" type="button">
+                    <i className="yobicon-calendar2"></i>
+                  </button>
+                </dd>
+              </dl>
+              {validationMessage ? (
+                <div className="alert alert-error" role="alert">
+                  {validationMessage}
+                </div>
+              ) : null}
+              <div className="labels-wrap">
+                <a
+                  className="ybtn ybtn-default ybtn-mini pull-right"
+                  href={buildProjectHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "issue/labelsform",
+                  )}
+                >
+                  <i className="yobicon-cog vmiddle"></i>
+                  {(props.labels ?? []).length === 0 ? (
+                    <span className="vmiddle">{legacyMessage(props.messages, "label.manage")}</span>
+                  ) : null}
+                </a>
+                <dl className="issue-option">
+                  <dt>{legacyMessage(props.messages, "label")}</dt>
+                  <dd>
+                    <select
+                      aria-label={legacyMessage(props.messages, "label.select")}
+                      className="issue-label-filter"
+                      data-search="labelIds"
+                      data-placeholder={legacyMessage(props.messages, "label.select")}
+                      defaultValue={selectedLabelIds}
+                      multiple
+                      name="labelIds"
+                    >
+                      {(props.labels ?? []).map((label) => (
+                        <option key={label.id} value={label.id}>
+                          {label.categoryName ? `${label.categoryName}: ${label.name}` : label.name}
+                        </option>
+                      ))}
+                    </select>
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div className="span10 span-hard-wrap" id="span10">
+          <div className="pull-right">
+            <a
+              className="ybtn ybtn-success"
+              href={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "issueform",
+              )}
+            >
+              {legacyMessage(props.messages, "issue.menu.new")}
+            </a>
+          </div>
+          <ul className="nav nav-tabs nm">
+            <li className={query.state !== "closed" ? "active" : undefined} data-pjax="">
+              <a href={openHref} {...openStateAttr}>
+                {legacyMessage(props.messages, "issue.state.open")}
+                <span className="num-badge">
+                  {query.state !== "closed" ? (issueList?.totalCount ?? 0) : 0}
+                </span>
+              </a>
+            </li>
+            <li className={query.state === "closed" ? "active" : undefined} data-pjax="">
+              <a href={closedHref} {...closedStateAttr}>
+                {legacyMessage(props.messages, "issue.state.closed")}
+                <span className="num-badge">
+                  {query.state === "closed" ? (issueList?.totalCount ?? 0) : 0}
+                </span>
+              </a>
+            </li>
+            <li>
+              <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
+            </li>
+            <li className="show-subtasks-li">
+              <LegacyShowSubtasksCheckbox messages={props.messages} />
+            </li>
+          </ul>
+          {issueRows.length === 0 ? (
+            <div className="error-wrap">
+              <i className="ico ico-err1"></i>
+              <p>{legacyMessage(props.messages, "issue.is.empty")}</p>
+            </div>
+          ) : (
+            <>
+              <div className="filter-wrap board">
+                <IssueMassUpdateToolbar
+                  assignees={detail.dashboard?.assignees ?? []}
+                  disabled={selectedIssueNumbers.length === 0 || !props.onMassUpdate}
+                  labels={props.labels ?? []}
+                  messages={props.messages}
+                  milestones={(props.milestones ?? []).filter(
+                    (milestone) => milestone.state !== "closed",
+                  )}
+                  onCheckAll={(checked) =>
+                    setSelectedIssueNumbers(checked ? visibleIssueNumbers : [])
+                  }
+                  onMassUpdate={submitMassUpdate}
+                  selectedCount={selectedIssueNumbers.length}
+                  totalCount={visibleIssueNumbers.length}
+                  viewerLoginId={props.viewerLoginId}
+                  viewerUserId={props.viewerUserId}
+                />
+                <div className="filters pull-right">
+                  {[
+                    ["dueDate", "common.order.dueDate"],
+                    ["updatedDate", "common.order.updatedDate"],
+                    ["createdDate", "common.order.date"],
+                    ["numOfComments", "common.order.comments"],
+                  ].map(([orderBy, label]) => (
+                    <a
+                      className={query.orderBy === orderBy ? "filter active" : "filter"}
+                      href={projectIssueListPageHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        {
+                          ...query,
+                          orderBy,
+                          orderDir:
+                            query.orderBy === orderBy && query.orderDir === "desc" ? "asc" : "desc",
+                          pageNum: 1,
+                        },
+                        1,
+                      )}
+                      key={orderBy}
+                      {...({
+                        orderby: orderBy,
+                        orderdir:
+                          query.orderBy === orderBy && query.orderDir === "desc" ? "asc" : "desc",
+                      } as React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+                        orderby: string;
+                        orderdir: string;
+                      })}
+                    >
+                      <i className="ico btn-gray-arrow down"></i>
+                      {legacyMessage(props.messages, label)}
+                    </a>
+                  ))}
+                </div>
+              </div>
+              {issueList && issueList.draftItems.length > 0 ? (
+                <ProjectIssueRows
+                  items={issueList.draftItems}
+                  listKind="draft"
+                  messages={props.messages}
+                  onSelectionChange={setSelectedIssueNumbers}
+                  query={query}
+                  runtimeConfig={props.runtimeConfig}
+                  selectedIssueNumbers={selectedIssueNumbers}
+                />
+              ) : null}
+              <ProjectIssueRows
+                items={issueRows}
+                listKind="normal"
+                messages={props.messages}
+                onSelectionChange={setSelectedIssueNumbers}
+                query={query}
+                runtimeConfig={props.runtimeConfig}
+                selectedIssueNumbers={selectedIssueNumbers}
+              />
+              <div className="pull-left" style={{ padding: "10px" }}>
+                <a
+                  className="ybtn small"
+                  href={projectIssueExcelExportHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    query,
+                  )}
+                >
+                  <i className="yobicon-file-excel"></i>{" "}
+                  {legacyMessage(props.messages, "issue.downloadAsExcel")}
+                </a>
+              </div>
+              <IssueListPagination
+                currentPage={issueList?.pageNum ?? query.pageNum}
+                hrefForPage={(pageNum) =>
+                  projectIssueListPageHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    query,
+                    pageNum,
+                  )
+                }
+                messages={props.messages}
+                pageCount={totalPageCount}
+              />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
   return (
     <main className="app-shell issue-list-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
@@ -836,443 +1256,7 @@ export function ProjectIssueListPage(props: {
         keymapMode="list"
         runtimeConfig={props.runtimeConfig}
       />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="row-fluid issue-list-wrap" {...pjaxContainerAttr}>
-            <div className=" left-menu span2 span-hard-wrap">
-              <ul className="lst-stacked unstyled">
-                <li
-                  className={!query.assigneeLoginId && !query.authorLoginId ? "active" : undefined}
-                >
-                  <a
-                    data-assignee-id=""
-                    data-author-id=""
-                    data-commenter-id=""
-                    data-milestone-id={query.milestoneId || ""}
-                    href={allIssuesHref}
-                    {...pjaxFilterAttr}
-                  >
-                    {legacyMessage(
-                      props.messages,
-                      query.state === "closed" ? "issue.list.all.closed" : "issue.list.all.open",
-                    )}
-                    <span className="num-badge pull-right">{issueList?.totalCount ?? 0}</span>
-                  </a>
-                </li>
-                <li className={query.assigneeLoginId ? "active" : undefined}>
-                  <a
-                    data-assignee-id={query.assigneeLoginId}
-                    data-author-id=""
-                    data-commenter-id=""
-                    data-milestone-id={query.milestoneId || ""}
-                    href={assignedIssuesHref}
-                    {...pjaxFilterAttr}
-                  >
-                    {legacyMessage(props.messages, "issue.list.assignedToMe")}
-                    <span className="num-badge pull-right">
-                      {query.assigneeLoginId ? (issueList?.totalCount ?? 0) : 0}
-                    </span>
-                  </a>
-                </li>
-                <li className={query.authorLoginId ? "active" : undefined}>
-                  <a
-                    data-assignee-id=""
-                    data-author-id={query.authorLoginId}
-                    data-commenter-id=""
-                    data-milestone-id={query.milestoneId || ""}
-                    href={authoredIssuesHref}
-                    {...pjaxFilterAttr}
-                  >
-                    {legacyMessage(props.messages, "issue.list.authoredByMe")}
-                    <span className="num-badge pull-right">
-                      {query.authorLoginId ? (issueList?.totalCount ?? 0) : 0}
-                    </span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    data-assignee-id=""
-                    data-author-id=""
-                    data-commenter-id=""
-                    data-milestone-id={query.milestoneId || ""}
-                    href={commentedIssuesHref}
-                    {...pjaxFilterAttr}
-                  >
-                    {legacyMessage(props.messages, "issue.list.commentedByMe")}
-                    <span className="num-badge pull-right">0</span>
-                  </a>
-                </li>
-              </ul>
-              <form
-                action={buildProjectHref(
-                  props.runtimeConfig,
-                  detail.ownerName,
-                  detail.projectName,
-                  "issues",
-                )}
-                id="search"
-                method="get"
-                name="search"
-                onSubmit={(event) => {
-                  if (!isLegacyIssueDueDateValid(dueDateFilter)) {
-                    event.preventDefault();
-                    setValidationMessage("issue.error.invalid.duedate");
-                  }
-                }}
-              >
-                <input name="pageNum" type="hidden" value="1" />
-                <input name="orderBy" type="hidden" value={query.orderBy} />
-                <input name="orderDir" type="hidden" value={query.orderDir} />
-                <input name="state" type="hidden" value={query.state} />
-                {query.commenterId !== undefined ? (
-                  <input
-                    data-search="commenterId"
-                    name="commenterId"
-                    type="hidden"
-                    value={query.commenterId}
-                  />
-                ) : null}
-                {query.assigneeId !== undefined ? (
-                  <input
-                    data-search="assigneeId"
-                    name="assigneeId"
-                    type="hidden"
-                    value={query.assigneeId}
-                  />
-                ) : null}
-                <input
-                  data-search="authorLoginId"
-                  name="authorLoginId"
-                  type="hidden"
-                  value={query.authorLoginId}
-                />
-                {query.authorId !== undefined ? (
-                  <input
-                    data-search="authorId"
-                    name="authorId"
-                    type="hidden"
-                    value={query.authorId}
-                  />
-                ) : null}
-                <input
-                  data-search="assigneeLoginId"
-                  name="assigneeLoginId"
-                  type="hidden"
-                  value={query.assigneeLoginId}
-                />
-                <hr className="hide-in-mobile" />
-                <div className="search">
-                  <div className="search-bar">
-                    <input
-                      className="textbox full"
-                      data-search="filter"
-                      name="filter"
-                      type="text"
-                      defaultValue={query.filter}
-                    />
-                    <button className="search-btn" data-submit="submit" type="submit">
-                      <i className="yobicon-search"></i>
-                    </button>
-                  </div>
-                </div>
-                <div className="srch-advanced hide-in-mobile" id="advanced-search-form">
-                  <dl className="issue-option">
-                    <dt>{legacyMessage(props.messages, "issue.author")}</dt>
-                    <dd>
-                      <select
-                        data-container-css-class="fullsize"
-                        data-format="user"
-                        data-search="authorId"
-                        data-toggle="select2"
-                        id="authorId"
-                        name="authorLoginId"
-                        defaultValue={query.authorLoginId}
-                      >
-                        <option value="">
-                          {legacyMessage(props.messages, "common.order.all")}
-                        </option>
-                        {query.authorLoginId ? (
-                          <option value={query.authorLoginId}>{query.authorLoginId}</option>
-                        ) : null}
-                      </select>
-                    </dd>
-                  </dl>
-                  <dl className="issue-option">
-                    <dt>{legacyMessage(props.messages, "issue.assignee")}</dt>
-                    <dd>
-                      <select
-                        data-container-css-class="fullsize"
-                        data-format="user"
-                        data-search="assigneeId"
-                        data-toggle="select2"
-                        id="assigneeId"
-                        name="assigneeLoginId"
-                        defaultValue={query.assigneeLoginId}
-                      >
-                        <option value="">
-                          {legacyMessage(props.messages, "common.order.all")}
-                        </option>
-                        <option value="anonymous">
-                          {legacyMessage(props.messages, "issue.noAssignee")}
-                        </option>
-                        {query.assigneeLoginId ? (
-                          <option value={query.assigneeLoginId}>{query.assigneeLoginId}</option>
-                        ) : null}
-                      </select>
-                    </dd>
-                  </dl>
-                  <dl className="issue-option">
-                    <dt>{legacyMessage(props.messages, "milestone")}</dt>
-                    <dd>
-                      <select
-                        data-container-css-class="fullsize"
-                        data-format="milestone"
-                        data-search="milestoneId"
-                        data-toggle="select2"
-                        id="milestoneId"
-                        name="milestoneId"
-                        defaultValue={query.milestoneId ? String(query.milestoneId) : ""}
-                      >
-                        <option value="">
-                          {legacyMessage(props.messages, "milestone.state.all")}
-                        </option>
-                        <option value="0">
-                          {legacyMessage(props.messages, "issue.noMilestone")}
-                        </option>
-                        <IssueMilestoneOptionGroups
-                          messages={props.messages}
-                          milestones={props.milestones ?? []}
-                        />
-                      </select>
-                    </dd>
-                  </dl>
-                  <dl className="issue-option">
-                    <dt>{legacyMessage(props.messages, "issue.dueDate")}</dt>
-                    <dd className="search search-bar">
-                      <input
-                        className="textbox full"
-                        data-toggle="calendar"
-                        id="issueDueDate"
-                        name="dueDate"
-                        onChange={(event) => {
-                          setValidationMessage(null);
-                          setDueDateFilter(event.currentTarget.value);
-                        }}
-                        type="text"
-                        value={dueDateFilter}
-                      />
-                      <button className="search-btn btn-calendar" type="button">
-                        <i className="yobicon-calendar2"></i>
-                      </button>
-                    </dd>
-                  </dl>
-                  {validationMessage ? (
-                    <div className="alert alert-error" role="alert">
-                      {validationMessage}
-                    </div>
-                  ) : null}
-                  <div className="labels-wrap">
-                    <a
-                      className="ybtn ybtn-default ybtn-mini pull-right"
-                      href={buildProjectHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        "issue/labelsform",
-                      )}
-                    >
-                      <i className="yobicon-cog vmiddle"></i>
-                      {(props.labels ?? []).length === 0 ? (
-                        <span className="vmiddle">
-                          {legacyMessage(props.messages, "label.manage")}
-                        </span>
-                      ) : null}
-                    </a>
-                    <dl className="issue-option">
-                      <dt>{legacyMessage(props.messages, "label")}</dt>
-                      <dd>
-                        <select
-                          aria-label={legacyMessage(props.messages, "label.select")}
-                          className="issue-label-filter"
-                          data-search="labelIds"
-                          data-placeholder={legacyMessage(props.messages, "label.select")}
-                          defaultValue={selectedLabelIds}
-                          multiple
-                          name="labelIds"
-                        >
-                          {(props.labels ?? []).map((label) => (
-                            <option key={label.id} value={label.id}>
-                              {label.categoryName
-                                ? `${label.categoryName}: ${label.name}`
-                                : label.name}
-                            </option>
-                          ))}
-                        </select>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </form>
-            </div>
-            <div className="span10 span-hard-wrap" id="span10">
-              <div className="pull-right">
-                <a
-                  className="ybtn ybtn-success"
-                  href={buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    "issueform",
-                  )}
-                >
-                  {legacyMessage(props.messages, "issue.menu.new")}
-                </a>
-              </div>
-              <ul className="nav nav-tabs nm">
-                <li className={query.state !== "closed" ? "active" : undefined} data-pjax="">
-                  <a href={openHref} {...openStateAttr}>
-                    {legacyMessage(props.messages, "issue.state.open")}
-                    <span className="num-badge">
-                      {query.state !== "closed" ? (issueList?.totalCount ?? 0) : 0}
-                    </span>
-                  </a>
-                </li>
-                <li className={query.state === "closed" ? "active" : undefined} data-pjax="">
-                  <a href={closedHref} {...closedStateAttr}>
-                    {legacyMessage(props.messages, "issue.state.closed")}
-                    <span className="num-badge">
-                      {query.state === "closed" ? (issueList?.totalCount ?? 0) : 0}
-                    </span>
-                  </a>
-                </li>
-                <li>
-                  <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
-                </li>
-                <li className="show-subtasks-li">
-                  <LegacyShowSubtasksCheckbox messages={props.messages} />
-                </li>
-              </ul>
-              {issueRows.length === 0 ? (
-                <div className="error-wrap">
-                  <i className="ico ico-err1"></i>
-                  <p>{legacyMessage(props.messages, "issue.is.empty")}</p>
-                </div>
-              ) : (
-                <>
-                  <div className="filter-wrap board">
-                    <IssueMassUpdateToolbar
-                      assignees={detail.dashboard?.assignees ?? []}
-                      disabled={selectedIssueNumbers.length === 0 || !props.onMassUpdate}
-                      labels={props.labels ?? []}
-                      messages={props.messages}
-                      milestones={(props.milestones ?? []).filter(
-                        (milestone) => milestone.state !== "closed",
-                      )}
-                      onCheckAll={(checked) =>
-                        setSelectedIssueNumbers(checked ? visibleIssueNumbers : [])
-                      }
-                      onMassUpdate={submitMassUpdate}
-                      selectedCount={selectedIssueNumbers.length}
-                      totalCount={visibleIssueNumbers.length}
-                      viewerLoginId={props.viewerLoginId}
-                      viewerUserId={props.viewerUserId}
-                    />
-                    <div className="filters pull-right">
-                      {[
-                        ["dueDate", "common.order.dueDate"],
-                        ["updatedDate", "common.order.updatedDate"],
-                        ["createdDate", "common.order.date"],
-                        ["numOfComments", "common.order.comments"],
-                      ].map(([orderBy, label]) => (
-                        <a
-                          className={query.orderBy === orderBy ? "filter active" : "filter"}
-                          href={projectIssueListPageHref(
-                            props.runtimeConfig,
-                            detail.ownerName,
-                            detail.projectName,
-                            {
-                              ...query,
-                              orderBy,
-                              orderDir:
-                                query.orderBy === orderBy && query.orderDir === "desc"
-                                  ? "asc"
-                                  : "desc",
-                              pageNum: 1,
-                            },
-                            1,
-                          )}
-                          key={orderBy}
-                          {...({
-                            orderby: orderBy,
-                            orderdir:
-                              query.orderBy === orderBy && query.orderDir === "desc"
-                                ? "asc"
-                                : "desc",
-                          } as React.AnchorHTMLAttributes<HTMLAnchorElement> & {
-                            orderby: string;
-                            orderdir: string;
-                          })}
-                        >
-                          <i className="ico btn-gray-arrow down"></i>
-                          {legacyMessage(props.messages, label)}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                  {issueList && issueList.draftItems.length > 0 ? (
-                    <ProjectIssueRows
-                      items={issueList.draftItems}
-                      listKind="draft"
-                      messages={props.messages}
-                      onSelectionChange={setSelectedIssueNumbers}
-                      query={query}
-                      runtimeConfig={props.runtimeConfig}
-                      selectedIssueNumbers={selectedIssueNumbers}
-                    />
-                  ) : null}
-                  <ProjectIssueRows
-                    items={issueRows}
-                    listKind="normal"
-                    messages={props.messages}
-                    onSelectionChange={setSelectedIssueNumbers}
-                    query={query}
-                    runtimeConfig={props.runtimeConfig}
-                    selectedIssueNumbers={selectedIssueNumbers}
-                  />
-                  <div className="pull-left" style={{ padding: "10px" }}>
-                    <a
-                      className="ybtn small"
-                      href={projectIssueExcelExportHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        query,
-                      )}
-                    >
-                      <i className="yobicon-file-excel"></i>{" "}
-                      {legacyMessage(props.messages, "issue.downloadAsExcel")}
-                    </a>
-                  </div>
-                  <IssueListPagination
-                    currentPage={issueList?.pageNum ?? query.pageNum}
-                    hrefForPage={(pageNum) =>
-                      projectIssueListPageHref(
-                        props.runtimeConfig,
-                        detail.ownerName,
-                        detail.projectName,
-                        query,
-                        pageNum,
-                      )
-                    }
-                    messages={props.messages}
-                    pageCount={totalPageCount}
-                  />
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

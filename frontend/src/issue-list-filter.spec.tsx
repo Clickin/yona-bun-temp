@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -247,5 +249,65 @@ describe("project issue list filters", () => {
     expect(html).not.toContain("Author:");
     expect(html).not.toContain("issue.assignee:");
     expect(html).not.toContain("Comments:");
+  });
+
+  it("lets the project layout route own the issue list shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueListPage
+        detail={{
+          dashboard: { assignees: [], labels: [] },
+          enrollmentRequested: false,
+          isFavorited: false,
+          organizationName: "",
+          overview: "",
+          ownerName: "admin",
+          projectName: "projectYobi",
+          projectScope: "public",
+          viewerCanEnroll: false,
+          viewerCanUpdate: true,
+        }}
+        issueList={{
+          draftItems: [],
+          items: [],
+          ownerName: "admin",
+          pageNum: 1,
+          pageSize: 15,
+          projectName: "projectYobi",
+          totalCount: 0,
+        }}
+        query={{
+          assigneeLoginId: "",
+          authorLoginId: "",
+          dueDate: "",
+          labelIds: [],
+          milestoneId: 0,
+          pageNum: 1,
+          state: "open",
+        }}
+        renderShell={false}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/issues/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/issues`");
+    expect(layoutSource).toContain('activeMenu: "issue"');
+    expect(layoutSource).toContain('keymapMode: "list"');
+    expect(layoutSource).toContain('shellClassName: "issue-list-page"');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="app-shell issue-list-page"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="row-fluid issue-list-wrap"');
+    expect(html).toContain('id="advanced-search-form"');
   });
 });

@@ -23,6 +23,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx` adds `renderShell={false}` while retaining the existing label/category REST mutation boundary.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-label-settings-i18n.spec.tsx src/project-settings-parity.spec.tsx`.
 
+## 2026-06-27 Issue List Layout Follow-Up
+
+- Moved project issue list shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/issues`, keeping the issue menu active, list keymap mode, and `issue-list-page` shell CSS hook.
+- Scope: `frontend/src/routes/-issue-views.tsx` adds `renderShell={false}` for `ProjectIssueListPage`; the issue list leaf route passes that flag while retaining the existing REST list and mass-update boundaries.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-list-filter.spec.tsx`.
+
 ## Evidence Checked
 
 Legacy evidence:
@@ -76,7 +82,7 @@ Total rows: 24
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
-| `/:owner/:project/issues` | Project issue list renders state tabs, side filters, due date, label/milestone/assignee filters, two-column and subtask toggles. | `ProjectIssueListPage` renders state tabs, side filters, advanced filter shell, due date input, label/milestone selects, `LegacyTwoColumnModeCheckboxArea`, and `LegacyShowSubtasksCheckbox`. | covered | none |
+| `/:owner/:project/issues` | Project issue list renders state tabs, side filters, due date, label/milestone/assignee filters, two-column and subtask toggles. | Project layout owns the header/menu/page-wrap shell with active issue menu, list keymap, and `issue-list-page`; `ProjectIssueListPage` renders state tabs, side filters, advanced filter shell, due date input, label/milestone selects, `LegacyTwoColumnModeCheckboxArea`, and `LegacyShowSubtasksCheckbox` under the outlet. | covered | `frontend/src/routes/$owner/$projectName/route.tsx`, `frontend/src/routes/$owner/$projectName/issues/route.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/issue-list-filter.spec.tsx` |
 | `/:owner/:project/issues` filter execution | Legacy supports filter text, commenter filter, due date, sort order, and quick-search state via request params/PJAX. | React route/client now preserves `filter`, `dueDate`, `orderBy`, `orderDir`, `commenterId`, author/assignee/label/milestone/page/state params; REST raw query parsing accepts duplicate labels and legacy scalar params; repository filtering applies text, commenter, due date, labels, milestone, assignee/author, state, and sort before pagination. | covered | none |
 | `/:owner/:project/issues` mass update | `partial_massupdate.scala.html` renders check-all, state, assignee, milestone, attach-label, detach-label controls. | `ProjectIssueListPage` renders `#mass-update-form`, `#check-all`, `#state`, `#assignee`, `#milestone`, `#attaching-label`, and `#detaching-label`, tracks checked `name=checked-issue` rows, and posts selected issue numbers to REST `massUpdateIssues`. | covered | none |
 | `/user/issues` | Personal issue filters, state tabs, search, sort, two-column/subtask toggles. | `UserIssueListPage` renders the same filter set, hidden ids, state tabs, search, sort links, list rows, and default-login-page control. | covered | none |

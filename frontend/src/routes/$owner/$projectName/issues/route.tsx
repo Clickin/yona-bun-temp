@@ -146,6 +146,7 @@ function ProjectIssuesRouteComponent() {
         loadIssues();
       }}
       query={query}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       viewerLoginId={currentSession?.loginId}
       viewerUserId={Number(currentSession?.actorId ?? 0) || undefined}

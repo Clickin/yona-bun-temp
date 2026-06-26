@@ -250,6 +250,17 @@ M16 continues board shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
 
+M17 starts issue list/detail shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/issues`, with the issue menu active, issue
+  list keymap mode, and `issue-list-page` shell class preserved.
+- `ProjectIssueListPage` supports `renderShell={false}` so the list leaf route
+  keeps its REST list/mass-update boundaries but renders only the legacy
+  `project-page-wrap` issue list body under the project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/issue-list-filter.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit
