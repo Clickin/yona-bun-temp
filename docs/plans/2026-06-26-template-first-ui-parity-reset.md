@@ -161,6 +161,23 @@ Any `gap`, `deviation`, or `weak evidence` blocks UI parity closure.
 
 ## Immediate Next Steps
 
+Update 2026-06-27:
+
+- No `.webp` files are present in the repository or ignored output tree; no
+  webp asset deletion was required.
+- `scripts/visual-parity-sweep.mjs` now supports focused path sweeps through
+  `YORAM_SWEEP_PATHS` and records P2/P3 selector metrics/screenshots.
+- P2/P3 focused sweep evidence is recorded in
+  `docs/provenance/ui-parity-reports/template-first-p2-project-shell.md` and
+  `docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md`.
+- CSS parity follow-up restored full-width project shells, legacy
+  `project-page-wrap`/`page-wrap` widths, Bootstrap 2 `row-fluid/span*`
+  desktop grid behavior, and `cu-label`/`cu-desc` inline layout in
+  `frontend/src/app.css`.
+- P3 remains open: live `/admin/sample/issue/1` renders with correct shell
+  status but incomplete detail/comment/timeline-visible content compared with
+  legacy.
+
 1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
    header/menu, issue/editor/comment surfaces define most repeated visual
    contracts.

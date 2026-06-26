@@ -68,19 +68,30 @@ Source comparison by Subagent P2 found concrete reset blockers:
 | `project/members.scala.html` | Role dropdown. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-members-parity.spec.tsx`, `frontend/src/project-settings-parity.spec.tsx` | layout | covered in current follow-up | P2 | none | Member role dropdown items now render as `<a data-action="apply" data-href=... data-loginId=...>` inside the legacy `.btn-group > button.dropdown-toggle.large + ul.dropdown-menu > li[data-value]` shell. The legacy `javascript:void(0)` href is intentionally represented as a React `preventDefault()` anchor target to preserve behavior without copying legacy JavaScript. |
 | `project/partial_webhooks_list.scala.html` | Existing webhook row. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-settings-parity.spec.tsx` | interaction | covered in current follow-up | P2 | none | Existing webhook rows now preserve the legacy `.row-fluid.list-item.vertical-align[data-webhook-id]` shell, `<h6>` wrappers for payload/secret/type, delete button request attributes, and checked read-only git-push checkbox. The legacy inline `onclick="return false;"` is intentionally implemented as React `event.preventDefault()` to keep the same no-toggle UX without copying legacy JavaScript. |
 
-## Verifier Baseline Required
+## Verifier Evidence
 
-P2 cannot close until verifier evidence includes:
+Focused verifier run:
 
-- desktop/mobile legacy/current screenshots for project home, settings,
-  members, watchers, webhooks, transfer/delete/changeVCS, and at least one
-  private/protected/forked project header state;
-- computed-style/layout proof for `.project-header-outer`,
-  `.project-header-avatar`, `.project-breadcrumb-wrap`, `.project-util-wrap`,
-  `.project-menu-outer`, `.project-menu-nav`, `.page-wrap-outer`,
-  `.project-page-wrap`, `.bubble-wrap.gray`, `.box-wrap`, `.cu-label`, and
-  `.cu-desc`;
-- conditional branch proof for watcher/favorite/enroll/member/admin/menu
-  settings states;
-- REST boundary proof retained from the older report, but treated as supporting
-  evidence only.
+- Command:
+  `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both YORAM_SWEEP_PATHS=/admin/sample,/admin/sample/settingform,/admin/sample/members,/admin/sample/watchers,/admin/sample/webhooks,/admin/sample/transfer,/admin/sample/deleteform,/admin/sample/changeVCS,/admin/sample/issues,/user/issues,/admin/sample/issueform,/admin/sample/issue/1/editform,/admin/sample/issue/1 node scripts/visual-parity-sweep.mjs`
+- Artifact: `output/playwright/visual-sweep/latest.json`
+- Checked at: `2026-06-26T15:26:46.018Z`
+- Result: legacy `13/13` passed, local `13/13` passed, `diffFailures 0`,
+  `localFailures 0`, `statusDeltas []`.
+
+Computed-style/layout proof now covers the P2 shell selectors listed below.
+
+| Route | selector | legacy | local |
+| --- | --- | ---: | ---: |
+| `/admin/sample/settingform` | `.project-header-outer` width | 1366 | 1366 |
+| `/admin/sample/settingform` | `.project-menu-outer` width | 1366 | 1366 |
+| `/admin/sample/settingform` | `.project-page-wrap` width | 1346 | 1346 |
+| `/admin/sample/settingform` | `.bubble-wrap.gray` width | 1346 | 1346 |
+| `/admin/sample/settingform` | `.box-wrap` width | 1346 | 1346 |
+| `/admin/sample/settingform` | `.cu-label` display/width | `inline-block` / 205 | `inline-block` / 205 |
+| `/admin/sample/settingform` | `.cu-desc` display | `inline-block` | `inline-block` |
+
+This evidence closes the previous verifier-baseline blocker for the sampled P2
+project shell/settings routes. Conditional private/protected/forked header
+states still require packet-specific verifier evidence before whole-project UI
+parity can be closed.

@@ -43,7 +43,7 @@ Source comparison by Subagent P3 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 0 |
+| gap | 1 |
 | deviation | 0 |
 | weak evidence | 0 |
 | covered | 12 |
@@ -54,6 +54,7 @@ Source comparison by Subagent P3 found concrete reset blockers:
 | legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `issue/view.scala.html`, `issue/partial_index_comments.scala.html`, `issue/partial_index_comment.scala.html` | Issue detail right `issue-info` compact comment index. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/issue-detail-shell.spec.tsx` | layout | covered in current follow-up | P3 | none | Issue detail now renders the legacy compact comment index inside `.issue-info` after `#issueUpdateForm`: `#comments.board-comment-wrap > #timeline > .timeline-list`, `.comment-header .num`, root `.comment.index-comment[data-location]`, `#comment-body-$id .comment-body > a`, `.index-comment-author`, `.comment-exists`, `.comment_author`, `.ago-date`, and hidden `.share-link`. |
+| `issue/view.scala.html`, `issue/partial_comments.scala.html`, `issue/partial_comment.scala.html`, `issue/partial_event_timeline.scala.html` | Live legacy sample detail `/admin/sample/issue/1` with comments/timeline/body. | `frontend/src/routes/-issue-views.tsx`, issue detail REST/view-model boundary | data-boundary | gap | P3 | `frontend/src/routes/-issue-views.tsx`, issue detail API/view-model files, focused live-data tests | Focused sweep `output/playwright/visual-sweep/latest.json` at `2026-06-26T15:26:46.018Z` proves the shell renders without route/status failure, but live visible content is not parity: legacy body text length `2304` vs local `240`; legacy has markdown/editor/comment/timeline-visible content that local sample route does not render equivalently. Do not close P3 until the live issue detail content/timeline/comment data mapping is fixed or explicitly reclassified. |
 | `issue/partial_comment.scala.html`, `issue/partial_voter_list.scala.html` | Full comment timeline with voter avatars/modal threshold. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/issue-detail-shell.spec.tsx`, `frontend/src/auth-workspace-shell.spec.tsx` | layout | covered in current follow-up | P3 | none | Full comment action rows now match the legacy voter threshold: <=5 voters render `.avatar-wrap.smaller` tooltip links without agreement text, >5 voters render `.vote-description-people[href=#voters-$id]` plus `#voters-$id.modal.hide.voters-dialog` with `.usf-group`, `.avatar-wrap.mlarge`, `.name`, and `.loginid`. |
 | `common/commentUpdateForm.scala.html` | Comment edit with upload label/input and notification mail checkbox. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-view-models.ts`, `frontend/src/auth-workspace-client.ts`, `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, `frontend/src/issue-detail-shell.spec.tsx` | interaction | covered in current follow-up | P3 | none | Comment edit now renders the legacy `.file-upload > .file-upload__label.ybtn[for=upload-$id]`, `.file-upload__input#upload-$id[name=filePath][multiple]`, and authored-only `.send-notification-check` popover with checked `notificationMail=yes`; server/detail view models carry `authorId` and `viewerUserId` so the checkbox follows legacy `comment.isAuthoredBy(currentUser)` behavior. |
 | `common/fileUploader.scala.html`, `common/uploadForm.scala.html` | Issue/comment create upload, drag/drop, attached file template. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/routes/-markdown-attachment-textarea.tsx`, `frontend/src/issue-detail-shell.spec.tsx`, `frontend/src/route-parity.spec.tsx` | data-boundary | covered in current follow-up | P3 | none | Issue/comment create upload shells now preserve the legacy `uploadForm` wrapper plus `fileUploader` template anchors: `#upload.upload-wrap.content-footer[data-resource-type]`, `.attach-wrap`, `.fake-file-wrap input.file[name=filePath][multiple]`, `.attached-files.unstyled`, `#tplAttachedFile[type=text/x-jquery-tmpl]`, `.attached-file`, `.progress.upload-progress .bar.orange`, `.btn-delete`, `.btn-insert`, and `#tplDropFilesHere .upload-drop-here`. |
@@ -67,19 +68,35 @@ Source comparison by Subagent P3 found concrete reset blockers:
 | `issue/my_list.scala.html`, `my_partial_search.scala.html`, `my_partial_list.scala.html`, `my_partial_list_quicksearch.scala.html` | User issue list and quick search route states. | `frontend/src/routes/user/issues/route.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/route-parity.spec.tsx` | layout | covered in current follow-up | P3 | none | User issue list mapper pass now proves the legacy `my_*` shell: `.page-wrap-outer > .page-wrap`, my-series tabs, `[pjax-container].row-fluid.issue-list-wrap`, `.left-menu.span2.span-hard-wrap`, `.lst-stacked.unstyled`, `[pjax-filter]` quick filter data ids, hidden `data-search` fields, `.myissues-search-input`, state tab `state` attrs, sort `orderBy` / `orderDir` attrs, `.post-list-wrap.my-issues`, `li.post-item.title[href]`, `.project-name-in-my-issues.fixed-height-my-issues-list`, project/title/post-id cells, label/count/meta/assignee anchors, pagination, and empty-state shell. |
 | Legacy PJAX/timeline fragment paths | XHR list/timeline fragments return server-rendered HTML in legacy. | React route plus REST JSON | data-boundary | not-applicable | P3 | none unless parent reclassifies | Keep as React-rendered API conversion per reset; rendered DOM still needs template shape parity. |
 
-## Verifier Baseline Required
+## Verifier Evidence
 
-P3 cannot close until verifier evidence includes:
+Focused verifier run:
 
-- desktop/mobile legacy/current screenshots for project issue list,
-  user issue list, create form, edit form, issue detail with comments/timeline,
-  and at least one empty-state list;
-- computed-style/layout proof for `.row-fluid.issue-list-wrap`, `.left-menu`,
-  `.post-list-wrap`, `.post-item.title`, `.content-wrap.frm-wrap`,
-  `[data-toggle=markdown-editor]`, `.markdown-preview.markdown-wrap`,
-  `.upload-wrap.content-footer`, `#issueUpdateForm`, `ul.comments`,
-  `li.comment`, `.comment-body.markdown-wrap`, and `#comment-delete-modal`;
-- interaction proof for filter/search/pagination, mass update, editor preview,
-  upload/drop, comment edit/delete, child comment, and sidebar metadata updates;
-- confirmation that REST JSON/API-return remains the data boundary while the
-  visible DOM follows legacy template shape.
+- Command:
+  `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both YORAM_SWEEP_PATHS=/admin/sample,/admin/sample/settingform,/admin/sample/members,/admin/sample/watchers,/admin/sample/webhooks,/admin/sample/transfer,/admin/sample/deleteform,/admin/sample/changeVCS,/admin/sample/issues,/user/issues,/admin/sample/issueform,/admin/sample/issue/1/editform,/admin/sample/issue/1 node scripts/visual-parity-sweep.mjs`
+- Artifact: `output/playwright/visual-sweep/latest.json`
+- Checked at: `2026-06-26T15:26:46.018Z`
+- Result: legacy `13/13` passed, local `13/13` passed, `diffFailures 0`,
+  `localFailures 0`, `statusDeltas []`.
+
+Computed-style/layout proof now covers the sampled P3 shell/grid selectors.
+
+| Route | selector | legacy | local |
+| --- | --- | ---: | ---: |
+| `/admin/sample/issues` | `.project-page-wrap` width | 1346 | 1346 |
+| `/admin/sample/issues` | `.row-fluid.issue-list-wrap` width | 1346 | 1346 |
+| `/admin/sample/issues` | `.left-menu` width | 200 | 200 |
+| `/user/issues` | `.row-fluid.issue-list-wrap` width | 1346 | 1346 |
+| `/user/issues` | `.left-menu` width | 200 | 200 |
+| `/admin/sample/issueform` | `.content-wrap.frm-wrap` width | 1346 | 1346 |
+| `/admin/sample/issueform` | `.upload-wrap.content-footer` width | 1002 | 1002 |
+
+Remaining verifier work:
+
+- Close the live issue detail data-boundary gap recorded above for
+  `/admin/sample/issue/1`.
+- Add mobile screenshot evidence and interaction proof for filter/search,
+  pagination, mass update, editor preview, upload/drop, comment edit/delete,
+  child comments, and sidebar metadata updates.
+- Preserve the reset rule that REST JSON/API-return remains the data boundary
+  while the visible DOM follows the legacy template shape.

@@ -102,12 +102,48 @@ test("visual sweep scans chrome text and attributes for visible raw legacy keys"
 test("visual sweep records P0 global shell computed-style metrics", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
+  assert.match(source, /const requestedSweepPaths = parseRequestedSweepPaths/u);
+  assert.match(source, /process\.env\.YORAM_SWEEP_PATHS/u);
+  assert.match(source, /label === "local" && loggedIn && !useRequestedPaths/u);
+  assert.match(source, /waitUntil: "domcontentloaded"/u);
   assert.match(source, /gnbInner: selectorState\("\.gnb-inner"\)/u);
   assert.match(source, /gnbUsermenu: selectorState\("\.gnb-usermenu"\)/u);
   assert.match(source, /sidenav: selectorState\("#mySidenav"\)/u);
   assert.match(source, /footer: selectorState\("footer\.page-footer-outer"\)/u);
-  assert.match(source, /const alwaysScreenshotPaths = new Set\(\["\/", "\/admin\/sample", "\/users\/loginform"\]\)/u);
+  assert.match(source, /"\/admin\/sample\/settingform"/u);
+  assert.match(source, /"\/admin\/sample\/issue\/1"/u);
   assert.match(source, /const isFramedShell = path === "\/sidebar"/u);
   assert.match(source, /missing global navigation inner container/u);
   assert.match(source, /missing global user menu container/u);
+});
+
+test("visual sweep records P2 and P3 template verifier metrics", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  for (const selector of [
+    "projectHeaderAvatar",
+    "projectBreadcrumbWrap",
+    "projectUtilWrap",
+    "projectMenuNav",
+    "projectPageWrap",
+    "bubbleWrapGray",
+    "boxWrap",
+    "cuLabel",
+    "cuDesc",
+    "issueListWrap",
+    "leftMenu",
+    "postListWrap",
+    "postItemTitle",
+    "contentFormWrap",
+    "markdownEditor",
+    "markdownPreview",
+    "uploadWrap",
+    "issueUpdateForm",
+    "comments",
+    "commentBody",
+    "commentDeleteModal",
+  ]) {
+    assert.match(source, new RegExp(`${selector}: selectorState`, "u"));
+    assert.match(source, new RegExp(`${selector}: metrics\\.${selector}`, "u"));
+  }
 });

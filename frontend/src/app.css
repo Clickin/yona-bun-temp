@@ -184,6 +184,19 @@ button[type="submit"]:focus {
   padding: 24px 0 60px;
 }
 
+.app-shell:has(> .project-header-outer),
+.app-shell:has(> .project-menu-outer),
+.app-shell.issue-list-page,
+.app-shell.issue-detail-page,
+.app-shell.issue-form-page,
+.app-shell.user-issue-list-page,
+.app-shell.board-page,
+.app-shell.pull-request-page {
+  width: 100%;
+  max-width: none;
+  padding: 0 0 60px;
+}
+
 .framed-body {
   overflow: hidden;
 }
@@ -1172,6 +1185,12 @@ h1 {
   margin-top: 10px;
 }
 
+.page-wrap-outer,
+.project-header-outer,
+.project-menu-outer {
+  min-width: 1100px;
+}
+
 .page-wrap,
 .project-page-wrap {
   margin-right: auto;
@@ -1179,7 +1198,12 @@ h1 {
   background-color: #fff;
 }
 
+.app-shell.user-issue-list-page .page-wrap {
+  width: calc(100% - 20px);
+}
+
 .project-page-wrap {
+  width: calc(100% - 20px);
   margin-top: 20px;
 }
 
@@ -1454,6 +1478,97 @@ h1 {
   right: 10px;
   padding: 0 !important;
   margin-left: 0 !important;
+}
+
+.row-fluid {
+  width: 100%;
+}
+
+.row-fluid::before,
+.row-fluid::after {
+  display: table;
+  line-height: 0;
+  content: "";
+}
+
+.row-fluid::after {
+  clear: both;
+}
+
+.row-fluid [class*="span"] {
+  box-sizing: border-box;
+  display: block;
+  float: left;
+  width: 100%;
+  min-height: 30px;
+  margin-left: 2.127659574468085%;
+}
+
+.row-fluid [class*="span"]:first-child {
+  margin-left: 0;
+}
+
+.row-fluid .controls-row [class*="span"] + [class*="span"] {
+  margin-left: 2.127659574468085%;
+}
+
+.row-fluid .span12 {
+  width: 100%;
+}
+
+.row-fluid .span11 {
+  width: 91.48936170212765%;
+}
+
+.row-fluid .span10 {
+  width: 82.97872340425532%;
+}
+
+.row-fluid .span9 {
+  width: 74.46808510638297%;
+}
+
+.row-fluid .span8 {
+  width: 65.95744680851064%;
+}
+
+.row-fluid .span7 {
+  width: 57.44680851063829%;
+}
+
+.row-fluid .span6 {
+  width: 48.93617021276595%;
+}
+
+.row-fluid .span5 {
+  width: 40.42553191489362%;
+}
+
+.row-fluid .span4 {
+  width: 31.914893617021278%;
+}
+
+.row-fluid .span3 {
+  width: 23.404255319148934%;
+}
+
+.row-fluid .span2 {
+  width: 14.893617021276595%;
+}
+
+.row-fluid .span1 {
+  width: 6.382978723404255%;
+}
+
+.cu-label {
+  display: inline-block;
+  width: 160px;
+  padding-right: 45px;
+  vertical-align: top;
+}
+
+.cu-desc {
+  display: inline-block;
 }
 
 .filter-wrap {

@@ -23,8 +23,21 @@ const localBaseUrl = (process.env.YORAM_BASE_URL ?? "http://127.0.0.1:18101/yona
 const loginId = process.env.YONA_LEGACY_LOGIN_ID ?? "admin";
 const password = process.env.YONA_LEGACY_PASSWORD ?? "admin";
 const sweepTarget = process.env.YORAM_SWEEP_TARGET ?? "both";
+const requestedSweepPaths = parseRequestedSweepPaths(process.env.YORAM_SWEEP_PATHS);
 
 mkdirSync(outputDir, { recursive: true });
+
+function parseRequestedSweepPaths(input) {
+  return [
+    ...new Set(
+      (input ?? "")
+        .split(",")
+        .map((path) => path.trim())
+        .filter(Boolean)
+        .map((path) => (path.startsWith("/") ? path : `/${path}`)),
+    ),
+  ];
+}
 
 const basePages = [
   "/",
@@ -211,7 +224,23 @@ const localDirectApiSurfaces = [
   },
 ];
 
-const alwaysScreenshotPaths = new Set(["/", "/admin/sample", "/users/loginform"]);
+const alwaysScreenshotPaths = new Set([
+  "/",
+  "/admin/sample",
+  "/users/loginform",
+  "/admin/sample/settingform",
+  "/admin/sample/members",
+  "/admin/sample/watchers",
+  "/admin/sample/webhooks",
+  "/admin/sample/transfer",
+  "/admin/sample/deleteform",
+  "/admin/sample/changeVCS",
+  "/admin/sample/issues",
+  "/user/issues",
+  "/admin/sample/issueform",
+  "/admin/sample/issue/1/editform",
+  "/admin/sample/issue/1",
+]);
 
 const routeSampleValues = {
   $branch: "main",
@@ -663,7 +692,7 @@ async function inspectPage(page, baseUrl, path, label) {
   let response = null;
   try {
     response = await page.goto(urlFor(baseUrl, path), {
-      waitUntil: "networkidle",
+      waitUntil: "domcontentloaded",
       timeout: 20_000,
     });
   } catch (error) {
@@ -777,8 +806,30 @@ async function inspectPage(page, baseUrl, path, label) {
       gnbUsermenu: selectorState(".gnb-usermenu"),
       sidenav: selectorState("#mySidenav"),
       projectHeader: selectorState(".project-header-outer"),
+      projectHeaderAvatar: selectorState(".project-header-avatar"),
+      projectBreadcrumbWrap: selectorState(".project-breadcrumb-wrap"),
+      projectUtilWrap: selectorState(".project-util-wrap"),
       projectMenu: selectorState(".project-menu-outer"),
+      projectMenuNav: selectorState(".project-menu-nav"),
       pageWrap: selectorState(".page-wrap-outer, .project-page-wrap"),
+      projectPageWrap: selectorState(".project-page-wrap"),
+      bubbleWrapGray: selectorState(".bubble-wrap.gray"),
+      boxWrap: selectorState(".box-wrap"),
+      cuLabel: selectorState(".cu-label"),
+      cuDesc: selectorState(".cu-desc"),
+      issueListWrap: selectorState(".row-fluid.issue-list-wrap"),
+      leftMenu: selectorState(".left-menu"),
+      postListWrap: selectorState(".post-list-wrap"),
+      postItemTitle: selectorState(".post-item.title"),
+      contentFormWrap: selectorState(".content-wrap.frm-wrap"),
+      markdownEditor: selectorState("[data-toggle=markdown-editor]"),
+      markdownPreview: selectorState(".markdown-preview.markdown-wrap"),
+      uploadWrap: selectorState(".upload-wrap.content-footer"),
+      issueUpdateForm: selectorState("#issueUpdateForm"),
+      comments: selectorState("ul.comments"),
+      comment: selectorState("li.comment"),
+      commentBody: selectorState(".comment-body.markdown-wrap"),
+      commentDeleteModal: selectorState("#comment-delete-modal"),
       loginDialog: selectorState("#loginDialog, .loginDialog"),
       footer: selectorState("footer.page-footer-outer"),
       userProfile: selectorState(".user-profile-page"),
@@ -888,8 +939,30 @@ async function inspectPage(page, baseUrl, path, label) {
       gnbUsermenu: metrics.gnbUsermenu,
       sidenav: metrics.sidenav,
       projectHeader: metrics.projectHeader,
+      projectHeaderAvatar: metrics.projectHeaderAvatar,
+      projectBreadcrumbWrap: metrics.projectBreadcrumbWrap,
+      projectUtilWrap: metrics.projectUtilWrap,
       projectMenu: metrics.projectMenu,
+      projectMenuNav: metrics.projectMenuNav,
       pageWrap: metrics.pageWrap,
+      projectPageWrap: metrics.projectPageWrap,
+      bubbleWrapGray: metrics.bubbleWrapGray,
+      boxWrap: metrics.boxWrap,
+      cuLabel: metrics.cuLabel,
+      cuDesc: metrics.cuDesc,
+      issueListWrap: metrics.issueListWrap,
+      leftMenu: metrics.leftMenu,
+      postListWrap: metrics.postListWrap,
+      postItemTitle: metrics.postItemTitle,
+      contentFormWrap: metrics.contentFormWrap,
+      markdownEditor: metrics.markdownEditor,
+      markdownPreview: metrics.markdownPreview,
+      uploadWrap: metrics.uploadWrap,
+      issueUpdateForm: metrics.issueUpdateForm,
+      comments: metrics.comments,
+      comment: metrics.comment,
+      commentBody: metrics.commentBody,
+      commentDeleteModal: metrics.commentDeleteModal,
       loginDialog: metrics.loginDialog,
       footer: metrics.footer,
       userProfile: metrics.userProfile,
@@ -942,14 +1015,25 @@ async function runTarget(label, baseUrl) {
     const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
     const page = await context.newPage();
     const loggedIn = label === "local" ? await apiLogin(page, baseUrl) : await login(page, baseUrl);
+    const useRequestedPaths = requestedSweepPaths.length > 0;
     const directApiSurfaces =
-      label === "local" && loggedIn ? await inspectLocalDirectApiSurfaces(page, baseUrl) : null;
-    const discoveredProjectPages = loggedIn ? await discoverProjectPaths(page, baseUrl) : [];
+      label === "local" && loggedIn && !useRequestedPaths
+        ? await inspectLocalDirectApiSurfaces(page, baseUrl)
+        : null;
+    const discoveredProjectPages =
+      loggedIn && !useRequestedPaths ? await discoverProjectPaths(page, baseUrl) : [];
     const legacyAuditPages = legacyAuditDiscoveredPageLinks();
-    const routeSamples = label === "legacy" ? [] : routeTreeSamplePaths();
-    const paths = [
-      ...new Set([...basePages, ...legacyAuditPages, ...routeSamples, ...discoveredProjectPages]),
-    ];
+    const routeSamples = label === "legacy" || useRequestedPaths ? [] : routeTreeSamplePaths();
+    const paths = useRequestedPaths
+      ? requestedSweepPaths
+      : [
+          ...new Set([
+            ...basePages,
+            ...legacyAuditPages,
+            ...routeSamples,
+            ...discoveredProjectPages,
+          ]),
+        ];
     const results = [];
     for (const path of paths) {
       const routePage = await context.newPage();
@@ -960,7 +1044,9 @@ async function runTarget(label, baseUrl) {
       }
     }
     const resultPaths = new Set(results.map((result) => result.path));
-    const missingLegacyAuditPages = legacyAuditPages.filter((path) => !resultPaths.has(path));
+    const missingLegacyAuditPages = useRequestedPaths
+      ? []
+      : legacyAuditPages.filter((path) => !resultPaths.has(path));
     await page.close().catch(() => {});
     await context.close().catch(() => {});
     return {
@@ -976,6 +1062,7 @@ async function runTarget(label, baseUrl) {
       legacyAuditCorpus: legacyAuditCorpusSummary(),
       legacyAuditPagesCovered: legacyAuditPages.length - missingLegacyAuditPages.length,
       missingLegacyAuditPages,
+      requestedSweepPaths,
       discoveredProjectPages,
       results,
     };
