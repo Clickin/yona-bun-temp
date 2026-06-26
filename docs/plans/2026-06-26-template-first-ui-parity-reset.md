@@ -165,6 +165,12 @@ Update 2026-06-27:
 
 - No `.webp` files are present in the repository or ignored output tree; no
   webp asset deletion was required.
+- P1 auth/public/home now has a template-first reset report at
+  `docs/provenance/ui-parity-reports/template-first-p1-auth-public-home.md`.
+  The report records legacy login/signup/lost-reset/verify/secret/help/public
+  home templates against the current React/API targets, preserves OAuth and
+  first-run/no-admin browser evidence, and has no standalone
+  `needs-parent-decision` row.
 - `scripts/visual-parity-sweep.mjs` now supports focused path sweeps through
   `YORAM_SWEEP_PATHS` and records P2/P3 selector metrics/screenshots.
 - P2/P3 focused sweep evidence is recorded in
