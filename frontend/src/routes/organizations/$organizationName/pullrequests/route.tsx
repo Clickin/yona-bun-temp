@@ -66,6 +66,7 @@ function OrganizationPullRequestsRouteComponent() {
       messages={messages}
       organizationName={organizationName}
       query={{ category: "open", filter, pageNum }}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

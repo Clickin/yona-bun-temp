@@ -66,6 +66,7 @@ function OrganizationClosedPullRequestsRouteComponent() {
       messages={messages}
       organizationName={organizationName}
       query={{ category: "closed", filter, pageNum }}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

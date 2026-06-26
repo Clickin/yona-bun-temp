@@ -97,6 +97,16 @@
 - 2026-06-26 full UI parity subagent sweep follow-up: the root search dropdown now limits the organization/group scope item to the legacy `common/navbar.scala.html` condition where project listing is hidden or the viewer is guest and the current user is known to participate in the organization from the workspace overview. The project-page group scope now reads the project route container and exposes the group scope only when the container has `organizationName`, matching legacy `project.hasGroup`; remaining root-shell work is browser-visible proof depth rather than an implementation gap and is tracked in `docs/provenance/ui-parity-reports/ui-parity-root-navigation-shell.md`.
 - 2026-06-26 root shell browser proof continuation: `frontend/tests/root-shell-parity.e2e.ts` now exercises the React shell in a real browser under `/yona`, including anonymous nav/feedback, login dialog open/submit/error/close, authenticated site-admin affix, user menu/sidebar tab content, guest project-list and organization-create gating, standalone `/secret` page-owned footer without duplicate root footer, and project page `Project`/`Group`/`All` search-scope actions. `frontend/src/routes/__root.tsx` now strips the runtime base path before root shell route-family classification so mounted reverse-proxy paths such as `/yona/secret` and `/yona/:owner/:project` retain the legacy standalone/project shell behavior.
 - 2026-06-27 TanStack layout parity continuation: project settings begins the route-layout migration without changing visible legacy output. `frontend/src/routes/$owner/$projectName/route.tsx` now owns the legacy project header/menu/page-wrap shell for `/settingform`, while `ProjectSettingsPage` can render only its inner legacy `project-page-wrap` body through `renderShell={false}`. This preserves the existing `project/setting.scala.html` class order while moving shell ownership toward TanStack Router nested layouts. Focused coverage: `frontend/src/project-settings-parity.spec.tsx`, `frontend/src/project-home-tabs.spec.tsx`, and `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 TanStack organization aggregate layout continuation:
+  `frontend/src/routes/organizations/$organizationName/route.tsx` now owns the
+  legacy organization header/menu/page-wrap shell for aggregate issue, board,
+  and pull-request list routes. The aggregate leaf components keep their
+  existing REST/query boundaries and can render only their legacy inner body
+  through `renderShell={false}` so the visible output stays aligned with
+  `organizationLayout.scala.html` while route ownership moves to TanStack
+  Router nested layouts. Focused coverage:
+  `frontend/src/organization-shell-i18n.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

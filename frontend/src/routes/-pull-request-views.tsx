@@ -1182,6 +1182,7 @@ export function OrganizationPullRequestListPage(props: {
   messages?: LegacyMessageLookup;
   organizationName: string;
   query: OrganizationPullRequestListQuery;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackOrganizationDetail(props.organizationName);
@@ -1189,6 +1190,96 @@ export function OrganizationPullRequestListPage(props: {
     { category: "open", label: "pullRequest.state.open" },
     { category: "closed", label: "pullRequest.state.closed" },
   ];
+
+  const content = (
+    <div className="project-page-wrap">
+      <div
+        className="row-fluid cb"
+        {...({ "pjax-container": "" } as React.HTMLAttributes<HTMLDivElement>)}
+      >
+        <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
+          <OrganizationPullRequestSearchForm
+            category={props.category}
+            detail={detail}
+            messages={props.messages}
+            query={props.query}
+            runtimeConfig={props.runtimeConfig}
+          />
+        </div>
+        <div className="span10 span-hard-wrap" id="span10">
+          <ul className="nav nav-tabs nm pullrequeset-tab-menu">
+            {tabs.map((tab) => (
+              <li
+                className={props.category === tab.category ? "active" : undefined}
+                key={tab.category}
+              >
+                <a
+                  data-type="state"
+                  data-url={[
+                    organizationCategoryHref(
+                      props.runtimeConfig,
+                      detail.organizationName,
+                      tab.category,
+                    ),
+                    organizationPullRequestQueryString(props.query),
+                  ]
+                    .filter(Boolean)
+                    .join("?")}
+                  href={[
+                    organizationCategoryHref(
+                      props.runtimeConfig,
+                      detail.organizationName,
+                      tab.category,
+                    ),
+                    organizationPullRequestQueryString(props.query),
+                  ]
+                    .filter(Boolean)
+                    .join("?")}
+                >
+                  {legacyMessage(props.messages, tab.label)}
+                  <span className="num-badge">
+                    {tab.category === "closed"
+                      ? (props.list?.closedCount ?? 0)
+                      : (props.list?.openCount ?? 0)}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
+            <div className="row-fluid tab-pane active" id="list">
+              <PullRequestListRows
+                items={props.list?.items ?? []}
+                messages={props.messages}
+                runtimeConfig={props.runtimeConfig}
+                showProjectName={true}
+              />
+              <PullRequestListPagination
+                hrefForPage={(pageNum) =>
+                  [
+                    organizationCategoryHref(
+                      props.runtimeConfig,
+                      detail.organizationName,
+                      props.category,
+                    ),
+                    organizationPullRequestQueryString(props.query, { pageNum }),
+                  ]
+                    .filter(Boolean)
+                    .join("?")
+                }
+                list={props.list}
+                messages={props.messages}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
 
   return (
     <main className="app-shell pull-request-page">
@@ -1203,91 +1294,7 @@ export function OrganizationPullRequestListPage(props: {
         messages={props.messages}
         runtimeConfig={props.runtimeConfig}
       />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div
-            className="row-fluid cb"
-            {...({ "pjax-container": "" } as React.HTMLAttributes<HTMLDivElement>)}
-          >
-            <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
-              <OrganizationPullRequestSearchForm
-                category={props.category}
-                detail={detail}
-                messages={props.messages}
-                query={props.query}
-                runtimeConfig={props.runtimeConfig}
-              />
-            </div>
-            <div className="span10 span-hard-wrap" id="span10">
-              <ul className="nav nav-tabs nm pullrequeset-tab-menu">
-                {tabs.map((tab) => (
-                  <li
-                    className={props.category === tab.category ? "active" : undefined}
-                    key={tab.category}
-                  >
-                    <a
-                      data-type="state"
-                      data-url={[
-                        organizationCategoryHref(
-                          props.runtimeConfig,
-                          detail.organizationName,
-                          tab.category,
-                        ),
-                        organizationPullRequestQueryString(props.query),
-                      ]
-                        .filter(Boolean)
-                        .join("?")}
-                      href={[
-                        organizationCategoryHref(
-                          props.runtimeConfig,
-                          detail.organizationName,
-                          tab.category,
-                        ),
-                        organizationPullRequestQueryString(props.query),
-                      ]
-                        .filter(Boolean)
-                        .join("?")}
-                    >
-                      {legacyMessage(props.messages, tab.label)}
-                      <span className="num-badge">
-                        {tab.category === "closed"
-                          ? (props.list?.closedCount ?? 0)
-                          : (props.list?.openCount ?? 0)}
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
-                <div className="row-fluid tab-pane active" id="list">
-                  <PullRequestListRows
-                    items={props.list?.items ?? []}
-                    messages={props.messages}
-                    runtimeConfig={props.runtimeConfig}
-                    showProjectName={true}
-                  />
-                  <PullRequestListPagination
-                    hrefForPage={(pageNum) =>
-                      [
-                        organizationCategoryHref(
-                          props.runtimeConfig,
-                          detail.organizationName,
-                          props.category,
-                        ),
-                        organizationPullRequestQueryString(props.query, { pageNum }),
-                      ]
-                        .filter(Boolean)
-                        .join("?")
-                    }
-                    list={props.list}
-                    messages={props.messages}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }

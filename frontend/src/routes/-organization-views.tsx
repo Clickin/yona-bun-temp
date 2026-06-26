@@ -805,6 +805,7 @@ export function OrganizationIssueListPage(props: {
   issueList: OrganizationIssueListViewModel | null | undefined;
   messages?: LegacyMessageLookup;
   query: OrganizationIssueListQuery;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? {
@@ -859,6 +860,366 @@ export function OrganizationIssueListPage(props: {
       pageNum: 1,
     });
 
+  const content = (
+    <div className="page-wrap">
+      <div className="row-fluid issue-list-wrap" data-pjax-container="">
+        <aside className="left-menu span2 span-hard-wrap">
+          <div className="inner advanced">
+            <ul className="lst-stacked unstyled">
+              <li
+                className={
+                  !query.assigneeId && !query.authorId && !query.mentionId ? "active" : undefined
+                }
+              >
+                <a
+                  data-assignee-id=""
+                  data-author-id=""
+                  data-mention-id=""
+                  data-milestone-id=""
+                  data-pjax-filter=""
+                  data-project-names={query.projectNames.join(",")}
+                  href={allHref}
+                >
+                  {legacyMessage(props.messages, "issue.list.all")}
+                </a>
+              </li>
+              {props.currentUserId > 0 ? (
+                <>
+                  <li className={query.assigneeId === props.currentUserId ? "active" : undefined}>
+                    <a
+                      data-assignee-id={props.currentUserId}
+                      data-author-id=""
+                      data-mention-id=""
+                      data-milestone-id=""
+                      data-pjax-filter=""
+                      data-project-names={query.projectNames.join(",")}
+                      href={assignedHref}
+                    >
+                      {legacyMessage(props.messages, "issue.list.assignedToMe")}
+                    </a>
+                  </li>
+                  <li className={query.authorId === props.currentUserId ? "active" : undefined}>
+                    <a
+                      data-assignee-id=""
+                      data-author-id={props.currentUserId}
+                      data-mention-id=""
+                      data-milestone-id=""
+                      data-pjax-filter=""
+                      data-project-names={query.projectNames.join(",")}
+                      href={authoredHref}
+                    >
+                      {legacyMessage(props.messages, "issue.list.authoredByMe")}
+                    </a>
+                  </li>
+                  <li className={query.mentionId === props.currentUserId ? "active" : undefined}>
+                    <a
+                      data-assignee-id=""
+                      data-author-id=""
+                      data-mention-id={props.currentUserId}
+                      data-milestone-id=""
+                      data-pjax-filter=""
+                      data-project-names={query.projectNames.join(",")}
+                      href={mentionedHref}
+                    >
+                      {legacyMessage(props.messages, "issue.list.mentionedOfMe")}
+                    </a>
+                  </li>
+                </>
+              ) : null}
+            </ul>
+            <form
+              action={buildOrganizationHref(props.runtimeConfig, organizationName, "issues")}
+              id="search"
+              method="get"
+              name="search"
+            >
+              <select
+                data-container-css-class="fullsize"
+                data-placeholder={legacyMessage(props.messages, "organization.choose.projects")}
+                data-toggle="select2"
+                defaultValue={query.projectNames}
+                id="projects"
+                multiple
+                name="projectNames[]"
+              >
+                {(issueList?.visibleProjects ?? []).map((project) => (
+                  <option data-avatar-url="" key={project.projectName} value={project.projectName}>
+                    {project.projectName}
+                  </option>
+                ))}
+              </select>
+              <hr />
+              <input name="orderBy" type="hidden" value={query.orderBy} />
+              <input name="orderDir" type="hidden" value={query.orderDir} />
+              <input name="state" type="hidden" value={state} />
+              <input
+                data-search="authorId"
+                name="authorId"
+                type="hidden"
+                value={query.authorId || ""}
+              />
+              <input
+                data-search="assigneeId"
+                name="assigneeId"
+                type="hidden"
+                value={query.assigneeId || ""}
+              />
+              <input
+                data-search="mentionId"
+                name="mentionId"
+                type="hidden"
+                value={query.mentionId || ""}
+              />
+              <div className="search">
+                <div className="search-bar">
+                  <input
+                    className="textbox full"
+                    defaultValue={query.filter}
+                    name="filter"
+                    type="text"
+                  />
+                  <button className="search-btn" type="submit">
+                    <i className="yobicon-search" />
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </aside>
+        <section className="span10 span-hard-wrap" id="span10">
+          <ul className="nav nav-tabs nm">
+            <li className={state === "open" ? "active" : undefined}>
+              <a data-state="open" href={openHref}>
+                {legacyMessage(props.messages, "issue.state.open")}{" "}
+                <span className="num-badge">{issueList?.openIssueCount ?? 0}</span>
+              </a>
+            </li>
+            <li className={state === "closed" ? "active" : undefined}>
+              <a data-state="closed" href={closedHref}>
+                {legacyMessage(props.messages, "issue.state.closed")}{" "}
+                <span className="num-badge">{issueList?.closedIssueCount ?? 0}</span>
+              </a>
+            </li>
+            <li>
+              <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
+            </li>
+          </ul>
+          {issueItems.length > 0 ? (
+            <>
+              <div className="filter-wrap small-heights">
+                {issueItems.length > 1 ? (
+                  <div className="filters pull-right">
+                    {[
+                      ["dueDate", "common.order.dueDate"],
+                      ["updatedDate", "common.order.updatedDate"],
+                      ["createdDate", "common.order.date"],
+                      ["numOfComments", "common.order.comments"],
+                    ].map(([orderBy, label]) => (
+                      <a
+                        className={query.orderBy === orderBy ? "filter active" : "filter"}
+                        data-order-by={orderBy}
+                        data-order-dir={orderDirFor(orderBy)}
+                        href={orderHref(orderBy)}
+                        key={orderBy}
+                      >
+                        <i
+                          className={`ico btn-gray-arrow ${
+                            query.orderBy === orderBy && query.orderDir !== "desc" ? "" : "down"
+                          }`}
+                        />
+                        {legacyMessage(props.messages, label)}
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              <ul className="post-list-wrap">
+                {issueItems.map((issue) => {
+                  const issueHref = prefixBasePath(
+                    props.runtimeConfig.basePath,
+                    `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`,
+                  );
+                  const legacyIssueId = issue.id && issue.id > 0 ? issue.id : issue.issueNumber;
+                  const projectHref = prefixBasePath(
+                    props.runtimeConfig.basePath,
+                    `/${issue.ownerName}/${issue.projectName}`,
+                  );
+                  const labelHrefBase = buildOrganizationIssueHref(
+                    props.runtimeConfig,
+                    organizationName,
+                    query,
+                    { pageNum: 1 },
+                  );
+                  const authorHref = issue.authorLoginId
+                    ? userInfoHref(props.runtimeConfig, issue.authorLoginId)
+                    : "#";
+                  const assigneeHref = issue.assigneeLoginId
+                    ? userInfoHref(props.runtimeConfig, issue.assigneeLoginId)
+                    : "#";
+                  return (
+                    <li
+                      className="post-item title"
+                      data-href={issueHref}
+                      id={`issue-item-${legacyIssueId}`}
+                      key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
+                    >
+                      <div className="span10 span-hard-wrap">
+                        <a
+                          className={`avatar-wrap mlarge hide-in-mobile${
+                            issue.authorAvatarUrl ? "" : " empty-avatar-wrap"
+                          }`}
+                          data-placement="top"
+                          data-toggle="tooltip"
+                          href={authorHref}
+                          title={
+                            issue.authorLoginId ||
+                            issue.authorLabel ||
+                            legacyMessage(props.messages, "issue.noAuthor")
+                          }
+                        >
+                          {issue.authorAvatarUrl ? (
+                            <img
+                              alt={issue.authorLabel}
+                              height={32}
+                              src={issue.authorAvatarUrl}
+                              width={32}
+                            />
+                          ) : (
+                            "\u00a0"
+                          )}
+                        </a>
+                        <div className="title-wrap">
+                          <a className="title" href={issueHref}>
+                            {issue.title}
+                          </a>
+                        </div>
+                        <div className="infos">
+                          {issue.authorLoginId && issue.authorLabel ? (
+                            <a
+                              className="infos-item infos-link-item"
+                              data-placement="top"
+                              data-toggle="tooltip"
+                              href={authorHref}
+                              title={issue.authorLoginId}
+                            >
+                              {issue.authorLabel}
+                            </a>
+                          ) : (
+                            <span className="infos-item">
+                              {legacyMessage(props.messages, "issue.noAuthor")}
+                            </span>
+                          )}
+                          <span className="infos-item">{issue.updatedLabel}</span>
+                          {issue.milestoneTitle ? (
+                            <span className="infos-item mileston-tag">{issue.milestoneTitle}</span>
+                          ) : null}
+                          {issue.commentCount > 0 || issue.voterCount > 0 ? (
+                            <span className="infos-item item-count-groups">
+                              {issue.commentCount > 0 ? (
+                                <a className="num-comments" href={`${issueHref}#comments`}>
+                                  {issue.commentCount}
+                                </a>
+                              ) : null}
+                              {issue.voterCount > 0 ? (
+                                <a className="num-hearts strong" href={`${issueHref}#vote`}>
+                                  {issue.voterCount}
+                                </a>
+                              ) : null}
+                            </span>
+                          ) : null}
+                          <a className="infos-link-item group-project-name" href={projectHref}>
+                            {issue.projectName}
+                          </a>
+                          <span className="post-id margin-right-5">#{issue.issueNumber}</span>
+                          {issue.labels.map((label) => (
+                            <a
+                              className={legacyIssueLabelClassName(
+                                "label issue-label list-label",
+                                label.color,
+                              )}
+                              data-label-id={label.id}
+                              href={`${labelHrefBase}&labelIds=${label.id}`}
+                              key={label.id}
+                              style={{ background: label.color || "#ddd" }}
+                            >
+                              {label.name}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="span2 hide-in-mobile">
+                        <div className="mt5 pull-right">
+                          {issue.assigneeLabel ? (
+                            <a
+                              className={`avatar-wrap assinee${
+                                issue.assigneeAvatarUrl ? "" : " empty-avatar-wrap"
+                              }`}
+                              data-placement="top"
+                              data-toggle="tooltip"
+                              href={assigneeHref}
+                              title={`${legacyMessage(props.messages, "issue.assignee")}: ${
+                                issue.assigneeLabel
+                              }`}
+                            >
+                              {issue.assigneeAvatarUrl ? (
+                                <img
+                                  alt={issue.assigneeLabel}
+                                  height={32}
+                                  src={issue.assigneeAvatarUrl}
+                                  width={32}
+                                />
+                              ) : (
+                                "\u00a0"
+                              )}
+                            </a>
+                          ) : (
+                            <div className="empty-avatar-wrap">&nbsp;</div>
+                          )}
+                        </div>
+                        {issue.dueDateLabel ? (
+                          <div
+                            className={`mr20 mt10 pull-right${
+                              issue.dueDateOverdue ? " overdue" : ""
+                            }`}
+                            data-placement="top"
+                            data-toggle="tooltip"
+                            title={issue.dueDateLabel}
+                          >
+                            <i className="yobicon-clock2" />
+                            {issue.dueDateLabel}
+                          </div>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div id="pagination" data-total={totalPageCount}>
+                <a
+                  className="pageNum active"
+                  href={buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
+                    pageNum: issueList?.pageNum ?? 1,
+                  })}
+                >
+                  {issueList?.pageNum ?? 1}
+                </a>
+              </div>
+            </>
+          ) : (
+            <div className="error-wrap">
+              <i className="ico ico-err1" />
+              <p>{legacyMessage(props.messages, "issue.is.empty")}</p>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main>
       <OrganizationHeader
@@ -872,378 +1233,7 @@ export function OrganizationIssueListPage(props: {
         messages={props.messages}
         runtimeConfig={props.runtimeConfig}
       />
-      <div className="page-wrap-outer">
-        <div className="page-wrap">
-          <div className="row-fluid issue-list-wrap" data-pjax-container="">
-            <aside className="left-menu span2 span-hard-wrap">
-              <div className="inner advanced">
-                <ul className="lst-stacked unstyled">
-                  <li
-                    className={
-                      !query.assigneeId && !query.authorId && !query.mentionId
-                        ? "active"
-                        : undefined
-                    }
-                  >
-                    <a
-                      data-assignee-id=""
-                      data-author-id=""
-                      data-mention-id=""
-                      data-milestone-id=""
-                      data-pjax-filter=""
-                      data-project-names={query.projectNames.join(",")}
-                      href={allHref}
-                    >
-                      {legacyMessage(props.messages, "issue.list.all")}
-                    </a>
-                  </li>
-                  {props.currentUserId > 0 ? (
-                    <>
-                      <li
-                        className={query.assigneeId === props.currentUserId ? "active" : undefined}
-                      >
-                        <a
-                          data-assignee-id={props.currentUserId}
-                          data-author-id=""
-                          data-mention-id=""
-                          data-milestone-id=""
-                          data-pjax-filter=""
-                          data-project-names={query.projectNames.join(",")}
-                          href={assignedHref}
-                        >
-                          {legacyMessage(props.messages, "issue.list.assignedToMe")}
-                        </a>
-                      </li>
-                      <li className={query.authorId === props.currentUserId ? "active" : undefined}>
-                        <a
-                          data-assignee-id=""
-                          data-author-id={props.currentUserId}
-                          data-mention-id=""
-                          data-milestone-id=""
-                          data-pjax-filter=""
-                          data-project-names={query.projectNames.join(",")}
-                          href={authoredHref}
-                        >
-                          {legacyMessage(props.messages, "issue.list.authoredByMe")}
-                        </a>
-                      </li>
-                      <li
-                        className={query.mentionId === props.currentUserId ? "active" : undefined}
-                      >
-                        <a
-                          data-assignee-id=""
-                          data-author-id=""
-                          data-mention-id={props.currentUserId}
-                          data-milestone-id=""
-                          data-pjax-filter=""
-                          data-project-names={query.projectNames.join(",")}
-                          href={mentionedHref}
-                        >
-                          {legacyMessage(props.messages, "issue.list.mentionedOfMe")}
-                        </a>
-                      </li>
-                    </>
-                  ) : null}
-                </ul>
-                <form
-                  action={buildOrganizationHref(props.runtimeConfig, organizationName, "issues")}
-                  id="search"
-                  method="get"
-                  name="search"
-                >
-                  <select
-                    data-container-css-class="fullsize"
-                    data-placeholder={legacyMessage(props.messages, "organization.choose.projects")}
-                    data-toggle="select2"
-                    defaultValue={query.projectNames}
-                    id="projects"
-                    multiple
-                    name="projectNames[]"
-                  >
-                    {(issueList?.visibleProjects ?? []).map((project) => (
-                      <option
-                        data-avatar-url=""
-                        key={project.projectName}
-                        value={project.projectName}
-                      >
-                        {project.projectName}
-                      </option>
-                    ))}
-                  </select>
-                  <hr />
-                  <input name="orderBy" type="hidden" value={query.orderBy} />
-                  <input name="orderDir" type="hidden" value={query.orderDir} />
-                  <input name="state" type="hidden" value={state} />
-                  <input
-                    data-search="authorId"
-                    name="authorId"
-                    type="hidden"
-                    value={query.authorId || ""}
-                  />
-                  <input
-                    data-search="assigneeId"
-                    name="assigneeId"
-                    type="hidden"
-                    value={query.assigneeId || ""}
-                  />
-                  <input
-                    data-search="mentionId"
-                    name="mentionId"
-                    type="hidden"
-                    value={query.mentionId || ""}
-                  />
-                  <div className="search">
-                    <div className="search-bar">
-                      <input
-                        className="textbox full"
-                        defaultValue={query.filter}
-                        name="filter"
-                        type="text"
-                      />
-                      <button className="search-btn" type="submit">
-                        <i className="yobicon-search" />
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </aside>
-            <section className="span10 span-hard-wrap" id="span10">
-              <ul className="nav nav-tabs nm">
-                <li className={state === "open" ? "active" : undefined}>
-                  <a data-state="open" href={openHref}>
-                    {legacyMessage(props.messages, "issue.state.open")}{" "}
-                    <span className="num-badge">{issueList?.openIssueCount ?? 0}</span>
-                  </a>
-                </li>
-                <li className={state === "closed" ? "active" : undefined}>
-                  <a data-state="closed" href={closedHref}>
-                    {legacyMessage(props.messages, "issue.state.closed")}{" "}
-                    <span className="num-badge">{issueList?.closedIssueCount ?? 0}</span>
-                  </a>
-                </li>
-                <li>
-                  <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
-                </li>
-              </ul>
-              {issueItems.length > 0 ? (
-                <>
-                  <div className="filter-wrap small-heights">
-                    {issueItems.length > 1 ? (
-                      <div className="filters pull-right">
-                        {[
-                          ["dueDate", "common.order.dueDate"],
-                          ["updatedDate", "common.order.updatedDate"],
-                          ["createdDate", "common.order.date"],
-                          ["numOfComments", "common.order.comments"],
-                        ].map(([orderBy, label]) => (
-                          <a
-                            className={query.orderBy === orderBy ? "filter active" : "filter"}
-                            data-order-by={orderBy}
-                            data-order-dir={orderDirFor(orderBy)}
-                            href={orderHref(orderBy)}
-                            key={orderBy}
-                          >
-                            <i
-                              className={`ico btn-gray-arrow ${
-                                query.orderBy === orderBy && query.orderDir !== "desc" ? "" : "down"
-                              }`}
-                            />
-                            {legacyMessage(props.messages, label)}
-                          </a>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                  <ul className="post-list-wrap">
-                    {issueItems.map((issue) => {
-                      const issueHref = prefixBasePath(
-                        props.runtimeConfig.basePath,
-                        `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`,
-                      );
-                      const legacyIssueId = issue.id && issue.id > 0 ? issue.id : issue.issueNumber;
-                      const projectHref = prefixBasePath(
-                        props.runtimeConfig.basePath,
-                        `/${issue.ownerName}/${issue.projectName}`,
-                      );
-                      const labelHrefBase = buildOrganizationIssueHref(
-                        props.runtimeConfig,
-                        organizationName,
-                        query,
-                        { pageNum: 1 },
-                      );
-                      const authorHref = issue.authorLoginId
-                        ? userInfoHref(props.runtimeConfig, issue.authorLoginId)
-                        : "#";
-                      const assigneeHref = issue.assigneeLoginId
-                        ? userInfoHref(props.runtimeConfig, issue.assigneeLoginId)
-                        : "#";
-                      return (
-                        <li
-                          className="post-item title"
-                          data-href={issueHref}
-                          id={`issue-item-${legacyIssueId}`}
-                          key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
-                        >
-                          <div className="span10 span-hard-wrap">
-                            <a
-                              className={`avatar-wrap mlarge hide-in-mobile${
-                                issue.authorAvatarUrl ? "" : " empty-avatar-wrap"
-                              }`}
-                              data-placement="top"
-                              data-toggle="tooltip"
-                              href={authorHref}
-                              title={
-                                issue.authorLoginId ||
-                                issue.authorLabel ||
-                                legacyMessage(props.messages, "issue.noAuthor")
-                              }
-                            >
-                              {issue.authorAvatarUrl ? (
-                                <img
-                                  alt={issue.authorLabel}
-                                  height={32}
-                                  src={issue.authorAvatarUrl}
-                                  width={32}
-                                />
-                              ) : (
-                                "\u00a0"
-                              )}
-                            </a>
-                            <div className="title-wrap">
-                              <a className="title" href={issueHref}>
-                                {issue.title}
-                              </a>
-                            </div>
-                            <div className="infos">
-                              {issue.authorLoginId && issue.authorLabel ? (
-                                <a
-                                  className="infos-item infos-link-item"
-                                  data-placement="top"
-                                  data-toggle="tooltip"
-                                  href={authorHref}
-                                  title={issue.authorLoginId}
-                                >
-                                  {issue.authorLabel}
-                                </a>
-                              ) : (
-                                <span className="infos-item">
-                                  {legacyMessage(props.messages, "issue.noAuthor")}
-                                </span>
-                              )}
-                              <span className="infos-item">{issue.updatedLabel}</span>
-                              {issue.milestoneTitle ? (
-                                <span className="infos-item mileston-tag">
-                                  {issue.milestoneTitle}
-                                </span>
-                              ) : null}
-                              {issue.commentCount > 0 || issue.voterCount > 0 ? (
-                                <span className="infos-item item-count-groups">
-                                  {issue.commentCount > 0 ? (
-                                    <a className="num-comments" href={`${issueHref}#comments`}>
-                                      {issue.commentCount}
-                                    </a>
-                                  ) : null}
-                                  {issue.voterCount > 0 ? (
-                                    <a className="num-hearts strong" href={`${issueHref}#vote`}>
-                                      {issue.voterCount}
-                                    </a>
-                                  ) : null}
-                                </span>
-                              ) : null}
-                              <a className="infos-link-item group-project-name" href={projectHref}>
-                                {issue.projectName}
-                              </a>
-                              <span className="post-id margin-right-5">#{issue.issueNumber}</span>
-                              {issue.labels.map((label) => (
-                                <a
-                                  className={legacyIssueLabelClassName(
-                                    "label issue-label list-label",
-                                    label.color,
-                                  )}
-                                  data-label-id={label.id}
-                                  href={`${labelHrefBase}&labelIds=${label.id}`}
-                                  key={label.id}
-                                  style={{ background: label.color || "#ddd" }}
-                                >
-                                  {label.name}
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="span2 hide-in-mobile">
-                            <div className="mt5 pull-right">
-                              {issue.assigneeLabel ? (
-                                <a
-                                  className={`avatar-wrap assinee${
-                                    issue.assigneeAvatarUrl ? "" : " empty-avatar-wrap"
-                                  }`}
-                                  data-placement="top"
-                                  data-toggle="tooltip"
-                                  href={assigneeHref}
-                                  title={`${legacyMessage(props.messages, "issue.assignee")}: ${
-                                    issue.assigneeLabel
-                                  }`}
-                                >
-                                  {issue.assigneeAvatarUrl ? (
-                                    <img
-                                      alt={issue.assigneeLabel}
-                                      height={32}
-                                      src={issue.assigneeAvatarUrl}
-                                      width={32}
-                                    />
-                                  ) : (
-                                    "\u00a0"
-                                  )}
-                                </a>
-                              ) : (
-                                <div className="empty-avatar-wrap">&nbsp;</div>
-                              )}
-                            </div>
-                            {issue.dueDateLabel ? (
-                              <div
-                                className={`mr20 mt10 pull-right${
-                                  issue.dueDateOverdue ? " overdue" : ""
-                                }`}
-                                data-placement="top"
-                                data-toggle="tooltip"
-                                title={issue.dueDateLabel}
-                              >
-                                <i className="yobicon-clock2" />
-                                {issue.dueDateLabel}
-                              </div>
-                            ) : null}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <div id="pagination" data-total={totalPageCount}>
-                    <a
-                      className="pageNum active"
-                      href={buildOrganizationIssueHref(
-                        props.runtimeConfig,
-                        organizationName,
-                        query,
-                        {
-                          pageNum: issueList?.pageNum ?? 1,
-                        },
-                      )}
-                    >
-                      {issueList?.pageNum ?? 1}
-                    </a>
-                  </div>
-                </>
-              ) : (
-                <div className="error-wrap">
-                  <i className="ico ico-err1" />
-                  <p>{legacyMessage(props.messages, "issue.is.empty")}</p>
-                </div>
-              )}
-            </section>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }

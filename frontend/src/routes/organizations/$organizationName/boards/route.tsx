@@ -90,6 +90,7 @@ function OrganizationBoardsRouteComponent() {
       orderBy={orderBy}
       orderDir={orderDir}
       projectNames={projectNames}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

@@ -123,6 +123,7 @@ function OrganizationIssuesRouteComponent() {
       issueList={issueList}
       messages={messages}
       query={query}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

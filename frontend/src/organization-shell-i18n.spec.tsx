@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { createLegacyI18nRuntime } from "./i18n";
 import { testRuntimeConfig } from "./auth-workspace-shell.test-helpers";
+import { OrganizationBoardListPage } from "./routes/-board-views";
 import {
   OrganizationDeletePage,
   OrganizationDetailPage,
@@ -13,6 +14,7 @@ import {
   OrganizationSettingsPage,
   shouldReuseLegacyMemberTypeaheadCache,
 } from "./routes/-organization-views";
+import { OrganizationPullRequestListPage } from "./routes/-pull-request-views";
 import type { OrganizationDetailViewModel } from "./routes/-view-models";
 
 type LegacyMessageLookup = ReturnType<typeof createLegacyI18nRuntime>["t"];
@@ -275,6 +277,131 @@ describe("organization shell legacy i18n opt-in", () => {
     expect(html).toContain('id="btnDelete"');
     expect(html).toContain('id="alertDeletion"');
     expect(html).not.toContain('class="app-shell"');
+    expect(html).not.toContain("project-header-outer");
+    expect(html).not.toContain("project-menu-outer");
+    expect(html).not.toContain("page-wrap-outer");
+  });
+
+  it("lets the organization layout route own issue list chrome without changing the inner body", () => {
+    const html = renderToStaticMarkup(
+      <OrganizationIssueListPage
+        currentUserId={7}
+        detail={organizationDetail}
+        issueList={{
+          closedIssueCount: 0,
+          items: [],
+          openIssueCount: 0,
+          organizationName: "yona-org",
+          pageNum: 1,
+          pageSize: 20,
+          totalCount: 0,
+          visibleProjects: [],
+        }}
+        query={{
+          assigneeId: 0,
+          authorId: 0,
+          filter: "",
+          mentionId: 0,
+          orderBy: "updatedDate",
+          orderDir: "desc",
+          pageNum: 1,
+          projectNames: [],
+          state: "open",
+        }}
+        renderShell={false}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/issues/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/organizations/${organizationName}/issues`");
+    expect(layoutSource).toContain('active: "issues"');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).toContain('class="page-wrap"');
+    expect(html).toContain('class="row-fluid issue-list-wrap"');
+    expect(html).not.toContain("project-header-outer");
+    expect(html).not.toContain("project-menu-outer");
+    expect(html).not.toContain("page-wrap-outer");
+  });
+
+  it("lets the organization layout route own board list chrome without changing the inner body", () => {
+    const html = renderToStaticMarkup(
+      <OrganizationBoardListPage
+        boards={undefined}
+        filter=""
+        organizationName="yona-org"
+        orderBy="createdDate"
+        orderDir="desc"
+        projectNames={[]}
+        renderShell={false}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/boards/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/organizations/${organizationName}/boards`");
+    expect(layoutSource).toContain('active: "boards"');
+    expect(layoutSource).toContain('shellClassName: "board-page"');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="search-wrap underline board-toolbar"');
+    expect(html).not.toContain("project-header-outer");
+    expect(html).not.toContain("project-menu-outer");
+    expect(html).not.toContain("page-wrap-outer");
+  });
+
+  it("lets the organization layout route own pull request list chrome without changing the inner body", () => {
+    const html = renderToStaticMarkup(
+      <OrganizationPullRequestListPage
+        category="open"
+        detail={organizationDetail}
+        list={undefined}
+        organizationName="yona-org"
+        query={{ category: "open", filter: "", pageNum: 1 }}
+        renderShell={false}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/pullrequests/route.tsx"),
+      "utf8",
+    );
+    const closedRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/organizations/$organizationName/closedPullrequests/route.tsx",
+      ),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/organizations/${organizationName}/pullrequests`");
+    expect(layoutSource).toContain(
+      "appPath === `/organizations/${organizationName}/closedPullrequests`",
+    );
+    expect(layoutSource).toContain('active: "pullrequests"');
+    expect(layoutSource).toContain('shellClassName: "pull-request-page"');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(closedRouteSource).toContain("renderShell={false}");
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="nav nav-tabs nm pullrequeset-tab-menu"');
     expect(html).not.toContain("project-header-outer");
     expect(html).not.toContain("project-menu-outer");
     expect(html).not.toContain("page-wrap-outer");

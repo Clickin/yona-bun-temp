@@ -238,6 +238,18 @@ M15 continues board shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
 
+M16 continues organization shell migration:
+
+- `/organizations/$organizationName/route.tsx` now owns the legacy organization
+  header/menu/page-wrap shell for `/issues`, `/boards`, `/pullrequests`, and
+  `/closedPullrequests`.
+- `OrganizationIssueListPage`, `OrganizationBoardListPage`, and
+  `OrganizationPullRequestListPage` support `renderShell={false}` so aggregate
+  leaf routes keep their REST/query boundaries but render only their legacy
+  list bodies under the organization layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx`.
+
 M16 continues board shell migration:
 
 - `/$owner/$projectName/route.tsx` now owns the legacy project

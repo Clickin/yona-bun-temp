@@ -69,13 +69,28 @@ function organizationLayoutShell(
   pathname: string,
   basePath: string,
   organizationName: string,
-): { active?: "home" | "settings"; shellClassName?: string } | null {
+): {
+  active?: "boards" | "home" | "issues" | "pullrequests" | "settings";
+  shellClassName?: string;
+} | null {
   const appPath = stripOrganizationLayoutBasePath(pathname, basePath).replace(/\/+$/u, "");
   if (appPath === `/organizations/${organizationName}`) {
     return { active: "home", shellClassName: "organization-page" };
   }
   if (appPath === `/organizations/${organizationName}/settingform`) {
     return { active: "settings", shellClassName: "organization-settings-shell" };
+  }
+  if (appPath === `/organizations/${organizationName}/issues`) {
+    return { active: "issues" };
+  }
+  if (appPath === `/organizations/${organizationName}/boards`) {
+    return { active: "boards", shellClassName: "board-page" };
+  }
+  if (
+    appPath === `/organizations/${organizationName}/pullrequests` ||
+    appPath === `/organizations/${organizationName}/closedPullrequests`
+  ) {
+    return { active: "pullrequests", shellClassName: "pull-request-page" };
   }
   if (
     appPath === `/organizations/${organizationName}/members` ||
@@ -115,7 +130,7 @@ function OrganizationRouteShellLayout({
   setErrorMessage,
   shellClassName,
 }: {
-  active?: "home" | "settings";
+  active?: "boards" | "home" | "issues" | "pullrequests" | "settings";
   bootstrapping: boolean;
   csrfToken: string;
   messages: ReturnType<typeof useAppRuntime>["messages"];

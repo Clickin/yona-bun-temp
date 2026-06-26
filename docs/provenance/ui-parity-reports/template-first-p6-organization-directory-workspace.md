@@ -130,3 +130,12 @@ packet reports.
   routes while preserving direct-render shell output for existing specs.
   Focused coverage:
   `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx -t "members chrome|delete chrome"`.
+- 2026-06-27 organization aggregate shell follow-up:
+  `frontend/src/routes/organizations/$organizationName/route.tsx` now owns the
+  organization header/menu/page-wrap shell for `/issues`, `/boards`,
+  `/pullrequests`, and `/closedPullrequests`. `OrganizationIssueListPage`,
+  `OrganizationBoardListPage`, and `OrganizationPullRequestListPage` render only
+  their legacy aggregate list bodies through `renderShell={false}` for those
+  child routes while preserving direct-render shell output for existing specs.
+  Focused coverage:
+  `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx`.
