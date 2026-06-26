@@ -380,6 +380,26 @@ export function addLegacyTasklistTemplateFromButton(button: HTMLButtonElement) {
   textarea.setSelectionRange(inserted.cursorIndex, inserted.cursorIndex);
 }
 
+export function clearLegacyTemporaryEditorTextareas(
+  textareas: Array<Pick<HTMLTextAreaElement, "value">>,
+): number {
+  for (const textarea of textareas) {
+    textarea.value = "";
+  }
+  return textareas.length;
+}
+
+function clearLegacyTemporaryEditorFromButton(button: HTMLButtonElement) {
+  const textareas = Array.from(button.closest("form")?.querySelectorAll("textarea") ?? []);
+  const clearedCount = clearLegacyTemporaryEditorTextareas(textareas);
+  if (clearedCount === 0) {
+    return;
+  }
+  for (const textarea of textareas) {
+    updateTextareaValue(textarea, textarea.value);
+  }
+}
+
 function isSafeUrl(value: string) {
   const normalized = value.toLowerCase();
   const schemeMatch = /^[A-Za-z][A-Za-z0-9+.-]*:/.exec(value);
@@ -7353,6 +7373,7 @@ export function LegacyMarkdownEditorShell(props: {
               <button
                 className="ybtn ybtn-small ybtn-warning"
                 id="button-clear-temporary"
+                onClick={(event) => clearLegacyTemporaryEditorFromButton(event.currentTarget)}
                 type="button"
               >
                 {legacyMessage(messages, "button.clear.temporary")}

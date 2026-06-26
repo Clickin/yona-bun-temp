@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
+  clearLegacyTemporaryEditorTextareas,
   insertLegacyTasklistTemplate,
   legacyCommentMentionsCurrentUser,
   LegacyMarkdownEditorShell,
@@ -92,6 +93,46 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("title.markdown.help");
     expect(receiverHtml).toContain("Translated receivers");
     expect(receiverHtml).not.toContain("notification.receiver.list.title");
+  });
+
+  it("pins the legacy common.editor tab and clear-temporary contract", () => {
+    const html = renderToStaticMarkup(
+      <LegacyMarkdownEditorShell
+        editId="edit-body"
+        editorMode="content-body"
+        markdownPreview="preview **body**"
+        previewId="preview-body"
+        viaEmail
+      >
+        <textarea className="editorSeries content comment nm" data-editor-mode="content-body" />
+      </LegacyMarkdownEditorShell>,
+    );
+
+    expect(html).toContain('data-toggle="markdown-editor"');
+    expect(html).toContain('class="nav nav-tabs nm small"');
+    expect(html).toContain('href="#edit-body"');
+    expect(html).toContain('data-mode="edit"');
+    expect(html).toContain('href="#preview-body"');
+    expect(html).toContain('data-mode="preview"');
+    expect(html).toContain('id="edit-body"');
+    expect(html).toContain('class="tab-pane active"');
+    expect(html).toContain('id="preview-body"');
+    expect(html).toContain('class="markdown-preview markdown-wrap content-body"');
+    expect(html).toContain('data-via-email="true"');
+    expect(html).toContain('class="task-list-button"');
+    expect(html).toContain('class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"');
+    expect(html).toContain('id="button-clear-temporary"');
+    expect(html).toContain('class="editor-notice-label"');
+    expect(html).toContain('class="notification-receiver"');
+    expect(html).toContain('class="notification-receiver-title"');
+    expect(html).toContain('class="notification-receiver-list"');
+  });
+
+  it("clears legacy editor temporary textareas without importing legacy JavaScript", () => {
+    const textareas = [{ value: "draft" }, { value: "another draft" }];
+
+    expect(clearLegacyTemporaryEditorTextareas(textareas)).toBe(2);
+    expect(textareas).toEqual([{ value: "" }, { value: "" }]);
   });
 
   it("inserts the legacy checklist template like common/scripts.scala.html", () => {

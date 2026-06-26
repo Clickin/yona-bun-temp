@@ -319,3 +319,10 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   `.weight-up-arrow`, `.title-prefix`, and label `data-category-id` /
   `data-label-id`, with label category metadata retained in the frontend view
   model. Focused coverage: `frontend/src/issue-list-filter.spec.tsx`.
+- 2026-06-26 template-first P3 editor shell correction: the shared markdown
+  editor shell now has selector and behavior evidence for
+  `common/editor.scala.html` edit/preview tabs, matching tab panes,
+  `.task-list-button`, `#button-clear-temporary`, `.editor-notice-label`,
+  `.markdown-preview.markdown-wrap`, and `.notification-receiver`, with
+  clear-temporary behavior implemented in React rather than legacy JavaScript.
+  Focused coverage: `frontend/src/markdown-renderer.spec.tsx`.
