@@ -234,6 +234,13 @@
   `auth-workspace-shell.spec.tsx`,
   `user-profile-route-loading-shell-i18n.spec.tsx`, and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 project mutation SPA navigation continuation: project create,
+  settings save, delete, VCS change, fork, and member self-leave routes keep
+  their existing REST mutation calls but redirect through TanStack navigation
+  with base-path-prefixed hrefs instead of `navigateToAppHref`. Focused
+  coverage: `project-create-parity.spec.tsx`,
+  `project-settings-parity.spec.tsx`, `project-members-parity.spec.tsx`,
+  `route-parity.spec.tsx`, and `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   addProjectMemberRest,
   deleteProjectMemberRest,
@@ -11,12 +11,12 @@ import {
 import { apiQueryKeys } from "../../../../api/query-keys";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
+import { prefixBasePath } from "../../../../runtime-config";
 import { ProjectMembersPage } from "../../../-project-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useRequireAuthenticatedRoute,
 } from "../../../-shared";
@@ -29,6 +29,7 @@ function ProjectMembersRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const routeHref = `/${owner}/${projectName}/members`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
   const [failureKind, setFailureKind] = React.useState<
@@ -132,7 +133,7 @@ function ProjectMembersRouteComponent() {
         queryKey: apiQueryKeys.project.container(owner, projectName),
       });
       if (detail.redirectPath && detail.redirectPath !== routeHref) {
-        navigateToAppHref(runtimeConfig.basePath, detail.redirectPath);
+        void navigate({ href: prefixBasePath(runtimeConfig.basePath, detail.redirectPath) });
       }
     },
   });

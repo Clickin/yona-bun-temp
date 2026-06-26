@@ -1,16 +1,16 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { deleteProjectRest, readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { apiQueryKeys } from "../../../../api/query-keys";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
+import { prefixBasePath } from "../../../../runtime-config";
 import { ProjectDeletePage } from "../../../-project-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useRequireAuthenticatedRoute,
 } from "../../../-shared";
@@ -23,6 +23,7 @@ function ProjectDeleteFormRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const routeHref = `/${owner}/${projectName}/deleteform`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
   const [failureKind, setFailureKind] = React.useState<
@@ -64,7 +65,7 @@ function ProjectDeleteFormRouteComponent() {
     },
     onSuccess: (result) => {
       queryClient.removeQueries({ queryKey: apiQueryKeys.project.base(owner, projectName) });
-      navigateToAppHref(runtimeConfig.basePath, result.redirectPath || "/");
+      void navigate({ href: prefixBasePath(runtimeConfig.basePath, result.redirectPath || "/") });
     },
   });
 

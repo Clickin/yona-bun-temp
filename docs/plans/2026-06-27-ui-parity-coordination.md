@@ -632,6 +632,15 @@ M52 continues workspace/profile SPA navigation:
   focused `auth-workspace-shell` / `user-profile-route-loading-shell-i18n`
   guards.
 
+M53 continues project mutation SPA navigation:
+
+- Project create, settings save, delete, VCS change, fork, and member self-leave
+  redirects keep their existing REST mutation boundaries and now use TanStack
+  navigation instead of `navigateToAppHref`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  focused `project-create-parity`, `project-settings-parity`,
+  `project-members-parity`, and `route-parity` guards.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

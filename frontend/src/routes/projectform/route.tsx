@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { createProject } from "../../auth-workspace-client";
 import {
@@ -6,8 +6,9 @@ import {
   type ProjectCreateFormOptionsResponse,
 } from "../../api/org-project";
 import { useAppRuntime } from "../../app-runtime-context";
+import { prefixBasePath } from "../../runtime-config";
 import { ProjectNewPage } from "../-project-views";
-import { BadRequestPage, navigateToAppHref, useRequireAuthenticatedRoute } from "../-shared";
+import { BadRequestPage, useRequireAuthenticatedRoute } from "../-shared";
 
 export const Route = createFileRoute("/projectform")({
   component: ProjectNewRouteComponent,
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/projectform")({
 function ProjectNewRouteComponent() {
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/projectform");
+  const navigate = useNavigate();
   const [formOptions, setFormOptions] = React.useState<ProjectCreateFormOptionsResponse | null>(
     null,
   );
@@ -64,7 +66,12 @@ function ProjectNewRouteComponent() {
       onCreateProject={async (input) => {
         try {
           const detail = await createProject(runtimeConfig, csrfToken, input);
-          navigateToAppHref(runtimeConfig.basePath, `/${detail.ownerName}/${detail.projectName}`);
+          void navigate({
+            href: prefixBasePath(
+              runtimeConfig.basePath,
+              `/${detail.ownerName}/${detail.projectName}`,
+            ),
+          });
         } catch (error) {
           setErrorMessage(
             error instanceof Error

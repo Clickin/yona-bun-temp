@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   readCodeBranches,
   setDefaultCodeBranchRest,
@@ -7,12 +7,12 @@ import {
 } from "../../../../api/code-branches";
 import { readProjectSettings, updateProject } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
+import { prefixBasePath } from "../../../../runtime-config";
 import { ProjectSettingsPage } from "../../../-project-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useRequireAuthenticatedRoute,
 } from "../../../-shared";
@@ -26,6 +26,7 @@ function ProjectSettingsRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(`/${owner}/${projectName}/settingform`);
+  const navigate = useNavigate();
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
@@ -136,10 +137,12 @@ function ProjectSettingsRouteComponent() {
           } else {
             setBranchList(null);
           }
-          navigateToAppHref(
-            runtimeConfig.basePath,
-            `/${nextDetail.ownerName}/${nextDetail.projectName}/settingform`,
-          );
+          void navigate({
+            href: prefixBasePath(
+              runtimeConfig.basePath,
+              `/${nextDetail.ownerName}/${nextDetail.projectName}/settingform`,
+            ),
+          });
         } catch (error) {
           setErrorMessage(
             error instanceof Error

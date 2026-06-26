@@ -5405,6 +5405,9 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readProjectSettings");
     expect(routeSource).toContain("updateProject");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("prefixBasePath");
+    expect(routeSource).not.toContain("navigateToAppHref");
     expect(routeSource).toContain("error.badrequest");
     expect(routeSource).not.toContain("Update project failed.");
 
@@ -5432,7 +5435,9 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain("BadRequestPage");
     expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("deleteProjectRest");
-    expect(routeSource).toContain("navigateToAppHref");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("prefixBasePath");
+    expect(routeSource).not.toContain("navigateToAppHref");
     expect(routeSource).toContain("project.delete.error");
     expect(routeSource).not.toContain("Delete project failed.");
 
@@ -5650,6 +5655,9 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readProjectChangeVcsQueryOptions");
     expect(routeSource).toContain("changeProjectVcsRest");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("prefixBasePath");
+    expect(routeSource).not.toContain("navigateToAppHref");
     expect(routeSource).toContain("project.changeVCS.error");
     expect(routeSource).not.toContain("Change project VCS failed.");
 
@@ -5824,8 +5832,10 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain("forkProjectRest");
     expect(routeSource).toContain("fork.failed");
     expect(routeSource).not.toContain("Fork project failed.");
-    expect(routeSource).toContain("navigateToAppHref(");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("prefixBasePath");
     expect(routeSource).toContain("runtimeConfig.basePath");
+    expect(routeSource).not.toContain("navigateToAppHref(");
     expect(routeSource).not.toContain("window.location.assign(");
 
     const apiSource = fs.readFileSync(path.resolve(__dirname, "api/org-project.ts"), "utf8");

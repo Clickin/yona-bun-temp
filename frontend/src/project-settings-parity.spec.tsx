@@ -82,6 +82,18 @@ describe("project settings parity", () => {
       const source = fs.readFileSync(path.resolve(__dirname, routeFile), "utf8");
       expect(source).toContain(`messages("${key}", { fallback: "${key}" })`);
     }
+
+    for (const routeFile of [
+      "routes/$owner/$projectName/settingform/route.tsx",
+      "routes/$owner/$projectName/deleteform/route.tsx",
+      "routes/$owner/$projectName/changeVCS/route.tsx",
+      "routes/$owner/$projectName/newFork/route.tsx",
+    ]) {
+      const source = fs.readFileSync(path.resolve(__dirname, routeFile), "utf8");
+      expect(source).toContain("useNavigate");
+      expect(source).toContain("prefixBasePath");
+      expect(source).not.toContain("navigateToAppHref");
+    }
   });
 
   it("renders the legacy project setting form shell and controls", () => {

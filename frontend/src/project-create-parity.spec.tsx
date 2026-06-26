@@ -192,6 +192,9 @@ describe("project create parity", () => {
     );
     expect(viewSource).toContain("props.onCreateProject?.({");
     expect(viewSource).toContain("projectScope: ownerScope.projectScope");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("prefixBasePath");
+    expect(routeSource).not.toContain("navigateToAppHref");
     expect(routeSource).not.toContain("Create project failed.");
     expect(routeSource).toContain('messages("error.badrequest", { fallback: "error.badrequest" })');
   });
