@@ -3637,8 +3637,15 @@ export function ProjectChangeVcsPage(props: {
   );
 }
 
+const projectStatisticsBody = (
+  <div className="project-page-wrap">
+    <h1>Under Construction</h1>
+  </div>
+);
+
 export function ProjectStatisticsPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? {
@@ -3653,15 +3660,15 @@ export function ProjectStatisticsPage(props: {
     viewerCanUpdate: false,
   };
 
+  if (props.renderShell === false) {
+    return projectStatisticsBody;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="issue" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <h1>Under Construction</h1>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{projectStatisticsBody}</div>
     </main>
   );
 }

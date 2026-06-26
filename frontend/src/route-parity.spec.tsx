@@ -5810,6 +5810,13 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readProjectContainerQueryOptions");
     expect(routeSource).toContain("ProjectStatisticsPage");
+    expect(routeSource).toContain("renderShell={false}");
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/statistics`");
+    expect(layoutSource).toContain('return { activeMenu: "issue" };');
 
     const viewSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-project-views.tsx"),
@@ -5853,6 +5860,30 @@ describe("file-route parity harness", () => {
     expect(html).not.toContain("project-title-text");
     expect(html).toContain('<span class="project-protected" title="Group Project">G</span>');
     expect(html).toContain("<h1>Under Construction</h1>");
+
+    const leafHtml = renderToStaticMarkup(
+      <ProjectStatisticsPage
+        detail={{
+          enrollmentRequested: false,
+          isFavorited: false,
+          organizationName: "",
+          overview: "",
+          ownerName: "weblabs",
+          projectName: "projectYobi",
+          projectScope: "public",
+          viewerCanEnroll: false,
+          viewerCanUpdate: false,
+        }}
+        renderShell={false}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+    expect(leafHtml).not.toContain('class="app-shell"');
+    expect(leafHtml).not.toContain('class="page-wrap-outer"');
+    expect(leafHtml).not.toContain('class="project-header-outer"');
+    expect(leafHtml).not.toContain('class="project-menu-outer"');
+    expect(leafHtml).toContain('class="project-page-wrap"');
+    expect(leafHtml).toContain("<h1>Under Construction</h1>");
   });
 
   it("requires the public user profile route to preserve the legacy single-segment shell", () => {

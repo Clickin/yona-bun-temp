@@ -47,6 +47,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectWatchersPage`; the watchers leaf route passes that flag while retaining its read/query boundary.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/project-watchers-parity.spec.tsx`.
 
+## 2026-06-27 Statistics Layout Follow-Up
+
+- Moved project statistics shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/statistics`, keeping the issue menu active.
+- Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectStatisticsPage`; the statistics leaf route passes that flag while retaining the legacy `Under Construction` body.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -- --testNamePattern "project statistics"`.
+
 ## Legacy Evidence Checked
 
 - `yona-original/app/views/project/home.scala.html`
@@ -127,7 +133,7 @@ Total rows: 18
 | `/:owner/:project/transfer` | `transfer.scala.html` checkbox-gates transfer modal and Yes/No confirmation; owner input is submitted by JS module. | `ProjectTransferPage` preserves checkbox alert, modal IDs/copy, REST mutation, and accept path projection. `frontend/tests/project-transfer-parity.e2e.ts` now clicks transfer while unchecked, asserts the legacy `project.transfer.alert` copy, verifies the modal stays hidden and no REST POST occurs, then checks the box and proves the CSRF-backed transfer POST plus modal confirm path. | covered in current follow-up | none |
 | `/:owner/:project/changeVCS` | `change_vcs.scala.html` checkbox-gates change-VCS modal and confirmation. | `ProjectChangeVcsPage` preserves checkbox alert, modal IDs/copy, REST mutation, redirect. | covered | none |
 | `/:owner/:project/deleteform` | `delete.scala.html` checkbox-gates delete modal and confirmation. | `ProjectDeletePage` preserves checkbox alert, modal IDs/copy, REST mutation, redirect. | covered | none |
-| `/:owner/:project/statistics` | `statistics.scala.html` renders only `<h1>Under Construction</h1>`. | `ProjectStatisticsPage` renders the same under-construction shell with project header/menu. | covered | none |
+| `/:owner/:project/statistics` | `statistics.scala.html` renders only `<h1>Under Construction</h1>`. | Project layout owns the header/menu/page-wrap shell with active issue menu; `ProjectStatisticsPage` renders the same under-construction body under the outlet. | covered | `frontend/src/routes/$owner/$projectName/route.tsx`, `frontend/src/routes/$owner/$projectName/statistics/route.tsx`, `frontend/src/routes/-project-views.tsx`, `frontend/src/route-parity.spec.tsx` |
 | project admin/settings browser raw-key absence | Legacy project admin/settings pages resolve `project.*`, `button.*`, `fork.*`, and validation message keys through Play messages before rendering. | The scoped project admin Playwright suites now assert browser-visible body text does not contain bounded raw project-admin message key patterns across settings, members, fork, webhooks, delete, transfer, and changeVCS positive and forbidden/disabled states. `pnpm --dir frontend test:e2e -- project-settings-parity.e2e.ts project-members-parity.e2e.ts project-fork-parity.e2e.ts project-webhooks-parity.e2e.ts project-delete-parity.e2e.ts project-transfer-parity.e2e.ts project-change-vcs-parity.e2e.ts` passed 12 Playwright tests. | covered in current follow-up | none |
 
 ## Playwright Scenario Matrix

@@ -274,6 +274,17 @@ M18 continues issue list/detail shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx`.
 
+M19 continues project shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/statistics`, with the issue menu active.
+- `ProjectStatisticsPage` supports `renderShell={false}` so the statistics leaf
+  route keeps its project-container read boundary but renders only the legacy
+  `project-page-wrap` under-construction body under the project layout
+  `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -- --testNamePattern "project statistics"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

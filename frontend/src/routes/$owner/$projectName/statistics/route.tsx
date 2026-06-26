@@ -63,6 +63,7 @@ function ProjectStatisticsRouteComponent() {
   return (
     <ProjectStatisticsPage
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

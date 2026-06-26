@@ -151,6 +151,9 @@ function projectLayoutShell(
   if (appPath === `/${owner}/${projectName}/issues`) {
     return { activeMenu: "issue", keymapMode: "list", shellClassName: "issue-list-page" };
   }
+  if (appPath === `/${owner}/${projectName}/statistics`) {
+    return { activeMenu: "issue" };
+  }
   return null;
 }
 
