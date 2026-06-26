@@ -240,7 +240,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="badge badge-issue-open"');
     expect(html).toContain('class="board-body row-fluid"');
     expect(html).toContain('class="span9 span-left-pane"');
-    expect(html).toContain('class="span3 right-menu"');
+    expect(html).toContain('class="span3 span-right-pane mb20"');
     expect(html).toContain('class="board-actrow right-txt"');
     expect(html).toContain('id="watch-button"');
     expect(html).toContain('data-watching="true"');
@@ -549,7 +549,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     );
 
     const leftPaneStart = html.indexOf('<div class="span9 span-left-pane">');
-    const rightPaneStart = html.indexOf('<aside class="span3 right-menu">');
+    const rightPaneStart = html.indexOf('<aside class="span3 span-right-pane mb20">');
     expect(leftPaneStart).toBeGreaterThanOrEqual(0);
     expect(rightPaneStart).toBeGreaterThan(leftPaneStart);
     const leftPaneHtml = html.slice(leftPaneStart, rightPaneStart);

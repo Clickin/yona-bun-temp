@@ -3124,7 +3124,7 @@ export function ProjectIssueDetailPage(props: {
             ) : null}
           </section>
         </div>
-        <aside className="span3 right-menu">
+        <aside className="span3 span-right-pane mb20">
           <div className="issue-info">
             <form
               action={buildProjectHref(
