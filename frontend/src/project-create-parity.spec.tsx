@@ -186,6 +186,7 @@ describe("project create parity", () => {
     expect(viewSource).not.toContain('id="newProjectForm"\n            method="post"');
     expect(viewSource).toContain("event.preventDefault();");
     expect(viewSource).not.toContain("if (!props.onCreateProject) {");
+    expect(viewSource).not.toContain('item.key === "pullRequest" && svnSelected');
     expect(viewSource).toContain(
       "validateLegacyProjectForm({ projectName: formState.projectName })",
     );

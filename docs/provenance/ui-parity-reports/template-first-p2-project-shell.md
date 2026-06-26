@@ -43,9 +43,9 @@ Source comparison by Subagent P2 found concrete reset blockers:
 | status | count |
 | --- | ---: |
 | gap | 7 |
-| deviation | 2 |
+| deviation | 1 |
 | weak evidence | 3 |
-| covered | 4 |
+| covered | 5 |
 
 ## Reset Findings
 
@@ -64,7 +64,7 @@ Source comparison by Subagent P2 found concrete reset blockers:
 | `project/setting.scala.html` | Reviewer count dropdown. | `frontend/src/routes/-project-views.tsx` | layout | deviation | P2 | `ProjectSettingsPage` | Legacy uses `.btn-group.branches > button + ul.dropdown-menu`; current uses native `select`. |
 | `project/home.scala.html` | Project home sidebar. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-home-tabs.spec.tsx` | layout | covered in current follow-up | P2 | none | Removed the non-legacy `section > h3 Project dashboard` / `.runtime-grid` sidebar block; watch/enroll controls now live in `project/header.scala.html`'s util dropdown position, and the sidebar preserves legacy button wrap, optional milestone summary, and member info order. |
 | `project/home.scala.html` | SVN project with code menu enabled. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-home-tabs.spec.tsx` | interaction | covered in current follow-up | P2 | none | Fork CTA now renders only when `detail.showCode` is true and `vcs` is Git/unspecified, matching the legacy `project.vcs.equals("GIT")` guard under `project.menuSetting.code`. |
-| `project/create.scala.html` | New project form, SVN selected. | `frontend/src/routes/-project-views.tsx` | layout | deviation | P2 | project create form component | Legacy always renders PR menu checkbox; current hides the PR checkbox when SVN is selected. |
+| `project/create.scala.html` | New project form, SVN selected. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-create-parity.spec.tsx` | layout | covered in current follow-up | P2 | none | Removed the React-only `display:none` branch for `#menuSettingPullRequest`; the create form now keeps the legacy template checkbox label/input in the DOM regardless of SVN warning state, with a source guard preventing the old `svnSelected` hide condition from returning. |
 | `project/members.scala.html` | Role dropdown. | `frontend/src/routes/-project-views.tsx` | layout | weak evidence | P2 | `ProjectMembersPage` | Legacy dropdown items are `<a data-loginId>`; current uses `<button data-loginid>`. |
 | `project/partial_webhooks_list.scala.html` | Existing webhook row. | `frontend/src/routes/-project-views.tsx` | interaction | weak evidence | P2 | `ProjectWebhooksPage` | Legacy checkbox has `onclick="return false;"`; current uses a read-only checkbox. |
 

@@ -1586,9 +1586,6 @@ export function ProjectNewPage(props: {
                       className="bg-radiobtn label-public inline-list"
                       htmlFor={item.id}
                       key={item.key}
-                      style={
-                        item.key === "pullRequest" && svnSelected ? { display: "none" } : undefined
-                      }
                     >
                       <input
                         checked={formState[item.key]}
