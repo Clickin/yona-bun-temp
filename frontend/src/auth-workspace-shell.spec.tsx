@@ -128,6 +128,14 @@ describe("auth and workspace views", () => {
     expect(source).toContain('name="searchType"');
     expect(source).toContain('id="gnb-search-scope-title"');
     expect(source).toContain('data-toggle="search-scope"');
+    expect(source).toContain("selectedSearchAction");
+    expect(source).toContain("selectedSearchScopeLabel");
+    expect(source).toContain("setSelectedSearchAction(searchAction)");
+    expect(source).toContain("setSelectedSearchScopeLabel(");
+    expect(source).toContain("rootSearchScopeLabel(messages, searchScope)");
+    expect(source).toContain('href="#"');
+    expect(source).toContain("event.preventDefault();");
+    expect(source).toContain("rootSearchScopeLabel");
     expect(source).toContain("search.scope.project");
     expect(source).toContain("search.scope.group");
     expect(source).toContain("search.scope.all");

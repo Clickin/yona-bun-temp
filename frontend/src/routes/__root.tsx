@@ -1,4 +1,4 @@
-/* eslint-disable jsx-a11y/no-access-key -- legacy common/navbar.scala.html keeps accesskey=S */
+/* eslint-disable jsx-a11y/anchor-is-valid, jsx-a11y/no-access-key -- legacy common/navbar.scala.html keeps accesskey=S and common/scripts.scala.html binds search-scope anchors with href="#" */
 import * as React from "react";
 import { Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -100,6 +100,7 @@ type RootSearchScope =
   | { type: "global" }
   | { organizationName: string; type: "organization" }
   | { ownerName: string; projectName: string; type: "project" };
+type RootMessageResolver = (key: string, options: { fallback: string }) => string;
 type SidebarActiveMenu = "myOrganizationList" | "myProjectList" | "myRecentIssueList";
 
 const DEFAULT_SIDEBAR_ACTIVE_MENU: SidebarActiveMenu = "myOrganizationList";
@@ -362,6 +363,10 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
   const showProjectListing = !runtimeConfig.hideProjectListing && !isGuest;
   const searchScope = rootSearchScopeFromPathname(appPathname);
   const searchAction = rootSearchAction(runtimeConfig.basePath, searchScope);
+  const defaultSearchScopeLabel = rootSearchScopeLabel(messages, searchScope);
+  const [selectedSearchAction, setSelectedSearchAction] = React.useState(searchAction);
+  const [selectedSearchScopeLabel, setSelectedSearchScopeLabel] =
+    React.useState(defaultSearchScopeLabel);
   const showGlobalSearchScope = showProjectListing || !!currentSession?.isSiteAdmin;
   const showOrganizationSearchScope =
     searchScope.type === "organization" &&
@@ -377,6 +382,10 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
   });
   const showProjectGroupSearchScope =
     searchScope.type === "project" && Boolean(projectContainerQuery.data?.organizationName?.trim());
+  React.useEffect(() => {
+    setSelectedSearchAction(searchAction);
+    setSelectedSearchScopeLabel(defaultSearchScopeLabel);
+  }, [defaultSearchScopeLabel, searchAction]);
   const handlePinClick = React.useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -443,7 +452,7 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
           ) : null}
           <li>
             <form
-              action={searchAction}
+              action={selectedSearchAction}
               className="input-prepend gnb-search-form"
               name="gnb-search-form"
             >
@@ -456,17 +465,7 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
                     id="gnb-search-scope-title"
                     type="button"
                   >
-                    {messages(
-                      searchScope.type === "project"
-                        ? "search.scope.project"
-                        : "search.scope.group",
-                      {
-                        fallback:
-                          searchScope.type === "project"
-                            ? "search.scope.project"
-                            : "search.scope.group",
-                      },
-                    )}
+                    {selectedSearchScopeLabel}
                   </button>
                   <ul className="dropdown-menu flat right">
                     {searchScope.type === "project" || showOrganizationSearchScope ? (
@@ -474,19 +473,16 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
                         <a
                           data-action={searchAction}
                           data-toggle="search-scope"
-                          href={searchAction}
+                          href="#"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            setSelectedSearchAction(searchAction);
+                            setSelectedSearchScopeLabel(
+                              rootSearchScopeLabel(messages, searchScope),
+                            );
+                          }}
                         >
-                          {messages(
-                            searchScope.type === "project"
-                              ? "search.scope.project"
-                              : "search.scope.group",
-                            {
-                              fallback:
-                                searchScope.type === "project"
-                                  ? "search.scope.project"
-                                  : "search.scope.group",
-                            },
-                          )}
+                          {rootSearchScopeLabel(messages, searchScope)}
                         </a>
                       </li>
                     ) : null}
@@ -498,10 +494,19 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
                             `/organizations/${encodeURIComponent(searchScope.ownerName)}/search`,
                           )}
                           data-toggle="search-scope"
-                          href={prefixBasePath(
-                            runtimeConfig.basePath,
-                            `/organizations/${encodeURIComponent(searchScope.ownerName)}/search`,
-                          )}
+                          href="#"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            setSelectedSearchAction(
+                              prefixBasePath(
+                                runtimeConfig.basePath,
+                                `/organizations/${encodeURIComponent(searchScope.ownerName)}/search`,
+                              ),
+                            );
+                            setSelectedSearchScopeLabel(
+                              messages("search.scope.group", { fallback: "search.scope.group" }),
+                            );
+                          }}
                         >
                           {messages("search.scope.group", { fallback: "search.scope.group" })}
                         </a>
@@ -512,7 +517,16 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
                         <a
                           data-action={prefixBasePath(runtimeConfig.basePath, "/search")}
                           data-toggle="search-scope"
-                          href={prefixBasePath(runtimeConfig.basePath, "/search")}
+                          href="#"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            setSelectedSearchAction(
+                              prefixBasePath(runtimeConfig.basePath, "/search"),
+                            );
+                            setSelectedSearchScopeLabel(
+                              messages("search.scope.all", { fallback: "search.scope.all" }),
+                            );
+                          }}
                         >
                           {messages("search.scope.all", { fallback: "search.scope.all" })}
                         </a>
@@ -600,6 +614,16 @@ function rootSearchAction(basePath: string, scope: RootSearchScope): string {
   }
 
   return prefixBasePath(basePath, "/search");
+}
+
+function rootSearchScopeLabel(messages: RootMessageResolver, scope: RootSearchScope): string {
+  if (scope.type === "project") {
+    return messages("search.scope.project", { fallback: "search.scope.project" });
+  }
+  if (scope.type === "organization") {
+    return messages("search.scope.group", { fallback: "search.scope.group" });
+  }
+  return messages("search.scope.all", { fallback: "search.scope.all" });
 }
 
 function readSidebarActiveMenu(): SidebarActiveMenu {
