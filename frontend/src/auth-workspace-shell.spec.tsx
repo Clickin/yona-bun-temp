@@ -187,10 +187,16 @@ describe("auth and workspace views", () => {
     expect(source).toContain(
       "legacyApplyMarkdownExternalLinkTargets(document, window.location.origin)",
     );
+    expect(source).toContain("legacyApplyMarkdownViewerBehavior(document)");
     expect(source).toContain('document.addEventListener("keydown", onKeyDown)');
     expect(source).toContain('window.dispatchEvent(new CustomEvent("legacy:nprogress:start"))');
+    expect(source).toContain('new CustomEvent("legacy:viewer:open"');
     expect(source).toContain('[data-toggle="yobi-notify"]');
     expect(source).toContain(".markdown-wrap a[href]");
+    expect(source).toContain(".markdown-wrap");
+    expect(source).toContain('querySelectorAll<HTMLImageElement>("img")');
+    expect(source).toContain('image.style.cursor = "pointer"');
+    expect(source).toContain('container.dataset.legacyViewer = "true"');
     expect(source).toContain("form.requestSubmit()");
     expect(source).toContain('className="page-footer-outer"');
     expect(source).toContain('className="page-footer"');

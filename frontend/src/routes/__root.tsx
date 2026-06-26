@@ -257,6 +257,38 @@ export function legacyApplyMarkdownExternalLinkTargets(documentRef: Document, or
   }
 }
 
+export function legacyApplyMarkdownViewerBehavior(documentRef: Document): number {
+  let initializedCount = 0;
+  for (const container of Array.from(documentRef.querySelectorAll<HTMLElement>(".markdown-wrap"))) {
+    const images = Array.from(container.querySelectorAll<HTMLImageElement>("img"));
+    if (images.length === 0) {
+      continue;
+    }
+    container.dataset.legacyViewer = "true";
+    for (const [index, image] of images.entries()) {
+      image.style.cursor = "pointer";
+      if (image.dataset.legacyViewerBound === "true") {
+        continue;
+      }
+      image.dataset.legacyViewerBound = "true";
+      image.addEventListener("click", () => {
+        image.dispatchEvent(
+          new CustomEvent("legacy:viewer:open", {
+            bubbles: true,
+            detail: {
+              alt: image.alt,
+              index,
+              src: image.currentSrc || image.src,
+            },
+          }),
+        );
+      });
+      initializedCount += 1;
+    }
+  }
+  return initializedCount;
+}
+
 export function legacyCommonScriptsShouldSubmitShortcut(event: {
   ctrlKey: boolean;
   key: string;
@@ -300,6 +332,7 @@ function LegacyCommonScriptsBridge() {
   React.useEffect(() => {
     legacyRenderFlashNotifications(document);
     legacyApplyMarkdownExternalLinkTargets(document, window.location.origin);
+    legacyApplyMarkdownViewerBehavior(document);
   }, [pathname]);
 
   React.useEffect(() => {
