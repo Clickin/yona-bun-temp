@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,11 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+const PROJECT_ADMIN_RAW_KEY_PATTERN = /\b(?:project|button)\.[a-z][A-Za-z0-9_.-]*/;
+
+async function assertNoProjectAdminRawKeys(page: Page): Promise<void> {
+  await expect(page.locator("body")).not.toContainText(PROJECT_ADMIN_RAW_KEY_PATTERN);
+}
 
 const projectContainerPayload = () => ({
   backgroundUrl: "",
@@ -174,7 +179,7 @@ test("project transfer route preserves the legacy request shell", async ({ page 
   await expect(page.locator("#accept")).toBeVisible();
   await expect(page.locator("#btnTransfer")).toBeVisible();
   await expect(page.locator("#alertTransfer")).toHaveClass(/hide/);
-  await expect(page.locator("body")).not.toContainText("project.transfer");
+  await assertNoProjectAdminRawKeys(page);
 
   await page.locator("#owner").fill("recipient");
   await page.locator("#btnTransfer").click();

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,11 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+const PROJECT_ADMIN_RAW_KEY_PATTERN = /\b(?:fork|project|button)\.[a-z][A-Za-z0-9_.-]*/;
+
+async function assertNoProjectAdminRawKeys(page: Page): Promise<void> {
+  await expect(page.locator("body")).not.toContainText(PROJECT_ADMIN_RAW_KEY_PATTERN);
+}
 
 const projectContainerPayload = () => ({
   backgroundUrl: "",
@@ -201,6 +206,7 @@ test("project fork route preserves the legacy fork shell and posts REST mutation
   await expect(page.locator("#inputName")).toBeVisible();
   await expect(page.locator("#public")).toBeVisible();
   await expect(page.locator("#private")).toBeVisible();
+  await assertNoProjectAdminRawKeys(page);
 
   await page.locator("#inputName").fill("");
   await expect(page.locator('button[type="submit"].ybtn-info')).toBeDisabled();
@@ -265,7 +271,7 @@ test("project fork route renders the legacy existing-fork notice without submitt
   await page.goto("/yona/owner/projectYobi/newFork");
   await expect(page.locator("#helpMessage .ico-err2")).toHaveCount(1);
   await expect(page.getByText("Same forked project already exists.")).toBeVisible();
-  await expect(page.getByText("fork.already.exist")).toHaveCount(0);
+  await assertNoProjectAdminRawKeys(page);
   await expect(page.locator("#helpMessage a.primary-txt")).toHaveAttribute(
     "href",
     "/yona/owner/projectYobiFork",

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,11 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+const PROJECT_ADMIN_RAW_KEY_PATTERN = /\b(?:project|button)\.[a-z][A-Za-z0-9_.-]*/;
+
+async function assertNoProjectAdminRawKeys(page: Page): Promise<void> {
+  await expect(page.locator("body")).not.toContainText(PROJECT_ADMIN_RAW_KEY_PATTERN);
+}
 
 const projectContainerPayload = (viewerCanUpdate = true) => ({
   backgroundUrl: "",
@@ -151,6 +156,7 @@ test("project deleteform preserves the legacy confirmation shell and deletes by 
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/yona/owner/projectYobi/deleteform");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
+  await assertNoProjectAdminRawKeys(page);
   await expect(page.locator("#subMenuProjectDelete")).toHaveClass(/active/);
   await expect(page.locator("#accept")).toBeVisible();
   await page.locator("#btnDelete").click();
@@ -177,5 +183,6 @@ test("project deleteform shows the forbidden shell for non-updaters", async ({ p
 
   await page.goto("/yona/owner/projectYobi/deleteform");
   await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
+  await assertNoProjectAdminRawKeys(page);
   await expect(page.locator("#btnDelete")).toHaveCount(0);
 });

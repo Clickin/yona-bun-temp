@@ -6,6 +6,11 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+const PROJECT_ADMIN_RAW_KEY_PATTERN = /\b(?:project|button)\.[a-z][A-Za-z0-9_.-]*/;
+
+async function assertNoProjectAdminRawKeys(page: Page): Promise<void> {
+  await expect(page.locator("body")).not.toContainText(PROJECT_ADMIN_RAW_KEY_PATTERN);
+}
 
 async function installRuntime(page: Page): Promise<void> {
   await page.addInitScript(() => {
@@ -226,13 +231,14 @@ test("project settings saves menu, code access, reviewer and default branch stat
   await expect(page.locator("#menuSettingIssue")).toBeChecked();
   await expect(page.locator("#menuSettingReview")).toBeChecked();
   await expect(page.locator("#project-default-branch")).toHaveValue("main");
+  await assertNoProjectAdminRawKeys(page);
 
   await page.locator("#project-name").fill("invalid name");
   await page.locator("#save").click();
   await expect(page.getByRole("alert")).toHaveText(
     "Enter name in alphabetnumerical or symbol characters(_-.)",
   );
-  await expect(page.getByText("project.name.alert")).toHaveCount(0);
+  await assertNoProjectAdminRawKeys(page);
   expect(savedBody).toBeNull();
 
   await page.locator("#project-name").fill("projectYobi");
@@ -242,7 +248,7 @@ test("project settings saves menu, code access, reviewer and default branch stat
     name: "not-image.txt",
   });
   await expect(page.getByRole("alert")).toHaveText("This is not an image file.");
-  await expect(page.getByText("project.logo.alert")).toHaveCount(0);
+  await assertNoProjectAdminRawKeys(page);
   expect(savedBody).toBeNull();
 
   await page.locator("#codeAccessibleAnyone").check();
@@ -280,6 +286,7 @@ test("project settings saves menu, code access, reviewer and default branch stat
   await expect(page.locator("#menuSettingIssue")).not.toBeChecked();
   await expect(page.locator("#menuSettingReview")).not.toBeChecked();
   await expect(page.locator("#project-default-branch")).toHaveValue("feature/settings");
+  await assertNoProjectAdminRawKeys(page);
   const projectMenuLabels = page.locator(".project-menu-gruop .menu-name");
   await expect(projectMenuLabels.filter({ hasText: "Issue" })).toHaveCount(0);
   await expect(projectMenuLabels.filter({ hasText: "Review" })).toHaveCount(0);
@@ -311,6 +318,7 @@ test("project settings route renders the legacy forbidden shell for non-updaters
 
   await page.goto("/yona/owner/projectYobi/settingform");
   await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
+  await assertNoProjectAdminRawKeys(page);
   await expect(page.locator("#saveSetting")).toHaveCount(0);
   await expect(page.locator("#save")).toHaveCount(0);
 });

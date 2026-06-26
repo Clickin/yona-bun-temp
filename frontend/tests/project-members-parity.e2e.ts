@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,11 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+const PROJECT_ADMIN_RAW_KEY_PATTERN = /\b(?:project|button)\.[a-z][A-Za-z0-9_.-]*/;
+
+async function assertNoProjectAdminRawKeys(page: Page): Promise<void> {
+  await expect(page.locator("body")).not.toContainText(PROJECT_ADMIN_RAW_KEY_PATTERN);
+}
 
 type ProjectMember = {
   avatarUrl: string;
@@ -204,6 +209,7 @@ test("project members route renders and mutates the legacy member management sur
 
   await page.goto("/yona/owner/projectYobi/members");
   await expect(page.locator("#addNewMember")).toBeVisible();
+  await assertNoProjectAdminRawKeys(page);
   await expect(page.locator("#loginId")).toHaveAttribute("placeholder", "Add new member ID.");
   await expect(page.locator("ul.members.project.row-fluid")).toBeVisible();
   await expect(page.locator(".label.owner")).toContainText("Project owner");
@@ -282,6 +288,7 @@ test("project members route renders the legacy forbidden shell for non-updaters"
 
   await page.goto("/yona/owner/projectYobi/members");
   await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
+  await assertNoProjectAdminRawKeys(page);
   await expect(page.locator("#addNewMember")).toHaveCount(0);
   await expect(page.locator('[data-action="apply"]')).toHaveCount(0);
   await expect(page.locator('[data-action="delete"]')).toHaveCount(0);

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,11 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+const PROJECT_ADMIN_RAW_KEY_PATTERN = /\b(?:project|button)\.[a-z][A-Za-z0-9_.-]*/;
+
+async function assertNoProjectAdminRawKeys(page: Page): Promise<void> {
+  await expect(page.locator("body")).not.toContainText(PROJECT_ADMIN_RAW_KEY_PATTERN);
+}
 
 const projectContainerPayload = () => ({
   backgroundUrl: "",
@@ -186,12 +191,13 @@ test("project webhooks route preserves the legacy CRUD shell", async ({ page }) 
   await expect(page.locator("#subMenuWebhook")).toHaveClass(/active/);
   await expect(page.locator("#formNewWebhook")).toBeVisible();
   await expect(page.locator("#webhooksList .error-wrap")).toBeVisible();
+  await assertNoProjectAdminRawKeys(page);
 
   await page.locator("#formNewWebhook").evaluate((form) => {
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
   await expect(page.getByRole("alert")).toHaveText("Payload URL is a required field.");
-  await expect(page.getByText("project.webhook.payloadUrl.empty")).toHaveCount(0);
+  await assertNoProjectAdminRawKeys(page);
   expect(webhookRequests).toHaveLength(0);
 
   await page.locator("input[name=payloadUrl]").fill("https://hooks.example/yona");
@@ -258,6 +264,7 @@ test("project webhooks route renders the legacy forbidden shell for non-updaters
 
   await page.goto("/yona/owner/projectYobi/webhooks");
   await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
+  await assertNoProjectAdminRawKeys(page);
   await expect(page.locator("#formNewWebhook")).toHaveCount(0);
   await expect(page.locator('[data-request-method="delete"]')).toHaveCount(0);
 });

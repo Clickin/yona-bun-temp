@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,11 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+const PROJECT_ADMIN_RAW_KEY_PATTERN = /\b(?:project|button)\.[a-z][A-Za-z0-9_.-]*/;
+
+async function assertNoProjectAdminRawKeys(page: Page): Promise<void> {
+  await expect(page.locator("body")).not.toContainText(PROJECT_ADMIN_RAW_KEY_PATTERN);
+}
 
 const projectContainerPayload = () => ({
   backgroundUrl: "",
@@ -164,6 +169,7 @@ test("project change VCS route preserves the legacy confirmation shell", async (
 
   await page.goto("/yona/owner/projectYobi/changeVCS");
   await expect(page.locator("#subMenuProjectChangeVCS")).toHaveClass(/active/);
+  await assertNoProjectAdminRawKeys(page);
   await expect(page.locator(".bubble-wrap h3")).toContainText("GIT");
   await expect(page.locator(".bubble-wrap h3")).toContainText("Subversion");
   await expect(page.locator("#acceptChangeVCS")).toBeVisible();

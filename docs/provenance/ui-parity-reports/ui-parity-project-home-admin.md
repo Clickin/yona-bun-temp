@@ -57,12 +57,12 @@ Total rows: 18
 
 | status | count |
 | --- | ---: |
-| covered | 17 |
+| covered | 18 |
 | gap | 0 |
 | deviation | 0 |
 | deferred | 0 |
 | not-applicable | 0 |
-| weak evidence | 1 |
+| weak evidence | 0 |
 | needs-parent-decision | 0 |
 
 ## Result Inventory
@@ -86,7 +86,7 @@ Total rows: 18
 | `/:owner/:project/changeVCS` | `change_vcs.scala.html` checkbox-gates change-VCS modal and confirmation. | `ProjectChangeVcsPage` preserves checkbox alert, modal IDs/copy, REST mutation, redirect. | covered | none |
 | `/:owner/:project/deleteform` | `delete.scala.html` checkbox-gates delete modal and confirmation. | `ProjectDeletePage` preserves checkbox alert, modal IDs/copy, REST mutation, redirect. | covered | none |
 | `/:owner/:project/statistics` | `statistics.scala.html` renders only `<h1>Under Construction</h1>`. | `ProjectStatisticsPage` renders the same under-construction shell with project header/menu. | covered | none |
-| project admin/settings browser raw-key absence | Legacy project admin/settings pages resolve `project.*`, `button.*`, and validation message keys through Play messages before rendering. | Individual source/render specs cover many resolved strings, but scoped browser tests for settings/member/fork/webhook/delete/transfer/changeVCS do not consistently assert body-level absence of raw project-admin message keys. Transfer now asserts no visible `project.transfer`; the remaining scoped pages need bounded raw-key negative assertions. | weak evidence | existing project admin focused E2E files only |
+| project admin/settings browser raw-key absence | Legacy project admin/settings pages resolve `project.*`, `button.*`, `fork.*`, and validation message keys through Play messages before rendering. | The scoped project admin Playwright suites now assert browser-visible body text does not contain bounded raw project-admin message key patterns across settings, members, fork, webhooks, delete, transfer, and changeVCS positive and forbidden/disabled states. `pnpm --dir frontend test:e2e -- project-settings-parity.e2e.ts project-members-parity.e2e.ts project-fork-parity.e2e.ts project-webhooks-parity.e2e.ts project-delete-parity.e2e.ts project-transfer-parity.e2e.ts project-change-vcs-parity.e2e.ts` passed 12 Playwright tests. | covered in current follow-up | none |
 
 ## Playwright Scenario Matrix
 
