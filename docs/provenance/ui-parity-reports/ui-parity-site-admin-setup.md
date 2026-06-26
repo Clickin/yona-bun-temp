@@ -66,10 +66,10 @@ Total rows: 17
 
 | status | count |
 | --- | ---: |
-| covered | 15 |
+| covered | 16 |
 | gap | 0 |
 | deviation | 0 |
-| deferred | 1 |
+| deferred | 0 |
 | not-applicable | 1 |
 | weak evidence | 0 |
 | needs-parent-decision | 0 |
@@ -94,7 +94,7 @@ Total rows: 17
 | `/secret` configured state | Legacy `Global.onRequest` only enters `getConfigSecretAction()` when `isSecretInvalid`; normal configured runtime falls through to default routing and there is no concrete `/secret` route | `/api/v1/auth/capabilities` now exposes `secretSetupRequired`; direct GET `/secret` returns 404 after setup, REST setup retry returns 404, and the React `/secret` route renders `NotFoundPage` instead of the setup form when configured | covered in Wave 3 | `crates/server/src/routes/auth.rs`, `frontend/src/routes/secret/route.tsx`, `crates/server/tests/auth_workspace_contract.rs`, `frontend/src/route-parity.spec.tsx` |
 | `/restart` | `Global.java` returns restart action after secret update; `restart.scala.html` uses `.secret-wrap`, `.secret-box`, `app.restart.*` copy | `frontend/src/routes/restart/route.tsx`, `frontend/src/route-parity.spec.tsx`, visual sweep entries for `/restart` | covered | none |
 | `/_import` Git project import | `project/importing.scala.html`: `#importGit`, `#url`, `#useRepoAuth`, `#repoAuth` with `project.import.auth.userid`/`project.import.auth.userpw` labels and `project.import.auth.userid.desc` placeholder, `project-name` placeholder `project.name.alert`, menu checkboxes | `ProjectImportPage` preserves route/form shell and REST `importProjectRest`, and now renders the legacy `#repoAuth .row-fluid` / `dl.span6` labels/placeholders plus `project.name.alert` placeholder. | covered in follow-up | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-import-parity.spec.tsx` |
-| `/migration` | `conf/routes:19-26`, `migration/home.scala.html`, `yona.Migration.js`; legacy UI is outbound "Yona to Github" and gated by `github.allow.migration=false` by default | `frontend/src/routes/migration/route.tsx` renders disabled shell with source/destination panels; `docs/provenance/github-migration-decision.md` and `migration-tool-api-decision.md` classify as deferred/operator scope | deferred | `docs/provenance/github-migration-decision.md`, `crates/migration`, external operator tooling if parent reopens |
+| `/migration` | `conf/routes:19-26`, `MigrationApp.migration`, `migration/home.scala.html`, `yona.Migration.js`; legacy UI is outbound "Yona to Github" and gated by `github.allow.migration=false` by default, where the default legacy response is forbidden with `error.forbidden.or.not.allowed` | `frontend/src/routes/migration/route.tsx` renders the React disabled shell with `.yobi-migration`, source/destination panels, disabled milestone/issue/post actions, and the legacy forbidden copy. `frontend/src/migration-route-parity.spec.tsx` pins the shell. `router_contract::legacy_migration_root_returns_disabled_react_shell_not_server_html`, `legacy_migration_requires_login_when_anonymous_access_is_disabled`, and `legacy_migration_export_paths_stay_disabled_json_surface` pin the direct 403/login/disabled JSON boundaries. `docs/provenance/github-migration-decision.md` keeps actual GitHub API migration behavior as external operator tooling, not a frontend UI parity blocker. | covered | none |
 
 ## Playwright Scenario Matrix
 
@@ -114,10 +114,10 @@ Total rows: 17
 | `/secret` | configured runtime | legacy default action after `isSecretInvalid=false`; setup form not an always-on normal page by `Global.onRequest` evidence and absent concrete route | direct GET `/secret` returns 404 after setup and SPA `/secret` renders `NotFoundPage` when `secretSetupRequired=false` | direct navigation after configured state | capabilities/API plus React guard | covered in Wave 3 |
 | `/restart` | after setup | `.secret-wrap`, `.secret-box.txt-center`, `app.restart.welcome`, `app.restart.notice` | same shell and restart copy | direct navigation | React route only; legacy restart action evidence | covered |
 | `/_import` | authenticated create/import | `#importGit`, `#url`, `#useRepoAuth`, `#repoAuth .row-fluid .span6`, labels `project.import.auth.userid` / `project.import.auth.userpw`, project-name placeholder `project.name.alert` | same shell, auth labels/layout, and project-name placeholder rendered by React | toggle repo auth, inspect labels/placeholders, submit empty URL | React POST `/api/v1/projects/import`; direct `/_import` clone route covered | covered in follow-up |
-| `/migration` | authenticated operator page, GitHub migration disabled/deferred | `.yobi-migration`, `Yona to Github`, source/destination panels, milestone/issue/post buttons from Angular template | disabled React shell preserves panels and disabled actions | direct navigation only | no app-runtime GitHub API migration; operator/deferred scope | deferred |
+| `/migration` | authenticated operator page, GitHub migration disabled by default | `.yobi-migration`, `Yona to Github`, source/destination panels, milestone/issue/post buttons from Angular template, forbidden copy when `github.allow.migration=false` | disabled React shell preserves panels, disabled actions, and forbidden copy; direct route keeps the disabled/forbidden boundary | direct navigation only | no app-runtime GitHub API migration; external operator tooling remains outside frontend UI parity gate | covered |
 
 ## Notes
 
 - Site-admin runtime i18n is covered by `site-admin-route-parity.spec.tsx`, including checks that default render does not expose raw `site.sidebar` or `site.update.isAvailable` keys. Some Playwright E2E fixtures intentionally assert fallback keys because they do not load the full i18n runtime; those fixture assertions are weaker than the static/runtime i18n spec and should not be treated as proof that raw keys appear in production.
 - `/sites/data` is intentionally not in the shared legacy sidebar; legacy `siteMngLayout.scala.html` also omits a data nav item.
-- `/migration` is not the same feature as `/_import`. Legacy `/_import` is Git URL clone into Yona; legacy `/migration` is outbound Yona-to-GitHub operator tooling and remains deferred by the existing parent decision.
+- `/migration` is not the same feature as `/_import`. Legacy `/_import` is Git URL clone into Yona; legacy `/migration` is outbound Yona-to-GitHub operator tooling. The default disabled/forbidden UI shell is covered for frontend parity, while actual GitHub API migration remains external operator tooling by `docs/provenance/github-migration-decision.md`.

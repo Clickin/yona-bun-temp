@@ -276,7 +276,7 @@ Round 2 remaining subagent split:
 | `ui-parity-code-vcs` | code browser, file rendering, commit history/detail, compare, branches, raw/download/image links | explorer | Code/VCS shell, branch selector, diff/comment, no-head/error-state, and direct-link findings |
 | `ui-parity-pull-request-review` | PR lists/create/edit/detail/changes/reviews/review threads | explorer | PR branch selector, merge/conflict/review/comment/thread state findings |
 | `ui-parity-search-notification` | global/project/org search, `/notifications`, `/notification?from=&limit=` | explorer | Search result-type/filter/pagination and notification stream/fragment-conversion findings |
-| `ui-parity-site-admin-setup` | `/sites/**`, `/secret`, `/restart`, `/migration`, release/setup/import operator pages | explorer | Site-admin/setup/import/update/diagnostic state findings and deferred/operator-scope classifications |
+| `ui-parity-site-admin-setup` | `/sites/**`, `/secret`, `/restart`, `/migration`, release/setup/import operator pages | explorer | Site-admin/setup/import/update/diagnostic state findings, including `/migration` disabled-shell UI coverage and separate outbound GitHub operator-scope classification |
 | `ui-parity-fragment-security-db` | legacy fragment conversions, XSS/SQLi/pathological Markdown, visual sweep status deltas, DB/migration smoke evidence | explorer | Weak evidence links, guard gaps, or DB/security smoke gaps |
 
 ## Active Subagent Assignments
@@ -890,8 +890,9 @@ templates, `welcome/secret.scala.html`, `welcome/restart.scala.html`,
 and `frontend/src/api/site-admin.ts`. Check non-admin forbidden/admin state,
 site sidebar active/update badge, user/project/post/issue lists, mail/mass-mail,
 data export/import, update, diagnostic, `/secret` setup-required versus
-configured state, `/restart`, `/_import`, and `/migration` deferred/operator
-scope classification.
+configured state, `/restart`, `/_import`, and `/migration` disabled-shell UI
+coverage while keeping outbound GitHub migration behavior outside the frontend
+UI parity gate.
 
 ### Historical `ui-parity-public-auth-shell`
 
