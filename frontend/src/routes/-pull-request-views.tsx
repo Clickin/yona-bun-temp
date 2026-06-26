@@ -4055,6 +4055,7 @@ function ProjectReviewPagination(props: {
 export function ProjectReviewsPage(props: {
   detail: ProjectDetailViewModel | null;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   query: ReviewThreadListQuery;
   renderShell?: boolean;
   reviews: ReviewThreadListResponse | undefined;
@@ -4141,6 +4142,25 @@ export function ProjectReviewsPage(props: {
               id="search"
               method="get"
               name="search"
+              onSubmit={(event) => {
+                if (!props.onNavigate) {
+                  return;
+                }
+                event.preventDefault();
+                const formData = new FormData(event.currentTarget);
+                props.onNavigate(
+                  reviewsHref(
+                    reviewListFilterQueryString(props.query, {
+                      authorId: Number(formData.get("authorId") || "0"),
+                      filter: String(formData.get("filter") ?? ""),
+                      orderBy: String(formData.get("orderBy") ?? ""),
+                      orderDir: String(formData.get("orderDir") ?? ""),
+                      participantId: Number(formData.get("participantId") || "0"),
+                      state: String(formData.get("state") ?? "open"),
+                    }),
+                  ),
+                );
+              }}
             >
               <input name="authorId" type="hidden" value={props.query.authorId ?? ""} />
               <input name="participantId" type="hidden" value={props.query.participantId ?? ""} />

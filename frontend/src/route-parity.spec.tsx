@@ -4605,6 +4605,14 @@ describe("file-route parity harness", () => {
 
   it("renders project review list with the legacy reviewthread shell", () => {
     const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const pullRequestViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-pull-request-views.tsx"),
+      "utf8",
+    );
+    const reviewsRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/reviews/route.tsx"),
+      "utf8",
+    );
     const html = renderToStaticMarkup(
       <ProjectReviewsPage
         detail={{
@@ -4797,6 +4805,12 @@ describe("file-route parity harness", () => {
     expect(html).not.toContain("Yona Rust Project");
     expect(html).not.toContain("<h1>Reviews</h1>");
     expect(html).not.toContain("review-card");
+    expect(pullRequestViewsSource).toContain("onNavigate?: (href: string) => void");
+    expect(pullRequestViewsSource).toContain("new FormData(event.currentTarget)");
+    expect(pullRequestViewsSource).toContain("event.preventDefault();");
+    expect(reviewsRouteSource).toContain("useNavigate");
+    expect(reviewsRouteSource).toContain("useRouterState");
+    expect(reviewsRouteSource).toContain("navigate({ href })");
   });
 
   it("requires real PR/review interaction routes without create/edit placeholders", () => {

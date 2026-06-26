@@ -173,6 +173,14 @@
   refetches without native document navigation. Focused coverage:
   `frontend/src/route-parity.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 review-thread list SPA navigation continuation:
+  project review lists (`/reviews`) keep the legacy hidden-field search form,
+  side filters, state tabs, sort links, export href, rows, and pagination
+  output, but search submits now call TanStack navigation. The route already
+  subscribes to router location state, so same-route review filtering refetches
+  without native document navigation. Focused coverage:
+  `frontend/src/route-parity.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

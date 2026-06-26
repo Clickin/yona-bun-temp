@@ -551,6 +551,15 @@ M43 continues board list SPA navigation:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "board permission gates"`.
 
+M44 continues review-thread list SPA navigation:
+
+- Project review-thread list search keeps the legacy hidden-field GET form,
+  filters, state tabs, export href, rows, and pagination.
+- Search submit now calls TanStack navigation while the existing router
+  location subscription refetches review results inside the SPA.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "project review list"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   projectReviewsQueryOptions,
   type ReviewThreadListQuery,
@@ -24,6 +24,7 @@ function ProjectReviewsRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, currentSession, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/reviews`;
+  const navigate = useNavigate();
   useRouterState({ select: (state) => state.location.href });
   const searchParams = new URLSearchParams(window.location.search);
   const query: ReviewThreadListQuery = {
@@ -72,6 +73,9 @@ function ProjectReviewsRouteComponent() {
     <ProjectReviewsPage
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       messages={messages}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       query={query}
       renderShell={false}
       reviews={reviewsQuery.data}
