@@ -11,7 +11,8 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/app.css` plus a focused CSS source guard in `frontend/src/issue-detail-shell.spec.tsx`. The existing React markup already carries the legacy issue detail classes, so this follow-up avoids JSX churn and keeps REST/React behavior unchanged.
 - Continuation: board-id/date header styling now matches legacy `_page.less` color, spacing, and line-height selectors under the `issue-detail-page` shell.
 - Continuation: issue detail right pane now uses the legacy `span3 span-right-pane mb20` shell from `issue/view.scala.html`, restoring the existing `.span-right-pane` responsive behavior.
-- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx`.
+- Continuation: project issue list comment/vote/sharer counts now reuse the legacy `common/commentCount.scala.html`, `voteCount.scala.html`, and `sharerCount.scala.html` class/icon structure.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx src/issue-list-filter.spec.tsx`.
 
 ## 2026-06-27 Nested Layout Follow-Up
 

@@ -1504,17 +1504,39 @@ function ProjectIssueRows(props: {
                   {item.commentCount > 0 || item.voterCount > 0 || item.watcherCount > 0 ? (
                     <span className="infos-item item-count-groups">
                       {item.commentCount > 0 ? (
-                        <a className="num-comments" href={`${issueHref}#comments`}>
-                          {item.commentCount}
+                        <a
+                          className="comments-count comments-count-color"
+                          href={`${issueHref}#comments`}
+                        >
+                          <span className="count-groups item-icon">
+                            <i className="yobicon-comment2"></i>
+                          </span>
+                          <span className="count-groups item-count">{item.commentCount}</span>
                         </a>
                       ) : null}
                       {item.voterCount > 0 ? (
-                        <a className="num-hearts" href={`${issueHref}#vote`}>
-                          {item.voterCount}
+                        <a className="vote-count vote-color" href={`${issueHref}#vote`}>
+                          <span className="count-groups item-icon">
+                            <i className="yobicon-hearts"></i>
+                          </span>
+                          <span className="count-groups item-count strong">{item.voterCount}</span>
                         </a>
                       ) : null}
                       {item.watcherCount > 0 ? (
-                        <span className="num-sharers">{item.watcherCount}</span>
+                        <a
+                          className="sharer-color"
+                          data-placement="bottom"
+                          data-toggle="tooltip"
+                          href={`${issueHref}#sharers`}
+                          title={legacyMessage(props.messages, "issue.sharer")}
+                        >
+                          <span className="count-groups item-icon">
+                            <i className="yobicon-friends"></i>
+                          </span>
+                          <span className="count-groups item-count strong">
+                            {item.watcherCount}
+                          </span>
+                        </a>
                       ) : null}
                     </span>
                   ) : null}
