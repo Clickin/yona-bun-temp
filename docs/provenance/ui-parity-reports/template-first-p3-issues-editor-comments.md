@@ -43,10 +43,10 @@ Source comparison by Subagent P3 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 1 |
+| gap | 0 |
 | deviation | 1 |
 | weak evidence | 9 |
-| covered | 1 |
+| covered | 2 |
 | not-applicable | 1 |
 
 ## Reset Findings
@@ -55,7 +55,7 @@ Source comparison by Subagent P3 found concrete reset blockers:
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `issue/view.scala.html`, `issue/partial_index_comments.scala.html`, `issue/partial_index_comment.scala.html` | Issue detail right `issue-info` compact comment index. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/issue-detail-shell.spec.tsx` | layout | covered in current follow-up | P3 | none | Issue detail now renders the legacy compact comment index inside `.issue-info` after `#issueUpdateForm`: `#comments.board-comment-wrap > #timeline > .timeline-list`, `.comment-header .num`, root `.comment.index-comment[data-location]`, `#comment-body-$id .comment-body > a`, `.index-comment-author`, `.comment-exists`, `.comment_author`, `.ago-date`, and hidden `.share-link`. |
 | `issue/partial_comment.scala.html` | Full comment timeline with voter avatars/modal threshold. | `frontend/src/routes/-issue-views.tsx` | layout | weak evidence | P3 | comment components and issue detail tests | Need selector proof for `.vote-description-people`, `#voters-$id`, `.avatar-wrap.smaller`. |
-| `common/commentUpdateForm.scala.html` | Comment edit with upload label/input and notification mail checkbox. | `frontend/src/routes/-issue-views.tsx` | interaction | gap | P3 | comment edit/upload components and tests | Need selector proof for `.file-upload__label`, `.file-upload__input`, `.send-notification-check`. |
+| `common/commentUpdateForm.scala.html` | Comment edit with upload label/input and notification mail checkbox. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-view-models.ts`, `frontend/src/auth-workspace-client.ts`, `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, `frontend/src/issue-detail-shell.spec.tsx` | interaction | covered in current follow-up | P3 | none | Comment edit now renders the legacy `.file-upload > .file-upload__label.ybtn[for=upload-$id]`, `.file-upload__input#upload-$id[name=filePath][multiple]`, and authored-only `.send-notification-check` popover with checked `notificationMail=yes`; server/detail view models carry `authorId` and `viewerUserId` so the checkbox follows legacy `comment.isAuthoredBy(currentUser)` behavior. |
 | `common/fileUploader.scala.html`, `common/uploadForm.scala.html` | Issue/comment create upload, drag/drop, attached file template. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/routes/-markdown-attachment-textarea.tsx` | data-boundary | weak evidence | P3 | upload/editor components and upload specs | Need selector proof for `#tplAttachedFile`, `.attached-file`, `.btn-insert`, `.upload-progress`. |
 | `common/editor.scala.html` | Markdown editor edit/preview/checklist/clear temporary/receiver list. | `frontend/src/routes/-markdown-renderer.tsx`, `frontend/src/routes/-issue-views.tsx` | interaction | weak evidence | P3 | markdown editor shell and comment tests | Need tab-switching and `#button-clear-temporary` behavior proof. |
 | `issue/view.scala.html`, `common/tasklistBar.scala.html` | Issue/comment tasklist progress bar before markdown content. | `frontend/src/routes/-markdown-renderer.tsx` | layout | weak evidence | P3 | markdown renderer and markdown tests | Need selector proof for `.tasklist .task-title .done-counter` and `.task-progress .bar.red`. |

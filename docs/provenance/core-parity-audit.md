@@ -2079,6 +2079,16 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   legacy message table before rendering. Focused coverage:
   `frontend/src/issue-detail-shell.spec.tsx` and full
   `pnpm --dir frontend exec vitest run`.
+- 2026-06-26 issue comment detail contract tightening:
+  `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
+  `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and
+  detail `viewerUserId` in the REST detail projection so the React
+  `common/commentUpdateForm.scala.html` port can preserve the legacy
+  `comment.isAuthoredBy(currentUser)` notification checkbox condition without
+  importing legacy Play/JavaScript code. Focused coverage:
+  `frontend/src/issue-detail-shell.spec.tsx`,
+  `pnpm agent:cargo -- --outside-sandbox check -p yoram-server`, and full
+  `pnpm --dir frontend test`.
 - 2026-06-25 initial admin bootstrap route guard:
   `frontend/src/route-parity.spec.tsx` now pins `/secret` and `/restart` as
   real React routes, requires the `/secret` screen submit path to call

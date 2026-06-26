@@ -696,6 +696,7 @@ pub(super) async fn rest_refreshed_issue_detail(
             parent_issue_number: None,
             parent_issue_state: String::new(),
             parent_issue_title: String::new(),
+            viewer_user_id: actor_id.unwrap_or_default(),
             weight: 0,
         });
     };

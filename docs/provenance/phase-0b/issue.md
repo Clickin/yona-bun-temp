@@ -285,3 +285,10 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   `data-location`, `#comment-body-$id`, `.index-comment-author`,
   `.comment-exists`, `.comment_author`, `.ago-date`, and hidden `.share-link`
   anchors. Focused coverage: `frontend/src/issue-detail-shell.spec.tsx`.
+- 2026-06-26 template-first P3 comment update form correction: issue comment
+  edit now restores the legacy upload label/input shell and authored-only
+  notification mail checkbox from `common/commentUpdateForm.scala.html`,
+  including `.file-upload__label`, `.file-upload__input`, `.send-notification-check`,
+  `notificationMail=yes`, and server/frontend propagation of `authorId` plus
+  `viewerUserId` for the legacy authored condition. Focused coverage:
+  `frontend/src/issue-detail-shell.spec.tsx`.

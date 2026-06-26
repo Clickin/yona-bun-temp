@@ -2655,6 +2655,10 @@ export function ProjectIssueDetailPage(props: {
                                     onSearchMentionUsers={props.onSearchMentionUsers}
                                     onSubmit={props.onCommentUpdate}
                                     runtimeConfig={props.runtimeConfig}
+                                    showNotificationMail={
+                                      Boolean(comment.authorId) &&
+                                      comment.authorId === props.issue.viewerUserId
+                                    }
                                   />
                                 </div>
                               ) : null}
@@ -4933,6 +4937,7 @@ function IssueCommentEditForm(props: {
     attachmentIds?: number[],
   ) => Promise<void>;
   runtimeConfig: RuntimeConfig;
+  showNotificationMail?: boolean;
 }) {
   const [contentsMarkdown, setContentsMarkdown] = React.useState(props.initialContents);
   const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
@@ -4990,6 +4995,32 @@ function IssueCommentEditForm(props: {
               </div>
             </div>
             <div className="right-txt comment-update-button upload-button-line">
+              <span className="file-upload">
+                <label className="file-upload__label ybtn" htmlFor={`upload-${props.commentId}`}>
+                  {legacyMessage(props.messages, "button.upload")}
+                </label>
+                <input
+                  className="file-upload__input"
+                  id={`upload-${props.commentId}`}
+                  multiple
+                  name="filePath"
+                  type="file"
+                />
+              </span>
+              {props.showNotificationMail ? (
+                <span
+                  className="send-notification-check"
+                  data-content={legacyMessage(props.messages, "notification.send.mail.warning")}
+                  data-placement="top"
+                  data-toggle="popover"
+                  data-trigger="hover"
+                >
+                  <label className="checkbox inline">
+                    <input defaultChecked name="notificationMail" type="checkbox" value="yes" />
+                    <strong>{legacyMessage(props.messages, "notification.send.mail")}</strong>
+                  </label>
+                </span>
+              ) : null}
               <button
                 className="ybtn ybtn-cancel"
                 data-comment-id={props.commentId}

@@ -418,6 +418,7 @@ export interface ProjectIssueDetailViewModel {
   dueDateLabel: string;
   comments: Array<{
     authorAvatarUrl: string;
+    authorId?: number;
     authorLabel: string;
     authorLoginId: string;
     contentsMarkdown: string;
@@ -469,6 +470,7 @@ export interface ProjectIssueDetailViewModel {
   timeline: Array<{
     comment?: {
       authorAvatarUrl: string;
+      authorId?: number;
       authorLabel: string;
       authorLoginId: string;
       contentsMarkdown: string;
@@ -503,6 +505,7 @@ export interface ProjectIssueDetailViewModel {
   viewerCanDelete: boolean;
   viewerCanManageSharers: boolean;
   viewerCanUpdate: boolean;
+  viewerUserId?: number;
   viewerHasInheritedShare: boolean;
   viewerIsDirectSharer: boolean;
   voterCount: number;

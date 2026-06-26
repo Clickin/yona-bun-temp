@@ -117,6 +117,8 @@ pub struct IssueComment {
     #[serde(default)]
     pub id: i64,
     #[serde(default)]
+    pub author_id: i64,
+    #[serde(default)]
     pub contents_markdown: String,
     #[serde(default)]
     pub contents_html: String,

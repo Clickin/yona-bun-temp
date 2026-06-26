@@ -544,6 +544,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
             {
               comment: {
                 authorAvatarUrl: "https://cdn.yona/avatar-commenter.png",
+                authorId: 42,
                 authorLabel: "Commenter",
                 authorLoginId: "commenter",
                 contentsMarkdown: "Comment body",
@@ -612,6 +613,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
             {
               comment: {
                 authorAvatarUrl: "https://cdn.yona/avatar-commenter.png",
+                authorId: 42,
                 authorLabel: "Commenter",
                 authorLoginId: "commenter",
                 contentsMarkdown: "- [ ] Comment body",
@@ -643,6 +645,22 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('data-comment-id="56"');
     expect(html).toContain('title="Edit comment"');
     expect(html).toContain('class="btn-transparent-with-fontsize-lineheight ml10"');
+    expect(html).toContain('id="comment-editform-56"');
+    expect(html).toContain('class="comment-update-form"');
+    expect(html).toContain('class="file-upload__label ybtn"');
+    expect(html).toContain('for="upload-56"');
+    expect(html).toContain('class="file-upload__input"');
+    expect(html).toContain('id="upload-56"');
+    expect(html).toContain('type="file"');
+    expect(html).toContain('name="filePath"');
+    expect(html).toContain("multiple");
+    expect(html).toContain('class="send-notification-check"');
+    expect(html).toContain('data-toggle="popover"');
+    expect(html).toContain('data-trigger="hover"');
+    expect(html).toContain('data-placement="top"');
+    expect(html).toContain('name="notificationMail"');
+    expect(html).toContain('value="yes"');
+    expect(html).toContain('checked=""');
     expect(html).toContain('class="yobicon-edit-2"');
     expect(html).toContain('id="comment-editform-56"');
     expect(html).toContain('class="comment-update-form"');
@@ -1109,6 +1127,7 @@ const issueDetail: ProjectIssueDetailViewModel = {
   viewerCanDelete: false,
   viewerCanManageSharers: false,
   viewerCanUpdate: false,
+  viewerUserId: 42,
   viewerHasInheritedShare: false,
   viewerIsDirectSharer: false,
   voterCount: 0,

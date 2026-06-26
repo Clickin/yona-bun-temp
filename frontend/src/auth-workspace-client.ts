@@ -312,6 +312,7 @@ export type RestIssueDetailResponse = ReadIssueDetailResponse & {
   parentIssueId?: bigint | number | null;
   parentIssueNumber?: bigint | number | null;
   parentIssueTitle?: string;
+  viewerUserId?: bigint | number;
   weight?: number;
 };
 

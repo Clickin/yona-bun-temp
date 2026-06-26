@@ -808,6 +808,7 @@ export function toProjectIssueDetailView(
     dueDateLabel: response.dueDateLabel ?? "",
     comments: response.comments.map((comment) => ({
       authorAvatarUrl: comment.authorAvatarUrl,
+      authorId: Number(comment.authorId ?? 0),
       authorLabel: comment.authorLabel,
       authorLoginId: comment.authorLoginId,
       contentsMarkdown: comment.contentsMarkdown,
@@ -870,6 +871,7 @@ export function toProjectIssueDetailView(
       comment: item.comment
         ? {
             authorAvatarUrl: item.comment.authorAvatarUrl,
+            authorId: Number(item.comment.authorId ?? 0),
             authorLabel: item.comment.authorLabel,
             authorLoginId: item.comment.authorLoginId,
             contentsMarkdown: item.comment.contentsMarkdown,
@@ -910,6 +912,7 @@ export function toProjectIssueDetailView(
     viewerCanDelete: response.viewerCanDelete,
     viewerCanManageSharers: response.viewerCanManageSharers,
     viewerCanUpdate: response.viewerCanUpdate,
+    viewerUserId: Number(response.viewerUserId ?? 0),
     viewerHasInheritedShare: response.viewerHasInheritedShare,
     viewerIsDirectSharer: response.viewerIsDirectSharer,
     voterCount: response.voterCount,

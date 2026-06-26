@@ -675,6 +675,7 @@ struct RestIssueDetailResponse {
     parent_issue_number: Option<i64>,
     parent_issue_state: String,
     parent_issue_title: String,
+    viewer_user_id: i64,
     weight: i16,
 }
 
@@ -3611,6 +3612,7 @@ fn issue_comment_from_record(
             .map(|attachment| issue_attachment_from_record(attachment, base_path))
             .collect(),
         author_label: record.author_label.clone(),
+        author_id: record.author_id.unwrap_or_default(),
         author_avatar_url: gravatar_url(&record.author_email_address),
         author_login_id: record.author_login_id.clone(),
         contents_html: String::new(),
@@ -3925,6 +3927,7 @@ fn rest_issue_detail_response_from_record_with_sharer_flags_and_references(
         parent_issue_number: issue.parent_issue_number,
         parent_issue_state: issue.parent_issue_state.clone(),
         parent_issue_title: issue.parent_issue_title.clone(),
+        viewer_user_id: viewer_id.unwrap_or_default(),
         weight: issue.weight,
     }
 }
