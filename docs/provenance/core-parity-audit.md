@@ -107,6 +107,13 @@
   Router nested layouts. Focused coverage:
   `frontend/src/organization-shell-i18n.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 TanStack organization search layout continuation:
+  organization scoped search now follows the project scoped search nested
+  layout pattern. The organization parent route owns header/menu/search shell
+  class while `SearchRoutePage` renders only the legacy search body through
+  `renderShell={false}`, avoiding duplicate chrome and redundant org container
+  fetches. Focused coverage: `frontend/src/route-parity.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

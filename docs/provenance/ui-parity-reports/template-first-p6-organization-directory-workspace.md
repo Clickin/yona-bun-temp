@@ -139,3 +139,11 @@ packet reports.
   child routes while preserving direct-render shell output for existing specs.
   Focused coverage:
   `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx`.
+- 2026-06-27 organization scoped search shell follow-up:
+  `frontend/src/routes/organizations/$organizationName/route.tsx` now owns the
+  organization header/menu shell for `/search` with the legacy `search-page`
+  shell class and no extra parent `page-wrap-outer`. The child route renders
+  `SearchRoutePage` with `renderShell={false}` so search keeps its legacy
+  breadcrumb/results body and avoids duplicate organization chrome queries.
+  Focused coverage:
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real search routes"`.

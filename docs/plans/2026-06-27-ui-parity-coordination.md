@@ -250,6 +250,18 @@ M16 continues organization shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx`.
 
+M17 continues organization shell migration for scoped search:
+
+- `/organizations/$organizationName/route.tsx` now owns the legacy organization
+  header/menu shell for `/search`, with `search-page` shell class and no extra
+  parent `page-wrap-outer`, matching the existing project scoped search layout
+  pattern.
+- `organizations/$organizationName/search/route.tsx` renders
+  `SearchRoutePage` with `renderShell={false}` so the child keeps only the
+  legacy search breadcrumb/results body and does not refetch org chrome.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real search routes"`.
+
 M16 continues board shell migration:
 
 - `/$owner/$projectName/route.tsx` now owns the legacy project

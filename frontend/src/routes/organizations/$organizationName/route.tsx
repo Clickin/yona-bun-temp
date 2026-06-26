@@ -47,6 +47,7 @@ function OrganizationLayoutRouteComponent() {
       runtimeConfig={runtimeConfig}
       setErrorMessage={setErrorMessage}
       shellClassName={layoutShell.shellClassName}
+      wrapPageOuter={layoutShell.wrapPageOuter}
     />
   );
 }
@@ -72,6 +73,7 @@ function organizationLayoutShell(
 ): {
   active?: "boards" | "home" | "issues" | "pullrequests" | "settings";
   shellClassName?: string;
+  wrapPageOuter?: boolean;
 } | null {
   const appPath = stripOrganizationLayoutBasePath(pathname, basePath).replace(/\/+$/u, "");
   if (appPath === `/organizations/${organizationName}`) {
@@ -91,6 +93,9 @@ function organizationLayoutShell(
     appPath === `/organizations/${organizationName}/closedPullrequests`
   ) {
     return { active: "pullrequests", shellClassName: "pull-request-page" };
+  }
+  if (appPath === `/organizations/${organizationName}/search`) {
+    return { shellClassName: "search-page", wrapPageOuter: false };
   }
   if (
     appPath === `/organizations/${organizationName}/members` ||
@@ -129,6 +134,7 @@ function OrganizationRouteShellLayout({
   runtimeConfig,
   setErrorMessage,
   shellClassName,
+  wrapPageOuter = true,
 }: {
   active?: "boards" | "home" | "issues" | "pullrequests" | "settings";
   bootstrapping: boolean;
@@ -138,6 +144,7 @@ function OrganizationRouteShellLayout({
   runtimeConfig: ReturnType<typeof useAppRuntime>["runtimeConfig"];
   setErrorMessage: ReturnType<typeof useAppRuntime>["setErrorMessage"];
   shellClassName?: string;
+  wrapPageOuter?: boolean;
 }) {
   const containerQuery = useQuery({
     enabled: !bootstrapping,
@@ -194,9 +201,13 @@ function OrganizationRouteShellLayout({
         messages={messages}
         runtimeConfig={runtimeConfig}
       />
-      <div className="page-wrap-outer">
+      {wrapPageOuter ? (
+        <div className="page-wrap-outer">
+          <Outlet />
+        </div>
+      ) : (
         <Outlet />
-      </div>
+      )}
     </main>
   );
 }

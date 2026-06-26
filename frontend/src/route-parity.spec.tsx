@@ -1447,6 +1447,10 @@ describe("file-route parity harness", () => {
       path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
       "utf8",
     );
+    const organizationLayoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/route.tsx"),
+      "utf8",
+    );
 
     expect(globalSearchRouteSource).not.toContain("PlaceholderPage");
     expect(projectSearchRouteSource).not.toContain("PlaceholderPage");
@@ -1483,6 +1487,12 @@ describe("file-route parity harness", () => {
     expect(projectLayoutSource).toContain('shellClassName: "search-page"');
     expect(projectLayoutSource).toContain("wrapPageOuter: false");
     expect(projectSearchRouteSource).toContain("renderShell={false}");
+    expect(organizationLayoutSource).toContain(
+      "appPath === `/organizations/${organizationName}/search`",
+    );
+    expect(organizationLayoutSource).toContain('shellClassName: "search-page"');
+    expect(organizationLayoutSource).toContain("wrapPageOuter: false");
+    expect(organizationSearchRouteSource).toContain("renderShell={false}");
     expect(searchViewsSource).toContain("OrganizationHeader");
     expect(searchViewsSource).toContain("OrganizationMenu");
     expect(searchViewsSource).toContain("organizationSearchDetail");

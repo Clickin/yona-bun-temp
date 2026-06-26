@@ -7,5 +7,5 @@ export const Route = createFileRoute("/organizations/$organizationName/search")(
 
 function OrganizationSearchRouteComponent() {
   const { organizationName } = Route.useParams();
-  return <SearchRoutePage scope={{ organizationName, type: "organization" }} />;
+  return <SearchRoutePage renderShell={false} scope={{ organizationName, type: "organization" }} />;
 }
