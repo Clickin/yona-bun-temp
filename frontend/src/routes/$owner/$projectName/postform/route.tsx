@@ -1,18 +1,18 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   createProjectPostRest,
   readProjectPostFormOptionsQueryOptions,
 } from "../../../../api/boards";
 import { apiQueryKeys } from "../../../../api/query-keys";
 import { useAppRuntime } from "../../../../app-runtime-context";
+import { prefixBasePath } from "../../../../runtime-config";
 import { ProjectPostFormPage } from "../../../-board-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../-shared";
@@ -25,6 +25,7 @@ function PostCreateRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/postform`;
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
@@ -111,14 +112,11 @@ function PostCreateRouteComponent() {
             title: input.title,
           });
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() });
-          if ("onlineCommit" in created) {
-            navigateToAppHref(runtimeConfig.basePath, created.redirectHref);
-          } else {
-            navigateToAppHref(
-              runtimeConfig.basePath,
-              `/${owner}/${projectName}/post/${created.postNumber}`,
-            );
-          }
+          const nextHref =
+            "onlineCommit" in created
+              ? created.redirectHref
+              : `/${owner}/${projectName}/post/${created.postNumber}`;
+          void navigate({ href: prefixBasePath(runtimeConfig.basePath, nextHref) });
         } catch (error) {
           setErrorMessage(
             error instanceof Error

@@ -2325,6 +2325,9 @@ describe("file-route parity harness", () => {
     expect(boardDetailRouteSource).toContain(
       'useDocumentTitle(postQuery.data?.title ?? "menu.board")',
     );
+    expect(boardDetailRouteSource).toContain("useNavigate");
+    expect(boardDetailRouteSource).toContain("prefixBasePath");
+    expect(boardDetailRouteSource).not.toContain("navigateToAppHref(");
     expect(boardDetailRouteSource).toContain("error.badrequest");
     expect(boardDetailRouteSource).not.toContain('"Board"');
     expect(boardDetailRouteSource).not.toContain("Delete board comment failed.");
@@ -2336,6 +2339,9 @@ describe("file-route parity harness", () => {
     expect(boardCreateRouteSource).toContain("BadRequestPage");
     expect(boardCreateRouteSource).toContain('"bad-request"');
     expect(boardCreateRouteSource).toContain("createProjectPostRest");
+    expect(boardCreateRouteSource).toContain("useNavigate");
+    expect(boardCreateRouteSource).toContain("prefixBasePath");
+    expect(boardCreateRouteSource).not.toContain("navigateToAppHref(");
     expect(boardCreateRouteSource).toContain("error.badrequest");
     expect(boardCreateRouteSource).not.toContain("Create post failed.");
     expect(boardEditRouteSource).not.toContain("Read post form options failed.");
@@ -2343,6 +2349,9 @@ describe("file-route parity harness", () => {
     expect(boardEditRouteSource).toContain("BadRequestPage");
     expect(boardEditRouteSource).toContain('"bad-request"');
     expect(boardEditRouteSource).toContain("updateProjectPostRest");
+    expect(boardEditRouteSource).toContain("useNavigate");
+    expect(boardEditRouteSource).toContain("prefixBasePath");
+    expect(boardEditRouteSource).not.toContain("navigateToAppHref(");
     expect(boardEditRouteSource).toContain("post.update.error");
     expect(boardEditRouteSource).not.toContain("Update post failed.");
     const organizationBoardRouteSource = fs.readFileSync(organizationBoardRoutePath, "utf8");

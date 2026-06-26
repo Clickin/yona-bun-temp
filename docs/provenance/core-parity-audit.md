@@ -222,6 +222,11 @@
   redirect through TanStack navigation with base-path-prefixed hrefs instead of
   `navigateToAppHref`. Focused coverage: `route-parity.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 board post mutation SPA navigation continuation: project board
+  post create, edit, and delete routes keep their existing REST mutation calls
+  but redirect through TanStack navigation with base-path-prefixed hrefs instead
+  of `navigateToAppHref`. Focused coverage: `route-parity.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

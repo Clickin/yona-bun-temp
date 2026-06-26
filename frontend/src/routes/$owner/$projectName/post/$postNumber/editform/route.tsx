@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   readProjectPostFormOptionsQueryOptions,
   readProjectPostQueryOptions,
@@ -8,12 +8,12 @@ import {
 } from "../../../../../../api/boards";
 import { apiQueryKeys } from "../../../../../../api/query-keys";
 import { useAppRuntime } from "../../../../../../app-runtime-context";
+import { prefixBasePath } from "../../../../../../runtime-config";
 import { ProjectPostFormPage } from "../../../../../-board-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../../../-shared";
@@ -26,6 +26,7 @@ function PostEditRouteComponent() {
   const { owner, projectName, postNumber } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const routeHref = `/${owner}/${projectName}/post/${postNumber}/editform`;
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
@@ -117,7 +118,12 @@ function PostEditRouteComponent() {
           });
           queryClient.setQueryData(postQueryOptions.queryKey, updated);
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() });
-          navigateToAppHref(runtimeConfig.basePath, `/${owner}/${projectName}/post/${postNumber}`);
+          void navigate({
+            href: prefixBasePath(
+              runtimeConfig.basePath,
+              `/${owner}/${projectName}/post/${postNumber}`,
+            ),
+          });
         } catch (error) {
           setErrorMessage(
             error instanceof Error
