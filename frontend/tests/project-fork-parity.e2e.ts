@@ -125,6 +125,7 @@ test("project fork route preserves the legacy fork shell and posts REST mutation
   page,
 }) => {
   let requested = false;
+  let requestCount = 0;
 
   await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
     await route.fulfill({
@@ -161,6 +162,7 @@ test("project fork route preserves the legacy fork shell and posts REST mutation
     });
   });
   await page.route(apiV1Route("/owners/owner/projects/projectYobi/fork"), async (route) => {
+    requestCount += 1;
     expect(route.request().method()).toBe("POST");
     expect(route.request().headers()["x-csrf-token"]).toBe("csrf-123");
     expect(route.request().postDataJSON()).toEqual({
@@ -200,10 +202,79 @@ test("project fork route preserves the legacy fork shell and posts REST mutation
   await expect(page.locator("#public")).toBeVisible();
   await expect(page.locator("#private")).toBeVisible();
 
+  await page.locator("#inputName").fill("");
+  await expect(page.locator('button[type="submit"].ybtn-info')).toBeDisabled();
+  await page.locator("form.form-horizontal").evaluate((form) => {
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+  expect(requestCount).toBe(0);
+
   await page.locator("#project-owner").selectOption("team");
   await expect(page.locator("#protected")).toBeVisible();
   await page.locator("#inputName").fill("projectFork");
   await page.locator("#protected").check();
   await page.locator('button[type="submit"].ybtn-info').click();
   await expect.poll(() => requested).toBe(true);
+});
+
+test("project fork route renders the legacy existing-fork notice without submitting", async ({
+  page,
+}) => {
+  let requestCount = 0;
+
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(projectContainerPayload()),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/fork-options"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        canFork: false,
+        existingForks: [{ ownerName: "owner", projectName: "projectYobiFork" }],
+        ownerOptions: [{ organization: false, ownerName: "owner", selected: true }],
+        selected: {
+          ownerName: "owner",
+          projectName: "projectYobi",
+          projectScope: "public",
+        },
+        source: {
+          isForked: false,
+          overview: "fork parity",
+          ownerName: "owner",
+          projectName: "projectYobi",
+          projectScope: "public",
+          vcs: "GIT",
+        },
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/fork"), async (route) => {
+    requestCount += 1;
+    await route.fulfill({
+      body: JSON.stringify({ error: { message: "unexpected fork" } }),
+      headers: restJsonHeaders,
+      status: 500,
+    });
+  });
+
+  await page.goto("/yona/owner/projectYobi/newFork");
+  await expect(page.locator("#helpMessage .ico-err2")).toHaveCount(1);
+  await expect(page.getByText("Same forked project already exists.")).toBeVisible();
+  await expect(page.getByText("fork.already.exist")).toHaveCount(0);
+  await expect(page.locator("#helpMessage a.primary-txt")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobiFork",
+  );
+  await expect(page.locator("#helpMessage a.primary-txt")).toHaveText("owner / projectYobiFork");
+  await expect(page.locator('button[type="submit"].ybtn-info')).toBeDisabled();
+
+  await page.locator("form.form-horizontal").evaluate((form) => {
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+  expect(requestCount).toBe(0);
 });
