@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { apiQueryKeys } from "../../../api/query-keys";
 import {
   deleteSiteProjectRest,
@@ -267,8 +267,15 @@ function apiSiteMailListUri(runtimeConfig: RuntimeConfig): string {
 function SiteAdminRouteComponent() {
   const { pageName } = Route.useParams();
   const href = useCurrentHref();
+  const navigate = useNavigate();
   const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig, setErrorMessage } =
     useAppRuntime();
+  const navigateSiteAdmin = React.useCallback(
+    (nextHref: string) => {
+      void navigate({ href: nextHref });
+    },
+    [navigate],
+  );
 
   useDocumentTitle("Site Admin");
 
@@ -287,6 +294,7 @@ function SiteAdminRouteComponent() {
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
         messages={messages}
+        onNavigate={navigateSiteAdmin}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
         updateAvailable={updateAvailable}
@@ -302,6 +310,7 @@ function SiteAdminRouteComponent() {
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
         messages={messages}
+        onNavigate={navigateSiteAdmin}
         runtimeConfig={runtimeConfig}
         setErrorMessage={setErrorMessage}
         updateAvailable={updateAvailable}
@@ -509,6 +518,7 @@ function SiteUserListRoute({
   currentIsSiteAdmin,
   href,
   messages,
+  onNavigate,
   runtimeConfig,
   setErrorMessage,
   updateAvailable = false,
@@ -518,6 +528,7 @@ function SiteUserListRoute({
   currentIsSiteAdmin: boolean;
   href: string;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
   updateAvailable?: boolean;
@@ -616,6 +627,7 @@ function SiteUserListRoute({
       updateAvailable={updateAvailable}
       onCancelDelete={() => setDeleteTarget(null)}
       onConfirmDelete={(loginId) => deleteMutation.mutate(loginId)}
+      onNavigate={onNavigate}
       onRequestDelete={setDeleteTarget}
       onToggleAccountLock={(loginId) => lockMutation.mutate(loginId)}
       onToggleGuest={(loginId) => guestMutation.mutate(loginId)}
@@ -631,6 +643,7 @@ function SiteProjectListRoute({
   currentIsSiteAdmin,
   href,
   messages,
+  onNavigate,
   runtimeConfig,
   setErrorMessage,
   updateAvailable = false,
@@ -640,6 +653,7 @@ function SiteProjectListRoute({
   currentIsSiteAdmin: boolean;
   href: string;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   runtimeConfig: RuntimeConfig;
   setErrorMessage: (message: string | null) => void;
   updateAvailable?: boolean;
@@ -693,6 +707,7 @@ function SiteProjectListRoute({
       updateAvailable={updateAvailable}
       onCancelDelete={() => setDeleteTarget(null)}
       onConfirmDelete={(projectId) => deleteMutation.mutate(projectId)}
+      onNavigate={onNavigate}
       onRequestDelete={setDeleteTarget}
     />
   );
@@ -1004,6 +1019,7 @@ export function SiteAdminUserListPage({
   updateAvailable = false,
   onCancelDelete,
   onConfirmDelete,
+  onNavigate,
   onRequestDelete,
   onResetPassword,
   onToggleAccountLock,
@@ -1029,6 +1045,7 @@ export function SiteAdminUserListPage({
   onToggleAccountLock: (loginId: string) => void;
   onToggleGuest: (loginId: string) => void;
   onToggleSiteAdmin: (loginId: string) => void;
+  onNavigate?: (href: string) => void;
 }) {
   const messages = useSiteAdminMessages(i18nMessages);
   const users = response?.users ?? [];
@@ -1062,6 +1079,20 @@ export function SiteAdminUserListPage({
                   action={appHref(runtimeConfig, "/sites/userList")}
                   className="form-search pull-right"
                   method="get"
+                  onSubmit={(event) => {
+                    if (!onNavigate) {
+                      return;
+                    }
+                    event.preventDefault();
+                    const formData = new FormData(event.currentTarget);
+                    onNavigate(
+                      siteUserListHref({
+                        page: 1,
+                        query: String(formData.get("query") ?? "").trim(),
+                        state: normalizeSiteUserState(String(formData.get("state") ?? "")),
+                      }),
+                    );
+                  }}
                 >
                   <input name="state" type="hidden" value={input.state} />
                   <div className="search-bar">
@@ -1141,6 +1172,7 @@ export function SiteAdminProjectListPage({
   updateAvailable = false,
   onCancelDelete,
   onConfirmDelete,
+  onNavigate,
   onRequestDelete,
 }: {
   deleteTarget: SiteProject | null;
@@ -1153,6 +1185,7 @@ export function SiteAdminProjectListPage({
   onCancelDelete: () => void;
   onConfirmDelete: (projectId: number) => void;
   onRequestDelete: (project: SiteProject) => void;
+  onNavigate?: (href: string) => void;
 }) {
   const messages = useSiteAdminMessages(i18nMessages);
   const projects = response?.projects ?? [];
@@ -1186,6 +1219,19 @@ export function SiteAdminProjectListPage({
                   action={appHref(runtimeConfig, "/sites/projectList")}
                   className="form-search pull-right"
                   method="get"
+                  onSubmit={(event) => {
+                    if (!onNavigate) {
+                      return;
+                    }
+                    event.preventDefault();
+                    const formData = new FormData(event.currentTarget);
+                    onNavigate(
+                      siteProjectListHref({
+                        filter: String(formData.get("filter") ?? "").trim(),
+                        page: 1,
+                      }),
+                    );
+                  }}
                 >
                   <div className="search-bar">
                     <input

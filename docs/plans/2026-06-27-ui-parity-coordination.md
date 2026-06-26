@@ -560,6 +560,15 @@ M44 continues review-thread list SPA navigation:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "project review list"`.
 
+M45 continues site-admin list SPA navigation:
+
+- `/sites/userList` and `/sites/projectList` search forms keep the legacy GET
+  form, title/sidebar, rows, modals, and pagination output.
+- Search submit now calls TanStack navigation and reuses the existing
+  href-derived query parsing to refetch inside the SPA.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/site-admin-route-parity.spec.tsx -t "legacy user and project search forms"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

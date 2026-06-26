@@ -181,6 +181,13 @@
   without native document navigation. Focused coverage:
   `frontend/src/route-parity.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 site-admin list SPA navigation continuation:
+  `/sites/userList` and `/sites/projectList` keep the legacy search GET form,
+  title, sidebar, row, modal, and pagination output, but search submits now call
+  TanStack navigation. The existing href-derived site-admin query flow then
+  refetches list data without native document navigation. Focused coverage:
+  `frontend/src/site-admin-route-parity.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

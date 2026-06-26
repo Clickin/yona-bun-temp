@@ -246,6 +246,10 @@ describe("site-admin route parity harness", () => {
   });
 
   it("renders legacy user and project search forms without temporary English placeholders", () => {
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/sites/$pageName/route.tsx"),
+      "utf8",
+    );
     const userHtml = renderToStaticMarkup(
       <SiteAdminUserListPage
         deleteTarget={null}
@@ -322,6 +326,11 @@ describe("site-admin route parity harness", () => {
     expect(projectHtml).not.toContain("Search projects");
     expect(projectHtml).not.toContain(">Search</button>");
     expect(projectHtml).not.toContain("No projects found.");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("navigate({ href: nextHref })");
+    expect(routeSource).toContain("onNavigate?: (href: string) => void");
+    expect(routeSource).toContain("new FormData(event.currentTarget)");
+    expect(routeSource).toContain("event.preventDefault();");
   });
 
   it("renders legacy user and project list action labels", () => {
