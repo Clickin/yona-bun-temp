@@ -1,7 +1,15 @@
 # Full UI Parity Subagent Phase
 
-Status: current execution plan
+Status: superseded route/API inventory plan
 Date: 2026-06-26
+
+Superseded by:
+`docs/plans/2026-06-26-template-first-ui-parity-reset.md`.
+
+This document remains useful as a route, state, API-boundary, and report
+inventory baseline. It no longer closes UI parity because its browser-visible
+evidence did not prove template-level DOM/class/CSS replacement quality against
+legacy Yona.
 
 This phase is the goal directive for a full UI parity sweep that can be split
 across subagents. The goal is still conversion parity, not UI improvement: a
@@ -199,10 +207,10 @@ as `covered` inside the report.
 
 ## Browser-Visible Round 2 Gate
 
-Round 2 was the browser-visible UI parity gate after the completed explorer
-reports and is now closed with the evidence rows below. It remains documented as
-a separate phase before RC release because prior smoke tests missed first-screen
-rendering failures.
+Round 2 was the browser-visible route/API gate after the completed explorer
+reports. It is now superseded as UI parity closure evidence by the
+template-first reset because prior sweeps did not prove template-level
+DOM/class/CSS replacement quality.
 
 Automatic `gap` findings:
 
@@ -237,13 +245,14 @@ Minimum Playwright assertions per route group:
 - Boundary: REST JSON/API return plus React render for React-visible flows,
   with direct legacy routes limited to compatibility/deep-link adapters.
 
-Round 2 is closed only while every packet status below is
-`covered in current follow-up` and no packet status is `pending`, `running`,
-`gap`, `weak evidence`, or `needs-parent-decision`. If a later browser-visible
-parity defect is found, reopen the owning packet and add a new Audit Result
-Queue row before assigning implementation.
+The rows below are retained as superseded route/API and browser-reachability
+baseline evidence. They must not be used to claim final UI parity without the
+template-first verification required by
+`docs/plans/2026-06-26-template-first-ui-parity-reset.md`. If a later
+browser-visible parity defect is found, reopen the owning packet in the reset
+plan and add a new Audit Result Queue row before assigning implementation.
 
-Round 2 remaining subagent split:
+Superseded Round 2 subagent split:
 
 | Packet | Suggested subagent scope | Write scope before findings | Required proof |
 | --- | --- | --- | --- |

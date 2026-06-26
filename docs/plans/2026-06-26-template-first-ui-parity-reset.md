@@ -1,0 +1,190 @@
+# Template-First UI Parity Reset
+
+Status: current execution directive
+Date: 2026-06-26
+
+## Decision
+
+The current React UI is not accepted as legacy Yona UI parity. The prior visual
+sweeps proved route reachability, stylesheet loading, direct API conversion, and
+absence of obvious browser failures; they did not prove pixel-level replacement
+quality. User-visible feedback that the app looks like a toy compared with
+legacy Yona is a valid parity defect, not an enhancement request.
+
+The UI parity strategy is therefore reset to **template-first conversion**:
+
+1. Preserve legacy Yona page structure, CSS class contract, labels, form order,
+   modal markup, table/list density, and interaction affordances from
+   `yona-original/app/views/**`.
+2. Reuse legacy Bootstrap/Yobi CSS as the baseline instead of introducing a new
+   design system.
+3. Port Scala templates to JSX/TSX as close to 1:1 as practical, then extract
+   shared React components only after the legacy DOM/class shape is preserved.
+4. Treat Tailwind or a new utility-first design layer as out of scope until
+   functional and UI parity are complete.
+
+This is a conversion project. Visual or functional improvements may be proposed
+only after legacy parity is complete.
+
+## Supersedes
+
+This directive supersedes the closure claim in
+`docs/provenance/frontend-ui-parity-completion-audit.md`. That audit remains
+useful as route/API coverage evidence, but it is no longer sufficient evidence
+for UI parity.
+
+## Template Hierarchy
+
+Legacy Yona visible UI is organized around template shells and repeated partials.
+React conversion must preserve these layers before route-specific details are
+declared complete.
+
+| Layer | Legacy templates | React target | Parity requirement |
+| --- | --- | --- | --- |
+| Global shell | `layout.scala.html`, `layout_framed.scala.html`, `common/navbar.scala.html`, `common/footer.scala.html`, `common/loginDialog.scala.html`, `common/scripts.scala.html`, `common/usermenu.scala.html` | root shell/shared layout components | Same linked asset order/effect, `.gnb-outer`, side navigation pin behavior, login dialog DOM/classes, footer, global search, user menu tabs, flash/toast/modal containers. |
+| Project shell | `projectLayout.scala.html`, `project/header.scala.html`, `projectMenu.scala.html`, `project/partial_settingmenu.scala.html` | project route wrapper and shared project components | Same `.project-header-outer`, background/avatar/breadcrumb/favorite/private/protected markers, watcher/member controls, `.project-menu-outer`, menu order/count badges, admin cog. |
+| Organization shell | `organizationLayout.scala.html`, `organization/header.scala.html`, `organization/menu.scala.html`, `organization/partial_settingmenu.scala.html` | organization route wrapper/components | Same organization header/menu/settings layout, member/admin controls, empty and protected states. |
+| Site-admin shell | `siteLayout.scala.html`, `site/siteMngLayout.scala.html`, `site/*.scala.html`, `site/partial_pagination*.scala.html` | `/sites/$pageName` route/components | Same breadcrumb/sidebar/page-title layout, tables, filters, pagination, modal/confirm controls, mail/data/update state copy. |
+| Auth/public shell | `index/index.scala.html`, `index/partial_intro.scala.html`, `user/login.scala.html`, `user/signup.scala.html`, `site/lostPassword.scala.html`, `user/resetPassword.scala.html` | public/auth route components | Same landing, auth forms, placeholders, OAuth button display, remember-me row, password links, first-run/admin setup state. |
+| Issue surface | `issue/*.scala.html`, `common/comment*.scala.html`, `common/editor.scala.html`, `common/fileUploader.scala.html`, `common/tasklistBar.scala.html` | issue list/form/detail/comment/editor components | Same list filters, quick search, labels, assignee/milestone controls, textarea/editor toolbar, comments/timeline, child issue/subtask blocks, mass update. |
+| Board/milestone surface | `board/*.scala.html`, `milestone/*.scala.html` | board and milestone route components | Same list/detail/form/comment surfaces, state tabs, delete modals, milestone progress/status blocks. |
+| Code/VCS surface | `code/*.scala.html`, `git/*.scala.html`, diff partials | code browser, commits, branches, compare, PR/review components | Same repository action bars, clone info, branch selector, file/folder tables, diff rows, review thread/comment anchors, PR event timeline. |
+| Search/notifications/workspace | `search/*.scala.html`, `index/notifications.scala.html`, `index/sidebar.scala.html`, `user/edit*.scala.html`, `user/view.scala.html`, `user/userFiles.scala.html` | search, notification, sidebar, profile/settings components | Same tabs, empty states, notification fragments as React-rendered rows, profile cards, settings tab menu, token/email/file list controls. |
+| Error/restricted/help | `error/*.scala.html`, `restricted.scala.html`, `help/*.scala.html` | error/help/restricted route components | Same page classes, error copy/layout, help FAQ/table of contents, UIKit reference where in scope. |
+
+## CSS Baseline Rule
+
+The target CSS baseline is legacy Yona:
+
+1. `yona-original/public/bootstrap/css/bootstrap.css`
+2. `yona-original/public/bootstrap/css/bootstrap-responsive.css`
+3. compiled legacy `yobi.css` behavior from
+   `yona-original/app/assets/stylesheets/yobi.less` and imported LESS files
+4. `usermenu.css`, `yobicon`, Select2/Pikaday/NProgress/Viewer styles where
+   the legacy template loaded them
+
+React components should use legacy classes such as `page-wrap-outer`,
+`project-page-wrap`, `project-header-outer`, `project-menu-outer`, `ybtn`,
+`frm-wrap`, `nm`, `n-alert`, `board-list-wrap`, `issue-list-wrap`, and
+`markdown-wrap` instead of replacing them with a new visual vocabulary.
+
+Inline style values and conditional classes present in templates are part of
+the conversion target unless explicitly recorded as not-applicable.
+
+## Conversion Method
+
+Each route family follows this order:
+
+1. Read the owning Scala template and all partials it calls.
+2. Create a DOM/class/copy skeleton in React that mirrors the template before
+   wiring new abstractions.
+3. Map dynamic expressions to existing REST data/view models without changing
+   visible order or labels.
+4. Replace server-side HTML fragments with API-return plus React render only at
+   the data boundary; the rendered DOM should still match the legacy fragment's
+   visible shape.
+5. Extract shared components only when at least two converted templates already
+   share the same legacy markup.
+6. Compare against legacy browser output before marking the route covered.
+
+No worker may introduce Tailwind, new card-based layouts, new spacing scales, or
+new design tokens to close a parity row.
+
+## Subagent Model
+
+Use four concurrent roles. The parent/main agent owns this document, queue
+triage, final integration, and commits.
+
+| Role | Mode | Primary scope | Output |
+| --- | --- | --- | --- |
+| Subagent A: Template Mapper | read-only explorer | Parse `yona-original/app/views/**`, identify template call graph, repeated partials, CSS classes, route/state variants. | Template inventory report with legacy paths, partial dependencies, DOM anchors, and packet ownership. |
+| Subagent B: React Port Worker | bounded writer | Convert assigned route packet from template skeleton to React JSX using legacy classes and existing REST clients. | Focused TSX/CSS/test changes only in assigned files, plus report row updates. |
+| Subagent C: Interaction Worker | bounded writer | Port dynamic states that static route render misses: validation, modal open/cancel/confirm, filter/search/pagination, uploads, comments, mutation-visible results. | Focused interaction wiring/tests for assigned packet. |
+| Subagent D: Visual Verifier | read-only verifier | Compare legacy template/live legacy output with current React output for assigned packet. Must not implement. | Browser evidence, screenshots, selector/copy/layout diff rows, pass/fail verdict. |
+
+The parent may also act as one of the four roles when useful, but one role must
+remain verification-only for each packet.
+
+## Packet Split
+
+Packets are split by legacy template ownership and React write scope. A worker
+may edit only its packet files unless the parent expands scope.
+
+| Packet | Legacy template roots | Current React roots | Owner type | Verification target |
+| --- | --- | --- | --- | --- |
+| P0 global shell/assets | `layout*`, `common/navbar`, `common/footer`, `common/loginDialog`, `common/usermenu`, `common/scripts` | `frontend/src/routes/__root.tsx`, `frontend/src/routes/-shared.tsx`, global CSS/assets | mapper + worker + verifier | first viewport global shell, login dialog, side menu, asset/style count/effect |
+| P1 auth/public/home | `index/**`, `user/login`, `user/signup`, `site/lostPassword`, `user/resetPassword`, `help/**` | `index`, `users/loginform`, `users/signupform`, `lostPassword`, `resetPassword`, `_help`, auth views | worker + verifier | anonymous and authenticated public states, OAuth buttons, first-run/no-admin |
+| P2 project shell/settings | `projectLayout`, `project/header`, `projectMenu`, `project/home`, `project/create`, `project/setting`, `project/members`, `project/watchers`, `project/webhooks`, `project/delete`, `project/transfer`, `project/change_vcs` | `$owner/$projectName/**`, `projectform`, `_import`, project views | worker + verifier | project header/menu pixel shape, settings submenus, admin/member/watch/favorite controls |
+| P3 issue/editor/comments | `issue/**`, `common/editor`, `common/comment*`, `common/fileUploader`, `common/tasklistBar` | issue routes/views, markdown/attachment textarea | worker + interaction + verifier | issue list/detail/form/editor/comment/mass update, modal and validation states |
+| P4 board/milestone | `board/**`, `milestone/**` | board and milestone views/routes | worker + interaction + verifier | board/milestone list/detail/form/comment/delete/progress states |
+| P5 code/git/pr/review | `code/**`, `git/**`, `reviewthread/**`, diff partials | code, commits, branches, compare, pull request, review views/routes | worker + interaction + verifier | repository browser, clone info, diff/PR/review thread, Git/SVN-visible UI |
+| P6 organization/directory/workspace | `organization/**`, `organizationLayout`, `index/all*`, `user/view`, `user/edit*`, `user/userFiles`, `index/sidebar`, `index/notifications` | org routes, directory routes, profile/settings/files/notification routes | worker + interaction + verifier | org shell/member/settings, directory lists, profile/settings, user menu/sidebar |
+| P7 site-admin/error/security | `site/**`, `siteLayout*`, `error/**`, `restricted` | `/sites/$pageName`, error/restricted routes | worker + verifier | site-admin sidebar/tables/forms/pagination/mail/data/update, error pages |
+
+## Verification Contract
+
+A packet is not closed by route reachability. It closes only when the verifier
+records all of the following:
+
+- legacy source template path and current React file path
+- desktop screenshot and mobile screenshot for legacy and current, or an
+  explicit not-applicable reason for mobile when legacy is not responsive
+- selector/class assertions for the packet's shell (`.gnb-outer`,
+  `.project-header-outer`, `.project-menu-outer`, `.site-breadcrumb-outer`,
+  etc.)
+- visible copy/placeholder/title parity against legacy messages
+- form validation and success/failure state where the template contains a form
+- modal/dropdown/tab/filter/pagination state where the template contains one
+- raw legacy key absence
+- same base-path behavior under `/yona`
+- status classification for legacy sample-data 404/500/400 differences
+
+The verifier must compare against legacy output through the node curl proxy when
+Playwright cannot directly reach the legacy host.
+
+## Audit Queue Format
+
+Every finding goes into the owning packet report using this row shape:
+
+| field | required value |
+| --- | --- |
+| legacy template | exact `yona-original/app/views/...` path |
+| legacy route/state | URL, user role, project visibility, data state, interaction state |
+| current file | exact React/API/test path |
+| defect class | `layout`, `css`, `copy`, `route`, `interaction`, `permission`, `data-boundary`, `asset`, or `test-gap` |
+| status | `gap`, `deviation`, `weak evidence`, `covered`, `not-applicable`, `deferred` |
+| owner packet | P0-P7 |
+| proposed write scope | exact files/modules a worker may touch |
+| verification evidence | screenshot path, Playwright spec, curl/proxy artifact, or selector assertion |
+
+Any `gap`, `deviation`, or `weak evidence` blocks UI parity closure.
+
+## Immediate Next Steps
+
+1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
+   header/menu, issue/editor/comment surfaces define most repeated visual
+   contracts.
+2. Parent updates existing `docs/provenance/ui-parity-reports/*.md` to use the
+   audit queue format above and reopens rows that were closed by reachability
+   rather than pixel-visible parity.
+3. Subagent D creates the first verifier baseline for P0 global shell and P2
+   project shell before implementation begins. The baseline must show why the
+   current React output differs from legacy.
+4. Workers then port shell components and route families from templates in
+   packet order. A packet can be split further only after its template mapping
+   is complete.
+
+## Closure Rule
+
+UI parity is complete only when:
+
+- every legacy template in the app-runtime scope is represented in a packet
+  inventory;
+- every packet report has zero `gap`, `deviation`, and `weak evidence` rows;
+- verifier evidence exists for the relevant desktop/mobile route states;
+- visual output uses the legacy CSS/class contract, not a replacement design
+  system;
+- the parent reruns the integrated browser sweep against embedded Yoram and
+  node-proxied legacy Yona.
+
+Until then, “UI parity closed” must not be claimed.

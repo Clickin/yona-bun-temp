@@ -1,7 +1,15 @@
 # Frontend UI Parity Completion Audit
 
-Status: current evidence audit
+Status: superseded route/API evidence audit
 Date: 2026-06-26
+
+Superseded by:
+`docs/plans/2026-06-26-template-first-ui-parity-reset.md`.
+
+This document remains useful as route/API coverage evidence, but it no longer
+proves UI parity. Browser reachability, direct API JSON conversion, and absence
+of raw i18n keys are necessary but insufficient. Pixel-visible replacement
+quality must now be judged through the template-first UI parity reset.
 
 ## Scope
 
@@ -19,7 +27,7 @@ behavior, broad external `/-_-api/v1/**` migrator compatibility, and other
 operator/tool surfaces remain governed by their provenance decisions and are not
 frontend UI parity blockers.
 
-## Gate Result
+## Superseded Gate Result
 
 Authoritative report set:
 
