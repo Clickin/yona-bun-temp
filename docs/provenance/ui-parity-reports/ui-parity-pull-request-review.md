@@ -124,6 +124,18 @@ Total rows: 22
 | `/:owner/:project/reviews?state=open` | filters/search/export | `.lst-stacked`, `review.allReview`, `review.involvingYou`, `review.createdByYou`, hidden form fields, state tabs, `issue.downloadAsExcel` | same selectors/copy, Excel href includes `format=xls` | click all/participant filters, sort, closed state, search submit, export href | REST reviews list/export compatibility + React render | covered |
 | `/:owner/:project/reviews?state=open` | row variants | `reviewthread/partial_list.scala.html` row target via `DiffRenderer.urlToCommentThread`, including non-PR commit threads, with nowrap title truncation | `ProjectReviewListRows` creates PR changes and commit anchors, CSS preserves nowrap truncation, and REST includes non-PR commit rows with `pullRequestNumber: null` | initial render with PR and commit threads | REST reviews + React render | covered in current follow-up |
 
+## Nested Layout Follow-Ups
+
+- 2026-06-27 PR list project shell follow-up:
+  `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
+  header/menu/page-wrap shell for `/pullRequests`, `/closedPullRequests`, and
+  `/sentPullRequests` with the pull request menu active and the legacy
+  `pull-request-page` shell class. `ProjectPullRequestListPage` renders only
+  the legacy PR list body through `renderShell={false}` for those TanStack
+  child routes while preserving direct-render shell output for existing specs.
+  Focused coverage:
+  `pnpm --dir frontend exec vitest run src/pull-request-list-form-review-i18n.spec.tsx -t "PR list chrome"`.
+
 ## Follow-Up Queue Proposal
 
 1. If exact legacy timeline author labels are required beyond login id text, add a focused sender display-name/avatar projection to the PR event DTO.

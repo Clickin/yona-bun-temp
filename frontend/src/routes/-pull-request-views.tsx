@@ -1028,85 +1028,92 @@ export function ProjectPullRequestListPage(props: {
   list: PullRequestListResponse | undefined;
   messages?: LegacyMessageLookup;
   query: PullRequestListQuery;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   onDeletePushedBranch?: (branch: PullRequestPushedBranch) => void;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const list = props.list;
 
-  return (
-    <main className="app-shell pull-request-page">
-      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div
-            className="row-fluid cb"
-            {...({ "pjax-container": "" } as React.HTMLAttributes<HTMLDivElement>)}
-          >
-            <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
-              <ProjectPullRequestSearchForm
-                category={props.category}
-                detail={detail}
+  const pageBody = (
+    <div className="project-page-wrap">
+      <div
+        className="row-fluid cb"
+        {...({ "pjax-container": "" } as React.HTMLAttributes<HTMLDivElement>)}
+      >
+        <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
+          <ProjectPullRequestSearchForm
+            category={props.category}
+            detail={detail}
+            list={list}
+            messages={props.messages}
+            query={props.query}
+            runtimeConfig={props.runtimeConfig}
+          />
+        </div>
+        <div className="span10 span-hard-wrap" id="span10">
+          <ProjectRecentlyPushedBranches
+            branches={list?.recentlyPushedBranches ?? []}
+            messages={props.messages}
+            onDeletePushedBranch={props.onDeletePushedBranch}
+            runtimeConfig={props.runtimeConfig}
+          />
+          <div className="pull-right">
+            <a
+              className="ybtn ybtn-success"
+              href={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "newPullRequestForm",
+              )}
+            >
+              {legacyMessage(props.messages, "pullRequest.new")}
+            </a>
+          </div>
+          <PullRequestTabs
+            active={props.category}
+            detail={detail}
+            list={list}
+            messages={props.messages}
+            query={props.query}
+            runtimeConfig={props.runtimeConfig}
+          />
+          <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
+            <div className="row-fluid tab-pane active" id="list">
+              <PullRequestListRows
+                items={list?.items ?? []}
+                messages={props.messages}
+                runtimeConfig={props.runtimeConfig}
+              />
+              <PullRequestListPagination
+                hrefForPage={(pageNum) =>
+                  [
+                    projectCategoryHref(props.runtimeConfig, detail, props.category),
+                    pullRequestQueryString(props.query, props.category, { pageNum }),
+                  ]
+                    .filter(Boolean)
+                    .join("?")
+                }
                 list={list}
                 messages={props.messages}
-                query={props.query}
-                runtimeConfig={props.runtimeConfig}
               />
-            </div>
-            <div className="span10 span-hard-wrap" id="span10">
-              <ProjectRecentlyPushedBranches
-                branches={list?.recentlyPushedBranches ?? []}
-                messages={props.messages}
-                onDeletePushedBranch={props.onDeletePushedBranch}
-                runtimeConfig={props.runtimeConfig}
-              />
-              <div className="pull-right">
-                <a
-                  className="ybtn ybtn-success"
-                  href={buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    "newPullRequestForm",
-                  )}
-                >
-                  {legacyMessage(props.messages, "pullRequest.new")}
-                </a>
-              </div>
-              <PullRequestTabs
-                active={props.category}
-                detail={detail}
-                list={list}
-                messages={props.messages}
-                query={props.query}
-                runtimeConfig={props.runtimeConfig}
-              />
-              <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
-                <div className="row-fluid tab-pane active" id="list">
-                  <PullRequestListRows
-                    items={list?.items ?? []}
-                    messages={props.messages}
-                    runtimeConfig={props.runtimeConfig}
-                  />
-                  <PullRequestListPagination
-                    hrefForPage={(pageNum) =>
-                      [
-                        projectCategoryHref(props.runtimeConfig, detail, props.category),
-                        pullRequestQueryString(props.query, props.category, { pageNum }),
-                      ]
-                        .filter(Boolean)
-                        .join("?")
-                    }
-                    list={list}
-                    messages={props.messages}
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
+  return (
+    <main className="app-shell pull-request-page">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

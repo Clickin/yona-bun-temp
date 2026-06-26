@@ -94,6 +94,7 @@ function ProjectPullRequestsRouteComponent() {
       messages={messages}
       onDeletePushedBranch={(branch) => deletePushedBranchMutation.mutate(branch.id)}
       query={{ category: "open", contributorId, filter, pageNum }}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

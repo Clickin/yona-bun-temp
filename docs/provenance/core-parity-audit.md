@@ -2110,6 +2110,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   the code menu active, while `CodeHistoryPage` renders only the legacy commit
   history body through `renderShell={false}`. Focused coverage:
   `pnpm --dir frontend exec vitest run src/code-views.spec.tsx -t "history shell"`.
+- 2026-06-27 project nested-layout PR list follow-up:
+  `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
+  header/menu/page-wrap shell for `/pullRequests`, `/closedPullRequests`, and
+  `/sentPullRequests` with the pull request menu active and the legacy
+  `pull-request-page` shell class, while `ProjectPullRequestListPage` renders
+  only the legacy list body through `renderShell={false}`. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/pull-request-list-form-review-i18n.spec.tsx -t "PR list chrome"`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

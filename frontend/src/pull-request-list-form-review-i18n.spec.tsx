@@ -113,6 +113,56 @@ function renderRemainingPullRequestControls(messages?: LegacyMessageLookup) {
 }
 
 describe("PR list/form/review-list legacy i18n opt-in", () => {
+  it("lets the project layout own PR list chrome without changing the legacy body", () => {
+    const html = renderToStaticMarkup(
+      <ProjectPullRequestListPage
+        category="open"
+        detail={detail}
+        list={{
+          acceptedCount: 0,
+          category: "open",
+          closedCount: 0,
+          contributors: [],
+          items: [],
+          openCount: 0,
+          pageNum: 1,
+          pageSize: 15,
+          recentlyPushedBranches: [],
+          sentCount: 0,
+          totalCount: 0,
+        }}
+        query={{ category: "open", contributorId: 0, filter: "", pageNum: 1 }}
+        renderShell={false}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const listRouteSources = [
+      "routes/$owner/$projectName/pullRequests/route.tsx",
+      "routes/$owner/$projectName/closedPullRequests/route.tsx",
+      "routes/$owner/$projectName/sentPullRequests/route.tsx",
+    ].map((routePath) => fs.readFileSync(path.resolve(__dirname, routePath), "utf8"));
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/pullRequests`");
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/closedPullRequests`");
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/sentPullRequests`");
+    expect(layoutSource).toContain('activeMenu: "pullRequest"');
+    expect(layoutSource).toContain('shellClassName: "pull-request-page"');
+    for (const routeSource of listRouteSources) {
+      expect(routeSource).toContain("renderShell={false}");
+    }
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="row-fluid cb"');
+    expect(html).toContain('class="span10 span-hard-wrap" id="span10"');
+    expect(html).not.toContain("app-shell pull-request-page");
+    expect(html).not.toContain("project-header-outer");
+    expect(html).not.toContain("project-menu-outer");
+    expect(html).not.toContain("page-wrap-outer");
+  });
+
   it("opts PR route mutation error fallbacks into legacy messages", () => {
     const routePaths = [
       "routes/$owner/$projectName/newPullRequestForm/route.tsx",

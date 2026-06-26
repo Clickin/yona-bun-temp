@@ -66,6 +66,7 @@ function SentPullRequestsRouteComponent() {
       list={listQuery.data}
       messages={messages}
       query={{ category: "sent", filter, pageNum }}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

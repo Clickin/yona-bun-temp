@@ -68,6 +68,7 @@ function ClosedPullRequestsRouteComponent() {
       list={listQuery.data}
       messages={messages}
       query={{ category: "closed", contributorId, filter, pageNum }}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );
