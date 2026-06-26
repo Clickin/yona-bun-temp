@@ -307,3 +307,9 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   `.bar.red[title=Tasklist]`. Focused coverage:
   `frontend/src/issue-detail-shell.spec.tsx`; renderer coverage remains in
   `frontend/src/markdown-renderer.spec.tsx`.
+- 2026-06-26 template-first P3 mass update correction: project issue list mass
+  update dropdowns now follow `issue/partial_massupdate.scala.html` for label
+  category rows/dividers, current-user `Assign to me`, and assignee avatar
+  rows, including `.mass-update-list li.disabled[data-category]`,
+  `.divider[data-category]`, `.usf-group`, `.avatar-wrap.smaller`, `.name`,
+  and `.loginid`. Focused coverage: `frontend/src/issue-list-filter.spec.tsx`.

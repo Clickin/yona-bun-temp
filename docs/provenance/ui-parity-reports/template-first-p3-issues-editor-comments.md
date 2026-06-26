@@ -45,8 +45,8 @@ Source comparison by Subagent P3 found concrete reset blockers:
 | --- | ---: |
 | gap | 0 |
 | deviation | 1 |
-| weak evidence | 7 |
-| covered | 4 |
+| weak evidence | 6 |
+| covered | 5 |
 | not-applicable | 1 |
 
 ## Reset Findings
@@ -59,7 +59,7 @@ Source comparison by Subagent P3 found concrete reset blockers:
 | `common/fileUploader.scala.html`, `common/uploadForm.scala.html` | Issue/comment create upload, drag/drop, attached file template. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/routes/-markdown-attachment-textarea.tsx` | data-boundary | weak evidence | P3 | upload/editor components and upload specs | Need selector proof for `#tplAttachedFile`, `.attached-file`, `.btn-insert`, `.upload-progress`. |
 | `common/editor.scala.html` | Markdown editor edit/preview/checklist/clear temporary/receiver list. | `frontend/src/routes/-markdown-renderer.tsx`, `frontend/src/routes/-issue-views.tsx` | interaction | weak evidence | P3 | markdown editor shell and comment tests | Need tab-switching and `#button-clear-temporary` behavior proof. |
 | `issue/view.scala.html`, `common/tasklistBar.scala.html` | Issue/comment tasklist progress bar before markdown content. | `frontend/src/routes/-markdown-renderer.tsx`, `frontend/src/issue-detail-shell.spec.tsx`, `frontend/src/markdown-renderer.spec.tsx` | layout | covered in current follow-up | P3 | none | Issue detail now has route-level selector proof that issue and comment markdown bodies render the legacy tasklist progress shell before markdown content, including `.tasklist.task-show`, `.task-title .done-counter`, `.task-progress`, and `.bar.red[title=Tasklist]` with legacy width percentages. |
-| `issue/partial_massupdate.scala.html` | Mass update dropdowns with category dividers and assign-to-me row. | `frontend/src/routes/-issue-views.tsx` | layout | weak evidence | P3 | issue list components and `issue-list-filter.spec.tsx` | Need selector proof for `.mass-update-list li.disabled[data-category]`, `.divider`, and avatar user rows. |
+| `issue/partial_massupdate.scala.html` | Mass update dropdowns with category dividers and assign-to-me row. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/routes/$owner/$projectName/issues/route.tsx`, `frontend/src/issue-list-filter.spec.tsx` | layout | covered in current follow-up | P3 | none | Mass update dropdowns now preserve legacy `.mass-update-list` label category rows with `li.disabled[data-category]`, label `li[data-category][data-value]`, `.divider[data-category]`, current-user `Assign to me`, and assignee rows with `.usf-group`, `.avatar-wrap.smaller`, `.name`, and `.loginid`. |
 | `issue/partial_list.scala.html` | Issue list labels, child issue hidden block, count icons. | `frontend/src/routes/-issue-views.tsx` | css | weak evidence | P3 | issue list components and tests | Need selector proof for `.child-issue-list.hide`, common count icon classes, and title prefix hover behavior. |
 | `issue/view.scala.html` | Detail sidebar order: issue-info compact comments; left pane watcher/subtasks/sharer before comments. | `frontend/src/routes/-issue-views.tsx` | layout | deviation | P3 | issue detail component and detail parity test | Need DOM order assertion against legacy template. |
 | `issue/create.scala.html`, `issue/edit.scala.html` | Save/draft/publish double-submit guard and draft tooltip. | `frontend/src/routes/-issue-views.tsx` | interaction | weak evidence | P3 | issue form component and `issue-form-parity.e2e.ts` | Need interaction proof for disabled 3s guard and draft save description. |

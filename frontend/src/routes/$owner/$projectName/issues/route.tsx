@@ -29,7 +29,7 @@ export const Route = createFileRoute("/$owner/$projectName/issues")({
 
 function ProjectIssuesRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
+  const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issues`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -79,6 +79,7 @@ function ProjectIssuesRouteComponent() {
           setQuery(nextQuery);
           setLabels(
             nextLabels.labels.map((label) => ({
+              categoryId: Number(label.categoryId ?? 0) || null,
               categoryName: label.categoryName,
               color: label.color,
               id: Number(label.id),
@@ -146,6 +147,8 @@ function ProjectIssuesRouteComponent() {
       }}
       query={query}
       runtimeConfig={runtimeConfig}
+      viewerLoginId={currentSession?.loginId}
+      viewerUserId={Number(currentSession?.actorId ?? 0) || undefined}
     />
   );
 }

@@ -727,6 +727,8 @@ export function ProjectIssueListPage(props: {
   onMassUpdate?: (input: ProjectIssueMassUpdateInput) => Promise<void>;
   query?: ProjectIssueListQuery;
   runtimeConfig: RuntimeConfig;
+  viewerLoginId?: string;
+  viewerUserId?: number;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const query: ProjectIssueListQuery = {
@@ -1172,6 +1174,8 @@ export function ProjectIssueListPage(props: {
                       onMassUpdate={submitMassUpdate}
                       selectedCount={selectedIssueNumbers.length}
                       totalCount={visibleIssueNumbers.length}
+                      viewerLoginId={props.viewerLoginId}
+                      viewerUserId={props.viewerUserId}
                     />
                     <div className="filters pull-right">
                       {[
@@ -1304,6 +1308,7 @@ export type ProjectIssueMassUpdateInput = {
 };
 
 export interface IssueListFilterLabel {
+  categoryId?: number | null;
   categoryName: string;
   color: string;
   id: number;
@@ -1599,8 +1604,16 @@ function IssueMassUpdateToolbar(props: {
   onMassUpdate: (input: Omit<ProjectIssueMassUpdateInput, "issueNumbers">) => Promise<void>;
   selectedCount: number;
   totalCount: number;
+  viewerLoginId?: string;
+  viewerUserId?: number;
 }) {
   const disabled = props.disabled;
+  const viewerAssignee = (props.assignees ?? []).find(
+    (assignee) =>
+      (props.viewerUserId ? assignee.userId === props.viewerUserId : false) ||
+      (props.viewerLoginId ? assignee.loginId === props.viewerLoginId : false),
+  );
+  const groupedLabels = legacyMassUpdateLabelOptions(props.labels);
   return (
     <div className="mass-update-wrap hide-in-mobile">
       <form
@@ -1651,14 +1664,29 @@ function IssueMassUpdateToolbar(props: {
                 props.onMassUpdate({ assigneeLoginId: "anonymous", assigneeUpdate: true }),
               value: "anonymous",
             },
+            ...(viewerAssignee
+              ? [
+                  {
+                    label: legacyMessage(props.messages, "issue.assignToMe"),
+                    onSelect: () =>
+                      props.onMassUpdate({
+                        assigneeLoginId: viewerAssignee.loginId,
+                        assigneeUpdate: true,
+                      }),
+                    value: String(viewerAssignee.userId),
+                  },
+                ]
+              : []),
+            { kind: "divider" },
             ...(props.assignees ?? []).map((assignee) => ({
+              assignee,
               label: assignee.userLabel || assignee.loginId,
               onSelect: () =>
                 props.onMassUpdate({
                   assigneeLoginId: assignee.loginId,
                   assigneeUpdate: true,
                 }),
-              value: assignee.loginId,
+              value: String(assignee.userId || assignee.loginId),
             })),
           ]}
         />
@@ -1690,22 +1718,28 @@ function IssueMassUpdateToolbar(props: {
               id="attaching-label"
               label={legacyMessage(props.messages, "issue.update.attachLabel")}
               name="attachingLabelIds"
-              options={props.labels.map((label) => ({
-                label: label.name,
-                onSelect: () => props.onMassUpdate({ addLabelIds: [label.id] }),
-                value: String(label.id),
-              }))}
+              options={groupedLabels.map((option) =>
+                option.kind === "label"
+                  ? {
+                      ...option,
+                      onSelect: () => props.onMassUpdate({ addLabelIds: [option.label.id] }),
+                    }
+                  : option,
+              )}
             />
             <IssueMassUpdateDropdown
               disabled={disabled}
               id="detaching-label"
               label={legacyMessage(props.messages, "issue.update.detachLabel")}
               name="detachingLabelIds"
-              options={props.labels.map((label) => ({
-                label: label.name,
-                onSelect: () => props.onMassUpdate({ removeLabelIds: [label.id] }),
-                value: String(label.id),
-              }))}
+              options={groupedLabels.map((option) =>
+                option.kind === "label"
+                  ? {
+                      ...option,
+                      onSelect: () => props.onMassUpdate({ removeLabelIds: [option.label.id] }),
+                    }
+                  : option,
+              )}
             />
           </>
         ) : null}
@@ -1714,12 +1748,56 @@ function IssueMassUpdateToolbar(props: {
   );
 }
 
+type IssueMassUpdateDropdownOption =
+  | {
+      assignee?: NonNullable<ProjectDetailViewModel["dashboard"]>["assignees"][number];
+      label: string;
+      onSelect: () => Promise<void>;
+      value: string;
+    }
+  | { categoryId: string; categoryName: string; kind: "category" }
+  | { categoryId?: string; kind: "divider" }
+  | {
+      categoryId: string;
+      kind: "label";
+      label: IssueListFilterLabel;
+      onSelect: () => Promise<void>;
+      value: string;
+    };
+
+function legacyMassUpdateLabelOptions(
+  labels: IssueListFilterLabel[],
+): IssueMassUpdateDropdownOption[] {
+  const labelsByCategory = new Map<string, IssueListFilterLabel[]>();
+  for (const label of labels) {
+    const categoryId = String(label.categoryId ?? (label.categoryName || ""));
+    const current = labelsByCategory.get(categoryId) ?? [];
+    current.push(label);
+    labelsByCategory.set(categoryId, current);
+  }
+
+  return Array.from(labelsByCategory.entries()).flatMap(([categoryId, categoryLabels]) => {
+    const categoryName = categoryLabels[0]?.categoryName ?? "";
+    return [
+      { categoryId, categoryName, kind: "category" as const },
+      ...categoryLabels.map((label) => ({
+        categoryId,
+        kind: "label" as const,
+        label,
+        onSelect: async () => undefined,
+        value: String(label.id),
+      })),
+      { categoryId, kind: "divider" as const },
+    ];
+  });
+}
+
 function IssueMassUpdateDropdown(props: {
   disabled: boolean;
   id: string;
   label: string;
   name: string;
-  options: Array<{ label: string; onSelect: () => Promise<void>; value: string }>;
+  options: IssueMassUpdateDropdownOption[];
 }) {
   return (
     <div className="btn-group" data-name={props.name} id={props.id}>
@@ -1744,18 +1822,90 @@ function IssueMassUpdateDropdown(props: {
               : undefined
         }
       >
-        {props.options.map((option) => (
-          <li data-value={option.value} key={option.value}>
-            <button
-              className="btn-transparent"
-              disabled={props.disabled}
-              onClick={() => void option.onSelect()}
-              type="button"
-            >
-              {option.label}
-            </button>
-          </li>
-        ))}
+        {props.options.map((option) => {
+          if (option.kind === "category") {
+            return (
+              <li
+                className="disabled"
+                data-category={option.categoryId}
+                key={`category-${option.categoryId}-${option.categoryName}`}
+              >
+                <span>{option.categoryName}</span>
+              </li>
+            );
+          }
+          if (option.kind === "divider") {
+            return (
+              <li
+                className="divider"
+                data-category={option.categoryId}
+                key={`divider-${option.categoryId ?? "none"}`}
+              ></li>
+            );
+          }
+          if (option.kind === "label") {
+            return (
+              <li
+                data-category={option.categoryId}
+                data-value={option.value}
+                key={`label-${option.categoryId}-${option.value}`}
+              >
+                <button
+                  className="btn-transparent"
+                  disabled={props.disabled}
+                  onClick={() => void option.onSelect()}
+                  type="button"
+                >
+                  <span
+                    className={legacyIssueLabelClassName(
+                      "issue-label active list-label",
+                      option.label.color,
+                    )}
+                    data-label-id={option.label.id}
+                    style={{ backgroundColor: option.label.color || "#ddd" }}
+                  >
+                    {option.label.name}
+                  </span>
+                </button>
+              </li>
+            );
+          }
+          return (
+            <li data-value={option.value} key={`option-${option.value}-${option.label}`}>
+              <button
+                className="btn-transparent"
+                disabled={props.disabled}
+                onClick={() => void option.onSelect()}
+                type="button"
+              >
+                {option.assignee ? (
+                  <span className="usf-group">
+                    <span className="avatar-wrap smaller">
+                      {option.assignee.avatarUrl ? (
+                        <img
+                          alt={option.assignee.userLabel || option.assignee.loginId}
+                          height={20}
+                          src={option.assignee.avatarUrl}
+                          width={20}
+                        />
+                      ) : null}
+                    </span>
+                    <strong className="name">
+                      {option.assignee.userLabel || option.assignee.loginId}
+                    </strong>
+                    <span className="loginid">
+                      {" "}
+                      <strong>@</strong>
+                      {option.assignee.loginId}
+                    </span>
+                  </span>
+                ) : (
+                  option.label
+                )}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

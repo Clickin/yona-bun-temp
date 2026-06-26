@@ -83,6 +83,7 @@ describe("project issue list filters", () => {
         }}
         labels={[
           {
+            categoryId: 11,
             categoryName: "Type",
             color: "#f44336",
             id: 5,
@@ -106,6 +107,8 @@ describe("project issue list filters", () => {
           state: "open",
         }}
         runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        viewerLoginId="door"
+        viewerUserId={2}
       />,
     );
 
@@ -174,6 +177,19 @@ describe("project issue list filters", () => {
     expect(html).toContain('id="milestone"');
     expect(html).toContain('id="attaching-label"');
     expect(html).toContain('id="detaching-label"');
+    expect(html).toContain('class="dropdown-menu mass-update-list"');
+    expect(html).toContain('class="disabled" data-category="11"');
+    expect(html).toContain("<span>Type</span>");
+    expect(html).toContain('data-category="11" data-value="5"');
+    expect(html).toContain('class="divider" data-category="11"');
+    expect(html).toContain('class="issue-label active list-label white"');
+    expect(html).toContain('data-label-id="5"');
+    expect(html).toContain('data-value="2"');
+    expect(html).toContain("Assign to me");
+    expect(html).toContain('class="usf-group"');
+    expect(html).toContain('class="avatar-wrap smaller"');
+    expect(html).toContain('class="name">Door User</strong>');
+    expect(html).toContain('class="loginid"');
     expect(html).toContain("Door User");
     expect(html).toContain("Attach label");
     expect(html).toContain("Detach label");
