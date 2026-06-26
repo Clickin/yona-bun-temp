@@ -4392,7 +4392,7 @@ describe("file-route parity harness", () => {
     expect(projectHtml).toContain("Sender");
     expect(projectHtml).toContain('<option value="7">Sent by me</option>');
     expect(projectHtml).toContain(
-      '<option data-login-id="owner" value="7" selected="">Owner User</option>',
+      '<option data-login-id="owner" data-selected="true" value="7">Owner User</option>',
     );
     expect(projectHtml).toContain('<option data-login-id="reviewer" value="8">Reviewer</option>');
     expect(projectHtml).toContain("<h5>Recently pushed branch</h5>");

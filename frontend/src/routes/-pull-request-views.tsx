@@ -580,10 +580,26 @@ function ProjectPullRequestSearchForm(props: {
   runtimeConfig: RuntimeConfig;
 }) {
   const selectedContributorId = props.query.contributorId ?? 0;
+  const contributorSelectRef = React.useRef<HTMLSelectElement | null>(null);
   const currentUserContributor =
     props.list?.contributors.find(
       (contributor) => contributor.userId > 0 && contributor.userId === props.list?.currentUserId,
     ) ?? null;
+  React.useEffect(() => {
+    const select = contributorSelectRef.current;
+    if (!select) {
+      return;
+    }
+    const selectedValue = selectedContributorId === 0 ? "" : String(selectedContributorId);
+    const matchingContributorOption = Array.from(select.options).find(
+      (option) => option.value === selectedValue && option.getAttribute("data-selected") === "true",
+    );
+    if (matchingContributorOption) {
+      select.selectedIndex = matchingContributorOption.index;
+      return;
+    }
+    select.value = selectedValue;
+  }, [selectedContributorId, props.list?.contributors]);
   return (
     <form
       action={projectCategoryHref(props.runtimeConfig, props.detail, props.category)}
@@ -609,10 +625,13 @@ function ProjectPullRequestSearchForm(props: {
           <dl className="issue-option">
             <dt>{legacyMessage(props.messages, "pullRequest.sender")}</dt>
             <dd>
-              <select data-format="user" id="contributors" name="contributorId">
-                <option selected={selectedContributorId === 0} value="">
-                  {legacyMessage(props.messages, "common.order.all")}
-                </option>
+              <select
+                data-format="user"
+                id="contributors"
+                name="contributorId"
+                ref={contributorSelectRef}
+              >
+                <option value="">{legacyMessage(props.messages, "common.order.all")}</option>
                 {currentUserContributor ? (
                   <option value={currentUserContributor.userId}>
                     {legacyMessage(props.messages, "pullRequest.sentByMe")}
@@ -621,8 +640,10 @@ function ProjectPullRequestSearchForm(props: {
                 {props.list?.contributors.map((contributor) => (
                   <option
                     data-login-id={contributor.loginId}
+                    data-selected={
+                      selectedContributorId === contributor.userId ? "true" : undefined
+                    }
                     key={contributor.userId}
-                    selected={selectedContributorId === contributor.userId}
                     value={contributor.userId}
                   >
                     {contributor.userLabel || contributor.loginId}
