@@ -143,6 +143,11 @@ describe("auth and workspace views", () => {
     expect(source).toContain("showProjectGroupSearchScope");
     expect(source).toContain("projectContainerQuery.data?.organizationName");
     expect(source).toContain('name="gnb-search-form"');
+    expect(source).toContain("const navigate = useNavigate();");
+    expect(source).toContain("const handleSearchSubmit = React.useCallback(");
+    expect(source).toContain("new FormData(event.currentTarget)");
+    expect(source).toContain("void navigate({ href:");
+    expect(source).toContain("onSubmit={handleSearchSubmit}");
     expect(source).toContain('name="searchType"');
     expect(source).toContain('id="gnb-search-scope-title"');
     expect(source).toContain('data-toggle="search-scope"');

@@ -58,5 +58,10 @@ describe("route loading shell legacy i18n opt-in", () => {
     expect(fallbackHtml).not.toContain("<h1>common.loading</h1>");
     expect(koreanHtml).toContain("<h1>불러오는 중</h1>");
     expect(koreanHtml).not.toContain("<h1>common.loading</h1>");
+
+    const sharedSource = fs.readFileSync(path.resolve(__dirname, "routes/-shared.tsx"), "utf8");
+    expect(sharedSource).toContain("const navigate = useNavigate();");
+    expect(sharedSource).toContain("replace: true");
+    expect(sharedSource).not.toContain("window.location.replace(");
   });
 });

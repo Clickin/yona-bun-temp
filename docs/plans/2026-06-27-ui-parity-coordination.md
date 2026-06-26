@@ -579,6 +579,17 @@ M46 continues code browser SPA navigation:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "direct browser navigation|real project code browser route|real project commit history route"`.
 
+M47 continues root/shared SPA navigation:
+
+- Global navbar search keeps the legacy `gnb-search-form` action/dropdown
+  output, but submit now calls TanStack navigation instead of native GET reload.
+- Shared auth-required redirects, shared alias redirects, and the project admin
+  alias handoff now use TanStack navigation/replace semantics instead of direct
+  `window.location` document navigation.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  focused `auth-workspace-shell`, `user-profile-route-loading-shell-i18n`,
+  `issue-detail-shell`, and `route-parity` vitest guards.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

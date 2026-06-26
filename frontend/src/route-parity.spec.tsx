@@ -149,11 +149,16 @@ describe("file-route parity harness", () => {
     const directNavigations = listRouteSourceFiles()
       .flatMap((file) => {
         const source = fs.readFileSync(path.resolve(__dirname, file), "utf8");
-        return Array.from(source.matchAll(/window\.location\.(?:assign|href\s*=)/g), (match) => ({
-          file,
-          line: lineNumberForIndex(source, match.index ?? 0),
-          sourceLine: sourceLineForIndex(source, match.index ?? 0),
-        }));
+        return Array.from(
+          source.matchAll(
+            /(?:window\.location\.(?:assign|replace|reload|href\s*=)|window\.parent\.location\.href\s*=)/g,
+          ),
+          (match) => ({
+            file,
+            line: lineNumberForIndex(source, match.index ?? 0),
+            sourceLine: sourceLineForIndex(source, match.index ?? 0),
+          }),
+        );
       })
       .sort((left, right) =>
         left.file === right.file ? left.line - right.line : left.file.localeCompare(right.file),
@@ -164,6 +169,21 @@ describe("file-route parity harness", () => {
         file: "routes/__root.tsx",
         line: expect.any(Number),
         sourceLine: "window.location.href = prefixBasePath(",
+      },
+      {
+        file: "routes/__root.tsx",
+        line: expect.any(Number),
+        sourceLine: "window.parent.location.href = window.location.href;",
+      },
+      {
+        file: "routes/__root.tsx",
+        line: expect.any(Number),
+        sourceLine: "window.location.reload();",
+      },
+      {
+        file: "routes/__root.tsx",
+        line: expect.any(Number),
+        sourceLine: "window.location.reload();",
       },
       {
         file: "routes/-shared.tsx",

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { RestApiError } from "../api/rest-client";
 import { prefixBasePath } from "../runtime-config";
 import { useAppRuntime } from "../app-runtime-context";
@@ -50,16 +51,19 @@ export function legacyIssueLabelClassName(baseClassName: string, color: string |
 
 export function useRequireAuthenticatedRoute(targetHref: string) {
   const { bootstrapping, currentSession, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     if (bootstrapping || !currentSession?.isAnonymous) {
       return;
     }
-    navigateToAppHref(
-      runtimeConfig.basePath,
-      `/users/loginform?redirectUrl=${encodeURIComponent(targetHref)}`,
-    );
-  }, [bootstrapping, currentSession, runtimeConfig.basePath, targetHref]);
+    void navigate({
+      href: prefixBasePath(
+        runtimeConfig.basePath,
+        `/users/loginform?redirectUrl=${encodeURIComponent(targetHref)}`,
+      ),
+    });
+  }, [bootstrapping, currentSession, navigate, runtimeConfig.basePath, targetHref]);
 
   return !bootstrapping && !!currentSession && !currentSession.isAnonymous;
 }
@@ -185,12 +189,13 @@ export function RedirectPage({
   to: string;
 }) {
   const messages = useLegacyMessages();
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     const search = preserveSearch && typeof window !== "undefined" ? window.location.search : "";
     const hash = preserveHash && typeof window !== "undefined" ? window.location.hash : "";
-    window.location.replace(prefixBasePath(basePath, `${to}${search}${hash}`));
-  }, [basePath, preserveHash, preserveSearch, to]);
+    void navigate({ href: prefixBasePath(basePath, `${to}${search}${hash}`), replace: true });
+  }, [basePath, navigate, preserveHash, preserveSearch, to]);
 
   return (
     <main className="app-shell">

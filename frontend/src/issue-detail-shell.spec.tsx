@@ -1378,6 +1378,12 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(layoutSource).toContain('activeMenu: "issue"');
     expect(layoutSource).toContain('keymapMode: "detail"');
     expect(layoutSource).toContain('shellClassName: "issue-detail-page"');
+    expect(layoutSource).toContain(
+      "return <RedirectPage basePath={runtimeConfig.basePath} to={legacyAdminAlias} />;",
+    );
+    expect(layoutSource).not.toContain(
+      "navigateToAppHref(runtimeConfig.basePath, legacyAdminAlias)",
+    );
     expect(routeSource).toContain("renderShell={false}");
     expect(html).not.toContain('class="app-shell issue-detail-page"');
     expect(html).not.toContain('class="page-wrap-outer"');

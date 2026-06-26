@@ -22,6 +22,7 @@ import {
   ForbiddenPage,
   navigateToAppHref,
   NotFoundPage,
+  RedirectPage,
   useCurrentHref,
 } from "../../-shared";
 
@@ -56,8 +57,7 @@ function ProjectLayoutRouteComponent() {
   const layoutShell = projectLayoutShell(pathname, runtimeConfig.basePath, owner, projectName);
 
   if (legacyAdminAlias) {
-    navigateToAppHref(runtimeConfig.basePath, legacyAdminAlias);
-    return null;
+    return <RedirectPage basePath={runtimeConfig.basePath} to={legacyAdminAlias} />;
   }
 
   if (!layoutShell) {

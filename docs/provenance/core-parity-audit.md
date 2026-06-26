@@ -196,6 +196,15 @@
   `page` changes refetch without native document navigation. Focused coverage:
   `frontend/src/route-parity.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 root/shared SPA navigation continuation: global navbar search
+  still renders the legacy `common/navbar.scala.html` form action/dropdown
+  shell, but submit now routes through TanStack navigation. Shared
+  auth-required redirects, shared alias redirects, and project admin aliases
+  also use TanStack navigation/replace semantics instead of direct document
+  navigation. Focused coverage: `auth-workspace-shell.spec.tsx`,
+  `user-profile-route-loading-shell-i18n.spec.tsx`,
+  `issue-detail-shell.spec.tsx`, `route-parity.spec.tsx`, and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

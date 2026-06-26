@@ -746,6 +746,7 @@ export function framedIframeSrcFromSearch(
 
 function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
   const { currentSession, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const appPathname = stripRuntimeBasePath(pathname, runtimeConfig.basePath);
   const isGuest = workspaceOverview?.profile?.isGuest ?? false;
@@ -775,6 +776,21 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
     setSelectedSearchAction(searchAction);
     setSelectedSearchScopeLabel(defaultSearchScopeLabel);
   }, [defaultSearchScopeLabel, searchAction]);
+  const handleSearchSubmit = React.useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+      const searchParams = new URLSearchParams();
+      for (const [key, value] of formData.entries()) {
+        if (typeof value === "string" && value.trim()) {
+          searchParams.set(key, value);
+        }
+      }
+      const query = searchParams.toString();
+      void navigate({ href: query ? `${selectedSearchAction}?${query}` : selectedSearchAction });
+    },
+    [navigate, selectedSearchAction],
+  );
   const handlePinClick = React.useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -844,6 +860,7 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
               action={selectedSearchAction}
               className="input-prepend gnb-search-form"
               name="gnb-search-form"
+              onSubmit={handleSearchSubmit}
             >
               <input name="searchType" type="hidden" value="auto" />
               {searchScope.type !== "global" ? (
