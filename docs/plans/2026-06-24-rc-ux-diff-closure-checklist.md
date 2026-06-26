@@ -86,7 +86,7 @@ Each goal packet should close these checks for its page group:
 | `rc-ux-project-admin`        | `/admin/sample/members`, `/admin/sample/watchers`, `/admin/sample/settingform`, `/admin/sample/webhooks`, `/admin/sample/deleteform`, `/admin/sample/transfer`, `/admin/sample/newFork`, `/admin/sample/statistics`, `/admin/sample/changeVCS` | Member/watch/settings/webhook/delete/transfer/fork/statistics/change-VCS shells, modals, permissions, mutations, and legacy warning copy.                    | `pass` |
 | `rc-ux-fragment-conversions` | Legacy server-returned fragments such as notification/sidebar/user-menu surfaces                                                                                                                                                               | Each legacy fragment endpoint has equivalent API-return plus React-rendered UX evidence on the containing route.                                             | `pass` |
 | `rc-ux-security-stability`   | User-controlled Markdown/search/title/body inputs across RC pages                                                                                                                                                                              | XSS, SQLi literal keyword behavior, long fenced code block fallback, and invalid Markdown recovery stay green.                                               | `pass` |
-| `rc-ux-db-migration-smoke`   | Adopted legacy MariaDB plus SQLite, PostgreSQL, MySQL/MariaDB runtime matrix                                                                                                                                                                   | In-place legacy MariaDB adopt and supported DB matrix prove the same pages work from migrated data, including DB-specific search behavior.                   | `pass` |
+| `rc-ux-db-migration-smoke`   | Adopted legacy MariaDB plus SQLite, PostgreSQL, MySQL/MariaDB runtime matrix                                                                                                                                                                   | In-place legacy MariaDB adopt proves migrated profile data is readable through the REST/app data path; supported DB matrix proves DB-specific runtime/search behavior. Browser-visible page parity remains covered by route-family Playwright suites. | `pass` |
 
 ## Closed Row Evidence
 
@@ -527,9 +527,10 @@ global_search_treats_sql_injection_probe_as_plain_keyword -- --nocapture`
   against `mariadb:10.3`. It imported the ignored dump, built the Rust server
   with `db-matrix`, started once with `YONA_SCHEMA_POLICY=validate_only`, then
   started once with `YONA_SCHEMA_POLICY=adopt`. The smoke now verifies
-  user-visible migrated data by reading `/api/v1/users/:loginId/profile` for a
+  migrated profile data by reading `/api/v1/users/:loginId/profile` for a
   non-anonymous legacy user and comparing `loginId`, `displayName`, and
-  `englishName`. The JSON result records `migrated_profile` alongside
+  `englishName`. This is REST/adopt evidence, not a browser-visible page proof;
+  page parity is covered by the route-family Playwright suites. The JSON result records `migrated_profile` alongside
   `users: 1`, `validate_only_left_migration_table_absent: true`, and
   `adopted_version: m20260409_000001_create_legacy_start_schema`.
 - Env-backed matrix verification: `pnpm agent:cargo-test -- --outside-sandbox -p

@@ -243,7 +243,49 @@ test.beforeEach(async ({ page }) => {
 test("issue detail actions, metadata sidebar, and delete modal mutate through REST", async ({
   page,
 }) => {
-  let currentIssue = issueDetail();
+  let currentIssue = issueDetail({
+    timeline: [
+      {
+        createdLabel: "1 minute ago",
+        eventType: "ISSUE_STATE_CHANGED",
+        id: 17,
+        kind: "event",
+        newValue: "closed",
+        oldValue: "open",
+        senderLoginId: "owner",
+      },
+      {
+        createdLabel: "now",
+        eventType: "ISSUE_LABEL_CHANGED",
+        id: 18,
+        kind: "event",
+        newValue: "bug",
+        oldValue: "",
+        senderLoginId: "owner",
+      },
+      {
+        createdLabel: "now",
+        eventType: "ISSUE_ASSIGNEE_CHANGED",
+        id: 20,
+        kind: "event",
+        newValue: "2",
+        oldValue: "",
+        senderLabel: "Owner User",
+        senderLoginId: "owner",
+        targetLabel: "Assignee User",
+        targetLoginId: "assignee",
+      },
+      {
+        createdLabel: "now",
+        eventType: "ISSUE_BODY_CHANGED",
+        id: 19,
+        kind: "event",
+        newValue: "new body",
+        oldValue: "old body",
+        senderLoginId: "owner",
+      },
+    ],
+  });
   const requests: Array<{ body: unknown; csrfToken: string; method: string; path: string }> = [];
 
   const record = (
@@ -370,6 +412,19 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   });
 
   await page.goto("/yona/admin/projectYobi/issue/1");
+
+  await expect(page.locator("#event-17")).toContainText("Closed");
+  await expect(page.locator("#event-17")).toContainText("owner closed this issue");
+  await expect(page.locator("#event-17 a.usf-group")).toHaveAttribute("href", "/yona/owner");
+  await expect(page.locator("#event-18")).toContainText("Added");
+  await expect(page.locator("#event-18 .issue-label")).toContainText("bug");
+  await expect(page.locator("#event-20")).toContainText("Owner User assigned this issue to");
+  await expect(page.locator("#event-20 a.usf-group").nth(1)).toHaveAttribute(
+    "href",
+    "/yona/assignee",
+  );
+  await expect(page.locator("#event-19")).toHaveCount(0);
+  await expect(page.locator("#timeline")).not.toContainText("issue.event.");
 
   await page.locator(".favorite-issue").click();
   await expect(page.locator(".favorite-issue .star")).toHaveClass(/starred/);
@@ -550,11 +605,18 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
     "![issue-paste.png](/yona/files/931) ![issue-drop.png](/yona/files/932) ",
   );
 
+  await editor.fill("Preview **markdown**");
+  await page.locator('a[href="#preview-comment-body"][data-mode="preview"]').click();
+  await expect(page.locator("#preview-comment-body .markdown-preview")).toContainText(
+    "Preview markdown",
+  );
+  await expect(page.locator("#preview-comment-body strong")).toHaveText("markdown");
+
   await page.locator("#comment-form").getByRole("button", { name: "Add a comment" }).click();
 
   expect(uploadedHeaders).toEqual(["csrf-123", "csrf-123"]);
   expect(submittedComment).toEqual({
     attachmentIds: ["931", "932"],
-    contentsMarkdown: "![issue-paste.png](/yona/files/931) ![issue-drop.png](/yona/files/932)",
+    contentsMarkdown: "Preview **markdown**",
   });
 });

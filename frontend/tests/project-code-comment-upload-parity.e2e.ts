@@ -133,6 +133,78 @@ test.beforeEach(async ({ page }) => {
   await routeRuntimeShell(page);
 });
 
+test("code browser renders the legacy no-head guidance without raw keys", async ({ page }) => {
+  await page.route(apiV1Route("/owners/admin/projects/projectYobi/container"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        cloneUrl: "https://example.com/admin/projectYobi.git",
+        codeMemberOnly: false,
+        defaultTab: "readme",
+        enrollmentRequested: false,
+        isFavorited: false,
+        isForked: false,
+        isWatching: false,
+        memberCount: 0,
+        members: [],
+        openIssueCount: 0,
+        openPullRequestCount: 0,
+        organizationName: "",
+        overview: "",
+        ownerName: "admin",
+        projectName: "projectYobi",
+        projectScope: "public",
+        reviewCount: 0,
+        showAdmin: false,
+        showBoard: true,
+        showCode: true,
+        showIssue: true,
+        showMilestone: true,
+        showPullRequest: true,
+        showReview: true,
+        viewerCanEnroll: false,
+        viewerCanUpdate: true,
+        viewerCanWatch: false,
+        watchCount: 0,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.route(apiV1Route("/projects/admin/projectYobi/code"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        breadcrumbs: [],
+        branches: [],
+        entries: [],
+        noHead: true,
+        ownerName: "admin",
+        path: "",
+        projectName: "projectYobi",
+        selectedBranch: "",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/admin/projectYobi/code");
+
+  await expect(page.locator(".project-page-wrap")).toBeVisible();
+  await expect(page.locator(".code-browse-wrap")).toContainText("The repository is empty!");
+  await expect(page.locator(".code-browse-wrap")).toContainText(
+    "Create a new local repository by cloning",
+  );
+  await expect(page.locator(".code-browse-wrap")).toContainText(
+    "git clone https://example.com/admin/projectYobi.git projectYobi",
+  );
+  await expect(page.locator(".code-browse-wrap")).toContainText('git commit -m "Hello Yona"');
+  await expect(page.locator(".code-browse-wrap")).toContainText(
+    "If you have already created a local git repository",
+  );
+  await expect(page.locator(".code-browse-wrap")).not.toContainText("code.nohead");
+});
+
 test("commit detail watch button toggles through REST with CSRF and preserves query", async ({
   page,
 }) => {

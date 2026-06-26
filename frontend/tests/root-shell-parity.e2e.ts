@@ -25,7 +25,7 @@ async function expectNoVisibleRawLegacyKeys(page: Page): Promise<void> {
   const bodyText = await page.locator("body").innerText();
   const rawKeys =
     bodyText.match(
-      /\b(?:app|button|error|menu|notification|search|site|title|user|validation)\.[A-Za-z0-9_.-]+/g,
+      /\b(?:app|button|error|issue|menu|notification|search|site|title|user|validation)\.[A-Za-z0-9_.-]+/g,
     ) ?? [];
   expect(rawKeys, `visible raw legacy message keys in:\n${bodyText}`).toEqual([]);
 }
@@ -293,6 +293,19 @@ test("standalone legacy pages suppress the root footer", async ({ page }) => {
   await expect(page.locator(".page-footer-outer")).toHaveCount(1);
   await expect(page.locator(".secret-page .page-footer-outer")).toContainText("Powered by");
   await expect(page.locator(".page-footer-outer")).not.toContainText("Copyright");
+
+  await page.goto("/yona/restart");
+  await expectNoVisibleRawLegacyKeys(page);
+  await expect(page.locator(".secret-page .secret-wrap.restart")).toBeVisible();
+  await expect(page.locator(".page-footer-outer")).toHaveCount(1);
+  await expect(page.locator(".secret-page .page-footer-outer")).toContainText("Powered by");
+  await expect(page.locator(".page-footer-outer")).not.toContainText("Copyright");
+
+  await page.goto("/yona/_UIKit");
+  await expectNoVisibleRawLegacyKeys(page);
+  await expect(page.locator("header.gnb-outer .subtitle")).toHaveText("Yobi UI");
+  await expect(page.locator(".page-wrap-outer")).toContainText("Buttons");
+  await expect(page.locator(".page-footer-outer")).toContainText("NAVER Corp.");
 });
 
 test("project route search scope exposes project, group, and global actions from browser DOM", async ({

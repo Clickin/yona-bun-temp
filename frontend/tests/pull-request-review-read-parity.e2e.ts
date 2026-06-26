@@ -424,6 +424,18 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
   await expect(page.locator(".review-list-wrap .post-list-wrap")).toContainText(
     "Review **comment** body",
   );
+  await expect(page.locator(".review-list-wrap .post-item .title-wrap").nth(0)).toHaveCSS(
+    "white-space",
+    "nowrap",
+  );
+  await expect(page.locator(".review-list-wrap .post-item .title-wrap").nth(0)).toHaveCSS(
+    "overflow",
+    "hidden",
+  );
+  await expect(page.locator(".review-list-wrap .post-item .title-wrap").nth(0)).toHaveCSS(
+    "text-overflow",
+    "ellipsis",
+  );
   await expect(page.locator(".review-list-wrap .post-item .title").nth(0)).toHaveAttribute(
     "href",
     "/yona/admin/projectYobi/pullRequest/3/changes/abcdef123456#thread-7",

@@ -228,6 +228,42 @@ test("login form preserves redirectUrl and rememberMe through the REST JSON boun
   });
 });
 
+test("login form failed submit renders the legacy error copy through REST", async ({ page }) => {
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+  let submittedBody: Record<string, unknown> | null = null;
+
+  await page.route(apiV1Route("/auth/sign-in"), async (route) => {
+    submittedBody = route.request().postDataJSON() as Record<string, unknown>;
+    await route.fulfill({
+      body: JSON.stringify({ message: "user.login.failed.client" }),
+      headers: restJsonHeaders,
+      status: 401,
+    });
+  });
+
+  await page.goto("/yona/users/loginform?redirectUrl=/admin/sample");
+  await expectNoVisibleRawLegacyKeys(page);
+
+  const loginForm = page.locator("main .login-form-wrap.frm-wrap form").first();
+  await loginForm.locator("input[name='loginIdOrEmail']").fill("admin");
+  await loginForm.locator("input[name='password']").fill("wrong-password");
+  await loginForm.locator("button[type='submit']").click();
+
+  await expect(page).toHaveURL(
+    /\/yona\/users\/loginform\?redirectUrl=(?:\/admin\/sample|%2Fadmin%2Fsample)$/,
+  );
+  await expect(page.locator(".runtime-error-banner")).toContainText(
+    "Failed to log in. The request is invalid.",
+  );
+  await expectNoVisibleRawLegacyKeys(page);
+  expect(submittedBody).toMatchObject({
+    identifier: "admin",
+    password: "wrong-password",
+    rememberMe: true,
+  });
+});
+
 test("auth aliases redirect to the legacy public entry routes", async ({ page }) => {
   await installRuntimeConfig(page);
   await installAuthEntryMocks(page);
