@@ -135,6 +135,7 @@ test("project webhooks route preserves the legacy CRUD shell", async ({ page }) 
   let webhooks: unknown[] = [];
   let created = false;
   let deleted = false;
+  const webhookRequests: Array<{ body: unknown; method: string; path: string; csrf?: string }> = [];
 
   await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
     await route.fulfill({
@@ -145,12 +146,11 @@ test("project webhooks route preserves the legacy CRUD shell", async ({ page }) 
   });
   await page.route(apiV1Route("/owners/owner/projects/projectYobi/webhooks"), async (route) => {
     if (route.request().method() === "POST") {
-      expect(route.request().headers()["x-csrf-token"]).toBe("csrf-123");
-      expect(route.request().postDataJSON()).toEqual({
-        gitPush: true,
-        payloadUrl: "https://hooks.example/yona",
-        secret: "s3",
-        webhookType: "DETAIL_SLACK",
+      webhookRequests.push({
+        body: route.request().postDataJSON(),
+        csrf: route.request().headers()["x-csrf-token"],
+        method: route.request().method(),
+        path: new URL(route.request().url()).pathname.replace("/yona/api/v1", ""),
       });
       webhooks = [
         {
@@ -158,7 +158,7 @@ test("project webhooks route preserves the legacy CRUD shell", async ({ page }) 
           id: 15,
           payloadUrl: "https://hooks.example/yona",
           secret: "s3",
-          webhookType: "DETAIL_SLACK",
+          webhookType: "JSON",
         },
       ];
       created = true;
@@ -187,22 +187,77 @@ test("project webhooks route preserves the legacy CRUD shell", async ({ page }) 
   await expect(page.locator("#formNewWebhook")).toBeVisible();
   await expect(page.locator("#webhooksList .error-wrap")).toBeVisible();
 
+  await page.locator("#formNewWebhook").evaluate((form) => {
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+  await expect(page.getByRole("alert")).toHaveText("Payload URL is a required field.");
+  await expect(page.getByText("project.webhook.payloadUrl.empty")).toHaveCount(0);
+  expect(webhookRequests).toHaveLength(0);
+
   await page.locator("input[name=payloadUrl]").fill("https://hooks.example/yona");
   await page.locator("input[name=secret]").fill("s3");
-  await page.locator("input[name=webhookType][value=DETAIL_SLACK]").check();
-  await page.locator("#gitPush").check();
+  await page.locator("input[name=webhookType][value=JSON]").check();
+  await expect(page.locator("#gitPush")).toBeChecked();
+  await expect(page.locator("#gitPush")).toBeDisabled();
   await page.locator("#formNewWebhook").evaluate((form) => {
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
 
   await expect.poll(() => created).toBe(true);
+  expect(webhookRequests).toEqual([
+    {
+      body: {
+        gitPush: true,
+        payloadUrl: "https://hooks.example/yona",
+        secret: "s3",
+        webhookType: "JSON",
+      },
+      csrf: "csrf-123",
+      method: "POST",
+      path: "/owners/owner/projects/projectYobi/webhooks",
+    },
+  ]);
   const row = page.locator('[data-webhook-id="15"]');
   await expect(row).toContainText("https://hooks.example/yona");
   await expect(row).toContainText("s3");
-  await expect(row).toContainText("DETAIL_SLACK");
+  await expect(row).toContainText("JSON");
   await expect(row.locator('input[type="checkbox"]')).toBeChecked();
 
   await row.locator('[data-request-method="delete"]').click();
   await expect.poll(() => deleted).toBe(true);
   await expect(page.locator("#webhooksList .error-wrap")).toBeVisible();
+});
+
+test("project webhooks route renders the legacy forbidden shell for non-updaters", async ({
+  page,
+}) => {
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        ...projectContainerPayload(),
+        showAdmin: false,
+        viewerCanUpdate: false,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/webhooks"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        error: {
+          code: "permission_denied",
+          message: "forbidden",
+          status: 403,
+        },
+      }),
+      headers: restJsonHeaders,
+      status: 403,
+    });
+  });
+
+  await page.goto("/yona/owner/projectYobi/webhooks");
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
+  await expect(page.locator("#formNewWebhook")).toHaveCount(0);
+  await expect(page.locator('[data-request-method="delete"]')).toHaveCount(0);
 });
