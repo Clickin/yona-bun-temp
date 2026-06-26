@@ -42,11 +42,11 @@ Current evidence:
 
 ## Route Inventory Summary
 
-Total rows: 18
+Total rows: 20
 
 | status | count |
 | --- | ---: |
-| covered | 18 |
+| covered | 20 |
 | gap | 0 |
 | deviation | 0 |
 | deferred | 0 |
@@ -76,6 +76,8 @@ Total rows: 18
 | `/organizations/:org/members` role/delete/enrollment | Legacy role dropdown, delete modal, enrolled-user Add, member list. | Current renders role dropdown, delete modal, enrollment Add, and REST mutations; backend contract covers add/role/delete/accept. | covered | none |
 | `/organizations/:org/members` delete cancel | Legacy Bootstrap modal closes on `data-dismiss` and renders `#alertDeletion` as `class="modal hide"` without `fade`. | Close and No buttons now clear the React `deleteTarget` state while keeping legacy modal IDs/copy and the same non-fade `modal hide` class. | covered in current follow-up | `frontend/src/routes/-organization-views.tsx`, `frontend/src/organization-home-parity.spec.tsx` |
 | `/organizations/:org/deleteForm` | Delete button opens `#alertDeletion`; Yes deletes and redirects, No closes; legacy template renders the modal as `class="modal hide"` without `fade`. | `OrganizationDeletePage` renders the confirm modal with the legacy non-fade `modal hide` class and REST delete redirect. | covered in current follow-up | `frontend/src/routes/-organization-views.tsx`, `frontend/src/auth-workspace-shell.spec.tsx` |
+| `/organizations/:org/issues`, `/boards`, `/pullrequests`, `/closedPullrequests` | Legacy aggregate pages render through `organizationLayout.scala.html` with organization header/menu chrome plus aggregate filters/tabs/pagination. | `frontend/src/routes/organizations/$organizationName/route.tsx` owns the organization shell for aggregate issue/board/PR routes, while child renderers use `renderShell={false}` for the legacy list bodies. | covered in current follow-up | `frontend/src/organization-shell-i18n.spec.tsx`, `docs/provenance/ui-parity-reports/template-first-p6-organization-directory-workspace.md` |
+| `/organizations/:org/search` | Legacy organization-scoped search keeps organization chrome and search-page body ordering. | Organization parent layout owns header/menu with `search-page` class and skips an extra parent page-wrap; `SearchRoutePage renderShell={false}` keeps breadcrumb/results body and same-page query changes use TanStack navigation instead of native reload. | covered in current follow-up | `frontend/src/route-parity.spec.tsx`, `frontend/src/routes/-search-views.tsx`, `docs/provenance/ui-parity-reports/template-first-p6-organization-directory-workspace.md` |
 
 ## Playwright Scenario Matrix
 

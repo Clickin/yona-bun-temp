@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import type {
   SearchCounts,
   SearchInput,
@@ -100,17 +101,25 @@ function searchHref(
   input: SearchInput | null,
   overrides: Partial<SearchInput> = {},
 ) {
+  return prefixBasePath(runtimeConfig.basePath, searchPath(scope, input, overrides));
+}
+
+function searchPath(
+  scope: SearchRouteScope,
+  input: SearchInput | null,
+  overrides: Partial<SearchInput> = {},
+) {
   const keyword = overrides.keyword ?? input?.keyword ?? "";
   const searchType = overrides.searchType ?? input?.searchType ?? "auto";
   const pageNum = overrides.pageNum ?? input?.pageNum ?? 1;
   if (!keyword.trim()) {
-    return prefixBasePath(runtimeConfig.basePath, basePathForScope(scope));
+    return basePathForScope(scope);
   }
   const query = new URLSearchParams();
   query.set("keyword", keyword);
   query.set("searchType", searchType);
   query.set("pageNum", String(pageNum));
-  return prefixBasePath(runtimeConfig.basePath, `${basePathForScope(scope)}?${query.toString()}`);
+  return `${basePathForScope(scope)}?${query.toString()}`;
 }
 
 function emptyCounts(): SearchCounts {
@@ -190,6 +199,7 @@ export function SearchCategories(props: {
   counts: SearchCounts;
   input: SearchInput | null;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   runtimeConfig: RuntimeConfig;
   scope: SearchRouteScope;
 }) {
@@ -206,15 +216,27 @@ export function SearchCategories(props: {
     if (count === 0) {
       classNames.push("empty");
     }
+    const href = searchHref(props.runtimeConfig, props.scope, props.input, {
+      pageNum: 1,
+      searchType: category.type,
+    });
+    const navigationHref = searchPath(props.scope, props.input, {
+      pageNum: 1,
+      searchType: category.type,
+    });
     categoryItems.push(
       <li className={classNames.join(" ")} key={category.type}>
         <a
           data-toggle="search-category"
           data-type={category.type}
-          href={searchHref(props.runtimeConfig, props.scope, props.input, {
-            pageNum: 1,
-            searchType: category.type,
-          })}
+          href={href}
+          onClick={(event) => {
+            if (!props.onNavigate) {
+              return;
+            }
+            event.preventDefault();
+            props.onNavigate(navigationHref);
+          }}
         >
           {legacySearchMessage(props.messages, category.label)}
           <span className="num-badge pull-right">{count}</span>
@@ -449,6 +471,7 @@ export function SearchResults(props: {
   input: SearchInput | null;
   isLoading: boolean;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   response: SearchResponse | null | undefined;
   runtimeConfig: RuntimeConfig;
   scope: SearchRouteScope;
@@ -479,6 +502,7 @@ export function SearchResults(props: {
       <SearchPagination
         input={props.input}
         messages={props.messages}
+        onNavigate={props.onNavigate}
         response={props.response}
         runtimeConfig={props.runtimeConfig}
         scope={props.scope}
@@ -490,6 +514,7 @@ export function SearchResults(props: {
 export function SearchPagination(props: {
   input: SearchInput;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   response: SearchResponse;
   runtimeConfig: RuntimeConfig;
   scope: SearchRouteScope;
@@ -504,7 +529,15 @@ export function SearchPagination(props: {
     pageNum: pageNum - 1,
     searchType: props.response.searchType,
   });
+  const prevNavigationHref = searchPath(props.scope, props.input, {
+    pageNum: pageNum - 1,
+    searchType: props.response.searchType,
+  });
   const nextHref = searchHref(props.runtimeConfig, props.scope, props.input, {
+    pageNum: pageNum + 1,
+    searchType: props.response.searchType,
+  });
+  const nextNavigationHref = searchPath(props.scope, props.input, {
     pageNum: pageNum + 1,
     searchType: props.response.searchType,
   });
@@ -515,6 +548,13 @@ export function SearchPagination(props: {
           {pageNum > 1 ? (
             <a
               href={prevHref}
+              onClick={(event) => {
+                if (!props.onNavigate) {
+                  return;
+                }
+                event.preventDefault();
+                props.onNavigate(prevNavigationHref);
+              }}
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
               <i className="ico btn-pg-prev"></i>
@@ -544,6 +584,13 @@ export function SearchPagination(props: {
           {pageNum < pageCount ? (
             <a
               href={nextHref}
+              onClick={(event) => {
+                if (!props.onNavigate) {
+                  return;
+                }
+                event.preventDefault();
+                props.onNavigate(nextNavigationHref);
+              }}
               {...({ "pjax-page": "" } as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
             >
               <i className="ico btn-pg-next"></i>
@@ -588,6 +635,7 @@ export function SearchRoutePage({
   renderShell?: boolean;
   scope: SearchRouteScope;
 }) {
+  const navigate = useNavigate();
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
@@ -669,6 +717,12 @@ export function SearchRoutePage({
   const activeCount = activeCategory ? counts[activeCategory.countKey] : 0;
   const projectDetail = projectSearchDetail(scope, projectChromeQuery.data);
   const organizationDetail = organizationSearchDetail(scope, organizationChromeQuery.data);
+  const navigateSearch = React.useCallback(
+    (href: string) => {
+      void navigate({ href });
+    },
+    [navigate],
+  );
   useDocumentTitle("title.search");
 
   React.useEffect(() => {
@@ -741,6 +795,7 @@ export function SearchRoutePage({
                 counts={counts}
                 input={input}
                 messages={messages}
+                onNavigate={navigateSearch}
                 runtimeConfig={runtimeConfig}
                 scope={scope}
               />
@@ -751,6 +806,19 @@ export function SearchRoutePage({
                   action={prefixBasePath(runtimeConfig.basePath, basePathForScope(scope))}
                   id="searchInnerForm"
                   method="get"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const formData = new FormData(event.currentTarget);
+                    navigateSearch(
+                      searchPath(scope, input, {
+                        keyword: String(formData.get("keyword") ?? ""),
+                        pageNum: 1,
+                        searchType: isSearchType(String(formData.get("searchType") ?? ""))
+                          ? (String(formData.get("searchType")) as SearchType)
+                          : activeType,
+                      }),
+                    );
+                  }}
                 >
                   <input name="searchType" type="hidden" value={activeType} />
                   <input
@@ -777,6 +845,7 @@ export function SearchRoutePage({
                   input={input}
                   isLoading={searchQuery.isLoading}
                   messages={messages}
+                  onNavigate={navigateSearch}
                   response={response}
                   runtimeConfig={runtimeConfig}
                   scope={scope}

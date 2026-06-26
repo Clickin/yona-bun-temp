@@ -98,11 +98,12 @@ Browser proof:
 - `frontend/tests/workspace-settings-parity.e2e.ts`
 - `frontend/tests/search-parity.e2e.ts` for notification stream/load-more and scoped search chrome.
 
-P6 has no integrated desktop sweep status deltas in
+The integrated desktop sweep status in
 `output/playwright/visual-sweep/latest.json` checked at
-`2026-06-26T16:21:36.680Z`. Whole UI parity remains blocked by other packet
-reports with `needs-parent-decision` rows and by any missing template-first
-packet reports.
+`2026-06-26T16:21:36.680Z` is a pre-organization-layout-migration baseline.
+Current 2026-06-27 organization nested-layout claims are limited to the focused
+spec evidence listed below. Whole UI parity remains blocked until a fresh
+integrated visual sweep covers all packet reports.
 
 ## Nested Layout Follow-Ups
 

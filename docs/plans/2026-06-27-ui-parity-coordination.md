@@ -238,30 +238,6 @@ M15 continues board shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
 
-M16 continues organization shell migration:
-
-- `/organizations/$organizationName/route.tsx` now owns the legacy organization
-  header/menu/page-wrap shell for `/issues`, `/boards`, `/pullrequests`, and
-  `/closedPullrequests`.
-- `OrganizationIssueListPage`, `OrganizationBoardListPage`, and
-  `OrganizationPullRequestListPage` support `renderShell={false}` so aggregate
-  leaf routes keep their REST/query boundaries but render only their legacy
-  list bodies under the organization layout `<Outlet />`.
-- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
-  `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx`.
-
-M17 continues organization shell migration for scoped search:
-
-- `/organizations/$organizationName/route.tsx` now owns the legacy organization
-  header/menu shell for `/search`, with `search-page` shell class and no extra
-  parent `page-wrap-outer`, matching the existing project scoped search layout
-  pattern.
-- `organizations/$organizationName/search/route.tsx` renders
-  `SearchRoutePage` with `renderShell={false}` so the child keeps only the
-  legacy search breadcrumb/results body and does not refetch org chrome.
-- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
-  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real search routes"`.
-
 M16 continues board shell migration:
 
 - `/$owner/$projectName/route.tsx` now owns the legacy project
@@ -491,11 +467,39 @@ M35 continues organization shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx -t "members chrome|delete chrome"`.
 
+M36 continues organization shell migration:
+
+- `/organizations/$organizationName/route.tsx` now owns the legacy organization
+  header/menu/page-wrap shell for `/issues`, `/boards`, `/pullrequests`, and
+  `/closedPullrequests`.
+- `OrganizationIssueListPage`, `OrganizationBoardListPage`, and
+  `OrganizationPullRequestListPage` support `renderShell={false}` so aggregate
+  leaf routes keep their REST/query boundaries but render only their legacy
+  list bodies under the organization layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx`.
+
+M37 continues organization shell migration for scoped search:
+
+- `/organizations/$organizationName/route.tsx` now owns the legacy organization
+  header/menu shell for `/search`, with `search-page` shell class and no extra
+  parent `page-wrap-outer`, matching the existing project scoped search layout
+  pattern.
+- `organizations/$organizationName/search/route.tsx` renders
+  `SearchRoutePage` with `renderShell={false}` so the child keeps only the
+  legacy search breadcrumb/results body and does not refetch org chrome.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real search routes"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit
 - P1 Project shell audit
 - P2 Issue/editor/comment audit
+- P3 Board/milestone/post audit
+- P4 Code/PR/review audit
+- P5 Workspace/org/site-admin audit
+- P6 Organization/directory/workspace audit
 
 ## Reviewed Subagent Findings
 
