@@ -227,6 +227,24 @@ test("project settings saves menu, code access, reviewer and default branch stat
   await expect(page.locator("#menuSettingReview")).toBeChecked();
   await expect(page.locator("#project-default-branch")).toHaveValue("main");
 
+  await page.locator("#project-name").fill("invalid name");
+  await page.locator("#save").click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Enter name in alphabetnumerical or symbol characters(_-.)",
+  );
+  await expect(page.getByText("project.name.alert")).toHaveCount(0);
+  expect(savedBody).toBeNull();
+
+  await page.locator("#project-name").fill("projectYobi");
+  await page.locator("#logoPath").setInputFiles({
+    buffer: Buffer.from("not an image"),
+    mimeType: "text/plain",
+    name: "not-image.txt",
+  });
+  await expect(page.getByRole("alert")).toHaveText("This is not an image file.");
+  await expect(page.getByText("project.logo.alert")).toHaveCount(0);
+  expect(savedBody).toBeNull();
+
   await page.locator("#codeAccessibleAnyone").check();
   await page.locator("#menuSettingIssue").uncheck();
   await page.locator("#menuSettingReview").uncheck();
@@ -265,4 +283,34 @@ test("project settings saves menu, code access, reviewer and default branch stat
   const projectMenuLabels = page.locator(".project-menu-gruop .menu-name");
   await expect(projectMenuLabels.filter({ hasText: "Issue" })).toHaveCount(0);
   await expect(projectMenuLabels.filter({ hasText: "Review" })).toHaveCount(0);
+});
+
+test("project settings route renders the legacy forbidden shell for non-updaters", async ({
+  page,
+}) => {
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/settings"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        error: {
+          code: "permission_denied",
+          message: "forbidden",
+          status: 403,
+        },
+      }),
+      headers: restJsonHeaders,
+      status: 403,
+    });
+  });
+  await page.route(apiV1Route("/projects/owner/projectYobi/branches"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(branchPayload()),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/owner/projectYobi/settingform");
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
+  await expect(page.locator("#saveSetting")).toHaveCount(0);
+  await expect(page.locator("#save")).toHaveCount(0);
 });
