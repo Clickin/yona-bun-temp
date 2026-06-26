@@ -3324,6 +3324,38 @@ export function ProjectIssueDetailPage(props: {
                         </option>
                       ))}
                     </select>
+                    <div className="issue-labels-fallback">
+                      {issueLabels.map((label) => {
+                        const selected = (issue.labels ?? []).some(
+                          (issueLabel) => issueLabel.id === label.id,
+                        );
+                        return (
+                          <label className="checkbox inline" key={label.id}>
+                            <input
+                              checked={selected}
+                              name="labelIds"
+                              onChange={(event) =>
+                                void props.onMetadataUpdate?.({
+                                  addLabelIds: event.currentTarget.checked ? [label.id] : [],
+                                  removeLabelIds: event.currentTarget.checked ? [] : [label.id],
+                                })
+                              }
+                              type="checkbox"
+                              value={label.id}
+                            />
+                            <span
+                              className={legacyIssueLabelClassName(
+                                "label issue-label list-label active",
+                                label.color,
+                              )}
+                              style={{ backgroundColor: label.color }}
+                            >
+                              {label.name}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </dd>
                 </dl>
               ) : (

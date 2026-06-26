@@ -1287,6 +1287,11 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('id="labelIds"');
     expect(html).toContain('name="labelIds"');
     expect(html).toContain('data-format="issuelabel"');
+    expect(html).toContain('class="issue-labels-fallback"');
+    expect(html).toContain('type="checkbox"');
+    expect(html).toContain('value="5"');
+    expect(html).toContain('class="label issue-label list-label active white"');
+    expect(html).toContain("bug");
     expect(html).toContain("[Edit]");
     expect(html).not.toContain("[button.edit]");
   });
