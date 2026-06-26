@@ -432,6 +432,18 @@ function truncateLegacyIssueTitle(title: string) {
   return trimmed.length > 10 ? `${trimmed.slice(0, 10).trim()}...` : trimmed;
 }
 
+function compactLegacyMarkdownText(markdown: string) {
+  return (
+    markdown
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/[*_>#~-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 80) || "..."
+  );
+}
+
 function IssueListSubtaskSummary(props: {
   item: IssueListItemViewModel;
   runtimeConfig: RuntimeConfig;
@@ -1807,6 +1819,90 @@ function projectIssueExcelExportHref(
   return `${buildProjectHref(runtimeConfig, ownerName, projectName, "issues")}?${params.toString()}`;
 }
 
+function IssueCompactCommentIndex(props: {
+  commentsByParent: Map<number, ProjectIssueDetailViewModel["comments"]>;
+  issue: ProjectIssueDetailViewModel;
+  messages: LegacyMessageLookup;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const rootComments = props.issue.comments.filter((comment) => !comment.parentCommentId);
+
+  return (
+    <div className="board-comment-wrap" id="comments">
+      <div id="timeline">
+        <div className="timeline-list">
+          <div className="comment-header">
+            <strong>{legacyMessage(props.messages, "common.comment")}</strong>{" "}
+            <strong className="num">{props.issue.comments.length}</strong>
+          </div>
+          {rootComments.length > 0 ? (
+            <ul className="comments">
+              {rootComments.map((comment) => {
+                const childCount = props.commentsByParent.get(comment.id)?.length ?? 0;
+                return (
+                  <li
+                    className="comment index-comment"
+                    data-location={`#comment-${comment.id}`}
+                    id={`comment-${comment.id}`}
+                    key={comment.id}
+                  >
+                    <div>
+                      <div id={`comment-body-${comment.id}`}>
+                        <div className="comment-body">
+                          <a href={`#comment-${comment.id}`}>
+                            {compactLegacyMarkdownText(comment.contentsMarkdown)}
+                          </a>
+                        </div>
+                      </div>
+                      <div className="index-comment-author">
+                        {childCount > 0 ? (
+                          <span className="comment-exists">
+                            <i className="yobicon-comment2"></i>
+                            {childCount > 1 ? childCount : null}
+                          </span>
+                        ) : null}
+                        <span className="comment_author">
+                          <a
+                            data-placement="top"
+                            data-toggle="tooltip"
+                            href={prefixBasePath(
+                              props.runtimeConfig.basePath,
+                              `/${comment.authorLoginId}`,
+                            )}
+                            title={comment.authorLoginId}
+                          >
+                            <strong>{comment.authorLabel}</strong>
+                          </a>
+                        </span>
+                        <span className="ago-date">
+                          <a
+                            className="ago"
+                            href={`#comment-${comment.id}`}
+                            title={comment.createdLabel}
+                          >
+                            {comment.createdLabel}
+                          </a>
+                          <a
+                            className="share-link"
+                            href={`#comment-${comment.id}`}
+                            style={{ display: "none" }}
+                          >
+                            [Link]
+                          </a>
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ProjectIssueDetailPage(props: {
   detail: ProjectDetailViewModel | null;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
@@ -2972,6 +3068,14 @@ export function ProjectIssueDetailPage(props: {
                     />
                   )}
                 </form>
+                {issue ? (
+                  <IssueCompactCommentIndex
+                    commentsByParent={childCommentsByParent}
+                    issue={issue}
+                    messages={messages}
+                    runtimeConfig={props.runtimeConfig}
+                  />
+                ) : null}
               </div>
               <div className="watcher-list"></div>
               {issue ? (

@@ -411,6 +411,19 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
 
     expect(html).toContain('id="comment-77"');
     expect(html).not.toContain('id="comment-78"');
+    expect(html).toContain('class="issue-info"');
+    expect(html).toContain('<div class="board-comment-wrap" id="comments"><div id="timeline"');
+    expect(html).toContain('class="comment index-comment"');
+    expect(html).toContain('data-location="#comment-77"');
+    expect(html).toContain('id="comment-body-77"');
+    expect(html).toContain(
+      '<div class="comment-body"><a href="#comment-77">Parent comment</a></div>',
+    );
+    expect(html).toContain('class="index-comment-author"');
+    expect(html).toContain('class="comment-exists"');
+    expect(html).toContain('class="comment_author"');
+    expect(html).toContain('href="/yona/parent"');
+    expect(html).toContain('class="share-link"');
     expect(html).toContain('class="add-a-comment pull-right"');
     expect(html).toContain('class="child-comments"');
     expect(html).toContain('class="one-line-comment"');

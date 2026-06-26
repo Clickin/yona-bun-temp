@@ -43,16 +43,17 @@ Source comparison by Subagent P3 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 2 |
+| gap | 1 |
 | deviation | 1 |
 | weak evidence | 9 |
+| covered | 1 |
 | not-applicable | 1 |
 
 ## Reset Findings
 
 | legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `issue/view.scala.html`, `issue/partial_index_comments.scala.html`, `issue/partial_index_comment.scala.html` | Issue detail right `issue-info` compact comment index. | `frontend/src/routes/-issue-views.tsx` | layout | gap | P3 | issue detail component and tests | Selector assertion for `.issue-info #comments .index-comment` is missing/weak. |
+| `issue/view.scala.html`, `issue/partial_index_comments.scala.html`, `issue/partial_index_comment.scala.html` | Issue detail right `issue-info` compact comment index. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/issue-detail-shell.spec.tsx` | layout | covered in current follow-up | P3 | none | Issue detail now renders the legacy compact comment index inside `.issue-info` after `#issueUpdateForm`: `#comments.board-comment-wrap > #timeline > .timeline-list`, `.comment-header .num`, root `.comment.index-comment[data-location]`, `#comment-body-$id .comment-body > a`, `.index-comment-author`, `.comment-exists`, `.comment_author`, `.ago-date`, and hidden `.share-link`. |
 | `issue/partial_comment.scala.html` | Full comment timeline with voter avatars/modal threshold. | `frontend/src/routes/-issue-views.tsx` | layout | weak evidence | P3 | comment components and issue detail tests | Need selector proof for `.vote-description-people`, `#voters-$id`, `.avatar-wrap.smaller`. |
 | `common/commentUpdateForm.scala.html` | Comment edit with upload label/input and notification mail checkbox. | `frontend/src/routes/-issue-views.tsx` | interaction | gap | P3 | comment edit/upload components and tests | Need selector proof for `.file-upload__label`, `.file-upload__input`, `.send-notification-check`. |
 | `common/fileUploader.scala.html`, `common/uploadForm.scala.html` | Issue/comment create upload, drag/drop, attached file template. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/routes/-markdown-attachment-textarea.tsx` | data-boundary | weak evidence | P3 | upload/editor components and upload specs | Need selector proof for `#tplAttachedFile`, `.attached-file`, `.btn-insert`, `.upload-progress`. |

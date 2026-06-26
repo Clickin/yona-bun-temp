@@ -278,3 +278,10 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   `issue.event.label.added`, and `title.no.results` are no longer accepted as
   visible issue-detail UI. Focused coverage:
   `frontend/src/issue-detail-shell.spec.tsx`.
+- 2026-06-26 template-first P3 compact comment index correction: issue detail
+  now restores the legacy right-sidebar `.issue-info #comments` compact comment
+  index from `issue/partial_index_comments.scala.html` and
+  `issue/partial_index_comment.scala.html`, including `.comment.index-comment`,
+  `data-location`, `#comment-body-$id`, `.index-comment-author`,
+  `.comment-exists`, `.comment_author`, `.ago-date`, and hidden `.share-link`
+  anchors. Focused coverage: `frontend/src/issue-detail-shell.spec.tsx`.
