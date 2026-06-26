@@ -4195,24 +4195,34 @@ export function ProjectSettingsPage(props: {
                         data-id="project-reviewer-count"
                         data-name="defaultReviewerCount"
                       >
-                        <span className="d-label">{formState.defaultReviewerCount}</span>
-                        <select
-                          id="project-reviewer-count"
-                          name="defaultReviewerCount"
-                          value={Math.min(formState.defaultReviewerCount, maxReviewerCount)}
-                          onChange={(event) =>
-                            setFormState((current) => ({
-                              ...current,
-                              defaultReviewerCount: Number(event.target.value),
-                            }))
-                          }
+                        <button
+                          className="btn dropdown-toggle large"
+                          data-toggle="dropdown"
+                          type="button"
                         >
+                          <span className="d-label">{formState.defaultReviewerCount}</span>
+                          <span className="d-caret">
+                            <span className="caret" />
+                          </span>
+                        </button>
+                        <ul className="dropdown-menu">
                           {reviewerCountOptions.map((count) => (
-                            <option key={count} value={count}>
-                              {count}
-                            </option>
+                            <li data-value={count} key={count}>
+                              <a
+                                href="#reviewer-count"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  setFormState((current) => ({
+                                    ...current,
+                                    defaultReviewerCount: count,
+                                  }));
+                                }}
+                              >
+                                {count}
+                              </a>
+                            </li>
                           ))}
-                        </select>
+                        </ul>
                       </div>
                       <span className="note ml10">
                         {legacyMessage(props.messages, "project.reviewer.count.description")}

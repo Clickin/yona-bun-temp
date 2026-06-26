@@ -147,6 +147,18 @@ describe("project settings parity", () => {
     expect(html).toContain('data-format="branch"');
     expect(html).toContain('<option value="main" selected="">main</option>');
     expect(html).toContain('<option value="feature/settings">feature/settings</option>');
+    expect(html).toContain('id="welReviewerCount"');
+    expect(html).toContain('data-id="project-reviewer-count"');
+    expect(html).toContain('data-name="defaultReviewerCount"');
+    expect(html).toContain('class="btn dropdown-toggle large"');
+    expect(html).toContain('data-toggle="dropdown"');
+    expect(html).toContain('class="d-label">2</span>');
+    expect(html).toContain('class="d-caret"><span class="caret"></span></span>');
+    expect(html).toContain('class="dropdown-menu"');
+    expect(html).toContain('<li data-value="1"><a href="#reviewer-count">1</a></li>');
+    expect(html).toContain('<li data-value="2"><a href="#reviewer-count">2</a></li>');
+    expect(html).not.toContain('<select id="project-reviewer-count"');
+    expect(html).not.toContain('<select name="defaultReviewerCount"');
     expect(html).toContain('id="menuSettingCode"');
     expect(html).toContain('id="menuSettingPullRequest"');
     expect(html).toContain('id="save"');

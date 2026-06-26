@@ -653,8 +653,14 @@ describe("auth and workspace views", () => {
     expect(html).toContain('id="welReviewerCount"');
     expect(html).toContain('data-id="project-reviewer-count"');
     expect(html).toContain('data-name="defaultReviewerCount"');
-    expect(html).toContain('name="defaultReviewerCount"');
-    expect(html).toContain('<option value="2" selected="">2</option>');
+    expect(html).toContain('class="btn dropdown-toggle large"');
+    expect(html).toContain('data-toggle="dropdown"');
+    expect(html).toContain('class="d-label">2</span>');
+    expect(html).toContain('class="d-caret"><span class="caret"></span></span>');
+    expect(html).toContain('<ul class="dropdown-menu">');
+    expect(html).toContain('<li data-value="2"><a href="#reviewer-count">2</a></li>');
+    expect(html).not.toContain('<select name="defaultReviewerCount"');
+    expect(html).not.toContain('<option value="2" selected="">2</option>');
     expect(html).toContain('class="box-wrap bottom"');
     expect(html).toContain('id="save"');
     expect(html).toContain("Save");
