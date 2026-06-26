@@ -100,6 +100,7 @@ function projectLayoutShell(
   if (
     appPath === `/${owner}/${projectName}/settingform` ||
     appPath === `/${owner}/${projectName}/members` ||
+    appPath === `/${owner}/${projectName}/transfer` ||
     appPath === `/${owner}/${projectName}/webhooks`
   ) {
     return { activeMenu: "settings" };

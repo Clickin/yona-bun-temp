@@ -112,6 +112,7 @@ function ProjectTransferRouteComponent() {
         await transferMutation.mutateAsync(destination);
       }}
       pending={transferMutation.isPending}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       transfer={transferMutation.data ?? transferQuery.data ?? null}
     />

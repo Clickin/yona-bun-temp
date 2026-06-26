@@ -246,6 +246,42 @@ describe("project settings parity", () => {
     expect(html).toContain('id="webhooksList"');
   });
 
+  it("lets the project layout route own the transfer settings shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectTransferPage
+        detail={projectDetail}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+        transfer={{
+          acceptPath: "",
+          ownerName: "admin",
+          projectName: "projectYobi",
+          transferId: 0,
+          viewerCanTransfer: true,
+        }}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/transfer/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/transfer`");
+    expect(layoutSource).toContain('return { activeMenu: "settings" };');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="subMenuProjectTransfer"');
+    expect(html).toContain('id="btnTransfer"');
+    expect(html).toContain('id="alertTransfer"');
+  });
+
   it("preserves legacy visibility for protected and Git-only project setting controls", () => {
     const userOwnedHtml = renderToStaticMarkup(
       <ProjectSettingsPage

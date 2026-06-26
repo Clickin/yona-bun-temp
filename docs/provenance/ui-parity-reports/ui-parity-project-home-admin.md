@@ -17,6 +17,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectWebhooksPage`; the webhooks leaf route passes that flag while retaining its existing webhook REST mutation/query boundaries.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx`.
 
+## 2026-06-27 Transfer Layout Follow-Up
+
+- Moved project transfer settings shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/transfer`, keeping the settings menu active and rendering `ProjectTransferPage` through the TanStack Router `<Outlet />`.
+- Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectTransferPage`; the transfer leaf route passes that flag while retaining its existing transfer REST request/query boundary.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx`.
+
 ## Legacy Evidence Checked
 
 - `yona-original/app/views/project/home.scala.html`
