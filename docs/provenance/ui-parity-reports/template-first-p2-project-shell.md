@@ -42,10 +42,10 @@ Source comparison by Subagent P2 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 3 |
+| gap | 2 |
 | deviation | 0 |
 | weak evidence | 0 |
-| covered | 13 |
+| covered | 14 |
 
 ## Reset Findings
 
@@ -58,7 +58,7 @@ Source comparison by Subagent P2 found concrete reset blockers:
 | `project/partial_settingmenu.scala.html` | Settings submenu with enroll requests. | `crates/server/src/api_types.rs`, `crates/server/src/routes/utils.rs`, `frontend/src/api/types.ts`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-project-views.tsx`, `frontend/src/project-settings-parity.spec.tsx` | data-boundary | covered in current follow-up | P2 | none | `ProjectSettingsSubMenu` now renders the legacy member tab `<span class="num-badge">N</span>` from `enrollmentRequestCount` when the count is positive, matching `project.enrolledUsers.size`. |
 | `project/watchers.scala.html` | `/owner/project/watchers`, private/protected/custom-menu project. | `frontend/src/routes/$owner/$projectName/watchers/route.tsx` | data-boundary | gap | P2 | `watchers/route.tsx`, `-project-views.tsx` | Current uses synthetic `projectShellDetail`, losing logo/background/scope/menu/count state. |
 | `project/members.scala.html` | `/owner/project/members`, custom-menu project. | `frontend/src/routes/$owner/$projectName/members/route.tsx` | data-boundary | gap | P2 | `members/route.tsx`, `-project-views.tsx` | Current shell detail is synthesized from members response. |
-| `project/webhooks.scala.html` | Webhook list, viewer can read but cannot create. | `frontend/src/routes/$owner/$projectName/webhooks/route.tsx` | permission | gap | P2 | `webhooks/route.tsx` | Legacy hides create form only; current route returns `ForbiddenPage` when `!viewerCanUpdate`. |
+| `project/webhooks.scala.html` | Webhook list, viewer can read but cannot create. | `crates/server/src/routes/projects/webhooks.rs`, `frontend/src/routes/$owner/$projectName/webhooks/route.tsx`, `frontend/src/route-parity.spec.tsx` | permission | covered in current follow-up | P2 | none | `GET /webhooks` now uses project READ authorization and the React route no longer returns `ForbiddenPage` solely for `!viewerCanUpdate`; `ProjectWebhooksPage` still hides `#formNewWebhook` for read-only viewers. Create/delete mutations keep UPDATE authorization. |
 | `project/setting.scala.html` | Settings form with logo. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-settings-parity.spec.tsx` | asset | covered in current follow-up | P2 | none | `ProjectSettingsPage` now renders `.logo-wrap` with legacy inline `background-image:url(...)`, using `detail.logoUrl` or the legacy `/assets/images/project_default_logo.png` fallback; focused settings parity asserts the style and `#logoPath` upload anchor. |
 | `project/setting.scala.html` | Git project, code menu off. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-settings-parity.spec.tsx` | layout | covered in current follow-up | P2 | none | Git settings now always render `#defaultBranceSettingPanel` with the legacy branch select and hide the wrapper with `style="display:none"` when code menu is off; the panel no longer disappears when code is off or branch options are empty. |
 | `project/setting.scala.html` | Reviewer count dropdown. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-settings-parity.spec.tsx`, `frontend/src/auth-workspace-shell.spec.tsx` | layout | covered in current follow-up | P2 | none | `#welReviewerCount` now renders the legacy `.btn-group.branches[data-id=project-reviewer-count][data-name=defaultReviewerCount] > button.btn.dropdown-toggle.large[data-toggle=dropdown] + ul.dropdown-menu > li[data-value] > a` shell. React click handlers update current state without importing legacy JavaScript. |

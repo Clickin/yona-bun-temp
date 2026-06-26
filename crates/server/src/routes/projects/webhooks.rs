@@ -797,8 +797,9 @@ pub(super) async fn rest_read_project_webhooks(
             "project webhooks require repository backend",
         ));
     };
-    let authorization =
-        rest_require_project_update(repository, &owner_name, &project_name, actor_id).await?;
+    let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
     let webhooks = repository
         .list_project_webhooks(authorization.project.id)
         .await

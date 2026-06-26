@@ -5332,6 +5332,9 @@ describe("file-route parity harness", () => {
     expect(routeSource).not.toContain("Create project webhook failed.");
     expect(routeSource).not.toContain("Delete project webhook failed.");
     expect(routeSource).toContain('"error.badrequest"');
+    expect(routeSource).not.toContain(
+      "containerQuery.data && !containerQuery.data.viewerCanUpdate",
+    );
 
     const viewSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-project-views.tsx"),
@@ -5356,6 +5359,12 @@ describe("file-route parity harness", () => {
     const serverSource = fs.readFileSync(
       path.resolve(__dirname, "../..", "crates/server/src/routes/projects/webhooks.rs"),
       "utf8",
+    );
+    expect(serverSource).toContain(
+      "require_project_read(repository, &owner_name, &project_name, actor_id)",
+    );
+    expect(serverSource).toContain(
+      "rest_require_project_update(repository, &owner_name, &project_name, Some(actor_id))",
     );
     expect(serverSource).toContain("project.webhook.payloadUrl.empty");
     expect(serverSource).not.toContain("project.webhook.payloadUrl.required");

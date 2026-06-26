@@ -124,10 +124,6 @@ function ProjectWebhooksRouteComponent() {
   if (failureKind === "bad-request") {
     return <BadRequestPage href={routeHref} />;
   }
-  if (containerQuery.data && !containerQuery.data.viewerCanUpdate) {
-    return <ForbiddenPage href={routeHref} />;
-  }
-
   return (
     <ProjectWebhooksPage
       detail={webhooksQuery.data ?? null}
