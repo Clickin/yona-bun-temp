@@ -1253,6 +1253,7 @@ export function OrganizationSettingsPage(props: {
   detail: OrganizationDetailViewModel | null | undefined;
   messages?: LegacyMessageLookup;
   pending?: boolean;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   onUpdateOrganization?: (input: {
     currentOrganizationName: string;
@@ -1286,6 +1287,146 @@ export function OrganizationSettingsPage(props: {
     setValidationMessage(null);
   }, [detail.description, detail.logoUrl, detail.organizationName]);
 
+  const content = (
+    <div className="project-page-wrap">
+      <OrganizationSettingsSubMenu
+        active="settings"
+        messages={props.messages}
+        organizationName={detail.organizationName}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <form
+        className="nm"
+        encType="multipart/form-data"
+        id="saveSetting"
+        name="update-org"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!isLegacyOrganizationName(formState.organizationName)) {
+            setValidationMessage("organization.name.alert");
+            return;
+          }
+          setValidationMessage(null);
+          props.onUpdateOrganization?.(formState);
+        }}
+      >
+        <input name="id" type="hidden" value={detail.organizationName} />
+        <div className="bubble-wrap gray">
+          <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: 20 }}>
+            <div className="setting-box left">
+              <div
+                className="logo-wrap"
+                style={logoPreviewUrl ? { backgroundImage: `url('${logoPreviewUrl}')` } : undefined}
+              />
+              <div className="logo-desc">
+                <strong>{legacyMessage(props.messages, "organization.logo")}</strong>
+                <ul className="unstyled descs">
+                  <li>{legacyMessage(props.messages, "organization.logo.type")}</li>
+                  <li>{legacyMessage(props.messages, "organization.logo.maxFileSize")}</li>
+                </ul>
+                <div className="nbtn medium white fake-file-wrap">
+                  <i className="yobicon-upload" />
+                  {` ${legacyMessage(props.messages, "button.upload")}`}
+                  <input
+                    accept="image/*"
+                    className="file"
+                    id="logoPath"
+                    name="logoPath"
+                    type="file"
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0];
+                      if (file && !isOrganizationLogoImageFile(file)) {
+                        setValidationMessage("project.logo.alert");
+                        event.currentTarget.value = "";
+                        return;
+                      }
+                      setValidationMessage(null);
+                      if (!file || !props.csrfToken) {
+                        return;
+                      }
+                      void uploadTemporaryAttachment(
+                        props.runtimeConfig,
+                        props.csrfToken,
+                        file,
+                      ).then((attachment) => {
+                        const nextFormState = {
+                          ...formState,
+                          logoAttachmentId: attachment.id,
+                        };
+                        setFormState(nextFormState);
+                        setLogoPreviewUrl(attachment.url);
+                        props.onUpdateOrganization?.(nextFormState);
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            <dl className="setting-box right">
+              <dt>
+                <label htmlFor="project-name">
+                  {legacyMessage(props.messages, "organization.name.placeholder")}
+                </label>
+              </dt>
+              <dd>
+                <input
+                  id="project-name"
+                  maxLength={250}
+                  name="name"
+                  type="text"
+                  value={formState.organizationName}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      organizationName: event.target.value,
+                    }))
+                  }
+                />
+                <div className="orange-txt">
+                  <span
+                    className="msg wrongName"
+                    style={{ display: validationMessage ? undefined : "none" }}
+                  >
+                    {validationMessage ? legacyMessage(props.messages, validationMessage) : null}
+                  </span>
+                </div>
+              </dd>
+              <dt>
+                <label htmlFor="project-desc">
+                  {legacyMessage(props.messages, "organization.description.placeholder")}
+                </label>
+              </dt>
+              <dd>
+                <textarea
+                  className="textarea"
+                  id="project-desc"
+                  maxLength={250}
+                  name="descr"
+                  value={formState.description}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      description: event.target.value,
+                    }))
+                  }
+                />
+              </dd>
+            </dl>
+          </div>
+          <div className="box-wrap bottom">
+            <button className="ybtn ybtn-success" disabled={props.pending} id="save" type="submit">
+              {legacyMessage(props.messages, "button.save")}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main className="app-shell organization-settings-shell">
       <OrganizationHeader
@@ -1299,150 +1440,7 @@ export function OrganizationSettingsPage(props: {
         messages={props.messages}
         runtimeConfig={props.runtimeConfig}
       />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <OrganizationSettingsSubMenu
-            active="settings"
-            messages={props.messages}
-            organizationName={detail.organizationName}
-            runtimeConfig={props.runtimeConfig}
-          />
-          <form
-            className="nm"
-            encType="multipart/form-data"
-            id="saveSetting"
-            name="update-org"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!isLegacyOrganizationName(formState.organizationName)) {
-                setValidationMessage("organization.name.alert");
-                return;
-              }
-              setValidationMessage(null);
-              props.onUpdateOrganization?.(formState);
-            }}
-          >
-            <input name="id" type="hidden" value={detail.organizationName} />
-            <div className="bubble-wrap gray">
-              <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: 20 }}>
-                <div className="setting-box left">
-                  <div
-                    className="logo-wrap"
-                    style={
-                      logoPreviewUrl ? { backgroundImage: `url('${logoPreviewUrl}')` } : undefined
-                    }
-                  />
-                  <div className="logo-desc">
-                    <strong>{legacyMessage(props.messages, "organization.logo")}</strong>
-                    <ul className="unstyled descs">
-                      <li>{legacyMessage(props.messages, "organization.logo.type")}</li>
-                      <li>{legacyMessage(props.messages, "organization.logo.maxFileSize")}</li>
-                    </ul>
-                    <div className="nbtn medium white fake-file-wrap">
-                      <i className="yobicon-upload" />
-                      {` ${legacyMessage(props.messages, "button.upload")}`}
-                      <input
-                        accept="image/*"
-                        className="file"
-                        id="logoPath"
-                        name="logoPath"
-                        type="file"
-                        onChange={(event) => {
-                          const file = event.currentTarget.files?.[0];
-                          if (file && !isOrganizationLogoImageFile(file)) {
-                            setValidationMessage("project.logo.alert");
-                            event.currentTarget.value = "";
-                            return;
-                          }
-                          setValidationMessage(null);
-                          if (!file || !props.csrfToken) {
-                            return;
-                          }
-                          void uploadTemporaryAttachment(
-                            props.runtimeConfig,
-                            props.csrfToken,
-                            file,
-                          ).then((attachment) => {
-                            const nextFormState = {
-                              ...formState,
-                              logoAttachmentId: attachment.id,
-                            };
-                            setFormState(nextFormState);
-                            setLogoPreviewUrl(attachment.url);
-                            props.onUpdateOrganization?.(nextFormState);
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <dl className="setting-box right">
-                  <dt>
-                    <label htmlFor="project-name">
-                      {legacyMessage(props.messages, "organization.name.placeholder")}
-                    </label>
-                  </dt>
-                  <dd>
-                    <input
-                      id="project-name"
-                      maxLength={250}
-                      name="name"
-                      type="text"
-                      value={formState.organizationName}
-                      onChange={(event) =>
-                        setFormState((current) => ({
-                          ...current,
-                          organizationName: event.target.value,
-                        }))
-                      }
-                    />
-                    <div className="orange-txt">
-                      <span
-                        className="msg wrongName"
-                        style={{ display: validationMessage ? undefined : "none" }}
-                      >
-                        {validationMessage
-                          ? legacyMessage(props.messages, validationMessage)
-                          : null}
-                      </span>
-                    </div>
-                  </dd>
-                  <dt>
-                    <label htmlFor="project-desc">
-                      {legacyMessage(props.messages, "organization.description.placeholder")}
-                    </label>
-                  </dt>
-                  <dd>
-                    <textarea
-                      className="textarea"
-                      id="project-desc"
-                      maxLength={250}
-                      name="descr"
-                      value={formState.description}
-                      onChange={(event) =>
-                        setFormState((current) => ({
-                          ...current,
-                          description: event.target.value,
-                        }))
-                      }
-                    />
-                  </dd>
-                </dl>
-              </div>
-              <div className="box-wrap bottom">
-                <button
-                  className="ybtn ybtn-success"
-                  disabled={props.pending}
-                  id="save"
-                  type="submit"
-                >
-                  {legacyMessage(props.messages, "button.save")}
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }

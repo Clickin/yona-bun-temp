@@ -445,6 +445,17 @@ M33 starts organization shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/organization-home-parity.spec.tsx -t "organization layout route own home"`.
 
+M34 continues organization shell migration:
+
+- `/organizations/$organizationName/route.tsx` now owns the legacy organization
+  header/menu/page-wrap shell for `/settingform`, with the settings menu active
+  and the legacy `organization-settings-shell` class.
+- `OrganizationSettingsPage` supports `renderShell={false}` so the settings
+  child route keeps the existing update/upload mutation boundary but renders
+  only the legacy settings body under the organization layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx -t "settings chrome"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

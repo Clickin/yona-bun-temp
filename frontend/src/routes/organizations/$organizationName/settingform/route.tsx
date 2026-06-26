@@ -80,6 +80,7 @@ function OrganizationSettingsRouteComponent() {
       csrfToken={csrfToken}
       detail={detail}
       messages={messages}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       onUpdateOrganization={async (input) => {
         try {

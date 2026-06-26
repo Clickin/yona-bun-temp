@@ -114,3 +114,11 @@ packet reports.
   `/organizations/$organizationName/` while preserving direct-render shell
   output for existing specs. Focused coverage:
   `pnpm --dir frontend exec vitest run src/organization-home-parity.spec.tsx -t "organization layout route own home"`.
+- 2026-06-27 organization settings shell follow-up:
+  `frontend/src/routes/organizations/$organizationName/route.tsx` now owns the
+  organization header/menu/page-wrap shell for `/settingform` with the settings
+  menu active and the legacy `organization-settings-shell` class.
+  `OrganizationSettingsPage` renders only the legacy settings body through
+  `renderShell={false}` for that child route while preserving direct-render
+  shell output for existing specs. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx -t "settings chrome"`.

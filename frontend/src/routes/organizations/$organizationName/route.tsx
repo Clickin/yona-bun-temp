@@ -46,6 +46,7 @@ function OrganizationLayoutRouteComponent() {
       organizationName={organizationName}
       runtimeConfig={runtimeConfig}
       setErrorMessage={setErrorMessage}
+      shellClassName={layoutShell.shellClassName}
     />
   );
 }
@@ -68,10 +69,13 @@ function organizationLayoutShell(
   pathname: string,
   basePath: string,
   organizationName: string,
-): { active?: "home" } | null {
+): { active?: "home" | "settings"; shellClassName?: string } | null {
   const appPath = stripOrganizationLayoutBasePath(pathname, basePath).replace(/\/+$/u, "");
   if (appPath === `/organizations/${organizationName}`) {
-    return { active: "home" };
+    return { active: "home", shellClassName: "organization-page" };
+  }
+  if (appPath === `/organizations/${organizationName}/settingform`) {
+    return { active: "settings", shellClassName: "organization-settings-shell" };
   }
   return null;
 }
@@ -103,14 +107,16 @@ function OrganizationRouteShellLayout({
   organizationName,
   runtimeConfig,
   setErrorMessage,
+  shellClassName,
 }: {
-  active?: "home";
+  active?: "home" | "settings";
   bootstrapping: boolean;
   csrfToken: string;
   messages: ReturnType<typeof useAppRuntime>["messages"];
   organizationName: string;
   runtimeConfig: ReturnType<typeof useAppRuntime>["runtimeConfig"];
   setErrorMessage: ReturnType<typeof useAppRuntime>["setErrorMessage"];
+  shellClassName?: string;
 }) {
   const containerQuery = useQuery({
     enabled: !bootstrapping,
@@ -139,7 +145,7 @@ function OrganizationRouteShellLayout({
 
   const detail = toOrganizationContainerView(containerQuery.data);
   return (
-    <main className="app-shell organization-page">
+    <main className={shellClassName ? `app-shell ${shellClassName}` : "app-shell"}>
       <OrganizationHeader
         detail={detail}
         messages={messages}

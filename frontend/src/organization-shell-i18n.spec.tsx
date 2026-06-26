@@ -179,6 +179,36 @@ function renderOrganizationMembers(messages?: LegacyMessageLookup) {
 }
 
 describe("organization shell legacy i18n opt-in", () => {
+  it("lets the organization layout route own settings chrome without changing the inner body", () => {
+    const html = renderToStaticMarkup(
+      <OrganizationSettingsPage
+        detail={organizationDetail}
+        renderShell={false}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/settingform/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/organizations/${organizationName}/settingform`");
+    expect(layoutSource).toContain('active: "settings"');
+    expect(layoutSource).toContain('shellClassName: "organization-settings-shell"');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="saveSetting"');
+    expect(html).toContain('id="logoPath"');
+    expect(html).not.toContain("app-shell organization-settings-shell");
+    expect(html).not.toContain("project-header-outer");
+    expect(html).not.toContain("project-menu-outer");
+    expect(html).not.toContain("page-wrap-outer");
+  });
+
   it("uses default legacy messages for organization menu/header labels without a runtime provider", () => {
     const homeHtml = renderOrganizationHome();
     const settingsHtml = renderOrganizationSettings();
