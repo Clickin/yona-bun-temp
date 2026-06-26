@@ -852,11 +852,13 @@ export function ProjectMenu(props: {
           </div>
         ) : null}
       </div>
-      <ProjectKeymapHelp
-        detail={detail}
-        mode={props.keymapMode}
-        section={props.activeMenu ?? "home"}
-      />
+      {props.keymapMode ? (
+        <ProjectKeymapHelp
+          detail={detail}
+          mode={props.keymapMode}
+          section={props.activeMenu ?? "home"}
+        />
+      ) : null}
     </div>
   );
 }

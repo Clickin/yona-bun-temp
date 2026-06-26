@@ -49,6 +49,16 @@ describe("project keymap help parity", () => {
     }
   }
 
+  it("does not render keymap help from projectMenu unless a legacy page requests it", () => {
+    const html = renderToStaticMarkup(
+      <ProjectMenu activeMenu="settings" detail={projectDetail} runtimeConfig={runtimeConfig} />,
+    );
+
+    expect(html).toContain('class="project-menu-outer"');
+    expect(html).not.toContain('href="#helpKeys"');
+    expect(html).not.toContain('class="modal hide fade keymap-help"');
+  });
+
   it("renders legacy issue list shortcuts", () => {
     const html = renderToStaticMarkup(
       <ProjectMenu
