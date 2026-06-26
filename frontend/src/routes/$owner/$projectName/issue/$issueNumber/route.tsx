@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   assignIssue,
   createIssueComment,
@@ -35,13 +35,13 @@ import {
   toProjectIssueDetailView,
   toProjectMilestoneListView,
 } from "../../../../../app-view-models";
+import { prefixBasePath } from "../../../../../runtime-config";
 import { ProjectIssueDetailPage } from "../../../../-issue-views";
 import type { ProjectMilestoneViewModel } from "../../../../-view-models";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../../-shared";
@@ -53,6 +53,7 @@ export const Route = createFileRoute("/$owner/$projectName/issue/$issueNumber")(
 function IssueDetailRouteComponent() {
   const { owner, projectName, issueNumber } = Route.useParams();
   const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
   const routeHref = `/${owner}/${projectName}/issue/${issueNumber}`;
   const isEditFormRoute = window.location.pathname
     .replace(/\/+$/u, "")
@@ -227,7 +228,9 @@ function IssueDetailRouteComponent() {
           ownerName: owner,
           projectName,
         });
-        navigateToAppHref(runtimeConfig.basePath, `/${owner}/${projectName}/issues`);
+        void navigate({
+          href: prefixBasePath(runtimeConfig.basePath, `/${owner}/${projectName}/issues`),
+        });
       }}
       onFavoriteToggle={async () => {
         const nextIssue = await toggleFavoriteIssue(runtimeConfig, csrfToken, {

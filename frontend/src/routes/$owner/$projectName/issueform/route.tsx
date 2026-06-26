@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   createIssue,
   listIssueParentOptions,
@@ -10,6 +10,7 @@ import {
 import { projectIssueReferencesQueryOptions } from "../../../../api/issue-meta";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView, toProjectMilestoneListView } from "../../../../app-view-models";
+import { prefixBasePath } from "../../../../runtime-config";
 import { ProjectIssueFormPage } from "../../../-issue-views";
 import type {
   ProjectIssueParentOptionViewModel,
@@ -19,7 +20,6 @@ import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../-shared";
@@ -31,6 +31,7 @@ export const Route = createFileRoute("/$owner/$projectName/issueform")({
 function IssueCreateRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
   const routeHref = `/${owner}/${projectName}/issueform`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -157,10 +158,12 @@ function IssueCreateRouteComponent() {
           referCommentId,
           title,
         });
-        navigateToAppHref(
-          runtimeConfig.basePath,
-          `/${owner}/${projectName}/issue/${Number(issue.issueNumber)}`,
-        );
+        void navigate({
+          href: prefixBasePath(
+            runtimeConfig.basePath,
+            `/${owner}/${projectName}/issue/${Number(issue.issueNumber)}`,
+          ),
+        });
       }}
       initialParentIssueId={initialParentIssueId}
       parentIssueOptions={parentIssueOptions}

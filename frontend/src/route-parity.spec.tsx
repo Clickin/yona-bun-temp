@@ -368,14 +368,20 @@ describe("file-route parity harness", () => {
     expect(issueEditRouteSource).not.toContain("Read issue failed.");
     expect(issueEditRouteSource).toContain("BadRequestPage");
     expect(issueEditRouteSource).toContain('"bad-request"');
-    expect(issueCreateRouteSource).toContain("navigateToAppHref(");
+    expect(issueCreateRouteSource).toContain("useNavigate");
+    expect(issueCreateRouteSource).toContain("prefixBasePath");
     expect(issueCreateRouteSource).toContain("runtimeConfig.basePath");
+    expect(issueCreateRouteSource).not.toContain("navigateToAppHref(");
     expect(issueCreateRouteSource).not.toContain("window.location.assign(`/${owner}");
-    expect(issueEditRouteSource).toContain("navigateToAppHref(");
+    expect(issueEditRouteSource).toContain("useNavigate");
+    expect(issueEditRouteSource).toContain("prefixBasePath");
     expect(issueEditRouteSource).toContain("runtimeConfig.basePath");
+    expect(issueEditRouteSource).not.toContain("navigateToAppHref(");
     expect(issueEditRouteSource).not.toContain("window.location.assign(`/${owner}");
-    expect(issueDetailRouteSource).toContain("navigateToAppHref(");
+    expect(issueDetailRouteSource).toContain("useNavigate");
+    expect(issueDetailRouteSource).toContain("prefixBasePath");
     expect(issueDetailRouteSource).toContain("runtimeConfig.basePath");
+    expect(issueDetailRouteSource).not.toContain("navigateToAppHref(");
     expect(issueDetailRouteSource).not.toContain("window.location.assign(`/${owner}");
   });
 

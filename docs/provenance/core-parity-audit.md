@@ -212,6 +212,11 @@
   `navigateToAppHref`. Focused coverage: `auth-workspace-shell.spec.tsx`,
   `route-parity.spec.tsx`, `form-submit-boundary.spec.tsx`, and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 issue mutation SPA navigation continuation: project issue create,
+  edit, and delete routes keep their existing REST mutation calls but redirect
+  through TanStack navigation with base-path-prefixed hrefs instead of
+  `navigateToAppHref`. Focused coverage: `route-parity.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle
