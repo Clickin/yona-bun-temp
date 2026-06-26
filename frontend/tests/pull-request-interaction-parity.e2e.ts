@@ -6,6 +6,7 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+const rawPullRequestKeyPattern = /pullRequest\.[A-Za-z]|review\.[A-Za-z]|title\.[A-Za-z]/u;
 
 const projectOption = {
   id: 1,
@@ -662,6 +663,57 @@ test.beforeEach(async ({ page }) => {
       });
     },
   );
+});
+
+test("blocks empty PR create/edit submissions with legacy validation copy and no REST mutation", async ({
+  page,
+}) => {
+  const mutationRequests: Array<{ method: string; pathname: string }> = [];
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (
+      url.pathname.includes("/api/v1/owners/admin/projects/projectYobi/pull-requests") &&
+      ["PATCH", "POST"].includes(request.method())
+    ) {
+      mutationRequests.push({ method: request.method(), pathname: url.pathname });
+    }
+  });
+
+  await page.goto("/yona/admin/projectYobi/newPullRequestForm");
+  await expect(page.locator(".pull-request-form")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(rawPullRequestKeyPattern);
+
+  await page.locator("#title").fill("");
+  await page.locator("#editor-body-content-body").fill("");
+  await page.getByRole("button", { name: "Send pull request" }).click();
+  await expect(page.locator(".alert.alert-error")).toContainText("Title is a required field.");
+  await expect.poll(() => mutationRequests.length).toBe(0);
+  await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/newPullRequestForm$/);
+  await expect(page.locator("body")).not.toContainText(rawPullRequestKeyPattern);
+
+  await page.locator("#title").fill("Validation proof");
+  await page.locator("#editor-body-content-body").fill("");
+  await page.getByRole("button", { name: "Send pull request" }).click();
+  await expect(page.locator(".alert.alert-error")).toContainText("Enter pull request description.");
+  await expect.poll(() => mutationRequests.length).toBe(0);
+
+  await page.goto("/yona/admin/projectYobi/pullRequest/9/editform");
+  await expect(page.locator("#fromProjectId")).toBeDisabled();
+  await expect(page.locator(".pull-request-form")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(rawPullRequestKeyPattern);
+
+  await page.locator("#title").fill("");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".alert.alert-error")).toContainText("Title is a required field.");
+  await expect.poll(() => mutationRequests.length).toBe(0);
+  await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/pullRequest\/9\/editform$/);
+
+  await page.locator("#title").fill("Validation edit proof");
+  await page.locator("#editor-body-content-body").fill("");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".alert.alert-error")).toContainText("Enter pull request description.");
+  await expect.poll(() => mutationRequests.length).toBe(0);
+  await expect(page.locator("body")).not.toContainText(rawPullRequestKeyPattern);
 });
 
 test("covers create/edit forms and PR interaction actions without placeholders", async ({

@@ -6,6 +6,8 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+const rawPullRequestReviewKeyPattern =
+  /pullRequest\.[A-Za-z]|review\.[A-Za-z]|title\.pullrequest|title\.codeReview/u;
 
 function prItem(number: number, title: string, state = "open") {
   return {
@@ -395,12 +397,15 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
     "/yona/admin/projectYobi/pullRequests?pageNum=2",
   );
   await expect(page.locator("main")).not.toContainText("File-based route placeholder");
+  await expect(page.locator("body")).not.toContainText(rawPullRequestReviewKeyPattern);
 
   await page.goto("/yona/admin/projectYobi/closedPullRequests?pageNum=1");
   await expect(page.locator(".state.closed")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(rawPullRequestReviewKeyPattern);
 
   await page.goto("/yona/admin/projectYobi/sentPullRequests?pageNum=1");
   await expect(page.locator(".post-list-wrap")).toContainText("Sent read surface");
+  await expect(page.locator("body")).not.toContainText(rawPullRequestReviewKeyPattern);
 
   await page.goto("/yona/admin/projectYobi/pullRequest/3");
   await expect(page.locator(".pullRequest-branchInfo")).toContainText("topic/pr-3");
@@ -447,6 +452,7 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
     "href",
     "/yona/admin/projectYobi/commit/fedcba654321#thread-11",
   );
+  await expect(page.locator("body")).not.toContainText(rawPullRequestReviewKeyPattern);
 });
 
 test("preserves /reviews filter, sort, state, export, and search query interactions", async ({
