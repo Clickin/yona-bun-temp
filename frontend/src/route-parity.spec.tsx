@@ -4596,6 +4596,8 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("onNavigate?: (href: string) => void");
     expect(pullRequestViewsSource).toContain("new FormData(event.currentTarget)");
     expect(pullRequestViewsSource).toContain("event.preventDefault();");
+    expect(pullRequestViewsSource).toContain("props.onNavigate(href)");
+    expect(pullRequestViewsSource).not.toContain("window.location.href = props.hrefForPage");
     for (const routeSource of prRouteSources) {
       expect(routeSource).toContain("useNavigate");
       expect(routeSource).toContain("useRouterState");
@@ -4808,6 +4810,8 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("onNavigate?: (href: string) => void");
     expect(pullRequestViewsSource).toContain("new FormData(event.currentTarget)");
     expect(pullRequestViewsSource).toContain("event.preventDefault();");
+    expect(pullRequestViewsSource).toContain("props.onNavigate(href)");
+    expect(pullRequestViewsSource).not.toContain("window.location.href = props.hrefForPage");
     expect(reviewsRouteSource).toContain("useNavigate");
     expect(reviewsRouteSource).toContain("useRouterState");
     expect(reviewsRouteSource).toContain("navigate({ href })");

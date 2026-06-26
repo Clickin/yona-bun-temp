@@ -905,6 +905,7 @@ function PullRequestListPagination(props: {
   hrefForPage: (pageNum: number) => string;
   list: PullRequestListResponse | undefined;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
 }) {
   const pageSize = Math.max(1, props.list?.pageSize || 15);
   const pageCount = Math.max(1, Math.ceil(Math.max(0, props.list?.totalCount ?? 0) / pageSize));
@@ -914,6 +915,7 @@ function PullRequestListPagination(props: {
       currentPage={currentPage}
       hrefForPage={props.hrefForPage}
       messages={props.messages}
+      onNavigate={props.onNavigate}
       pageCount={pageCount}
     />
   );
@@ -923,6 +925,7 @@ function LegacyPageNavigation(props: {
   currentPage: number;
   hrefForPage: (pageNum: number) => string;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   pageCount: number;
 }) {
   if (props.pageCount <= 1) {
@@ -944,7 +947,12 @@ function LegacyPageNavigation(props: {
     }
     const nextPage = Math.min(Math.max(1, parsedPage), props.pageCount);
     input.value = String(nextPage);
-    window.location.href = props.hrefForPage(nextPage);
+    const href = props.hrefForPage(nextPage);
+    if (props.onNavigate) {
+      props.onNavigate(href);
+      return;
+    }
+    window.location.href = href;
   };
 
   return (
@@ -1144,6 +1152,7 @@ export function ProjectPullRequestListPage(props: {
                 }
                 list={list}
                 messages={props.messages}
+                onNavigate={props.onNavigate}
               />
             </div>
           </div>
@@ -1318,6 +1327,7 @@ export function OrganizationPullRequestListPage(props: {
                 }
                 list={props.list}
                 messages={props.messages}
+                onNavigate={props.onNavigate}
               />
             </div>
           </div>
@@ -4026,6 +4036,7 @@ function ProjectReviewListRows(props: {
 function ProjectReviewPagination(props: {
   detail: ProjectDetailViewModel;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   query: ReviewThreadListQuery;
   reviews: ReviewThreadListResponse | undefined;
   runtimeConfig: RuntimeConfig;
@@ -4047,6 +4058,7 @@ function ProjectReviewPagination(props: {
       currentPage={currentPage}
       hrefForPage={pageHref}
       messages={props.messages}
+      onNavigate={props.onNavigate}
       pageCount={pageCount}
     />
   );
@@ -4250,6 +4262,7 @@ export function ProjectReviewsPage(props: {
           <ProjectReviewPagination
             detail={detail}
             messages={props.messages}
+            onNavigate={props.onNavigate}
             query={props.query}
             reviews={props.reviews}
             runtimeConfig={props.runtimeConfig}

@@ -161,8 +161,8 @@
   `/sentPullRequests`) plus organization PR aggregate lists (`/pullrequests`
   and `/closedPullrequests`) keep the legacy GET form, tab, row, and pagination
   markup, but search submits now call TanStack navigation. Each list route
-  subscribes to router location state, so same-route filter changes refetch
-  without native document navigation. Focused coverage:
+  subscribes to router location state, so same-route filter and page-input
+  changes refetch without native document navigation. Focused coverage:
   `frontend/src/route-parity.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-27 board list SPA navigation continuation:
@@ -177,8 +177,9 @@
   project review lists (`/reviews`) keep the legacy hidden-field search form,
   side filters, state tabs, sort links, export href, rows, and pagination
   output, but search submits now call TanStack navigation. The route already
-  subscribes to router location state, so same-route review filtering refetches
-  without native document navigation. Focused coverage:
+  subscribes to router location state, so same-route review filtering and
+  page-input changes refetch without native document navigation. Focused
+  coverage:
   `frontend/src/route-parity.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-27 site-admin list SPA navigation continuation:

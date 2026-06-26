@@ -537,7 +537,8 @@ M42 continues PR list SPA navigation:
 - Project and organization PR list search forms keep the legacy GET form markup,
   tabs, rows, and pagination.
 - Search submit now calls TanStack navigation, and each PR list route subscribes
-  to router location state so same-page filter changes refetch inside the SPA.
+  to router location state so same-page filter and page-input changes refetch
+  inside the SPA.
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "pull request list pagination"`.
 
@@ -556,7 +557,7 @@ M44 continues review-thread list SPA navigation:
 - Project review-thread list search keeps the legacy hidden-field GET form,
   filters, state tabs, export href, rows, and pagination.
 - Search submit now calls TanStack navigation while the existing router
-  location subscription refetches review results inside the SPA.
+  location subscription refetches review and page-input changes inside the SPA.
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "project review list"`.
 
