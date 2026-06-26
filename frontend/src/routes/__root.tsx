@@ -3,6 +3,7 @@ import * as React from "react";
 import { Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { readProjectContainerQueryOptions } from "../api/org-project";
+import { siteUpdateQueryOptions } from "../api/site-admin";
 import { RestApiError } from "../api/rest-client";
 import { signInWithPassword } from "../auth-workspace-client";
 import { AppRuntimeProvider, useAppRuntime } from "../app-runtime-context";
@@ -30,6 +31,7 @@ function RootRouteComponent() {
         <div className="main" id="main">
           <RuntimeErrorBanner />
           <SiteAdminLoggedInAffix />
+          <RootUpdateNotification />
           <RootHeader onOpenLoginDialog={() => setLoginDialogOpen(true)} />
           <RootSidebar />
           <Outlet />
@@ -175,6 +177,64 @@ function SiteAdminLoggedInAffix() {
         })}
       </span>
     </div>
+  );
+}
+
+function RootUpdateNotification() {
+  const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig, setErrorMessage } =
+    useAppRuntime();
+  const [dismissed, setDismissed] = React.useState(false);
+  const query = useQuery({
+    ...siteUpdateQueryOptions(runtimeConfig),
+    enabled: !bootstrapping && Boolean(currentSession?.isSiteAdmin) && !dismissed,
+  });
+  const versionToUpdate = query.data?.versionToUpdate ?? null;
+  const releaseUrl =
+    query.data?.releaseUrl ?? prefixBasePath(runtimeConfig.basePath, "/sites/update");
+  const unwatchUri = prefixBasePath(runtimeConfig.basePath, "/sites/unwatchUpdate");
+
+  if (!currentSession?.isSiteAdmin || dismissed || !versionToUpdate) {
+    return null;
+  }
+
+  return (
+    <p className="center-txt">
+      <a href={releaseUrl}>
+        {messages("site.update.notification", {
+          args: [versionToUpdate],
+          fallback: "site.update.notification",
+        })}
+      </a>
+      <button
+        className="ybtn ybtn-small"
+        data-request-method="post"
+        data-request-uri={unwatchUri}
+        onClick={async () => {
+          try {
+            const response = await fetch(unwatchUri, {
+              credentials: "same-origin",
+              headers: csrfToken ? { "x-csrf-token": csrfToken } : undefined,
+              method: "POST",
+            });
+            if (!response.ok) {
+              throw new Error(`site.update.notification.hide.failed:${response.status}`);
+            }
+            setDismissed(true);
+            setErrorMessage(null);
+          } catch (error) {
+            setErrorMessage(
+              error instanceof Error ? error.message : "site.update.notification.hide.failed",
+            );
+          }
+        }}
+        type="button"
+      >
+        {messages("site.update.notification.hide", {
+          args: [versionToUpdate],
+          fallback: "site.update.notification.hide",
+        })}
+      </button>
+    </p>
   );
 }
 

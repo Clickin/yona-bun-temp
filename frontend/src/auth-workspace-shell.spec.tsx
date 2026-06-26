@@ -69,6 +69,15 @@ describe("auth and workspace views", () => {
       'messages("user.siteAdminLoggedInAffix", { fallback: "user.siteAdminLoggedInAffix" })',
     );
     expect(source).toContain("user.siteAdminLoggedInAffix.maxim");
+    expect(source).toContain("<RootUpdateNotification />");
+    expect(source).toContain("siteUpdateQueryOptions");
+    expect(source).toContain('className="center-txt"');
+    expect(source).toContain('messages("site.update.notification"');
+    expect(source).toContain('messages("site.update.notification.hide"');
+    expect(source).toContain('data-request-method="post"');
+    expect(source).toContain("data-request-uri={unwatchUri}");
+    expect(source).toContain('prefixBasePath(runtimeConfig.basePath, "/sites/unwatchUpdate")');
+    expect(source).toContain('method: "POST"');
     expect(source).toContain('messages("title.list", { fallback: "title.list" })');
     expect(source).toContain("runtimeConfig.hideProjectListing");
     expect(source).toContain("workspaceOverview?.profile?.isGuest");

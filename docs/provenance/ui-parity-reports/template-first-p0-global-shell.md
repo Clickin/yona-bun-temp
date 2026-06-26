@@ -44,17 +44,17 @@ Source comparison by Subagent P0 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 5 |
+| gap | 4 |
 | deviation | 1 |
 | weak evidence | 2 |
-| covered | 3 |
+| covered | 4 |
 
 ## Reset Findings
 
 | legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `layout.scala.html` | Any normal route, anonymous/authenticated. Legacy loads Bootstrap, yobicon, Select2, Pikaday, `usermenu.css`, compiled `yobi.css`, NProgress, Viewer CSS/JS in a fixed asset chain. | `frontend/index.html`, `frontend/src/main.tsx`, `frontend/src/app.css` | asset | gap | P0 | `frontend/index.html`, `frontend/src/main.tsx`, `frontend/src/app.css`, asset copy/build config if approved | Current SPA imports only the Vite app bundle plus recreated CSS. Reset requires legacy Bootstrap/Yobi-equivalent asset baseline. |
-| `layout.scala.html` | Any normal route. | `frontend/index.html`, `frontend/src/main.tsx`, `frontend/src/routes/__root.tsx` | layout | gap | P0 | root shared global-shell component/test | `body#html-body` and `#main.main` are covered in current follow-up by `frontend/index.html`, `mountApp`, and `RootRouteComponent`; `partial_update_notification()` remains missing. |
+| `layout.scala.html`, `partial_update_notification.scala.html` | Any normal route, site-admin update notification watched and update version available. | `frontend/index.html`, `frontend/src/main.tsx`, `frontend/src/routes/__root.tsx`, `frontend/src/auth-workspace-shell.spec.tsx` | layout | covered in current follow-up | P0 | none | `body#html-body`, `#main.main`, and the legacy site-admin `<p class="center-txt">` update notification are covered. `RootUpdateNotification` reads `/api/v1/site/update`, renders `site.update.notification`, preserves `data-request-method="post"` and `data-request-uri="/sites/unwatchUpdate"`, and POSTs the legacy hide action with CSRF. |
 | `common/scripts.scala.html` | Any route with common scripts. | `frontend/src/routes/__root.tsx`, `frontend/src/auth-workspace-shell.spec.tsx` | interaction | covered in current follow-up | P0 | none | `LegacyGlobalContainers` now renders global `#yobiDialog`, `#yobiToasts`, and `#tplYobiToast`; focused static proof is in `auth-workspace-shell.spec.tsx`. Behavior consumers remain tracked by the separate flash/shortcut/upload/viewer row. |
 | `common/navbar.scala.html` | Header on global/project/org routes. | `frontend/src/routes/__root.tsx`, `frontend/src/app.css` | css | deviation | P0 | `frontend/src/app.css` | Legacy `_page.less` uses dark `.gnb-outer`; current `.gnb-outer` is white with light border. |
 | `common/navbar.scala.html` | Pin/sidebar toggle, framed/non-framed state. | `frontend/src/routes/__root.tsx` | interaction | gap | P0 | `frontend/src/routes/__root.tsx`, `frontend/tests/root-shell-parity.e2e.ts` | `.pin` is rendered, but no mapped localStorage/sidebar redirect/iframe toggle behavior is documented. |
