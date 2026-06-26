@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 import {
   cancelEnrollOrganization,
   enrollOrganization,
@@ -9,15 +10,70 @@ import {
 import { useAppRuntime } from "../../../app-runtime-context";
 import { toOrganizationContainerView } from "../../../app-view-models";
 import { RestApiError } from "../../../api/rest-client";
-import { OrganizationDetailPage } from "../../-organization-views";
-import { navigateToAppHref } from "../../-shared";
+import {
+  OrganizationDetailPage,
+  OrganizationHeader,
+  OrganizationMenu,
+} from "../../-organization-views";
+import {
+  BadRequestPage,
+  classifyConnectFailure,
+  ForbiddenPage,
+  navigateToAppHref,
+  NotFoundPage,
+} from "../../-shared";
 
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationLayoutRouteComponent,
 });
 
 function OrganizationLayoutRouteComponent() {
-  return <Outlet />;
+  const { organizationName } = Route.useParams();
+  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const layoutShell = organizationLayoutShell(pathname, runtimeConfig.basePath, organizationName);
+
+  if (!layoutShell) {
+    return <Outlet />;
+  }
+
+  return (
+    <OrganizationRouteShellLayout
+      active={layoutShell.active}
+      bootstrapping={bootstrapping}
+      csrfToken={csrfToken}
+      messages={messages}
+      organizationName={organizationName}
+      runtimeConfig={runtimeConfig}
+      setErrorMessage={setErrorMessage}
+    />
+  );
+}
+
+function stripOrganizationLayoutBasePath(pathname: string, basePath: string): string {
+  const normalizedBasePath = basePath && basePath !== "/" ? basePath.replace(/\/+$/u, "") : "";
+  if (!normalizedBasePath) {
+    return pathname || "/";
+  }
+  if (pathname === normalizedBasePath) {
+    return "/";
+  }
+  if (pathname.startsWith(`${normalizedBasePath}/`)) {
+    return pathname.slice(normalizedBasePath.length) || "/";
+  }
+  return pathname || "/";
+}
+
+function organizationLayoutShell(
+  pathname: string,
+  basePath: string,
+  organizationName: string,
+): { active?: "home" } | null {
+  const appPath = stripOrganizationLayoutBasePath(pathname, basePath).replace(/\/+$/u, "");
+  if (appPath === `/organizations/${organizationName}`) {
+    return { active: "home" };
+  }
+  return null;
 }
 
 function legacyOrganizationEnrollFallback(error: unknown): string {
@@ -39,7 +95,86 @@ function legacyOrganizationEnrollFallback(error: unknown): string {
   return "user.enroll.failed";
 }
 
-export function OrganizationDetailRouteComponent() {
+function OrganizationRouteShellLayout({
+  active,
+  bootstrapping,
+  csrfToken,
+  messages,
+  organizationName,
+  runtimeConfig,
+  setErrorMessage,
+}: {
+  active?: "home";
+  bootstrapping: boolean;
+  csrfToken: string;
+  messages: ReturnType<typeof useAppRuntime>["messages"];
+  organizationName: string;
+  runtimeConfig: ReturnType<typeof useAppRuntime>["runtimeConfig"];
+  setErrorMessage: ReturnType<typeof useAppRuntime>["setErrorMessage"];
+}) {
+  const containerQuery = useQuery({
+    enabled: !bootstrapping,
+    queryFn: () => readOrganizationContainer(runtimeConfig, organizationName),
+    queryKey: ["api", "v1", "organizations", organizationName, "container"],
+  });
+  const failureKind = classifyConnectFailure(containerQuery.error);
+  const routeHref = `/organizations/${organizationName}`;
+
+  if (failureKind === "forbidden") {
+    return <ForbiddenPage href={routeHref} />;
+  }
+  if (failureKind === "not-found") {
+    return <NotFoundPage href={routeHref} />;
+  }
+  if (containerQuery.error) {
+    return <BadRequestPage href={routeHref} />;
+  }
+  if (bootstrapping || !containerQuery.data) {
+    return (
+      <main className="app-shell">
+        <h1>{messages("common.loading", { fallback: "common.loading" })}</h1>
+      </main>
+    );
+  }
+
+  const detail = toOrganizationContainerView(containerQuery.data);
+  return (
+    <main className="app-shell organization-page">
+      <OrganizationHeader
+        detail={detail}
+        messages={messages}
+        runtimeConfig={runtimeConfig}
+        onCancelEnrollOrganization={async (nextOrganizationName) => {
+          try {
+            await cancelEnrollOrganization(runtimeConfig, csrfToken, nextOrganizationName);
+            await containerQuery.refetch();
+          } catch (error) {
+            setErrorMessage(legacyOrganizationEnrollFallback(error));
+          }
+        }}
+        onEnrollOrganization={async (nextOrganizationName) => {
+          try {
+            await enrollOrganization(runtimeConfig, csrfToken, nextOrganizationName);
+            await containerQuery.refetch();
+          } catch (error) {
+            setErrorMessage(legacyOrganizationEnrollFallback(error));
+          }
+        }}
+      />
+      <OrganizationMenu
+        active={active}
+        detail={detail}
+        messages={messages}
+        runtimeConfig={runtimeConfig}
+      />
+      <div className="page-wrap-outer">
+        <Outlet />
+      </div>
+    </main>
+  );
+}
+
+export function OrganizationDetailRouteComponent(props: { renderShell?: boolean } = {}) {
   const { organizationName } = Route.useParams();
   const { csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationContainerView> | null>(
@@ -68,6 +203,7 @@ export function OrganizationDetailRouteComponent() {
     <OrganizationDetailPage
       detail={detail}
       messages={messages}
+      renderShell={props.renderShell}
       runtimeConfig={runtimeConfig}
       onCancelEnrollOrganization={async (nextOrganizationName) => {
         try {

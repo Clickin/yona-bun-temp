@@ -2166,6 +2166,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   the project search child route passes `renderShell={false}` to
   `SearchRoutePage`. Focused coverage:
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real search routes"`.
+- 2026-06-27 organization nested-layout home follow-up:
+  `frontend/src/routes/organizations/$organizationName/route.tsx` now owns the
+  organization header/menu/page-wrap shell for the organization index route
+  with the home menu active, while `OrganizationDetailPage` renders only the
+  legacy organization home body through `renderShell={false}`. Focused
+  coverage:
+  `pnpm --dir frontend exec vitest run src/organization-home-parity.spec.tsx -t "organization layout route own home"`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

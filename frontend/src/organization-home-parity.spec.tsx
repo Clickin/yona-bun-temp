@@ -2,10 +2,54 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { renderOrganizationDetail } from "./auth-workspace-shell.test-helpers";
-import { OrganizationNewPage, OrganizationSettingsPage } from "./routes/-organization-views";
+import { renderOrganizationDetail, testRuntimeConfig } from "./auth-workspace-shell.test-helpers";
+import {
+  OrganizationDetailPage,
+  OrganizationNewPage,
+  OrganizationSettingsPage,
+} from "./routes/-organization-views";
 
 describe("organization home parity", () => {
+  it("lets the organization layout route own home chrome without changing the inner body", () => {
+    const html = renderToStaticMarkup(
+      <OrganizationDetailPage
+        detail={{
+          adminMembers: [],
+          description: "Web labs",
+          enrollmentRequested: false,
+          memberMembers: [],
+          organizationName: "weblabs",
+          viewerCanCreateProject: true,
+          viewerCanEnroll: false,
+          viewerCanLeave: false,
+          viewerCanUpdate: true,
+          visibleProjects: [],
+        }}
+        renderShell={false}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+    const layoutSource = readFileSync(
+      resolve(process.cwd(), "src/routes/organizations/$organizationName/route.tsx"),
+      "utf8",
+    );
+    const indexSource = readFileSync(
+      resolve(process.cwd(), "src/routes/organizations/$organizationName/index.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/organizations/${organizationName}`");
+    expect(layoutSource).toContain('active: "home"');
+    expect(indexSource).toContain("renderShell={false}");
+    expect(html).toContain('class="project-page-wrap organization-home-wrap"');
+    expect(html).toContain('class="project-home-header row-fluid"');
+    expect(html).toContain('class="row-fluid organization-home-body"');
+    expect(html).not.toContain('class="app-shell organization-page"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+  });
+
   it("renders the legacy page shell, project list, and roster side pane anchors", () => {
     const html = renderOrganizationDetail({
       adminMembers: [

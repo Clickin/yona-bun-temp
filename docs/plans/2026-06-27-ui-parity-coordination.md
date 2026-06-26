@@ -433,6 +433,18 @@ M32 continues project shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "real search routes"`.
 
+M33 starts organization shell migration:
+
+- `/organizations/$organizationName/route.tsx` now owns the legacy organization
+  header/menu/page-wrap shell for the organization index route, with the home
+  menu active.
+- `OrganizationDetailPage` supports `renderShell={false}` so the index child
+  route keeps the existing organization home data/mutation callbacks but
+  renders only the legacy `organization-home-wrap` body under the organization
+  layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/organization-home-parity.spec.tsx -t "organization layout route own home"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

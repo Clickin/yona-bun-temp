@@ -103,3 +103,14 @@ P6 has no integrated desktop sweep status deltas in
 `2026-06-26T16:21:36.680Z`. Whole UI parity remains blocked by other packet
 reports with `needs-parent-decision` rows and by any missing template-first
 packet reports.
+
+## Nested Layout Follow-Ups
+
+- 2026-06-27 organization home shell follow-up:
+  `frontend/src/routes/organizations/$organizationName/route.tsx` now owns the
+  organization header/menu/page-wrap shell for the organization index route
+  with the home menu active. `OrganizationDetailPage` renders only the legacy
+  organization home body through `renderShell={false}` for
+  `/organizations/$organizationName/` while preserving direct-render shell
+  output for existing specs. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/organization-home-parity.spec.tsx -t "organization layout route own home"`.

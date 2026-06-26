@@ -561,6 +561,7 @@ export function OrganizationNewPage(props: {
 export function OrganizationDetailPage(props: {
   detail: OrganizationDetailViewModel | null | undefined;
   messages?: LegacyMessageLookup;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   onCancelEnrollOrganization?: (organizationName: string) => void;
   onEnrollOrganization?: (organizationName: string) => void;
@@ -589,6 +590,195 @@ export function OrganizationDetailPage(props: {
       .includes(normalizedProjectFilter);
   });
 
+  const content = (
+    <div className="project-page-wrap organization-home-wrap">
+      <div className="project-home-header row-fluid">
+        <div className="project-overview span9 span-hard-wrap">
+          <h3 className="markdown-wrap">
+            <span className="project-description" id="project-description">
+              {detail.description}
+            </span>
+          </h3>
+        </div>
+      </div>
+      <div className="row-fluid organization-home-body">
+        <div className="span9 span-left-pane">
+          <div className="project-search-wrap row-fluid mt10">
+            <div className="span7">
+              <div className="search-bar">
+                <input
+                  className="textbox full"
+                  data-items="project-item"
+                  data-toggle="item-search"
+                  id="mylist-filter"
+                  name="mylist-filter"
+                  onChange={(event) => setProjectFilter(event.currentTarget.value)}
+                  placeholder={legacyMessage(props.messages, "title.type.name")}
+                  type="text"
+                  value={projectFilter}
+                />
+                <button className="search-btn" type="button">
+                  <i className="yobicon-search" />
+                </button>
+              </div>
+            </div>
+            {detail.viewerCanCreateProject ? (
+              <div className="pull-right">
+                <a
+                  className="ybtn ybtn-primary"
+                  href={prefixBasePath(
+                    props.runtimeConfig.basePath,
+                    `/projectform?owner=${encodeURIComponent(detail.organizationName)}`,
+                  )}
+                >
+                  {legacyMessage(props.messages, "button.newProject")}
+                </a>
+              </div>
+            ) : null}
+          </div>
+          <div className="project-list-wrap organization-project-list">
+            <ul className="all-projects organization-project-list">
+              {visibleProjects.map((project) => {
+                const projectHref = prefixBasePath(
+                  props.runtimeConfig.basePath,
+                  `/${project.ownerName}/${project.projectName}`,
+                );
+                const ownerHref = prefixBasePath(
+                  props.runtimeConfig.basePath,
+                  `/${project.ownerName}`,
+                );
+                const originHref =
+                  project.originOwnerName && project.originProjectName
+                    ? prefixBasePath(
+                        props.runtimeConfig.basePath,
+                        `/${project.originOwnerName}/${project.originProjectName}`,
+                      )
+                    : "";
+                return (
+                  <li
+                    className="project"
+                    data-item="project-item"
+                    data-value={`${project.projectName} ${project.overview}`}
+                    key={`${project.ownerName}/${project.projectName}`}
+                  >
+                    <div className="listitem organization-project-card">
+                      <div className="info-wrap">
+                        <div className="owner-avatar-wrap hide-in-mobile">
+                          <a href={projectHref}>
+                            {project.logoUrl ? (
+                              <img alt={`${project.projectName}.name`} src={project.logoUrl} />
+                            ) : null}
+                          </a>
+                        </div>
+                        <div className="organization-project-info">
+                          <div className="header">
+                            <a className="black" href={projectHref}>
+                              {project.projectName}
+                            </a>
+                            {originHref ? (
+                              <span className="small-font blue-txt">
+                                <a className="origin-title" href={originHref}>
+                                  <i className="yobicon-split" />
+                                  {project.originOwnerName} / {project.originProjectName}
+                                </a>
+                              </span>
+                            ) : null}
+                            {project.projectScope === "private" ? (
+                              <i className="yobicon-lock yobicon-small" />
+                            ) : null}
+                            {project.projectScope === "protected" ? (
+                              <span className="project-protected" title="Group Project">
+                                G
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="desc">{project.overview}</div>
+                          <p className="name-tag">
+                            by{" "}
+                            <a className="owner-name-small" href={ownerHref}>
+                              {project.ownerName}
+                            </a>{" "}
+                            at <strong title={project.createdLabel}>{project.createdLabel}</strong>
+                            {project.lastPushedLabel ? (
+                              <span className="small-font">
+                                , {legacyMessage(props.messages, "project.codeUpdate")}{" "}
+                                <strong title={project.lastPushedLabel}>
+                                  {project.lastPushedLabel}
+                                </strong>
+                              </span>
+                            ) : null}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="stats-wrap pull-right">
+                        <div className="members">
+                          <ul className="unstyled" />
+                          <p>
+                            <i className="yobicon-friends yobicon-middle" />
+                            <strong>{project.memberCount}</strong> <i className="yobicon-eye" />{" "}
+                            <strong>{project.watchCount}</strong>{" "}
+                            {project.isWatching ? (
+                              <i
+                                className="yobicon-lightbulb ramp-on"
+                                data-toggle="tooltip"
+                                title={legacyMessage(
+                                  props.messages,
+                                  "project.default.group.watching",
+                                )}
+                              />
+                            ) : (
+                              <i
+                                className="yobicon-lightbulb ramp-off"
+                                data-toggle="tooltip"
+                                title={legacyMessageWithKeyFallback(
+                                  props.messages,
+                                  "project.you.are.not.watching",
+                                  [""],
+                                )}
+                              />
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+        <aside className="span3 span-right-pane">
+          <OrganizationMembershipActions
+            detail={detail}
+            messages={props.messages}
+            onLeaveOrganization={props.onLeaveOrganization}
+            runtimeConfig={props.runtimeConfig}
+          />
+          {detail.adminMembers?.length ? (
+            <OrganizationMemberBubble
+              members={detail.adminMembers}
+              messages={props.messages}
+              runtimeConfig={props.runtimeConfig}
+              title="user.role.org_admin"
+            />
+          ) : null}
+          {detail.memberMembers?.length ? (
+            <OrganizationMemberBubble
+              members={detail.memberMembers}
+              messages={props.messages}
+              runtimeConfig={props.runtimeConfig}
+              title="user.role.org_member"
+            />
+          ) : null}
+        </aside>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main className="app-shell organization-page">
       <OrganizationHeader
@@ -604,191 +794,7 @@ export function OrganizationDetailPage(props: {
         messages={props.messages}
         runtimeConfig={props.runtimeConfig}
       />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap organization-home-wrap">
-          <div className="project-home-header row-fluid">
-            <div className="project-overview span9 span-hard-wrap">
-              <h3 className="markdown-wrap">
-                <span className="project-description" id="project-description">
-                  {detail.description}
-                </span>
-              </h3>
-            </div>
-          </div>
-          <div className="row-fluid organization-home-body">
-            <div className="span9 span-left-pane">
-              <div className="project-search-wrap row-fluid mt10">
-                <div className="span7">
-                  <div className="search-bar">
-                    <input
-                      className="textbox full"
-                      data-items="project-item"
-                      data-toggle="item-search"
-                      id="mylist-filter"
-                      name="mylist-filter"
-                      onChange={(event) => setProjectFilter(event.currentTarget.value)}
-                      placeholder={legacyMessage(props.messages, "title.type.name")}
-                      type="text"
-                      value={projectFilter}
-                    />
-                    <button className="search-btn" type="button">
-                      <i className="yobicon-search" />
-                    </button>
-                  </div>
-                </div>
-                {detail.viewerCanCreateProject ? (
-                  <div className="pull-right">
-                    <a
-                      className="ybtn ybtn-primary"
-                      href={prefixBasePath(
-                        props.runtimeConfig.basePath,
-                        `/projectform?owner=${encodeURIComponent(detail.organizationName)}`,
-                      )}
-                    >
-                      {legacyMessage(props.messages, "button.newProject")}
-                    </a>
-                  </div>
-                ) : null}
-              </div>
-              <div className="project-list-wrap organization-project-list">
-                <ul className="all-projects organization-project-list">
-                  {visibleProjects.map((project) => {
-                    const projectHref = prefixBasePath(
-                      props.runtimeConfig.basePath,
-                      `/${project.ownerName}/${project.projectName}`,
-                    );
-                    const ownerHref = prefixBasePath(
-                      props.runtimeConfig.basePath,
-                      `/${project.ownerName}`,
-                    );
-                    const originHref =
-                      project.originOwnerName && project.originProjectName
-                        ? prefixBasePath(
-                            props.runtimeConfig.basePath,
-                            `/${project.originOwnerName}/${project.originProjectName}`,
-                          )
-                        : "";
-                    return (
-                      <li
-                        className="project"
-                        data-item="project-item"
-                        data-value={`${project.projectName} ${project.overview}`}
-                        key={`${project.ownerName}/${project.projectName}`}
-                      >
-                        <div className="listitem organization-project-card">
-                          <div className="info-wrap">
-                            <div className="owner-avatar-wrap hide-in-mobile">
-                              <a href={projectHref}>
-                                {project.logoUrl ? (
-                                  <img alt={`${project.projectName}.name`} src={project.logoUrl} />
-                                ) : null}
-                              </a>
-                            </div>
-                            <div className="organization-project-info">
-                              <div className="header">
-                                <a className="black" href={projectHref}>
-                                  {project.projectName}
-                                </a>
-                                {originHref ? (
-                                  <span className="small-font blue-txt">
-                                    <a className="origin-title" href={originHref}>
-                                      <i className="yobicon-split" />
-                                      {project.originOwnerName} / {project.originProjectName}
-                                    </a>
-                                  </span>
-                                ) : null}
-                                {project.projectScope === "private" ? (
-                                  <i className="yobicon-lock yobicon-small" />
-                                ) : null}
-                                {project.projectScope === "protected" ? (
-                                  <span className="project-protected" title="Group Project">
-                                    G
-                                  </span>
-                                ) : null}
-                              </div>
-                              <div className="desc">{project.overview}</div>
-                              <p className="name-tag">
-                                by{" "}
-                                <a className="owner-name-small" href={ownerHref}>
-                                  {project.ownerName}
-                                </a>{" "}
-                                at{" "}
-                                <strong title={project.createdLabel}>{project.createdLabel}</strong>
-                                {project.lastPushedLabel ? (
-                                  <span className="small-font">
-                                    , {legacyMessage(props.messages, "project.codeUpdate")}{" "}
-                                    <strong title={project.lastPushedLabel}>
-                                      {project.lastPushedLabel}
-                                    </strong>
-                                  </span>
-                                ) : null}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="stats-wrap pull-right">
-                            <div className="members">
-                              <ul className="unstyled" />
-                              <p>
-                                <i className="yobicon-friends yobicon-middle" />
-                                <strong>{project.memberCount}</strong> <i className="yobicon-eye" />{" "}
-                                <strong>{project.watchCount}</strong>{" "}
-                                {project.isWatching ? (
-                                  <i
-                                    className="yobicon-lightbulb ramp-on"
-                                    data-toggle="tooltip"
-                                    title={legacyMessage(
-                                      props.messages,
-                                      "project.default.group.watching",
-                                    )}
-                                  />
-                                ) : (
-                                  <i
-                                    className="yobicon-lightbulb ramp-off"
-                                    data-toggle="tooltip"
-                                    title={legacyMessageWithKeyFallback(
-                                      props.messages,
-                                      "project.you.are.not.watching",
-                                      [""],
-                                    )}
-                                  />
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            </div>
-            <aside className="span3 span-right-pane">
-              <OrganizationMembershipActions
-                detail={detail}
-                messages={props.messages}
-                onLeaveOrganization={props.onLeaveOrganization}
-                runtimeConfig={props.runtimeConfig}
-              />
-              {detail.adminMembers?.length ? (
-                <OrganizationMemberBubble
-                  members={detail.adminMembers}
-                  messages={props.messages}
-                  runtimeConfig={props.runtimeConfig}
-                  title="user.role.org_admin"
-                />
-              ) : null}
-              {detail.memberMembers?.length ? (
-                <OrganizationMemberBubble
-                  members={detail.memberMembers}
-                  messages={props.messages}
-                  runtimeConfig={props.runtimeConfig}
-                  title="user.role.org_member"
-                />
-              ) : null}
-            </aside>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }
