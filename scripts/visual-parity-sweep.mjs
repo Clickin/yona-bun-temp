@@ -903,6 +903,9 @@ async function inspectPage(page, baseUrl, path, label) {
   const isProjectPage = /^\/[^/?#]+\/[^/?#]+/u.test(path) && !rootNames.has(path.split("/")[1]);
   const isLegacyFragment = label === "legacy" && path.startsWith("/notification?");
   const isFramedShell = path === "/sidebar" || path.startsWith("/sidebar?");
+  const effectiveRequestFailures = requestFailures.filter(
+    (failure) => !(isFramedShell && isViteDevModuleAbort(failure)),
+  );
   const errors = [];
   const status = response?.status() ?? 0;
   if (status >= 500) {
@@ -962,8 +965,8 @@ async function inspectPage(page, baseUrl, path, label) {
   if (consoleErrors.length > 0) {
     errors.push(`${consoleErrors.length} console error(s)`);
   }
-  if (requestFailures.length > 0) {
-    errors.push(`${requestFailures.length} request failure(s)`);
+  if (effectiveRequestFailures.length > 0) {
+    errors.push(`${effectiveRequestFailures.length} request failure(s)`);
   }
   if (errors.length > 0 || alwaysScreenshotPaths.has(path)) {
     const screenshotLabel =
@@ -984,7 +987,11 @@ async function inspectPage(page, baseUrl, path, label) {
     ok: errors.length === 0,
     errors,
     consoleErrors,
-    requestFailures,
+    requestFailures: effectiveRequestFailures,
+    ignoredRequestFailures:
+      effectiveRequestFailures.length === requestFailures.length
+        ? []
+        : requestFailures.filter((failure) => isViteDevModuleAbort(failure)),
     metrics: {
       title: metrics.title,
       bodyTextLength: metrics.bodyTextLength,
@@ -1030,6 +1037,13 @@ async function inspectPage(page, baseUrl, path, label) {
       isErrorPage: metrics.isErrorPage,
     },
   };
+}
+
+function isViteDevModuleAbort(failure) {
+  return (
+    failure.startsWith("net::ERR_ABORTED ") &&
+    (/\/(?:src|@fs)\//u.test(failure) || /\/@vite\//u.test(failure))
+  );
 }
 
 function targetFailureStatus(error) {

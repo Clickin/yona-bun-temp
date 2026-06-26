@@ -54,6 +54,13 @@ Rules:
   API-return plus React-render conversions. Do not record a missing server-side
   HTML fragment as the intended fix unless the parent explicitly classifies it
   as a compatibility route.
+- Latest integrated desktop sweep evidence:
+  `output/playwright/visual-sweep/latest.json` at
+  `2026-06-26T16:21:36.680Z` records legacy `93/96`, local `174/174`,
+  `diffFailures 0`, `localFailures 0`, and `22` status deltas. The remaining
+  deltas are not packet closures by themselves; each owning packet must still
+  classify legacy sample-data or homelab-reference differences before whole UI
+  parity can be claimed.
 
 Round 2 report rows must additionally include:
 

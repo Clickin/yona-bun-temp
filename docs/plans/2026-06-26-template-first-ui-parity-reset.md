@@ -196,6 +196,16 @@ Update 2026-06-27:
   `/yona` base-path anchors, and raw-key absence. P0 no longer has a standalone
   verifier-baseline blocker, though whole UI parity still requires the
   integrated browser sweep.
+- Integrated desktop browser sweep was rerun through the node curl proxy and a
+  fresh local runtime DB:
+  `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both node scripts/visual-parity-sweep.mjs`.
+  Artifact: `output/playwright/visual-sweep/latest.json`, checked at
+  `2026-06-26T16:21:36.680Z`. Result: legacy `93/96`, local `174/174`,
+  comparison `diffFailures 0`, `localFailures 0`, with `22` status deltas
+  remaining from legacy sample/homelab data states such as legacy 404/500/400
+  versus local rendered pages. The sweep now ignores only Vite dev
+  `ERR_ABORTED` module-load noise for framed `/sidebar` pages while preserving
+  real request failures.
 
 1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
    header/menu, issue/editor/comment surfaces define most repeated visual
