@@ -215,6 +215,17 @@ M13 continues milestone shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
 
+M14 starts board shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/posts`, with the board menu active, board
+  list keymap mode, and `board-page` shell class preserved.
+- `ProjectBoardListPage` supports `renderShell={false}` so the list leaf route
+  keeps its board list REST/query boundary but renders only the legacy
+  `post-list project-page-wrap` body under the project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

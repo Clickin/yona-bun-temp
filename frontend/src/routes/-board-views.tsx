@@ -796,6 +796,7 @@ export function ProjectBoardListPage(props: {
   orderBy: string;
   orderDir: string;
   posts: ProjectPostsResponse | null | undefined;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail;
@@ -808,6 +809,122 @@ export function ProjectBoardListPage(props: {
       : null);
 
   const totalRows = (props.posts?.items.length ?? 0) + (props.posts?.notices.length ?? 0);
+
+  const pageBody = (
+    <div className="post-list project-page-wrap">
+      <div className="search-wrap underline board-toolbar">
+        <form
+          action={prefixBasePath(
+            props.runtimeConfig.basePath,
+            `/${ownerName}/${projectName}/posts`,
+          )}
+          className="pull-left"
+          id="option_form"
+          method="get"
+        >
+          <input defaultValue={props.orderBy} name="orderBy" type="hidden" />
+          <input defaultValue={props.orderDir} name="orderDir" type="hidden" />
+          <div className="search-bar">
+            <input
+              className="textbox"
+              defaultValue={props.filter}
+              name="filter"
+              placeholder={legacyMessage(props.messages, "project.searchPlaceholder")}
+              type="text"
+            />
+            <button className="search-btn" type="submit">
+              <i className="yobicon-search" />
+            </button>
+          </div>
+          {props.labels.length ? (
+            <div className="board-labels">
+              <select
+                aria-label={legacyMessage(props.messages, "label.select")}
+                data-placeholder={legacyMessage(props.messages, "label.select")}
+                defaultValue={props.labelIds}
+                multiple
+                name="labelIds[]"
+              >
+                {props.labels.map((label) => (
+                  <option key={label.id} value={label.id}>
+                    {label.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+          <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
+        </form>
+        <div className="pull-right">
+          {props.canCreate ? (
+            <a
+              className="ybtn ybtn-success"
+              href={prefixBasePath(
+                props.runtimeConfig.basePath,
+                `/${ownerName}/${projectName}/postform`,
+              )}
+            >
+              {legacyMessage(props.messages, "post.write")}
+            </a>
+          ) : null}
+        </div>
+      </div>
+      {totalRows === 0 ? (
+        <div className="error-wrap">
+          <i className="ico ico-err1" />
+          <p>{legacyMessage(props.messages, "post.is.empty")}</p>
+        </div>
+      ) : (
+        <>
+          {props.posts && props.posts.totalCount > 1 ? (
+            <BoardSortLinks
+              basePathname={`/${ownerName}/${projectName}/posts`}
+              filter={props.filter}
+              labelIds={props.labelIds}
+              messages={props.messages}
+              orderBy={props.orderBy}
+              orderDir={props.orderDir}
+              runtimeConfig={props.runtimeConfig}
+            />
+          ) : null}
+          {props.posts?.notices.length ? (
+            <PostRows
+              className="post-list-wrap notice-wrap"
+              items={props.posts.notices}
+              messages={props.messages}
+              runtimeConfig={props.runtimeConfig}
+            />
+          ) : null}
+          <PostRows
+            items={props.posts?.items ?? []}
+            messages={props.messages}
+            runtimeConfig={props.runtimeConfig}
+          />
+        </>
+      )}
+      <div className="write-btn-wrap" />
+      {props.posts ? (
+        <BoardPagination
+          basePathname={`/${ownerName}/${projectName}/posts`}
+          filter={props.filter}
+          labelIds={props.labelIds}
+          messages={props.messages}
+          orderBy={props.orderBy}
+          orderDir={props.orderDir}
+          pageNum={props.posts.pageNum}
+          pageSize={props.posts.pageSize}
+          runtimeConfig={props.runtimeConfig}
+          totalCount={props.posts.totalCount}
+        />
+      ) : (
+        <div className="page-navigation-wrap" id="pagination" />
+      )}
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
 
   return (
     <main className="app-shell board-page">
@@ -822,117 +939,7 @@ export function ProjectBoardListPage(props: {
           runtimeConfig={props.runtimeConfig}
         />
       ) : null}
-      <div className="page-wrap-outer">
-        <div className="post-list project-page-wrap">
-          <div className="search-wrap underline board-toolbar">
-            <form
-              action={prefixBasePath(
-                props.runtimeConfig.basePath,
-                `/${ownerName}/${projectName}/posts`,
-              )}
-              className="pull-left"
-              id="option_form"
-              method="get"
-            >
-              <input defaultValue={props.orderBy} name="orderBy" type="hidden" />
-              <input defaultValue={props.orderDir} name="orderDir" type="hidden" />
-              <div className="search-bar">
-                <input
-                  className="textbox"
-                  defaultValue={props.filter}
-                  name="filter"
-                  placeholder={legacyMessage(props.messages, "project.searchPlaceholder")}
-                  type="text"
-                />
-                <button className="search-btn" type="submit">
-                  <i className="yobicon-search" />
-                </button>
-              </div>
-              {props.labels.length ? (
-                <div className="board-labels">
-                  <select
-                    aria-label={legacyMessage(props.messages, "label.select")}
-                    data-placeholder={legacyMessage(props.messages, "label.select")}
-                    defaultValue={props.labelIds}
-                    multiple
-                    name="labelIds[]"
-                  >
-                    {props.labels.map((label) => (
-                      <option key={label.id} value={label.id}>
-                        {label.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
-              <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
-            </form>
-            <div className="pull-right">
-              {props.canCreate ? (
-                <a
-                  className="ybtn ybtn-success"
-                  href={prefixBasePath(
-                    props.runtimeConfig.basePath,
-                    `/${ownerName}/${projectName}/postform`,
-                  )}
-                >
-                  {legacyMessage(props.messages, "post.write")}
-                </a>
-              ) : null}
-            </div>
-          </div>
-          {totalRows === 0 ? (
-            <div className="error-wrap">
-              <i className="ico ico-err1" />
-              <p>{legacyMessage(props.messages, "post.is.empty")}</p>
-            </div>
-          ) : (
-            <>
-              {props.posts && props.posts.totalCount > 1 ? (
-                <BoardSortLinks
-                  basePathname={`/${ownerName}/${projectName}/posts`}
-                  filter={props.filter}
-                  labelIds={props.labelIds}
-                  messages={props.messages}
-                  orderBy={props.orderBy}
-                  orderDir={props.orderDir}
-                  runtimeConfig={props.runtimeConfig}
-                />
-              ) : null}
-              {props.posts?.notices.length ? (
-                <PostRows
-                  className="post-list-wrap notice-wrap"
-                  items={props.posts.notices}
-                  messages={props.messages}
-                  runtimeConfig={props.runtimeConfig}
-                />
-              ) : null}
-              <PostRows
-                items={props.posts?.items ?? []}
-                messages={props.messages}
-                runtimeConfig={props.runtimeConfig}
-              />
-            </>
-          )}
-          <div className="write-btn-wrap" />
-          {props.posts ? (
-            <BoardPagination
-              basePathname={`/${ownerName}/${projectName}/posts`}
-              filter={props.filter}
-              labelIds={props.labelIds}
-              messages={props.messages}
-              orderBy={props.orderBy}
-              orderDir={props.orderDir}
-              pageNum={props.posts.pageNum}
-              pageSize={props.posts.pageSize}
-              runtimeConfig={props.runtimeConfig}
-              totalCount={props.posts.totalCount}
-            />
-          ) : (
-            <div className="page-navigation-wrap" id="pagination" />
-          )}
-        </div>
-      </div>
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

@@ -3,7 +3,11 @@ import path from "node:path";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { ProjectBoardDetailPage, ProjectPostFormPage } from "./routes/-board-views";
+import {
+  ProjectBoardDetailPage,
+  ProjectBoardListPage,
+  ProjectPostFormPage,
+} from "./routes/-board-views";
 import {
   ProjectMilestoneDetailPage,
   ProjectMilestoneFormPage,
@@ -213,6 +217,53 @@ describe("board/milestone UI parity closure", () => {
     expect(html).toContain('class="attached-file"');
     expect(html).toContain('data-resource-type="NONISSUE_COMMENT"');
     expect(html).toContain("comment.png");
+  });
+
+  it("lets the project layout route own the board list shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectBoardListPage
+        canCreate={true}
+        detail={detail}
+        filter=""
+        labelIds={[]}
+        labels={[boardLabel]}
+        orderBy="updatedDate"
+        orderDir="desc"
+        posts={{
+          items: [boardPost],
+          notices: [],
+          ownerName: "owner",
+          pageNum: 1,
+          pageSize: 15,
+          projectName: "projectYobi",
+          readme: null,
+          totalCount: 1,
+        }}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/posts/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/posts`");
+    expect(layoutSource).toContain('activeMenu: "board"');
+    expect(layoutSource).toContain('keymapMode: "list"');
+    expect(layoutSource).toContain('shellClassName: "board-page"');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="app-shell board-page"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="post-list project-page-wrap"');
+    expect(html).toContain('id="option_form"');
+    expect(html).toContain('class="board-labels"');
   });
 
   it("renders milestone list sort/search and due-date relative metadata from the view model", () => {

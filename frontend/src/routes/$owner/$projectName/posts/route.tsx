@@ -123,6 +123,7 @@ function ProjectBoardsRouteComponent() {
       orderBy={orderBy}
       orderDir={orderDir}
       posts={postsQuery.data}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

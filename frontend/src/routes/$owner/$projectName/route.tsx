@@ -68,10 +68,12 @@ function ProjectLayoutRouteComponent() {
     <ProjectRouteShellLayout
       activeMenu={layoutShell.activeMenu}
       bootstrapping={bootstrapping}
+      keymapMode={layoutShell.keymapMode}
       messages={messages}
       owner={owner}
       projectName={projectName}
       runtimeConfig={runtimeConfig}
+      shellClassName={layoutShell.shellClassName}
     />
   );
 }
@@ -95,7 +97,11 @@ function projectLayoutShell(
   basePath: string,
   owner: string,
   projectName: string,
-): { activeMenu?: "issue" | "milestone" | "settings" } | null {
+): {
+  activeMenu?: "board" | "issue" | "milestone" | "settings";
+  keymapMode?: "detail" | "list";
+  shellClassName?: string;
+} | null {
   const appPath = stripProjectLayoutBasePath(pathname, basePath).replace(/\/+$/u, "");
   if (
     appPath === `/${owner}/${projectName}/changeVCS` ||
@@ -110,6 +116,9 @@ function projectLayoutShell(
   }
   if (appPath === `/${owner}/${projectName}/watchers`) {
     return {};
+  }
+  if (appPath === `/${owner}/${projectName}/posts`) {
+    return { activeMenu: "board", keymapMode: "list", shellClassName: "board-page" };
   }
   if (appPath === `/${owner}/${projectName}/milestones`) {
     return { activeMenu: "milestone" };
@@ -165,17 +174,21 @@ function isMilestoneDetailPath(appPath: string, owner: string, projectName: stri
 function ProjectRouteShellLayout({
   activeMenu,
   bootstrapping,
+  keymapMode,
   messages,
   owner,
   projectName,
   runtimeConfig,
+  shellClassName,
 }: {
-  activeMenu?: "issue" | "milestone" | "settings";
+  activeMenu?: "board" | "issue" | "milestone" | "settings";
   bootstrapping: boolean;
+  keymapMode?: "detail" | "list";
   messages: ReturnType<typeof useAppRuntime>["messages"];
   owner: string;
   projectName: string;
   runtimeConfig: ReturnType<typeof useAppRuntime>["runtimeConfig"];
+  shellClassName?: string;
 }) {
   const detailQuery = useQuery({
     ...readProjectContainerQueryOptions(runtimeConfig, {
@@ -207,9 +220,14 @@ function ProjectRouteShellLayout({
 
   const detail = toProjectContainerView(detailQuery.data);
   return (
-    <main className="app-shell">
+    <main className={shellClassName ? `app-shell ${shellClassName}` : "app-shell"}>
       <ProjectHeader detail={detail} runtimeConfig={runtimeConfig} />
-      <ProjectMenu activeMenu={activeMenu} detail={detail} runtimeConfig={runtimeConfig} />
+      <ProjectMenu
+        activeMenu={activeMenu}
+        detail={detail}
+        keymapMode={keymapMode}
+        runtimeConfig={runtimeConfig}
+      />
       <div className="page-wrap-outer">
         <Outlet />
       </div>

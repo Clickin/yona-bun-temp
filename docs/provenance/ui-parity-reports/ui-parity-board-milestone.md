@@ -69,6 +69,15 @@ Worker update, 2026-06-26:
   mass-update controls, and delete modal. Verification:
   `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
   src/board-milestone-parity.spec.tsx`.
+- Worker update, 2026-06-27 board list layout follow-up: project board list
+  shell ownership moved into
+  `frontend/src/routes/$owner/$projectName/route.tsx` for `/posts`, keeping the
+  board menu active, the board list keymap mode, and the `board-page` shell CSS
+  hook. `ProjectBoardListPage` now supports `renderShell={false}` while
+  retaining the legacy `post-list project-page-wrap`, `#option_form`, label
+  selector, notice rows, and pagination body. Verification:
+  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
+  src/board-milestone-parity.spec.tsx`.
 
 ## Evidence Checked
 
@@ -114,7 +123,7 @@ Total rows: 20
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
-| `/:owner/:project/posts` | Board list search form, label select, sort links, notice wrap, empty state, pagination shell. | `ProjectBoardListPage`, `PostRows`, `BoardSortLinks`, `BoardPagination` preserve anchors and copy. | covered | none |
+| `/:owner/:project/posts` | Board list search form, label select, sort links, notice wrap, empty state, pagination shell. | Project layout owns the header/menu/page-wrap shell with active board menu, list keymap, and `board-page`; `ProjectBoardListPage`, `PostRows`, `BoardSortLinks`, `BoardPagination` preserve anchors and copy under the outlet. | covered | `frontend/src/routes/$owner/$projectName/route.tsx`, `frontend/src/routes/$owner/$projectName/posts/route.tsx`, `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 | `/organizations/:name/boards` | Organization board aggregate with project multiselect, keyword search, sort, pagination, cross-project rows. | `OrganizationBoardListPage` preserves organization header/menu and aggregate controls. | covered | none |
 | `/organizations/:name/boards` notice pinning | Legacy template has optional notice-wrap, but provenance records org aggregation as no separate notice pinning. | Contract pins no separate org notice pinning. | not-applicable | none |
 | board create/edit notice/readme/online commit controls | Legacy form renders notice/readme/issue-template/branch/path/line-ending/file uploader/notification controls. | `ProjectPostFormPage` renders those controls and hides notice/readme for online commit contexts. | covered | none |
