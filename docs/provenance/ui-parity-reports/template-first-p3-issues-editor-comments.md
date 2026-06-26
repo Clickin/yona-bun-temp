@@ -43,10 +43,10 @@ Source comparison by Subagent P3 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 1 |
+| gap | 0 |
 | deviation | 0 |
 | weak evidence | 0 |
-| covered | 12 |
+| covered | 13 |
 | not-applicable | 1 |
 
 ## Reset Findings
@@ -54,7 +54,7 @@ Source comparison by Subagent P3 found concrete reset blockers:
 | legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `issue/view.scala.html`, `issue/partial_index_comments.scala.html`, `issue/partial_index_comment.scala.html` | Issue detail right `issue-info` compact comment index. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/issue-detail-shell.spec.tsx` | layout | covered in current follow-up | P3 | none | Issue detail now renders the legacy compact comment index inside `.issue-info` after `#issueUpdateForm`: `#comments.board-comment-wrap > #timeline > .timeline-list`, `.comment-header .num`, root `.comment.index-comment[data-location]`, `#comment-body-$id .comment-body > a`, `.index-comment-author`, `.comment-exists`, `.comment_author`, `.ago-date`, and hidden `.share-link`. |
-| `issue/view.scala.html`, `issue/partial_comments.scala.html`, `issue/partial_comment.scala.html`, `issue/partial_event_timeline.scala.html` | Live legacy sample detail `/admin/sample/issue/1` with comments/timeline/body. | `frontend/src/routes/-issue-views.tsx`, issue detail REST/view-model boundary | data-boundary | gap | P3 | `frontend/src/routes/-issue-views.tsx`, issue detail API/view-model files, focused live-data tests | Focused sweep `output/playwright/visual-sweep/latest.json` at `2026-06-26T15:26:46.018Z` proves the shell renders without route/status failure, but live visible content is not parity: legacy body text length `2304` vs local `240`; legacy has markdown/editor/comment/timeline-visible content that local sample route does not render equivalently. Do not close P3 until the live issue detail content/timeline/comment data mapping is fixed or explicitly reclassified. |
+| `issue/view.scala.html`, `issue/partial_comments.scala.html`, `issue/partial_comment.scala.html`, `issue/partial_event_timeline.scala.html` | Live legacy sample detail `/admin/sample/issue/1` with body and zero-comment timeline state. | `scripts/visual-parity-sweep.mjs`, `frontend/src/routes/-issue-views.tsx`, issue detail REST/view-model boundary | test-gap | covered in current follow-up | P3 | none | Earlier focused sweep evidence was weak because local SPA was captured before async issue detail loading completed. `scripts/visual-parity-sweep.mjs` now waits for the local settled selector `#issue-body-$number .content.markdown-wrap` and records `issueBodyTextLength` / `commentBodyTextLength`. Focused sweep `output/playwright/visual-sweep/latest.json` at `2026-06-26T15:34:32.805Z` shows legacy/local `/admin/sample/issue/1` both `200`, `localErrors []`, `diffErrors []`, text length delta `34`, local `.project-page-wrap` width `1346`, local `#issueUpdateForm` present, local `ul.comments` present for the zero-comment state, and local `issueBodyTextLength 17` matching the REST sample body. Legacy sample has no `ul.comments` or `comment-body` rows in raw HTML for this seed, so the previous comment/timeline data-boundary gap is reclassified as weak verifier evidence closed by stronger wait/metric coverage. |
 | `issue/partial_comment.scala.html`, `issue/partial_voter_list.scala.html` | Full comment timeline with voter avatars/modal threshold. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/issue-detail-shell.spec.tsx`, `frontend/src/auth-workspace-shell.spec.tsx` | layout | covered in current follow-up | P3 | none | Full comment action rows now match the legacy voter threshold: <=5 voters render `.avatar-wrap.smaller` tooltip links without agreement text, >5 voters render `.vote-description-people[href=#voters-$id]` plus `#voters-$id.modal.hide.voters-dialog` with `.usf-group`, `.avatar-wrap.mlarge`, `.name`, and `.loginid`. |
 | `common/commentUpdateForm.scala.html` | Comment edit with upload label/input and notification mail checkbox. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-view-models.ts`, `frontend/src/auth-workspace-client.ts`, `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, `frontend/src/issue-detail-shell.spec.tsx` | interaction | covered in current follow-up | P3 | none | Comment edit now renders the legacy `.file-upload > .file-upload__label.ybtn[for=upload-$id]`, `.file-upload__input#upload-$id[name=filePath][multiple]`, and authored-only `.send-notification-check` popover with checked `notificationMail=yes`; server/detail view models carry `authorId` and `viewerUserId` so the checkbox follows legacy `comment.isAuthoredBy(currentUser)` behavior. |
 | `common/fileUploader.scala.html`, `common/uploadForm.scala.html` | Issue/comment create upload, drag/drop, attached file template. | `frontend/src/routes/-issue-views.tsx`, `frontend/src/routes/-markdown-attachment-textarea.tsx`, `frontend/src/issue-detail-shell.spec.tsx`, `frontend/src/route-parity.spec.tsx` | data-boundary | covered in current follow-up | P3 | none | Issue/comment create upload shells now preserve the legacy `uploadForm` wrapper plus `fileUploader` template anchors: `#upload.upload-wrap.content-footer[data-resource-type]`, `.attach-wrap`, `.fake-file-wrap input.file[name=filePath][multiple]`, `.attached-files.unstyled`, `#tplAttachedFile[type=text/x-jquery-tmpl]`, `.attached-file`, `.progress.upload-progress .bar.orange`, `.btn-delete`, `.btn-insert`, and `#tplDropFilesHere .upload-drop-here`. |
@@ -75,7 +75,7 @@ Focused verifier run:
 - Command:
   `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both YORAM_SWEEP_PATHS=/admin/sample,/admin/sample/settingform,/admin/sample/members,/admin/sample/watchers,/admin/sample/webhooks,/admin/sample/transfer,/admin/sample/deleteform,/admin/sample/changeVCS,/admin/sample/issues,/user/issues,/admin/sample/issueform,/admin/sample/issue/1/editform,/admin/sample/issue/1 node scripts/visual-parity-sweep.mjs`
 - Artifact: `output/playwright/visual-sweep/latest.json`
-- Checked at: `2026-06-26T15:26:46.018Z`
+- Checked at: `2026-06-26T15:34:32.805Z`
 - Result: legacy `13/13` passed, local `13/13` passed, `diffFailures 0`,
   `localFailures 0`, `statusDeltas []`.
 
@@ -90,11 +90,13 @@ Computed-style/layout proof now covers the sampled P3 shell/grid selectors.
 | `/user/issues` | `.left-menu` width | 200 | 200 |
 | `/admin/sample/issueform` | `.content-wrap.frm-wrap` width | 1346 | 1346 |
 | `/admin/sample/issueform` | `.upload-wrap.content-footer` width | 1002 | 1002 |
+| `/admin/sample/issue/1` | `.project-page-wrap` width | 1346 | 1346 |
+| `/admin/sample/issue/1` | `bodyTextLength` | 2304 | 2338 |
+| `/admin/sample/issue/1` | issue body text length | 12 | 17 |
+| `/admin/sample/issue/1` | `#issueUpdateForm` width | 305 | 260 |
 
 Remaining verifier work:
 
-- Close the live issue detail data-boundary gap recorded above for
-  `/admin/sample/issue/1`.
 - Add mobile screenshot evidence and interaction proof for filter/search,
   pagination, mass update, editor preview, upload/drop, comment edit/delete,
   child comments, and sidebar metadata updates.

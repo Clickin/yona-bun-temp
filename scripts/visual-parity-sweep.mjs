@@ -242,6 +242,36 @@ const alwaysScreenshotPaths = new Set([
   "/admin/sample/issue/1",
 ]);
 
+function localSettledSelectorForPath(path) {
+  if (path.endsWith("/issueform") || path.endsWith("/editform")) {
+    return "[data-toggle=markdown-editor]";
+  }
+  const issueDetailMatch = path.match(/\/issue\/(\d+)$/u);
+  if (issueDetailMatch) {
+    return `#issue-body-${issueDetailMatch[1]} .content.markdown-wrap`;
+  }
+  if (path.endsWith("/issues") || path === "/user/issues") {
+    return ".row-fluid.issue-list-wrap";
+  }
+  if (
+    path.endsWith("/settingform") ||
+    path.endsWith("/transfer") ||
+    path.endsWith("/deleteform") ||
+    path.endsWith("/changeVCS")
+  ) {
+    return ".bubble-wrap.gray, .box-wrap";
+  }
+  if (
+    path.endsWith("/members") ||
+    path.endsWith("/watchers") ||
+    path.endsWith("/webhooks") ||
+    /^\/[^/?#]+\/[^/?#]+\/?$/u.test(path)
+  ) {
+    return ".project-page-wrap";
+  }
+  return null;
+}
+
 const routeSampleValues = {
   $branch: "main",
   $commitId: "HEAD",
@@ -728,6 +758,11 @@ async function inspectPage(page, baseUrl, path, label) {
     )
     .catch(() => {});
 
+  const localSettledSelector = label === "local" ? localSettledSelectorForPath(path) : null;
+  if (localSettledSelector) {
+    await page.waitForSelector(localSettledSelector, { timeout: 10_000 }).catch(() => {});
+  }
+
   const metrics = await page.evaluate(() => {
     const cloneChromeWithoutUserMarkdown = () => {
       const clone = document.body.cloneNode(true);
@@ -790,6 +825,8 @@ async function inspectPage(page, baseUrl, path, label) {
         backgroundColor: style.backgroundColor,
       };
     };
+    const selectorTextLength = (selector) =>
+      document.querySelector(selector)?.textContent?.trim().length ?? null;
     return {
       title: document.title,
       text: body.innerText.slice(0, 5000),
@@ -830,6 +867,8 @@ async function inspectPage(page, baseUrl, path, label) {
       comment: selectorState("li.comment"),
       commentBody: selectorState(".comment-body.markdown-wrap"),
       commentDeleteModal: selectorState("#comment-delete-modal"),
+      issueBodyTextLength: selectorTextLength("[id^='issue-body-'] .content.markdown-wrap"),
+      commentBodyTextLength: selectorTextLength(".comment-body.markdown-wrap"),
       loginDialog: selectorState("#loginDialog, .loginDialog"),
       footer: selectorState("footer.page-footer-outer"),
       userProfile: selectorState(".user-profile-page"),
@@ -963,6 +1002,8 @@ async function inspectPage(page, baseUrl, path, label) {
       comment: metrics.comment,
       commentBody: metrics.commentBody,
       commentDeleteModal: metrics.commentDeleteModal,
+      issueBodyTextLength: metrics.issueBodyTextLength,
+      commentBodyTextLength: metrics.commentBodyTextLength,
       loginDialog: metrics.loginDialog,
       footer: metrics.footer,
       userProfile: metrics.userProfile,

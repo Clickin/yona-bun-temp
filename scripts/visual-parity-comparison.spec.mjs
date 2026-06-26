@@ -104,14 +104,20 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
 
   assert.match(source, /const requestedSweepPaths = parseRequestedSweepPaths/u);
   assert.match(source, /process\.env\.YORAM_SWEEP_PATHS/u);
+  assert.match(source, /function localSettledSelectorForPath/u);
   assert.match(source, /label === "local" && loggedIn && !useRequestedPaths/u);
   assert.match(source, /waitUntil: "domcontentloaded"/u);
+  assert.match(source, /await page\.waitForSelector\(localSettledSelector/u);
   assert.match(source, /gnbInner: selectorState\("\.gnb-inner"\)/u);
   assert.match(source, /gnbUsermenu: selectorState\("\.gnb-usermenu"\)/u);
   assert.match(source, /sidenav: selectorState\("#mySidenav"\)/u);
   assert.match(source, /footer: selectorState\("footer\.page-footer-outer"\)/u);
   assert.match(source, /"\/admin\/sample\/settingform"/u);
   assert.match(source, /"\/admin\/sample\/issue\/1"/u);
+  assert.match(source, /#issue-body-\$\{issueDetailMatch\[1\]\} \.content\.markdown-wrap`/u);
+  assert.match(source, /const selectorTextLength = \(selector\)/u);
+  assert.match(source, /issueBodyTextLength: selectorTextLength/u);
+  assert.match(source, /commentBodyTextLength: selectorTextLength/u);
   assert.match(source, /const isFramedShell = path === "\/sidebar"/u);
   assert.match(source, /missing global navigation inner container/u);
   assert.match(source, /missing global user menu container/u);

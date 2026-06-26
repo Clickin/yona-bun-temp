@@ -174,9 +174,11 @@ Update 2026-06-27:
   `project-page-wrap`/`page-wrap` widths, Bootstrap 2 `row-fluid/span*`
   desktop grid behavior, and `cu-label`/`cu-desc` inline layout in
   `frontend/src/app.css`.
-- P3 remains open: live `/admin/sample/issue/1` renders with correct shell
-  status but incomplete detail/comment/timeline-visible content compared with
-  legacy.
+- P3 live `/admin/sample/issue/1` weak evidence was reclassified after the
+  visual sweep began waiting for the local issue body selector; current
+  evidence shows the sampled zero-comment detail route rendering after async
+  data load. P3 still requires mobile screenshots and interaction-state proof
+  before the whole packet can close.
 
 1. Subagent A maps P0/P2/P3 template dependencies first because shell, project
    header/menu, issue/editor/comment surfaces define most repeated visual
