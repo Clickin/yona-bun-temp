@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { normalizePlaywrightArgs } from "./playwright-e2e-args.mjs";
 import { buildPlaywrightE2eRuntime } from "./playwright-e2e-runtime.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -56,4 +57,43 @@ test("buildPlaywrightE2eRuntime gives each run its own isolated runtime director
 
   assert.notEqual(first.runtimeDirectory, second.runtimeDirectory);
   assert.notEqual(first.backendEnv.YONA_DEV_RUNTIME_DIR, second.backendEnv.YONA_DEV_RUNTIME_DIR);
+});
+
+test("normalizePlaywrightArgs keeps grep options ahead of file filters", () => {
+  assert.deepEqual(
+    normalizePlaywrightArgs([
+      "legacy-rendered-page-audit.e2e.ts",
+      "-g",
+      "renders commit, branch, and compare anchors on a mobile viewport",
+    ]),
+    [
+      "-g",
+      "renders commit, branch, and compare anchors on a mobile viewport",
+      "legacy-rendered-page-audit.e2e.ts",
+    ],
+  );
+
+  assert.deepEqual(
+    normalizePlaywrightArgs(["search-parity.e2e.ts", "--grep=hostile"]),
+    ["--grep=hostile", "search-parity.e2e.ts"],
+  );
+});
+
+test("normalizePlaywrightArgs preserves option values and positional order", () => {
+  assert.deepEqual(
+    normalizePlaywrightArgs([
+      "pull-request-review-read-parity.e2e.ts",
+      "pull-request-interaction-parity.e2e.ts",
+      "--project",
+      "chromium",
+      "--workers=1",
+    ]),
+    [
+      "--project",
+      "chromium",
+      "--workers=1",
+      "pull-request-review-read-parity.e2e.ts",
+      "pull-request-interaction-parity.e2e.ts",
+    ],
+  );
 });

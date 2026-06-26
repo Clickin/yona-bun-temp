@@ -7,6 +7,7 @@ import {
   createPlaywrightE2eRunToken,
   reserveOpenPort,
 } from "./playwright-e2e-runtime.mjs";
+import { normalizePlaywrightArgs } from "./playwright-e2e-args.mjs";
 
 const READY_TIMEOUT_MS = 60_000;
 const READY_POLL_INTERVAL_MS = 250;
@@ -245,7 +246,7 @@ async function runPlaywright(forwardedArgs, env) {
 async function main() {
   const runtime = await createRuntime();
   const env = createRuntimeEnv(runtime);
-  const forwardedArgs = process.argv.slice(2);
+  const forwardedArgs = normalizePlaywrightArgs(process.argv.slice(2));
   const serverStates = [
     spawnManagedServer("backend", ["../scripts/run-dev-backend-once.mjs"], env),
     spawnManagedServer("frontend", ["../scripts/run-e2e-frontend.mjs"], env),
