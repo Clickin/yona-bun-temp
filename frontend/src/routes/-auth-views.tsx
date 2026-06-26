@@ -360,6 +360,7 @@ export function LoginPage({
 export function LegacyLoginDialog({
   authUiCapabilities,
   csrfToken,
+  errorMessage,
   messages: messagesOverride,
   open = false,
   onClose,
@@ -368,6 +369,7 @@ export function LegacyLoginDialog({
 }: {
   authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
   csrfToken?: string;
+  errorMessage?: string | null;
   messages?: LegacyI18nContextValue["t"];
   open?: boolean;
   onClose?: () => void;
@@ -445,7 +447,13 @@ export function LegacyLoginDialog({
               </dl>
               <div className="error">
                 <i className="yobicon-error"></i>
-                <span className="error-message"></span>
+                <span className="error-message">
+                  {errorMessage
+                    ? messages.t(errorMessage, {
+                        fallback: errorMessage,
+                      })
+                    : ""}
+                </span>
               </div>
               <div className="btns-row nm">
                 <button className="ybtn ybtn-primary fullsize" type="submit">

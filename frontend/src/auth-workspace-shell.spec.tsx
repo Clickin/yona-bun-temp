@@ -121,6 +121,14 @@ describe("auth and workspace views", () => {
       'messages("title.newOrganization", { fallback: "title.newOrganization" })',
     );
     expect(source).toContain("<RootFooter />");
+    expect(source).toContain('className="main"');
+    expect(source).toContain('id="main"');
+    expect(source).toContain("<LegacyGlobalContainers />");
+    expect(source).toContain('id="yobiDialog"');
+    expect(source).toContain('className="modal hide yobiDialog"');
+    expect(source).toContain('id="yobiToasts"');
+    expect(source).toContain('id="tplYobiToast"');
+    expect(source).toContain('type="text/x-jquery-tmpl"');
     expect(source).toContain('className="page-footer-outer"');
     expect(source).toContain('className="page-footer"');
     expect(source).toContain('className="provider"');
@@ -136,6 +144,12 @@ describe("auth and workspace views", () => {
     expect(source).not.toContain(">Profile</a>");
     expect(source).not.toContain(">Account</a>");
     expect(source).not.toContain(">Log out</span>");
+
+    const mainSource = fs.readFileSync(path.resolve(__dirname, "main.tsx"), "utf8");
+    expect(mainSource).toContain('document.body.id = "html-body"');
+
+    const indexHtml = fs.readFileSync(path.resolve(__dirname, "../index.html"), "utf8");
+    expect(indexHtml).toContain('<body id="html-body">');
   });
 
   it("renders the canonical login shell with legacy field names and recovery link", () => {
@@ -202,6 +216,7 @@ describe("auth and workspace views", () => {
           socialLoginOnly: false,
         }}
         csrfToken="csrf-1"
+        errorMessage="user.login.failed.client"
         runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
       />,
     );
@@ -219,7 +234,8 @@ describe("auth and workspace views", () => {
     expect(html).toContain('id="passwordD"');
     expect(html).toContain('placeholder="Password"');
     expect(html).toContain('class="yobicon-error"');
-    expect(html).toContain('class="error-message"');
+    expect(html).toContain("Failed to log in. The request is invalid.");
+    expect(html).toContain("Please ask site admin.");
     expect(html).toContain(">Log in<");
     expect(html).toContain('id="remember-meD"');
     expect(html).toContain(">Stay logged in<");

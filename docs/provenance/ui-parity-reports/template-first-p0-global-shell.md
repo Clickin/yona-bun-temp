@@ -44,23 +44,23 @@ Source comparison by Subagent P0 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 6 |
+| gap | 5 |
 | deviation | 1 |
-| weak evidence | 3 |
-| covered | 1 |
+| weak evidence | 2 |
+| covered | 3 |
 
 ## Reset Findings
 
 | legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `layout.scala.html` | Any normal route, anonymous/authenticated. Legacy loads Bootstrap, yobicon, Select2, Pikaday, `usermenu.css`, compiled `yobi.css`, NProgress, Viewer CSS/JS in a fixed asset chain. | `frontend/index.html`, `frontend/src/main.tsx`, `frontend/src/app.css` | asset | gap | P0 | `frontend/index.html`, `frontend/src/main.tsx`, `frontend/src/app.css`, asset copy/build config if approved | Current SPA imports only the Vite app bundle plus recreated CSS. Reset requires legacy Bootstrap/Yobi-equivalent asset baseline. |
-| `layout.scala.html` | Any normal route. | `frontend/src/routes/__root.tsx` | layout | gap | P0 | `frontend/src/routes/__root.tsx` | Missing shell anchors `body#html-body`, `#main.main`, and `partial_update_notification()` equivalent. |
-| `common/scripts.scala.html` | Any route with common scripts. | `frontend/src/routes/__root.tsx`, route-specific modal code | interaction | gap | P0 | root shared global-shell component/test | Missing global `#yobiDialog`, `#yobiToasts`, and `#tplYobiToast`; route-specific dialogs do not satisfy global shell parity. |
+| `layout.scala.html` | Any normal route. | `frontend/index.html`, `frontend/src/main.tsx`, `frontend/src/routes/__root.tsx` | layout | gap | P0 | root shared global-shell component/test | `body#html-body` and `#main.main` are covered in current follow-up by `frontend/index.html`, `mountApp`, and `RootRouteComponent`; `partial_update_notification()` remains missing. |
+| `common/scripts.scala.html` | Any route with common scripts. | `frontend/src/routes/__root.tsx`, `frontend/src/auth-workspace-shell.spec.tsx` | interaction | covered in current follow-up | P0 | none | `LegacyGlobalContainers` now renders global `#yobiDialog`, `#yobiToasts`, and `#tplYobiToast`; focused static proof is in `auth-workspace-shell.spec.tsx`. Behavior consumers remain tracked by the separate flash/shortcut/upload/viewer row. |
 | `common/navbar.scala.html` | Header on global/project/org routes. | `frontend/src/routes/__root.tsx`, `frontend/src/app.css` | css | deviation | P0 | `frontend/src/app.css` | Legacy `_page.less` uses dark `.gnb-outer`; current `.gnb-outer` is white with light border. |
 | `common/navbar.scala.html` | Pin/sidebar toggle, framed/non-framed state. | `frontend/src/routes/__root.tsx` | interaction | gap | P0 | `frontend/src/routes/__root.tsx`, `frontend/tests/root-shell-parity.e2e.ts` | `.pin` is rendered, but no mapped localStorage/sidebar redirect/iframe toggle behavior is documented. |
 | `layout_framed.scala.html` | `/sidebar?path=...&hash=...`, authenticated framed shell. | No evident React route | route | gap | P0 | root route/framed route files, router config | No current `body.framed-body`, `#sidebar.sidebar.hide-in-mobile`, `#mainFrame`, or `iframe#mainFrameId.mainFrame` equivalent found. |
 | `common/usermenu.scala.html` | Authenticated side menu tabs/favorites. | `frontend/src/routes/__root.tsx`, workspace overview mapping | interaction | weak evidence | P0 | `frontend/src/routes/__root.tsx`, workspace API/client, E2E | Current renders static tab content from `workspaceOverview`; legacy lazy-loads `UsermenuUrl` and supports favorite toggles through `yona.Usermenu.js`. |
-| `common/loginDialog.scala.html` | Anonymous login dialog local error state. | `frontend/src/routes/-auth-views.tsx` | interaction | weak evidence | P0 | `LegacyLoginDialog`, root shell tests | DOM is mostly covered, but mapper found React can surface login errors in `.runtime-error-banner` rather than filling `.loginDialog .error .error-message`; verify/fix modal-local error behavior. |
+| `common/loginDialog.scala.html` | Anonymous login dialog local error state. | `frontend/src/routes/-auth-views.tsx`, `frontend/src/routes/__root.tsx`, `frontend/src/auth-workspace-shell.spec.tsx` | interaction | covered in current follow-up | P0 | none | `RootLoginDialog` now keeps login failures local to the modal and `LegacyLoginDialog` fills `.loginDialog .error .error-message` with resolved legacy copy. Pixel/modal geometry remains part of the verifier baseline. |
 | `common/scripts.scala.html` | Flash toast/alert, shortcuts, upload globals, markdown viewer. | scattered route files | interaction | gap | P0 | shared global shell/runtime utilities | No global parity evidence for flash-to-toast/alert, `yobi.Files.init`, shortcut keymap, ViewerJS image behavior, or task-list global listener. |
 | `common/footer.scala.html` | Normal pages. | `frontend/src/routes/__root.tsx` | layout | covered | P0 | none | Source and E2E assert `.page-footer-outer .page-footer` and provider copy; still needs visual comparison as part of the P0 verifier baseline. |
 | `common/navbar.scala.html` | Anonymous/authenticated header basics/search scope. | `frontend/src/routes/__root.tsx` | test-gap | weak evidence | P0 | `frontend/tests/root-shell-parity.e2e.ts`, visual verifier artifacts | E2E asserts selectors and text, but no legacy-vs-current screenshot/pixel evidence exists yet. |

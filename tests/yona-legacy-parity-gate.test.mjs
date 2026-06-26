@@ -180,6 +180,23 @@ test("maps restricted sample route changes to the account lifecycle slice", () =
   );
 });
 
+test("accepts template-first P0 report as global shell implementation evidence", () => {
+  const result = runGate([
+    "frontend/src/main.tsx",
+    "frontend/src/routes/__root.tsx",
+    "frontend/src/routes/-auth-views.tsx",
+    "frontend/src/auth-workspace-shell.spec.tsx",
+    "docs/provenance/ui-parity-reports/template-first-p0-global-shell.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id).sort(),
+    ["auth-account-lifecycle", "rust-foundation-and-runtime-bootstrap"].sort(),
+  );
+});
+
 test("maps shared frontend view model changes to shared view model evidence", () => {
   const result = runGate([
     "frontend/src/app-view-models.ts",

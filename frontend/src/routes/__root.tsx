@@ -27,13 +27,16 @@ function RootRouteComponent() {
   return (
     <YonaQueryProvider>
       <AppRuntimeProvider runtimeConfig={runtimeConfig}>
-        <RuntimeErrorBanner />
-        <SiteAdminLoggedInAffix />
-        <RootHeader onOpenLoginDialog={() => setLoginDialogOpen(true)} />
-        <RootSidebar />
-        <Outlet />
-        <RootFooter />
-        <RootLoginDialog open={loginDialogOpen} onClose={() => setLoginDialogOpen(false)} />
+        <div className="main" id="main">
+          <RuntimeErrorBanner />
+          <SiteAdminLoggedInAffix />
+          <RootHeader onOpenLoginDialog={() => setLoginDialogOpen(true)} />
+          <RootSidebar />
+          <Outlet />
+          <RootFooter />
+          <LegacyGlobalContainers />
+          <RootLoginDialog open={loginDialogOpen} onClose={() => setLoginDialogOpen(false)} />
+        </div>
       </AppRuntimeProvider>
     </YonaQueryProvider>
   );
@@ -117,6 +120,42 @@ function RootFooter() {
         </span>
       </div>
     </footer>
+  );
+}
+
+function LegacyGlobalContainers() {
+  const { messages } = useAppRuntime();
+
+  return (
+    <>
+      <div aria-hidden="true" className="modal hide yobiDialog" id="yobiDialog" role="dialog">
+        <div className="btn-dismiss">
+          <button className="btn-transparent" data-dismiss="modal" type="button">
+            &times;
+          </button>
+        </div>
+        <div className="message">
+          <div className="center-text">
+            <p className="msg"></p>
+            <p className="desc"></p>
+          </div>
+          <div className="center-txt buttons">
+            <button className="ybtn ybtn-info" data-dismiss="modal" type="button">
+              {messages("button.confirm", { fallback: "button.confirm" })}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="yobiToasts" id="yobiToasts"></div>
+      <script
+        dangerouslySetInnerHTML={{
+          __html:
+            '<div class="toast" tabindex="-1"><div class="btn-dismiss"><button type="button" class="btn-transparent">&times;</button></div><div class="center-text"><span class="v"></span><div class="msg"></div></div></div>',
+        }}
+        id="tplYobiToast"
+        type="text/x-jquery-tmpl"
+      />
+    </>
   );
 }
 
@@ -684,6 +723,7 @@ function RootLoginDialog({ onClose, open }: { onClose: () => void; open: boolean
     setErrorMessage,
   } = useAppRuntime();
   const [pending, setPending] = React.useState(false);
+  const [dialogErrorMessage, setDialogErrorMessage] = React.useState<string | null>(null);
 
   if (currentSession && !currentSession.isAnonymous) {
     return null;
@@ -693,14 +733,19 @@ function RootLoginDialog({ onClose, open }: { onClose: () => void; open: boolean
     <LegacyLoginDialog
       authUiCapabilities={authUiCapabilities}
       csrfToken={csrfToken}
+      errorMessage={dialogErrorMessage}
       open={open}
-      onClose={onClose}
+      onClose={() => {
+        setDialogErrorMessage(null);
+        onClose();
+      }}
       runtimeConfig={runtimeConfig}
       onSignIn={async (input) => {
         if (pending) {
           return;
         }
         setPending(true);
+        setDialogErrorMessage(null);
         setErrorMessage(null);
         try {
           const session = await signInWithPassword(runtimeConfig, csrfToken, input);
@@ -711,7 +756,7 @@ function RootLoginDialog({ onClose, open }: { onClose: () => void; open: boolean
             resolvePostAuthHref(null, session.defaultLandingPath),
           );
         } catch (error) {
-          setErrorMessage(legacyLoginFailureMessage(error));
+          setDialogErrorMessage(legacyLoginFailureMessage(error));
         } finally {
           setPending(false);
         }

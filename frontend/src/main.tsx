@@ -20,6 +20,10 @@ export function createApp(options: CreateAppOptions = {}) {
 }
 
 export function mountApp(container: Element, options: CreateAppOptions = {}) {
+  if (typeof document !== "undefined") {
+    document.body.id = "html-body";
+  }
+
   const { router } = createApp(options);
   return createRoot(container).render(<RouterProvider router={router} />);
 }
