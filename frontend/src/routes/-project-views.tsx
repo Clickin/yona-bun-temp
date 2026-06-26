@@ -3889,6 +3889,9 @@ export function ProjectSettingsPage(props: {
   const maxReviewerCount = Math.max(1, detail.maxReviewerCount ?? 1);
   const reviewerCountOptions = Array.from({ length: maxReviewerCount }, (_, index) => index + 1);
   const isGitProject = !detail.vcs || detail.vcs.toLowerCase() === "git";
+  const logoUrl =
+    detail.logoUrl ??
+    prefixBasePath(props.runtimeConfig.basePath, "/assets/images/project_default_logo.png");
   const projectScopes = [
     { id: "public", label: "project.public", value: "PUBLIC" },
     ...(detail.organizationName
@@ -3945,7 +3948,7 @@ export function ProjectSettingsPage(props: {
             <div className="bubble-wrap gray" style={{ overflow: "visible" }}>
               <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: 20 }}>
                 <div className="setting-box left">
-                  <div className="logo-wrap" />
+                  <div className="logo-wrap" style={{ backgroundImage: `url('${logoUrl}')` }} />
                   <div className="logo-desc">
                     <ul className="unstyled descs">
                       <li>

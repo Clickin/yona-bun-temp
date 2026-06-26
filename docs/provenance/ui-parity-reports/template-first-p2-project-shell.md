@@ -42,10 +42,10 @@ Source comparison by Subagent P2 found concrete reset blockers:
 
 | status | count |
 | --- | ---: |
-| gap | 7 |
+| gap | 6 |
 | deviation | 1 |
 | weak evidence | 3 |
-| covered | 5 |
+| covered | 6 |
 
 ## Reset Findings
 
@@ -59,7 +59,7 @@ Source comparison by Subagent P2 found concrete reset blockers:
 | `project/watchers.scala.html` | `/owner/project/watchers`, private/protected/custom-menu project. | `frontend/src/routes/$owner/$projectName/watchers/route.tsx` | data-boundary | gap | P2 | `watchers/route.tsx`, `-project-views.tsx` | Current uses synthetic `projectShellDetail`, losing logo/background/scope/menu/count state. |
 | `project/members.scala.html` | `/owner/project/members`, custom-menu project. | `frontend/src/routes/$owner/$projectName/members/route.tsx` | data-boundary | gap | P2 | `members/route.tsx`, `-project-views.tsx` | Current shell detail is synthesized from members response. |
 | `project/webhooks.scala.html` | Webhook list, viewer can read but cannot create. | `frontend/src/routes/$owner/$projectName/webhooks/route.tsx` | permission | gap | P2 | `webhooks/route.tsx` | Legacy hides create form only; current route returns `ForbiddenPage` when `!viewerCanUpdate`. |
-| `project/setting.scala.html` | Settings form with logo. | `frontend/src/routes/-project-views.tsx` | asset | gap | P2 | `ProjectSettingsPage` | Legacy `.logo-wrap` has `background-image:url(...)`; current `.logo-wrap` is empty. |
+| `project/setting.scala.html` | Settings form with logo. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-settings-parity.spec.tsx` | asset | covered in current follow-up | P2 | none | `ProjectSettingsPage` now renders `.logo-wrap` with legacy inline `background-image:url(...)`, using `detail.logoUrl` or the legacy `/assets/images/project_default_logo.png` fallback; focused settings parity asserts the style and `#logoPath` upload anchor. |
 | `project/setting.scala.html` | Git project, code menu off. | `frontend/src/routes/-project-views.tsx` | layout | gap | P2 | `ProjectSettingsPage` | Legacy keeps `#defaultBranceSettingPanel` hidden; current omits it when code is off or no branches exist. |
 | `project/setting.scala.html` | Reviewer count dropdown. | `frontend/src/routes/-project-views.tsx` | layout | deviation | P2 | `ProjectSettingsPage` | Legacy uses `.btn-group.branches > button + ul.dropdown-menu`; current uses native `select`. |
 | `project/home.scala.html` | Project home sidebar. | `frontend/src/routes/-project-views.tsx`, `frontend/src/project-home-tabs.spec.tsx` | layout | covered in current follow-up | P2 | none | Removed the non-legacy `section > h3 Project dashboard` / `.runtime-grid` sidebar block; watch/enroll controls now live in `project/header.scala.html`'s util dropdown position, and the sidebar preserves legacy button wrap, optional milestone summary, and member info order. |

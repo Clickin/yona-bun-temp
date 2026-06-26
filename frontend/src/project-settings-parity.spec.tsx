@@ -25,6 +25,7 @@ const projectDetail = {
   enrollmentRequested: false,
   isFavorited: false,
   isUsingReviewerCount: true,
+  logoUrl: "/yona/files/project-logo.png",
   maxReviewerCount: 3,
   organizationName: "team",
   overview: "Overview",
@@ -117,6 +118,11 @@ describe("project settings parity", () => {
     expect(html).toContain('class="bubble-wrap gray"');
     expect(html).toContain('class="box-wrap top clearfix frm-wrap"');
     expect(html).toContain('class="setting-box left"');
+    expect(html).toContain('class="logo-wrap"');
+    expect(html).toContain(
+      'style="background-image:url(&#x27;/yona/files/project-logo.png&#x27;)"',
+    );
+    expect(html).toContain('id="logoPath"');
     expect(html).toContain('class="setting-box right"');
     expect(html).toContain('id="project-name"');
     expect(html).toContain('name="name"');
