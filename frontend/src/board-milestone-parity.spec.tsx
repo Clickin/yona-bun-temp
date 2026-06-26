@@ -266,6 +266,48 @@ describe("board/milestone UI parity closure", () => {
     expect(html).toContain('class="board-labels"');
   });
 
+  it("lets the project layout route own board form shells", () => {
+    const html = renderToStaticMarkup(
+      <ProjectPostFormPage
+        canMarkNotice={true}
+        canMarkReadme={true}
+        labels={[boardLabel]}
+        mode="create"
+        ownerName="owner"
+        projectName="projectYobi"
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+        onSubmit={async () => undefined}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const createRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/postform/route.tsx"),
+      "utf8",
+    );
+    const editRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/post/$postNumber/editform/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/postform`");
+    expect(layoutSource).toContain("isBoardPostEditFormPath");
+    expect(layoutSource).toContain('activeMenu: "board"');
+    expect(layoutSource).toContain('shellClassName: "board-page"');
+    expect(createRouteSource).toContain("renderShell={false}");
+    expect(editRouteSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="app-shell board-page"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="nm board-form"');
+    expect(html).toContain('id="editor-body-content-body"');
+  });
+
   it("renders milestone list sort/search and due-date relative metadata from the view model", () => {
     const html = renderToStaticMarkup(
       <ProjectMilestoneListPage

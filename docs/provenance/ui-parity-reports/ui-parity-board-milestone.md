@@ -78,6 +78,15 @@ Worker update, 2026-06-26:
   selector, notice rows, and pagination body. Verification:
   `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
   src/board-milestone-parity.spec.tsx`.
+- Worker update, 2026-06-27 board form layout follow-up: project board
+  create/edit shell ownership moved into
+  `frontend/src/routes/$owner/$projectName/route.tsx` for `/postform` and
+  `/post/:postNumber/editform`, keeping the board menu active and the
+  `board-page` shell CSS hook. `ProjectPostFormPage` now supports
+  `renderShell={false}` while retaining the legacy `project-page-wrap`,
+  `.board-form`, markdown editor, uploader, notice/readme, and submit/cancel
+  body. Verification: `pnpm --dir frontend exec tsc --noEmit`;
+  `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
 
 ## Evidence Checked
 

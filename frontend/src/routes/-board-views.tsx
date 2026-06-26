@@ -1959,6 +1959,7 @@ export function ProjectPostFormPage(props: {
   ownerName: string;
   projectName: string;
   readme?: boolean;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   onSubmit: (input: {
     bodyMarkdown: string;
@@ -2000,216 +2001,230 @@ export function ProjectPostFormPage(props: {
   });
   const titlePlaceholder = legacyMessage(messages, isOnlineCommit ? "code.commitMsg" : "title");
 
-  return (
-    <main className="app-shell board-page">
-      <h1 className="sr-only">
-        {legacyMessage(messages, props.mode === "create" ? "post.write" : "post.modify")}
-      </h1>
-      <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu activeMenu="board" detail={shellDetail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <form
-            className="nm board-form"
-            encType="multipart/form-data"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (title.length === 0) {
-                setValidationMessage("post.error.emptyTitle");
-                return;
-              }
-              setValidationMessage(null);
-              void props.onSubmit({
-                attachmentIds,
-                bodyMarkdown,
-                labelIds:
-                  props.mode === "edit"
-                    ? (props.initialPost?.labels ?? []).map((label) => label.id)
-                    : [],
-                newFileName,
-                notice,
-                readme,
-                title,
-              });
-            }}
-          >
-            <div className="content-wrap frm-wrap">
-              <dl>
-                {props.mode === "edit" ? (
-                  <dt>
-                    <label htmlFor="title">{legacyMessage(messages, "title")}</label>
-                  </dt>
-                ) : null}
-                <dd>
-                  <input
-                    autoComplete="off"
-                    className="zen-mode text title"
-                    id="title"
-                    maxLength={250}
-                    name="title"
-                    onChange={(event) => {
-                      setValidationMessage(null);
-                      setTitle(event.target.value);
-                    }}
-                    placeholder={titlePlaceholder}
-                    data-legacy-tabindex="1"
-                    type="text"
-                    value={title}
-                  />
-                </dd>
-                <dd>
-                  {onlineCommit?.issueTemplate ? (
-                    <div className="attach-wrap">
-                      <span className="help help-droppable">
-                        {legacyMessage(messages, "issue.template.no.attachment.allow")}
-                      </span>
-                    </div>
-                  ) : null}
-                  {isOnlineCommit ? (
-                    <div className="file-path-wrap">
-                      <span className="help file-path">
-                        {onlineCommit?.branch}: /{onlineCommit?.path}{" "}
-                        {!onlineCommit?.edit && !onlineCommit?.issueTemplate ? (
-                          <input
-                            className="new-file-name"
-                            name="new-file-name"
-                            onChange={(event) => setNewFileName(event.target.value)}
-                            placeholder="filename.."
-                            required
-                            data-legacy-tabindex="2"
-                            type="text"
-                            value={newFileName}
-                          />
-                        ) : null}
-                      </span>
-                    </div>
-                  ) : null}
-                </dd>
-                <dd style={{ position: "relative" }}>
-                  <span className="sr-only" id="board-post-body-label">
-                    Body
+  const pageTitle = (
+    <h1 className="sr-only">
+      {legacyMessage(messages, props.mode === "create" ? "post.write" : "post.modify")}
+    </h1>
+  );
+  const pageBody = (
+    <div className="project-page-wrap">
+      <form
+        className="nm board-form"
+        encType="multipart/form-data"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (title.length === 0) {
+            setValidationMessage("post.error.emptyTitle");
+            return;
+          }
+          setValidationMessage(null);
+          void props.onSubmit({
+            attachmentIds,
+            bodyMarkdown,
+            labelIds:
+              props.mode === "edit"
+                ? (props.initialPost?.labels ?? []).map((label) => label.id)
+                : [],
+            newFileName,
+            notice,
+            readme,
+            title,
+          });
+        }}
+      >
+        <div className="content-wrap frm-wrap">
+          <dl>
+            {props.mode === "edit" ? (
+              <dt>
+                <label htmlFor="title">{legacyMessage(messages, "title")}</label>
+              </dt>
+            ) : null}
+            <dd>
+              <input
+                autoComplete="off"
+                className="zen-mode text title"
+                id="title"
+                maxLength={250}
+                name="title"
+                onChange={(event) => {
+                  setValidationMessage(null);
+                  setTitle(event.target.value);
+                }}
+                placeholder={titlePlaceholder}
+                data-legacy-tabindex="1"
+                type="text"
+                value={title}
+              />
+            </dd>
+            <dd>
+              {onlineCommit?.issueTemplate ? (
+                <div className="attach-wrap">
+                  <span className="help help-droppable">
+                    {legacyMessage(messages, "issue.template.no.attachment.allow")}
                   </span>
-                  <LegacyMarkdownEditorShell
-                    editId="edit-content-body"
-                    editorMode="content-body"
-                    messages={messages}
-                    previewId="preview-content-body"
-                  >
-                    <BoardMarkdownTextarea
-                      ariaLabel="Body"
-                      className="editorSeries content comment nm"
-                      csrfToken={props.csrfToken}
-                      dataEditorMode="content-body"
-                      id="editor-body-content-body"
-                      name="body"
-                      onAttachmentUpload={(attachment) =>
-                        setAttachmentIds((current) => [...current, attachment.id])
-                      }
-                      onChange={(nextBodyMarkdown) => {
-                        setValidationMessage(null);
-                        setBodyMarkdown(nextBodyMarkdown);
-                      }}
-                      runtimeConfig={props.runtimeConfig}
-                      value={bodyMarkdown}
-                    />
-                  </LegacyMarkdownEditorShell>
-                </dd>
-              </dl>
-              {!isOnlineCommit ? (
-                <LegacyFileUploaderShell
-                  messages={messages}
-                  resourceId={props.mode === "edit" ? props.initialPost?.id : null}
-                  resourceType="BOARD_POST"
-                />
-              ) : null}
-              <div className="right-txt mt10 mb10">
-                {props.canMarkNotice && !isOnlineCommit ? (
-                  <label className="checkbox">
-                    <input
-                      checked={notice}
-                      id="notice"
-                      name="notice"
-                      onChange={(event) => setNotice(event.target.checked)}
-                      type="checkbox"
-                    />
-                    {legacyMessage(messages, "post.notice.label")}
-                  </label>
-                ) : null}
-                <input
-                  id="issueTemplate"
-                  name="issueTemplate"
-                  type="hidden"
-                  value={onlineCommit?.issueTemplate ? "true" : ""}
-                />
-                <input id="branch" name="branch" type="hidden" value={onlineCommit?.branch ?? ""} />
-                <input
-                  id="path"
-                  name="path"
-                  type="hidden"
-                  value={
-                    isOnlineCommit && !onlineCommit?.edit && !onlineCommit?.issueTemplate
-                      ? `${onlineCommit?.path ?? ""}${newFileName}`
-                      : (onlineCommit?.path ?? "")
-                  }
-                />
-                <input id="lineEnding" name="lineEnding" type="hidden" value="LF" />
-                {props.canMarkReadme && !isOnlineCommit ? (
-                  <label className="checkbox">
-                    <input
-                      checked={readme}
-                      id="readme"
-                      name="readme"
-                      onChange={(event) => setReadme(event.target.checked)}
-                      type="checkbox"
-                    />
-                    {legacyMessage(messages, "post.readmefy")}
-                  </label>
-                ) : null}
-              </div>
-              <div className="actions board-actions">
-                {props.mode === "edit" && !props.initialPost?.readme ? (
-                  <span className="send-notification-check">
-                    <label className="checkbox inline">
-                      <input
-                        defaultChecked
-                        id="notificationMail"
-                        name="notificationMail"
-                        type="checkbox"
-                        value="yes"
-                      />
-                      <strong>{legacyMessage(messages, "notification.send.mail")}</strong>
-                    </label>
-                  </span>
-                ) : null}
-                <button
-                  className={props.mode === "edit" ? "ybtn ybtn-info" : "ybtn ybtn-success"}
-                  data-legacy-tabindex="3"
-                  type="submit"
-                >
-                  {legacyMessage(messages, "button.save")}
-                </button>
-                <a
-                  className="ybtn"
-                  href={buildProjectHref(
-                    props.runtimeConfig,
-                    props.ownerName,
-                    props.projectName,
-                    "posts",
-                  )}
-                  data-legacy-tabindex="4"
-                >
-                  {legacyMessage(messages, "button.cancel")}
-                </a>
-              </div>
-              {validationMessage ? (
-                <div className="alert alert-error" role="alert">
-                  {legacyMessage(messages, validationMessage)}
                 </div>
               ) : null}
+              {isOnlineCommit ? (
+                <div className="file-path-wrap">
+                  <span className="help file-path">
+                    {onlineCommit?.branch}: /{onlineCommit?.path}{" "}
+                    {!onlineCommit?.edit && !onlineCommit?.issueTemplate ? (
+                      <input
+                        className="new-file-name"
+                        name="new-file-name"
+                        onChange={(event) => setNewFileName(event.target.value)}
+                        placeholder="filename.."
+                        required
+                        data-legacy-tabindex="2"
+                        type="text"
+                        value={newFileName}
+                      />
+                    ) : null}
+                  </span>
+                </div>
+              ) : null}
+            </dd>
+            <dd style={{ position: "relative" }}>
+              <span className="sr-only" id="board-post-body-label">
+                Body
+              </span>
+              <LegacyMarkdownEditorShell
+                editId="edit-content-body"
+                editorMode="content-body"
+                messages={messages}
+                previewId="preview-content-body"
+              >
+                <BoardMarkdownTextarea
+                  ariaLabel="Body"
+                  className="editorSeries content comment nm"
+                  csrfToken={props.csrfToken}
+                  dataEditorMode="content-body"
+                  id="editor-body-content-body"
+                  name="body"
+                  onAttachmentUpload={(attachment) =>
+                    setAttachmentIds((current) => [...current, attachment.id])
+                  }
+                  onChange={(nextBodyMarkdown) => {
+                    setValidationMessage(null);
+                    setBodyMarkdown(nextBodyMarkdown);
+                  }}
+                  runtimeConfig={props.runtimeConfig}
+                  value={bodyMarkdown}
+                />
+              </LegacyMarkdownEditorShell>
+            </dd>
+          </dl>
+          {!isOnlineCommit ? (
+            <LegacyFileUploaderShell
+              messages={messages}
+              resourceId={props.mode === "edit" ? props.initialPost?.id : null}
+              resourceType="BOARD_POST"
+            />
+          ) : null}
+          <div className="right-txt mt10 mb10">
+            {props.canMarkNotice && !isOnlineCommit ? (
+              <label className="checkbox">
+                <input
+                  checked={notice}
+                  id="notice"
+                  name="notice"
+                  onChange={(event) => setNotice(event.target.checked)}
+                  type="checkbox"
+                />
+                {legacyMessage(messages, "post.notice.label")}
+              </label>
+            ) : null}
+            <input
+              id="issueTemplate"
+              name="issueTemplate"
+              type="hidden"
+              value={onlineCommit?.issueTemplate ? "true" : ""}
+            />
+            <input id="branch" name="branch" type="hidden" value={onlineCommit?.branch ?? ""} />
+            <input
+              id="path"
+              name="path"
+              type="hidden"
+              value={
+                isOnlineCommit && !onlineCommit?.edit && !onlineCommit?.issueTemplate
+                  ? `${onlineCommit?.path ?? ""}${newFileName}`
+                  : (onlineCommit?.path ?? "")
+              }
+            />
+            <input id="lineEnding" name="lineEnding" type="hidden" value="LF" />
+            {props.canMarkReadme && !isOnlineCommit ? (
+              <label className="checkbox">
+                <input
+                  checked={readme}
+                  id="readme"
+                  name="readme"
+                  onChange={(event) => setReadme(event.target.checked)}
+                  type="checkbox"
+                />
+                {legacyMessage(messages, "post.readmefy")}
+              </label>
+            ) : null}
+          </div>
+          <div className="actions board-actions">
+            {props.mode === "edit" && !props.initialPost?.readme ? (
+              <span className="send-notification-check">
+                <label className="checkbox inline">
+                  <input
+                    defaultChecked
+                    id="notificationMail"
+                    name="notificationMail"
+                    type="checkbox"
+                    value="yes"
+                  />
+                  <strong>{legacyMessage(messages, "notification.send.mail")}</strong>
+                </label>
+              </span>
+            ) : null}
+            <button
+              className={props.mode === "edit" ? "ybtn ybtn-info" : "ybtn ybtn-success"}
+              data-legacy-tabindex="3"
+              type="submit"
+            >
+              {legacyMessage(messages, "button.save")}
+            </button>
+            <a
+              className="ybtn"
+              href={buildProjectHref(
+                props.runtimeConfig,
+                props.ownerName,
+                props.projectName,
+                "posts",
+              )}
+              data-legacy-tabindex="4"
+            >
+              {legacyMessage(messages, "button.cancel")}
+            </a>
+          </div>
+          {validationMessage ? (
+            <div className="alert alert-error" role="alert">
+              {legacyMessage(messages, validationMessage)}
             </div>
-          </form>
+          ) : null}
         </div>
-      </div>
+      </form>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return (
+      <>
+        {pageTitle}
+        {pageBody}
+      </>
+    );
+  }
+
+  return (
+    <main className="app-shell board-page">
+      {pageTitle}
+      <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="board" detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

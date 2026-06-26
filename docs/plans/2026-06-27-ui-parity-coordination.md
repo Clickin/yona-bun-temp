@@ -226,6 +226,18 @@ M14 starts board shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
 
+M15 continues board shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/postform` and
+  `/post/:postNumber/editform`, with the board menu active and `board-page`
+  shell class preserved.
+- `ProjectPostFormPage` supports `renderShell={false}` so create/edit leaf
+  routes keep their REST submit boundaries but render only the legacy
+  `project-page-wrap` form body under the project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

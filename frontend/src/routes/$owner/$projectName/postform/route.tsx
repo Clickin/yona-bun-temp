@@ -91,6 +91,7 @@ function PostCreateRouteComponent() {
       ownerName={owner}
       projectName={projectName}
       readme={formOptionsQuery.data?.readme ?? false}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       onSubmit={async (input) => {
         try {

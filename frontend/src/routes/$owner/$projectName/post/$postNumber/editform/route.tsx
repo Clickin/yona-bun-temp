@@ -100,6 +100,7 @@ function PostEditRouteComponent() {
       mode="edit"
       ownerName={owner}
       projectName={projectName}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       onSubmit={async (input) => {
         try {

@@ -120,6 +120,12 @@ function projectLayoutShell(
   if (appPath === `/${owner}/${projectName}/posts`) {
     return { activeMenu: "board", keymapMode: "list", shellClassName: "board-page" };
   }
+  if (
+    appPath === `/${owner}/${projectName}/postform` ||
+    isBoardPostEditFormPath(appPath, owner, projectName)
+  ) {
+    return { activeMenu: "board", shellClassName: "board-page" };
+  }
   if (appPath === `/${owner}/${projectName}/milestones`) {
     return { activeMenu: "milestone" };
   }
@@ -146,6 +152,17 @@ function isIssueEditFormPath(appPath: string, owner: string, projectName: string
     segments[0] === owner &&
     segments[1] === projectName &&
     segments[2] === "issue" &&
+    segments[4] === "editform"
+  );
+}
+
+function isBoardPostEditFormPath(appPath: string, owner: string, projectName: string): boolean {
+  const segments = appPath.split("/").filter(Boolean);
+  return (
+    segments.length === 5 &&
+    segments[0] === owner &&
+    segments[1] === projectName &&
+    segments[2] === "post" &&
     segments[4] === "editform"
   );
 }
