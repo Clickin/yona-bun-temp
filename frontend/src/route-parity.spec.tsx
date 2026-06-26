@@ -348,6 +348,9 @@ describe("file-route parity harness", () => {
     expect(directIssueFormRouteSource).not.toContain("Read direct issue form failed.");
     expect(directIssueFormRouteSource).toContain("BadRequestPage");
     expect(directIssueFormRouteSource).toContain('"bad-request"');
+    expect(directIssueFormRouteSource).toContain("useNavigate");
+    expect(directIssueFormRouteSource).toContain("prefixBasePath");
+    expect(directIssueFormRouteSource).not.toContain("navigateToAppHref");
     const directMyIssueFormRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/user/issues/new/mine/route.tsx"),
       "utf8",

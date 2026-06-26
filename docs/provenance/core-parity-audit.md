@@ -56,6 +56,11 @@
   the owning TanStack layout with base-path-aware navigation instead of a full
   document reload helper. Focused guards: `frontend/src/route-parity.spec.tsx`
   and `frontend/src/organization-home-parity.spec.tsx`.
+- React-owned direct issue creation at `/user/issues/new` and
+  `/user/issues/new/mine` preserves the legacy shared form body, but routes
+  successful create redirects through TanStack Router with the mounted base
+  path instead of reloading the document. Focused guard:
+  `frontend/src/route-parity.spec.tsx`.
 - Direct `window.location` navigation in route source is limited to shared app-base fallback helpers; route-owned filter, pagination, code branch, and history transitions use TanStack navigation. Focused guard: `frontend/src/route-parity.spec.tsx`.
 - React-owned project/organization leave, enrollment, and project-watch click
   mutations keep legacy `href`/`data-href` anchors for parity, but clicks call

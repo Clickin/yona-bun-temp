@@ -758,6 +758,10 @@ A slice is closed only when:
   leave actions keep their legacy anchors/REST mutations, then route
   redirect-path responses through TanStack Router navigation from the layout
   owner instead of reloading the document.
+- M57 continues direct issue mutation SPA navigation: `/user/issues/new` and
+  `/user/issues/new/mine` keep the shared direct issue form body and create
+  mutation, then navigate to the created project issue through TanStack Router
+  with the mounted base path preserved.
 - Follow-up modernization after parity slices: introduce a Vite/TypeScript
   import alias for frontend source imports and mechanically rewrite deep
   relative imports in a separate no-behavior-change migration.

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   createIssue,
   listProjectMilestones,
@@ -10,6 +10,7 @@ import {
 import { projectIssueReferencesQueryOptions } from "../../../../api/issue-meta";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView, toProjectMilestoneListView } from "../../../../app-view-models";
+import { prefixBasePath } from "../../../../runtime-config";
 import { ProjectIssueFormPage } from "../../../-issue-views";
 import type { ProjectMilestoneViewModel } from "../../../-view-models";
 import {
@@ -17,7 +18,6 @@ import {
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
-  navigateToAppHref,
   useDocumentTitle,
   useRequireAuthenticatedRoute,
 } from "../../../-shared";
@@ -37,6 +37,7 @@ function DirectIssueCreateRouteComponent() {
 export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; routeHref: string }) {
   const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(props.routeHref);
+  const navigate = useNavigate();
   const [options, setOptions] = React.useState<Awaited<
     ReturnType<typeof readDirectIssueFormOptions>
   > | null>(null);
@@ -177,10 +178,12 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
           referCommentId: options.referCommentId,
           title,
         });
-        navigateToAppHref(
-          runtimeConfig.basePath,
-          `/${ownerName}/${projectName}/issue/${Number(issue.issueNumber)}`,
-        );
+        void navigate({
+          href: prefixBasePath(
+            runtimeConfig.basePath,
+            `/${ownerName}/${projectName}/issue/${Number(issue.issueNumber)}`,
+          ),
+        });
       }}
       referCommentId={options.referCommentId}
       runtimeConfig={runtimeConfig}
