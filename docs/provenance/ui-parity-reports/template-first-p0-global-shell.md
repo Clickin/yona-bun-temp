@@ -3,7 +3,7 @@
 Status: current reset baseline
 Date: 2026-06-26
 Owner packet: P0 global shell/assets
-Mode: template-first mapper baseline; implementation/verifier follow-up active
+Mode: template-first mapper baseline; implementation evidence reviewed
 
 ## Scope
 

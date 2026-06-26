@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { normalizeBasePath, resolveDevConfig } from "./dev-config.mjs";
+
+const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 
 test("normalizeBasePath keeps root as the default local dev mount", () => {
   assert.equal(normalizeBasePath(undefined), "/");
@@ -43,4 +47,16 @@ test("resolveDevConfig still supports mounted-base-path smoke runs", () => {
       frontendUrl: "http://127.0.0.1:4100/yona/",
     },
   );
+});
+
+test("vite dev proxy preserves mounted legacy direct compatibility surfaces", () => {
+  const source = readFileSync(resolve(repoRoot, "frontend/vite.config.ts"), "utf8");
+
+  assert.match(source, /"-_-api"/u);
+  assert.match(source, /"markdown"/u);
+  assert.match(source, /"user\/sidebar"/u);
+  assert.match(source, /"user\/usermenuTabContentList"/u);
+  assert.match(source, /mentionListAtCommitDiff/u);
+  assert.match(source, /acceptValue\.includes\("text\/html"\)/u);
+  assert.match(source, /return request\.url/u);
 });

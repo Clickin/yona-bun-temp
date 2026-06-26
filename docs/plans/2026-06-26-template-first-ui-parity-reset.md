@@ -206,13 +206,19 @@ Update 2026-06-27:
   fresh local runtime DB:
   `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both node scripts/visual-parity-sweep.mjs`.
   Artifact: `output/playwright/visual-sweep/latest.json`, checked at
-  `2026-06-26T16:21:36.680Z`. Result: legacy `93/96`, local `174/174`,
-  comparison `diffFailures 0`, `localFailures 0`, with `22` status deltas
-  from legacy sample/homelab data states or non-HTML export boundaries such as
-  legacy 404/500/400/0 versus local rendered pages. The sweep now ignores only
-  Vite dev
+  `2026-06-26T17:14:26.291Z`. Result: legacy `93/96`, local `174/174`, local
+  direct API surfaces `13/13`, comparison `diffFailures 0`, `localFailures 0`,
+  with `22` status deltas from legacy sample/homelab data states or non-HTML
+  export boundaries such as legacy 404/500/400/0 versus local rendered pages.
+  The sweep now ignores only Vite dev
   `ERR_ABORTED` module-load noise for framed `/sidebar` pages while preserving
   real request failures.
+- Vite dev proxy parity was refreshed in `frontend/vite.config.ts` so the
+  sweep's direct compatibility/API surfaces reach the backend from the mounted
+  frontend origin: `-_-api`, `markdown`, `notification` JSON, user-menu/sidebar,
+  and project compatibility routes for labels/mention lists are proxied while
+  `/notification` browser navigation with `Accept: text/html` remains SPA
+  fallback.
 - The `22` integrated status deltas are now packet-owned and classified in
   `docs/provenance/ui-parity-reports/README.md#integrated-status-delta-classification`.
   P3 issue export and P5 review export are `covered` because `format=xls`
@@ -243,6 +249,15 @@ Update 2026-06-27:
   retains integrated status-delta `needs-parent-decision` rows. Whole UI parity
   still requires a final closure audit for any remaining `gap`, `deviation`,
   `weak evidence`, or stale non-zero summary rows across all parity reports.
+- Final closure audit pass checked the current report set with
+  `rg -n "\| (gap|deviation|weak evidence|needs-parent-decision) \| [1-9]"`
+  across `docs/provenance/ui-parity-reports`,
+  `docs/plans/2026-06-26-template-first-ui-parity-reset.md`, and `SPEC.md`.
+  Result: no non-zero `gap`, `deviation`, `weak evidence`, or
+  `needs-parent-decision` summary rows were found. The only remaining
+  integrated sweep status deltas are the classified `covered`/`not-applicable`
+  rows in
+  `docs/provenance/ui-parity-reports/README.md#integrated-status-delta-classification`.
 
 1. Parent runs a final closure audit across all template-first reports and
    existing parity reports for any non-zero `gap`, `deviation`, `weak evidence`,

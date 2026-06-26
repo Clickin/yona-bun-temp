@@ -1,4 +1,5 @@
 import { tanstackRouterGenerator } from "@tanstack/router-plugin/vite";
+import type { IncomingMessage } from "node:http";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 
@@ -16,9 +17,22 @@ function prefixBasePath(basePath: string, leaf: string): string {
   return basePath === "/" ? `/${leaf}` : `${basePath}/${leaf}`;
 }
 
+function escapeRegExp(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function buildBackendProxy(basePath: string, target: string) {
-  return Object.fromEntries(
-    ["api", "rpc", "files", "user/email"].map((leaf) => [
+  const staticPrefixes = Object.fromEntries(
+    [
+      "-_-api",
+      "api",
+      "files",
+      "markdown",
+      "rpc",
+      "user/email",
+      "user/sidebar",
+      "user/usermenuTabContentList",
+    ].map((leaf) => [
       prefixBasePath(basePath, leaf),
       {
         changeOrigin: false,
@@ -26,6 +40,33 @@ function buildBackendProxy(basePath: string, target: string) {
       },
     ]),
   );
+  const projectCompatibilityPattern =
+    basePath === "/"
+      ? "^/[^/]+/[^/]+/(issue/labels|labels|mentionList|mentionListAtCommitDiff)(?:[/?#]|$)"
+      : `^${escapeRegExp(basePath)}/[^/]+/[^/]+/(issue/labels|labels|mentionList|mentionListAtCommitDiff)(?:[/?#]|$)`;
+  const notificationPattern =
+    basePath === "/"
+      ? "^/notification(?:[/?#]|$)"
+      : `^${escapeRegExp(basePath)}/notification(?:[/?#]|$)`;
+  return {
+    ...staticPrefixes,
+    [notificationPattern]: {
+      bypass(request: IncomingMessage) {
+        const accept = request.headers.accept ?? "";
+        const acceptValue = Array.isArray(accept) ? accept.join(",") : accept;
+        if (acceptValue.includes("text/html")) {
+          return request.url;
+        }
+        return undefined;
+      },
+      changeOrigin: false,
+      target,
+    },
+    [projectCompatibilityPattern]: {
+      changeOrigin: false,
+      target,
+    },
+  };
 }
 
 export default defineConfig(({ mode }) => {

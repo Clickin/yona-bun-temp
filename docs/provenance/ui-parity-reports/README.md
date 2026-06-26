@@ -61,16 +61,19 @@ Rules:
   as a compatibility route.
 - Latest integrated desktop sweep evidence:
   `output/playwright/visual-sweep/latest.json` at
-  `2026-06-26T16:21:36.680Z` records legacy `93/96`, local `174/174`,
-  `diffFailures 0`, `localFailures 0`, and `22` status deltas. The deltas are
-  classified below as implemented export/search boundaries or non-comparable
-  legacy sample-data/homelab-reference differences; they are not packet
-  closures by themselves.
+  `2026-06-26T17:14:26.291Z` records legacy `93/96`, local `174/174`, local
+  direct API surfaces `13/13`, `diffFailures 0`, `localFailures 0`, and `22`
+  status deltas. The deltas are classified below as implemented export/search
+  boundaries or non-comparable legacy sample-data/homelab-reference
+  differences; they are not packet closures by themselves. The local run used a
+  fresh runtime DB and the Vite dev proxy in `frontend/vite.config.ts` now
+  forwards direct compatibility/API surfaces while preserving SPA fallback for
+  browser navigation.
 
 ## Integrated Status Delta Classification
 
 These rows are from `output/playwright/visual-sweep/latest.json` checked at
-`2026-06-26T16:21:36.680Z`. They had no screenshot diff failure. Status `0`
+`2026-06-26T17:14:26.291Z`. They had no screenshot diff failure. Status `0`
 means the browser saw no regular document response, usually because legacy
 produced a download/navigation boundary instead of a comparable HTML page.
 

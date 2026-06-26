@@ -86,7 +86,7 @@ below as implemented boundaries or non-comparable sample-data states.
 ## Integrated Status Delta Findings
 
 These rows come from `output/playwright/visual-sweep/latest.json` checked at
-`2026-06-26T16:21:36.680Z`. They had no screenshot diff failure. The rows below
+`2026-06-26T17:14:26.291Z`. They had no screenshot diff failure. The rows below
 are classified as implemented non-HTML/SPA error boundaries or non-comparable
 legacy homelab seed states; they are not template output gaps.
 
@@ -132,9 +132,10 @@ Integrated browser sweep evidence:
 - Command from parent plan:
   `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both node scripts/visual-parity-sweep.mjs`
 - Artifact: `output/playwright/visual-sweep/latest.json`
-- Checked at: `2026-06-26T16:21:36.680Z`
-- Result: overall legacy `93/96`, local `174/174`, `diffFailures 0`,
-  `localFailures 0`, with seventeen P5 status deltas listed above.
+- Checked at: `2026-06-26T17:14:26.291Z`
+- Result: overall legacy `93/96`, local `174/174`, local direct API surfaces
+  `13/13`, `diffFailures 0`, `localFailures 0`, with seventeen P5 status
+  deltas listed above.
 
 P5 has no remaining `needs-parent-decision` rows. The integrated sweep deltas
 above are classified as implemented export/search boundaries or non-comparable

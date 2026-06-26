@@ -3,7 +3,7 @@
 Status: current reset baseline
 Date: 2026-06-26
 Owner packet: P2 project shell/settings
-Mode: template-first mapper baseline; implementation not started
+Mode: template-first mapper baseline; implementation evidence reviewed
 
 ## Scope
 
@@ -93,5 +93,5 @@ Computed-style/layout proof now covers the P2 shell selectors listed below.
 
 This evidence closes the previous verifier-baseline blocker for the sampled P2
 project shell/settings routes. Conditional private/protected/forked header
-states still require packet-specific verifier evidence before whole-project UI
-parity can be closed.
+states are covered by the static and route-specific P2 rows above; broader
+whole-UI closure remains subject to the top-level integrated browser sweep.
