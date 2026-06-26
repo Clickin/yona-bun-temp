@@ -23,6 +23,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectTransferPage`; the transfer leaf route passes that flag while retaining its existing transfer REST request/query boundary.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx`.
 
+## 2026-06-27 Delete Layout Follow-Up
+
+- Moved project delete settings shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/deleteform`, keeping the settings menu active and rendering `ProjectDeletePage` through the TanStack Router `<Outlet />`.
+- Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectDeletePage`; the delete leaf route passes that flag while retaining its existing delete REST mutation boundary.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx`.
+
 ## Legacy Evidence Checked
 
 - `yona-original/app/views/project/home.scala.html`

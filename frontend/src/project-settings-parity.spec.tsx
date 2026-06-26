@@ -282,6 +282,35 @@ describe("project settings parity", () => {
     expect(html).toContain('id="alertTransfer"');
   });
 
+  it("lets the project layout route own the delete settings shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectDeletePage
+        detail={projectDetail}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/deleteform/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/deleteform`");
+    expect(layoutSource).toContain('return { activeMenu: "settings" };');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="subMenuProjectDelete"');
+    expect(html).toContain('id="btnDelete"');
+    expect(html).toContain('id="alertDeletion"');
+  });
+
   it("preserves legacy visibility for protected and Git-only project setting controls", () => {
     const userOwnedHtml = renderToStaticMarkup(
       <ProjectSettingsPage

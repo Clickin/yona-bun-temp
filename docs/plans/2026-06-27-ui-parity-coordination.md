@@ -138,6 +138,16 @@ M6 continues settings-family shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx`.
 
+M7 continues settings-family shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/deleteform`, with the settings menu active.
+- `ProjectDeletePage` supports `renderShell={false}` so the delete leaf route
+  keeps its REST delete mutation boundary but renders only the legacy
+  `project-page-wrap` body under the project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

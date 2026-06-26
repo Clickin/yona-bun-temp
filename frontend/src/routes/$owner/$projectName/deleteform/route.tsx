@@ -94,6 +94,7 @@ function ProjectDeleteFormRouteComponent() {
       messages={messages}
       onDeleteProject={() => deleteMutation.mutate()}
       pending={deleteMutation.isPending}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

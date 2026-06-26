@@ -3736,6 +3736,7 @@ export function ProjectDeletePage(props: {
   detail: ProjectDetailViewModel | null | undefined;
   messages?: LegacyMessageLookup;
   pending?: boolean;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   onDeleteProject?: (ownerName: string, projectName: string) => void;
 }) {
@@ -3755,110 +3756,116 @@ export function ProjectDeletePage(props: {
   const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
   const canOpenDeleteModal = accepted && !props.pending;
 
+  const content = (
+    <div className="project-page-wrap">
+      <ProjectSettingsSubMenu
+        active="delete"
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+
+      <div className="bubble-wrap gray wp">
+        <div className="cu-label">{legacyMessage(props.messages, "project.delete")}</div>
+        <div className="cu-desc">
+          <p>
+            <strong className="notice">
+              {legacyMessage(props.messages, "project.delete.description")}
+            </strong>
+          </p>
+          <p>
+            <input
+              autoComplete="off"
+              checked={accepted}
+              className="checkbox"
+              id="accept"
+              onChange={(event) => {
+                setAccepted(event.target.checked);
+                setValidationMessage(null);
+              }}
+              type="checkbox"
+            />
+            <label className="bg-checkbox label-agreement" htmlFor="accept">
+              {legacyMessage(props.messages, "project.delete.accept")}
+            </label>
+          </p>
+        </div>
+      </div>
+      {validationMessage ? (
+        <div className="alert alert-error" role="alert">
+          {legacyMessage(props.messages, validationMessage)}
+        </div>
+      ) : null}
+      <div className="box-wrap bottom">
+        <a
+          className="ybtn ybtn-danger"
+          data-toggle="modal"
+          href="#alertDeletion"
+          id="btnDelete"
+          onClick={(event) => {
+            event.preventDefault();
+            if (canOpenDeleteModal) {
+              setValidationMessage(null);
+              setModalOpen(true);
+            } else if (!accepted) {
+              setValidationMessage("project.delete.alert");
+            }
+          }}
+        >
+          <i className="yobicon-database-remove" />{" "}
+          {legacyMessage(props.messages, "project.delete.this")}
+        </a>
+      </div>
+
+      <div className={modalOpen ? "modal" : "modal hide"} id="alertDeletion">
+        <div className="modal-header">
+          <button
+            aria-label={legacyMessage(props.messages, "button.close")}
+            className="close"
+            data-dismiss="modal"
+            onClick={() => setModalOpen(false)}
+            type="button"
+          >
+            ×
+          </button>
+          <h3>{legacyMessage(props.messages, "project.delete.requestion")}</h3>
+        </div>
+        <div className="modal-body">
+          <p>{legacyMessage(props.messages, "project.delete.description")}</p>
+          <p>{legacyMessage(props.messages, "project.delete.reaccept")}</p>
+        </div>
+        <div className="modal-footer">
+          <button
+            className="ybtn ybtn-danger"
+            disabled={props.pending}
+            id="btnDeleteExec"
+            onClick={() => props.onDeleteProject?.(detail.ownerName, detail.projectName)}
+            type="button"
+          >
+            {legacyMessage(props.messages, "button.yes")}
+          </button>
+          <button
+            className="ybtn"
+            data-dismiss="modal"
+            onClick={() => setModalOpen(false)}
+            type="button"
+          >
+            {legacyMessage(props.messages, "button.no")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <ProjectSettingsSubMenu
-            active="delete"
-            detail={detail}
-            messages={props.messages}
-            runtimeConfig={props.runtimeConfig}
-          />
-
-          <div className="bubble-wrap gray wp">
-            <div className="cu-label">{legacyMessage(props.messages, "project.delete")}</div>
-            <div className="cu-desc">
-              <p>
-                <strong className="notice">
-                  {legacyMessage(props.messages, "project.delete.description")}
-                </strong>
-              </p>
-              <p>
-                <input
-                  autoComplete="off"
-                  checked={accepted}
-                  className="checkbox"
-                  id="accept"
-                  onChange={(event) => {
-                    setAccepted(event.target.checked);
-                    setValidationMessage(null);
-                  }}
-                  type="checkbox"
-                />
-                <label className="bg-checkbox label-agreement" htmlFor="accept">
-                  {legacyMessage(props.messages, "project.delete.accept")}
-                </label>
-              </p>
-            </div>
-          </div>
-          {validationMessage ? (
-            <div className="alert alert-error" role="alert">
-              {legacyMessage(props.messages, validationMessage)}
-            </div>
-          ) : null}
-          <div className="box-wrap bottom">
-            <a
-              className="ybtn ybtn-danger"
-              data-toggle="modal"
-              href="#alertDeletion"
-              id="btnDelete"
-              onClick={(event) => {
-                event.preventDefault();
-                if (canOpenDeleteModal) {
-                  setValidationMessage(null);
-                  setModalOpen(true);
-                } else if (!accepted) {
-                  setValidationMessage("project.delete.alert");
-                }
-              }}
-            >
-              <i className="yobicon-database-remove" />{" "}
-              {legacyMessage(props.messages, "project.delete.this")}
-            </a>
-          </div>
-
-          <div className={modalOpen ? "modal" : "modal hide"} id="alertDeletion">
-            <div className="modal-header">
-              <button
-                aria-label={legacyMessage(props.messages, "button.close")}
-                className="close"
-                data-dismiss="modal"
-                onClick={() => setModalOpen(false)}
-                type="button"
-              >
-                ×
-              </button>
-              <h3>{legacyMessage(props.messages, "project.delete.requestion")}</h3>
-            </div>
-            <div className="modal-body">
-              <p>{legacyMessage(props.messages, "project.delete.description")}</p>
-              <p>{legacyMessage(props.messages, "project.delete.reaccept")}</p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="ybtn ybtn-danger"
-                disabled={props.pending}
-                id="btnDeleteExec"
-                onClick={() => props.onDeleteProject?.(detail.ownerName, detail.projectName)}
-                type="button"
-              >
-                {legacyMessage(props.messages, "button.yes")}
-              </button>
-              <button
-                className="ybtn"
-                data-dismiss="modal"
-                onClick={() => setModalOpen(false)}
-                type="button"
-              >
-                {legacyMessage(props.messages, "button.no")}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }
