@@ -159,3 +159,9 @@ integrated visual sweep covers all packet reports.
   while preserving direct-render shell output for existing specs. Focused
   coverage:
   `pnpm --dir frontend exec vitest run src/workspace-settings-parity.spec.tsx src/workspace-settings-i18n.spec.tsx`.
+- 2026-06-27 user files SPA navigation follow-up:
+  `/user/files` preserves the legacy `user/userFiles.scala.html` search form,
+  my-series tabs, rows, and pagination markup, but same-page filter submit and
+  pagination clicks now route through TanStack navigation and refetch from
+  router location state instead of native document navigation. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/user-files-parity.spec.tsx src/form-submit-boundary.spec.tsx`.

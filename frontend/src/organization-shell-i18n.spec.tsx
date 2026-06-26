@@ -328,6 +328,8 @@ describe("organization shell legacy i18n opt-in", () => {
     expect(routeSource).toContain("location.href");
     expect(routeSource).toContain("useNavigate");
     expect(routeSource).toContain("onNavigate=");
+    expect(html).toContain('name="search"');
+    expect(html).toContain('method="get"');
     expect(html).toContain('class="page-wrap"');
     expect(html).toContain('class="row-fluid issue-list-wrap"');
     expect(html).not.toContain("project-header-outer");

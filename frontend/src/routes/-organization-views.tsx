@@ -944,10 +944,10 @@ export function OrganizationIssueListPage(props: {
               method="get"
               name="search"
               onSubmit={(event) => {
+                event.preventDefault();
                 if (!props.onNavigate) {
                   return;
                 }
-                event.preventDefault();
                 const formData = new FormData(event.currentTarget);
                 props.onNavigate(
                   buildOrganizationIssuePath(organizationName, query, {

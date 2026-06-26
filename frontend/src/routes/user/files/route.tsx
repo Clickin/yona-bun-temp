@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { listWorkspaceFilesRest, type WorkspaceFilesResponse } from "../../../api/workspace";
 import { useAppRuntime } from "../../../app-runtime-context";
 import {
@@ -18,6 +18,18 @@ export const Route = createFileRoute("/user/files")({
 
 function appHref(basePath: string, href: string): string {
   return prefixBasePath(basePath, href);
+}
+
+function userFilesPath(query: { filter: string; page: number }): string {
+  const searchParams = new URLSearchParams();
+  if (query.filter.trim()) {
+    searchParams.set("filter", query.filter.trim());
+  }
+  if (query.page > 1) {
+    searchParams.set("pageNum", String(query.page));
+  }
+  const search = searchParams.toString();
+  return `/user/files${search ? `?${search}` : ""}`;
 }
 
 function legacyMessage(messages: LegacyMessageLookup | undefined, key: string) {
@@ -91,6 +103,8 @@ function userFilesQueryFromLocation(): { filter: string; page: number } {
 
 function UserFilesRouteComponent() {
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const navigate = useNavigate();
   const canRender = useRequireAuthenticatedRoute("/user/files");
   const [query, setQuery] = React.useState(() => userFilesQueryFromLocation());
   const [files, setFiles] = React.useState<WorkspaceFilesResponse | null>(null);
@@ -121,7 +135,7 @@ function UserFilesRouteComponent() {
     return () => {
       cancelled = true;
     };
-  }, [canRender, runtimeConfig]);
+  }, [canRender, locationHref, runtimeConfig]);
 
   if (bootstrapping || !canRender) {
     return (
@@ -139,6 +153,9 @@ function UserFilesRouteComponent() {
       basePath={runtimeConfig.basePath}
       files={files}
       messages={messages}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       query={query}
     />
   );
@@ -148,6 +165,7 @@ export function UserFilesPage(props: {
   basePath: string;
   files: WorkspaceFilesResponse | null;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   query: { filter: string; page: number };
 }) {
   const files = props.files?.files ?? [];
@@ -158,7 +176,22 @@ export function UserFilesPage(props: {
       <div className="page-wrap-outer">
         <div className="page-wrap">
           <MySeriesMenuTabs basePath={props.basePath} messages={props.messages} />
-          <form action={appHref(props.basePath, "/user/files")}>
+          <form
+            action={appHref(props.basePath, "/user/files")}
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!props.onNavigate) {
+                return;
+              }
+              const formData = new FormData(event.currentTarget);
+              props.onNavigate(
+                userFilesPath({
+                  filter: String(formData.get("filter") ?? ""),
+                  page: 1,
+                }),
+              );
+            }}
+          >
             <div className="user-file-search search search-bar">
               <input
                 className="textbox"
@@ -219,19 +252,19 @@ export function UserFilesPage(props: {
         <div id="pagination">
           {Array.from({ length: totalPages }, (_, index) => {
             const page = index + 1;
-            const searchParams = new URLSearchParams();
-            if (props.query.filter.trim()) {
-              searchParams.set("filter", props.query.filter.trim());
-            }
-            if (page > 1) {
-              searchParams.set("pageNum", String(page));
-            }
-            const query = searchParams.toString();
+            const href = userFilesPath({ filter: props.query.filter, page });
             return (
               <a
                 className={page === (props.files?.page ?? props.query.page) ? "active" : ""}
-                href={appHref(props.basePath, `/user/files${query ? `?${query}` : ""}`)}
+                href={appHref(props.basePath, href)}
                 key={page}
+                onClick={(event) => {
+                  if (!props.onNavigate) {
+                    return;
+                  }
+                  event.preventDefault();
+                  props.onNavigate(href);
+                }}
               >
                 {page}
               </a>

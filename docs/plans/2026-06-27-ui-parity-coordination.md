@@ -502,6 +502,16 @@ M38 starts workspace settings shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/workspace-settings-parity.spec.tsx src/workspace-settings-i18n.spec.tsx`.
 
+M39 continues workspace files SPA navigation:
+
+- `/user/files` keeps the legacy user files shell and GET form/link markup, but
+  filter submit and pagination clicks now call TanStack navigation instead of
+  native document navigation.
+- The route reads file query state from router location changes so same-page
+  filter/page changes refetch workspace files without leaving the SPA.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/user-files-parity.spec.tsx src/form-submit-boundary.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

@@ -131,6 +131,14 @@
   `frontend/src/workspace-settings-i18n.spec.tsx`,
   `frontend/src/workspace-settings-parity.spec.tsx`, and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 user files SPA navigation continuation:
+  `/user/files` keeps the legacy current-user files form, tab, row, and
+  pagination markup, but filter submit and pagination clicks now use TanStack
+  navigation. The route refetches from router location state so file filtering
+  and page changes no longer perform a native document GET. Focused coverage:
+  `frontend/src/user-files-parity.spec.tsx`,
+  `frontend/src/form-submit-boundary.spec.tsx`, and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were
   missing for normal non-admin users: `issue.myIssue`, sidebar avatar toggle

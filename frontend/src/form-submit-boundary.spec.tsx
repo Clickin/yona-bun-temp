@@ -14,11 +14,6 @@ const allowedDefaultGetActionForms: AllowedDefaultGetActionForm[] = [
     marker: 'name="gnb-search-form"',
     reason: "legacy common/navbar.scala.html omits method for the global search GET form",
   },
-  {
-    file: "routes/user/files/route.tsx",
-    marker: 'action={appHref(props.basePath, "/user/files")}',
-    reason: "legacy user/userFiles.scala.html omits method for the user-file filter GET form",
-  },
 ];
 
 const formPostPattern = /(?:^|\s)method\s*=\s*(?:"post"|'post'|\{\s*["']post["']\s*\})/gi;

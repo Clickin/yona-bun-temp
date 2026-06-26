@@ -27,6 +27,12 @@ describe("legacy user files route parity", () => {
     expect(routeSource).toContain('className="attachment-files-header row"');
     expect(routeSource).toContain('className="attachment-file-detail row"');
     expect(routeSource).toContain('id="pagination"');
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("useRouterState");
+    expect(routeSource).toContain("state.location.href");
+    expect(routeSource).toContain("event.preventDefault();");
+    expect(routeSource).toContain("new FormData(event.currentTarget)");
+    expect(routeSource).toContain("navigate({ href })");
 
     const appCss = readFileSync(join(sourceRoot, "app.css"), "utf8");
     expect(appCss).toContain(".attachment-file-detail.hover");
