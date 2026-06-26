@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { readProjectContainerQueryOptions } from "../api/org-project";
 import { siteUpdateQueryOptions } from "../api/site-admin";
 import { RestApiError } from "../api/rest-client";
-import { signInWithPassword } from "../auth-workspace-client";
+import { signInWithPassword, toggleFavoriteProject } from "../auth-workspace-client";
 import { AppRuntimeProvider, useAppRuntime } from "../app-runtime-context";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -886,8 +886,40 @@ function RootSidebarContent({
   framed?: boolean;
   onActiveMenuChange?: (nextMenu: SidebarActiveMenu) => void;
 }) {
-  const { currentSession, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
+  const {
+    csrfToken,
+    currentSession,
+    messages,
+    refreshWorkspace,
+    runtimeConfig,
+    setErrorMessage,
+    workspaceOverview,
+  } = useAppRuntime();
   const [internalActiveMenu, setInternalActiveMenu] = useSidebarActiveMenu();
+  const toggleSidebarProjectFavorite = React.useCallback(
+    async (ownerName: string, projectName: string, starElement: HTMLElement) => {
+      if (!csrfToken || !currentSession || currentSession.isAnonymous) {
+        return;
+      }
+      try {
+        const result = await toggleFavoriteProject(
+          runtimeConfig,
+          csrfToken,
+          ownerName,
+          projectName,
+        );
+        const favored = legacyUsermenuFavoredFromResponse(result);
+        if (favored !== null) {
+          starElement.classList.toggle("starred", favored);
+        }
+        await refreshWorkspace(currentSession);
+        setErrorMessage(null);
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : "Update failed: favorite project");
+      }
+    },
+    [csrfToken, currentSession, refreshWorkspace, runtimeConfig, setErrorMessage],
+  );
 
   if (!currentSession || currentSession.isAnonymous) {
     return null;
@@ -1002,12 +1034,13 @@ function RootSidebarContent({
             </li>
           ) : null}
         </ul>
-        <div className="tab-content tab-box">
+        <div className="tab-content tab-box user-project-list">
           <div id="usermenu-tab-content-list" className="tab-content">
             <SidebarProjectList
               active={selectedActiveMenu === "myOrganizationList"}
               id="myOrganizationList"
               noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
+              onToggleFavorite={toggleSidebarProjectFavorite}
               projects={workspaceOverview?.favoriteProjects ?? []}
               runtimeConfig={runtimeConfig}
             />
@@ -1015,6 +1048,7 @@ function RootSidebarContent({
               active={selectedActiveMenu === "myProjectList"}
               id="myProjectList"
               noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
+              onToggleFavorite={toggleSidebarProjectFavorite}
               projects={[
                 ...(workspaceOverview?.recentProjects ?? []),
                 ...(workspaceOverview?.watchedProjects ?? []),
@@ -1038,12 +1072,18 @@ function SidebarProjectList({
   active = false,
   id,
   noResultsLabel,
+  onToggleFavorite,
   projects,
   runtimeConfig,
 }: {
   active?: boolean;
   id: string;
   noResultsLabel: string;
+  onToggleFavorite?: (
+    ownerName: string,
+    projectName: string,
+    starElement: HTMLElement,
+  ) => Promise<void>;
   projects: Array<{ ownerName: string; projectName: string }>;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -1081,15 +1121,51 @@ function SidebarProjectList({
                   </div>
                 </div>
               </div>
-              <div className="star-project flex-item" data-project-id="">
+              <button
+                className="star-project flex-item"
+                data-owner-name={project.ownerName}
+                data-project-id={`${project.ownerName}/${project.projectName}`}
+                data-project-name={project.projectName}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  const star = event.currentTarget.querySelector<HTMLElement>("i");
+                  if (!star || !onToggleFavorite) {
+                    return;
+                  }
+                  void onToggleFavorite(project.ownerName, project.projectName, star);
+                }}
+                type="button"
+              >
                 <i className="star material-icons">star</i>
-              </div>
+              </button>
             </div>
           </li>
         );
       })}
     </ul>
   );
+}
+
+export function legacyUsermenuFavoredFromResponse(
+  response: Record<string, unknown>,
+): boolean | null {
+  const favored = response.favored ?? response.favorite ?? response.isFavorite;
+  if (typeof favored === "boolean") {
+    return favored;
+  }
+  if (typeof favored === "number") {
+    return favored > 0;
+  }
+  if (typeof favored === "string") {
+    if (favored === "true" || favored === "1") {
+      return true;
+    }
+    if (favored === "false" || favored === "0") {
+      return false;
+    }
+  }
+  return null;
 }
 
 function SidebarIssueList({

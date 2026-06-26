@@ -57,6 +57,7 @@ import {
   legacyFilesRuntimeConfig,
   legacyCommonScriptsExternalLinkTarget,
   legacyCommonScriptsShouldStartProgressForLink,
+  legacyUsermenuFavoredFromResponse,
 } from "./routes/__root";
 
 describe("auth and workspace views", () => {
@@ -107,6 +108,16 @@ describe("auth and workspace views", () => {
     expect(source).toContain('onClick={() => selectActiveMenu("myRecentIssueList")}');
     expect(source).toContain('display: activeMenu === "myRecentIssueList" ? undefined : "none"');
     expect(source).toContain('className="yobicon-refresh refresh-button"');
+    expect(source).toContain('className="tab-content tab-box user-project-list"');
+    expect(source).toContain("toggleFavoriteProject(");
+    expect(source).toContain("ownerName,");
+    expect(source).toContain("projectName,");
+    expect(source).toContain("legacyUsermenuFavoredFromResponse(result)");
+    expect(source).toContain('starElement.classList.toggle("starred", favored)');
+    expect(source).toContain("await refreshWorkspace(currentSession)");
+    expect(source).toContain("data-owner-name={project.ownerName}");
+    expect(source).toContain("data-project-id={`${project.ownerName}/${project.projectName}`}");
+    expect(source).toContain("data-project-name={project.projectName}");
     expect(source).toContain("siteUpdateQueryOptions");
     expect(source).toContain('className="center-txt"');
     expect(source).toContain('messages("site.update.notification"');
@@ -307,6 +318,16 @@ describe("auth and workspace views", () => {
       sListURL: "/files",
       sUploadURL: "/files",
     });
+  });
+
+  it("pins pure contracts for legacy usermenu favorite responses", () => {
+    expect(legacyUsermenuFavoredFromResponse({ favored: true })).toBe(true);
+    expect(legacyUsermenuFavoredFromResponse({ favored: false })).toBe(false);
+    expect(legacyUsermenuFavoredFromResponse({ favorite: 1 })).toBe(true);
+    expect(legacyUsermenuFavoredFromResponse({ favorite: 0 })).toBe(false);
+    expect(legacyUsermenuFavoredFromResponse({ isFavorite: "true" })).toBe(true);
+    expect(legacyUsermenuFavoredFromResponse({ isFavorite: "0" })).toBe(false);
+    expect(legacyUsermenuFavoredFromResponse({})).toBe(null);
   });
 
   it("builds the legacy framed iframe src from /sidebar query params", () => {

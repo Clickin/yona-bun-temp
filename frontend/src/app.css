@@ -1163,6 +1163,14 @@ h1 {
   vertical-align: text-top;
 }
 
+.user-project-list .star-project {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  text-align: left;
+}
+
 .user-project-list .starred {
   color: #e91e63;
 }
