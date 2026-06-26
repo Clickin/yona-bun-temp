@@ -4,11 +4,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   addProjectMemberRest,
   deleteProjectMemberRest,
+  readProjectContainerQueryOptions,
   readProjectMembersQueryOptions,
   updateProjectMemberRoleRest,
 } from "../../../../api/org-project";
 import { apiQueryKeys } from "../../../../api/query-keys";
 import { useAppRuntime } from "../../../../app-runtime-context";
+import { toProjectContainerView } from "../../../../app-view-models";
 import { ProjectMembersPage } from "../../../-project-views";
 import {
   BadRequestPage,
@@ -32,6 +34,13 @@ function ProjectMembersRouteComponent() {
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
+  const containerQuery = useQuery({
+    ...readProjectContainerQueryOptions(runtimeConfig, {
+      ownerName: owner,
+      projectName,
+    }),
+    enabled: !bootstrapping && canRender,
+  });
   const membersQueryKey = apiQueryKeys.project.members(owner, projectName);
   const membersQuery = useQuery({
     ...readProjectMembersQueryOptions(runtimeConfig, {
@@ -42,17 +51,18 @@ function ProjectMembersRouteComponent() {
   });
 
   React.useEffect(() => {
-    if (!membersQuery.error) {
+    const error = containerQuery.error ?? membersQuery.error;
+    if (!error) {
       setFailureKind(null);
       return;
     }
-    const nextFailureKind = classifyConnectFailure(membersQuery.error);
+    const nextFailureKind = classifyConnectFailure(error);
     if (nextFailureKind) {
       setFailureKind(nextFailureKind);
       return;
     }
     setFailureKind("bad-request");
-  }, [membersQuery.error]);
+  }, [containerQuery.error, membersQuery.error]);
 
   const addMutation = useMutation({
     mutationFn: (loginId: string) =>
@@ -152,6 +162,7 @@ function ProjectMembersRouteComponent() {
       onDeleteMember={(userId) => deleteMutation.mutate(userId)}
       onUpdateMemberRole={(userId, role) => updateRoleMutation.mutate({ role, userId })}
       pending={addMutation.isPending || updateRoleMutation.isPending || deleteMutation.isPending}
+      projectDetail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       runtimeConfig={runtimeConfig}
     />
   );

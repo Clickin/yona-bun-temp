@@ -52,6 +52,26 @@ describe("project members parity", () => {
         onAddMember={vi.fn()}
         onDeleteMember={vi.fn()}
         onUpdateMemberRole={vi.fn()}
+        projectDetail={{
+          boardCount: 2,
+          enrollmentRequestCount: 1,
+          enrollmentRequested: false,
+          isFavorited: false,
+          logoUrl: "/logos/projectYobi.png",
+          organizationName: "",
+          overview: "",
+          ownerName: "owner",
+          projectName: "projectYobi",
+          projectScope: "private",
+          showBoard: true,
+          showCode: false,
+          showIssue: false,
+          showMilestone: false,
+          showPullRequest: false,
+          showReview: false,
+          viewerCanEnroll: false,
+          viewerCanUpdate: true,
+        }}
         runtimeConfig={runtimeConfig}
       />,
     );
@@ -62,8 +82,14 @@ describe("project members parity", () => {
     expect(html).toContain('class="project-header-wrap"');
     expect(html).toContain('<a href="/yona/owner">owner</a>');
     expect(html).toContain('<a href="/yona/owner/projectYobi">projectYobi</a>');
+    expect(html).toContain('<img alt="" src="/logos/projectYobi.png"/>');
+    expect(html).toContain('class="project-private"');
     expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('<span class="menu-name">Board</span>');
+    expect(html).toContain('<span class="project-menu-count">2</span>');
+    expect(html).not.toContain('<span class="menu-name">Code</span>');
     expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('<span class="num-badge">1</span>');
     expect(html).toContain('id="addNewMember"');
     expect(html).toContain('id="loginId"');
     expect(html).toContain('placeholder="Add new member ID."');
@@ -92,6 +118,9 @@ describe("project members parity", () => {
     expect(routeSource).not.toContain("Add project member failed.");
     expect(routeSource).not.toContain("Update project member role failed.");
     expect(routeSource).not.toContain("Delete project member failed.");
+    expect(routeSource).toContain("readProjectContainerQueryOptions");
+    expect(routeSource).toContain("toProjectContainerView");
+    expect(routeSource).toContain("projectDetail=");
     expect(routeSource).toContain('messages("error.badrequest", { fallback: "error.badrequest" })');
     expect(routeSource).toContain(
       'messages("project.member.ownerMustBeAManager", {\n              fallback: "project.member.ownerMustBeAManager",',

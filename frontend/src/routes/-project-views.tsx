@@ -2502,6 +2502,7 @@ export function ProjectDetailPage(props: {
 export function ProjectWatchersPage(props: {
   detail: ProjectWatchersResponse | null | undefined;
   messages?: LegacyMessageLookup;
+  projectDetail?: ProjectDetailViewModel | null | undefined;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t: contextMessages } = useLegacyMessages();
@@ -2512,10 +2513,12 @@ export function ProjectWatchersPage(props: {
     totalCount: 0,
     watchers: [],
   };
-  const shellDetail = projectShellDetail({
-    ownerName: detail.ownerName,
-    projectName: detail.projectName,
-  });
+  const shellDetail =
+    props.projectDetail ??
+    projectShellDetail({
+      ownerName: detail.ownerName,
+      projectName: detail.projectName,
+    });
 
   return (
     <main className="app-shell">
@@ -2558,6 +2561,7 @@ export function ProjectMembersPage(props: {
   detail: ProjectMembersResponse | null | undefined;
   messages?: LegacyMessageLookup;
   pending?: boolean;
+  projectDetail?: ProjectDetailViewModel | null | undefined;
   runtimeConfig: RuntimeConfig;
   onAddMember?: (loginId: string) => void;
   onDeleteMember?: (userId: number) => void;
@@ -2572,12 +2576,14 @@ export function ProjectMembersPage(props: {
     viewerCanUpdate: false,
   };
   const [loginId, setLoginId] = React.useState("");
-  const shellDetail = projectShellDetail({
-    enrollmentRequestCount: detail.enrollmentRequests.length,
-    ownerName: detail.ownerName,
-    projectName: detail.projectName,
-    viewerCanUpdate: detail.viewerCanUpdate,
-  });
+  const shellDetail =
+    props.projectDetail ??
+    projectShellDetail({
+      enrollmentRequestCount: detail.enrollmentRequests.length,
+      ownerName: detail.ownerName,
+      projectName: detail.projectName,
+      viewerCanUpdate: detail.viewerCanUpdate,
+    });
 
   return (
     <main className="app-shell">
@@ -2589,6 +2595,12 @@ export function ProjectMembersPage(props: {
       <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
+          <ProjectSettingsSubMenu
+            active="members"
+            detail={shellDetail}
+            messages={props.messages}
+            runtimeConfig={props.runtimeConfig}
+          />
           <div className="inner-bubble">
             <form
               className="nm"

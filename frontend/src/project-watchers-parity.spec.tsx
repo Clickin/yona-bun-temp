@@ -33,6 +33,27 @@ describe("project watchers parity", () => {
             },
           ],
         }}
+        projectDetail={{
+          boardCount: 0,
+          enrollmentRequestCount: 1,
+          enrollmentRequested: false,
+          isFavorited: false,
+          logoUrl: "/logos/projectYobi.png",
+          openIssueCount: 4,
+          organizationName: "weblabs",
+          overview: "",
+          ownerName: "weblabs",
+          projectName: "projectYobi",
+          projectScope: "protected",
+          showBoard: false,
+          showCode: false,
+          showIssue: true,
+          showMilestone: false,
+          showPullRequest: false,
+          showReview: false,
+          viewerCanEnroll: false,
+          viewerCanUpdate: true,
+        }}
         runtimeConfig={runtimeConfig}
       />,
     );
@@ -46,7 +67,12 @@ describe("project watchers parity", () => {
     expect(html).toContain('class="project-header-wrap"');
     expect(html).toContain('<a href="/yona/weblabs">weblabs</a>');
     expect(html).toContain('<a href="/yona/weblabs/projectYobi">projectYobi</a>');
+    expect(html).toContain('<img alt="" src="/logos/projectYobi.png"/>');
+    expect(html).toContain('class="project-protected"');
     expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('<span class="menu-name">Issue</span>');
+    expect(html).toContain('<span class="project-menu-count">4</span>');
+    expect(html).not.toContain('<span class="menu-name">Code</span>');
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="members project row-fluid"');
     expect(html).toContain('class="member span6 span-hard-wrap"');
@@ -63,6 +89,9 @@ describe("project watchers parity", () => {
     );
 
     expect(routeSource).toContain("classifyConnectFailure");
+    expect(routeSource).toContain("readProjectContainerQueryOptions");
+    expect(routeSource).toContain("toProjectContainerView");
+    expect(routeSource).toContain("projectDetail=");
     expect(routeSource).toContain("BadRequestPage");
     expect(routeSource).toContain("ForbiddenPage");
     expect(routeSource).toContain("NotFoundPage");
