@@ -19,6 +19,7 @@ describe("readRuntimeConfig", () => {
       basePath: "/",
       feedbackUrl: "",
       hideProjectListing: false,
+      maxUploadedFileSize: 2147483454,
       navbarCustomLinkName: "",
       navbarCustomLinkUrl: "",
       projectDefaultMenus: ["code", "issue", "pullRequest", "review", "milestone", "board"],
@@ -53,6 +54,7 @@ describe("readRuntimeConfig", () => {
       basePath: "/yona",
       feedbackUrl: "https://feedback.example.com",
       hideProjectListing: true,
+      maxUploadedFileSize: 2147483454,
       navbarCustomLinkName: "Docs",
       navbarCustomLinkUrl: "https://docs.example.com",
       projectDefaultMenus: ["issue", "pullRequest"],
@@ -69,6 +71,7 @@ describe("readRuntimeConfig", () => {
     process.env.VITE_YONA_FEEDBACK_URL = "https://feedback.example.test";
     process.env.VITE_YONA_HIDE_PROJECT_LISTING = "1";
     process.env.VITE_YONA_LANGS = "ja-JP, en-US";
+    process.env.VITE_YONA_MAX_UPLOADED_FILE_SIZE = "4096";
     process.env.VITE_YONA_PROJECT_DEFAULT_MENUS = "issue,board";
     process.env.VITE_YONA_NAVBAR_CUSTOM_LINK_NAME = " Support ";
     process.env.VITE_YONA_NAVBAR_CUSTOM_LINK_URL = "/support";
@@ -80,6 +83,7 @@ describe("readRuntimeConfig", () => {
       VITE_YONA_FEEDBACK_URL: "https://feedback.example.test",
       VITE_YONA_HIDE_PROJECT_LISTING: "1",
       VITE_YONA_LANGS: "ja-JP, en-US",
+      VITE_YONA_MAX_UPLOADED_FILE_SIZE: "4096",
       VITE_YONA_NAVBAR_CUSTOM_LINK_NAME: " Support ",
       VITE_YONA_NAVBAR_CUSTOM_LINK_URL: "/support",
       VITE_YONA_PROJECT_DEFAULT_MENUS: "issue,board",
@@ -92,6 +96,7 @@ describe("readRuntimeConfig", () => {
       basePath: "/yona",
       feedbackUrl: "https://feedback.example.test",
       hideProjectListing: true,
+      maxUploadedFileSize: 4096,
       navbarCustomLinkName: "Support",
       navbarCustomLinkUrl: "/support",
       projectDefaultMenus: ["issue", "board"],

@@ -103,8 +103,14 @@ type RootSearchScope =
   | { ownerName: string; projectName: string; type: "project" };
 type RootMessageResolver = (key: string, options: { fallback: string }) => string;
 type SidebarActiveMenu = "myOrganizationList" | "myProjectList" | "myRecentIssueList";
+type LegacyFilesRuntimeConfig = {
+  maxFileSize: number;
+  sListURL: string;
+  sUploadURL: string;
+};
 
 const DEFAULT_SIDEBAR_ACTIVE_MENU: SidebarActiveMenu = "myOrganizationList";
+const LEGACY_DEFAULT_MAX_UPLOADED_FILE_SIZE = 2147483454;
 const SIDEBAR_ACTIVE_MENUS = new Set<SidebarActiveMenu>([
   "myOrganizationList",
   "myProjectList",
@@ -289,6 +295,37 @@ export function legacyApplyMarkdownViewerBehavior(documentRef: Document): number
   return initializedCount;
 }
 
+export function legacyFilesRuntimeConfig(runtimeConfig: RuntimeConfig): LegacyFilesRuntimeConfig {
+  const filesUrl = prefixBasePath(runtimeConfig.basePath, "/files");
+  return {
+    maxFileSize: runtimeConfig.maxUploadedFileSize ?? LEGACY_DEFAULT_MAX_UPLOADED_FILE_SIZE,
+    sListURL: filesUrl,
+    sUploadURL: filesUrl,
+  };
+}
+
+export function legacyApplyFilesRuntimeDefaults(
+  documentRef: Document,
+  windowRef: Window,
+  runtimeConfig: RuntimeConfig,
+): LegacyFilesRuntimeConfig {
+  const filesConfig = legacyFilesRuntimeConfig(runtimeConfig);
+  (
+    windowRef as Window & {
+      __YONA_LEGACY_FILES__?: LegacyFilesRuntimeConfig;
+    }
+  ).__YONA_LEGACY_FILES__ = filesConfig;
+  documentRef.documentElement.dataset.yonaFilesListUrl = filesConfig.sListURL;
+  documentRef.documentElement.dataset.yonaFilesUploadUrl = filesConfig.sUploadURL;
+  documentRef.documentElement.dataset.yonaFilesMaxFileSize = String(filesConfig.maxFileSize);
+  for (const uploadWrap of Array.from(documentRef.querySelectorAll<HTMLElement>(".upload-wrap"))) {
+    uploadWrap.dataset.listUrl ||= filesConfig.sListURL;
+    uploadWrap.dataset.uploadUrl ||= filesConfig.sUploadURL;
+    uploadWrap.dataset.maxFileSize ||= String(filesConfig.maxFileSize);
+  }
+  return filesConfig;
+}
+
 export function legacyCommonScriptsShouldSubmitShortcut(event: {
   ctrlKey: boolean;
   key: string;
@@ -328,12 +365,14 @@ function legacySubmitClosestForm(target: EventTarget | null): boolean {
 
 function LegacyCommonScriptsBridge() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const { runtimeConfig } = useAppRuntime();
 
   React.useEffect(() => {
     legacyRenderFlashNotifications(document);
     legacyApplyMarkdownExternalLinkTargets(document, window.location.origin);
     legacyApplyMarkdownViewerBehavior(document);
-  }, [pathname]);
+    legacyApplyFilesRuntimeDefaults(document, window, runtimeConfig);
+  }, [pathname, runtimeConfig]);
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

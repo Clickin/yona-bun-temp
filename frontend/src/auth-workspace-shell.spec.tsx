@@ -54,6 +54,7 @@ import { ProjectNewPage, ProjectSettingsPage } from "./routes/-project-views";
 import type { ProjectIssueDetailViewModel } from "./routes/-view-models";
 import {
   framedIframeSrcFromSearch,
+  legacyFilesRuntimeConfig,
   legacyCommonScriptsExternalLinkTarget,
   legacyCommonScriptsShouldStartProgressForLink,
 } from "./routes/__root";
@@ -188,6 +189,12 @@ describe("auth and workspace views", () => {
       "legacyApplyMarkdownExternalLinkTargets(document, window.location.origin)",
     );
     expect(source).toContain("legacyApplyMarkdownViewerBehavior(document)");
+    expect(source).toContain("legacyApplyFilesRuntimeDefaults(document, window, runtimeConfig)");
+    expect(source).toContain("__YONA_LEGACY_FILES__");
+    expect(source).toContain("documentRef.documentElement.dataset.yonaFilesListUrl");
+    expect(source).toContain("documentRef.documentElement.dataset.yonaFilesUploadUrl");
+    expect(source).toContain("documentRef.documentElement.dataset.yonaFilesMaxFileSize");
+    expect(source).toContain('documentRef.querySelectorAll<HTMLElement>(".upload-wrap")');
     expect(source).toContain('document.addEventListener("keydown", onKeyDown)');
     expect(source).toContain('window.dispatchEvent(new CustomEvent("legacy:nprogress:start"))');
     expect(source).toContain('new CustomEvent("legacy:viewer:open"');
@@ -281,6 +288,25 @@ describe("auth and workspace views", () => {
     } as unknown as Element;
     expect(legacyCommonScriptsShouldStartProgressForLink(progressLink)).toBe(true);
     expect(legacyCommonScriptsShouldStartProgressForLink(plainLink)).toBe(false);
+  });
+
+  it("pins pure contracts for legacy common/scripts upload defaults", () => {
+    expect(legacyFilesRuntimeConfig(testRuntimeConfig)).toEqual({
+      maxFileSize: 2147483454,
+      sListURL: "/yona/files",
+      sUploadURL: "/yona/files",
+    });
+    expect(
+      legacyFilesRuntimeConfig({
+        apiBaseUrl: "/api",
+        basePath: "/",
+        maxUploadedFileSize: 4096,
+      }),
+    ).toEqual({
+      maxFileSize: 4096,
+      sListURL: "/files",
+      sUploadURL: "/files",
+    });
   });
 
   it("builds the legacy framed iframe src from /sidebar query params", () => {

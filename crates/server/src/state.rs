@@ -201,6 +201,8 @@ pub(crate) struct BrowserRuntimeConfig {
     feedback_url: String,
     #[serde(rename = "hideProjectListing")]
     hide_project_listing: bool,
+    #[serde(rename = "maxUploadedFileSize")]
+    max_uploaded_file_size: usize,
     #[serde(rename = "navbarCustomLinkName")]
     navbar_custom_link_name: String,
     #[serde(rename = "navbarCustomLinkUrl")]
@@ -230,6 +232,7 @@ impl BrowserRuntimeConfig {
         project_default_scope: String,
         feedback_url: String,
         hide_project_listing: bool,
+        max_uploaded_file_size: usize,
         navbar_custom_link_name: String,
         navbar_custom_link_url: String,
         site_name: String,
@@ -248,6 +251,7 @@ impl BrowserRuntimeConfig {
             base_path,
             feedback_url,
             hide_project_listing,
+            max_uploaded_file_size,
             navbar_custom_link_name,
             navbar_custom_link_url,
             project_default_menus,

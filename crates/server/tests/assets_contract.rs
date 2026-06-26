@@ -306,6 +306,7 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
     assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
     assert!(html.contains("\"basePath\":\"/yona\""));
     assert!(html.contains("\"apiBaseUrl\":\"/yona/api\""));
+    assert!(html.contains("\"maxUploadedFileSize\":2147483454"));
     assert!(html.contains("src=\"/yona/assets/app.js\""));
     assert!(html.contains("href=\"/yona/assets/app.css\""));
     assert!(html.contains("src=\"/yona/images/logo.png\""));

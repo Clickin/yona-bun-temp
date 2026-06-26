@@ -3,6 +3,7 @@ export interface RuntimeConfig {
   basePath: string;
   feedbackUrl?: string;
   hideProjectListing?: boolean;
+  maxUploadedFileSize?: number;
   navbarCustomLinkName?: string;
   navbarCustomLinkUrl?: string;
   projectDefaultMenus?: string[];
@@ -18,12 +19,14 @@ export type RuntimeConfigInput = Omit<
   | "navbarCustomLinkUrl"
   | "feedbackUrl"
   | "hideProjectListing"
+  | "maxUploadedFileSize"
   | "projectDefaultMenus"
   | "showUserEmail"
   | "supportedLanguages"
 > & {
   feedbackUrl?: string | null;
   hideProjectListing?: boolean | string | null;
+  maxUploadedFileSize?: number | string | null;
   navbarCustomLinkName?: string | null;
   navbarCustomLinkUrl?: string | null;
   projectDefaultMenus?: string[] | string | null;
@@ -38,6 +41,7 @@ declare global {
     readonly VITE_YONA_FEEDBACK_URL?: string;
     readonly VITE_YONA_HIDE_PROJECT_LISTING?: string;
     readonly VITE_YONA_LANGS?: string;
+    readonly VITE_YONA_MAX_UPLOADED_FILE_SIZE?: string;
     readonly VITE_YONA_NAVBAR_CUSTOM_LINK_NAME?: string;
     readonly VITE_YONA_NAVBAR_CUSTOM_LINK_URL?: string;
     readonly VITE_YONA_PROJECT_DEFAULT_MENUS?: string;
@@ -70,6 +74,7 @@ export function resolveRuntimeConfig(input: RuntimeConfigInput = {}): RuntimeCon
     basePath,
     feedbackUrl: normalizeOptionalString(input.feedbackUrl),
     hideProjectListing: normalizeBoolean(input.hideProjectListing, false),
+    maxUploadedFileSize: normalizePositiveInteger(input.maxUploadedFileSize, 2147483454),
     navbarCustomLinkName: normalizeOptionalString(input.navbarCustomLinkName),
     navbarCustomLinkUrl: normalizeOptionalString(input.navbarCustomLinkUrl),
     projectDefaultMenus: normalizeProjectDefaultMenus(input.projectDefaultMenus),
@@ -86,6 +91,7 @@ function readViteRuntimeConfig(): RuntimeConfigInput {
     basePath: import.meta.env.VITE_YONA_BASE_PATH,
     feedbackUrl: import.meta.env.VITE_YONA_FEEDBACK_URL,
     hideProjectListing: import.meta.env.VITE_YONA_HIDE_PROJECT_LISTING,
+    maxUploadedFileSize: import.meta.env.VITE_YONA_MAX_UPLOADED_FILE_SIZE,
     navbarCustomLinkName: import.meta.env.VITE_YONA_NAVBAR_CUSTOM_LINK_NAME,
     navbarCustomLinkUrl: import.meta.env.VITE_YONA_NAVBAR_CUSTOM_LINK_URL,
     projectDefaultMenus: import.meta.env.VITE_YONA_PROJECT_DEFAULT_MENUS,
@@ -217,6 +223,11 @@ function normalizeBoolean(input: boolean | string | null | undefined, fallback: 
     default:
       return fallback;
   }
+}
+
+function normalizePositiveInteger(input: number | string | null | undefined, fallback: number) {
+  const value = typeof input === "number" ? input : Number.parseInt((input ?? "").trim(), 10);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
 }
 
 export function normalizeSiteName(input: string | null | undefined): string {
