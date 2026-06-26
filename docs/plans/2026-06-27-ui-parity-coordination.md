@@ -238,6 +238,18 @@ M15 continues board shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
 
+M16 continues board shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/post/:postNumber`, with the board menu
+  active, detail keymap mode, and `board-page` shell class preserved.
+- `ProjectBoardDetailPage` supports `renderShell={false}` so the detail leaf
+  route keeps its REST comment/watch/label/delete boundaries but renders only
+  the legacy `project-page-wrap board-view` body and delete modal under the
+  project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

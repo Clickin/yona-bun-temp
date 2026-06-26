@@ -87,6 +87,15 @@ Worker update, 2026-06-26:
   `.board-form`, markdown editor, uploader, notice/readme, and submit/cancel
   body. Verification: `pnpm --dir frontend exec tsc --noEmit`;
   `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
+- Worker update, 2026-06-27 board detail layout follow-up: project board detail
+  shell ownership moved into
+  `frontend/src/routes/$owner/$projectName/route.tsx` for
+  `/post/:postNumber`, keeping the board menu active, detail keymap mode, and
+  the `board-page` shell CSS hook. `ProjectBoardDetailPage` now supports
+  `renderShell={false}` while retaining the legacy `project-page-wrap
+  board-view`, comments, labels, attachment metadata, action buttons, and
+  delete modal. Verification: `pnpm --dir frontend exec tsc --noEmit`;
+  `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
 
 ## Evidence Checked
 
@@ -138,7 +147,7 @@ Total rows: 20
 | board create/edit notice/readme/online commit controls | Legacy form renders notice/readme/issue-template/branch/path/line-ending/file uploader/notification controls. | `ProjectPostFormPage` renders those controls and hides notice/readme for online commit contexts. | covered | none |
 | board create/edit label picker | Legacy create/edit templates do not render a board label picker. | `ProjectPostFormPage` no longer renders `.board-label-picker`; edit submit preserves existing labels without exposing a non-legacy form control. | covered | `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/board-posting-parity.e2e.ts` |
 | board create/edit attachment picker shell | Legacy uses `common.fileUploader(ResourceType.BOARD_POST, ...)`. | `ProjectPostFormPage` renders `.upload-wrap.content-footer[data-resource-type="BOARD_POST"]` while preserving paste/drop REST upload insertion. | covered | `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/board-posting-parity.e2e.ts` |
-| board detail history/watch/comments/child comments | Legacy renders history modal, watch button, comments, child comments, parentCommentId. | `ProjectBoardDetailPage` renders these shells. | covered | none |
+| board detail history/watch/comments/child comments | Legacy renders history modal, watch button, comments, child comments, parentCommentId. | Project layout owns the header/menu/page-wrap shell with active board menu, detail keymap, and `board-page`; `ProjectBoardDetailPage` renders these shells under the outlet. | covered | `frontend/src/routes/$owner/$projectName/route.tsx`, `frontend/src/routes/$owner/$projectName/post/$postNumber/route.tsx`, `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
 | board detail delete confirmation | Legacy delete opens `#deleteConfirm`; only modal confirm deletes. | `ProjectBoardDetailPage` renders `#deleteConfirm` with `post.delete.confirm`; delete REST callback runs from the modal Yes button. | covered | `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/board-posting-parity.e2e.ts` |
 | board detail labels | Legacy updateable detail uses label Select2 and posts the selected label id array to `BoardApi.updatePostLabel`; readonly detail shows selected labels. | React renders the updateable `#labelIds[data-toggle=select2][data-format=issuelabel]` shell and readonly selected-label shell, keeps the legacy direct `data-request-uri`, and now wires changes through canonical REST JSON `PATCH /api/v1/projects/:owner/:project/posts/:number/labels` with returned detail DTO/cache refresh. | covered | `frontend/src/api/boards.ts`, `frontend/src/routes/-board-views.tsx`, `frontend/src/routes/$owner/$projectName/post/$postNumber/route.tsx`, `crates/server/src/routes/boards.rs`, `crates/server/tests/board_contract.rs`, `frontend/src/api-query.spec.ts`, `frontend/tests/board-posting-parity.e2e.ts` |
 | board post/comment attachments | Legacy detail/comment containers include serialized attachment data. | `ProjectBoardDetailPage` serializes current DTO attachments into `.attachments[data-attachments]` and visible `.attached-file` rows for posts, comments, and child comments; backend already projects board post/comment attachments; `frontend/tests/board-posting-parity.e2e.ts` now browser-verifies post/comment metadata and rows from REST DTO fixtures. | covered | `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/board-posting-parity.e2e.ts` |

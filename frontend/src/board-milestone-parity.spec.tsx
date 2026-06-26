@@ -308,6 +308,38 @@ describe("board/milestone UI parity closure", () => {
     expect(html).toContain('id="editor-body-content-body"');
   });
 
+  it("lets the project layout route own the board detail shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectBoardDetailPage
+        messages={(key) => key}
+        post={boardPost}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/post/$postNumber/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("isBoardPostDetailPath");
+    expect(layoutSource).toContain('activeMenu: "board"');
+    expect(layoutSource).toContain('keymapMode: "detail"');
+    expect(layoutSource).toContain('shellClassName: "board-page"');
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="app-shell board-page"');
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap board-view"');
+    expect(html).toContain('class="board-header issue"');
+    expect(html).toContain('id="deleteConfirm"');
+  });
+
   it("renders milestone list sort/search and due-date relative metadata from the view model", () => {
     const html = renderToStaticMarkup(
       <ProjectMilestoneListPage

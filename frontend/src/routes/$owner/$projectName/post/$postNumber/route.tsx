@@ -95,6 +95,7 @@ function BoardDetailRouteComponent() {
       csrfToken={csrfToken}
       messages={messages}
       post={postQuery.data}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       viewerId={currentSession?.actorId.toString()}
       viewerLabel={currentSession?.userLabel}
