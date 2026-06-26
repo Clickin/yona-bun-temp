@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { restFetch } from "../../../../api/rest-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
@@ -110,6 +111,8 @@ export function CodeHistoryRouteView(props: {
   const branch = props.branch ?? "";
   const path = props.path ?? "";
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const routeHref = `/${owner}/${projectName}/commits`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -151,7 +154,7 @@ export function CodeHistoryRouteView(props: {
     return () => {
       cancelled = true;
     };
-  }, [branch, owner, path, projectName, runtimeConfig]);
+  }, [branch, locationHref, owner, path, projectName, runtimeConfig]);
 
   if (bootstrapping) {
     return (
@@ -175,6 +178,9 @@ export function CodeHistoryRouteView(props: {
       detail={detail}
       history={history}
       messages={messages}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       renderShell={false}
       runtimeConfig={runtimeConfig}
     />

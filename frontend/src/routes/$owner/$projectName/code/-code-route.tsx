@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { readCodeBrowser, readProjectContainer } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toCodeBrowserView, toProjectContainerView } from "../../../../app-view-models";
@@ -22,6 +23,7 @@ export function CodeBrowserRouteView(props: {
   const branch = props.branch ?? "";
   const path = props.path ?? "";
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
   const routeHref = `/${owner}/${projectName}/code`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -85,6 +87,9 @@ export function CodeBrowserRouteView(props: {
       code={code}
       detail={detail}
       messages={messages}
+      onNavigate={(href) => {
+        void navigate({ href });
+      }}
       renderShell={false}
       runtimeConfig={runtimeConfig}
     />

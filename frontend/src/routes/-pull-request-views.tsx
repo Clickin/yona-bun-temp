@@ -950,9 +950,7 @@ function LegacyPageNavigation(props: {
     const href = props.hrefForPage(nextPage);
     if (props.onNavigate) {
       props.onNavigate(href);
-      return;
     }
-    window.location.href = href;
   };
 
   return (

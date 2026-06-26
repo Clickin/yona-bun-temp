@@ -145,7 +145,7 @@ function sourceLineForIndex(source: string, index: number) {
 }
 
 describe("file-route parity harness", () => {
-  it("keeps direct browser navigation limited to legacy href/select pagination flows", () => {
+  it("keeps direct browser navigation limited to shared fallback helpers", () => {
     const directNavigations = listRouteSourceFiles()
       .flatMap((file) => {
         const source = fs.readFileSync(path.resolve(__dirname, file), "utf8");
@@ -164,31 +164,6 @@ describe("file-route parity harness", () => {
         file: "routes/__root.tsx",
         line: expect.any(Number),
         sourceLine: "window.location.href = prefixBasePath(",
-      },
-      {
-        file: "routes/-code-views.tsx",
-        line: expect.any(Number),
-        sourceLine: "window.location.assign(event.currentTarget.value);",
-      },
-      {
-        file: "routes/-code-views.tsx",
-        line: expect.any(Number),
-        sourceLine: "window.location.assign(event.currentTarget.value);",
-      },
-      {
-        file: "routes/-code-views.tsx",
-        line: expect.any(Number),
-        sourceLine: "window.location.assign(newerHref);",
-      },
-      {
-        file: "routes/-code-views.tsx",
-        line: expect.any(Number),
-        sourceLine: "window.location.assign(olderHref);",
-      },
-      {
-        file: "routes/-pull-request-views.tsx",
-        line: expect.any(Number),
-        sourceLine: "window.location.href = props.hrefForPage(nextPage);",
       },
       {
         file: "routes/-shared.tsx",
@@ -938,6 +913,10 @@ describe("file-route parity harness", () => {
       path.resolve(__dirname, "routes/$owner/$projectName/code/-code-route.tsx"),
       "utf8",
     );
+    const codeViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-code-views.tsx"),
+      "utf8",
+    );
     const commitDetailRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/commit/$commitId/route.tsx"),
       "utf8",
@@ -950,6 +929,10 @@ describe("file-route parity harness", () => {
     expect(codeRouteHelperSource).toContain("BadRequestPage");
     expect(codeRouteHelperSource).toContain('"bad-request"');
     expect(codeRouteHelperSource).toContain("readCodeBrowser");
+    expect(codeRouteHelperSource).toContain("useNavigate");
+    expect(codeRouteHelperSource).toContain("navigate({ href })");
+    expect(codeViewsSource).toContain("onNavigate?: (href: string) => void");
+    expect(codeViewsSource).not.toContain("window.location.assign(");
     expect(commitDetailRouteSource).not.toContain("Read commit detail failed.");
     expect(commitDetailRouteSource).toContain("BadRequestPage");
     expect(commitDetailRouteSource).toContain("codeCommitDetailQueryOptions");
@@ -994,7 +977,12 @@ describe("file-route parity harness", () => {
     expect(commitsRouteHelperSource).toContain("BadRequestPage");
     expect(commitsRouteHelperSource).toContain('"bad-request"');
     expect(commitsRouteHelperSource).toContain("readCodeHistory");
+    expect(commitsRouteHelperSource).toContain("useNavigate");
+    expect(commitsRouteHelperSource).toContain("useRouterState");
+    expect(commitsRouteHelperSource).toContain("navigate({ href })");
     expect(codeViewsSource).toContain("data-via-email");
+    expect(codeViewsSource).toContain("props.onNavigate?.(newerHref)");
+    expect(codeViewsSource).not.toContain("window.location.assign(");
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/commits/'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/commits/$branch'");

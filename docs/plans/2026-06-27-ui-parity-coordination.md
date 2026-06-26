@@ -570,6 +570,15 @@ M45 continues site-admin list SPA navigation:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/site-admin-route-parity.spec.tsx -t "legacy user and project search forms"`.
 
+M46 continues code browser SPA navigation:
+
+- Code browser/history branch selectors and history keyboard paging keep the
+  legacy selectors and shortcut behavior.
+- Those transitions now call TanStack navigation; commit history subscribes to
+  router location state for same-route `page` refetch.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "direct browser navigation|real project code browser route|real project commit history route"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

@@ -41,7 +41,7 @@
 - React-owned project/organization member management forms keep the legacy `#addNewMember`, role dropdown, `data-action`, and `data-href` anchors, but add/member-role mutations remain inside the React callback/API boundary with unconditional `preventDefault()` and no `if (!props.onAddMember)` / `if (!props.onUpdateMemberRole)` direct-submit fallback guards. Focused guard: `frontend/src/form-submit-boundary.spec.tsx`.
 - React-owned project/organization create, settings, project-webhook, and fork forms keep legacy wrappers, validation messages, and file/multipart-compatible markup, but create/update/fork mutations remain inside the React callback/API boundary with unconditional `preventDefault()` and no direct-submit fallback guards for missing callbacks. Focused guard: `frontend/src/form-submit-boundary.spec.tsx`.
 - React-owned project fork and project-member self-leave redirects use the shared app base-path navigation helper after REST mutations so `/yona` or other subdirectory reverse-proxy deployments remain inside the mounted SPA path.
-- Direct `window.location` navigation in route source is limited to legacy code-browser branch selects/history shortcuts and PR page-number navigation where the target is already a rendered href; mutation success redirects must use the shared app base-path navigation helper. Focused guard: `frontend/src/route-parity.spec.tsx`.
+- Direct `window.location` navigation in route source is limited to shared app-base fallback helpers; route-owned filter, pagination, code branch, and history transitions use TanStack navigation. Focused guard: `frontend/src/route-parity.spec.tsx`.
 - React-owned project/organization leave, enrollment, and project-watch click
   mutations keep legacy `href`/`data-href` anchors for parity, but clicks call
   `preventDefault()` before optional React callbacks so missing callbacks cannot
@@ -188,6 +188,13 @@
   TanStack navigation. The existing href-derived site-admin query flow then
   refetches list data without native document navigation. Focused coverage:
   `frontend/src/site-admin-route-parity.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 code browser SPA navigation continuation:
+  code browser/history branch selectors and history keyboard paging keep the
+  legacy `#branches` and shortcut behavior, but now route through TanStack
+  navigation. Commit history subscribes to router location state so same-route
+  `page` changes refetch without native document navigation. Focused coverage:
+  `frontend/src/route-parity.spec.tsx` and
   `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-25 authenticated user-menu continuation: the root SPA shell restores
   the authenticated `common/usermenu.scala.html` top menu anchors that were

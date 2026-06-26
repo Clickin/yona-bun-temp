@@ -659,6 +659,7 @@ export function CodeBrowserPage(props: {
   code: CodeBrowserViewModel | null;
   detail: ProjectDetailViewModel | null;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -730,7 +731,10 @@ export function CodeBrowserPage(props: {
                 data-toggle="select2"
                 id="branches"
                 onChange={(event) => {
-                  window.location.assign(event.currentTarget.value);
+                  const href = event.currentTarget.value;
+                  if (props.onNavigate) {
+                    props.onNavigate(href);
+                  }
                 }}
                 value={selectedBranchHref}
               >
@@ -2031,6 +2035,7 @@ export function CodeHistoryPage(props: {
   detail: ProjectDetailViewModel | null;
   history: CodeHistoryViewModel | null;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -2089,7 +2094,10 @@ export function CodeHistoryPage(props: {
                   data-toggle="select2"
                   id="branches"
                   onChange={(event) => {
-                    window.location.assign(event.currentTarget.value);
+                    const href = event.currentTarget.value;
+                    if (props.onNavigate) {
+                      props.onNavigate(href);
+                    }
                   }}
                   value={selectedHistoryBranchHref}
                 >
@@ -2144,6 +2152,7 @@ export function CodeHistoryPage(props: {
             )}
             <CodeHistoryTable
               history={history}
+              onNavigate={props.onNavigate}
               ownerName={detail.ownerName}
               projectName={detail.projectName}
               runtimeConfig={props.runtimeConfig}
@@ -2172,6 +2181,7 @@ export function CodeHistoryPage(props: {
 function CodeHistoryTable(props: {
   history: CodeHistoryViewModel | null;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -2218,15 +2228,15 @@ function CodeHistoryTable(props: {
       }
       const key = event.key.toLowerCase();
       if (key === "a" && newerHref) {
-        window.location.assign(newerHref);
+        props.onNavigate?.(newerHref);
       }
       if (key === "s" && olderHref) {
-        window.location.assign(olderHref);
+        props.onNavigate?.(olderHref);
       }
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [newerHref, olderHref]);
+  }, [newerHref, olderHref, props.onNavigate]);
   return (
     <>
       <div id="history" className="commit-wrap">
