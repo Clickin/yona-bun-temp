@@ -319,6 +319,7 @@ export function PullRequestChangesRouteContent(props: {
       }
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       messages={messages}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       selectedCommitId={selectedCommitId}
       viewerId={currentSession ? Number(currentSession.actorId) : undefined}

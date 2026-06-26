@@ -191,6 +191,9 @@ function projectLayoutShell(
   if (isPullRequestDetailPath(appPath, owner, projectName)) {
     return { activeMenu: "pullRequest", shellClassName: "pull-request-page" };
   }
+  if (isPullRequestChangesPath(appPath, owner, projectName)) {
+    return { activeMenu: "pullRequest", shellClassName: "pull-request-page" };
+  }
   return null;
 }
 
@@ -223,6 +226,17 @@ function isPullRequestDetailPath(appPath: string, owner: string, projectName: st
     segments[0] === owner &&
     segments[1] === projectName &&
     segments[2] === "pullRequest"
+  );
+}
+
+function isPullRequestChangesPath(appPath: string, owner: string, projectName: string): boolean {
+  const segments = appPath.split("/").filter(Boolean);
+  return (
+    (segments.length === 5 || segments.length === 6) &&
+    segments[0] === owner &&
+    segments[1] === projectName &&
+    segments[2] === "pullRequest" &&
+    segments[4] === "changes"
   );
 }
 

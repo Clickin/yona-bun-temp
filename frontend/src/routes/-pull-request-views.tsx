@@ -3337,6 +3337,7 @@ export function PullRequestChangesPage(props: {
   currentUser?: PullRequestCurrentUser;
   detail: ProjectDetailViewModel | null;
   messages?: LegacyMessageLookup;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   selectedCommitId?: string;
   viewerId?: number;
@@ -3616,260 +3617,253 @@ export function PullRequestChangesPage(props: {
 
   const unrangedThreads =
     props.changes?.nonRangedThreads ?? threads.filter((thread) => !thread.path);
-  return (
-    <main className="app-shell pull-request-page">
-      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="code-browse-wrap">
-            {pr ? (
-              <>
-                <PullRequestOverviewTabs
-                  active="changes"
+  const pageBody = (
+    <div className="project-page-wrap">
+      <div className="code-browse-wrap">
+        {pr ? (
+          <>
+            <PullRequestOverviewTabs
+              active="changes"
+              messages={props.messages}
+              pullRequest={pr}
+              runtimeConfig={props.runtimeConfig}
+            />
+            <div className="board-body mb20">
+              <div className="author-info right-txt" style={{ marginTop: 20 }}>
+                <a
+                  className="usf-group pull-left"
+                  href={`${props.runtimeConfig.basePath}/${encodeURIComponent(
+                    pr.contributor.loginId,
+                  )}`}
+                >
+                  <span className="avatar-wrap smaller">
+                    <span className="avatar-img">
+                      {pr.contributor.userLabel || pr.contributor.loginId}
+                    </span>
+                  </span>
+                  <strong className="name">
+                    {pr.contributor.userLabel || pr.contributor.loginId}
+                  </strong>
+                  <span className="loginid">
+                    {" "}
+                    <strong>@</strong>
+                    {pr.contributor.loginId}
+                  </span>
+                </a>
+                <PullRequestBranchInfo
                   messages={props.messages}
                   pullRequest={pr}
                   runtimeConfig={props.runtimeConfig}
                 />
-                <div className="board-body mb20">
-                  <div className="author-info right-txt" style={{ marginTop: 20 }}>
-                    <a
-                      className="usf-group pull-left"
-                      href={`${props.runtimeConfig.basePath}/${encodeURIComponent(
-                        pr.contributor.loginId,
-                      )}`}
-                    >
-                      <span className="avatar-wrap smaller">
-                        <span className="avatar-img">
-                          {pr.contributor.userLabel || pr.contributor.loginId}
-                        </span>
-                      </span>
-                      <strong className="name">
-                        {pr.contributor.userLabel || pr.contributor.loginId}
+              </div>
+            </div>
+          </>
+        ) : null}
+        <section className={`codediff-wrap mt10${cardThreads.length === 0 ? " diffs-only" : ""}`}>
+          {cardThreads.length > 0 ? (
+            <button className="ybtn ybtn-default btn-show-reviewcards" type="button">
+              <i className="yobicon-restore"></i>
+            </button>
+          ) : null}
+          <div className="diffs-wrap" id="changes">
+            <div className="btn-group auto mb10" id="commits">
+              <button className="btn dropdown-toggle auto" data-toggle="dropdown" type="button">
+                <span className="d-label">
+                  {selectedCommit ? (
+                    <>
+                      <strong className="blue-txt mr10 commit-hash">
+                        {selectedCommit.commitShortId ||
+                          pullRequestCommitShortId(selectedCommit.commitId)}
                       </strong>
-                      <span className="loginid">
-                        {" "}
-                        <strong>@</strong>
-                        {pr.contributor.loginId}
+                      <span>
+                        {pullRequestCommitTitle(selectedCommit)}
+                        {isOutdatedPullRequestCommit(selectedCommit) ? (
+                          <>
+                            {" "}
+                            <span className="outdated-label">
+                              {legacyMessage(props.messages, "review.outdated")}
+                            </span>
+                          </>
+                        ) : null}
                       </span>
-                    </a>
-                    <PullRequestBranchInfo
-                      messages={props.messages}
-                      pullRequest={pr}
-                      runtimeConfig={props.runtimeConfig}
-                    />
-                  </div>
-                </div>
-              </>
-            ) : null}
-            <section
-              className={`codediff-wrap mt10${cardThreads.length === 0 ? " diffs-only" : ""}`}
-            >
-              {cardThreads.length > 0 ? (
-                <button className="ybtn ybtn-default btn-show-reviewcards" type="button">
-                  <i className="yobicon-restore"></i>
-                </button>
-              ) : null}
-              <div className="diffs-wrap" id="changes">
-                <div className="btn-group auto mb10" id="commits">
-                  <button className="btn dropdown-toggle auto" data-toggle="dropdown" type="button">
-                    <span className="d-label">
-                      {selectedCommit ? (
-                        <>
-                          <strong className="blue-txt mr10 commit-hash">
-                            {selectedCommit.commitShortId ||
-                              pullRequestCommitShortId(selectedCommit.commitId)}
-                          </strong>
-                          <span>
-                            {pullRequestCommitTitle(selectedCommit)}
-                            {isOutdatedPullRequestCommit(selectedCommit) ? (
-                              <>
-                                {" "}
-                                <span className="outdated-label">
-                                  {legacyMessage(props.messages, "review.outdated")}
-                                </span>
-                              </>
-                            ) : null}
-                          </span>
-                        </>
-                      ) : props.selectedCommitId ? (
-                        <>
-                          {legacyMessage(props.messages, "pullRequest.changes.all")}{" "}
-                          <span className="outdated-label">
-                            {legacyMessage(props.messages, "review.outdated")}
-                          </span>
-                          {" - "}
-                          <strong className="blue-txt mr10 commit-hash">
-                            {pullRequestCommitShortId(props.selectedCommitId)}
-                          </strong>
-                        </>
-                      ) : (
-                        legacyMessage(props.messages, "pullRequest.changes.all")
-                      )}
-                    </span>
-                    <span className="d-caret">
-                      <span className="caret"></span>
-                    </span>
-                  </button>
-                  <ul className="dropdown-menu">
-                    <li data-value="All">
-                      <a href={pr ? pullRequestChangesCommitHref(props.runtimeConfig, pr) : "#"}>
-                        {legacyMessage(props.messages, "pullRequest.changes.all")}
+                    </>
+                  ) : props.selectedCommitId ? (
+                    <>
+                      {legacyMessage(props.messages, "pullRequest.changes.all")}{" "}
+                      <span className="outdated-label">
+                        {legacyMessage(props.messages, "review.outdated")}
+                      </span>
+                      {" - "}
+                      <strong className="blue-txt mr10 commit-hash">
+                        {pullRequestCommitShortId(props.selectedCommitId)}
+                      </strong>
+                    </>
+                  ) : (
+                    legacyMessage(props.messages, "pullRequest.changes.all")
+                  )}
+                </span>
+                <span className="d-caret">
+                  <span className="caret"></span>
+                </span>
+              </button>
+              <ul className="dropdown-menu">
+                <li data-value="All">
+                  <a href={pr ? pullRequestChangesCommitHref(props.runtimeConfig, pr) : "#"}>
+                    {legacyMessage(props.messages, "pullRequest.changes.all")}
+                  </a>
+                </li>
+                <li className="divider"></li>
+                {selectableCommits.map((commit) => {
+                  const outdated = isOutdatedPullRequestCommit(commit);
+                  return (
+                    <li
+                      className={outdated ? "outdated" : undefined}
+                      data-value={commit.commitId}
+                      key={commit.commitId}
+                    >
+                      <a
+                        href={
+                          pr
+                            ? pullRequestChangesCommitHref(props.runtimeConfig, pr, commit.commitId)
+                            : "#"
+                        }
+                      >
+                        <strong className="blue-txt mr10 commit-hash">
+                          {commit.commitShortId || commit.commitId}
+                        </strong>
+                        <span>
+                          {pullRequestCommitTitle(commit)}
+                          {outdated ? (
+                            <>
+                              {" "}
+                              <span className="outdated-label">
+                                {legacyMessage(props.messages, "review.outdated")}
+                              </span>
+                            </>
+                          ) : null}
+                        </span>
                       </a>
                     </li>
-                    <li className="divider"></li>
-                    {selectableCommits.map((commit) => {
-                      const outdated = isOutdatedPullRequestCommit(commit);
-                      return (
-                        <li
-                          className={outdated ? "outdated" : undefined}
-                          data-value={commit.commitId}
-                          key={commit.commitId}
-                        >
-                          <a
-                            href={
-                              pr
-                                ? pullRequestChangesCommitHref(
-                                    props.runtimeConfig,
-                                    pr,
-                                    commit.commitId,
-                                  )
-                                : "#"
-                            }
-                          >
-                            <strong className="blue-txt mr10 commit-hash">
-                              {commit.commitShortId || commit.commitId}
-                            </strong>
-                            <span>
-                              {pullRequestCommitTitle(commit)}
-                              {outdated ? (
-                                <>
-                                  {" "}
-                                  <span className="outdated-label">
-                                    {legacyMessage(props.messages, "review.outdated")}
-                                  </span>
-                                </>
-                              ) : null}
-                            </span>
-                          </a>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-                {selectedCommit ? (
-                  <SelectedPullRequestCommitInfo
-                    commit={selectedCommit}
-                    messages={props.messages}
-                  />
-                ) : null}
-                <div className="diff-body diffs-wrap-scroll">
-                  {pr ? (
-                    <>
-                      <div
-                        className={`pullRequest-stateInfo state ${
-                          pr.conflict ? "conflict" : pr.state
-                        }`}
-                      >
-                        {legacyMessage(
-                          props.messages,
-                          pr.conflict
-                            ? "pullRequest.state.conflict"
-                            : `pullRequest.state.${pr.state}`,
-                        )}
-                      </div>
-                      <PullRequestConflictGuide
-                        messages={props.messages}
-                        pullRequest={pr}
-                        runtimeConfig={props.runtimeConfig}
-                        viewerId={props.viewerId}
-                      />
-                    </>
-                  ) : null}
-                  {files.map(renderChangedFile)}
-                  <div className="btnPop">
-                    <button
-                      className="ybtn ybtn-info ybtn-small"
-                      data-block-ready={pendingInlineDraft ? "true" : "false"}
-                      disabled={!pendingInlineDraft}
-                      onClick={openPendingInlineDraft}
-                      type="button"
-                    >
-                      <i className="yobicon-post2"></i>
-                    </button>
+                  );
+                })}
+              </ul>
+            </div>
+            {selectedCommit ? (
+              <SelectedPullRequestCommitInfo commit={selectedCommit} messages={props.messages} />
+            ) : null}
+            <div className="diff-body diffs-wrap-scroll">
+              {pr ? (
+                <>
+                  <div
+                    className={`pullRequest-stateInfo state ${pr.conflict ? "conflict" : pr.state}`}
+                  >
+                    {legacyMessage(
+                      props.messages,
+                      pr.conflict ? "pullRequest.state.conflict" : `pullRequest.state.${pr.state}`,
+                    )}
                   </div>
-                </div>
-                <div className="board-comment-wrap">
-                  <div className="non-ranged-threads-wrap">
-                    {unrangedThreads.map(renderReviewThread)}
-                  </div>
-                  {canComment ? (
-                    <form
-                      action={
-                        pr
-                          ? prHref(
-                              props.runtimeConfig,
-                              pr.ownerName,
-                              pr.projectName,
-                              pr.pullRequestNumber,
-                              "comments",
-                            )
-                          : undefined
-                      }
-                      className="board-comment-form"
-                      encType="multipart/form-data"
-                      id="comment-form"
-                      onSubmit={(event) => void submitNonRangedComment(event)}
-                    >
-                      <div className="write-comment-box">
-                        <MarkdownAttachmentTextarea
-                          className="editorSeries content comment nm"
-                          csrfToken={props.csrfToken}
-                          name="contents"
-                          onAttachmentUpload={(attachment) =>
-                            setCommentAttachmentIds((current) => [...current, attachment.id])
-                          }
-                          onChange={setCommentDraft}
-                          runtimeConfig={props.runtimeConfig}
-                          value={commentDraft}
-                        />
-                        <div className="write-comment-wrap">
-                          <div className="right-txt">
-                            <button
-                              className="ybtn hidden"
-                              id="dynamic-comment-btn"
-                              type="button"
-                            ></button>
-                            <button className="ybtn ybtn-success" type="submit">
-                              {legacyMessage(props.messages, "button.comment.new")}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </form>
-                  ) : null}
-                </div>
-                {canComment && pr ? (
-                  <PullRequestBlockReviewForm
-                    csrfToken={props.csrfToken}
-                    draft={inlineDraft}
+                  <PullRequestConflictGuide
                     messages={props.messages}
-                    onSubmit={props.onInlineCommentSubmit}
                     pullRequest={pr}
                     runtimeConfig={props.runtimeConfig}
+                    viewerId={props.viewerId}
                   />
-                ) : null}
+                </>
+              ) : null}
+              {files.map(renderChangedFile)}
+              <div className="btnPop">
+                <button
+                  className="ybtn ybtn-info ybtn-small"
+                  data-block-ready={pendingInlineDraft ? "true" : "false"}
+                  disabled={!pendingInlineDraft}
+                  onClick={openPendingInlineDraft}
+                  type="button"
+                >
+                  <i className="yobicon-post2"></i>
+                </button>
               </div>
-              <ReviewThreadCards
+            </div>
+            <div className="board-comment-wrap">
+              <div className="non-ranged-threads-wrap">
+                {unrangedThreads.map(renderReviewThread)}
+              </div>
+              {canComment ? (
+                <form
+                  action={
+                    pr
+                      ? prHref(
+                          props.runtimeConfig,
+                          pr.ownerName,
+                          pr.projectName,
+                          pr.pullRequestNumber,
+                          "comments",
+                        )
+                      : undefined
+                  }
+                  className="board-comment-form"
+                  encType="multipart/form-data"
+                  id="comment-form"
+                  onSubmit={(event) => void submitNonRangedComment(event)}
+                >
+                  <div className="write-comment-box">
+                    <MarkdownAttachmentTextarea
+                      className="editorSeries content comment nm"
+                      csrfToken={props.csrfToken}
+                      name="contents"
+                      onAttachmentUpload={(attachment) =>
+                        setCommentAttachmentIds((current) => [...current, attachment.id])
+                      }
+                      onChange={setCommentDraft}
+                      runtimeConfig={props.runtimeConfig}
+                      value={commentDraft}
+                    />
+                    <div className="write-comment-wrap">
+                      <div className="right-txt">
+                        <button
+                          className="ybtn hidden"
+                          id="dynamic-comment-btn"
+                          type="button"
+                        ></button>
+                        <button className="ybtn ybtn-success" type="submit">
+                          {legacyMessage(props.messages, "button.comment.new")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              ) : null}
+            </div>
+            {canComment && pr ? (
+              <PullRequestBlockReviewForm
+                csrfToken={props.csrfToken}
+                draft={inlineDraft}
                 messages={props.messages}
+                onSubmit={props.onInlineCommentSubmit}
                 pullRequest={pr}
                 runtimeConfig={props.runtimeConfig}
-                threads={cardThreads}
               />
-            </section>
+            ) : null}
           </div>
-        </div>
+          <ReviewThreadCards
+            messages={props.messages}
+            pullRequest={pr}
+            runtimeConfig={props.runtimeConfig}
+            threads={cardThreads}
+          />
+        </section>
       </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
+  return (
+    <main className="app-shell pull-request-page">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

@@ -4,7 +4,7 @@ import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { createLegacyI18nRuntime } from "./i18n";
-import { ProjectPullRequestDetailPage } from "./routes/-pull-request-views";
+import { ProjectPullRequestDetailPage, PullRequestChangesPage } from "./routes/-pull-request-views";
 import type { ProjectDetailViewModel } from "./routes/-view-models";
 
 const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
@@ -121,6 +121,48 @@ describe("pull request review legacy i18n opt-in", () => {
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="board-header issue"');
     expect(html).toContain('class="board-body"');
+    expect(html).not.toContain("app-shell pull-request-page");
+    expect(html).not.toContain("project-header-outer");
+    expect(html).not.toContain("project-menu-outer");
+    expect(html).not.toContain("page-wrap-outer");
+  });
+
+  it("lets the project layout own PR changes chrome without changing the legacy body", () => {
+    const html = renderToStaticMarkup(
+      <PullRequestChangesPage
+        changes={undefined}
+        detail={detail}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const changesRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx",
+      ),
+      "utf8",
+    );
+    const commitRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/$commitId/route.tsx",
+      ),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("isPullRequestChangesPath(appPath, owner, projectName)");
+    expect(layoutSource).toContain('activeMenu: "pullRequest"');
+    expect(layoutSource).toContain('shellClassName: "pull-request-page"');
+    expect(changesRouteSource).toContain("renderShell={false}");
+    expect(commitRouteSource).toContain("PullRequestChangesRouteContent");
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="code-browse-wrap"');
+    expect(html).toContain('class="codediff-wrap mt10 diffs-only"');
     expect(html).not.toContain("app-shell pull-request-page");
     expect(html).not.toContain("project-header-outer");
     expect(html).not.toContain("project-menu-outer");
