@@ -1315,6 +1315,7 @@ export function ProjectPullRequestFormPage(props: {
   formOptions: PullRequestFormOptionsResponse | undefined;
   messages?: LegacyMessageLookup;
   mode: "create" | "edit";
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
   onSubmit: (input: PullRequestFormSubmitInput) => Promise<void>;
 }) {
@@ -1375,289 +1376,295 @@ export function ProjectPullRequestFormPage(props: {
   );
   const errorMessageParts = props.errorMessage ? splitLegacyHtmlBreaks(props.errorMessage) : [];
 
+  const pageBody = (
+    <div className="project-page-wrap">
+      <div className="content-wrap frm-wrap">
+        <section className="pull-request-wrap">
+          <header className="board-header issue">
+            <h1>{legacyMessage(props.messages, formTitle)}</h1>
+            <div className="pullRequest-branchInfo">
+              <span>{`${detail.ownerName}/${detail.projectName}`}</span>
+              {initialPullRequest ? (
+                <span className={`pullRequest-stateInfo state ${initialPullRequest.state}`}>
+                  {initialPullRequest.state}
+                </span>
+              ) : null}
+            </div>
+          </header>
+          {props.errorMessage ? (
+            <div className="alert alert-error" role="alert">
+              {errorMessageParts.map((part) => (
+                <React.Fragment key={part.key}>
+                  {part.prefixBreak ? <br /> : null}
+                  {part.text}
+                </React.Fragment>
+              ))}
+            </div>
+          ) : null}
+          <form
+            className="board-form pull-request-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (submitting) {
+                return;
+              }
+              if (title.trim().length === 0) {
+                setValidationMessage("pullRequest.title.required");
+                return;
+              }
+              if (fromBranch.trim().length === 0) {
+                setValidationMessage("pullRequest.fromBranch.required");
+                return;
+              }
+              if (toBranch.trim().length === 0) {
+                setValidationMessage("pullRequest.toBranch.required");
+                return;
+              }
+              if (bodyMarkdown.trim().length === 0) {
+                setValidationMessage("pullRequest.body.required");
+                return;
+              }
+              setValidationMessage(null);
+              setSubmitting(true);
+              void props
+                .onSubmit({
+                  attachmentIds,
+                  bodyMarkdown,
+                  fromBranch,
+                  fromProjectId,
+                  title,
+                  toBranch,
+                  toProjectId,
+                })
+                .finally(() => setSubmitting(false));
+            }}
+          >
+            <div className="pull-request-branches">
+              <label htmlFor="fromProjectId">
+                {legacyMessage(props.messages, "pullRequest.from")}
+                <select
+                  disabled={editMode}
+                  id="fromProjectId"
+                  name="fromProjectId"
+                  onChange={(event) => setFromProjectId(Number(event.currentTarget.value))}
+                  value={fromProjectId}
+                >
+                  {(options?.fromProjects ?? []).map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {`${project.ownerName}/${project.projectName}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label htmlFor="fromBranch">
+                {legacyMessage(props.messages, "pullRequest.select.branch")}
+                <select
+                  disabled={editMode}
+                  id="fromBranch"
+                  name="fromBranch"
+                  onChange={(event) => {
+                    setValidationMessage(null);
+                    setFromBranch(event.currentTarget.value);
+                  }}
+                  value={fromBranch}
+                >
+                  {(options?.fromBranches ?? []).map((branch) => (
+                    <option key={branch.name} value={branch.name}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label htmlFor="toProjectId">
+                {legacyMessage(props.messages, "pullRequest.to")}
+                <select
+                  disabled={editMode}
+                  id="toProjectId"
+                  name="toProjectId"
+                  onChange={(event) => setToProjectId(Number(event.currentTarget.value))}
+                  value={toProjectId}
+                >
+                  {(options?.toProjects ?? []).map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {`${project.ownerName}/${project.projectName}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label htmlFor="toBranch">
+                {legacyMessage(props.messages, "pullRequest.select.branch")}
+                <select
+                  disabled={editMode}
+                  id="toBranch"
+                  name="toBranch"
+                  onChange={(event) => {
+                    setValidationMessage(null);
+                    setToBranch(event.currentTarget.value);
+                  }}
+                  value={toBranch}
+                >
+                  {(options?.toBranches ?? []).map((branch) => (
+                    <option key={branch.name} value={branch.name}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <span
+              data-value={initialPullRequest?.state ?? "open"}
+              id="pullRequestState"
+              hidden
+            ></span>
+            <div className="alert mt20 mb20" id="status">
+              {legacyMessage(props.messages, "pullRequest.is.merging")}
+            </div>
+            <label htmlFor="title">
+              {legacyMessage(props.messages, "title")}
+              <input
+                id="title"
+                name="title"
+                onChange={(event) => {
+                  setValidationMessage(null);
+                  setTitle(event.currentTarget.value);
+                }}
+                value={title}
+              />
+            </label>
+            <label htmlFor="editor-body-content-body">
+              body
+              <LegacyMarkdownEditorShell
+                editId="edit-content-body"
+                editorMode="content-body"
+                previewId="preview-content-body"
+              >
+                <MarkdownAttachmentTextarea
+                  className="editorSeries content comment nm"
+                  csrfToken={props.csrfToken}
+                  editorMode="content-body"
+                  id="editor-body-content-body"
+                  name="body"
+                  onAttachmentUpload={(attachment) =>
+                    setAttachmentIds((current) => [...current, attachment.id])
+                  }
+                  onChange={(nextBodyMarkdown) => {
+                    setValidationMessage(null);
+                    setBodyMarkdown(nextBodyMarkdown);
+                  }}
+                  runtimeConfig={props.runtimeConfig}
+                  value={bodyMarkdown}
+                />
+              </LegacyMarkdownEditorShell>
+            </label>
+            <div
+              className="code-browse-wrap tab-pane active"
+              data-merge-result-url={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "newPullRequest/mergeResult",
+              )}
+              id="__commits"
+            >
+              <span className="num-badge vmiddle-inline" id="numOfCommits">
+                {formCommitCount}
+              </span>
+              <span> {legacyMessage(props.messages, "pullRequest.menu.commit")}</span>
+              <div
+                className="code-browser-wrap"
+                data-commits={formCommitCount}
+                data-conflict={mergeResult ? String(mergeResult.conflict) : "false"}
+                data-pullrequest-body={bodyMarkdown}
+                data-pullrequest-title={title}
+                id="mergeResult"
+              >
+                {mergeResultQuery.isError ? (
+                  <div>
+                    <h5>{legacyMessage(props.messages, "pullRequest.diff.noChanges")}</h5>
+                  </div>
+                ) : mergeResult?.commits.length ? (
+                  <div className="commit-wrap">
+                    <table className="code-table commits">
+                      <thead className="thead">
+                        <tr>
+                          <td className="commit-id">
+                            <strong>@</strong>
+                          </td>
+                          <td className="messages">
+                            <strong>{legacyMessage(props.messages, "code.commitMsg")}</strong>
+                          </td>
+                          <td className="date">
+                            <strong>{legacyMessage(props.messages, "code.commitDate")}</strong>
+                          </td>
+                          <td className="author">
+                            <strong>{legacyMessage(props.messages, "code.author")}</strong>
+                          </td>
+                        </tr>
+                      </thead>
+                      <tbody className="tbody">
+                        {mergeResult.commits.map((commit) => (
+                          <tr key={commit.commitId}>
+                            <td className="commit-id">
+                              <a
+                                href={buildProjectHref(
+                                  props.runtimeConfig,
+                                  detail.ownerName,
+                                  detail.projectName,
+                                  `code/${commit.commitId}`,
+                                )}
+                              >
+                                {commit.commitShortId}
+                              </a>
+                            </td>
+                            <td className="messages">{commit.commitMessage}</td>
+                            <td className="date" title={commit.authorDateLabel}>
+                              {commit.authorDateLabel}
+                            </td>
+                            <td className={`author ${commit.authorEmail}`}>
+                              <div className="avatar-wrap">
+                                <span>{commit.authorEmail}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div>
+                    <h5>{legacyMessage(props.messages, "pullRequest.diff.noChanges")}</h5>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="actions">
+              <button className="ybtn ybtn-success" disabled={submitting} type="submit">
+                {legacyMessage(props.messages, editMode ? "button.save" : "pullRequest.send")}
+              </button>
+              <a className="ybtn" href={backHref}>
+                {legacyMessage(props.messages, "button.cancel")}
+              </a>
+            </div>
+            {validationMessage ? (
+              <div className="alert alert-error" role="alert">
+                {legacyMessage(props.messages, validationMessage)}
+              </div>
+            ) : null}
+          </form>
+        </section>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
   return (
     <main className="app-shell pull-request-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="content-wrap frm-wrap">
-            <section className="pull-request-wrap">
-              <header className="board-header issue">
-                <h1>{legacyMessage(props.messages, formTitle)}</h1>
-                <div className="pullRequest-branchInfo">
-                  <span>{`${detail.ownerName}/${detail.projectName}`}</span>
-                  {initialPullRequest ? (
-                    <span className={`pullRequest-stateInfo state ${initialPullRequest.state}`}>
-                      {initialPullRequest.state}
-                    </span>
-                  ) : null}
-                </div>
-              </header>
-              {props.errorMessage ? (
-                <div className="alert alert-error" role="alert">
-                  {errorMessageParts.map((part) => (
-                    <React.Fragment key={part.key}>
-                      {part.prefixBreak ? <br /> : null}
-                      {part.text}
-                    </React.Fragment>
-                  ))}
-                </div>
-              ) : null}
-              <form
-                className="board-form pull-request-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (submitting) {
-                    return;
-                  }
-                  if (title.trim().length === 0) {
-                    setValidationMessage("pullRequest.title.required");
-                    return;
-                  }
-                  if (fromBranch.trim().length === 0) {
-                    setValidationMessage("pullRequest.fromBranch.required");
-                    return;
-                  }
-                  if (toBranch.trim().length === 0) {
-                    setValidationMessage("pullRequest.toBranch.required");
-                    return;
-                  }
-                  if (bodyMarkdown.trim().length === 0) {
-                    setValidationMessage("pullRequest.body.required");
-                    return;
-                  }
-                  setValidationMessage(null);
-                  setSubmitting(true);
-                  void props
-                    .onSubmit({
-                      attachmentIds,
-                      bodyMarkdown,
-                      fromBranch,
-                      fromProjectId,
-                      title,
-                      toBranch,
-                      toProjectId,
-                    })
-                    .finally(() => setSubmitting(false));
-                }}
-              >
-                <div className="pull-request-branches">
-                  <label htmlFor="fromProjectId">
-                    {legacyMessage(props.messages, "pullRequest.from")}
-                    <select
-                      disabled={editMode}
-                      id="fromProjectId"
-                      name="fromProjectId"
-                      onChange={(event) => setFromProjectId(Number(event.currentTarget.value))}
-                      value={fromProjectId}
-                    >
-                      {(options?.fromProjects ?? []).map((project) => (
-                        <option key={project.id} value={project.id}>
-                          {`${project.ownerName}/${project.projectName}`}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label htmlFor="fromBranch">
-                    {legacyMessage(props.messages, "pullRequest.select.branch")}
-                    <select
-                      disabled={editMode}
-                      id="fromBranch"
-                      name="fromBranch"
-                      onChange={(event) => {
-                        setValidationMessage(null);
-                        setFromBranch(event.currentTarget.value);
-                      }}
-                      value={fromBranch}
-                    >
-                      {(options?.fromBranches ?? []).map((branch) => (
-                        <option key={branch.name} value={branch.name}>
-                          {branch.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label htmlFor="toProjectId">
-                    {legacyMessage(props.messages, "pullRequest.to")}
-                    <select
-                      disabled={editMode}
-                      id="toProjectId"
-                      name="toProjectId"
-                      onChange={(event) => setToProjectId(Number(event.currentTarget.value))}
-                      value={toProjectId}
-                    >
-                      {(options?.toProjects ?? []).map((project) => (
-                        <option key={project.id} value={project.id}>
-                          {`${project.ownerName}/${project.projectName}`}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label htmlFor="toBranch">
-                    {legacyMessage(props.messages, "pullRequest.select.branch")}
-                    <select
-                      disabled={editMode}
-                      id="toBranch"
-                      name="toBranch"
-                      onChange={(event) => {
-                        setValidationMessage(null);
-                        setToBranch(event.currentTarget.value);
-                      }}
-                      value={toBranch}
-                    >
-                      {(options?.toBranches ?? []).map((branch) => (
-                        <option key={branch.name} value={branch.name}>
-                          {branch.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <span
-                  data-value={initialPullRequest?.state ?? "open"}
-                  id="pullRequestState"
-                  hidden
-                ></span>
-                <div className="alert mt20 mb20" id="status">
-                  {legacyMessage(props.messages, "pullRequest.is.merging")}
-                </div>
-                <label htmlFor="title">
-                  {legacyMessage(props.messages, "title")}
-                  <input
-                    id="title"
-                    name="title"
-                    onChange={(event) => {
-                      setValidationMessage(null);
-                      setTitle(event.currentTarget.value);
-                    }}
-                    value={title}
-                  />
-                </label>
-                <label htmlFor="editor-body-content-body">
-                  body
-                  <LegacyMarkdownEditorShell
-                    editId="edit-content-body"
-                    editorMode="content-body"
-                    previewId="preview-content-body"
-                  >
-                    <MarkdownAttachmentTextarea
-                      className="editorSeries content comment nm"
-                      csrfToken={props.csrfToken}
-                      editorMode="content-body"
-                      id="editor-body-content-body"
-                      name="body"
-                      onAttachmentUpload={(attachment) =>
-                        setAttachmentIds((current) => [...current, attachment.id])
-                      }
-                      onChange={(nextBodyMarkdown) => {
-                        setValidationMessage(null);
-                        setBodyMarkdown(nextBodyMarkdown);
-                      }}
-                      runtimeConfig={props.runtimeConfig}
-                      value={bodyMarkdown}
-                    />
-                  </LegacyMarkdownEditorShell>
-                </label>
-                <div
-                  className="code-browse-wrap tab-pane active"
-                  data-merge-result-url={buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    "newPullRequest/mergeResult",
-                  )}
-                  id="__commits"
-                >
-                  <span className="num-badge vmiddle-inline" id="numOfCommits">
-                    {formCommitCount}
-                  </span>
-                  <span> {legacyMessage(props.messages, "pullRequest.menu.commit")}</span>
-                  <div
-                    className="code-browser-wrap"
-                    data-commits={formCommitCount}
-                    data-conflict={mergeResult ? String(mergeResult.conflict) : "false"}
-                    data-pullrequest-body={bodyMarkdown}
-                    data-pullrequest-title={title}
-                    id="mergeResult"
-                  >
-                    {mergeResultQuery.isError ? (
-                      <div>
-                        <h5>{legacyMessage(props.messages, "pullRequest.diff.noChanges")}</h5>
-                      </div>
-                    ) : mergeResult?.commits.length ? (
-                      <div className="commit-wrap">
-                        <table className="code-table commits">
-                          <thead className="thead">
-                            <tr>
-                              <td className="commit-id">
-                                <strong>@</strong>
-                              </td>
-                              <td className="messages">
-                                <strong>{legacyMessage(props.messages, "code.commitMsg")}</strong>
-                              </td>
-                              <td className="date">
-                                <strong>{legacyMessage(props.messages, "code.commitDate")}</strong>
-                              </td>
-                              <td className="author">
-                                <strong>{legacyMessage(props.messages, "code.author")}</strong>
-                              </td>
-                            </tr>
-                          </thead>
-                          <tbody className="tbody">
-                            {mergeResult.commits.map((commit) => (
-                              <tr key={commit.commitId}>
-                                <td className="commit-id">
-                                  <a
-                                    href={buildProjectHref(
-                                      props.runtimeConfig,
-                                      detail.ownerName,
-                                      detail.projectName,
-                                      `code/${commit.commitId}`,
-                                    )}
-                                  >
-                                    {commit.commitShortId}
-                                  </a>
-                                </td>
-                                <td className="messages">{commit.commitMessage}</td>
-                                <td className="date" title={commit.authorDateLabel}>
-                                  {commit.authorDateLabel}
-                                </td>
-                                <td className={`author ${commit.authorEmail}`}>
-                                  <div className="avatar-wrap">
-                                    <span>{commit.authorEmail}</span>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div>
-                        <h5>{legacyMessage(props.messages, "pullRequest.diff.noChanges")}</h5>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="actions">
-                  <button className="ybtn ybtn-success" disabled={submitting} type="submit">
-                    {legacyMessage(props.messages, editMode ? "button.save" : "pullRequest.send")}
-                  </button>
-                  <a className="ybtn" href={backHref}>
-                    {legacyMessage(props.messages, "button.cancel")}
-                  </a>
-                </div>
-                {validationMessage ? (
-                  <div className="alert alert-error" role="alert">
-                    {legacyMessage(props.messages, validationMessage)}
-                  </div>
-                ) : null}
-              </form>
-            </section>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

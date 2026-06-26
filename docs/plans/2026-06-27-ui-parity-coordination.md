@@ -354,6 +354,18 @@ M25 starts pull-request shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/pull-request-list-form-review-i18n.spec.tsx -t "PR list chrome"`.
 
+M26 continues pull-request shell migration:
+
+- `/$owner/$projectName/route.tsx` now owns the legacy project
+  header/menu/page-wrap shell for `/newPullRequestForm` and
+  `/pullRequest/:pullRequestNumber/editform`, with the pull request menu active
+  and the legacy `pull-request-page` shell class.
+- `ProjectPullRequestFormPage` supports `renderShell={false}` so create/edit
+  child routes keep their form query/mutation boundaries but render only the
+  legacy `project-page-wrap` PR form body under the project layout `<Outlet />`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/pull-request-list-form-review-i18n.spec.tsx -t "PR form chrome"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

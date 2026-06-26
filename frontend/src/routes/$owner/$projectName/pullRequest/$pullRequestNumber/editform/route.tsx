@@ -116,6 +116,7 @@ function PullRequestEditFormRouteComponent() {
       formOptions={formOptionsQuery.data}
       messages={messages}
       mode="edit"
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       onSubmit={async (input) => {
         await updateMutation.mutateAsync({

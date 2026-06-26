@@ -120,6 +120,7 @@ function NewPullRequestFormRouteComponent() {
       formOptions={formOptionsQuery.data}
       messages={messages}
       mode="create"
+      renderShell={false}
       runtimeConfig={runtimeConfig}
       onSubmit={async (input) => {
         await createMutation.mutateAsync(input);

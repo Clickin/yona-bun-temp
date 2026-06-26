@@ -135,6 +135,15 @@ Total rows: 22
   child routes while preserving direct-render shell output for existing specs.
   Focused coverage:
   `pnpm --dir frontend exec vitest run src/pull-request-list-form-review-i18n.spec.tsx -t "PR list chrome"`.
+- 2026-06-27 PR form project shell follow-up:
+  `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
+  header/menu/page-wrap shell for `/newPullRequestForm` and
+  `/pullRequest/:pullRequestNumber/editform` with the pull request menu active
+  and the legacy `pull-request-page` shell class. `ProjectPullRequestFormPage`
+  renders only the legacy PR form body through `renderShell={false}` for those
+  TanStack child routes while preserving direct-render shell output for
+  existing specs. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/pull-request-list-form-review-i18n.spec.tsx -t "PR form chrome"`.
 
 ## Follow-Up Queue Proposal
 

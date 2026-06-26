@@ -182,6 +182,12 @@ function projectLayoutShell(
   ) {
     return { activeMenu: "pullRequest", shellClassName: "pull-request-page" };
   }
+  if (
+    appPath === `/${owner}/${projectName}/newPullRequestForm` ||
+    isPullRequestEditFormPath(appPath, owner, projectName)
+  ) {
+    return { activeMenu: "pullRequest", shellClassName: "pull-request-page" };
+  }
   return null;
 }
 
@@ -192,6 +198,17 @@ function isIssueEditFormPath(appPath: string, owner: string, projectName: string
     segments[0] === owner &&
     segments[1] === projectName &&
     segments[2] === "issue" &&
+    segments[4] === "editform"
+  );
+}
+
+function isPullRequestEditFormPath(appPath: string, owner: string, projectName: string): boolean {
+  const segments = appPath.split("/").filter(Boolean);
+  return (
+    segments.length === 5 &&
+    segments[0] === owner &&
+    segments[1] === projectName &&
+    segments[2] === "pullRequest" &&
     segments[4] === "editform"
   );
 }
