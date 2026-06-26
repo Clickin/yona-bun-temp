@@ -494,6 +494,7 @@ test("passes runtime foundation config changes when spec and provenance updates 
 test("passes root shell changes when legacy HTML audit provenance updates land together", () => {
   const result = runGate([
     "frontend/src/routes/__root.tsx",
+    "frontend/src/routes/sidebar/route.tsx",
     "frontend/tests/legacy-rendered-page-audit.e2e.ts",
     "docs/provenance/legacy-html-page-audit.md",
   ]);

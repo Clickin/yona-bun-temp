@@ -564,6 +564,7 @@ const DOMAIN_BUCKETS = [
       /^crates\/(?:server|domain|search|vcs)\//i,
       /^frontend\/src\/(?:main|router|runtime-config)\.tsx?$/i,
       /^frontend\/src\/routes\/__root\.tsx$/i,
+      /^frontend\/src\/routes\/sidebar\/route\.tsx$/i,
       /^reports\//i,
       /^scripts\//i,
     ],

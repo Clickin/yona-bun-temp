@@ -52,6 +52,7 @@ import {
 } from "./routes/-issue-views";
 import { ProjectNewPage, ProjectSettingsPage } from "./routes/-project-views";
 import type { ProjectIssueDetailViewModel } from "./routes/-view-models";
+import { framedIframeSrcFromSearch } from "./routes/__root";
 
 describe("auth and workspace views", () => {
   it("keeps the legacy global navigation shell in the root route", () => {
@@ -70,6 +71,23 @@ describe("auth and workspace views", () => {
     );
     expect(source).toContain("user.siteAdminLoggedInAffix.maxim");
     expect(source).toContain("<RootUpdateNotification />");
+    expect(source).toContain("<RootFramedShell />");
+    expect(source).toContain('appPathname === "/sidebar"');
+    expect(source).toContain('document.body.classList.toggle("framed-body", framed)');
+    expect(source).toContain('className="sidebar hide-in-mobile"');
+    expect(source).toContain('id="sidebar"');
+    expect(source).toContain('id="sidebar-bottom"');
+    expect(source).toContain('id="mainFrame"');
+    expect(source).toContain('id="mainFrameId"');
+    expect(source).toContain('name="mainFrame"');
+    expect(source).toContain('className="mainFrame"');
+    expect(source).toContain("useFramedIframeSrc");
+    expect(source).toContain('window.localStorage.setItem("shallWeOpenLeftNavigation", "true")');
+    expect(source).toContain('window.localStorage.setItem("shallWeOpenLeftNavigation", "false")');
+    expect(source).toContain("window.location.reload();");
+    expect(source).toContain("`/sidebar?${searchParams.toString()}`");
+    expect(source).toContain('className="pin-in-sidebar"');
+    expect(source).toContain("target={target}");
     expect(source).toContain("siteUpdateQueryOptions");
     expect(source).toContain('className="center-txt"');
     expect(source).toContain('messages("site.update.notification"');
@@ -175,6 +193,51 @@ describe("auth and workspace views", () => {
     expect(appCss).toContain("width: 50px;");
     expect(appCss).toContain('.gnb-search-form input[type="text"]:focus');
     expect(appCss).toContain("width: 200px;");
+    expect(appCss).toContain(".framed-body {");
+    expect(appCss).toContain("overflow: hidden;");
+    expect(appCss).toContain(".sidebar {");
+    expect(appCss).toContain("background-color: rgb(51 51 51);");
+    expect(appCss).toContain("border-right: 1px solid #000;");
+    expect(appCss).toContain("#mainFrame {");
+    expect(appCss).toContain(".pin-in-sidebar {");
+    expect(appCss).toContain("background-color: #03a9f4;");
+    expect(appCss).toContain(".pin {");
+    expect(appCss).toContain("left: -6px;");
+    expect(appCss).toContain(".pin-move-to-right");
+    expect(appCss).toContain("left: 270px;");
+  });
+
+  it("builds the legacy framed iframe src from /sidebar query params", () => {
+    expect(
+      framedIframeSrcFromSearch(
+        "?path=%2Fadmin%2FprojectYobi%2Fissue%2F1&hash=comment-7",
+        "/sidebar",
+        "/yona",
+        "/notifications",
+      ),
+    ).toBe("/yona/admin/projectYobi/issue/1#comment-7");
+
+    expect(
+      framedIframeSrcFromSearch(
+        "?path=%2Fyona%2Fadmin%2FprojectYobi",
+        "/sidebar",
+        "/yona",
+        "/notifications",
+      ),
+    ).toBe("/yona/admin/projectYobi");
+
+    expect(framedIframeSrcFromSearch("", "/sidebar", "/yona", "/notifications")).toBe(
+      "/yona/notifications",
+    );
+
+    expect(
+      framedIframeSrcFromSearch(
+        "?path=https%3A%2F%2Fexample.com%2Fphish",
+        "/sidebar",
+        "/yona",
+        "/notifications",
+      ),
+    ).toBe("/yona/notifications");
   });
 
   it("renders the canonical login shell with legacy field names and recovery link", () => {
