@@ -355,3 +355,9 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
   `href`, `.project-name-in-my-issues`, item count, label, meta, assignee,
   pagination, and empty-state anchors. Focused coverage:
   `frontend/src/route-parity.spec.tsx`.
+- 2026-06-26 template-first P3 issue detail pane-order correction: the issue
+  detail view now matches `issue/view.scala.html` ordering by rendering
+  `.sharer-list`, `.watcher-list`, and `.subtasks` in the left pane after
+  `.board-actrow` and before the full comments timeline, while the right pane
+  keeps `.issue-info`, `#issueUpdateForm`, and compact comment index only.
+  Focused coverage: `frontend/src/issue-detail-shell.spec.tsx`.

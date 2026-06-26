@@ -490,6 +490,84 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/78/delete"');
   });
 
+  it("preserves the legacy issue detail left and right pane ordering", () => {
+    const comment = {
+      authorLabel: "Commenter",
+      authorLoginId: "commenter",
+      contentsMarkdown: "Parent comment",
+      createdLabel: "now",
+      id: 90,
+      viewerCanDelete: false,
+      viewerCanUpdate: false,
+      viewerHasVoted: false,
+      voterCount: 0,
+      voters: [],
+    };
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          childIssues: [
+            {
+              assigneeLabel: "",
+              createdLabel: "now",
+              issueNumber: 2,
+              labels: [],
+              state: "open",
+              title: "Child issue",
+            },
+          ],
+          childOpenCount: 1,
+          commentCount: 1,
+          comments: [comment],
+          sharers: [{ loginId: "door", userId: 2, userLabel: "Door User" }],
+          timeline: [
+            {
+              comment,
+              createdLabel: "now",
+              eventType: "",
+              id: 90,
+              kind: "comment",
+              newValue: "",
+              oldValue: "",
+              senderLoginId: "",
+            },
+          ],
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    const leftPaneStart = html.indexOf('<div class="span9 span-left-pane">');
+    const rightPaneStart = html.indexOf('<aside class="span3 right-menu">');
+    expect(leftPaneStart).toBeGreaterThanOrEqual(0);
+    expect(rightPaneStart).toBeGreaterThan(leftPaneStart);
+    const leftPaneHtml = html.slice(leftPaneStart, rightPaneStart);
+    const rightPaneHtml = html.slice(rightPaneStart);
+
+    const actrowIndex = leftPaneHtml.indexOf('class="board-actrow right-txt"');
+    const sharerIndex = leftPaneHtml.indexOf('class="sharer-list"');
+    const watcherIndex = leftPaneHtml.indexOf('class="watcher-list"');
+    const subtasksIndex = leftPaneHtml.indexOf('class="subtasks"');
+    const commentsIndex = leftPaneHtml.indexOf('class="board-comment-wrap" id="comments"');
+    expect(actrowIndex).toBeGreaterThanOrEqual(0);
+    expect(sharerIndex).toBeGreaterThan(actrowIndex);
+    expect(watcherIndex).toBeGreaterThan(sharerIndex);
+    expect(subtasksIndex).toBeGreaterThan(watcherIndex);
+    expect(commentsIndex).toBeGreaterThan(subtasksIndex);
+
+    const issueInfoIndex = rightPaneHtml.indexOf('class="issue-info"');
+    const issueUpdateFormIndex = rightPaneHtml.indexOf('id="issueUpdateForm"');
+    const compactCommentsIndex = rightPaneHtml.indexOf('class="board-comment-wrap" id="comments"');
+    expect(issueInfoIndex).toBeGreaterThanOrEqual(0);
+    expect(issueUpdateFormIndex).toBeGreaterThan(issueInfoIndex);
+    expect(compactCommentsIndex).toBeGreaterThan(issueUpdateFormIndex);
+    expect(rightPaneHtml).not.toContain('class="sharer-list"');
+    expect(rightPaneHtml).not.toContain('class="watcher-list"');
+    expect(rightPaneHtml).not.toContain('class="subtasks"');
+  });
+
   it("marks comments and mention links for the current user like legacy jQuery", () => {
     const comment = {
       authorAvatarUrl: "https://cdn.yona/avatar-parent.png",

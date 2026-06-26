@@ -2690,6 +2690,25 @@ export function ProjectIssueDetailPage(props: {
                   ) : null}
                 </span>
               </div>
+              {issue ? (
+                <IssueSharerPanel
+                  issue={issue}
+                  messages={messages}
+                  onSearchSharableUsers={props.onSearchSharableUsers}
+                  onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
+                  onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
+                  runtimeConfig={props.runtimeConfig}
+                  sharePickerOpen={sharePickerOpen}
+                />
+              ) : null}
+              <div className="watcher-list"></div>
+              {issue ? (
+                <IssueSubtaskList
+                  issue={issue}
+                  messages={messages}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              ) : null}
               <section className="board-comment-wrap" id="comments">
                 <div id="timeline">
                   <div className="timeline-list">
@@ -3350,25 +3369,6 @@ export function ProjectIssueDetailPage(props: {
                   />
                 ) : null}
               </div>
-              <div className="watcher-list"></div>
-              {issue ? (
-                <IssueSubtaskList
-                  issue={issue}
-                  messages={messages}
-                  runtimeConfig={props.runtimeConfig}
-                />
-              ) : null}
-              {issue ? (
-                <IssueSharerPanel
-                  issue={issue}
-                  messages={messages}
-                  onSearchSharableUsers={props.onSearchSharableUsers}
-                  onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
-                  onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
-                  runtimeConfig={props.runtimeConfig}
-                  sharePickerOpen={sharePickerOpen}
-                />
-              ) : null}
             </aside>
           </div>
           {issue?.viewerCanDelete && onDeleteIssue ? (
