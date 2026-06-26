@@ -11,6 +11,7 @@ import {
   IssueReferenceSuggestions,
   IssueSharerPanel,
   ProjectIssueDetailPage,
+  ProjectIssueFormPage,
 } from "./routes/-issue-views";
 import { legacyIssueLabelTextClass } from "./routes/-shared";
 import type { ProjectDetailViewModel, ProjectIssueDetailViewModel } from "./routes/-view-models";
@@ -1347,6 +1348,43 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).not.toContain('<span class="font12 no-border-at-child"><span>open</span></span>');
     expect(html).toContain('href="/yona/owner/projectYobi/issues?state=open&amp;labelIds=9"');
     expect(html).toContain('class="child-issue-date" title="now"');
+  });
+
+  it("lets the project layout route own issue form shells without changing the form body", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueFormPage
+        detail={projectDetail}
+        mode="create"
+        onSubmit={async () => undefined}
+        renderShell={false}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const createRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/issueform/route.tsx"),
+      "utf8",
+    );
+    const editRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/issue/$issueNumber/editform/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain('return { activeMenu: "issue" };');
+    expect(layoutSource).toContain('segments[2] === "issue"');
+    expect(layoutSource).toContain('segments[4] === "editform"');
+    expect(createRouteSource).toContain("renderShell={false}");
+    expect(editRouteSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="issue-form"');
+    expect(html).toContain('id="title"');
+    expect(html).toContain('id="editor-body-content-body"');
   });
 });
 

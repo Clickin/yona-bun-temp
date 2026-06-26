@@ -11,6 +11,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/app.css` only. The existing React markup already carries the legacy issue detail classes, so this follow-up avoids JSX churn and keeps REST/React behavior unchanged.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx src/issue-list-filter.spec.tsx`.
 
+## 2026-06-27 Nested Layout Follow-Up
+
+- Moved project issue create/edit form shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/issueform` and `/issue/:issueNumber/editform`, keeping the issue menu active and rendering leaf form bodies through the TanStack Router `<Outlet />`.
+- Scope: `frontend/src/routes/-issue-views.tsx` adds `renderShell={false}` for `ProjectIssueFormPage`; create/edit leaf routes pass that flag while retaining their existing REST submit/data loading boundaries.
+- Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx src/project-settings-parity.spec.tsx`.
+
 ## Evidence Checked
 
 Legacy evidence:

@@ -179,6 +179,7 @@ function IssueEditRouteComponent() {
         );
       }}
       parentIssueOptions={parentIssueOptions}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );

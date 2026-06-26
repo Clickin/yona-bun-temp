@@ -198,8 +198,9 @@ describe("project settings parity", () => {
     expect(layoutSource).toContain(
       "<ProjectHeader detail={detail} runtimeConfig={runtimeConfig} />",
     );
+    expect(layoutSource).toContain('return { activeMenu: "settings" };');
     expect(layoutSource).toContain(
-      '<ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={runtimeConfig} />',
+      "<ProjectMenu activeMenu={activeMenu} detail={detail} runtimeConfig={runtimeConfig} />",
     );
     expect(routeSource).toContain("renderShell={false}");
     expect(html).not.toContain('class="page-wrap-outer"');

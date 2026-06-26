@@ -5430,6 +5430,7 @@ export function ProjectIssueFormPage(props: {
   onSubmit: (input: ProjectIssueFormSubmitInput) => Promise<void>;
   parentIssueOptions?: ProjectIssueParentOptionViewModel[];
   referCommentId?: string;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t: messages } = useLegacyMessages();
@@ -5548,247 +5549,214 @@ export function ProjectIssueFormPage(props: {
 
   const submitDisabled = submitting || submitGuardActive;
 
-  return (
-    <main className="app-shell issue-form-page">
+  const content = (
+    <>
       <h1 className="sr-only">
         {legacyMessage(messages, props.mode === "create" ? "button.newIssue" : "button.edit")}
       </h1>
-      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu activeMenu="issue" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="content-wrap frm-wrap">
-            <form
-              encType="multipart/form-data"
-              id="issue-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                submitIssueForm("save");
-              }}
-            >
-              {props.csrfToken ? (
-                <input name="csrfToken" type="hidden" value={props.csrfToken} />
-              ) : null}
-              {props.mode === "edit" && props.initialIssue ? (
-                <>
-                  <input name="authorId" type="hidden" value={props.initialIssue.authorId || ""} />
-                  <input
-                    id="isPublish"
-                    name="isPublish"
-                    type="hidden"
-                    value={legacySubmitIntent === "publish" ? "true" : "false"}
-                    readOnly
-                  />
-                </>
-              ) : null}
-              <input name="referCommentId" type="hidden" value={props.referCommentId ?? ""} />
-              <input
-                id="isDraft"
-                name="isDraft"
-                type="hidden"
-                value={legacySubmitIntent === "draft" ? "true" : "false"}
-                readOnly
-              />
-              <div className="row-fluid">
-                <div className="span12">
-                  <dl>
-                    {props.mode === "edit" && props.initialIssue ? (
-                      <dt>
-                        {props.initialIssue.isDraft ? (
-                          <span className="draft">
-                            {legacyMessage(messages, "issue.state.draft")}
-                          </span>
-                        ) : (
-                          <label htmlFor="title">
-                            <strong className="secondary-txt">
-                              #{props.initialIssue.issueNumber}
-                            </strong>
-                          </label>
-                        )}
-                      </dt>
-                    ) : null}
-                    <dd>
-                      <div className="span12">
-                        <div className="span11">
-                          <input
-                            autoComplete="off"
-                            className="text title"
-                            id="title"
-                            maxLength={250}
-                            name="title"
-                            onChange={(event) => {
-                              setValidationMessage(null);
-                              setTitle(event.currentTarget.value);
-                            }}
-                            placeholder={legacyMessage(messages, "title")}
-                            data-legacy-tabindex="1"
-                            title={
-                              props.mode === "create"
-                                ? legacyMessage(messages, "title.help.key")
-                                : undefined
-                            }
-                            type="text"
-                            value={title}
-                          />
-                        </div>
-                        <div className="span1 subtask-message">
-                          {legacyMessage(messages, "issue.option")}
-                        </div>
+      <div className="project-page-wrap">
+        <div className="content-wrap frm-wrap">
+          <form
+            encType="multipart/form-data"
+            id="issue-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submitIssueForm("save");
+            }}
+          >
+            {props.csrfToken ? (
+              <input name="csrfToken" type="hidden" value={props.csrfToken} />
+            ) : null}
+            {props.mode === "edit" && props.initialIssue ? (
+              <>
+                <input name="authorId" type="hidden" value={props.initialIssue.authorId || ""} />
+                <input
+                  id="isPublish"
+                  name="isPublish"
+                  type="hidden"
+                  value={legacySubmitIntent === "publish" ? "true" : "false"}
+                  readOnly
+                />
+              </>
+            ) : null}
+            <input name="referCommentId" type="hidden" value={props.referCommentId ?? ""} />
+            <input
+              id="isDraft"
+              name="isDraft"
+              type="hidden"
+              value={legacySubmitIntent === "draft" ? "true" : "false"}
+              readOnly
+            />
+            <div className="row-fluid">
+              <div className="span12">
+                <dl>
+                  {props.mode === "edit" && props.initialIssue ? (
+                    <dt>
+                      {props.initialIssue.isDraft ? (
+                        <span className="draft">
+                          {legacyMessage(messages, "issue.state.draft")}
+                        </span>
+                      ) : (
+                        <label htmlFor="title">
+                          <strong className="secondary-txt">
+                            #{props.initialIssue.issueNumber}
+                          </strong>
+                        </label>
+                      )}
+                    </dt>
+                  ) : null}
+                  <dd>
+                    <div className="span12">
+                      <div className="span11">
+                        <input
+                          autoComplete="off"
+                          className="text title"
+                          id="title"
+                          maxLength={250}
+                          name="title"
+                          onChange={(event) => {
+                            setValidationMessage(null);
+                            setTitle(event.currentTarget.value);
+                          }}
+                          placeholder={legacyMessage(messages, "title")}
+                          data-legacy-tabindex="1"
+                          title={
+                            props.mode === "create"
+                              ? legacyMessage(messages, "title.help.key")
+                              : undefined
+                          }
+                          type="text"
+                          value={title}
+                        />
                       </div>
-                      <div
-                        className={`subtask-wrap${parentIssueOptions.length > 0 || parentIssueId > 0 ? " show" : ""}`}
-                      >
-                        <div className="span3">
-                          <select
-                            data-container-css-class="fullsize"
-                            data-format="projects"
-                            data-placeholder={legacyMessage(
-                              messages,
-                              "organization.choose.projects",
-                            )}
-                            data-toggle="select2"
-                            disabled={parentIssueOptions.length === 0}
-                            id="targetProjectId"
-                            name="targetProjectId"
-                          >
-                            <option value="">{detail.projectName}</option>
-                          </select>
-                        </div>
-                        <div className="span6">
-                          <select
-                            data-container-css-class="fullsize"
-                            data-format="issues"
-                            data-placeholder={legacyMessage(
-                              messages,
-                              "organization.choose.projects",
-                            )}
-                            data-toggle="select2"
-                            id="parentId"
-                            name="parentIssueId"
-                            onChange={(event) =>
-                              setParentIssueId(Number(event.currentTarget.value))
-                            }
-                            value={parentIssueId}
-                          >
-                            <option value="">
-                              {legacyMessage(messages, "issue.subtask.select")}
+                      <div className="span1 subtask-message">
+                        {legacyMessage(messages, "issue.option")}
+                      </div>
+                    </div>
+                    <div
+                      className={`subtask-wrap${parentIssueOptions.length > 0 || parentIssueId > 0 ? " show" : ""}`}
+                    >
+                      <div className="span3">
+                        <select
+                          data-container-css-class="fullsize"
+                          data-format="projects"
+                          data-placeholder={legacyMessage(messages, "organization.choose.projects")}
+                          data-toggle="select2"
+                          disabled={parentIssueOptions.length === 0}
+                          id="targetProjectId"
+                          name="targetProjectId"
+                        >
+                          <option value="">{detail.projectName}</option>
+                        </select>
+                      </div>
+                      <div className="span6">
+                        <select
+                          data-container-css-class="fullsize"
+                          data-format="issues"
+                          data-placeholder={legacyMessage(messages, "organization.choose.projects")}
+                          data-toggle="select2"
+                          id="parentId"
+                          name="parentIssueId"
+                          onChange={(event) => setParentIssueId(Number(event.currentTarget.value))}
+                          value={parentIssueId}
+                        >
+                          <option value="">
+                            {legacyMessage(messages, "issue.subtask.select")}
+                          </option>
+                          {parentIssueOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              #{option.issueNumber}. {option.title}
                             </option>
-                            {parentIssueOptions.map((option) => (
-                              <option key={option.id} value={option.id}>
-                                #{option.issueNumber}. {option.title}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                          ))}
+                        </select>
                       </div>
+                    </div>
+                  </dd>
+                </dl>
+              </div>
+              <div className="row-fluid">
+                <div className="span9 span-left-pane">
+                  <dl>
+                    <dd style={{ position: "relative" }}>
+                      <LegacyMarkdownEditorShell
+                        basePath={props.runtimeConfig.basePath}
+                        editId="edit-content-body"
+                        editorMode="content-body"
+                        markdownPreview={bodyMarkdown}
+                        messages={messages}
+                        ownerName={detail.ownerName}
+                        projectName={detail.projectName}
+                        previewId="preview-content-body"
+                      >
+                        <IssueMentionTextarea
+                          className="editorSeries content comment nm"
+                          context="issue-body"
+                          csrfToken={props.csrfToken}
+                          editorMode="content-body"
+                          getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
+                          id="editor-body-content-body"
+                          name="body"
+                          onAttachmentUpload={(attachment) =>
+                            setAttachmentIds((current) => [...current, attachment.id])
+                          }
+                          onChange={(nextBodyMarkdown) => {
+                            setValidationMessage(null);
+                            setBodyMarkdown(nextBodyMarkdown);
+                          }}
+                          onSearchMentionUsers={props.onSearchMentionUsers}
+                          placeholder=""
+                          runtimeConfig={props.runtimeConfig}
+                          data-legacy-tabindex="2"
+                          value={bodyMarkdown}
+                        />
+                      </LegacyMarkdownEditorShell>
                     </dd>
                   </dl>
-                </div>
-                <div className="row-fluid">
-                  <div className="span9 span-left-pane">
-                    <dl>
-                      <dd style={{ position: "relative" }}>
-                        <LegacyMarkdownEditorShell
-                          basePath={props.runtimeConfig.basePath}
-                          editId="edit-content-body"
-                          editorMode="content-body"
-                          markdownPreview={bodyMarkdown}
-                          messages={messages}
-                          ownerName={detail.ownerName}
-                          projectName={detail.projectName}
-                          previewId="preview-content-body"
-                        >
-                          <IssueMentionTextarea
-                            className="editorSeries content comment nm"
-                            context="issue-body"
-                            csrfToken={props.csrfToken}
-                            editorMode="content-body"
-                            getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
-                            id="editor-body-content-body"
-                            name="body"
-                            onAttachmentUpload={(attachment) =>
-                              setAttachmentIds((current) => [...current, attachment.id])
-                            }
-                            onChange={(nextBodyMarkdown) => {
-                              setValidationMessage(null);
-                              setBodyMarkdown(nextBodyMarkdown);
-                            }}
-                            onSearchMentionUsers={props.onSearchMentionUsers}
-                            placeholder=""
-                            runtimeConfig={props.runtimeConfig}
-                            data-legacy-tabindex="2"
-                            value={bodyMarkdown}
+                  <LegacyIssueFileUploaderShell
+                    messages={messages}
+                    resourceId={props.initialIssue?.issueId ?? null}
+                    resourceType="ISSUE_POST"
+                  />
+                  <div className="actrow right-txt">
+                    {props.mode === "edit" && props.initialIssue && !props.initialIssue.isDraft ? (
+                      <span className="send-notification-check">
+                        <label className="checkbox inline">
+                          <input
+                            defaultChecked
+                            id="notificationMail"
+                            name="notificationMail"
+                            type="checkbox"
+                            value="yes"
                           />
-                        </LegacyMarkdownEditorShell>
-                      </dd>
-                    </dl>
-                    <LegacyIssueFileUploaderShell
-                      messages={messages}
-                      resourceId={props.initialIssue?.issueId ?? null}
-                      resourceType="ISSUE_POST"
-                    />
-                    <div className="actrow right-txt">
-                      {props.mode === "edit" &&
-                      props.initialIssue &&
-                      !props.initialIssue.isDraft ? (
-                        <span className="send-notification-check">
-                          <label className="checkbox inline">
-                            <input
-                              defaultChecked
-                              id="notificationMail"
-                              name="notificationMail"
-                              type="checkbox"
-                              value="yes"
-                            />
-                            <strong>{legacyMessage(messages, "notification.send.mail")}</strong>
-                          </label>
-                        </span>
-                      ) : null}
-                      {props.mode !== "edit" || !props.initialIssue?.isDraft ? (
+                          <strong>{legacyMessage(messages, "notification.send.mail")}</strong>
+                        </label>
+                      </span>
+                    ) : null}
+                    {props.mode !== "edit" || !props.initialIssue?.isDraft ? (
+                      <button
+                        className={props.mode === "create" ? "ybtn ybtn-success" : "ybtn ybtn-info"}
+                        disabled={submitDisabled}
+                        id="button-save"
+                        type="submit"
+                      >
+                        {legacyMessage(messages, "button.save")}
+                      </button>
+                    ) : null}
+                    {props.mode === "edit" && props.initialIssue?.isDraft ? (
+                      <>
                         <button
-                          className={
-                            props.mode === "create" ? "ybtn ybtn-success" : "ybtn ybtn-info"
-                          }
+                          className="ybtn ybtn-info"
+                          data-content={legacyMessage(messages, "button.draft.publish.description")}
+                          data-placement="top-start"
+                          data-toggle="tooltip"
                           disabled={submitDisabled}
-                          id="button-save"
-                          type="submit"
+                          id="button-draft-publish"
+                          onClick={submitDraftPublishIssueForm}
+                          title={legacyMessage(messages, "button.draft.publish.description")}
+                          type="button"
                         >
-                          {legacyMessage(messages, "button.save")}
+                          {legacyMessage(messages, "button.draft.publish")}
                         </button>
-                      ) : null}
-                      {props.mode === "edit" && props.initialIssue?.isDraft ? (
-                        <>
-                          <button
-                            className="ybtn ybtn-info"
-                            data-content={legacyMessage(
-                              messages,
-                              "button.draft.publish.description",
-                            )}
-                            data-placement="top-start"
-                            data-toggle="tooltip"
-                            disabled={submitDisabled}
-                            id="button-draft-publish"
-                            onClick={submitDraftPublishIssueForm}
-                            title={legacyMessage(messages, "button.draft.publish.description")}
-                            type="button"
-                          >
-                            {legacyMessage(messages, "button.draft.publish")}
-                          </button>
-                          <button
-                            className="ybtn ybtn-watching draft-save-btn"
-                            data-content={legacyMessage(messages, "button.draft.save.description")}
-                            data-placement="top"
-                            data-toggle="tooltip"
-                            disabled={submitDisabled}
-                            id="draft-save-btn"
-                            onClick={() => submitIssueForm("draft")}
-                            title={legacyMessage(messages, "button.draft.save.description")}
-                            type="button"
-                          >
-                            {legacyMessage(messages, "button.draft.save")}
-                          </button>
-                        </>
-                      ) : props.mode === "create" ? (
                         <button
                           className="ybtn ybtn-watching draft-save-btn"
                           data-content={legacyMessage(messages, "button.draft.save.description")}
@@ -5802,265 +5770,287 @@ export function ProjectIssueFormPage(props: {
                         >
                           {legacyMessage(messages, "button.draft.save")}
                         </button>
-                      ) : null}
-                      <a
-                        className="ybtn"
-                        data-legacy-href="history.back"
-                        href={buildProjectHref(
-                          props.runtimeConfig,
-                          detail.ownerName,
-                          detail.projectName,
-                          "issues",
-                        )}
+                      </>
+                    ) : props.mode === "create" ? (
+                      <button
+                        className="ybtn ybtn-watching draft-save-btn"
+                        data-content={legacyMessage(messages, "button.draft.save.description")}
+                        data-placement="top"
+                        data-toggle="tooltip"
+                        disabled={submitDisabled}
+                        id="draft-save-btn"
+                        onClick={() => submitIssueForm("draft")}
+                        title={legacyMessage(messages, "button.draft.save.description")}
+                        type="button"
                       >
-                        {legacyMessage(messages, "button.cancel")}
-                      </a>
-                    </div>
-                  </div>
-                  <div className="span3 span-hard-wrap right-menu">
-                    {props.mode === "edit" && props.initialIssue ? (
-                      <dl className="issue-option">
-                        <dt>{legacyMessage(messages, "issue.state")}</dt>
-                        <dd>
-                          <div className="btn-group auto" data-name="state" id="state">
-                            <button
-                              className="btn dropdown-toggle auto"
-                              data-toggle="dropdown"
-                              type="button"
-                            >
-                              <span className="d-label">
-                                {legacyMessage(messages, "issue.state")}
-                              </span>
-                              <span className="d-caret">
-                                <span className="caret"></span>
-                              </span>
-                            </button>
-                            <ul className="dropdown-menu">
-                              <li
-                                className={
-                                  props.initialIssue.state === "open" ? "active" : undefined
-                                }
-                                data-selected={
-                                  props.initialIssue.state === "open" ? "true" : undefined
-                                }
-                                data-value="OPEN"
-                              >
-                                <a
-                                  href={buildProjectHref(
-                                    props.runtimeConfig,
-                                    detail.ownerName,
-                                    detail.projectName,
-                                    "issues?state=open",
-                                  )}
-                                >
-                                  {legacyMessage(messages, "issue.state.open")}
-                                </a>
-                              </li>
-                              <li
-                                className={
-                                  props.initialIssue.state === "closed" ? "active" : undefined
-                                }
-                                data-selected={
-                                  props.initialIssue.state === "closed" ? "true" : undefined
-                                }
-                                data-value="CLOSED"
-                              >
-                                <a
-                                  href={buildProjectHref(
-                                    props.runtimeConfig,
-                                    detail.ownerName,
-                                    detail.projectName,
-                                    "issues?state=closed",
-                                  )}
-                                >
-                                  {legacyMessage(messages, "issue.state.closed")}
-                                </a>
-                              </li>
-                            </ul>
-                          </div>
-                        </dd>
-                      </dl>
+                        {legacyMessage(messages, "button.draft.save")}
+                      </button>
                     ) : null}
+                    <a
+                      className="ybtn"
+                      data-legacy-href="history.back"
+                      href={buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        "issues",
+                      )}
+                    >
+                      {legacyMessage(messages, "button.cancel")}
+                    </a>
+                  </div>
+                </div>
+                <div className="span3 span-hard-wrap right-menu">
+                  {props.mode === "edit" && props.initialIssue ? (
                     <dl className="issue-option">
-                      <dt>{legacyMessage(messages, "issue.assignee")}</dt>
+                      <dt>{legacyMessage(messages, "issue.state")}</dt>
                       <dd>
-                        <IssueAssigneeAutocompleteField
-                          className="bigdrop"
-                          id="assignee"
-                          name="assigneeLoginId"
-                          onChange={setAssigneeLoginId}
-                          onSearchAssignableUsers={props.onSearchAssignableUsers}
-                          onSelect={selectAssigneeSuggestion}
-                          placeholder={legacyMessage(messages, "issue.noAssignee")}
-                          style={{ width: "100%" }}
-                          title=""
-                          value={assigneeLoginId}
-                        />
-                      </dd>
-                    </dl>
-                    <dl className="issue-option" id="milestoneOption">
-                      <dt>{legacyMessage(messages, "milestone")}</dt>
-                      <dd>
-                        {milestoneOptions.length === 0 ? (
-                          <a
-                            className="ybtn ybtn-small ybtn-fullsize"
-                            href={buildProjectHref(
-                              props.runtimeConfig,
-                              detail.ownerName,
-                              detail.projectName,
-                              "newMilestoneForm",
-                            )}
-                            target="_blank"
+                        <div className="btn-group auto" data-name="state" id="state">
+                          <button
+                            className="btn dropdown-toggle auto"
+                            data-toggle="dropdown"
+                            type="button"
                           >
-                            {legacyMessage(messages, "milestone.menu.new")}
-                          </a>
-                        ) : (
-                          <select
-                            data-container-css-class="fullsize"
-                            data-format="milestone"
-                            data-toggle="select2"
-                            id="milestoneId"
-                            name="milestoneId"
-                            onChange={(event) => setMilestoneId(Number(event.currentTarget.value))}
-                            value={milestoneId}
-                          >
-                            <option value={0}>
-                              {legacyMessage(messages, "issue.noMilestone")}
-                            </option>
-                            {props.mode === "edit" ? (
-                              <IssueMilestoneOptionGroups
-                                messages={messages}
-                                milestones={milestoneOptions}
-                              />
-                            ) : (
-                              milestoneOptions.map((milestone) => (
-                                <option
-                                  data-state={milestone.state}
-                                  key={milestone.id}
-                                  value={milestone.id}
-                                >
-                                  {milestone.title}
-                                </option>
-                              ))
-                            )}
-                          </select>
-                        )}
-                      </dd>
-                    </dl>
-                    <dl className="issue-option">
-                      <dt>{legacyMessage(messages, "issue.dueDate")}</dt>
-                      <dd>
-                        <div className="search search-bar">
-                          <input
-                            className="textbox full"
-                            data-toggle="calendar"
-                            id="issueDueDate"
-                            name="dueDate"
-                            onChange={(event) => {
-                              setValidationMessage(null);
-                              setDueDate(event.currentTarget.value);
-                            }}
-                            type="text"
-                            value={dueDate}
-                          />
-                          <button className="search-btn btn-calendar" type="button">
-                            <i className="yobicon-calendar2"></i>
+                            <span className="d-label">
+                              {legacyMessage(messages, "issue.state")}
+                            </span>
+                            <span className="d-caret">
+                              <span className="caret"></span>
+                            </span>
                           </button>
+                          <ul className="dropdown-menu">
+                            <li
+                              className={props.initialIssue.state === "open" ? "active" : undefined}
+                              data-selected={
+                                props.initialIssue.state === "open" ? "true" : undefined
+                              }
+                              data-value="OPEN"
+                            >
+                              <a
+                                href={buildProjectHref(
+                                  props.runtimeConfig,
+                                  detail.ownerName,
+                                  detail.projectName,
+                                  "issues?state=open",
+                                )}
+                              >
+                                {legacyMessage(messages, "issue.state.open")}
+                              </a>
+                            </li>
+                            <li
+                              className={
+                                props.initialIssue.state === "closed" ? "active" : undefined
+                              }
+                              data-selected={
+                                props.initialIssue.state === "closed" ? "true" : undefined
+                              }
+                              data-value="CLOSED"
+                            >
+                              <a
+                                href={buildProjectHref(
+                                  props.runtimeConfig,
+                                  detail.ownerName,
+                                  detail.projectName,
+                                  "issues?state=closed",
+                                )}
+                              >
+                                {legacyMessage(messages, "issue.state.closed")}
+                              </a>
+                            </li>
+                          </ul>
                         </div>
                       </dd>
                     </dl>
-                    {availableLabels.length > 0 ? (
-                      <dl className="issue-option">
-                        <dt>
-                          {legacyMessage(messages, "label")}{" "}
-                          <a
-                            className="label-edit"
-                            href={buildProjectHref(
-                              props.runtimeConfig,
-                              detail.ownerName,
-                              detail.projectName,
-                              "issue/labelsform",
-                            )}
-                            target="_blank"
-                          >
-                            [{legacyMessage(messages, "button.edit")}]
-                          </a>
-                        </dt>
-                        <dd>
-                          <select
-                            aria-label={legacyMessage(messages, "label.select")}
-                            className="hide"
-                            data-allow-clear="true"
-                            data-container-css-class="issue-labels bordered fullsize"
-                            data-dropdown-css-class="issue-labels"
-                            data-format="issuelabel"
-                            data-placeholder={legacyMessage(messages, "label.select")}
-                            data-search="labelIds"
-                            data-toggle="select2"
-                            id="labelIds"
-                            multiple
-                            name="labelIds"
-                            onChange={(event) => {
-                              const selected = Array.from(event.currentTarget.selectedOptions).map(
-                                (option) => Number(option.value),
-                              );
-                              setLabelIds(selected);
-                            }}
-                            value={labelIds.map(String)}
-                          >
-                            <option></option>
-                            {availableLabels.map((label) => (
+                  ) : null}
+                  <dl className="issue-option">
+                    <dt>{legacyMessage(messages, "issue.assignee")}</dt>
+                    <dd>
+                      <IssueAssigneeAutocompleteField
+                        className="bigdrop"
+                        id="assignee"
+                        name="assigneeLoginId"
+                        onChange={setAssigneeLoginId}
+                        onSearchAssignableUsers={props.onSearchAssignableUsers}
+                        onSelect={selectAssigneeSuggestion}
+                        placeholder={legacyMessage(messages, "issue.noAssignee")}
+                        style={{ width: "100%" }}
+                        title=""
+                        value={assigneeLoginId}
+                      />
+                    </dd>
+                  </dl>
+                  <dl className="issue-option" id="milestoneOption">
+                    <dt>{legacyMessage(messages, "milestone")}</dt>
+                    <dd>
+                      {milestoneOptions.length === 0 ? (
+                        <a
+                          className="ybtn ybtn-small ybtn-fullsize"
+                          href={buildProjectHref(
+                            props.runtimeConfig,
+                            detail.ownerName,
+                            detail.projectName,
+                            "newMilestoneForm",
+                          )}
+                          target="_blank"
+                        >
+                          {legacyMessage(messages, "milestone.menu.new")}
+                        </a>
+                      ) : (
+                        <select
+                          data-container-css-class="fullsize"
+                          data-format="milestone"
+                          data-toggle="select2"
+                          id="milestoneId"
+                          name="milestoneId"
+                          onChange={(event) => setMilestoneId(Number(event.currentTarget.value))}
+                          value={milestoneId}
+                        >
+                          <option value={0}>{legacyMessage(messages, "issue.noMilestone")}</option>
+                          {props.mode === "edit" ? (
+                            <IssueMilestoneOptionGroups
+                              messages={messages}
+                              milestones={milestoneOptions}
+                            />
+                          ) : (
+                            milestoneOptions.map((milestone) => (
                               <option
-                                data-category-id={label.categoryId ?? ""}
-                                data-category-is-exclusive={
-                                  label.categoryIsExclusive ? "true" : "false"
+                                data-state={milestone.state}
+                                key={milestone.id}
+                                value={milestone.id}
+                              >
+                                {milestone.title}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      )}
+                    </dd>
+                  </dl>
+                  <dl className="issue-option">
+                    <dt>{legacyMessage(messages, "issue.dueDate")}</dt>
+                    <dd>
+                      <div className="search search-bar">
+                        <input
+                          className="textbox full"
+                          data-toggle="calendar"
+                          id="issueDueDate"
+                          name="dueDate"
+                          onChange={(event) => {
+                            setValidationMessage(null);
+                            setDueDate(event.currentTarget.value);
+                          }}
+                          type="text"
+                          value={dueDate}
+                        />
+                        <button className="search-btn btn-calendar" type="button">
+                          <i className="yobicon-calendar2"></i>
+                        </button>
+                      </div>
+                    </dd>
+                  </dl>
+                  {availableLabels.length > 0 ? (
+                    <dl className="issue-option">
+                      <dt>
+                        {legacyMessage(messages, "label")}{" "}
+                        <a
+                          className="label-edit"
+                          href={buildProjectHref(
+                            props.runtimeConfig,
+                            detail.ownerName,
+                            detail.projectName,
+                            "issue/labelsform",
+                          )}
+                          target="_blank"
+                        >
+                          [{legacyMessage(messages, "button.edit")}]
+                        </a>
+                      </dt>
+                      <dd>
+                        <select
+                          aria-label={legacyMessage(messages, "label.select")}
+                          className="hide"
+                          data-allow-clear="true"
+                          data-container-css-class="issue-labels bordered fullsize"
+                          data-dropdown-css-class="issue-labels"
+                          data-format="issuelabel"
+                          data-placeholder={legacyMessage(messages, "label.select")}
+                          data-search="labelIds"
+                          data-toggle="select2"
+                          id="labelIds"
+                          multiple
+                          name="labelIds"
+                          onChange={(event) => {
+                            const selected = Array.from(event.currentTarget.selectedOptions).map(
+                              (option) => Number(option.value),
+                            );
+                            setLabelIds(selected);
+                          }}
+                          value={labelIds.map(String)}
+                        >
+                          <option></option>
+                          {availableLabels.map((label) => (
+                            <option
+                              data-category-id={label.categoryId ?? ""}
+                              data-category-is-exclusive={
+                                label.categoryIsExclusive ? "true" : "false"
+                              }
+                              key={label.id}
+                              value={label.id}
+                            >
+                              {label.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="issue-labels-fallback">
+                          {availableLabels.map((label) => (
+                            <label className="checkbox inline" key={label.id}>
+                              <input
+                                checked={labelIds.includes(label.id)}
+                                name="labelIds"
+                                onChange={(event) =>
+                                  toggleLabel(label.id, event.currentTarget.checked)
                                 }
-                                key={label.id}
+                                type="checkbox"
                                 value={label.id}
+                              />
+                              <span
+                                className={legacyIssueLabelClassName(
+                                  "label issue-label list-label active",
+                                  label.color,
+                                )}
+                                style={{ backgroundColor: label.color }}
                               >
                                 {label.name}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="issue-labels-fallback">
-                            {availableLabels.map((label) => (
-                              <label className="checkbox inline" key={label.id}>
-                                <input
-                                  checked={labelIds.includes(label.id)}
-                                  name="labelIds"
-                                  onChange={(event) =>
-                                    toggleLabel(label.id, event.currentTarget.checked)
-                                  }
-                                  type="checkbox"
-                                  value={label.id}
-                                />
-                                <span
-                                  className={legacyIssueLabelClassName(
-                                    "label issue-label list-label active",
-                                    label.color,
-                                  )}
-                                  style={{ backgroundColor: label.color }}
-                                >
-                                  {label.name}
-                                </span>
-                              </label>
-                            ))}
-                          </div>
-                        </dd>
-                      </dl>
-                    ) : null}
-                  </div>
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </dd>
+                    </dl>
+                  ) : null}
                 </div>
               </div>
-              {validationMessage ? (
-                <div className="alert alert-error" role="alert">
-                  {legacyMessage(messages, validationMessage)}
-                </div>
-              ) : null}
-            </form>
-          </div>
+            </div>
+            {validationMessage ? (
+              <div className="alert alert-error" role="alert">
+                {legacyMessage(messages, validationMessage)}
+              </div>
+            ) : null}
+          </form>
         </div>
       </div>
+    </>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
+  return (
+    <main className="app-shell issue-form-page">
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="issue" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }

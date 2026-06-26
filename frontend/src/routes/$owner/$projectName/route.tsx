@@ -53,18 +53,20 @@ function ProjectLayoutRouteComponent() {
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const legacyAdminAlias = legacyAdminAliasPath(owner, projectName);
+  const layoutShell = projectLayoutShell(pathname, runtimeConfig.basePath, owner, projectName);
 
   if (legacyAdminAlias) {
     navigateToAppHref(runtimeConfig.basePath, legacyAdminAlias);
     return null;
   }
 
-  if (!projectLayoutOwnsShell(pathname, runtimeConfig.basePath, owner, projectName)) {
+  if (!layoutShell) {
     return <Outlet />;
   }
 
   return (
-    <ProjectSettingsLayout
+    <ProjectRouteShellLayout
+      activeMenu={layoutShell.activeMenu}
       bootstrapping={bootstrapping}
       messages={messages}
       owner={owner}
@@ -88,23 +90,45 @@ function stripProjectLayoutBasePath(pathname: string, basePath: string): string 
   return pathname || "/";
 }
 
-function projectLayoutOwnsShell(
+function projectLayoutShell(
   pathname: string,
   basePath: string,
   owner: string,
   projectName: string,
-): boolean {
-  const appPath = stripProjectLayoutBasePath(pathname, basePath);
-  return appPath === `/${owner}/${projectName}/settingform`;
+): { activeMenu: "issue" | "settings" } | null {
+  const appPath = stripProjectLayoutBasePath(pathname, basePath).replace(/\/+$/u, "");
+  if (appPath === `/${owner}/${projectName}/settingform`) {
+    return { activeMenu: "settings" };
+  }
+  if (
+    appPath === `/${owner}/${projectName}/issueform` ||
+    isIssueEditFormPath(appPath, owner, projectName)
+  ) {
+    return { activeMenu: "issue" };
+  }
+  return null;
 }
 
-function ProjectSettingsLayout({
+function isIssueEditFormPath(appPath: string, owner: string, projectName: string): boolean {
+  const segments = appPath.split("/").filter(Boolean);
+  return (
+    segments.length === 5 &&
+    segments[0] === owner &&
+    segments[1] === projectName &&
+    segments[2] === "issue" &&
+    segments[4] === "editform"
+  );
+}
+
+function ProjectRouteShellLayout({
+  activeMenu,
   bootstrapping,
   messages,
   owner,
   projectName,
   runtimeConfig,
 }: {
+  activeMenu: "issue" | "settings";
   bootstrapping: boolean;
   messages: ReturnType<typeof useAppRuntime>["messages"];
   owner: string;
@@ -120,7 +144,7 @@ function ProjectSettingsLayout({
   });
   const readError = detailQuery.error;
   const failureKind = classifyConnectFailure(readError);
-  const routeHref = `/${owner}/${projectName}/settingform`;
+  const routeHref = `/${owner}/${projectName}`;
 
   if (failureKind === "forbidden") {
     return <ForbiddenPage href={routeHref} />;
@@ -143,7 +167,7 @@ function ProjectSettingsLayout({
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={runtimeConfig} />
-      <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={runtimeConfig} />
+      <ProjectMenu activeMenu={activeMenu} detail={detail} runtimeConfig={runtimeConfig} />
       <div className="page-wrap-outer">
         <Outlet />
       </div>

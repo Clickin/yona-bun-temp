@@ -95,6 +95,18 @@ M2 starts project shell ownership migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx src/project-home-tabs.spec.tsx`.
 
+M3 continues project shell ownership migration for issue forms:
+
+- `/$owner/$projectName/route.tsx` now also owns the legacy project
+  header/menu/page-wrap shell for `/issueform` and
+  `/issue/:issueNumber/editform`, with the issue menu active.
+- `ProjectIssueFormPage` supports `renderShell={false}` so create/edit leaf
+  routes render the legacy form body under the project layout `<Outlet />`.
+- Issue detail itself still keeps its existing route-owned shell until migrated
+  as a separate, higher-risk detail slice.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx src/project-settings-parity.spec.tsx`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

@@ -165,6 +165,7 @@ function IssueCreateRouteComponent() {
       initialParentIssueId={initialParentIssueId}
       parentIssueOptions={parentIssueOptions}
       referCommentId={referCommentId}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );
