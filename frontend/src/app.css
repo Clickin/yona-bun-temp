@@ -19,6 +19,21 @@ body {
   display: none;
 }
 
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.nm {
+  margin: 0 !important;
+}
+
+.btn-transparent {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -366,6 +381,7 @@ button[type="submit"]:focus {
 }
 
 .gnb-nav a {
+  display: inline;
   padding: 10px;
   line-height: 40px;
   transition: color 0.15s;
@@ -448,7 +464,12 @@ button[type="submit"]:focus {
   width: 200px;
 }
 
-.gnb-search-form button {
+.gnb-search-form .dropdown-toggle {
+  background-color: #f7f7f7;
+  border-radius: 3px 0 0 3px;
+}
+
+.gnb-search-form .search-box button {
   min-height: auto;
   padding: 0;
   margin: 5px;
@@ -1165,8 +1186,9 @@ h1 {
 
 .nav-tabs > li > a {
   display: block;
-  padding: 8px 12px;
-  color: #666;
+  padding: 8px 30px;
+  color: #3592b5;
+  font-weight: bold;
   border: 1px solid transparent;
   border-radius: 3px 3px 0 0;
 }
@@ -1174,10 +1196,18 @@ h1 {
 .nav-tabs > li.active > a,
 .nav-tabs > li > a:hover,
 .nav-tabs > li > a:focus {
-  color: #f36c22;
+  color: #3592b5;
   background-color: #f2f2f2;
   border-color: #ddd #ddd transparent;
   text-decoration: none;
+}
+
+.nav-tabs.small {
+  height: 29px;
+}
+
+.nav-tabs.small > li > a {
+  padding: 4px 15px;
 }
 
 .page-wrap-outer {
@@ -1203,7 +1233,6 @@ h1 {
 }
 
 .project-page-wrap {
-  width: calc(100% - 20px);
   margin-top: 20px;
 }
 
@@ -1280,6 +1309,7 @@ h1 {
 .project-breadcrumb a:hover,
 .project-breadcrumb a:focus {
   color: #fff;
+  text-decoration: underline;
 }
 
 .project-breadcrumb .project-separator {
@@ -1289,6 +1319,11 @@ h1 {
 
 .project-breadcrumb .project-name,
 .project-breadcrumb .project-name a {
+  color: #fc491e;
+}
+
+.project-breadcrumb .project-name a:hover,
+.project-breadcrumb .project-name a:focus {
   color: #fc491e;
 }
 

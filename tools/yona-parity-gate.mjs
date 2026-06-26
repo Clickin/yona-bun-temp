@@ -80,6 +80,7 @@ const PARITY_SLICES = [
     implementationPatterns: [
       /^frontend\/src\/routes\/index\.tsx$/i,
       /^frontend\/src\/routes\/-home-view\.tsx$/i,
+      /^frontend\/src\/routes\/__root\.tsx$/i,
     ],
     testKeywords: ["public-landing", "home-route", "layout-parity"],
     provenanceDocs: ["docs/provenance/core-parity-audit.md"],
@@ -564,7 +565,6 @@ const DOMAIN_BUCKETS = [
       /^frontend\/(?:README\.md|package\.json|pnpm-lock\.yaml|index\.html|tsconfig\.json|vite\.config\.ts)$/i,
       /^crates\/(?:server|domain|search|vcs)\//i,
       /^frontend\/src\/(?:main|router|runtime-config)\.tsx?$/i,
-      /^frontend\/src\/routes\/__root\.tsx$/i,
       /^frontend\/src\/routes\/sidebar\/route\.tsx$/i,
       /^frontend\/scripts\//i,
       /^reports\//i,

@@ -57,6 +57,7 @@ import {
   legacyFilesRuntimeConfig,
   legacyCommonScriptsExternalLinkTarget,
   legacyCommonScriptsShouldStartProgressForLink,
+  legacySpaNavigationPathFromHref,
   legacyUsermenuFavoredFromResponse,
 } from "./routes/__root";
 
@@ -138,6 +139,7 @@ describe("auth and workspace views", () => {
     expect(source).toContain("rootSearchScopeFromPathname");
     expect(source).toContain("rootSearchAction");
     expect(source).toContain("readProjectContainerQueryOptions");
+    expect(source).toContain("legacySpaNavigationPathFromHref");
     expect(source).toContain("showProjectGroupSearchScope");
     expect(source).toContain("projectContainerQuery.data?.organizationName");
     expect(source).toContain('name="gnb-search-form"');
@@ -290,6 +292,26 @@ describe("auth and workspace views", () => {
     expect(appCss).toContain("left: -6px;");
     expect(appCss).toContain(".pin-move-to-right");
     expect(appCss).toContain("left: 270px;");
+  });
+
+  it("keeps legacy anchor markup while routing page links through the SPA", () => {
+    const currentHref = "https://example.test/yona/projects";
+
+    expect(
+      legacySpaNavigationPathFromHref(
+        "/yona/owner/projectYobi/issues?state=open",
+        currentHref,
+        "/yona",
+      ),
+    ).toBe("/yona/owner/projectYobi/issues?state=open");
+    expect(
+      legacySpaNavigationPathFromHref("/yona/owner/projectYobi/watch", currentHref, "/yona"),
+    ).toBeNull();
+    expect(legacySpaNavigationPathFromHref("/yona/files/77", currentHref, "/yona")).toBeNull();
+    expect(
+      legacySpaNavigationPathFromHref("https://outside.test/projects", currentHref, "/yona"),
+    ).toBeNull();
+    expect(legacySpaNavigationPathFromHref("#comments", currentHref, "/yona")).toBeNull();
   });
 
   it("pins pure contracts for legacy common/scripts link handling", () => {

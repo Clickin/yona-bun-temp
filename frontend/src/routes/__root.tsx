@@ -1,6 +1,11 @@
 /* eslint-disable jsx-a11y/anchor-is-valid, jsx-a11y/no-access-key -- legacy common/navbar.scala.html keeps accesskey=S and common/scripts.scala.html binds search-scope anchors with href="#" */
 import * as React from "react";
-import { Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
+import {
+  Outlet,
+  createRootRouteWithContext,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { readProjectContainerQueryOptions } from "../api/org-project";
 import { siteUpdateQueryOptions } from "../api/site-admin";
@@ -346,6 +351,137 @@ export function legacyCommonScriptsShouldStartProgressForLink(element: Element):
   );
 }
 
+const LEGACY_SPA_EXCLUDED_PREFIXES = [
+  "/api",
+  "/assets",
+  "/authenticate",
+  "/files",
+  "/images",
+  "/logout",
+  "/messages.js",
+  "/users/logout",
+];
+const LEGACY_SPA_PROJECT_PAGE_SEGMENTS = new Set([
+  "branches",
+  "changeVCS",
+  "closedPullRequests",
+  "code",
+  "commit",
+  "commits",
+  "compare",
+  "deleteform",
+  "issue",
+  "issueform",
+  "issues",
+  "members",
+  "milestone",
+  "milestones",
+  "newFork",
+  "newMilestoneForm",
+  "newPullRequestForm",
+  "post",
+  "postform",
+  "posts",
+  "pullRequest",
+  "pullRequests",
+  "reviews",
+  "search",
+  "sentPullRequests",
+  "settingform",
+  "statistics",
+  "transfer",
+  "watchers",
+  "webhooks",
+]);
+
+function legacyNormalizeBasePath(basePath: string) {
+  const trimmed = basePath.trim();
+  if (!trimmed || trimmed === "/") {
+    return "";
+  }
+  return trimmed.startsWith("/")
+    ? trimmed.replace(/\/+$/u, "")
+    : `/${trimmed.replace(/\/+$/u, "")}`;
+}
+
+function legacyAppPathFromUrlPathname(pathname: string, basePath: string) {
+  const normalizedBasePath = legacyNormalizeBasePath(basePath);
+  if (!normalizedBasePath) {
+    return pathname || "/";
+  }
+  if (pathname === normalizedBasePath) {
+    return "/";
+  }
+  if (pathname.startsWith(`${normalizedBasePath}/`)) {
+    return pathname.slice(normalizedBasePath.length) || "/";
+  }
+  return null;
+}
+
+function legacyRouteOwnsAppPath(appPath: string) {
+  if (appPath === "/") {
+    return true;
+  }
+  if (
+    LEGACY_SPA_EXCLUDED_PREFIXES.some(
+      (prefix) => appPath === prefix || appPath.startsWith(`${prefix}/`),
+    )
+  ) {
+    return false;
+  }
+  if (/\/(?:cancel|download|enroll|files|rawcode|unwatch|watch)(?:[/?#]|$)/u.test(appPath)) {
+    return false;
+  }
+  if (
+    /^\/(?:_UIKit|_help|_import|forgot-password|login|lostPassword|me|migration|notification|notifications|organizations|orgs|projectform|projects|register|reset-password|resetPassword|restart|restricted|search|secret|sites|user|users|verify)(?:\/|$)/u.test(
+      appPath,
+    )
+  ) {
+    return true;
+  }
+
+  const [, owner, projectName, pageSegment] = appPath.split("/");
+  if (!owner) {
+    return false;
+  }
+  if (!projectName) {
+    return true;
+  }
+  if (!pageSegment) {
+    return true;
+  }
+  return LEGACY_SPA_PROJECT_PAGE_SEGMENTS.has(pageSegment);
+}
+
+export function legacySpaNavigationPathFromHref(
+  href: string,
+  currentHref: string,
+  basePath: string,
+): string | null {
+  if (!href || href.startsWith("#")) {
+    return null;
+  }
+
+  const currentUrl = new URL(currentHref);
+  const targetUrl = new URL(href, currentUrl);
+  if (!["http:", "https:"].includes(targetUrl.protocol) || targetUrl.origin !== currentUrl.origin) {
+    return null;
+  }
+
+  const appPath = legacyAppPathFromUrlPathname(targetUrl.pathname, basePath);
+  if (!appPath || !legacyRouteOwnsAppPath(appPath)) {
+    return null;
+  }
+  if (
+    targetUrl.pathname === currentUrl.pathname &&
+    targetUrl.search === currentUrl.search &&
+    targetUrl.hash !== currentUrl.hash
+  ) {
+    return null;
+  }
+  return `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`;
+}
+
 function legacySubmitClosestForm(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
     return false;
@@ -364,6 +500,7 @@ function legacySubmitClosestForm(target: EventTarget | null): boolean {
 
 function LegacyCommonScriptsBridge() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const navigate = useNavigate();
   const { runtimeConfig } = useAppRuntime();
 
   React.useEffect(() => {
@@ -390,13 +527,52 @@ function LegacyCommonScriptsBridge() {
         window.dispatchEvent(new CustomEvent("legacy:nprogress:start"));
       }
     };
+    const onSpaLinkClick = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        !(event.target instanceof Element)
+      ) {
+        return;
+      }
+
+      const anchor = event.target.closest("a[href]");
+      if (!(anchor instanceof HTMLAnchorElement)) {
+        return;
+      }
+      if (
+        anchor.hasAttribute("download") ||
+        (anchor.target && anchor.target !== "_self") ||
+        anchor.dataset.requestMethod ||
+        anchor.dataset.requestUri
+      ) {
+        return;
+      }
+
+      const navigationHref = legacySpaNavigationPathFromHref(
+        anchor.getAttribute("href") ?? "",
+        window.location.href,
+        runtimeConfig.basePath,
+      );
+      if (!navigationHref) {
+        return;
+      }
+      event.preventDefault();
+      void navigate({ href: navigationHref });
+    };
     document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("click", onSpaLinkClick);
     document.addEventListener("click", onProgressLinkClick);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("click", onSpaLinkClick);
       document.removeEventListener("click", onProgressLinkClick);
     };
-  }, []);
+  }, [navigate, runtimeConfig.basePath]);
 
   return null;
 }
