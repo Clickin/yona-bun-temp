@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   pullRequestEditFormOptionsQueryOptions,
   updatePullRequestRest,
@@ -8,12 +8,12 @@ import { apiQueryKeys } from "../../../../../../api/query-keys";
 import { readProjectContainer } from "../../../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../../app-view-models";
+import { prefixBasePath } from "../../../../../../runtime-config";
 import { ProjectPullRequestFormPage } from "../../../../../-pull-request-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../../../-shared";
@@ -28,6 +28,7 @@ function PullRequestEditFormRouteComponent() {
   const { owner, projectName, pullRequestNumber } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const parsedNumber = Number(pullRequestNumber);
   const containerQuery = useQuery({
     enabled: !bootstrapping,
@@ -66,10 +67,12 @@ function PullRequestEditFormRouteComponent() {
         }),
         queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
       ]);
-      navigateToAppHref(
-        runtimeConfig.basePath,
-        `/${owner}/${projectName}/pullRequest/${parsedNumber}`,
-      );
+      void navigate({
+        href: prefixBasePath(
+          runtimeConfig.basePath,
+          `/${owner}/${projectName}/pullRequest/${parsedNumber}`,
+        ),
+      });
     },
     onError: (error) => {
       setErrorMessage(

@@ -4954,10 +4954,16 @@ describe("file-route parity harness", () => {
     expect(newPullRequestFormRouteSource).not.toContain("Read pull request form options failed.");
     expect(newPullRequestFormRouteSource).toContain("BadRequestPage");
     expect(newPullRequestFormRouteSource).toContain("pullRequest.error.newPullRequestForm");
+    expect(newPullRequestFormRouteSource).toContain("useNavigate");
+    expect(newPullRequestFormRouteSource).toContain("prefixBasePath");
+    expect(newPullRequestFormRouteSource).not.toContain("navigateToAppHref");
     expect(newPullRequestFormRouteSource).not.toContain("Create pull request failed.");
     expect(pullRequestEditFormRouteSource).not.toContain("Read pull request form options failed.");
     expect(pullRequestEditFormRouteSource).toContain("BadRequestPage");
     expect(pullRequestEditFormRouteSource).toContain("pullRequest.error.newPullRequestForm");
+    expect(pullRequestEditFormRouteSource).toContain("useNavigate");
+    expect(pullRequestEditFormRouteSource).toContain("prefixBasePath");
+    expect(pullRequestEditFormRouteSource).not.toContain("navigateToAppHref");
     expect(pullRequestEditFormRouteSource).not.toContain("Update pull request failed.");
     expect(pullRequestDetailRouteSource).not.toContain("Read pull request failed.");
     expect(pullRequestDetailRouteSource).toContain("BadRequestPage");

@@ -749,3 +749,8 @@ A slice is closed only when:
   through TanStack Router navigation instead of `navigateToAppHref`. Focused
   guards cover the organization route sources and keep the legacy visual
   shells/mutation fallbacks unchanged.
+- M55 continues pull-request mutation SPA navigation: PR create and edit keep
+  their existing TanStack Query invalidation boundaries, then redirect to the
+  PR detail route through TanStack Router navigation instead of a full document
+  reload helper. Focused guards cover the PR form route sources and mutation
+  error fallbacks.

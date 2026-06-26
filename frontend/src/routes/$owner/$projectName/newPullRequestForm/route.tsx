@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   createPullRequestRest,
   pullRequestCreateFormOptionsQueryOptions,
@@ -8,12 +8,12 @@ import { apiQueryKeys } from "../../../../api/query-keys";
 import { readProjectContainer } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
+import { prefixBasePath } from "../../../../runtime-config";
 import { ProjectPullRequestFormPage } from "../../../-pull-request-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../-shared";
@@ -26,6 +26,7 @@ function NewPullRequestFormRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const containerQuery = useQuery({
     enabled: !bootstrapping,
     queryFn: () => readProjectContainer(runtimeConfig, owner, projectName),
@@ -63,10 +64,12 @@ function NewPullRequestFormRouteComponent() {
         }),
         queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
       ]);
-      navigateToAppHref(
-        runtimeConfig.basePath,
-        `/${owner}/${projectName}/pullRequest/${created.pullRequestNumber}`,
-      );
+      void navigate({
+        href: prefixBasePath(
+          runtimeConfig.basePath,
+          `/${owner}/${projectName}/pullRequest/${created.pullRequestNumber}`,
+        ),
+      });
     },
     onError: (error) => {
       setErrorMessage(

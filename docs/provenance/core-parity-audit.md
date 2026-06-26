@@ -46,6 +46,11 @@
   `navigateToAppHref`, preserving the mounted base path while avoiding full
   document reloads. Focused guards: `frontend/src/route-parity.spec.tsx` and
   `frontend/src/organization-shell-i18n.spec.tsx`.
+- React-owned pull-request create and edit redirects now keep their existing
+  TanStack Query invalidation flow and then navigate to the pull-request detail
+  route with TanStack Router instead of the full document reload helper.
+  Focused guards: `frontend/src/route-parity.spec.tsx` and
+  `frontend/src/pull-request-list-form-review-i18n.spec.tsx`.
 - Direct `window.location` navigation in route source is limited to shared app-base fallback helpers; route-owned filter, pagination, code branch, and history transitions use TanStack navigation. Focused guard: `frontend/src/route-parity.spec.tsx`.
 - React-owned project/organization leave, enrollment, and project-watch click
   mutations keep legacy `href`/`data-href` anchors for parity, but clicks call
