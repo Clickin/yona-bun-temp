@@ -8,5 +8,11 @@ export const Route = createFileRoute("/me/settings/notifications")({
 
 function MeSettingsNotificationsAliasRouteComponent() {
   const { runtimeConfig } = useAppRuntime();
-  return <RedirectPage basePath={runtimeConfig.basePath} to="/user/editform/notifications" />;
+  return (
+    <RedirectPage
+      basePath={runtimeConfig.basePath}
+      preserveHash={true}
+      to="/user/editform/notifications"
+    />
+  );
 }

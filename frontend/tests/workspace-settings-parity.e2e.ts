@@ -7,6 +7,9 @@ const restJsonHeaders = {
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 
+const rawSettingsKeyPattern =
+  /userinfo\.[A-Za-z]|emails\.(?:click|main|send|set|sub|validation)|validation\.[A-Za-z]|user\.(?:confirmPassword|wrongPassword)/u;
+
 const workspaceOverview = {
   apiToken: "door-token",
   daysAgo: 14,
@@ -130,6 +133,29 @@ test("workspace settings shell stays usable on a mobile viewport", async ({ page
     "weblabs / projectTwo",
   );
   await expect(page.locator('.tab-content [id="2"]')).toHaveClass(/active/);
+});
+
+test("workspace settings legacy aliases redirect to canonical account tabs without raw keys", async ({
+  page,
+}) => {
+  const aliases = [
+    ["/yona/me/settings/profile", /\/yona\/user\/editform$/u, "Edit profile"],
+    ["/yona/me/settings/password", /\/yona\/user\/editform\/password$/u, "Change password"],
+    [
+      "/yona/me/settings/notifications#2",
+      /\/yona\/user\/editform\/notifications#2$/u,
+      "Notification settings",
+    ],
+    ["/yona/me/settings/emails", /\/yona\/user\/editform\/emails$/u, "Email settings"],
+    ["/yona/me/settings/token", /\/yona\/user\/editform\/token$/u, "User Token"],
+  ] as const;
+
+  for (const [alias, canonicalUrl, selectedTabText] of aliases) {
+    await page.goto(alias);
+    await expect(page).toHaveURL(canonicalUrl);
+    await expect(page.locator(".page-wrap > .nav-tabs li.active a")).toContainText(selectedTabText);
+    await expect(page.locator("body")).not.toContainText(rawSettingsKeyPattern);
+  }
 });
 
 test("workspace avatar invalid file and crop modal keep legacy settings selectors visible", async ({
@@ -503,4 +529,73 @@ test("workspace token and password settings keep legacy forms while mutating thr
     path: "/workspace/password",
   });
   await expect(page).toHaveURL(/\/yona\/users\/loginform$/);
+});
+
+test("workspace password validation failures stay visible without leaving REST boundary", async ({
+  page,
+}) => {
+  const requests: Array<{ body: unknown; method: string; path: string }> = [];
+  await page.route(apiV1Route("/workspace/password"), async (route) => {
+    const request = route.request();
+    const body = request.postDataJSON();
+    requests.push({
+      body,
+      method: request.method(),
+      path: new URL(request.url()).pathname.replace("/yona/api/v1", ""),
+    });
+    const errorMessage =
+      body.oldPassword === "wrong-current" ? "Wrong password!" : "Retyped password doesn't match";
+    await route.fulfill({
+      body: JSON.stringify({
+        error: {
+          code: "bad_request",
+          message: errorMessage,
+          status: 400,
+        },
+      }),
+      headers: restJsonHeaders,
+      status: 400,
+    });
+  });
+
+  await page.goto("/yona/user/editform/password");
+  await expect(page.locator("#frmPassword")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(rawSettingsKeyPattern);
+
+  await page.locator("#oldPassword").fill("wrong-current");
+  await page.locator("#password").fill("new-secret");
+  await page.locator("#retypedPassword").fill("new-secret");
+  await page.locator("#frmPassword button[type='submit']").click();
+  await expect(page.locator(".runtime-error-banner")).toContainText("Wrong password!");
+  expect(requests.at(-1)).toEqual({
+    body: {
+      loginId: "door",
+      oldPassword: "wrong-current",
+      password: "new-secret",
+      retypedPassword: "new-secret",
+    },
+    method: "POST",
+    path: "/workspace/password",
+  });
+  await expect(page).toHaveURL(/\/yona\/user\/editform\/password$/);
+  await expect(page.locator("body")).not.toContainText(rawSettingsKeyPattern);
+
+  await page.locator("#oldPassword").fill("old-secret");
+  await page.locator("#password").fill("new-secret");
+  await page.locator("#retypedPassword").fill("different-secret");
+  await page.locator("#frmPassword button[type='submit']").click();
+  await expect(page.locator(".runtime-error-banner")).toContainText(
+    "Retyped password doesn't match",
+  );
+  expect(requests.at(-1)).toEqual({
+    body: {
+      loginId: "door",
+      oldPassword: "old-secret",
+      password: "new-secret",
+      retypedPassword: "different-secret",
+    },
+    method: "POST",
+    path: "/workspace/password",
+  });
+  await expect(page).toHaveURL(/\/yona\/user\/editform\/password$/);
 });

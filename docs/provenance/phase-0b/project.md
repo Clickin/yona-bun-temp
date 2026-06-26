@@ -89,6 +89,13 @@
 - Workspace settings and default landing UX parity is app-runtime closed in
   `docs/provenance/phase-0b/user-workspace.md`; the remaining auth-provider and
   migrator hardening boundaries live in their dedicated deferred provenance.
+- 2026-06-27 workspace settings alias follow-up: `/me/settings/**` aliases now
+  render through the `/me` child outlet and replace-navigate to the canonical
+  legacy `/user/editform/**` account settings routes, with notification hash
+  preservation for `/me/settings/notifications#projectId`. This keeps the
+  workspace/project sidebar entrypoints on legacy account-settings URLs instead
+  of rendering the `/me` profile page for settings aliases. Browser evidence:
+  `frontend/tests/workspace-settings-parity.e2e.ts`.
 - 2026-06-25 workspace favorite/recent/default-landing UI correction: legacy
   `user/view.scala.html` does not render favorite-project, recent-project,
   default-login-page, or logout footer sections on `/me`. Favorite/recent
