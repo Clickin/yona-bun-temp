@@ -2504,6 +2504,7 @@ export function ProjectWatchersPage(props: {
   detail: ProjectWatchersResponse | null | undefined;
   messages?: LegacyMessageLookup;
   projectDetail?: ProjectDetailViewModel | null | undefined;
+  renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t: contextMessages } = useLegacyMessages();
@@ -2521,39 +2522,45 @@ export function ProjectWatchersPage(props: {
       projectName: detail.projectName,
     });
 
+  const content = (
+    <div className="project-page-wrap">
+      <h4>
+        <strong>{legacyMessage(messages, "project.watcher.title")}</strong>
+      </h4>
+      <p>{legacyMessage(messages, "project.watcher.description")}</p>
+      <ul className="members project row-fluid">
+        {detail.watchers.map((watcher) => (
+          <li className="member span6 span-hard-wrap" key={watcher.loginId}>
+            <a
+              className="avatar-wrap mlarge pull-left mr10"
+              href={prefixBasePath(props.runtimeConfig.basePath, `/${watcher.loginId}`)}
+            >
+              {watcher.avatarUrl ? (
+                <img
+                  alt={watcher.userLabel || watcher.loginId}
+                  height={64}
+                  src={watcher.avatarUrl}
+                  width={64}
+                />
+              ) : null}
+            </a>
+            <div className="member-name">{watcher.userLabel || watcher.loginId}</div>
+            <div className="member-id">{`@${watcher.loginId}`}</div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
   return (
     <main className="app-shell">
       <ProjectHeader detail={shellDetail} messages={messages} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu detail={shellDetail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <h4>
-            <strong>{legacyMessage(messages, "project.watcher.title")}</strong>
-          </h4>
-          <p>{legacyMessage(messages, "project.watcher.description")}</p>
-          <ul className="members project row-fluid">
-            {detail.watchers.map((watcher) => (
-              <li className="member span6 span-hard-wrap" key={watcher.loginId}>
-                <a
-                  className="avatar-wrap mlarge pull-left mr10"
-                  href={prefixBasePath(props.runtimeConfig.basePath, `/${watcher.loginId}`)}
-                >
-                  {watcher.avatarUrl ? (
-                    <img
-                      alt={watcher.userLabel || watcher.loginId}
-                      height={64}
-                      src={watcher.avatarUrl}
-                      width={64}
-                    />
-                  ) : null}
-                </a>
-                <div className="member-name">{watcher.userLabel || watcher.loginId}</div>
-                <div className="member-id">{`@${watcher.loginId}`}</div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{content}</div>
     </main>
   );
 }

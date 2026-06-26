@@ -95,7 +95,7 @@ function projectLayoutShell(
   basePath: string,
   owner: string,
   projectName: string,
-): { activeMenu: "issue" | "settings" } | null {
+): { activeMenu?: "issue" | "settings" } | null {
   const appPath = stripProjectLayoutBasePath(pathname, basePath).replace(/\/+$/u, "");
   if (
     appPath === `/${owner}/${projectName}/changeVCS` ||
@@ -107,6 +107,9 @@ function projectLayoutShell(
     appPath === `/${owner}/${projectName}/webhooks`
   ) {
     return { activeMenu: "settings" };
+  }
+  if (appPath === `/${owner}/${projectName}/watchers`) {
+    return {};
   }
   if (
     appPath === `/${owner}/${projectName}/issueform` ||
@@ -136,7 +139,7 @@ function ProjectRouteShellLayout({
   projectName,
   runtimeConfig,
 }: {
-  activeMenu: "issue" | "settings";
+  activeMenu?: "issue" | "settings";
   bootstrapping: boolean;
   messages: ReturnType<typeof useAppRuntime>["messages"];
   owner: string;

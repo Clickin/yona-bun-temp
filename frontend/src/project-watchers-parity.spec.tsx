@@ -98,4 +98,36 @@ describe("project watchers parity", () => {
     expect(routeSource).toContain('"bad-request"');
     expect(routeSource).not.toContain("Read project watchers failed.");
   });
+
+  it("lets the project layout route own the watchers shell", () => {
+    const html = renderToString(
+      <ProjectWatchersPage
+        detail={{
+          ownerName: "weblabs",
+          projectName: "projectYobi",
+          totalCount: 0,
+          watchers: [],
+        }}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/watchers/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/watchers`");
+    expect(layoutSource).toContain("return {};");
+    expect(routeSource).toContain("renderShell={false}");
+    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).not.toContain('class="project-header-outer"');
+    expect(html).not.toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="members project row-fluid"');
+  });
 });

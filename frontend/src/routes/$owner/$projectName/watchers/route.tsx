@@ -69,6 +69,7 @@ function ProjectWatchersRouteComponent() {
     <ProjectWatchersPage
       detail={watchersQuery.data ?? null}
       projectDetail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
+      renderShell={false}
       runtimeConfig={runtimeConfig}
     />
   );
