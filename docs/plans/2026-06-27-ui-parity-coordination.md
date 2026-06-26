@@ -607,6 +607,14 @@ M49 continues issue mutation SPA navigation:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "uses legacy message keys for form route document titles"`.
 
+M50 continues milestone mutation SPA navigation:
+
+- Project milestone create, edit, and delete keep the existing REST mutation
+  boundary and now redirect with TanStack navigation instead of
+  `navigateToAppHref`.
+- Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t "uses legacy message keys for form route document titles"`.
+
 Completed audit subagents:
 
 - P0 Root/global shell audit

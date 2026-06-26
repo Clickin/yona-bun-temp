@@ -527,8 +527,10 @@ describe("file-route parity harness", () => {
       "routes/$owner/$projectName/milestone/$milestoneId/editform/route.tsx",
     ]) {
       const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
-      expect(source).toContain("navigateToAppHref(");
+      expect(source).toContain("useNavigate");
+      expect(source).toContain("prefixBasePath");
       expect(source).toContain("runtimeConfig.basePath");
+      expect(source).not.toContain("navigateToAppHref(");
       expect(source).not.toContain("window.location.assign(");
     }
   });

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   readProjectContainer,
   readProjectMilestone,
@@ -10,12 +10,12 @@ import {
   toProjectContainerView,
   toProjectMilestoneDetailView,
 } from "../../../../../../app-view-models";
+import { prefixBasePath } from "../../../../../../runtime-config";
 import { ProjectMilestoneFormPage } from "../../../../../-milestone-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../../../-shared";
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/$owner/$projectName/milestone/$milestoneI
 function ProjectMilestoneEditFormRouteComponent() {
   const { owner, projectName, milestoneId } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
   const routeHref = `/${owner}/${projectName}/milestone/${milestoneId}/editform`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -107,10 +108,12 @@ function ProjectMilestoneEditFormRouteComponent() {
         const nextMilestoneId = response.milestone?.id
           ? Number(response.milestone.id)
           : Number(milestoneId);
-        navigateToAppHref(
-          runtimeConfig.basePath,
-          `/${owner}/${projectName}/milestone/${nextMilestoneId}`,
-        );
+        void navigate({
+          href: prefixBasePath(
+            runtimeConfig.basePath,
+            `/${owner}/${projectName}/milestone/${nextMilestoneId}`,
+          ),
+        });
       }}
       owner={owner}
       projectName={projectName}

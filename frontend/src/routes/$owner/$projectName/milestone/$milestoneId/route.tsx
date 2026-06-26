@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   closeProjectMilestone,
   deleteProjectMilestone,
@@ -13,13 +13,13 @@ import {
   toProjectContainerView,
   toProjectMilestoneDetailView,
 } from "../../../../../app-view-models";
+import { prefixBasePath } from "../../../../../runtime-config";
 import { ProjectMilestoneDetailPage } from "../../../../-milestone-views";
 import type { MilestoneIssueMassUpdateInput } from "../../../../-milestone-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  navigateToAppHref,
   NotFoundPage,
   useDocumentTitle,
 } from "../../../../-shared";
@@ -31,6 +31,7 @@ export const Route = createFileRoute("/$owner/$projectName/milestone/$milestoneI
 function ProjectMilestoneDetailRouteComponent() {
   const { owner, projectName, milestoneId } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
+  const navigate = useNavigate();
   const routeHref = `/${owner}/${projectName}/milestone/${milestoneId}`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -117,7 +118,9 @@ function ProjectMilestoneDetailRouteComponent() {
           ownerName: owner,
           projectName,
         });
-        navigateToAppHref(runtimeConfig.basePath, `/${owner}/${projectName}/milestones`);
+        void navigate({
+          href: prefixBasePath(runtimeConfig.basePath, `/${owner}/${projectName}/milestones`),
+        });
       }}
       onMassUpdate={async (input: MilestoneIssueMassUpdateInput & { issueNumbers: number[] }) => {
         await massUpdateIssues(runtimeConfig, csrfToken, {
