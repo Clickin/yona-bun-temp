@@ -161,6 +161,14 @@ Total rows: 22
   `renderShell={false}` for those TanStack child routes while preserving
   direct-render shell output for existing specs. Focused coverage:
   `pnpm --dir frontend exec vitest run src/pull-request-review-i18n.spec.tsx -t "PR changes chrome"`.
+- 2026-06-27 review-list project shell follow-up:
+  `frontend/src/routes/$owner/$projectName/route.tsx` now owns the project
+  header/menu/page-wrap shell for `/reviews` with the review menu active and
+  the legacy `pull-request-page` shell class. `ProjectReviewsPage` renders only
+  the legacy review list body through `renderShell={false}` for that TanStack
+  child route while preserving direct-render shell output for existing specs.
+  Focused coverage:
+  `pnpm --dir frontend exec vitest run src/pull-request-list-form-review-i18n.spec.tsx -t "review-list chrome"`.
 
 ## Follow-Up Queue Proposal
 

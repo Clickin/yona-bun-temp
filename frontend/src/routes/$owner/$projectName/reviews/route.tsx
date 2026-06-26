@@ -73,6 +73,7 @@ function ProjectReviewsRouteComponent() {
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       messages={messages}
       query={query}
+      renderShell={false}
       reviews={reviewsQuery.data}
       runtimeConfig={runtimeConfig}
       viewerId={Number(currentSession?.actorId ?? 0)}

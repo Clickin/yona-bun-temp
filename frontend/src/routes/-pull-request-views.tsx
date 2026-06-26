@@ -4000,6 +4000,7 @@ export function ProjectReviewsPage(props: {
   detail: ProjectDetailViewModel | null;
   messages?: LegacyMessageLookup;
   query: ReviewThreadListQuery;
+  renderShell?: boolean;
   reviews: ReviewThreadListResponse | undefined;
   runtimeConfig: RuntimeConfig;
   viewerId?: number;
@@ -4015,190 +4016,182 @@ export function ProjectReviewsPage(props: {
   const nextOrderDir = currentOrderDir === "asc" ? "desc" : "asc";
   const reviewsHref = (query: string) =>
     buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName, `reviews?${query}`);
+  const pageBody = (
+    <div className="project-page-wrap">
+      <div className="row-fluid issue-list-wrap">
+        <div className="span2 search-wrap span-hard-wrap">
+          <div className="inner advanced">
+            <ul className="lst-stacked unstyled">
+              <li
+                className={queryAuthorId === 0 && queryParticipantId === 0 ? "active" : undefined}
+              >
+                <a
+                  data-toggle="filter"
+                  href={reviewsHref(
+                    reviewListFilterQueryString(props.query, {
+                      authorId: 0,
+                      participantId: 0,
+                    }),
+                  )}
+                >
+                  {legacyMessage(props.messages, "review.allReview")}
+                  <span className="num-badge pull-right">{props.reviews?.allCount ?? 0}</span>
+                </a>
+              </li>
+              <li
+                className={viewerId !== 0 && queryParticipantId === viewerId ? "active" : undefined}
+              >
+                <a
+                  data-toggle="filter"
+                  data-type="participantId"
+                  data-value={viewerId || ""}
+                  href={reviewsHref(
+                    reviewListFilterQueryString(props.query, {
+                      authorId: 0,
+                      participantId: viewerId || undefined,
+                    }),
+                  )}
+                >
+                  {legacyMessage(props.messages, "review.involvingYou")}
+                  <span className="num-badge pull-right">
+                    {props.reviews?.participantCount ?? 0}
+                  </span>
+                </a>
+              </li>
+              <li className={viewerId !== 0 && queryAuthorId === viewerId ? "active" : undefined}>
+                <a
+                  data-toggle="filter"
+                  data-type="authorId"
+                  data-value={viewerId || ""}
+                  href={reviewsHref(
+                    reviewListFilterQueryString(props.query, {
+                      authorId: viewerId || undefined,
+                      participantId: 0,
+                    }),
+                  )}
+                >
+                  {legacyMessage(props.messages, "review.createdByYou")}
+                  <span className="num-badge pull-right">{props.reviews?.authorCount ?? 0}</span>
+                </a>
+              </li>
+            </ul>
+            <form
+              action={buildProjectHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                "reviews",
+              )}
+              id="search"
+              method="get"
+              name="search"
+            >
+              <input name="authorId" type="hidden" value={props.query.authorId ?? ""} />
+              <input name="participantId" type="hidden" value={props.query.participantId ?? ""} />
+              <input name="orderDir" type="hidden" value={props.query.orderDir ?? ""} />
+              <input name="orderBy" type="hidden" value={props.query.orderBy ?? ""} />
+              <input name="state" type="hidden" value={state} />
+              <hr className="hide-in-mobile" />
+              <div className="search-bar span-hard-wrap">
+                <input
+                  className="textbox full"
+                  defaultValue={props.query.filter ?? ""}
+                  name="filter"
+                  type="text"
+                />
+                <button className="search-btn" type="submit">
+                  <i className="yobicon-search"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div className="span10 span-hard-wrap">
+          <div className="pull-right filters">
+            <a
+              className="filter"
+              data-field="createdDate"
+              data-toggle="order"
+              data-value={nextOrderDir}
+              href={reviewsHref(
+                reviewListFilterQueryString(props.query, {
+                  orderBy: "createdDate",
+                  orderDir: nextOrderDir,
+                }),
+              )}
+            >
+              <i className={`ico btn-gray-arrow ${currentOrderDir === "desc" ? "down" : ""}`}></i>
+              {legacyMessage(props.messages, "common.order.date")}
+            </a>
+          </div>
+          <ul className="nav nav-tabs nm">
+            <li className={state === "open" ? "active" : undefined}>
+              <a
+                data-toggle="filter"
+                data-type="state"
+                data-value="open"
+                href={reviewsHref(reviewQueryString(props.query, "open"))}
+              >
+                {legacyMessage(props.messages, "issue.state.open")}
+                <span className="num-badge">{props.reviews?.openCount ?? 0}</span>
+              </a>
+            </li>
+            <li className={state === "closed" ? "active" : undefined}>
+              <a
+                data-toggle="filter"
+                data-type="state"
+                data-value="closed"
+                href={reviewsHref(reviewQueryString(props.query, "closed"))}
+              >
+                {legacyMessage(props.messages, "issue.state.closed")}
+                <span className="num-badge">{props.reviews?.closedCount ?? 0}</span>
+              </a>
+            </li>
+          </ul>
+          <div className="review-list-wrap">
+            <ProjectReviewListRows
+              detail={detail}
+              messages={props.messages}
+              runtimeConfig={props.runtimeConfig}
+              threads={props.reviews?.items ?? []}
+            />
+          </div>
+          <div className="pull-left" style={{ padding: 10 }}>
+            <a
+              className="ybtn small"
+              href={projectReviewExcelExportHref(
+                props.runtimeConfig,
+                detail.ownerName,
+                detail.projectName,
+                props.query,
+                state,
+              )}
+            >
+              <i className="yobicon-file-excel"></i>{" "}
+              {legacyMessage(props.messages, "issue.downloadAsExcel")}
+            </a>
+          </div>
+          <ProjectReviewPagination
+            detail={detail}
+            messages={props.messages}
+            query={props.query}
+            reviews={props.reviews}
+            runtimeConfig={props.runtimeConfig}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return pageBody;
+  }
+
   return (
     <main className="app-shell pull-request-page">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="review" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="row-fluid issue-list-wrap">
-            <div className="span2 search-wrap span-hard-wrap">
-              <div className="inner advanced">
-                <ul className="lst-stacked unstyled">
-                  <li
-                    className={
-                      queryAuthorId === 0 && queryParticipantId === 0 ? "active" : undefined
-                    }
-                  >
-                    <a
-                      data-toggle="filter"
-                      href={reviewsHref(
-                        reviewListFilterQueryString(props.query, {
-                          authorId: 0,
-                          participantId: 0,
-                        }),
-                      )}
-                    >
-                      {legacyMessage(props.messages, "review.allReview")}
-                      <span className="num-badge pull-right">{props.reviews?.allCount ?? 0}</span>
-                    </a>
-                  </li>
-                  <li
-                    className={
-                      viewerId !== 0 && queryParticipantId === viewerId ? "active" : undefined
-                    }
-                  >
-                    <a
-                      data-toggle="filter"
-                      data-type="participantId"
-                      data-value={viewerId || ""}
-                      href={reviewsHref(
-                        reviewListFilterQueryString(props.query, {
-                          authorId: 0,
-                          participantId: viewerId || undefined,
-                        }),
-                      )}
-                    >
-                      {legacyMessage(props.messages, "review.involvingYou")}
-                      <span className="num-badge pull-right">
-                        {props.reviews?.participantCount ?? 0}
-                      </span>
-                    </a>
-                  </li>
-                  <li
-                    className={viewerId !== 0 && queryAuthorId === viewerId ? "active" : undefined}
-                  >
-                    <a
-                      data-toggle="filter"
-                      data-type="authorId"
-                      data-value={viewerId || ""}
-                      href={reviewsHref(
-                        reviewListFilterQueryString(props.query, {
-                          authorId: viewerId || undefined,
-                          participantId: 0,
-                        }),
-                      )}
-                    >
-                      {legacyMessage(props.messages, "review.createdByYou")}
-                      <span className="num-badge pull-right">
-                        {props.reviews?.authorCount ?? 0}
-                      </span>
-                    </a>
-                  </li>
-                </ul>
-                <form
-                  action={buildProjectHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    "reviews",
-                  )}
-                  id="search"
-                  method="get"
-                  name="search"
-                >
-                  <input name="authorId" type="hidden" value={props.query.authorId ?? ""} />
-                  <input
-                    name="participantId"
-                    type="hidden"
-                    value={props.query.participantId ?? ""}
-                  />
-                  <input name="orderDir" type="hidden" value={props.query.orderDir ?? ""} />
-                  <input name="orderBy" type="hidden" value={props.query.orderBy ?? ""} />
-                  <input name="state" type="hidden" value={state} />
-                  <hr className="hide-in-mobile" />
-                  <div className="search-bar span-hard-wrap">
-                    <input
-                      className="textbox full"
-                      defaultValue={props.query.filter ?? ""}
-                      name="filter"
-                      type="text"
-                    />
-                    <button className="search-btn" type="submit">
-                      <i className="yobicon-search"></i>
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-            <div className="span10 span-hard-wrap">
-              <div className="pull-right filters">
-                <a
-                  className="filter"
-                  data-field="createdDate"
-                  data-toggle="order"
-                  data-value={nextOrderDir}
-                  href={reviewsHref(
-                    reviewListFilterQueryString(props.query, {
-                      orderBy: "createdDate",
-                      orderDir: nextOrderDir,
-                    }),
-                  )}
-                >
-                  <i
-                    className={`ico btn-gray-arrow ${currentOrderDir === "desc" ? "down" : ""}`}
-                  ></i>
-                  {legacyMessage(props.messages, "common.order.date")}
-                </a>
-              </div>
-              <ul className="nav nav-tabs nm">
-                <li className={state === "open" ? "active" : undefined}>
-                  <a
-                    data-toggle="filter"
-                    data-type="state"
-                    data-value="open"
-                    href={reviewsHref(reviewQueryString(props.query, "open"))}
-                  >
-                    {legacyMessage(props.messages, "issue.state.open")}
-                    <span className="num-badge">{props.reviews?.openCount ?? 0}</span>
-                  </a>
-                </li>
-                <li className={state === "closed" ? "active" : undefined}>
-                  <a
-                    data-toggle="filter"
-                    data-type="state"
-                    data-value="closed"
-                    href={reviewsHref(reviewQueryString(props.query, "closed"))}
-                  >
-                    {legacyMessage(props.messages, "issue.state.closed")}
-                    <span className="num-badge">{props.reviews?.closedCount ?? 0}</span>
-                  </a>
-                </li>
-              </ul>
-              <div className="review-list-wrap">
-                <ProjectReviewListRows
-                  detail={detail}
-                  messages={props.messages}
-                  runtimeConfig={props.runtimeConfig}
-                  threads={props.reviews?.items ?? []}
-                />
-              </div>
-              <div className="pull-left" style={{ padding: 10 }}>
-                <a
-                  className="ybtn small"
-                  href={projectReviewExcelExportHref(
-                    props.runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    props.query,
-                    state,
-                  )}
-                >
-                  <i className="yobicon-file-excel"></i>{" "}
-                  {legacyMessage(props.messages, "issue.downloadAsExcel")}
-                </a>
-              </div>
-              <ProjectReviewPagination
-                detail={detail}
-                messages={props.messages}
-                query={props.query}
-                reviews={props.reviews}
-                runtimeConfig={props.runtimeConfig}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="page-wrap-outer">{pageBody}</div>
     </main>
   );
 }

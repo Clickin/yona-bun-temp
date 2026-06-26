@@ -217,6 +217,58 @@ describe("PR list/form/review-list legacy i18n opt-in", () => {
     expect(html).not.toContain("page-wrap-outer");
   });
 
+  it("lets the project layout own review-list chrome without changing the legacy body", () => {
+    const html = renderToStaticMarkup(
+      <ProjectReviewsPage
+        detail={detail}
+        query={{
+          authorId: 0,
+          filter: "",
+          orderBy: "createdDate",
+          orderDir: "desc",
+          pageNum: 1,
+          participantId: 0,
+          state: "open",
+        }}
+        renderShell={false}
+        reviews={{
+          allCount: 0,
+          authorCount: 0,
+          closedCount: 0,
+          items: [],
+          openCount: 0,
+          pageNum: 1,
+          pageSize: 15,
+          participantCount: 0,
+          state: "open",
+          totalCount: 0,
+        }}
+        runtimeConfig={testRuntimeConfig}
+        viewerId={1}
+      />,
+    );
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/route.tsx"),
+      "utf8",
+    );
+    const reviewsRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/reviews/route.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/reviews`");
+    expect(layoutSource).toContain('activeMenu: "review"');
+    expect(layoutSource).toContain('shellClassName: "pull-request-page"');
+    expect(reviewsRouteSource).toContain("renderShell={false}");
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="row-fluid issue-list-wrap"');
+    expect(html).toContain('class="review-list-wrap"');
+    expect(html).not.toContain("app-shell pull-request-page");
+    expect(html).not.toContain("project-header-outer");
+    expect(html).not.toContain("project-menu-outer");
+    expect(html).not.toContain("page-wrap-outer");
+  });
+
   it("opts PR route mutation error fallbacks into legacy messages", () => {
     const routePaths = [
       "routes/$owner/$projectName/newPullRequestForm/route.tsx",

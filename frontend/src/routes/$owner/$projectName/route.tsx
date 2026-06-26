@@ -98,7 +98,7 @@ function projectLayoutShell(
   owner: string,
   projectName: string,
 ): {
-  activeMenu?: "board" | "code" | "issue" | "milestone" | "pullRequest" | "settings";
+  activeMenu?: "board" | "code" | "issue" | "milestone" | "pullRequest" | "review" | "settings";
   keymapMode?: "detail" | "list";
   shellClassName?: string;
 } | null {
@@ -193,6 +193,9 @@ function projectLayoutShell(
   }
   if (isPullRequestChangesPath(appPath, owner, projectName)) {
     return { activeMenu: "pullRequest", shellClassName: "pull-request-page" };
+  }
+  if (appPath === `/${owner}/${projectName}/reviews`) {
+    return { activeMenu: "review", shellClassName: "pull-request-page" };
   }
   return null;
 }
@@ -322,7 +325,7 @@ function ProjectRouteShellLayout({
   runtimeConfig,
   shellClassName,
 }: {
-  activeMenu?: "board" | "code" | "issue" | "milestone" | "pullRequest" | "settings";
+  activeMenu?: "board" | "code" | "issue" | "milestone" | "pullRequest" | "review" | "settings";
   bootstrapping: boolean;
   keymapMode?: "detail" | "list";
   messages: ReturnType<typeof useAppRuntime>["messages"];
