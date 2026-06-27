@@ -212,6 +212,9 @@ reports. It is now superseded as UI parity closure evidence by the
 template-first reset because prior sweeps did not prove template-level
 DOM/class/CSS replacement quality.
 
+Round 2 is closed only while every packet status below is `covered in current
+follow-up` and no blocking packet status is reintroduced.
+
 Automatic `gap` findings:
 
 - The page renders without the legacy stylesheet effect, such as unstyled
