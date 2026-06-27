@@ -17,12 +17,7 @@ import {
   lookupLegacyMessage,
   type LegacyI18nContextValue,
 } from "../../../../../i18n";
-import {
-  buildProjectHref,
-  ProjectHeader,
-  ProjectMenu,
-  ProjectSettingsSubMenu,
-} from "../../../../-project-views";
+import { buildProjectHref, ProjectSettingsSubMenu } from "../../../../-project-views";
 import type { ProjectDetailViewModel } from "../../../../-view-models";
 import {
   BadRequestPage,
@@ -450,22 +445,11 @@ export function IssueLabelsFormPage(props: {
     </>
   );
 
-  if (props.renderShell === false) {
-    return (
-      <>
-        {pageBody}
-        {modals}
-      </>
-    );
-  }
-
   return (
-    <main className="app-shell">
-      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu activeMenu="settings" detail={detail} runtimeConfig={props.runtimeConfig} />
-      <div className="page-wrap-outer">{pageBody}</div>
+    <>
+      {pageBody}
       {modals}
-    </main>
+    </>
   );
 }
 

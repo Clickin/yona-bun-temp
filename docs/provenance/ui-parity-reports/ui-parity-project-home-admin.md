@@ -38,7 +38,7 @@ Mode: read-only audit, no files edited by the explorer
 ## 2026-06-27 Issue-Labels Layout Follow-Up
 
 - Moved project issue-label settings shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/issue/labelsform`, keeping the settings menu active and rendering `IssueLabelsFormPage` through the TanStack Router `<Outlet />`.
-- Scope: `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx` adds `renderShell={false}` for the page while retaining its existing label/category REST mutation/query boundary.
+- Scope: `frontend/src/routes/$owner/$projectName/issue/labelsform/route.tsx` renders only the label editor body/modals and passes `renderShell={false}` from the route, with `ProjectHeader`/`ProjectMenu` ownership kept in the parent project layout while retaining the existing label/category REST mutation/query boundary.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-label-settings-i18n.spec.tsx src/project-settings-parity.spec.tsx`.
 
 ## 2026-06-27 Watchers Layout Follow-Up

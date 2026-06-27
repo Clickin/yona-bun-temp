@@ -886,6 +886,10 @@ A slice is closed only when:
   `window.location.search`, `window.location.pathname`, or build
   `URLSearchParams` from browser-global search instead of TanStack Router
   location state.
+- M87 tightens project issue-label settings shell ownership:
+  `IssueLabelsFormPage` now renders only the legacy label editor body and
+  modals, with `ProjectHeader`/`ProjectMenu` remaining solely in the
+  `/$owner/$projectName` parent layout for `/issue/labelsform`.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

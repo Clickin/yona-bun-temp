@@ -128,6 +128,9 @@ describe("project issue label settings legacy i18n opt-in", () => {
     expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/issue/labelsform`");
     expect(layoutSource).toContain('return { activeMenu: "settings" };');
     expect(routeSource).toContain("renderShell={false}");
+    expect(routeSource).not.toContain("ProjectHeader");
+    expect(routeSource).not.toContain("ProjectMenu");
+    expect(routeSource).not.toContain('className="page-wrap-outer"');
     expect(html).not.toContain('class="page-wrap-outer"');
     expect(html).not.toContain('class="project-header-outer"');
     expect(html).not.toContain('class="project-menu-outer"');

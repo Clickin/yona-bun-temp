@@ -143,6 +143,14 @@
   directory, organization, project, issue, milestone, and PR chrome. Focused
   coverage: `frontend/src/auth-workspace-shell.spec.tsx`.
 - 2026-06-27 TanStack layout parity continuation: project settings begins the route-layout migration without changing visible legacy output. `frontend/src/routes/$owner/$projectName/route.tsx` now owns the legacy project header/menu/page-wrap shell for `/settingform`, while `ProjectSettingsPage` can render only its inner legacy `project-page-wrap` body through `renderShell={false}`. This preserves the existing `project/setting.scala.html` class order while moving shell ownership toward TanStack Router nested layouts. Focused coverage: `frontend/src/project-settings-parity.spec.tsx`, `frontend/src/project-home-tabs.spec.tsx`, and `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 TanStack issue-label settings layout continuation:
+  `/$owner/$projectName/route.tsx` remains the sole project header/menu owner
+  for `/issue/labelsform`; `IssueLabelsFormPage` now renders only the legacy
+  label editor body and modals while the leaf route passes `renderShell={false}`.
+  This keeps label/category REST mutations unchanged and prevents route-local
+  duplicate project chrome. Focused coverage:
+  `frontend/src/issue-label-settings-i18n.spec.tsx` and
+  `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-27 TanStack organization aggregate layout continuation:
   `frontend/src/routes/organizations/$organizationName/route.tsx` now owns the
   legacy organization header/menu/page-wrap shell for aggregate issue, board,
