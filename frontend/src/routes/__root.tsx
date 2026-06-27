@@ -813,7 +813,7 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
       window.localStorage.setItem("shallWeOpenLeftNavigation", "false");
       window.parent.location.href = window.location.href;
     }
-  }, [runtimeConfig.basePath]);
+  }, [pathname, runtimeConfig.basePath]);
 
   return (
     <header className={`gnb-outer${searchScope.type !== "global" ? " project-header" : ""}`}>

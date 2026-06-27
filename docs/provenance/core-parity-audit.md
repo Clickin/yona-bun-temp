@@ -2443,7 +2443,8 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   and `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-27 root route-state follow-up: framed sidebar source resolution and
   pin-to-sidebar path capture use TanStack Router location state instead of
-  browser-global search/pathname reads. Focused coverage:
+  browser-global search/pathname reads, with the pin callback dependency tied
+  to the router pathname. Focused coverage:
   `pnpm --dir frontend exec vitest run src/auth-workspace-shell.spec.tsx src/route-parity.spec.tsx`
   and `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-26 issue comment detail contract tightening:
