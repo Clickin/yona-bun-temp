@@ -13,13 +13,6 @@ export function useCurrentHref() {
   return `${window.location.pathname}${window.location.search}`;
 }
 
-export function navigateToAppHref(basePath: string, href: string) {
-  if (typeof window === "undefined") {
-    return;
-  }
-  window.location.assign(prefixBasePath(basePath, href));
-}
-
 function normalizedIssueLabelColor(color: string | null | undefined) {
   const trimmed = (color ?? "").trim();
   const withoutHash = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;

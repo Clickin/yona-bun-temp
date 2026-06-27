@@ -786,7 +786,10 @@ A slice is closed only when:
   through TanStack Router navigation instead of the full document reload helper.
 - M59 removes the remaining route-owned full-reload helper usage: root login
   dialog and `/secret` setup now redirect through TanStack Router navigation
-  while preserving legacy auth/setup form output and base-path handling.
+  while preserving legacy auth/setup form output and base-path handling. The
+  unused `navigateToAppHref` helper has also been removed from the shared route
+  module so new React-owned redirects cannot reuse the old
+  `window.location.assign` path.
 - M60 establishes the frontend source import alias baseline: Vite and
   TypeScript now resolve `@/*` to `frontend/src/*`, and representative deep
   route imports were rewritten without changing runtime output. Current

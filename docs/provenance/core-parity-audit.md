@@ -70,10 +70,11 @@
   `frontend/src/form-submit-boundary.spec.tsx`.
 - Root login dialog and `/secret` setup redirects now stay inside TanStack
   Router navigation while preserving the legacy auth/setup DOM and mounted base
-  path behavior. Route-owned `navigateToAppHref` usage is eliminated; the
-  helper remains only as a shared fallback utility until callers outside route
-  ownership are audited. Focused guards: `frontend/src/auth-workspace-shell.spec.tsx`
-  and `frontend/src/route-parity.spec.tsx`.
+  path behavior. Route-owned `navigateToAppHref` usage is eliminated, and the
+  unused shared helper has been removed so React-owned redirects cannot fall
+  back to `window.location.assign`. Focused guards:
+  `frontend/src/auth-workspace-shell.spec.tsx` and
+  `frontend/src/route-parity.spec.tsx`.
 - Frontend source imports now have a Vite/TypeScript `@/*` alias baseline for
   `frontend/src/*`. Representative deep route imports, including PR form
   routes, were rewritten as a no-output-change maintainability migration; PR

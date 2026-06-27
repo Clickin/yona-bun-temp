@@ -185,11 +185,6 @@ describe("file-route parity harness", () => {
         line: expect.any(Number),
         sourceLine: "window.location.reload();",
       },
-      {
-        file: "routes/-shared.tsx",
-        line: expect.any(Number),
-        sourceLine: "window.location.assign(prefixBasePath(basePath, href));",
-      },
     ]);
   });
 
