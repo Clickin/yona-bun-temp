@@ -800,6 +800,10 @@ A slice is closed only when:
 - M70 continues P2 issue state visual parity: issue badges and timeline state
   pills now use legacy `_variables.less` state colors, including rejected,
   merged, conflict, and resolved states.
+- M71 continues P2 board detail comment parity: the restored legacy
+  `.board-comment-wrap` bubble and arrow geometry now applies through the
+  shared `.board-view` detail wrapper, so issue and board detail comments use
+  the same legacy output.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

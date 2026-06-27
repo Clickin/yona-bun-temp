@@ -2660,6 +2660,8 @@ describe("file-route parity harness", () => {
     expect(detailHtml).toContain('<span class="help-inline">Edit</span>');
     expect(detailHtml).toContain('class="page-wrap-outer"');
     expect(detailHtml).toContain('<div class="project-page-wrap board-view">');
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+    expect(appCss).toContain(".board-view .board-comment-wrap .comments .media-body::before");
     expect(detailHtml).toContain('<div class="board-header issue">');
     expect(detailHtml).toContain('<strong class="board-id">#16</strong>');
     expect(detailHtml).toContain('<div class="board-body row-fluid">');

@@ -51,13 +51,11 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
   it("keeps legacy comment bubble arrow geometry CSS", () => {
     const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
 
-    expect(appCss).toContain(".issue-detail-page .board-comment-wrap .comments .comment {");
+    expect(appCss).toContain(".board-view .board-comment-wrap .comments .comment {");
     expect(appCss).toContain("position: relative;");
-    expect(appCss).toContain(".issue-detail-page .board-comment-wrap .comments .media-body {");
+    expect(appCss).toContain(".board-view .board-comment-wrap .comments .media-body {");
     expect(appCss).toContain("position: static;");
-    expect(appCss).toContain(
-      ".issue-detail-page .board-comment-wrap .comments .media-body::before",
-    );
+    expect(appCss).toContain(".board-view .board-comment-wrap .comments .media-body::before");
     expect(appCss).toContain("top: 23px;");
     expect(appCss).toContain("left: 47px;");
     expect(appCss).toContain("transform: rotate(45deg);");
