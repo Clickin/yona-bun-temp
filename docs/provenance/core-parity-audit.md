@@ -2390,6 +2390,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   their legacy settings-tab bodies through `renderShell={false}`. Focused
   coverage:
   `pnpm --dir frontend exec vitest run src/organization-shell-i18n.spec.tsx -t "members chrome|delete chrome"`.
+- 2026-06-27 nested route SPA mode follow-up: issue detail, milestone detail,
+  and pull-request detail parent routes now use TanStack Router state to decide
+  whether to render their nested edit/changes outlets instead of reading
+  `window.location.pathname`; milestone detail also derives its `state` query
+  from the router href. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx src/board-milestone-parity.spec.tsx src/pull-request-review-i18n.spec.tsx`
+  and `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

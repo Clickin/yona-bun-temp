@@ -1479,6 +1479,8 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
       "navigateToAppHref(runtimeConfig.basePath, legacyAdminAlias)",
     );
     expect(routeSource).toContain("renderShell={false}");
+    expect(routeSource).toContain("useRouterState");
+    expect(routeSource).not.toContain("window.location.pathname");
     expect(html).not.toContain('class="app-shell issue-detail-page"');
     expect(html).not.toContain('class="page-wrap-outer"');
     expect(html).not.toContain('class="project-header-outer"');

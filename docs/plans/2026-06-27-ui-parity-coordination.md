@@ -835,6 +835,11 @@ A slice is closed only when:
 - M73 continues SPA parity closure: board, PR/review, and site-admin GET filter
   forms now call `preventDefault()` before optional navigation callbacks, so
   missing route callbacks cannot fall through to native document navigation.
+- M74 continues TanStack Router SPA ownership closure: issue detail, milestone
+  detail, and pull-request detail parent routes now derive edit/changes child
+  routing state from `useRouterState` instead of `window.location`, matching the
+  fixed board detail route and preserving nested-layout transitions without a
+  document reload dependency.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

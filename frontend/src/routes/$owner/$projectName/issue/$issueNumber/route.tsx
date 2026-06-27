@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   assignIssue,
   createIssueComment,
@@ -54,8 +54,9 @@ function IssueDetailRouteComponent() {
   const { owner, projectName, issueNumber } = Route.useParams();
   const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();
+  const routePathname = useRouterState({ select: (state) => state.location.pathname });
   const routeHref = `/${owner}/${projectName}/issue/${issueNumber}`;
-  const isEditFormRoute = window.location.pathname
+  const isEditFormRoute = routePathname
     .replace(/\/+$/u, "")
     .endsWith(`/issue/${issueNumber}/editform`);
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(

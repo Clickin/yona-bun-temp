@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 import {
   acceptPullRequestRest,
   closePullRequestRest,
@@ -35,10 +35,11 @@ export const Route = createFileRoute("/$owner/$projectName/pullRequest/$pullRequ
 });
 
 function PullRequestDetailRouteComponent() {
+  const routePathname = useRouterState({ select: (state) => state.location.pathname });
   const isChildRoute =
-    window.location.pathname.endsWith("/changes") ||
-    window.location.pathname.includes("/changes/") ||
-    window.location.pathname.endsWith("/editform");
+    routePathname.endsWith("/changes") ||
+    routePathname.includes("/changes/") ||
+    routePathname.endsWith("/editform");
 
   if (isChildRoute) {
     return <Outlet />;

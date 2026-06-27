@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   closeProjectMilestone,
   deleteProjectMilestone,
@@ -32,6 +32,8 @@ function ProjectMilestoneDetailRouteComponent() {
   const { owner, projectName, milestoneId } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const routePathname = useRouterState({ select: (state) => state.location.pathname });
   const routeHref = `/${owner}/${projectName}/milestone/${milestoneId}`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -41,8 +43,8 @@ function ProjectMilestoneDetailRouteComponent() {
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
-  const isEditFormRoute = window.location.pathname.endsWith("/editform");
-  const issueState = new URLSearchParams(window.location.search).get("state") || "open";
+  const isEditFormRoute = routePathname.endsWith("/editform");
+  const issueState = new URL(locationHref, "http://localhost").searchParams.get("state") || "open";
 
   useDocumentTitle(milestone?.title ?? "milestone");
 

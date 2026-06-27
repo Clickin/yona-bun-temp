@@ -470,6 +470,9 @@ describe("board/milestone UI parity closure", () => {
     expect(layoutSource).toContain("isMilestoneDetailPath");
     expect(layoutSource).toContain('return { activeMenu: "milestone" };');
     expect(routeSource).toContain("renderShell={false}");
+    expect(routeSource).toContain("useRouterState");
+    expect(routeSource).not.toContain("window.location.pathname");
+    expect(routeSource).not.toContain("window.location.search");
     expect(html).not.toContain('class="page-wrap-outer"');
     expect(html).not.toContain('class="project-header-outer"');
     expect(html).not.toContain('class="project-menu-outer"');
