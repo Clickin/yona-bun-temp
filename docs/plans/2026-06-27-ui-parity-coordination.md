@@ -768,6 +768,9 @@ A slice is closed only when:
 - M59 removes the remaining route-owned full-reload helper usage: root login
   dialog and `/secret` setup now redirect through TanStack Router navigation
   while preserving legacy auth/setup form output and base-path handling.
-- Follow-up modernization after parity slices: introduce a Vite/TypeScript
-  import alias for frontend source imports and mechanically rewrite deep
-  relative imports in a separate no-behavior-change migration.
+- M60 establishes the frontend source import alias baseline: Vite and
+  TypeScript now resolve `@/*` to `frontend/src/*`, and representative deep
+  route imports were rewritten without changing runtime output.
+- Follow-up modernization after parity slices: continue mechanically rewriting
+  remaining deep relative frontend imports to `@/*` in small no-behavior-change
+  batches.

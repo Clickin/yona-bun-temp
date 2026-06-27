@@ -4,11 +4,11 @@ import {
   importProjectRest,
   readProjectCreateFormOptionsRest,
   type ProjectCreateFormOptionsResponse,
-} from "../../api/org-project";
-import { useAppRuntime } from "../../app-runtime-context";
-import { prefixBasePath } from "../../runtime-config";
-import { ProjectImportPage } from "../-project-views";
-import { BadRequestPage, useRequireAuthenticatedRoute } from "../-shared";
+} from "@/api/org-project";
+import { useAppRuntime } from "@/app-runtime-context";
+import { prefixBasePath } from "@/runtime-config";
+import { ProjectImportPage } from "@/routes/-project-views";
+import { BadRequestPage, useRequireAuthenticatedRoute } from "@/routes/-shared";
 
 export const Route = createFileRoute("/_import")({
   component: ProjectImportRouteComponent,

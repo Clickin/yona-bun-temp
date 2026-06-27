@@ -74,6 +74,11 @@
   helper remains only as a shared fallback utility until callers outside route
   ownership are audited. Focused guards: `frontend/src/auth-workspace-shell.spec.tsx`
   and `frontend/src/route-parity.spec.tsx`.
+- Frontend source imports now have a Vite/TypeScript `@/*` alias baseline for
+  `frontend/src/*`. Representative deep route imports, including PR form
+  routes, were rewritten as a no-output-change maintainability migration; PR
+  route guards still pin the same legacy mutation fallback and SPA redirect
+  behavior.
 - Direct `window.location` navigation in route source is limited to shared app-base fallback helpers; route-owned filter, pagination, code branch, and history transitions use TanStack navigation. Focused guard: `frontend/src/route-parity.spec.tsx`.
 - React-owned project/organization leave, enrollment, and project-watch click
   mutations keep legacy `href`/`data-href` anchors for parity, but clicks call

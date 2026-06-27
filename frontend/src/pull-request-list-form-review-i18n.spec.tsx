@@ -298,6 +298,8 @@ describe("PR list/form/review-list legacy i18n opt-in", () => {
       expect(source).toContain('fallback: "pullRequest.error.newPullRequestForm"');
       expect(source).toContain("useNavigate");
       expect(source).toContain("prefixBasePath");
+      expect(source).toContain('from "@/api/pull-requests"');
+      expect(source).toContain('from "@/routes/-shared"');
       expect(source).not.toContain("navigateToAppHref");
     }
     expect(detailRouteSource).toContain(

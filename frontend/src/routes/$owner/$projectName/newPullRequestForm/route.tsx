@@ -3,20 +3,20 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   createPullRequestRest,
   pullRequestCreateFormOptionsQueryOptions,
-} from "../../../../api/pull-requests";
-import { apiQueryKeys } from "../../../../api/query-keys";
-import { readProjectContainer } from "../../../../auth-workspace-client";
-import { useAppRuntime } from "../../../../app-runtime-context";
-import { toProjectContainerView } from "../../../../app-view-models";
-import { prefixBasePath } from "../../../../runtime-config";
-import { ProjectPullRequestFormPage } from "../../../-pull-request-views";
+} from "@/api/pull-requests";
+import { apiQueryKeys } from "@/api/query-keys";
+import { readProjectContainer } from "@/auth-workspace-client";
+import { useAppRuntime } from "@/app-runtime-context";
+import { toProjectContainerView } from "@/app-view-models";
+import { prefixBasePath } from "@/runtime-config";
+import { ProjectPullRequestFormPage } from "@/routes/-pull-request-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
   useDocumentTitle,
-} from "../../../-shared";
+} from "@/routes/-shared";
 
 export const Route = createFileRoute("/$owner/$projectName/newPullRequestForm")({
   component: NewPullRequestFormRouteComponent,

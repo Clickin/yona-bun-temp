@@ -6,13 +6,13 @@ import {
   readDirectIssueFormOptions,
   readProjectContainer,
   searchProjectAssignableUsers,
-} from "../../../../auth-workspace-client";
-import { projectIssueReferencesQueryOptions } from "../../../../api/issue-meta";
-import { useAppRuntime } from "../../../../app-runtime-context";
-import { toProjectContainerView, toProjectMilestoneListView } from "../../../../app-view-models";
-import { prefixBasePath } from "../../../../runtime-config";
-import { ProjectIssueFormPage } from "../../../-issue-views";
-import type { ProjectMilestoneViewModel } from "../../../-view-models";
+} from "@/auth-workspace-client";
+import { projectIssueReferencesQueryOptions } from "@/api/issue-meta";
+import { useAppRuntime } from "@/app-runtime-context";
+import { toProjectContainerView, toProjectMilestoneListView } from "@/app-view-models";
+import { prefixBasePath } from "@/runtime-config";
+import { ProjectIssueFormPage } from "@/routes/-issue-views";
+import type { ProjectMilestoneViewModel } from "@/routes/-view-models";
 import {
   BadRequestPage,
   classifyConnectFailure,
@@ -20,7 +20,7 @@ import {
   NotFoundPage,
   useDocumentTitle,
   useRequireAuthenticatedRoute,
-} from "../../../-shared";
+} from "@/routes/-shared";
 
 export const Route = createFileRoute("/user/issues/new")({
   component: DirectIssueCreateRouteComponent,
