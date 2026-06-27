@@ -705,12 +705,13 @@ function RootFramedShell() {
 
 function useFramedIframeSrc(): string {
   const { currentSession, runtimeConfig } = useAppRuntime();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const appPathname = stripRuntimeBasePath(pathname, runtimeConfig.basePath);
   const defaultPage = currentSession?.defaultLandingPath || "/notifications";
 
   return framedIframeSrcFromSearch(
-    typeof window === "undefined" ? "" : window.location.search,
+    new URL(locationHref, "http://localhost").search,
     appPathname,
     runtimeConfig.basePath,
     defaultPage,
@@ -799,7 +800,7 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
       window.localStorage.setItem("shallWeOpenLeftNavigation", "true");
       const hash = window.location.hash.replace(/^#/u, "");
       const searchParams = new URLSearchParams({
-        path: window.location.pathname,
+        path: pathname,
       });
       if (hash) {
         searchParams.set("hash", hash);

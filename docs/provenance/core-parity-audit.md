@@ -2441,6 +2441,11 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   state instead of `window.location.search`. Focused coverage:
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx src/search-i18n.spec.tsx src/organization-shell-i18n.spec.tsx`
   and `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 root route-state follow-up: framed sidebar source resolution and
+  pin-to-sidebar path capture use TanStack Router location state instead of
+  browser-global search/pathname reads. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/auth-workspace-shell.spec.tsx src/route-parity.spec.tsx`
+  and `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

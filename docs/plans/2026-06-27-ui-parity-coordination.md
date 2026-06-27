@@ -869,6 +869,9 @@ A slice is closed only when:
 - M82 continues search route-state SPA closure: global, project, and
   organization search pages now parse keyword/type/page query state from
   TanStack Router href state instead of `window.location.search`.
+- M83 continues root route-state SPA closure: framed sidebar source resolution
+  and pin-to-sidebar path capture now use TanStack Router location state instead
+  of browser-global search/pathname reads.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

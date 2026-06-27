@@ -89,6 +89,8 @@ describe("auth and workspace views", () => {
     expect(source).toContain('name="mainFrame"');
     expect(source).toContain('className="mainFrame"');
     expect(source).toContain("useFramedIframeSrc");
+    expect(source).not.toContain("window.location.search");
+    expect(source).not.toContain("window.location.pathname");
     expect(source).toContain('window.localStorage.setItem("shallWeOpenLeftNavigation", "true")');
     expect(source).toContain('window.localStorage.setItem("shallWeOpenLeftNavigation", "false")');
     expect(source).toContain("window.location.reload();");
