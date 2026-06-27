@@ -16,22 +16,19 @@ export const Route = createFileRoute("/organizations/$organizationName/boards")(
   component: OrganizationBoardsRouteComponent,
 });
 
-function readSearchParams() {
-  if (typeof window === "undefined") {
-    return new URLSearchParams();
-  }
-  return new URLSearchParams(window.location.search);
+function readSearchParams(locationHref: string) {
+  return new URL(locationHref, "http://localhost").searchParams;
 }
 
 function OrganizationBoardsRouteComponent() {
   const { organizationName } = Route.useParams();
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();
-  useRouterState({ select: (state) => state.location.href });
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
-  const searchParams = readSearchParams();
+  const searchParams = readSearchParams(locationHref);
   const filter = searchParams.get("filter") ?? "";
   const orderBy = searchParams.get("orderBy") ?? "";
   const orderDir = searchParams.get("orderDir") ?? "";

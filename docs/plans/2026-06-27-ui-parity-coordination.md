@@ -850,6 +850,10 @@ A slice is closed only when:
   from TanStack Router href state instead of `window.location.search`, so
   in-app filter and pagination navigation cannot reuse stale browser-global
   query values.
+- M77 continues query-state SPA closure for review/board/milestone lists:
+  project reviews, project milestones, project boards, and organization boards
+  now parse filters/sort/pagination from TanStack Router href state instead of
+  `window.location.search`.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

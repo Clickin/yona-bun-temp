@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { listProjectMilestones, readProjectContainer } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView, toProjectMilestoneListView } from "../../../../app-view-models";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/$owner/$projectName/milestones")({
 function ProjectMilestonesRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const routeHref = `/${owner}/${projectName}/milestones`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -37,7 +38,7 @@ function ProjectMilestonesRouteComponent() {
     setFailureKind(null);
     void (async () => {
       try {
-        const searchParams = new URLSearchParams(window.location.search);
+        const searchParams = new URL(locationHref, "http://localhost").searchParams;
         const state = searchParams.get("state") || "open";
         const orderBy = searchParams.get("orderBy") || "dueDate";
         const orderDir = searchParams.get("orderDir") || "asc";
@@ -68,7 +69,7 @@ function ProjectMilestonesRouteComponent() {
     return () => {
       cancelled = true;
     };
-  }, [owner, projectName, runtimeConfig]);
+  }, [locationHref, owner, projectName, runtimeConfig]);
 
   if (bootstrapping) {
     return (

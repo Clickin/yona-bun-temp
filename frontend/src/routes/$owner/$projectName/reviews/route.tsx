@@ -25,8 +25,8 @@ function ProjectReviewsRouteComponent() {
   const { bootstrapping, currentSession, messages, runtimeConfig } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/reviews`;
   const navigate = useNavigate();
-  useRouterState({ select: (state) => state.location.href });
-  const searchParams = new URLSearchParams(window.location.search);
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const searchParams = new URL(locationHref, "http://localhost").searchParams;
   const query: ReviewThreadListQuery = {
     authorId: Number(searchParams.get("authorId") || "0"),
     filter: searchParams.get("filter") ?? "",

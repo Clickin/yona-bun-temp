@@ -264,6 +264,7 @@ describe("board/milestone UI parity closure", () => {
     expect(layoutSource).toContain('keymapMode: "list"');
     expect(layoutSource).toContain('shellClassName: "board-page"');
     expect(routeSource).toContain("renderShell={false}");
+    expect(routeSource).not.toContain("window.location.search");
     expect(html).not.toContain('class="app-shell board-page"');
     expect(html).not.toContain('class="page-wrap-outer"');
     expect(html).not.toContain('class="project-header-outer"');
@@ -397,6 +398,7 @@ describe("board/milestone UI parity closure", () => {
     expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/milestones`");
     expect(layoutSource).toContain('return { activeMenu: "milestone" };');
     expect(routeSource).toContain("renderShell={false}");
+    expect(routeSource).not.toContain("window.location.search");
     expect(html).not.toContain('class="page-wrap-outer"');
     expect(html).not.toContain('class="project-header-outer"');
     expect(html).not.toContain('class="project-menu-outer"');

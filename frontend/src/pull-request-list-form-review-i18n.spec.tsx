@@ -261,6 +261,7 @@ describe("PR list/form/review-list legacy i18n opt-in", () => {
     expect(layoutSource).toContain('activeMenu: "review"');
     expect(layoutSource).toContain('shellClassName: "pull-request-page"');
     expect(reviewsRouteSource).toContain("renderShell={false}");
+    expect(reviewsRouteSource).not.toContain("window.location.search");
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="row-fluid issue-list-wrap"');
     expect(html).toContain('class="review-list-wrap"');

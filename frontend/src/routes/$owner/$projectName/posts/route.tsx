@@ -21,22 +21,19 @@ export const Route = createFileRoute("/$owner/$projectName/posts")({
   component: ProjectBoardsRouteComponent,
 });
 
-function readSearchParams() {
-  if (typeof window === "undefined") {
-    return new URLSearchParams();
-  }
-  return new URLSearchParams(window.location.search);
+function readSearchParams(locationHref: string) {
+  return new URL(locationHref, "http://localhost").searchParams;
 }
 
 function ProjectBoardsRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();
-  useRouterState({ select: (state) => state.location.href });
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
-  const searchParams = readSearchParams();
+  const searchParams = readSearchParams(locationHref);
   const filter = searchParams.get("filter") ?? "";
   const labelIds = searchParams.getAll("labelIds").concat(searchParams.getAll("labelIds[]"));
   const orderBy = searchParams.get("orderBy") ?? "";
