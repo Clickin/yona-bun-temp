@@ -780,6 +780,8 @@ A slice is closed only when:
 - M63 closes the P1 nav-tabs CSS drift: global `.nav-tabs` now follows legacy
   Bootstrap tab float, clearfix, padding, border, hover, and active-state rules
   instead of the temporary wide cyan/bold tab styling.
+- M64 closes the P1 project breadcrumb hover drift: `.project-name a:hover`
+  now keeps the legacy orange color and underline behavior from `_page.less`.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

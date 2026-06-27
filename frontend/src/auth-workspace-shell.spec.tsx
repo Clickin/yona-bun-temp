@@ -296,6 +296,8 @@ describe("auth and workspace views", () => {
     expect(appCss).toContain("border-radius: 4px 4px 0 0;");
     expect(appCss).toContain("border-color: #eee #eee #ddd;");
     expect(appCss).toContain("border-bottom-color: transparent;");
+    expect(appCss).toContain(".project-breadcrumb .project-name a:hover");
+    expect(appCss).toContain("text-decoration: underline;");
     expect(appCss).toContain('.gnb-search-form input[type="text"]');
     expect(appCss).toContain("width: 50px;");
     expect(appCss).toContain('.gnb-search-form input[type="text"]:focus');

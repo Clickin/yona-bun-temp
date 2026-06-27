@@ -1447,6 +1447,7 @@ h1 {
 .project-breadcrumb .project-name a:hover,
 .project-breadcrumb .project-name a:focus {
   color: #fc491e;
+  text-decoration: underline;
 }
 
 .project-private,
