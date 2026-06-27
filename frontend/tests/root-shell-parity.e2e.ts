@@ -249,6 +249,13 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   await expect(page.locator(".usermenu-icon-button[href='/yona/sites/userList']")).toBeVisible();
   await expect(page.locator("#sidebar-open-btn a[href='#mySidenav']")).toBeVisible();
   await expect(page.locator("#mySidenav")).toHaveCount(1);
+  await expect(page.locator("#mySidenav")).toHaveCSS("width", "0px");
+  await page.locator("#sidebar-open-btn a[href='#mySidenav']").click();
+  await expect(page.locator("#mySidenav")).toHaveCSS("width", "360px");
+  await page.locator(".admin-logged-in-affix").click();
+  await expect(page.locator("#mySidenav")).toHaveCSS("width", "0px");
+  await page.keyboard.press("f");
+  await expect(page.locator("#mySidenav")).toHaveCSS("width", "360px");
   await expect(page.locator("#mySidenav .user-menu a[href='/yona/admin']")).toContainText(
     "Profile",
   );

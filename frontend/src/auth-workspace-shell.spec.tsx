@@ -79,6 +79,11 @@ describe("auth and workspace views", () => {
     expect(source).toContain("user.siteAdminLoggedInAffix.maxim");
     expect(source).toContain("<RootUpdateNotification />");
     expect(source).toContain("<RootFramedShell />");
+    expect(source).toContain("const [sidebarOpen, setSidebarOpen]");
+    expect(source).toContain('event.key.toLowerCase() !== "f"');
+    expect(source).toContain('document.addEventListener("click", onDocumentClick)');
+    expect(source).toContain("onToggleSidebar={toggleSidebar}");
+    expect(source).toContain('className={`sidenav${open ? " sidenav-open" : ""}`}');
     expect(source).toContain('appPathname === "/sidebar"');
     expect(source).toContain('document.body.classList.toggle("framed-body", framed)');
     expect(source).toContain('className="sidebar hide-in-mobile"');
@@ -176,6 +181,7 @@ describe("auth and workspace views", () => {
     expect(source).toContain("<RootAnonymousMenu onOpenLoginDialog={onOpenLoginDialog} />");
     expect(source).toContain("onOpenLoginDialog();");
     expect(source).toContain('id="sidebar-open-btn"');
+    expect(source).toContain("onToggleSidebar();");
     expect(source).toContain("dropdwon-box-btn");
     expect(source).toContain('messages("issue.myIssue", { fallback: "issue.myIssue" })');
     expect(source).toContain('messages("userinfo.profile", { fallback: "userinfo.profile" })');
@@ -342,6 +348,9 @@ describe("auth and workspace views", () => {
     expect(appCss).toContain("left: -6px;");
     expect(appCss).toContain(".pin-move-to-right");
     expect(appCss).toContain("left: 270px;");
+    expect(appCss).toContain("#mySidenav.sidenav-open");
+    expect(appCss).toContain("width: 360px;");
+    expect(appCss).toContain("width: 100vw;");
   });
 
   it("keeps legacy anchor markup while routing page links through the SPA", () => {

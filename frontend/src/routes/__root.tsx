@@ -28,9 +28,11 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
 function RootRouteComponent() {
   const { runtimeConfig } = Route.useRouteContext();
   const [loginDialogOpen, setLoginDialogOpen] = React.useState(false);
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const appPathname = stripRuntimeBasePath(pathname, runtimeConfig.basePath);
   const framed = appPathname === "/sidebar";
+  const toggleSidebar = React.useCallback(() => setSidebarOpen((current) => !current), []);
 
   React.useEffect(() => {
     if (typeof document === "undefined") {
@@ -44,6 +46,39 @@ function RootRouteComponent() {
     };
   }, [framed]);
 
+  React.useEffect(() => {
+    if (framed || typeof document === "undefined") {
+      return undefined;
+    }
+    const onKeyPress = (event: KeyboardEvent) => {
+      if (event.metaKey || event.key.toLowerCase() !== "f" || document.querySelector(":focus")) {
+        return;
+      }
+      event.preventDefault();
+      setSidebarOpen(true);
+    };
+    document.addEventListener("keypress", onKeyPress);
+    return () => document.removeEventListener("keypress", onKeyPress);
+  }, [framed]);
+
+  React.useEffect(() => {
+    if (!sidebarOpen || typeof document === "undefined") {
+      return undefined;
+    }
+    const onDocumentClick = (event: MouseEvent) => {
+      if (
+        !(event.target instanceof Element) ||
+        event.target.closest("#mySidenav") ||
+        event.target.closest("#sidebar-open-btn")
+      ) {
+        return;
+      }
+      setSidebarOpen(false);
+    };
+    document.addEventListener("click", onDocumentClick);
+    return () => document.removeEventListener("click", onDocumentClick);
+  }, [sidebarOpen]);
+
   return (
     <YonaQueryProvider>
       <AppRuntimeProvider runtimeConfig={runtimeConfig}>
@@ -54,8 +89,11 @@ function RootRouteComponent() {
             <RuntimeErrorBanner />
             <SiteAdminLoggedInAffix />
             <RootUpdateNotification />
-            <RootHeader onOpenLoginDialog={() => setLoginDialogOpen(true)} />
-            <RootSidebar />
+            <RootHeader
+              onOpenLoginDialog={() => setLoginDialogOpen(true)}
+              onToggleSidebar={toggleSidebar}
+            />
+            <RootSidebar open={sidebarOpen} />
             <Outlet />
             <RootFooter />
             <LegacyGlobalContainers />
@@ -744,7 +782,13 @@ export function framedIframeSrcFromSearch(
   return prefixBasePath(basePath, pathname === "/sidebar" ? `/${withHash}` : withHash);
 }
 
-function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
+function RootHeader({
+  onOpenLoginDialog,
+  onToggleSidebar,
+}: {
+  onOpenLoginDialog: () => void;
+  onToggleSidebar: () => void;
+}) {
   const { currentSession, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -951,7 +995,7 @@ function RootHeader({ onOpenLoginDialog }: { onOpenLoginDialog: () => void }) {
           </li>
         </ul>
         {currentSession && !currentSession.isAnonymous ? (
-          <RootUserMenu />
+          <RootUserMenu onToggleSidebar={onToggleSidebar} />
         ) : (
           <RootAnonymousMenu onOpenLoginDialog={onOpenLoginDialog} />
         )}
@@ -1055,7 +1099,7 @@ function useSidebarActiveMenu(): [SidebarActiveMenu, (nextMenu: SidebarActiveMen
   return [activeMenu, selectActiveMenu];
 }
 
-function RootSidebar() {
+function RootSidebar({ open }: { open: boolean }) {
   const { currentSession } = useAppRuntime();
 
   if (!currentSession || currentSession.isAnonymous) {
@@ -1063,7 +1107,7 @@ function RootSidebar() {
   }
 
   return (
-    <div id="mySidenav" className="sidenav">
+    <div id="mySidenav" className={`sidenav${open ? " sidenav-open" : ""}`}>
       <RootSidebarContent />
     </div>
   );
@@ -1399,7 +1443,7 @@ function SidebarIssueList({
   );
 }
 
-function RootUserMenu() {
+function RootUserMenu({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const { currentSession, messages, runtimeConfig, workspaceOverview } = useAppRuntime();
   const [createMenuOpen, setCreateMenuOpen] = React.useState(false);
 
@@ -1459,6 +1503,11 @@ function RootUserMenu() {
           data-placement="bottom"
           data-toggle="tooltip"
           href="#mySidenav"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onToggleSidebar();
+          }}
           title={`${messages("user.menu", { fallback: "user.menu" })}, ${messages(
             "title.shortcut",
             {

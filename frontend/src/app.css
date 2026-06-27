@@ -805,6 +805,11 @@ button[type="submit"]:focus {
   box-shadow: 2px 2px 10px #888;
 }
 
+#mySidenav.sidenav-open {
+  width: 360px;
+  border: 1px solid #ccc;
+}
+
 .sidenav .user-menu-wrap {
   box-sizing: border-box;
   padding: 10px;
@@ -1929,6 +1934,10 @@ h1 {
   #mySidenav .span-hard-wrap {
     min-width: 0;
     width: 100%;
+  }
+
+  #mySidenav.sidenav-open {
+    width: 100vw;
   }
 
   .markdown-help .markdwon-syntax pre {
