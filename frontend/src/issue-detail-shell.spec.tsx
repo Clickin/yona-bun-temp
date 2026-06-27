@@ -77,6 +77,16 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(appCss).toContain("padding: 1px 3px;");
   });
 
+  it("keeps legacy mobile issue pane visibility CSS", () => {
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+
+    expect(appCss).toContain("@media (max-width: 720px)");
+    expect(appCss).toContain(".span-left-pane {");
+    expect(appCss).toContain("width: 100% !important;");
+    expect(appCss).toContain(".span-right-pane {");
+    expect(appCss).toContain("display: none !important;");
+  });
+
   it("matches legacy issue label text contrast classes", () => {
     expect(legacyIssueLabelTextClass("#ffffff")).toBe("dimgray");
     expect(legacyIssueLabelTextClass("#f44336")).toBe("white");

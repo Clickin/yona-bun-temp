@@ -794,6 +794,9 @@ A slice is closed only when:
 - M68 continues P2 issue event geometry: event state badges restore legacy
   spacing and compact `.event-index` state padding/line-height from
   `_page.less`.
+- M69 continues P2 responsive issue geometry: mobile `.span-left-pane` and
+  `.span-right-pane` now follow legacy `_responsive.less` by widening the left
+  pane and hiding the right pane.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

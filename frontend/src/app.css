@@ -2815,6 +2815,14 @@ div.markdown-preview {
 }
 
 @media (max-width: 720px) {
+  .span-left-pane {
+    width: 100% !important;
+  }
+
+  .span-right-pane {
+    display: none !important;
+  }
+
   .issue-detail-page .board-body.row-fluid {
     display: block;
   }
