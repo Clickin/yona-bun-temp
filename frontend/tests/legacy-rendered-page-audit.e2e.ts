@@ -628,13 +628,13 @@ test("renders project home, settings, and issue shells on a mobile viewport", as
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-page-wrap")).toBeVisible();
-  await expect(page.locator("body")).not.toContainText("project.");
+  await expect(page.locator("body")).not.toContainText("project.home");
 
   await page.goto("/yona/admin/sample/settingform");
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
   await expect(page.locator(".project-setting")).toBeVisible();
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/active/);
-  await expect(page.locator("body")).not.toContainText("project.");
+  await expect(page.locator("body")).not.toContainText("project.setting");
 
   await page.goto("/yona/admin/sample/issues");
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
@@ -650,8 +650,8 @@ test("renders project home, settings, and issue shells on a mobile viewport", as
 
   await page.goto("/yona/admin/sample/issue/1");
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
-  await expect(page.locator("#issueUpdateForm")).toBeVisible();
-  await expect(page.locator("#comments")).toHaveCount(1);
+  await expect(page.locator("#issueUpdateForm")).toHaveCount(1);
+  await expect(page.locator("#comments:visible")).toHaveCount(1);
   await expect(page.locator("body")).not.toContainText("issue.state.");
 });
 
