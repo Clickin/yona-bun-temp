@@ -286,6 +286,16 @@ describe("auth and workspace views", () => {
     expect(appCss).toContain("margin-top: 20px;");
     expect(appCss).toContain(".mb20 {");
     expect(appCss).toContain("margin-bottom: 20px;");
+    expect(appCss).toContain(".nav-tabs::before");
+    expect(appCss).toContain(".nav-tabs::after");
+    expect(appCss).toContain("clear: both;");
+    expect(appCss).toContain(".nav-tabs > li {");
+    expect(appCss).toContain("float: left;");
+    expect(appCss).toContain("padding: 8px 12px;");
+    expect(appCss).toContain("margin-right: 2px;");
+    expect(appCss).toContain("border-radius: 4px 4px 0 0;");
+    expect(appCss).toContain("border-color: #eee #eee #ddd;");
+    expect(appCss).toContain("border-bottom-color: transparent;");
     expect(appCss).toContain('.gnb-search-form input[type="text"]');
     expect(appCss).toContain("width: 50px;");
     expect(appCss).toContain('.gnb-search-form input[type="text"]:focus');

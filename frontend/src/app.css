@@ -1276,33 +1276,52 @@ h1 {
 }
 
 .nav-tabs {
+  zoom: 1;
   padding-left: 0;
   margin: 0 0 15px;
   border-bottom: 1px solid #ddd;
   list-style: none;
 }
 
+.nav-tabs::before,
+.nav-tabs::after {
+  display: table;
+  line-height: 0;
+  content: "";
+}
+
+.nav-tabs::after {
+  clear: both;
+}
+
 .nav-tabs > li {
-  display: inline-block;
+  float: left;
   margin-bottom: -1px;
 }
 
 .nav-tabs > li > a {
   display: block;
-  padding: 8px 30px;
-  color: #3592b5;
-  font-weight: bold;
+  padding: 8px 12px;
+  margin-right: 2px;
+  line-height: 20px;
   border: 1px solid transparent;
-  border-radius: 3px 3px 0 0;
+  border-radius: 4px 4px 0 0;
+}
+
+.nav-tabs > li > a:hover,
+.nav-tabs > li > a:focus {
+  border-color: #eee #eee #ddd;
+  text-decoration: none;
 }
 
 .nav-tabs > li.active > a,
-.nav-tabs > li > a:hover,
-.nav-tabs > li > a:focus {
-  color: #3592b5;
-  background-color: #f2f2f2;
-  border-color: #ddd #ddd transparent;
-  text-decoration: none;
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+  color: #555;
+  cursor: default;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-bottom-color: transparent;
 }
 
 .nav-tabs.small {

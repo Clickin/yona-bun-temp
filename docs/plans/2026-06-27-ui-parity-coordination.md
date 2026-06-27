@@ -777,6 +777,9 @@ A slice is closed only when:
 - M62 closes the P0 global utility CSS gap: legacy `_common.less` float,
   text-align, vertical-align, and used margin utilities are restored globally,
   and `.pull-right` is no longer overloaded as a flex helper.
+- M63 closes the P1 nav-tabs CSS drift: global `.nav-tabs` now follows legacy
+  Bootstrap tab float, clearfix, padding, border, hover, and active-state rules
+  instead of the temporary wide cyan/bold tab styling.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.
