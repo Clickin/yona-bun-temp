@@ -51,6 +51,13 @@ describe("route loading shell legacy i18n opt-in", () => {
     );
     expect(userRouteSource).toContain("RedirectPage");
     expect(userRouteSource).not.toContain("navigateToAppHref");
+
+    const userFilesSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/user/files/route.tsx"),
+      "utf8",
+    );
+    expect(userFilesSource).toContain("useRouterState");
+    expect(userFilesSource).not.toContain("window.location.search");
   });
 
   it("renders the shared redirect loading shell through legacy messages", () => {

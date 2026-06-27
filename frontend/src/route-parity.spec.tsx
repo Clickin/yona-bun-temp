@@ -977,6 +977,7 @@ describe("file-route parity harness", () => {
     expect(commitDetailRouteSource).toContain("unwatchCommitRest");
     expect(commitDetailRouteSource).toContain("onToggleCommitWatch");
     expect(commitDetailRouteSource).toContain("error.badrequest");
+    expect(commitDetailRouteSource).not.toContain("window.location.search");
     expect(commitDetailRouteSource).not.toContain("Create commit comment failed.");
     expect(commitDetailRouteSource).not.toContain("Delete commit comment failed.");
     expect(commitDetailRouteSource).not.toContain("Update commit comment failed.");
@@ -1017,6 +1018,7 @@ describe("file-route parity harness", () => {
     expect(commitsRouteHelperSource).toContain("useNavigate");
     expect(commitsRouteHelperSource).toContain("useRouterState");
     expect(commitsRouteHelperSource).toContain("navigate({ href })");
+    expect(commitsRouteHelperSource).not.toContain("window.location.search");
     expect(codeViewsSource).toContain("data-via-email");
     expect(codeViewsSource).toContain("onNavigate?.(newerHref)");
     expect(codeViewsSource).not.toContain("window.location.assign(");

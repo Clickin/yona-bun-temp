@@ -129,7 +129,7 @@ export function CodeHistoryRouteView(props: {
     setFailureKind(null);
     void (async () => {
       try {
-        const searchParams = new URLSearchParams(window.location.search);
+        const searchParams = new URL(locationHref, "http://localhost").searchParams;
         const page = Number(searchParams.get("page") || "0") || 0;
         const [nextDetail, nextHistory] = await Promise.all([
           readProjectContainer(runtimeConfig, owner, projectName),

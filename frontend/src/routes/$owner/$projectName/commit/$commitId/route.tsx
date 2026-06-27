@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import {
   closeCommitDiscussionThreadRest,
   codeCommitDetailQueryOptions,
@@ -57,7 +57,8 @@ function CodeCommitDetailRouteComponent() {
   const { commitId, owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
-  const searchParams = new URLSearchParams(window.location.search);
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const searchParams = new URL(locationHref, "http://localhost").searchParams;
   const query = {
     branch: searchParams.get("branch") ?? "",
     path: searchParams.get("path") ?? "",

@@ -92,8 +92,8 @@ function legacyUserFileIconClass(fileName: string): string {
   return "icon text-icon";
 }
 
-function userFilesQueryFromLocation(): { filter: string; page: number } {
-  const searchParams = new URLSearchParams(window.location.search);
+function userFilesQueryFromLocation(locationHref: string): { filter: string; page: number } {
+  const searchParams = new URL(locationHref, "http://localhost").searchParams;
   const page = Number(searchParams.get("page") || searchParams.get("pageNum") || "1");
   return {
     filter: searchParams.get("filter") ?? "",
@@ -106,7 +106,7 @@ function UserFilesRouteComponent() {
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const navigate = useNavigate();
   const canRender = useRequireAuthenticatedRoute("/user/files");
-  const [query, setQuery] = React.useState(() => userFilesQueryFromLocation());
+  const [query, setQuery] = React.useState(() => userFilesQueryFromLocation(locationHref));
   const [files, setFiles] = React.useState<WorkspaceFilesResponse | null>(null);
   const [readFailed, setReadFailed] = React.useState(false);
 
@@ -120,7 +120,7 @@ function UserFilesRouteComponent() {
     setReadFailed(false);
     void (async () => {
       try {
-        const nextQuery = userFilesQueryFromLocation();
+        const nextQuery = userFilesQueryFromLocation(locationHref);
         const nextFiles = await listWorkspaceFilesRest(runtimeConfig, nextQuery);
         if (!cancelled) {
           setQuery(nextQuery);
