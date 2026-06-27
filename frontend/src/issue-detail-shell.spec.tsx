@@ -17,6 +17,19 @@ import { legacyIssueLabelTextClass } from "./routes/-shared";
 import type { ProjectDetailViewModel, ProjectIssueDetailViewModel } from "./routes/-view-models";
 
 describe("ProjectIssueDetailPage legacy issue shell", () => {
+  it("keeps legacy issue info sidebar spacing CSS", () => {
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+
+    expect(appCss).toContain(".issue-detail-page .issue-info {");
+    expect(appCss).toContain("padding: 15px 0 0 52px;");
+    expect(appCss).toContain(".issue-detail-page .issue-info dl");
+    expect(appCss).toContain("margin-bottom: 20px;");
+    expect(appCss).toContain(".issue-detail-page .issue-info dd");
+    expect(appCss).toContain("padding: 5px 0;");
+    expect(appCss).toContain(".issue-detail-page .issue-info .status");
+    expect(appCss).toContain("color: #646464;");
+  });
+
   it("matches legacy issue label text contrast classes", () => {
     expect(legacyIssueLabelTextClass("#ffffff")).toBe("dimgray");
     expect(legacyIssueLabelTextClass("#f44336")).toBe("white");

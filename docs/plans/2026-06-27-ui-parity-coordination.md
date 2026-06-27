@@ -782,6 +782,9 @@ A slice is closed only when:
   instead of the temporary wide cyan/bold tab styling.
 - M64 closes the P1 project breadcrumb hover drift: `.project-name a:hover`
   now keeps the legacy orange color and underline behavior from `_page.less`.
+- M65 starts the P2 issue detail geometry closure: `.issue-info` sidebar
+  padding, dl/dd spacing, paragraph rhythm, and status/name sizing now follow
+  legacy `_page.less`.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.
