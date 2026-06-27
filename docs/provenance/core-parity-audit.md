@@ -61,6 +61,13 @@
   successful create redirects through TanStack Router with the mounted base
   path instead of reloading the document. Focused guard:
   `frontend/src/route-parity.spec.tsx`.
+- React-owned project Git import and site data import preserve their legacy
+  form shells and REST/file payload handling, but successful import redirects
+  now use TanStack Router navigation with the mounted base path instead of the
+  full document reload helper. Focused guards:
+  `frontend/src/project-import-parity.spec.tsx`,
+  `frontend/src/site-admin-data-parity.spec.tsx`, and
+  `frontend/src/form-submit-boundary.spec.tsx`.
 - Direct `window.location` navigation in route source is limited to shared app-base fallback helpers; route-owned filter, pagination, code branch, and history transitions use TanStack navigation. Focused guard: `frontend/src/route-parity.spec.tsx`.
 - React-owned project/organization leave, enrollment, and project-watch click
   mutations keep legacy `href`/`data-href` anchors for parity, but clicks call

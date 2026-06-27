@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import {
   importProjectRest,
@@ -6,8 +6,9 @@ import {
   type ProjectCreateFormOptionsResponse,
 } from "../../api/org-project";
 import { useAppRuntime } from "../../app-runtime-context";
+import { prefixBasePath } from "../../runtime-config";
 import { ProjectImportPage } from "../-project-views";
-import { BadRequestPage, navigateToAppHref, useRequireAuthenticatedRoute } from "../-shared";
+import { BadRequestPage, useRequireAuthenticatedRoute } from "../-shared";
 
 export const Route = createFileRoute("/_import")({
   component: ProjectImportRouteComponent,
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_import")({
 function ProjectImportRouteComponent() {
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/_import");
+  const navigate = useNavigate();
   const [formOptions, setFormOptions] = React.useState<ProjectCreateFormOptionsResponse | null>(
     null,
   );
@@ -67,7 +69,9 @@ function ProjectImportRouteComponent() {
         setErrorMessage(null);
         try {
           const imported = await importProjectRest(runtimeConfig, csrfToken, input);
-          navigateToAppHref(runtimeConfig.basePath, imported.redirectPath);
+          void navigate({
+            href: prefixBasePath(runtimeConfig.basePath, imported.redirectPath),
+          });
         } catch (error) {
           setErrorMessage(
             error instanceof Error

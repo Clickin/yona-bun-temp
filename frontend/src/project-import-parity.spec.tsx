@@ -77,7 +77,9 @@ describe("project import parity", () => {
     expect(routeSource).toContain("readProjectCreateFormOptionsRest");
     expect(routeSource).toContain("importProjectRest");
     expect(routeSource).toContain("onImportProject");
-    expect(routeSource).toContain("navigateToAppHref");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("prefixBasePath");
+    expect(routeSource).not.toContain("navigateToAppHref");
     expect(routeSource).toContain("ProjectImportPage");
     expect(routeSource).toContain("csrfToken={csrfToken}");
     expect(routeSource).not.toContain("Project import mutation is deferred.");

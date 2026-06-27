@@ -592,6 +592,9 @@ describe("React form submit boundary", () => {
     expect(apiSource).toContain('restFetch<SiteImportResponse>(runtimeConfig, "/site/import"');
     expect(source).toContain("JSON.parse(await data.text())");
     expect(source).toContain("onImportSiteData");
+    expect(source).toContain("useNavigate");
+    expect(source).toContain("prefixBasePath");
+    expect(source).not.toContain("navigateToAppHref");
     expect(source).toContain("event.preventDefault()");
     expect(source).not.toContain('action={appHref(runtimeConfig, "/sites/import")}');
   });
@@ -606,7 +609,9 @@ describe("React form submit boundary", () => {
       'restFetch<ProjectImportResponse>(runtimeConfig, "/projects/import"',
     );
     expect(routeSource).toContain("onImportProject");
-    expect(routeSource).toContain("navigateToAppHref");
+    expect(routeSource).toContain("useNavigate");
+    expect(routeSource).toContain("prefixBasePath");
+    expect(routeSource).not.toContain("navigateToAppHref");
     expect(viewSource).toContain("event.preventDefault()");
     expect(viewSource).not.toContain("action={importAction}");
   });

@@ -54,7 +54,6 @@ import {
   NotFoundPage,
   useCurrentHref,
   useDocumentTitle,
-  navigateToAppHref,
   useRequireAuthenticatedRoute,
 } from "../../-shared";
 
@@ -439,6 +438,7 @@ function SiteDataRoute({
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const importMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
       importSiteDataRest(runtimeConfig, csrfToken, payload),
@@ -448,7 +448,7 @@ function SiteDataRoute({
     onSuccess: async () => {
       setErrorMessage(null);
       await queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "site"] });
-      navigateToAppHref(runtimeConfig.basePath, "/");
+      void navigate({ href: prefixBasePath(runtimeConfig.basePath, "/") });
     },
   });
 

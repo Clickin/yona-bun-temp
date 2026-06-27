@@ -762,6 +762,9 @@ A slice is closed only when:
   `/user/issues/new/mine` keep the shared direct issue form body and create
   mutation, then navigate to the created project issue through TanStack Router
   with the mounted base path preserved.
+- M58 continues import mutation SPA navigation: project Git import and site
+  data import keep their existing REST/file-form boundaries, then redirect
+  through TanStack Router navigation instead of the full document reload helper.
 - Follow-up modernization after parity slices: introduce a Vite/TypeScript
   import alias for frontend source imports and mechanically rewrite deep
   relative imports in a separate no-behavior-change migration.
