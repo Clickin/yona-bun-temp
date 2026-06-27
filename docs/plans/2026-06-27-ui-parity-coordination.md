@@ -797,6 +797,9 @@ A slice is closed only when:
 - M69 continues P2 responsive issue geometry: mobile `.span-left-pane` and
   `.span-right-pane` now follow legacy `_responsive.less` by widening the left
   pane and hiding the right pane.
+- M70 continues P2 issue state visual parity: issue badges and timeline state
+  pills now use legacy `_variables.less` state colors, including rejected,
+  merged, conflict, and resolved states.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

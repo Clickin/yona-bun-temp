@@ -77,6 +77,21 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(appCss).toContain("padding: 1px 3px;");
   });
 
+  it("keeps legacy issue state badge colors", () => {
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+
+    expect(appCss).toContain(".badge.badge-issue-open");
+    expect(appCss).toContain("background: #b6da54;");
+    expect(appCss).toContain(".badge.badge-issue-closed");
+    expect(appCss).toContain("background: #fd6956;");
+    expect(appCss).toContain(".badge.badge-issue-rejected");
+    expect(appCss).toContain("background: #fd8658;");
+    expect(appCss).toContain(".badge.badge-issue-merged");
+    expect(appCss).toContain("background: #65c9df;");
+    expect(appCss).toContain(".issue-detail-page .comments .event .state.conflict");
+    expect(appCss).toContain("background: #c0392b;");
+  });
+
   it("keeps legacy mobile issue pane visibility CSS", () => {
     const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
 

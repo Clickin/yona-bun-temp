@@ -2349,11 +2349,23 @@ h1 {
 }
 
 .badge.badge-issue-open {
-  background: #4b8f29;
+  background: #b6da54;
 }
 
 .badge.badge-issue-closed {
-  background: #777;
+  background: #fd6956;
+}
+
+.badge.badge-issue-rejected {
+  background: #fd8658;
+}
+
+.badge.badge-issue-merged {
+  background: #65c9df;
+}
+
+.badge.badge-issue-conflict {
+  background: #c0392b;
 }
 
 div.markdown-preview {
@@ -2785,16 +2797,29 @@ div.markdown-preview {
 }
 
 .issue-detail-page .comments .event .state.open {
-  background: #4b8f29;
+  background: #b6da54;
 }
 
 .issue-detail-page .comments .event .state.closed {
-  background: #777;
+  background: #fd6956;
 }
 
 .issue-detail-page .comments .event .state.changed,
+.issue-detail-page .comments .event .state.merged,
 .issue-detail-page .comments .event .state.milestone-changed {
-  background: #0088cc;
+  background: #65c9df;
+}
+
+.issue-detail-page .comments .event .state.rejected {
+  background: #f39c12;
+}
+
+.issue-detail-page .comments .event .state.conflict {
+  background: #c0392b;
+}
+
+.issue-detail-page .comments .event .state.resolved {
+  background: #468847;
 }
 
 .issue-detail-page .comments .event .state.sharer-added,
