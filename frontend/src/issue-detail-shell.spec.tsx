@@ -1279,6 +1279,9 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('id="tplAttachedFile"');
     expect(html).toContain('type="text/x-jquery-tmpl"');
     expect(html).toContain('class="attached-file"');
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+    expect(appCss).toContain(".upload-wrap .attached-files {");
+    expect(appCss).toContain(".attached-file.complete .btn-insert {");
     expect(html).toContain('data-id="${fileId}"');
     expect(html).toContain('class="progress upload-progress"');
     expect(html).toContain('class="bar orange"');

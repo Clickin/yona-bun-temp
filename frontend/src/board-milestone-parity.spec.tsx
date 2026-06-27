@@ -215,6 +215,9 @@ describe("board/milestone UI parity closure", () => {
     );
     expect(html).toContain('data-attachments="[{&quot;fileHref&quot;:&quot;/yona/files/501&quot;');
     expect(html).toContain('class="attached-file"');
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+    expect(appCss).toContain(".attached-file .name {");
+    expect(appCss).toContain("max-width: 250px;");
     expect(html).toContain('data-resource-type="NONISSUE_COMMENT"');
     expect(html).toContain("comment.png");
   });

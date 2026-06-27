@@ -2411,6 +2411,124 @@ div.markdown-preview {
   border-radius: 0 0 5px 5px;
 }
 
+.upload-wrap .help {
+  display: none;
+}
+
+.upload-wrap .help-droppable {
+  display: inline;
+}
+
+.upload-wrap .attach-wrap {
+  text-align: center;
+}
+
+.upload-wrap .attach-wrap .btn-wrap {
+  display: inline-block !important;
+  margin: 0 5px;
+  vertical-align: top;
+}
+
+.upload-wrap .attach-wrap .plain {
+  display: inline-block;
+  line-height: 30px;
+}
+
+.upload-wrap .attached-files {
+  display: none;
+  padding: 15px 0;
+  margin-top: 15px;
+  margin-bottom: 0;
+  border-top: 1px solid #e0e0e0;
+}
+
+.attached-file {
+  display: inline-block;
+  height: 30px;
+  padding: 0 10px;
+  margin: 5px 4px;
+  overflow: hidden;
+  line-height: 30px;
+  cursor: pointer;
+  background: #fafafa;
+  border: 1px solid #ccc;
+  transition-duration: 0.5s;
+}
+
+.attached-file:hover {
+  border: 1px solid #51aacc;
+}
+
+.attached-file i {
+  display: none;
+  margin-right: 3px;
+  color: #51aacc;
+  vertical-align: middle;
+}
+
+.attached-file .name {
+  display: inline-block;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  transition-duration: 0.5s;
+}
+
+.attached-file .size {
+  font-size: 11px;
+  vertical-align: middle;
+}
+
+.attached-file .progress {
+  display: inline-block;
+  width: 100px;
+  height: 7px;
+  margin: 0;
+  overflow: hidden;
+}
+
+.attached-file .btn-delete {
+  width: 30px;
+  height: 30px;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.attached-file .btn-delete:hover {
+  color: #51aacc;
+}
+
+.attached-file .btn-insert {
+  display: none;
+  margin-top: 2px;
+  margin-right: 10px;
+  line-height: 20px;
+  box-shadow: none;
+}
+
+.attached-file .btn-insert:hover {
+  color: #51aacc;
+  background: #fff;
+}
+
+.attached-file.complete .progress {
+  display: none;
+}
+
+.attached-file.complete .btn-delete {
+  display: inline-block;
+}
+
+.attached-file.complete .btn-insert {
+  display: block;
+}
+
+.attached-file.temporary i {
+  display: inline-block;
+}
+
 .write-comment-box .actrow {
   margin-top: 10px;
 }

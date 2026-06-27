@@ -804,6 +804,9 @@ A slice is closed only when:
   `.board-comment-wrap` bubble and arrow geometry now applies through the
   shared `.board-view` detail wrapper, so issue and board detail comments use
   the same legacy output.
+- M72 continues P2/P3 attachment visual parity: legacy upload attached-file
+  row sizing, truncation, progress, delete, insert, and temporary icon selectors
+  are restored for issue comments and board post/comment attachments.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.
