@@ -894,6 +894,10 @@ A slice is closed only when:
   project child route files under `/$owner/$projectName/**` now fail
   `route-parity.spec.tsx` if they import or render `ProjectHeader` or
   `ProjectMenu` instead of delegating shell chrome to the parent route.
+- M89 locks organization nested-layout chrome ownership with the same guard
+  pattern: child route files under `/organizations/$organizationName/**` now
+  fail if they import or render `OrganizationHeader` or `OrganizationMenu`
+  instead of delegating shell chrome to the parent organization route.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.
