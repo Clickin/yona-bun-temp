@@ -188,6 +188,28 @@ describe("file-route parity harness", () => {
     ]);
   });
 
+  it("keeps route query and pathname reads on TanStack Router state", () => {
+    const browserRouteStateReads = listRouteSourceFiles()
+      .flatMap((file) => {
+        const source = fs.readFileSync(path.resolve(__dirname, file), "utf8");
+        return Array.from(
+          source.matchAll(
+            /(?:window\.location\.(?:search|pathname)|new URLSearchParams\(window\.location\.search\))/g,
+          ),
+          (match) => ({
+            file,
+            line: lineNumberForIndex(source, match.index ?? 0),
+            sourceLine: sourceLineForIndex(source, match.index ?? 0),
+          }),
+        );
+      })
+      .sort((left, right) =>
+        left.file === right.file ? left.line - right.line : left.file.localeCompare(right.file),
+      );
+
+    expect(browserRouteStateReads).toEqual([]);
+  });
+
   it("keeps canonical and alias auth/settings routes in the generated route tree", () => {
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
 

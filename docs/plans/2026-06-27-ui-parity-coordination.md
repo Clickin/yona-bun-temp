@@ -881,6 +881,11 @@ A slice is closed only when:
   active-menu classification, query ownership, and `<Outlet />`, while
   `/settingform` renders `ProjectSettingsPage` with `renderShell={false}` under
   that parent layout. No output change was needed for this audit pass.
+- M86 locks the SPA route-state closure with a route-source guard:
+  `frontend/src/route-parity.spec.tsx` now fails if React route files read
+  `window.location.search`, `window.location.pathname`, or build
+  `URLSearchParams` from browser-global search instead of TanStack Router
+  location state.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.
