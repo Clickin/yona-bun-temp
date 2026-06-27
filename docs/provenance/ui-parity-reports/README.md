@@ -69,6 +69,15 @@ Rules:
   fresh runtime DB and the Vite dev proxy in `frontend/vite.config.ts` now
   forwards direct compatibility/API surfaces while preserving SPA fallback for
   browser navigation.
+- Latest local desktop sweep refresh:
+  `output/playwright/visual-sweep/latest.json` at
+  `2026-06-27T01:15:45.287Z` records local `174/174`, local direct API
+  surfaces `13/13`, imported legacy-audit page coverage `67/67`, zero missing
+  legacy-audit pages, `diffFailures 0`, and `localFailures 0` against
+  `http://127.0.0.1:18111/yona`. This refresh validates the current React/Vite
+  mounted SPA after the latest route/CSS follow-ups; it is local regression
+  evidence and does not replace the older combined legacy status-delta
+  classification below.
 
 ## Integrated Status Delta Classification
 

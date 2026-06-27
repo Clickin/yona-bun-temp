@@ -656,6 +656,14 @@
 - 2026-06-25 visual sweep corpus failure guard note: `scripts/visual-parity-sweep.mjs` now treats missing, invalid, unreachable, or failed `.agent/legacy-html-page-audit/latest.json` as an unusable corpus and exits non-zero instead of silently shrinking rendered-screen coverage to hand-listed routes only. The sweep output records `legacyAuditCorpus.status/error/pages`, and `scripts/legacy-html-page-audit.spec.mjs` covers unreachable and successful corpus normalization.
 - 2026-06-25 legacy audit test isolation note: `scripts/audit-legacy-html-pages.mjs` accepts `YONA_LEGACY_AUDIT_OUTPUT_DIR` so unreachable-baseline contract tests write to a temporary directory instead of overwriting `.agent/legacy-html-page-audit/latest.json`. After adding the override, the real homelab legacy audit was rerun outside the sandbox and restored the current corpus to 57/57 passing pages with no unaudited discovered links.
 - 2026-06-25 local visual sweep refresh: after restoring the legacy HTML audit corpus, the local Playwright sweep against `http://127.0.0.1:18111/yona` passed 154/154 rendered pages, 13/13 direct API fragment-conversion surfaces, and 49/49 imported legacy-audit pages with no missing coverage. Focused evidence: `output/playwright/visual-sweep/latest.json` and `docs/provenance/visual-parity-sweep-2026-06-25.md`.
+- 2026-06-27 local visual sweep refresh: after the latest TanStack Router shell,
+  SPA navigation, and legacy CSS utility follow-ups, the mounted local
+  Playwright sweep against `http://127.0.0.1:18111/yona` passed 174/174
+  rendered pages, 13/13 direct API fragment-conversion surfaces, and 67/67
+  imported legacy-audit pages with no missing coverage. The run recorded
+  `diffFailures 0` and `localFailures 0` in
+  `output/playwright/visual-sweep/latest.json` at
+  `2026-06-27T01:15:45.287Z`.
 - 2026-06-25 direct API sweep hardening note: the local Playwright visual sweep
   now checks 13 React-owned data/legacy-helper surfaces, including workspace
   sidebar/menu, notification paging, Markdown preview source return, direct
