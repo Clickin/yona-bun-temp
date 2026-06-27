@@ -2452,6 +2452,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   from browser-global pathname/search values. Focused coverage:
   `pnpm --dir frontend exec vitest run src/user-profile-route-loading-shell-i18n.spec.tsx src/auth-workspace-shell.spec.tsx src/wave1-auth-workspace-parity.spec.tsx`
   and `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 public profile route-state follow-up: `/:user` parses `daysAgo`
+  and `selected` from TanStack Router href state and passes that same route href
+  into the public profile shell, preserving selected-tab query behavior without
+  browser-global `window.location` reads. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx src/wave1-auth-workspace-parity.spec.tsx src/workspace-profile-i18n.spec.tsx`
+  and `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

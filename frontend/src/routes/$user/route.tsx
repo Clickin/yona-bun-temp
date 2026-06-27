@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../../api/users";
 import { useAppRuntime } from "../../app-runtime-context";
 import type { WorkspaceOverviewViewModel } from "../-view-models";
@@ -11,11 +11,8 @@ export const Route = createFileRoute("/$user")({
   component: PublicUserProfileRouteComponent,
 });
 
-function publicProfileSearch() {
-  if (typeof window === "undefined") {
-    return { daysAgo: null, selected: null };
-  }
-  const searchParams = new URLSearchParams(window.location.search);
+function publicProfileSearch(locationHref: string) {
+  const searchParams = new URL(locationHref, "http://localhost").searchParams;
   const daysAgoText = searchParams.get("daysAgo");
   const daysAgo = daysAgoText ? Number.parseInt(daysAgoText, 10) : null;
   return {
@@ -109,7 +106,8 @@ function PublicUserProfileRouteComponent() {
   const { user } = Route.useParams();
   const { bootstrapping, currentSession, messages, runtimeConfig } = useAppRuntime();
   const [failureKind, setFailureKind] = React.useState<null | "bad-request" | "not-found">(null);
-  const search = publicProfileSearch();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const search = publicProfileSearch(locationHref);
   const profileQuery = useQuery({
     ...readPublicUserProfileQueryOptions(runtimeConfig, {
       daysAgo: search.daysAgo,
@@ -167,7 +165,7 @@ function PublicUserProfileRouteComponent() {
       profileOverview={
         profileQuery.data ? toPublicProfileOverview(profileQuery.data, session) : null
       }
-      routeHref={typeof window === "undefined" ? `/${user}` : window.location.href}
+      routeHref={locationHref}
       runtimeConfig={runtimeConfig}
       viewerCanEditProfile={profileQuery.data?.viewerCanEditProfile ?? false}
     />

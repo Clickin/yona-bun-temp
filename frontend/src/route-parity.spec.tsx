@@ -6057,6 +6057,9 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readPublicUserProfile");
     expect(routeSource).toContain("PublicUserProfilePage");
+    expect(routeSource).toContain("useRouterState");
+    expect(routeSource).not.toContain("window.location.search");
+    expect(routeSource).not.toContain("window.location.href");
 
     const html = renderPublicUserProfile({
       defaultLandingPath: "/me",
