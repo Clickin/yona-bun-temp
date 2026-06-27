@@ -28,6 +28,98 @@ body {
   margin: 0 !important;
 }
 
+.pull-left {
+  float: left;
+}
+
+.pull-right {
+  float: right;
+}
+
+.center-txt {
+  text-align: center;
+}
+
+.right-txt {
+  text-align: right;
+}
+
+.left-txt {
+  text-align: left;
+}
+
+.vmiddle {
+  vertical-align: middle !important;
+}
+
+.ml0 {
+  margin-left: 0;
+}
+
+.ml4 {
+  margin-left: 4px;
+}
+
+.ml5 {
+  margin-left: 5px;
+}
+
+.ml6 {
+  margin-left: 6px;
+}
+
+.ml10 {
+  margin-left: 10px;
+}
+
+.ml20 {
+  margin-left: 20px;
+}
+
+.mr3 {
+  margin-right: 3px;
+}
+
+.mr5 {
+  margin-right: 5px;
+}
+
+.mr6 {
+  margin-right: 6px;
+}
+
+.mr10 {
+  margin-right: 10px;
+}
+
+.mr20 {
+  margin-right: 20px;
+}
+
+.mt4 {
+  margin-top: 4px;
+}
+
+.mt5 {
+  margin-top: 5px;
+}
+
+.mt10 {
+  margin-top: 10px;
+}
+
+.mt20 {
+  margin-top: 20px;
+}
+
+.mb10 {
+  margin-bottom: 10px;
+}
+
+.mb20 {
+  margin-bottom: 20px;
+}
+
 .btn-transparent {
   padding: 0;
   background: transparent;
@@ -3371,8 +3463,7 @@ h1 {
   min-width: 180px;
 }
 
-.file-info,
-.pull-right {
+.file-info {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 8px;

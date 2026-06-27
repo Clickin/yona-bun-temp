@@ -774,6 +774,9 @@ A slice is closed only when:
 - M61 closes the P0 root search-scope dropdown CSS gap: `.gnb-search-form`
   now carries the legacy `_page.less` dropdown item clear/float and anchor
   padding/line-height rules without broadening the search icon button selector.
+- M62 closes the P0 global utility CSS gap: legacy `_common.less` float,
+  text-align, vertical-align, and used margin utilities are restored globally,
+  and `.pull-right` is no longer overloaded as a flex helper.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.
