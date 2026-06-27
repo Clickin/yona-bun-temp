@@ -890,6 +890,10 @@ A slice is closed only when:
   `IssueLabelsFormPage` now renders only the legacy label editor body and
   modals, with `ProjectHeader`/`ProjectMenu` remaining solely in the
   `/$owner/$projectName` parent layout for `/issue/labelsform`.
+- M88 locks project nested-layout chrome ownership with a route-source guard:
+  project child route files under `/$owner/$projectName/**` now fail
+  `route-parity.spec.tsx` if they import or render `ProjectHeader` or
+  `ProjectMenu` instead of delegating shell chrome to the parent route.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

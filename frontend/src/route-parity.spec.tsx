@@ -210,6 +210,34 @@ describe("file-route parity harness", () => {
     expect(browserRouteStateReads).toEqual([]);
   });
 
+  it("keeps project child route chrome in the parent TanStack layout", () => {
+    const childProjectChromeOwners: Array<{ file: string; line: number; sourceLine: string }> = [];
+
+    for (const file of listRouteSourceFiles()) {
+      if (
+        !file.startsWith("routes/$owner/$projectName/") ||
+        file === "routes/$owner/$projectName/route.tsx"
+      ) {
+        continue;
+      }
+
+      const source = fs.readFileSync(path.resolve(__dirname, file), "utf8");
+      for (const match of source.matchAll(/\bProject(?:Header|Menu)\b/g)) {
+        childProjectChromeOwners.push({
+          file,
+          line: lineNumberForIndex(source, match.index ?? 0),
+          sourceLine: sourceLineForIndex(source, match.index ?? 0),
+        });
+      }
+    }
+
+    childProjectChromeOwners.sort((left, right) =>
+      left.file === right.file ? left.line - right.line : left.file.localeCompare(right.file),
+    );
+
+    expect(childProjectChromeOwners).toEqual([]);
+  });
+
   it("keeps canonical and alias auth/settings routes in the generated route tree", () => {
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
 
@@ -5278,12 +5306,9 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain("createProjectLabel");
     expect(routeSource).toContain("updateProjectLabel");
     expect(routeSource).toContain("deleteProjectLabel");
-    expect(routeSource).toContain("ProjectHeader");
-    expect(routeSource).toContain(
-      "<ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />",
-    );
-    expect(routeSource).toContain('<ProjectMenu activeMenu="settings"');
-    expect(routeSource).toContain('className="page-wrap-outer"');
+    expect(routeSource).not.toContain("ProjectHeader");
+    expect(routeSource).not.toContain("ProjectMenu");
+    expect(routeSource).not.toContain('className="page-wrap-outer"');
     expect(routeSource).toContain('className="project-page-wrap label-editor-wrap"');
     expect(routeSource).toContain("ProjectSettingsSubMenu");
     expect(routeSource).toContain('id="copyLabel"');
