@@ -1530,6 +1530,8 @@ describe("file-route parity harness", () => {
     expect(searchViewsSource).toContain("readOrganizationSearch");
     expect(searchViewsSource).toContain("apiQueryKeys.search.project");
     expect(searchViewsSource).toContain("useNavigate");
+    expect(searchViewsSource).toContain("useRouterState");
+    expect(searchViewsSource).not.toContain("window.location.search");
     expect(searchViewsSource).toContain("navigate({ href })");
     expect(searchViewsSource).toContain("event.preventDefault();");
     expect(searchViewsSource).toContain("new FormData(event.currentTarget)");

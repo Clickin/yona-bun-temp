@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import type {
   SearchCounts,
   SearchInput,
@@ -61,15 +61,8 @@ const SEARCH_CATEGORIES: Array<{ countKey: keyof SearchCounts; label: string; ty
     { countKey: "reviews", label: "search.menu.reviews", type: "review" },
   ];
 
-function readSearchParams() {
-  if (typeof window === "undefined") {
-    return new URLSearchParams();
-  }
-  return new URLSearchParams(window.location.search);
-}
-
-function readSearchRouteQuery(): SearchRouteQuery {
-  const params = readSearchParams();
+function readSearchRouteQuery(locationHref: string): SearchRouteQuery {
+  const params = new URL(locationHref, "http://localhost").searchParams;
   const keyword = (params.get("keyword") ?? "").trim();
   const searchType = (params.get("searchType") ?? "").trim();
   if (!keyword || !isSearchType(searchType)) {
@@ -636,11 +629,12 @@ export function SearchRoutePage({
   scope: SearchRouteScope;
 }) {
   const navigate = useNavigate();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
-  const routeQuery = readSearchRouteQuery();
+  const routeQuery = readSearchRouteQuery(locationHref);
   const routeInvalid =
     routeQuery.invalid || (scope.type === "project" && routeQuery.input?.searchType === "project");
   const input = routeQuery.input;
