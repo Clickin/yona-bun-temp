@@ -5323,9 +5323,10 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('data-action="apply"');
     expect(viewSource).toContain('data-action="delete"');
     expect(viewSource).not.toContain("if (!props.onUpdateMemberRole) {");
-    expect(viewSource).toContain(
-      "props.onUpdateMemberRole?.(\n                                detail.organizationName,",
-    );
+    expect(viewSource).toContain("props.onUpdateMemberRole?.(");
+    expect(viewSource).toContain("detail.organizationName,");
+    expect(viewSource).toContain("member.userId,");
+    expect(viewSource).toContain("roleOption.role,");
     expect(viewSource).toContain('id="alertDeletion"');
     expect(viewSource).toContain("enrollAcceptBtn");
   });

@@ -32,14 +32,14 @@ changes may happen only after the legacy output is stable and covered.
 
 ## Subagent Slices
 
-| Slice | Scope | Primary files | Output |
-| --- | --- | --- | --- |
-| P0 Root/global shell | Navbar, user menu, sidebar entry, footer, login dialog, SPA link behavior | `frontend/src/routes/__root.tsx`, `frontend/src/app.css`, `yona-original/app/views/common/**`, legacy `_page.less` | mismatch list and smallest-first fixes |
-| P1 Project shell | Project header, project menu, breadcrumb, project home/admin/settings chrome | `frontend/src/routes/-project-views.tsx`, project route files, `frontend/src/app.css`, legacy project templates/LESS | mismatch list and smallest-first fixes |
-| P2 Issue/editor/comment | Issue list/detail/form density, editor tabs, comments, labels, milestone/sidebar controls | `frontend/src/routes/-issue-views.tsx`, issue route files, `frontend/src/app.css`, legacy issue templates/LESS | mismatch list and smallest-first fixes |
-| P3 Board/milestone/post | Board list/detail, milestone list/detail/form, post list/detail/editor | `frontend/src/routes/-board-views.tsx`, `-milestone-views.tsx`, project post routes, legacy board/milestone/post templates | mismatch list and smallest-first fixes |
-| P4 Code/PR/review | Code browser, commits, diff, PR list/detail/change/review thread | `frontend/src/routes/-pull-request-views.tsx`, code route files, legacy code/git/review templates | mismatch list and smallest-first fixes |
-| P5 Workspace/org/site-admin | User/profile/settings, organization pages, directories, admin pages, search/notification | workspace/org/site-admin/search route files, legacy user/organization/site/search templates | mismatch list and smallest-first fixes |
+| Slice                       | Scope                                                                                     | Primary files                                                                                                              | Output                                 |
+| --------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| P0 Root/global shell        | Navbar, user menu, sidebar entry, footer, login dialog, SPA link behavior                 | `frontend/src/routes/__root.tsx`, `frontend/src/app.css`, `yona-original/app/views/common/**`, legacy `_page.less`         | mismatch list and smallest-first fixes |
+| P1 Project shell            | Project header, project menu, breadcrumb, project home/admin/settings chrome              | `frontend/src/routes/-project-views.tsx`, project route files, `frontend/src/app.css`, legacy project templates/LESS       | mismatch list and smallest-first fixes |
+| P2 Issue/editor/comment     | Issue list/detail/form density, editor tabs, comments, labels, milestone/sidebar controls | `frontend/src/routes/-issue-views.tsx`, issue route files, `frontend/src/app.css`, legacy issue templates/LESS             | mismatch list and smallest-first fixes |
+| P3 Board/milestone/post     | Board list/detail, milestone list/detail/form, post list/detail/editor                    | `frontend/src/routes/-board-views.tsx`, `-milestone-views.tsx`, project post routes, legacy board/milestone/post templates | mismatch list and smallest-first fixes |
+| P4 Code/PR/review           | Code browser, commits, diff, PR list/detail/change/review thread                          | `frontend/src/routes/-pull-request-views.tsx`, code route files, legacy code/git/review templates                          | mismatch list and smallest-first fixes |
+| P5 Workspace/org/site-admin | User/profile/settings, organization pages, directories, admin pages, search/notification  | workspace/org/site-admin/search route files, legacy user/organization/site/search templates                                | mismatch list and smallest-first fixes |
 
 ## Milestone Loop
 
@@ -658,14 +658,14 @@ Completed audit subagents:
 The implementation target is nested route layouts, not a template-engine-style
 page shell and not manual DOM ownership:
 
-| Layout owner | Route file | Owns |
-| --- | --- | --- |
-| Root app shell | `frontend/src/routes/__root.tsx` | global navbar, login dialog, footer, authenticated user menu state, global SPA anchor interception only where TanStack Router owns the target |
-| Project shell | `frontend/src/routes/$owner/$projectName/route.tsx` | project header, project menu, project-scoped search context, project shell data/query boundary, then `<Outlet />` |
-| Organization shell | `frontend/src/routes/organizations/$organizationName/route.tsx` | organization header/menu/enrollment shell, organization search context, then `<Outlet />` |
-| Workspace shell | `frontend/src/routes/me/route.tsx` and `frontend/src/routes/user/editform/route.tsx` | workspace/settings tab shell and auth gate, then `<Outlet />` for settings subroutes |
-| User issues shell | `frontend/src/routes/user/issues/route.tsx` | my-issues tab/search shell and `/user/issues/new/**` nested routing |
-| Site admin shell | `frontend/src/routes/sites/$pageName/route.tsx` or a future parent route if route shape changes | site admin sidebar/top shell with legacy `siteMngLayout.scala.html` output |
+| Layout owner       | Route file                                                                                      | Owns                                                                                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Root app shell     | `frontend/src/routes/__root.tsx`                                                                | global navbar, login dialog, footer, authenticated user menu state, global SPA anchor interception only where TanStack Router owns the target |
+| Project shell      | `frontend/src/routes/$owner/$projectName/route.tsx`                                             | project header, project menu, project-scoped search context, project shell data/query boundary, then `<Outlet />`                             |
+| Organization shell | `frontend/src/routes/organizations/$organizationName/route.tsx`                                 | organization header/menu/enrollment shell, organization search context, then `<Outlet />`                                                     |
+| Workspace shell    | `frontend/src/routes/me/route.tsx` and `frontend/src/routes/user/editform/route.tsx`            | workspace/settings tab shell and auth gate, then `<Outlet />` for settings subroutes                                                          |
+| User issues shell  | `frontend/src/routes/user/issues/route.tsx`                                                     | my-issues tab/search shell and `/user/issues/new/**` nested routing                                                                           |
+| Site admin shell   | `frontend/src/routes/sites/$pageName/route.tsx` or a future parent route if route shape changes | site admin sidebar/top shell with legacy `siteMngLayout.scala.html` output                                                                    |
 
 Rules for migration into these layouts:
 
@@ -807,6 +807,9 @@ A slice is closed only when:
 - M72 continues P2/P3 attachment visual parity: legacy upload attached-file
   row sizing, truncation, progress, delete, insert, and temporary icon selectors
   are restored for issue comments and board post/comment attachments.
+- M73 continues SPA parity closure: board, PR/review, and site-admin GET filter
+  forms now call `preventDefault()` before optional navigation callbacks, so
+  missing route callbacks cannot fall through to native document navigation.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

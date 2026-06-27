@@ -823,10 +823,10 @@ export function ProjectBoardListPage(props: {
           id="option_form"
           method="get"
           onSubmit={(event) => {
+            event.preventDefault();
             if (!props.onNavigate) {
               return;
             }
-            event.preventDefault();
             const formData = new FormData(event.currentTarget);
             props.onNavigate(
               boardListHref(props.runtimeConfig, `/${ownerName}/${projectName}/posts`, {
@@ -2271,10 +2271,10 @@ export function OrganizationBoardListPage(props: {
           id="option_form"
           method="get"
           onSubmit={(event) => {
+            event.preventDefault();
             if (!props.onNavigate) {
               return;
             }
-            event.preventDefault();
             const formData = new FormData(event.currentTarget);
             props.onNavigate(
               boardListHref(

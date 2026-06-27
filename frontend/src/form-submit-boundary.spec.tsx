@@ -8,13 +8,7 @@ type AllowedDefaultGetActionForm = {
   reason: string;
 };
 
-const allowedDefaultGetActionForms: AllowedDefaultGetActionForm[] = [
-  {
-    file: "routes/__root.tsx",
-    marker: 'name="gnb-search-form"',
-    reason: "legacy common/navbar.scala.html omits method for the global search GET form",
-  },
-];
+const allowedDefaultGetActionForms: AllowedDefaultGetActionForm[] = [];
 
 const formPostPattern = /(?:^|\s)method\s*=\s*(?:"post"|'post'|\{\s*["']post["']\s*\})/gi;
 const forbiddenReactOwnedLegacyActions = [
@@ -49,6 +43,7 @@ const allowedIndirectSubmitHandlers = [
   { file: "routes/-pull-request-views.tsx", handler: "submitBlockReview" },
   { file: "routes/-pull-request-views.tsx", handler: "submitInlineComment" },
   { file: "routes/-pull-request-views.tsx", handler: "submitNonRangedComment" },
+  { file: "routes/__root.tsx", handler: "handleSearchSubmit" },
   { file: "routes/sites/$pageName/route.tsx", handler: "handleSubmit" },
   { file: "routes/sites/$pageName/route.tsx", handler: "handleImportSubmit" },
 ];

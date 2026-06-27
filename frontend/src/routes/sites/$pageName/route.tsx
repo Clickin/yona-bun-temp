@@ -1080,10 +1080,10 @@ export function SiteAdminUserListPage({
                   className="form-search pull-right"
                   method="get"
                   onSubmit={(event) => {
+                    event.preventDefault();
                     if (!onNavigate) {
                       return;
                     }
-                    event.preventDefault();
                     const formData = new FormData(event.currentTarget);
                     onNavigate(
                       siteUserListHref({
@@ -1220,10 +1220,10 @@ export function SiteAdminProjectListPage({
                   className="form-search pull-right"
                   method="get"
                   onSubmit={(event) => {
+                    event.preventDefault();
                     if (!onNavigate) {
                       return;
                     }
-                    event.preventDefault();
                     const formData = new FormData(event.currentTarget);
                     onNavigate(
                       siteProjectListHref({

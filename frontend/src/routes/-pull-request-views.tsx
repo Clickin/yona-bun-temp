@@ -608,10 +608,10 @@ function ProjectPullRequestSearchForm(props: {
       method="get"
       name="search"
       onSubmit={(event) => {
+        event.preventDefault();
         if (!props.onNavigate) {
           return;
         }
-        event.preventDefault();
         const formData = new FormData(event.currentTarget);
         const filter = String(formData.get("filter") ?? "");
         const contributorId = Number(formData.get("contributorId") || "0");
@@ -697,10 +697,10 @@ function OrganizationPullRequestSearchForm(props: {
       method="get"
       name="search"
       onSubmit={(event) => {
+        event.preventDefault();
         if (!props.onNavigate) {
           return;
         }
-        event.preventDefault();
         const formData = new FormData(event.currentTarget);
         const filter = String(formData.get("filter") ?? "");
         const queryString = organizationPullRequestQueryString(props.query, {
@@ -4153,10 +4153,10 @@ export function ProjectReviewsPage(props: {
               method="get"
               name="search"
               onSubmit={(event) => {
+                event.preventDefault();
                 if (!props.onNavigate) {
                   return;
                 }
-                event.preventDefault();
                 const formData = new FormData(event.currentTarget);
                 props.onNavigate(
                   reviewsHref(
