@@ -139,6 +139,26 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
+  await page.route(apiV1Route("/organizations/weblabs/container"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        adminMembers: [],
+        description: "Web Labs",
+        enrollmentRequested: false,
+        logoUrl: "",
+        memberMembers: [],
+        organizationName: "weblabs",
+        viewerCanCreateProject: false,
+        viewerCanEnroll: false,
+        viewerCanLeave: false,
+        viewerCanUpdate: false,
+        visibleProjects: [],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
   await page.route(apiV1Route("/owners/admin/projects/projectYobi/container"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({

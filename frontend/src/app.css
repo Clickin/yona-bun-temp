@@ -2792,6 +2792,14 @@ div.markdown-preview {
   opacity: 0.2;
 }
 
+.board-view .board-comment-wrap .comments .act-row .btn-transparent {
+  display: inline-block;
+  min-width: 20px;
+  min-height: 20px;
+  line-height: 20px;
+  outline: none;
+}
+
 .board-view .board-comment-wrap .comments .act-row i:hover,
 .board-view .board-comment-wrap .comments .act-row .yobicon-hearts:hover {
   color: #51aacc;

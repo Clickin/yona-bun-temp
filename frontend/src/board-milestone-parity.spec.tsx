@@ -218,6 +218,10 @@ describe("board/milestone UI parity closure", () => {
     const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
     expect(appCss).toContain(".attached-file .name {");
     expect(appCss).toContain("max-width: 250px;");
+    expect(appCss).toContain(
+      ".board-view .board-comment-wrap .comments .act-row .btn-transparent {",
+    );
+    expect(appCss).toContain("min-width: 20px;");
     expect(html).toContain('data-resource-type="NONISSUE_COMMENT"');
     expect(html).toContain("comment.png");
   });

@@ -250,6 +250,25 @@ M16 continues board shell migration:
 - Verification for this slice: `pnpm --dir frontend exec tsc --noEmit` and
   `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
 
+M16a stabilizes board detail browser parity:
+
+- `post/$postNumber/route.tsx` now derives the edit/detail mode from TanStack
+  Router state instead of `window.location`, so SPA navigation from
+  `/post/:postNumber/editform` back to `/post/:postNumber` renders the detail
+  view without a document reload.
+- Board and issue comment edit forms now override the legacy
+  `.comment-update-form { display: none; }` rule only while React has rendered
+  the active editor, preserving the legacy hidden default while making the
+  browser-visible edit flow usable.
+- Board comment action buttons keep the legacy transparent icon styling with a
+  stable 20px hit area, and comment delete stays inside the React event
+  boundary even though the legacy `data-request-uri` marker remains rendered.
+- Organization board browser proof now includes the parent organization
+  container fixture required by the nested layout.
+- Verification for this slice: `pnpm --dir frontend test`;
+  `pnpm --dir frontend exec tsc --noEmit`;
+  `pnpm --dir frontend test:e2e -- board-posting-parity.e2e.ts`.
+
 M17 starts issue list/detail shell migration:
 
 - `/$owner/$projectName/route.tsx` now owns the legacy project

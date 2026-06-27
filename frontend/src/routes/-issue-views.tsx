@@ -5372,7 +5372,11 @@ function IssueCommentEditForm(props: {
   const [contentsMarkdown, setContentsMarkdown] = React.useState(props.initialContents);
   const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   return (
-    <div className="comment-update-form" id={`comment-editform-${props.commentId}`}>
+    <div
+      className="comment-update-form"
+      id={`comment-editform-${props.commentId}`}
+      style={{ display: "block" }}
+    >
       <form
         action={props.action}
         encType="multipart/form-data"

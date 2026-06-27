@@ -1404,7 +1404,10 @@ export function ProjectBoardDetailPage(props: {
                                   className="btn-transparent ml6"
                                   data-request-uri={commentAction}
                                   data-toggle="comment-delete"
-                                  onClick={() => void props.onCommentDelete?.(comment.id)}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    void props.onCommentDelete?.(comment.id);
+                                  }}
                                   title={legacyMessage(props.messages, "common.comment.delete")}
                                   type="button"
                                 >
@@ -1420,6 +1423,9 @@ export function ProjectBoardDetailPage(props: {
                             className="comment-update-form"
                             hidden={editingCommentId !== comment.id}
                             id={`comment-editform-${comment.id}`}
+                            style={
+                              editingCommentId === comment.id ? { display: "block" } : undefined
+                            }
                           >
                             <form
                               action={commentAction}

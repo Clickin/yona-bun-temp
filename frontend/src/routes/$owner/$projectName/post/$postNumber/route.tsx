@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   createPostCommentRest,
   deletePostCommentRest,
@@ -34,11 +34,12 @@ function BoardDetailRouteComponent() {
     useAppRuntime();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const routePathname = useRouterState({ select: (state) => state.location.pathname });
   const routeHref = `/${owner}/${projectName}/post/${postNumber}`;
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
-  const isEditFormRoute = window.location.pathname.endsWith("/editform");
+  const isEditFormRoute = routePathname.endsWith("/editform");
   const postQueryOptions = readProjectPostQueryOptions(runtimeConfig, {
     ownerName: owner,
     postNumber,

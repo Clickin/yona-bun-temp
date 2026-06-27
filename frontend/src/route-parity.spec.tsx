@@ -2335,6 +2335,9 @@ describe("file-route parity harness", () => {
       'useDocumentTitle(postQuery.data?.title ?? "menu.board")',
     );
     expect(boardDetailRouteSource).toContain("useNavigate");
+    expect(boardDetailRouteSource).toContain("useRouterState");
+    expect(boardDetailRouteSource).toContain("state.location.pathname");
+    expect(boardDetailRouteSource).not.toContain("window.location.pathname.endsWith");
     expect(boardDetailRouteSource).toContain("prefixBasePath");
     expect(boardDetailRouteSource).not.toContain("navigateToAppHref(");
     expect(boardDetailRouteSource).toContain("error.badrequest");
@@ -2698,6 +2701,9 @@ describe("file-route parity harness", () => {
     expect(detailHtml).toContain('data-comment-id="9"');
     expect(detailHtml).toContain('id="comment-editform-9"');
     expect(detailHtml).toContain('class="comment-update-form"');
+    expect(boardViewsSource).toContain(
+      'editingCommentId === comment.id ? { display: "block" } : undefined',
+    );
     expect(detailHtml).toContain('data-toggle="markdown-editor"');
     expect(detailHtml).toContain('href="#edit-9"');
     expect(detailHtml).toContain('href="#preview-9"');
