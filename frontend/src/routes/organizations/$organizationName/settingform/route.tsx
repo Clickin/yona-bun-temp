@@ -1,17 +1,17 @@
 import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { readOrganizationContainer, updateOrganization } from "../../../../auth-workspace-client";
-import { useAppRuntime } from "../../../../app-runtime-context";
-import { prefixBasePath } from "../../../../runtime-config";
-import { OrganizationSettingsPage } from "../../../-organization-views";
+import { readOrganizationContainer, updateOrganization } from "@/auth-workspace-client";
+import { useAppRuntime } from "@/app-runtime-context";
+import { toOrganizationContainerView } from "@/app-view-models";
+import { prefixBasePath } from "@/runtime-config";
+import { OrganizationSettingsPage } from "@/routes/-organization-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
   useRequireAuthenticatedRoute,
-} from "../../../-shared";
-import { toOrganizationContainerView } from "../../../../app-view-models";
+} from "@/routes/-shared";
 
 export const Route = createFileRoute("/organizations/$organizationName/settingform")({
   component: OrganizationSettingsRouteComponent,

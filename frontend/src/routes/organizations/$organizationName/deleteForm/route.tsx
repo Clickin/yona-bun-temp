@@ -1,17 +1,17 @@
 import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { deleteOrganization, readOrganizationAdmin } from "../../../../auth-workspace-client";
-import { useAppRuntime } from "../../../../app-runtime-context";
-import { toOrganizationAdminView } from "../../../../app-view-models";
-import { prefixBasePath } from "../../../../runtime-config";
-import { OrganizationDeletePage } from "../../../-organization-views";
+import { deleteOrganization, readOrganizationAdmin } from "@/auth-workspace-client";
+import { useAppRuntime } from "@/app-runtime-context";
+import { toOrganizationAdminView } from "@/app-view-models";
+import { prefixBasePath } from "@/runtime-config";
+import { OrganizationDeletePage } from "@/routes/-organization-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
   useRequireAuthenticatedRoute,
-} from "../../../-shared";
+} from "@/routes/-shared";
 
 export const Route = createFileRoute("/organizations/$organizationName/deleteForm")({
   component: OrganizationDeleteRouteComponent,

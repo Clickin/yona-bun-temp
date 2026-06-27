@@ -5347,6 +5347,8 @@ describe("file-route parity harness", () => {
       "utf8",
     );
     expect(newRouteSource).toContain("createOrganization");
+    expect(newRouteSource).toContain('from "@/auth-workspace-client"');
+    expect(newRouteSource).toContain('from "@/routes/-organization-views"');
     expect(newRouteSource).toContain("error.badrequest");
     expect(newRouteSource).toContain("useNavigate");
     expect(newRouteSource).toContain("prefixBasePath");
@@ -5362,6 +5364,8 @@ describe("file-route parity harness", () => {
     expect(settingsRouteSource).toContain('"bad-request"');
     expect(settingsRouteSource).toContain("readOrganizationContainer");
     expect(settingsRouteSource).toContain("updateOrganization");
+    expect(settingsRouteSource).toContain('from "@/auth-workspace-client"');
+    expect(settingsRouteSource).toContain('from "@/routes/-organization-views"');
     expect(settingsRouteSource).toContain("error.badrequest");
     expect(settingsRouteSource).toContain("useNavigate");
     expect(settingsRouteSource).toContain("prefixBasePath");
@@ -5406,6 +5410,8 @@ describe("file-route parity harness", () => {
     expect(routeSource).toContain('"bad-request"');
     expect(routeSource).toContain("readOrganizationAdmin");
     expect(routeSource).toContain("deleteOrganization");
+    expect(routeSource).toContain('from "@/auth-workspace-client"');
+    expect(routeSource).toContain('from "@/routes/-organization-views"');
     expect(routeSource).toContain("useNavigate");
     expect(routeSource).toContain("prefixBasePath");
     expect(routeSource).not.toContain("navigateToAppHref");

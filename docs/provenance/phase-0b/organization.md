@@ -73,6 +73,12 @@
 - 2026-06-26 Round 2 browser-visible follow-up: `frontend/tests/organization-directory-admin-parity.e2e.ts` now proves direct `/orgs` under `/yona` plus organization home filter/create/leave modal, settings save redirect, member typeahead/add/role/delete modal, and deleteForm confirmation/redirect. `frontend/src/routes/-organization-views.tsx` makes organization member/delete confirmation modals React-state-visible with legacy Bootstrap modal classes instead of relying on missing Bootstrap JavaScript.
 - 2026-06-27 modal class follow-up: organization member delete and deleteForm confirmation modals now match legacy `organization/members.scala.html` and `organization/deleteForm.scala.html` by rendering `#alertDeletion` with `class="modal hide"` and no `fade` class while still adding React-controlled `in`/display state only when open.
 - 2026-06-27 directory/create browser proof follow-up: `frontend/tests/directory-create-import-proof.e2e.ts` now drives `/orgs?filter=match&pageNum=1` under the mounted `/yona` base path, clicks legacy `#pagination.page-navigation-wrap` next/previous controls, asserts query-preserving page state and created metadata, and verifies `/organizations/new` invalid-name blocking plus valid REST JSON create payload and redirect. The same proof found a mounted-base double-prefix bug in shared directory pagination; `frontend/src/routes/-directory-views.tsx` now strips the runtime base path before re-prefixing legacy pagination links.
+- 2026-06-27 source alias follow-up: Vite and TypeScript resolve `@/*` to
+  `frontend/src/*`; the representative organization create/settings/delete
+  route modules now use the alias for shared clients/view components without
+  changing legacy DOM output or REST mutation behavior. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -t
+  "organization create/settings routes|organization delete route"`.
 - The members view now restores legacy ordering semantics: org admins first, org members second, login-id ascending within each group, and pending enrollment requests in a separate ascending block.
 - Direct entry semantics now match legacy intent on the mounted React routes: anonymous viewers redirect to login with return-path, authenticated forbidden viewers receive a forbidden shell, and missing organizations receive a not-found shell.
 - Phase 2F restores organization issue listing body parity with visible-project aggregation, core GET filters, state tabs, project selector, sort links, empty state, and pagination.

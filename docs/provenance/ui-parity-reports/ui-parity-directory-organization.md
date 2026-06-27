@@ -35,6 +35,8 @@ Current evidence:
 - `frontend/src/api/org-project.ts`
 - `frontend/src/auth-workspace-client.ts`
 - `frontend/src/app-view-models.ts`
+- `frontend/vite.config.ts` and `frontend/tsconfig.json` for the `@/*`
+  source alias used by representative organization mutation routes.
 - `crates/server/src/routes/projects/organizations.rs`
 - `crates/server/tests/rest_contract.rs`
 - `frontend/tests/directory-create-import-proof.e2e.ts`

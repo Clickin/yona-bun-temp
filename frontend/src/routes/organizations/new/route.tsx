@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { createOrganization } from "../../../auth-workspace-client";
-import { useAppRuntime } from "../../../app-runtime-context";
-import { prefixBasePath } from "../../../runtime-config";
-import { OrganizationNewPage } from "../../-organization-views";
-import { useRequireAuthenticatedRoute } from "../../-shared";
+import { createOrganization } from "@/auth-workspace-client";
+import { useAppRuntime } from "@/app-runtime-context";
+import { prefixBasePath } from "@/runtime-config";
+import { OrganizationNewPage } from "@/routes/-organization-views";
+import { useRequireAuthenticatedRoute } from "@/routes/-shared";
 
 export const Route = createFileRoute("/organizations/new")({
   component: OrganizationNewRouteComponent,

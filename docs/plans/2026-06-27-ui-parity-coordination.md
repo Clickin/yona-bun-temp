@@ -789,7 +789,9 @@ A slice is closed only when:
   while preserving legacy auth/setup form output and base-path handling.
 - M60 establishes the frontend source import alias baseline: Vite and
   TypeScript now resolve `@/*` to `frontend/src/*`, and representative deep
-  route imports were rewritten without changing runtime output.
+  route imports were rewritten without changing runtime output. Current
+  representative coverage includes the organization create/settings/delete
+  mutation routes.
 - M61 closes the P0 root search-scope dropdown CSS gap: `.gnb-search-form`
   now carries the legacy `_page.less` dropdown item clear/float and anchor
   padding/line-height rules without broadening the search icon button selector.
