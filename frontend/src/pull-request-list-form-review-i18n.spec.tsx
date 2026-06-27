@@ -153,6 +153,7 @@ describe("PR list/form/review-list legacy i18n opt-in", () => {
     expect(layoutSource).toContain('shellClassName: "pull-request-page"');
     for (const routeSource of listRouteSources) {
       expect(routeSource).toContain("renderShell={false}");
+      expect(routeSource).not.toContain("window.location.search");
     }
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="row-fluid cb"');

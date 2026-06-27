@@ -56,7 +56,7 @@ function UserIssuesLeafRouteComponent() {
     setReadFailed(false);
     void (async () => {
       try {
-        const searchParams = new URLSearchParams(window.location.search);
+        const searchParams = new URL(locationHref, "http://localhost").searchParams;
         const nextQuery = {
           filter: searchParams.get("filter") || "assigned",
           orderBy: searchParams.get("orderBy") || "updatedDate",

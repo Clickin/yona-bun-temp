@@ -322,6 +322,7 @@ describe("file-route parity harness", () => {
     expect(issueListRouteSource).toContain('"bad-request"');
     expect(issueListRouteSource).toContain('searchParams.get("dueDate")');
     expect(issueListRouteSource).not.toContain("window.location.pathname");
+    expect(issueListRouteSource).not.toContain("window.location.search");
     const issueViewsSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-issue-views.tsx"),
       "utf8",

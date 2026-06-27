@@ -845,6 +845,11 @@ A slice is closed only when:
   route already passes it through params; `/user/issues` and `/user/issues/new`
   parent routes now choose their nested outlets from TanStack Router state, and
   the direct issue create form reads `commentId` from the router href.
+- M76 continues query-state SPA closure: project/organization PR list filters
+  and project/organization/user issue list filters now parse query parameters
+  from TanStack Router href state instead of `window.location.search`, so
+  in-app filter and pagination navigation cannot reuse stale browser-global
+  query values.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

@@ -59,7 +59,7 @@ function OrganizationIssuesRouteComponent() {
     setFailureKind(null);
     void (async () => {
       try {
-        const searchParams = new URLSearchParams(window.location.search);
+        const searchParams = new URL(locationHref, "http://localhost").searchParams;
         const projectNames = [
           ...searchParams.getAll("projectNames"),
           ...searchParams.getAll("projectNames[]"),

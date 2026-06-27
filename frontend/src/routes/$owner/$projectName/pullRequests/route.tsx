@@ -27,8 +27,8 @@ function ProjectPullRequestsRouteComponent() {
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  useRouterState({ select: (state) => state.location.href });
-  const searchParams = new URLSearchParams(window.location.search);
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const searchParams = new URL(locationHref, "http://localhost").searchParams;
   const filter = searchParams.get("filter") ?? "";
   const pageNum = Number(searchParams.get("pageNum") || "1");
   const contributorId = Number(searchParams.get("contributorId") || "0");

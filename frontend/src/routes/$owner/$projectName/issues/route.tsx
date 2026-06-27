@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import {
   listProjectIssues,
   listProjectLabels,
@@ -30,6 +30,7 @@ export const Route = createFileRoute("/$owner/$projectName/issues")({
 function ProjectIssuesRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig } = useAppRuntime();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const routeHref = `/${owner}/${projectName}/issues`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -51,7 +52,7 @@ function ProjectIssuesRouteComponent() {
     setFailureKind(null);
     void (async () => {
       try {
-        const searchParams = new URLSearchParams(window.location.search);
+        const searchParams = new URL(locationHref, "http://localhost").searchParams;
         const nextQuery = issueListQueryFromSearchParams(searchParams);
         const [nextDetail, nextIssueList, nextLabels, nextMilestones] = await Promise.all([
           readProjectContainer(runtimeConfig, owner, projectName),
@@ -109,7 +110,7 @@ function ProjectIssuesRouteComponent() {
     return () => {
       cancelled = true;
     };
-  }, [owner, projectName, runtimeConfig]);
+  }, [locationHref, owner, projectName, runtimeConfig]);
 
   React.useEffect(() => loadIssues(), [loadIssues]);
 

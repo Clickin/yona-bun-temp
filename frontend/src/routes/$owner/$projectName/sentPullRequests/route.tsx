@@ -22,8 +22,8 @@ function SentPullRequestsRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();
-  useRouterState({ select: (state) => state.location.href });
-  const searchParams = new URLSearchParams(window.location.search);
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const searchParams = new URL(locationHref, "http://localhost").searchParams;
   const filter = searchParams.get("filter") ?? "";
   const pageNum = Number(searchParams.get("pageNum") || "1");
   const containerQuery = useQuery({
