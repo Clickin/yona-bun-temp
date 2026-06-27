@@ -964,6 +964,13 @@ describe("auth and workspace views", () => {
       expect(source, routeFile).not.toContain("fetch(");
       expect(source, routeFile).not.toContain('method: "POST"');
     }
+
+    const loginRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/users/loginform/route.tsx"),
+      "utf8",
+    );
+    expect(loginRouteSource).toContain("useCurrentHref");
+    expect(loginRouteSource).not.toContain("window.location.search");
   });
 
   it("keeps the root login dialog redirect inside TanStack navigation", () => {

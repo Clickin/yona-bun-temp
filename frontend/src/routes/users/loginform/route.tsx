@@ -71,8 +71,7 @@ function LoginRouteComponent() {
           const session = await signInWithPassword(runtimeConfig, csrfToken, input);
           setCurrentSession(session);
           await refreshWorkspace(session);
-          const searchParams =
-            typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
+          const searchParams = new URL(currentHref, "http://localhost").searchParams;
           const nextHref = resolvePostAuthHref(
             resolveAuthRedirectPath(searchParams),
             session.defaultLandingPath,
