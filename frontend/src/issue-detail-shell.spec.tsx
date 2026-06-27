@@ -63,6 +63,20 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(appCss).toContain("transform: rotate(45deg);");
   });
 
+  it("keeps legacy issue event index spacing CSS", () => {
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+
+    expect(appCss).toContain(".issue-detail-page .comments .event {");
+    expect(appCss).toContain("padding: 2px 0 2px 55px;");
+    expect(appCss).toContain(".issue-detail-page .comments .event.event-index");
+    expect(appCss).toContain("font-size: 12px;");
+    expect(appCss).toContain("line-height: normal;");
+    expect(appCss).toContain(".issue-detail-page .comments .event .state");
+    expect(appCss).toContain("margin-right: 10px;");
+    expect(appCss).toContain(".issue-detail-page .comments .event.event-index .state");
+    expect(appCss).toContain("padding: 1px 3px;");
+  });
+
   it("matches legacy issue label text contrast classes", () => {
     expect(legacyIssueLabelTextClass("#ffffff")).toBe("dimgray");
     expect(legacyIssueLabelTextClass("#f44336")).toBe("white");

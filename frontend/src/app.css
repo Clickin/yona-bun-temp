@@ -2755,10 +2755,16 @@ div.markdown-preview {
   line-height: 30px;
 }
 
+.issue-detail-page .comments .event.event-index {
+  padding: 0;
+  font-size: 12px;
+  line-height: normal;
+}
+
 .issue-detail-page .comments .event .state {
   display: inline-block;
   width: 90px;
-  margin-right: 8px;
+  margin-right: 10px;
   padding: 6px 0;
   color: #fff;
   font-weight: bold;
@@ -2766,6 +2772,12 @@ div.markdown-preview {
   text-align: center;
   background: #777;
   border-radius: 5px;
+}
+
+.issue-detail-page .comments .event.event-index .state {
+  width: auto;
+  margin-right: 0;
+  padding: 1px 3px;
 }
 
 .issue-detail-page .comments .event .state i {
