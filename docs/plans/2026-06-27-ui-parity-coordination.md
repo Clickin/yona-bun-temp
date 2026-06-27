@@ -788,6 +788,9 @@ A slice is closed only when:
 - M66 continues P2 issue/comment geometry: global write-comment editor spacing,
   disabled textarea sizing, comment textarea height, upload-wrap background,
   and markdown preview box rules now follow legacy `_page.less`.
+- M67 continues P2 comment bubble geometry: issue comment media-body arrow
+  positioning now uses the legacy `.comment` coordinate system and `top/left`
+  values from `_page.less`.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

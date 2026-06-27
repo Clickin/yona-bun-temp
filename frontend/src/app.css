@@ -2605,7 +2605,7 @@ div.markdown-preview {
 }
 
 .issue-detail-page .board-comment-wrap .comments .media-body {
-  position: relative;
+  position: static;
   margin-left: 52px;
   background-color: #fff;
   border: 1px solid #bdc3c7;
@@ -2614,8 +2614,8 @@ div.markdown-preview {
 
 .issue-detail-page .board-comment-wrap .comments .media-body::before {
   position: absolute;
-  top: 13px;
-  left: -6px;
+  top: 23px;
+  left: 47px;
   width: 9px;
   height: 9px;
   content: " ";
