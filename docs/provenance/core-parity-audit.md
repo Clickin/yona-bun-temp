@@ -2397,6 +2397,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   from the router href. Focused coverage:
   `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx src/board-milestone-parity.spec.tsx src/pull-request-review-i18n.spec.tsx`
   and `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 route-state SPA follow-up: PR changes, `/user/issues`, and
+  `/user/issues/new` removed parent/child route decisions from
+  `window.location.pathname`; direct issue create now reads `commentId` from the
+  TanStack Router href. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx src/pull-request-review-i18n.spec.tsx`
+  and `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

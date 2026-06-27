@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   createIssue,
   listProjectMilestones,
@@ -27,7 +27,8 @@ export const Route = createFileRoute("/user/issues/new")({
 });
 
 function DirectIssueCreateRouteComponent() {
-  if (window.location.pathname.endsWith("/mine")) {
+  const routePathname = useRouterState({ select: (state) => state.location.pathname });
+  if (routePathname.endsWith("/mine")) {
     return <Outlet />;
   }
 
@@ -38,6 +39,7 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
   const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(props.routeHref);
   const navigate = useNavigate();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const [options, setOptions] = React.useState<Awaited<
     ReturnType<typeof readDirectIssueFormOptions>
   > | null>(null);
@@ -61,7 +63,7 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
     setDetail(null);
     void (async () => {
       try {
-        const searchParams = new URLSearchParams(window.location.search);
+        const searchParams = new URL(locationHref, "http://localhost").searchParams;
         const nextOptions = await readDirectIssueFormOptions(runtimeConfig, {
           commentId: searchParams.get("commentId"),
           mine: props.mine,
@@ -104,7 +106,7 @@ export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; rou
     return () => {
       cancelled = true;
     };
-  }, [canRender, props.mine, runtimeConfig]);
+  }, [canRender, locationHref, props.mine, runtimeConfig]);
 
   if (bootstrapping || !canRender) {
     return (

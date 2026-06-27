@@ -31,25 +31,13 @@ export const Route = createFileRoute("/$owner/$projectName/pullRequest/$pullRequ
 
 function PullRequestChangesRouteComponent() {
   const { owner, projectName, pullRequestNumber } = Route.useParams();
-  const selectedCommitId = selectedCommitIdFromPath(window.location.pathname, pullRequestNumber);
   return (
     <PullRequestChangesRouteContent
       owner={owner}
       projectName={projectName}
       pullRequestNumber={pullRequestNumber}
-      selectedCommitId={selectedCommitId}
     />
   );
-}
-
-function selectedCommitIdFromPath(pathname: string, pullRequestNumber: string) {
-  const marker = `/pullRequest/${pullRequestNumber}/changes/`;
-  const markerIndex = pathname.indexOf(marker);
-  if (markerIndex < 0) {
-    return undefined;
-  }
-  const encoded = pathname.slice(markerIndex + marker.length).split("/")[0] ?? "";
-  return encoded ? decodeURIComponent(encoded) : undefined;
 }
 
 function updateChangesThreadBuckets(

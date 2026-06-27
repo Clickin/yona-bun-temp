@@ -840,6 +840,11 @@ A slice is closed only when:
   routing state from `useRouterState` instead of `window.location`, matching the
   fixed board detail route and preserving nested-layout transitions without a
   document reload dependency.
+- M75 continues route-state SPA closure: PR changes no longer parses selected
+  commit state from `window.location.pathname`, because the `$commitId` child
+  route already passes it through params; `/user/issues` and `/user/issues/new`
+  parent routes now choose their nested outlets from TanStack Router state, and
+  the direct issue create form reads `commentId` from the router href.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

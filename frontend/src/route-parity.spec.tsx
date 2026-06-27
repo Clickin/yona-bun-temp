@@ -321,6 +321,7 @@ describe("file-route parity harness", () => {
     expect(issueListRouteSource).toContain("BadRequestPage");
     expect(issueListRouteSource).toContain('"bad-request"');
     expect(issueListRouteSource).toContain('searchParams.get("dueDate")');
+    expect(issueListRouteSource).not.toContain("window.location.pathname");
     const issueViewsSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-issue-views.tsx"),
       "utf8",
@@ -347,8 +348,11 @@ describe("file-route parity harness", () => {
     expect(directIssueFormRouteSource).toContain("BadRequestPage");
     expect(directIssueFormRouteSource).toContain('"bad-request"');
     expect(directIssueFormRouteSource).toContain("useNavigate");
+    expect(directIssueFormRouteSource).toContain("useRouterState");
     expect(directIssueFormRouteSource).toContain("prefixBasePath");
     expect(directIssueFormRouteSource).not.toContain("navigateToAppHref");
+    expect(directIssueFormRouteSource).not.toContain("window.location.pathname");
+    expect(directIssueFormRouteSource).not.toContain("window.location.search");
     const directMyIssueFormRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/user/issues/new/mine/route.tsx"),
       "utf8",

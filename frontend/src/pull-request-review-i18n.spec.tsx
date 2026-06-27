@@ -161,6 +161,7 @@ describe("pull request review legacy i18n opt-in", () => {
     expect(layoutSource).toContain('activeMenu: "pullRequest"');
     expect(layoutSource).toContain('shellClassName: "pull-request-page"');
     expect(changesRouteSource).toContain("renderShell={false}");
+    expect(changesRouteSource).not.toContain("window.location.pathname");
     expect(commitRouteSource).toContain("PullRequestChangesRouteContent");
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="code-browse-wrap"');

@@ -12,7 +12,8 @@ export const Route = createFileRoute("/user/issues")({
 });
 
 function UserIssuesRouteComponent() {
-  if (window.location.pathname.includes("/user/issues/new")) {
+  const routePathname = useRouterState({ select: (state) => state.location.pathname });
+  if (routePathname.includes("/user/issues/new")) {
     return <Outlet />;
   }
 
