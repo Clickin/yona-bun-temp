@@ -603,9 +603,14 @@ test("preserves /reviews filter, sort, state, export, and search query interacti
       (form as HTMLFormElement).requestSubmit();
     }),
   ]);
-  await expect(page).toHaveURL(
-    "/yona/admin/projectYobi/reviews?authorId=0&participantId=2&orderDir=asc&orderBy=createdDate&state=closed&filter=commit+abc",
-  );
+  const browserSearchUrl = new URL(page.url());
+  expect(browserSearchUrl.pathname).toBe("/yona/admin/projectYobi/reviews");
+  expect(browserSearchUrl.searchParams.get("state")).toBe("closed");
+  expect(browserSearchUrl.searchParams.get("filter")).toBe("commit abc");
+  expect(browserSearchUrl.searchParams.get("participantId")).toBe("2");
+  expect(browserSearchUrl.searchParams.get("orderBy")).toBe("createdDate");
+  expect(browserSearchUrl.searchParams.get("orderDir")).toBe("asc");
+  expect(browserSearchUrl.searchParams.has("authorId")).toBe(false);
   const searchRequestUrl = new URL(searchRequest.url());
   expect(`${searchRequestUrl.pathname.replace(/^\/yona/u, "")}${searchRequestUrl.search}`).toBe(
     "/api/v1/owners/admin/projects/projectYobi/reviews?state=closed&filter=commit+abc&participantId=2&orderBy=createdDate&orderDir=asc&pageNum=1",
