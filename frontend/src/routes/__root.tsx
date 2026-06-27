@@ -15,7 +15,6 @@ import { AppRuntimeProvider, useAppRuntime } from "../app-runtime-context";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { LegacyLoginDialog, resolvePostAuthHref } from "./-auth-views";
-import { navigateToAppHref } from "./-shared";
 import type { WorkspaceOverviewViewModel } from "./-view-models";
 
 export interface AppRouterContext {
@@ -1549,6 +1548,7 @@ function RootAnonymousMenu({ onOpenLoginDialog }: { onOpenLoginDialog: () => voi
 }
 
 function RootLoginDialog({ onClose, open }: { onClose: () => void; open: boolean }) {
+  const navigate = useNavigate();
   const {
     authUiCapabilities,
     csrfToken,
@@ -1587,10 +1587,12 @@ function RootLoginDialog({ onClose, open }: { onClose: () => void; open: boolean
           const session = await signInWithPassword(runtimeConfig, csrfToken, input);
           setCurrentSession(session);
           await refreshWorkspace(session);
-          navigateToAppHref(
-            runtimeConfig.basePath,
-            resolvePostAuthHref(null, session.defaultLandingPath),
-          );
+          void navigate({
+            href: prefixBasePath(
+              runtimeConfig.basePath,
+              resolvePostAuthHref(null, session.defaultLandingPath),
+            ),
+          });
         } catch (error) {
           setDialogErrorMessage(legacyLoginFailureMessage(error));
         } finally {

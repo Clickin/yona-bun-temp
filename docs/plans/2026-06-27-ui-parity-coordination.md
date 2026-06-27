@@ -765,6 +765,9 @@ A slice is closed only when:
 - M58 continues import mutation SPA navigation: project Git import and site
   data import keep their existing REST/file-form boundaries, then redirect
   through TanStack Router navigation instead of the full document reload helper.
+- M59 removes the remaining route-owned full-reload helper usage: root login
+  dialog and `/secret` setup now redirect through TanStack Router navigation
+  while preserving legacy auth/setup form output and base-path handling.
 - Follow-up modernization after parity slices: introduce a Vite/TypeScript
   import alias for frontend source imports and mechanically rewrite deep
   relative imports in a separate no-behavior-change migration.

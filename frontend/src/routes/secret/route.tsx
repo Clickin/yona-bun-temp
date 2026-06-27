@@ -1,10 +1,10 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RestApiError } from "../../api/rest-client";
 import { setupSecretAdminRest } from "../../api/auth";
 import { useAppRuntime } from "../../app-runtime-context";
 import { prefixBasePath } from "../../runtime-config";
-import { navigateToAppHref, NotFoundPage, useDocumentTitle } from "../-shared";
+import { NotFoundPage, useDocumentTitle } from "../-shared";
 
 export const Route = createFileRoute("/secret")({
   component: SecretAdminSetupRouteComponent,
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/secret")({
 function SecretAdminSetupRouteComponent() {
   const { authUiCapabilities, bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } =
     useAppRuntime();
+  const navigate = useNavigate();
   const [formState, setFormState] = React.useState({
     emailAddress: "",
     name: "",
@@ -66,7 +67,12 @@ function SecretAdminSetupRouteComponent() {
                       csrfToken,
                       formState,
                     );
-                    navigateToAppHref(runtimeConfig.basePath, response.restartPath || "/restart");
+                    void navigate({
+                      href: prefixBasePath(
+                        runtimeConfig.basePath,
+                        response.restartPath || "/restart",
+                      ),
+                    });
                   } catch (error) {
                     setErrorMessage(secretSetupFailureMessage(error));
                   } finally {

@@ -68,6 +68,12 @@
   `frontend/src/project-import-parity.spec.tsx`,
   `frontend/src/site-admin-data-parity.spec.tsx`, and
   `frontend/src/form-submit-boundary.spec.tsx`.
+- Root login dialog and `/secret` setup redirects now stay inside TanStack
+  Router navigation while preserving the legacy auth/setup DOM and mounted base
+  path behavior. Route-owned `navigateToAppHref` usage is eliminated; the
+  helper remains only as a shared fallback utility until callers outside route
+  ownership are audited. Focused guards: `frontend/src/auth-workspace-shell.spec.tsx`
+  and `frontend/src/route-parity.spec.tsx`.
 - Direct `window.location` navigation in route source is limited to shared app-base fallback helpers; route-owned filter, pagination, code branch, and history transitions use TanStack navigation. Focused guard: `frontend/src/route-parity.spec.tsx`.
 - React-owned project/organization leave, enrollment, and project-watch click
   mutations keep legacy `href`/`data-href` anchors for parity, but clicks call

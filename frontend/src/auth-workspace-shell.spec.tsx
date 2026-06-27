@@ -921,6 +921,17 @@ describe("auth and workspace views", () => {
     }
   });
 
+  it("keeps the root login dialog redirect inside TanStack navigation", () => {
+    const source = fs.readFileSync(path.resolve(__dirname, "routes/__root.tsx"), "utf8");
+
+    expect(source).toContain("signInWithPassword(runtimeConfig, csrfToken, input)");
+    expect(source).toContain("refreshWorkspace(session)");
+    expect(source).toContain("useNavigate");
+    expect(source).toContain("prefixBasePath");
+    expect(source).toContain("resolvePostAuthHref(null, session.defaultLandingPath)");
+    expect(source).not.toContain("navigateToAppHref");
+  });
+
   it("keeps verify route pending until the REST verification result is known", () => {
     const source = fs.readFileSync(
       path.resolve(__dirname, "routes/verify/$loginId/$verificationCode/route.tsx"),

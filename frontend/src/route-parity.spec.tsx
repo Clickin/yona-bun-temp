@@ -282,6 +282,9 @@ describe("file-route parity harness", () => {
     expect(secretRouteSource).toContain("authUiCapabilities.secretSetupRequired === false");
     expect(secretRouteSource).toContain('<NotFoundPage href="/secret" />');
     expect(secretRouteSource).toContain("event.preventDefault()");
+    expect(secretRouteSource).toContain("useNavigate");
+    expect(secretRouteSource).toContain("prefixBasePath");
+    expect(secretRouteSource).not.toContain("navigateToAppHref");
     expect(secretRouteSource).not.toContain(
       'action={prefixBasePath(runtimeConfig.basePath, "/secret")}',
     );
