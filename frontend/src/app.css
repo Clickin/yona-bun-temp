@@ -469,6 +469,17 @@ button[type="submit"]:focus {
   border-radius: 3px 0 0 3px;
 }
 
+.gnb-search-form .dropdown-menu > li {
+  display: block;
+  clear: both;
+  float: none;
+}
+
+.gnb-search-form .dropdown-menu > li > a {
+  padding: 5px 10px;
+  line-height: 20px;
+}
+
 .gnb-search-form .search-box button {
   min-height: auto;
   padding: 0;

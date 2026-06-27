@@ -274,6 +274,10 @@ describe("auth and workspace views", () => {
     expect(appCss).toContain("width: 50px;");
     expect(appCss).toContain('.gnb-search-form input[type="text"]:focus');
     expect(appCss).toContain("width: 200px;");
+    expect(appCss).toContain(".gnb-search-form .dropdown-menu > li");
+    expect(appCss).toContain("clear: both;");
+    expect(appCss).toContain(".gnb-search-form .dropdown-menu > li > a");
+    expect(appCss).toContain("padding: 5px 10px;");
     expect(appCss).toContain(".dropdown-menu {");
     expect(appCss).toContain("display: none;");
     expect(appCss).toContain(".gnb-usermenu {");
