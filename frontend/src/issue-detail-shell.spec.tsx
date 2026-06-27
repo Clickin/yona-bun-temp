@@ -30,6 +30,24 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(appCss).toContain("color: #646464;");
   });
 
+  it("keeps legacy write-comment editor spacing CSS", () => {
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+
+    expect(appCss).toContain(".write-comment-box {");
+    expect(appCss).toContain("padding: 0 0 15px 54px;");
+    expect(appCss).toContain(".write-comment-box .write-comment-wrap");
+    expect(appCss).toContain("position: relative;");
+    expect(appCss).toContain(".write-comment-box .write-comment-wrap textarea.disabled");
+    expect(appCss).toContain("height: 80px;");
+    expect(appCss).toContain(".write-comment-box .comment {");
+    expect(appCss).toContain("height: 160px;");
+    expect(appCss).toContain("resize: vertical;");
+    expect(appCss).toContain(".write-comment-box .upload-wrap");
+    expect(appCss).toContain("background: #efefef;");
+    expect(appCss).toContain("div.markdown-preview");
+    expect(appCss).toContain("padding: 15px 20px;");
+  });
+
   it("matches legacy issue label text contrast classes", () => {
     expect(legacyIssueLabelTextClass("#ffffff")).toBe("dimgray");
     expect(legacyIssueLabelTextClass("#f44336")).toBe("white");

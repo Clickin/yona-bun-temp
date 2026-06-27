@@ -2356,6 +2356,53 @@ h1 {
   background: #777;
 }
 
+div.markdown-preview {
+  padding: 15px 20px;
+  background: #fafafa;
+  border: 1px solid #ccc;
+  border-radius: 0 0 3px 3px;
+}
+
+.write-comment-box {
+  padding: 0 0 15px 54px;
+}
+
+.write-comment-box .write-comment-wrap {
+  position: relative;
+}
+
+.write-comment-box .write-comment-wrap .nav {
+  margin-bottom: 0;
+}
+
+.write-comment-box .write-comment-wrap textarea.disabled {
+  height: 80px;
+  resize: none;
+  background: transparent;
+}
+
+.write-comment-box .comment {
+  height: 160px;
+  margin: 0;
+  resize: vertical;
+  box-shadow: none;
+}
+
+.write-comment-box .comment:focus {
+  border: 1px solid #ccc;
+}
+
+.write-comment-box .upload-wrap {
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #efefef;
+  border-radius: 0 0 5px 5px;
+}
+
+.write-comment-box .actrow {
+  margin-top: 10px;
+}
+
 .issue-detail-page .board-body.row-fluid {
   margin-top: 18px;
 }
