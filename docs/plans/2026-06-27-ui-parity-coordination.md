@@ -898,6 +898,10 @@ A slice is closed only when:
   pattern: child route files under `/organizations/$organizationName/**` now
   fail if they import or render `OrganizationHeader` or `OrganizationMenu`
   instead of delegating shell chrome to the parent organization route.
+- M90 locks workspace settings nested-layout chrome ownership: child route files
+  under `/user/editform/**` now fail if they import or render
+  `WorkspaceSettingsShell` instead of delegating account-settings chrome to the
+  `/user/editform` parent route.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

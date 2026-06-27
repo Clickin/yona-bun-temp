@@ -270,6 +270,32 @@ describe("file-route parity harness", () => {
     expect(childOrganizationChromeOwners).toEqual([]);
   });
 
+  it("keeps workspace settings child route chrome in the parent TanStack layout", () => {
+    const childWorkspaceChromeOwners: Array<{ file: string; line: number; sourceLine: string }> =
+      [];
+
+    for (const file of listRouteSourceFiles()) {
+      if (!file.startsWith("routes/user/editform/") || file === "routes/user/editform/route.tsx") {
+        continue;
+      }
+
+      const source = fs.readFileSync(path.resolve(__dirname, file), "utf8");
+      for (const match of source.matchAll(/\bWorkspaceSettingsShell\b/g)) {
+        childWorkspaceChromeOwners.push({
+          file,
+          line: lineNumberForIndex(source, match.index ?? 0),
+          sourceLine: sourceLineForIndex(source, match.index ?? 0),
+        });
+      }
+    }
+
+    childWorkspaceChromeOwners.sort((left, right) =>
+      left.file === right.file ? left.line - right.line : left.file.localeCompare(right.file),
+    );
+
+    expect(childWorkspaceChromeOwners).toEqual([]);
+  });
+
   it("keeps canonical and alias auth/settings routes in the generated route tree", () => {
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
 
