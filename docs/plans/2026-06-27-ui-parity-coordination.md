@@ -854,6 +854,9 @@ A slice is closed only when:
   project reviews, project milestones, project boards, and organization boards
   now parse filters/sort/pagination from TanStack Router href state instead of
   `window.location.search`.
+- M78 continues form query-state SPA closure: project issue create and board
+  post create routes now derive parent/referenced issue and online-commit form
+  options from TanStack Router href state instead of `window.location.search`.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

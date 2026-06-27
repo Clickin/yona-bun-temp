@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   createProjectPostRest,
   readProjectPostFormOptionsQueryOptions,
@@ -26,14 +26,15 @@ function PostCreateRouteComponent() {
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/postform`;
   const navigate = useNavigate();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const queryClient = useQueryClient();
   const [failureKind, setFailureKind] = React.useState<
     null | "bad-request" | "forbidden" | "not-found"
   >(null);
-  const searchParams =
-    typeof window === "undefined"
-      ? new URLSearchParams()
-      : new URLSearchParams(window.location.search);
+  const searchParams = React.useMemo(
+    () => new URL(locationHref, "http://localhost").searchParams,
+    [locationHref],
+  );
   const onlineCommitSearch = {
     branch: searchParams.get("branch") ?? undefined,
     edit: searchParams.has("edit"),

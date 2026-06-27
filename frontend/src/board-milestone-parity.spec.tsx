@@ -306,6 +306,7 @@ describe("board/milestone UI parity closure", () => {
     expect(layoutSource).toContain('activeMenu: "board"');
     expect(layoutSource).toContain('shellClassName: "board-page"');
     expect(createRouteSource).toContain("renderShell={false}");
+    expect(createRouteSource).not.toContain("window.location.search");
     expect(editRouteSource).toContain("renderShell={false}");
     expect(html).not.toContain('class="app-shell board-page"');
     expect(html).not.toContain('class="page-wrap-outer"');

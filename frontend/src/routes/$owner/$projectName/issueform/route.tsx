@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   createIssue,
   listIssueParentOptions,
@@ -32,7 +32,12 @@ function IssueCreateRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const routeHref = `/${owner}/${projectName}/issueform`;
+  const searchParams = React.useMemo(
+    () => new URL(locationHref, "http://localhost").searchParams,
+    [locationHref],
+  );
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
@@ -51,7 +56,6 @@ function IssueCreateRouteComponent() {
     setFailureKind(null);
     void (async () => {
       try {
-        const searchParams = new URLSearchParams(window.location.search);
         const initialParentIssueId = Number(searchParams.get("parentIssueId") ?? 0);
         const [nextDetail, nextMilestones, nextParentOptions] = await Promise.all([
           readProjectContainer(runtimeConfig, owner, projectName),
@@ -87,7 +91,7 @@ function IssueCreateRouteComponent() {
     return () => {
       cancelled = true;
     };
-  }, [owner, projectName, runtimeConfig]);
+  }, [owner, projectName, runtimeConfig, searchParams]);
 
   if (bootstrapping) {
     return (
@@ -106,7 +110,6 @@ function IssueCreateRouteComponent() {
     return <BadRequestPage href={routeHref} />;
   }
 
-  const searchParams = new URLSearchParams(window.location.search);
   const initialParentIssueId = Number(searchParams.get("parentIssueId") ?? 0);
   const referCommentId =
     searchParams.get("referCommentId") ?? searchParams.get("commentId") ?? undefined;

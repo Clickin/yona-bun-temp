@@ -1516,6 +1516,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(layoutSource).toContain('segments[2] === "issue"');
     expect(layoutSource).toContain('segments[4] === "editform"');
     expect(createRouteSource).toContain("renderShell={false}");
+    expect(createRouteSource).not.toContain("window.location.search");
     expect(editRouteSource).toContain("renderShell={false}");
     expect(html).not.toContain('class="page-wrap-outer"');
     expect(html).not.toContain('class="project-header-outer"');

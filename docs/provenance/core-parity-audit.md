@@ -2415,6 +2415,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `window.location.search`. Focused coverage:
   `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx src/pull-request-list-form-review-i18n.spec.tsx`
   and `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 issue/board form query-state follow-up: project issue create and
+  board post create routes now parse parent/referenced issue and online-commit
+  form options from TanStack Router href state instead of
+  `window.location.search`. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx src/board-milestone-parity.spec.tsx`
+  and `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and
