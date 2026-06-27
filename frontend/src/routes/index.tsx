@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { useAppRuntime } from "../app-runtime-context";
 import { HomePage } from "./-home-view";
 import { useDocumentTitle } from "./-shared";
@@ -10,10 +10,8 @@ export const Route = createFileRoute("/")({
 function IndexRouteComponent() {
   const { runtimeConfig } = useAppRuntime();
   useDocumentTitle(runtimeConfig.siteName ?? "Yona");
-  const searchParams =
-    typeof window === "undefined"
-      ? new URLSearchParams()
-      : new URLSearchParams(window.location.search);
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const searchParams = new URL(locationHref, "http://localhost").searchParams;
   return (
     <HomePage flashMessageKey={homeFlashMessageKey(searchParams)} runtimeConfig={runtimeConfig} />
   );

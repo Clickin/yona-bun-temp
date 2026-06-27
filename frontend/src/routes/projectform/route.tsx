@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import * as React from "react";
 import { createProject } from "../../auth-workspace-client";
 import {
@@ -18,6 +18,7 @@ function ProjectNewRouteComponent() {
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/projectform");
   const navigate = useNavigate();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const [formOptions, setFormOptions] = React.useState<ProjectCreateFormOptionsResponse | null>(
     null,
   );
@@ -27,7 +28,7 @@ function ProjectNewRouteComponent() {
     if (bootstrapping || !canRender) {
       return;
     }
-    const owner = new URLSearchParams(window.location.search).get("owner") ?? undefined;
+    const owner = new URL(locationHref, "http://localhost").searchParams.get("owner") ?? undefined;
     let cancelled = false;
     setReadFailed(false);
     void readProjectCreateFormOptionsRest(runtimeConfig, { owner })
@@ -44,7 +45,7 @@ function ProjectNewRouteComponent() {
     return () => {
       cancelled = true;
     };
-  }, [bootstrapping, canRender, runtimeConfig, setErrorMessage]);
+  }, [bootstrapping, canRender, locationHref, runtimeConfig, setErrorMessage]);
 
   if (bootstrapping || !canRender || !formOptions) {
     if (readFailed) {

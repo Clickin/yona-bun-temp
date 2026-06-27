@@ -169,7 +169,9 @@ describe("project create parity", () => {
       "utf8",
     );
 
-    expect(routeSource).toContain('new URLSearchParams(window.location.search).get("owner")');
+    expect(routeSource).toContain("useRouterState");
+    expect(routeSource).toContain('new URL(locationHref, "http://localhost").searchParams');
+    expect(routeSource).not.toContain("window.location.search");
     expect(routeSource).toContain("encodeURIComponent(owner)");
     expect(routeSource).toContain("to={`/projectform${query}`}");
   });

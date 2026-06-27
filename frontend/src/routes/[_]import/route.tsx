@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import * as React from "react";
 import {
   importProjectRest,
@@ -18,6 +18,7 @@ function ProjectImportRouteComponent() {
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/_import");
   const navigate = useNavigate();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const [formOptions, setFormOptions] = React.useState<ProjectCreateFormOptionsResponse | null>(
     null,
   );
@@ -28,7 +29,7 @@ function ProjectImportRouteComponent() {
     if (bootstrapping || !canRender) {
       return;
     }
-    const owner = new URLSearchParams(window.location.search).get("owner") ?? undefined;
+    const owner = new URL(locationHref, "http://localhost").searchParams.get("owner") ?? undefined;
     let cancelled = false;
     setReadFailed(false);
     void readProjectCreateFormOptionsRest(runtimeConfig, { owner })
@@ -45,7 +46,7 @@ function ProjectImportRouteComponent() {
     return () => {
       cancelled = true;
     };
-  }, [bootstrapping, canRender, runtimeConfig]);
+  }, [bootstrapping, canRender, locationHref, runtimeConfig]);
 
   if (bootstrapping || !canRender || !formOptions) {
     if (readFailed) {

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { RedirectPage, useRequireAuthenticatedRoute } from "../../-shared";
 
@@ -9,6 +9,7 @@ export const Route = createFileRoute("/projects/new")({
 function ProjectsNewRouteComponent() {
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/projects/new");
+  const locationHref = useRouterState({ select: (state) => state.location.href });
 
   if (bootstrapping || !canRender) {
     return (
@@ -18,10 +19,7 @@ function ProjectsNewRouteComponent() {
     );
   }
 
-  const owner =
-    typeof window === "undefined"
-      ? ""
-      : new URLSearchParams(window.location.search).get("owner") || "";
+  const owner = new URL(locationHref, "http://localhost").searchParams.get("owner") || "";
   const query = owner ? `?owner=${encodeURIComponent(owner)}` : "";
 
   return <RedirectPage basePath={runtimeConfig.basePath} to={`/projectform${query}`} />;
