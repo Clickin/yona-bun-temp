@@ -876,6 +876,11 @@ A slice is closed only when:
 - M84 continues shared route-state SPA closure: `useCurrentHref` now exposes the
   TanStack Router href for route forms and shells instead of reconstructing it
   from browser-global pathname/search values.
+- M85 audits the queued project-shell nested-layout item against current source:
+  `/$owner/$projectName/route.tsx` already owns `ProjectHeader`, `ProjectMenu`,
+  active-menu classification, query ownership, and `<Outlet />`, while
+  `/settingform` renders `ProjectSettingsPage` with `renderShell={false}` under
+  that parent layout. No output change was needed for this audit pass.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.
