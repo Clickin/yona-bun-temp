@@ -863,6 +863,9 @@ A slice is closed only when:
 - M80 continues create/auth query-state SPA closure: project create/import
   owner defaults, `/projects/new` alias redirects, and root flash messages now
   parse query state from TanStack Router href state inside route components.
+- M81 continues workspace route-state SPA closure: `/me` now derives its nested
+  settings-shell path check from TanStack Router pathname state instead of
+  browser-global pathname.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

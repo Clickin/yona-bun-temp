@@ -38,6 +38,10 @@ describe("route loading shell legacy i18n opt-in", () => {
       expect(source).not.toContain("<h1>common.loading</h1>");
     }
 
+    const meRouteSource = fs.readFileSync(path.resolve(__dirname, "routes/me/route.tsx"), "utf8");
+    expect(meRouteSource).toContain("useRouterState");
+    expect(meRouteSource).not.toContain("window.location.pathname");
+
     const notificationSource = fs.readFileSync(
       path.resolve(__dirname, "routes/notification/route.tsx"),
       "utf8",
