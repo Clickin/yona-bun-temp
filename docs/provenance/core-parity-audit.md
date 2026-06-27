@@ -2458,6 +2458,12 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   browser-global `window.location` reads. Focused coverage:
   `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx src/wave1-auth-workspace-parity.spec.tsx src/workspace-profile-i18n.spec.tsx`
   and `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 redirect alias route-state follow-up: `RedirectPage` preserves
+  search/hash from caller-provided TanStack Router href state for the legacy
+  reset-password and notification settings aliases instead of reading
+  `window.location.search` directly. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/user-profile-route-loading-shell-i18n.spec.tsx src/auth-workspace-shell.spec.tsx src/workspace-settings-i18n.spec.tsx`
+  and `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

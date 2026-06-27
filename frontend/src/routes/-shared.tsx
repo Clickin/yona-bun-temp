@@ -168,11 +168,13 @@ export function NotFoundPage({ href }: { href: string }) {
 
 export function RedirectPage({
   basePath,
+  currentHref = "",
   preserveHash = false,
   preserveSearch = false,
   to,
 }: {
   basePath: string;
+  currentHref?: string;
   preserveHash?: boolean;
   preserveSearch?: boolean;
   to: string;
@@ -181,10 +183,11 @@ export function RedirectPage({
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    const search = preserveSearch && typeof window !== "undefined" ? window.location.search : "";
-    const hash = preserveHash && typeof window !== "undefined" ? window.location.hash : "";
+    const currentUrl = new URL(currentHref, "http://localhost");
+    const search = preserveSearch ? currentUrl.search : "";
+    const hash = preserveHash ? currentUrl.hash : "";
     void navigate({ href: prefixBasePath(basePath, `${to}${search}${hash}`), replace: true });
-  }, [basePath, navigate, preserveHash, preserveSearch, to]);
+  }, [basePath, currentHref, navigate, preserveHash, preserveSearch, to]);
 
   return (
     <main className="app-shell">

@@ -81,6 +81,7 @@ describe("route loading shell legacy i18n opt-in", () => {
     expect(sharedSource).toContain("const navigate = useNavigate();");
     expect(sharedSource).toContain("useRouterState");
     expect(sharedSource).not.toContain("window.location.pathname");
+    expect(sharedSource).not.toContain("window.location.search");
     expect(sharedSource).toContain("replace: true");
     expect(sharedSource).not.toContain("window.location.replace(");
   });
