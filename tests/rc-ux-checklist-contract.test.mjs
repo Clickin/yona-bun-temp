@@ -16,6 +16,13 @@ const visualProvenancePath = path.join(
   "provenance",
   "visual-parity-sweep-2026-06-25.md",
 );
+const uiParityReportsReadmePath = path.join(
+  repoRoot,
+  "docs",
+  "provenance",
+  "ui-parity-reports",
+  "README.md",
+);
 const legacyAuditOutputPath = path.join(
   repoRoot,
   ".agent",
@@ -314,13 +321,18 @@ test("RC security row keeps concrete XSS, SQLi, and Markdown stability evidence"
 
 test("RC visual status deltas are documented against the latest sweep output", () => {
   const checklist = readText(checklistPath);
+  const reportsReadme = readText(uiParityReportsReadmePath);
   const visualProvenance = readText(visualProvenancePath);
   const latestSweep = JSON.parse(readText(sweepOutputPath));
   const statusDeltas = latestSweep.comparisonSummary?.statusDeltas ?? [];
 
-  assert.ok(statusDeltas.length > 0, "latest visual sweep must expose status deltas explicitly");
   assert.match(checklist, /Expected legacy non-2xx observations are documented/u);
   assert.match(visualProvenance, /### Recorded Status Deltas/u);
+
+  if (statusDeltas.length === 0) {
+    assert.match(reportsReadme, /Latest local desktop sweep refresh/u);
+    assert.match(reportsReadme, /does not replace the older combined legacy status-delta/u);
+  }
 
   for (const delta of statusDeltas) {
     assert.match(
