@@ -48,8 +48,51 @@ body {
   text-align: left;
 }
 
+.bold {
+  font-weight: bold;
+}
+
+.gray-txt {
+  color: #ccc !important;
+}
+
+.darkgray-txt {
+  color: #999 !important;
+}
+
+.orange-txt {
+  color: #f36c22 !important;
+}
+
+.primary-txt {
+  color: #f36c22 !important;
+}
+
+.secondary-txt {
+  color: #51aacc !important;
+}
+
+.blue-txt {
+  color: #5dbbe0;
+}
+
 .vmiddle {
   vertical-align: middle !important;
+}
+
+.vertical-top,
+.vtop {
+  vertical-align: top !important;
+}
+
+.small-font {
+  font-size: 10px;
+  font-weight: normal;
+}
+
+.yobicon-middle {
+  vertical-align: bottom;
+  margin-bottom: 3px;
 }
 
 .ml0 {
