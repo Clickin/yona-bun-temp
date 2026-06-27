@@ -136,10 +136,15 @@ upstream fetches and lets Playwright render the legacy responses from `127.0.0.1
   being hidden behind the 0 comparison-failure count; they are currently
   homelab-reference non-OK or sample-data status differences such as legacy
   404/500/400 responses where the local seeded route renders successfully.
+- 2026-06-27T03:00:33Z combined rerun through the localhost curl proxy plus
+  local `http://127.0.0.1:3101/yona` records legacy 93/96, local 174/174,
+  direct API 13/13, imported legacy-audit coverage 67/67 on both targets, 96
+  same-path comparisons, 78 local-only legacy-missing entries, 0 diff failures,
+  0 local failures, and 22 explicit status deltas.
 
 ### Recorded Status Deltas
 
-The 2026-06-25T13:13:10Z combined sweep recorded the following same-path HTTP
+The 2026-06-27T03:00:33Z combined sweep recorded the following same-path HTTP
 status differences. These are not counted as local UX failures because the Rust
 target rendered successfully and the comparison found no not-found, forbidden,
 bad-request, raw legacy key, or local failure state. They remain explicit
@@ -148,8 +153,9 @@ sample-data variance from a Rust regression.
 
 | Path | Legacy -> Rust status | Legacy ok | Rust ok | Classification |
 | --- | --- | --- | --- | --- |
-| `/admin/sample/issue/1` | `unknown -> 200` | `false` | `true` | homelab legacy reference timeout |
+| `/admin/sample/issues?format=xls` | `0 -> 200` | `true` | `true` | legacy download/status variance |
 | `/admin/sample/newPullRequestForm` | `400 -> 200` | `true` | `true` | sample-data status variance |
+| `/admin/sample/reviews?format=xls` | `0 -> 200` | `true` | `true` | legacy download/status variance |
 | `/admin/sample/post/1` | `404 -> 200` | `true` | `true` | sample-data status variance |
 | `/admin/sample/post/1/editform` | `500 -> 200` | `false` | `true` | homelab legacy reference error |
 | `/admin/sample/milestone/1` | `404 -> 200` | `true` | `true` | sample-data status variance |
