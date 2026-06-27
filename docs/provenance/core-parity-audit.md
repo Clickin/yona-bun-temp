@@ -2447,6 +2447,11 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   to the router pathname. Focused coverage:
   `pnpm --dir frontend exec vitest run src/auth-workspace-shell.spec.tsx src/route-parity.spec.tsx`
   and `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-06-27 shared href route-state follow-up: `useCurrentHref` exposes the
+  TanStack Router href for route forms and shells instead of reconstructing it
+  from browser-global pathname/search values. Focused coverage:
+  `pnpm --dir frontend exec vitest run src/user-profile-route-loading-shell-i18n.spec.tsx src/auth-workspace-shell.spec.tsx src/wave1-auth-workspace-parity.spec.tsx`
+  and `pnpm --dir frontend exec tsc --noEmit`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and

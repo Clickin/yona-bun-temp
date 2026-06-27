@@ -1,16 +1,12 @@
 import * as React from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { RestApiError } from "../api/rest-client";
 import { prefixBasePath } from "../runtime-config";
 import { useAppRuntime } from "../app-runtime-context";
 import { useLegacyMessages } from "../i18n";
 
 export function useCurrentHref() {
-  if (typeof window === "undefined") {
-    return "/";
-  }
-
-  return `${window.location.pathname}${window.location.search}`;
+  return useRouterState({ select: (state) => state.location.href });
 }
 
 function normalizedIssueLabelColor(color: string | null | undefined) {

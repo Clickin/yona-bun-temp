@@ -873,6 +873,9 @@ A slice is closed only when:
   and pin-to-sidebar path capture now use TanStack Router location state instead
   of browser-global search/pathname reads, with the pin callback dependency
   tied to the router pathname.
+- M84 continues shared route-state SPA closure: `useCurrentHref` now exposes the
+  TanStack Router href for route forms and shells instead of reconstructing it
+  from browser-global pathname/search values.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

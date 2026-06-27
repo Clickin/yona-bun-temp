@@ -79,6 +79,8 @@ describe("route loading shell legacy i18n opt-in", () => {
 
     const sharedSource = fs.readFileSync(path.resolve(__dirname, "routes/-shared.tsx"), "utf8");
     expect(sharedSource).toContain("const navigate = useNavigate();");
+    expect(sharedSource).toContain("useRouterState");
+    expect(sharedSource).not.toContain("window.location.pathname");
     expect(sharedSource).toContain("replace: true");
     expect(sharedSource).not.toContain("window.location.replace(");
   });
