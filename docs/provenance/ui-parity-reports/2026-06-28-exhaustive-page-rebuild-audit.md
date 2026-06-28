@@ -400,12 +400,12 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `organization/group_issue_search_partial.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
 | `organization/group_pullrequest_list.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
 | `organization/group_pullrequest_list_partial.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
-| `organization/header.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/header.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts 120px organization header, inner/header y alignment, and root navbar overlay position |
 | `organization/list.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
 | `organization/members.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
-| `organization/menu.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
-| `organization/partial_settingmenu.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
-| `organization/setting.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/menu.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts 40px organization menu placement directly below the header and before page content |
+| `organization/partial_settingmenu.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts the settings submenu appears before `#saveSetting` inside `.project-page-wrap` |
+| `organization/setting.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts settings form top box, left/right column x/y alignment, 260x188 logo area, description width, and mutation-capable form shell |
 | `organization/view.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
 
 ### `project/`
