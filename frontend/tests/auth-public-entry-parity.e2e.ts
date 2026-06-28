@@ -898,6 +898,37 @@ test("verify route renders success and invalid legacy public states", async ({ p
     "User is verified. Try logging in.",
   );
 
+  const navbar = await layoutBox(page, ".gnb-outer");
+  const pageFull = await layoutBox(page, "main.app-shell.page.full");
+  const centerWrap = await layoutBox(page, ".center-wrap.tag-line-wrap.reset-password");
+  const title = await layoutBox(page, ".center-wrap.tag-line-wrap.reset-password .title");
+  const loginId = await layoutBox(
+    page,
+    ".center-wrap.tag-line-wrap.reset-password p:first-of-type",
+  );
+  const divider = await layoutBox(page, ".center-wrap.tag-line-wrap.reset-password hr");
+  const tagline = await layoutBox(page, ".center-wrap.tag-line-wrap.reset-password .tag-line");
+  const footer = await layoutBox(page, ".page-footer-outer");
+
+  expect(Math.round(navbar.height)).toBe(40);
+  expect(pageFull.y).toBeGreaterThanOrEqual(navbar.y + navbar.height - 1);
+  expect(pageFull.width).toBeGreaterThanOrEqual(1100);
+  expect(centerWrap.width).toBeCloseTo(pageFull.width, 0);
+  expect(
+    Math.abs(centerWrap.x + centerWrap.width / 2 - (pageFull.x + pageFull.width / 2)),
+  ).toBeLessThanOrEqual(2);
+  expect(title.y).toBeGreaterThanOrEqual(centerWrap.y);
+  expect(loginId.y).toBeGreaterThan(title.y + title.height - 1);
+  expect(divider.y).toBeGreaterThan(loginId.y + loginId.height - 1);
+  expect(tagline.y).toBeGreaterThan(divider.y + divider.height - 1);
+  expect(
+    Math.abs(title.x + title.width / 2 - (pageFull.x + pageFull.width / 2)),
+  ).toBeLessThanOrEqual(2);
+  expect(
+    Math.abs(loginId.x + loginId.width / 2 - (pageFull.x + pageFull.width / 2)),
+  ).toBeLessThanOrEqual(2);
+  expect(footer.y).toBeGreaterThan(pageFull.y + pageFull.height - 1);
+
   await page.goto("/yona/verify/door/bad-code");
   await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator("body")).toContainText("Invalid verification");

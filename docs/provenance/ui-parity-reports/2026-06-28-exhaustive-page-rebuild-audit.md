@@ -499,7 +499,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `user/resetPassword.scala.html` | P1 auth | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts reset-password navbar/page/title/tagline stack, centered 400px form, 386px password/retyped-password input alignment, full-width submit, hash hidden field, footer order, resolved copy, and TanStack Query complete-reset mutation boundary |
 | `user/signup.scala.html` | P1 auth | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts public signup navbar/page/title/tagline stack, centered 400px form, label/input vertical ordering, 386px field alignment, full-width submit, login action row, resolved copy, and TanStack Query register mutation boundary |
 | `user/userFiles.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
-| `user/verified.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
+| `user/verified.scala.html` | P1 auth | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts verified-user navbar/page/title/loginId/hr/detail stack, centered reset-password shell alignment, footer order, resolved copy, and invalid verification branch |
 | `user/view.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
 
 ### `welcome/`
