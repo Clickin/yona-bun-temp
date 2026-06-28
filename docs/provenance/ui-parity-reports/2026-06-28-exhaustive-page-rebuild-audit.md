@@ -467,13 +467,13 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | --- | --- | --- |
 | `site/data.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
 | `site/diagnostic.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
-| `site/issueList.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/issueList.scala.html` | P7 site-admin | metric guard passed: `site-admin-issue-list-parity.e2e.ts` asserts state tabs, post-style row avatar/info/meta alignment, anchors, and pagination |
 | `site/lostPassword.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
 | `site/mail.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
 | `site/massMail.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
 | `site/partial_pagination.scala.html` | P7 site-admin | metric guard passed: `site-admin-project-list-parity.e2e.ts` asserts rendered pagination position/link shape on `/sites/projectList` |
 | `site/partial_paginationForUserList.scala.html` | P7 site-admin | metric guard passed: `site-admin-user-list-parity.e2e.ts` asserts rendered pagination position/link shape on `/sites/userList` |
-| `site/postList.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/postList.scala.html` | P7 site-admin | metric guard passed: `site-admin-post-list-parity.e2e.ts` asserts post-style row avatar/info/meta alignment, anchors, and pagination |
 | `site/projectList.scala.html` | P7 site-admin | metric guard passed: `site-admin-project-list-parity.e2e.ts` asserts title/filter alignment, listhead-to-row column alignment, delete modal hooks, and pagination |
 | `site/setting.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
 | `site/siteMngLayout.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |

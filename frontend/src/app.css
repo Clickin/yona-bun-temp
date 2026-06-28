@@ -3354,6 +3354,10 @@ div.markdown-preview {
   border-top: 0;
 }
 
+.site-admin-page .post-list-wrap .listitem {
+  box-sizing: border-box;
+}
+
 .site-admin-page .post-list-wrap .listitem,
 .site-admin-page .project-list-wrap .listitem,
 .site-admin-page .user-list-wrap .listitem {
