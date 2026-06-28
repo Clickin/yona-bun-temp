@@ -244,6 +244,28 @@ async function assertLegacyCommitDiffMetrics(page: Page) {
   await expect(page.locator(".diff-body .diff-stats .num-deleted")).toHaveText("-0");
   await expect(page.locator(".diff-body .diff-table tr.range .hunk")).toHaveCount(1);
   await expect(page.locator(".diff-body .diff-table tr.add")).toHaveCount(1);
+  await expect(page.locator(".diff-body .diff-table tr.context").first()).toHaveAttribute(
+    "data-line",
+    "1",
+  );
+  await expect(page.locator(".diff-body .diff-table tr.context").first()).toHaveAttribute(
+    "data-type",
+    "context",
+  );
+  await expect(page.locator(".diff-body .diff-table tr.context").first()).toHaveAttribute(
+    "data-side",
+    "B",
+  );
+  await expect(page.locator(".diff-body .diff-table tr.add")).toHaveAttribute("data-line", "2");
+  await expect(page.locator(".diff-body .diff-table tr.add")).toHaveAttribute("data-type", "add");
+  await expect(page.locator(".diff-body .diff-table tr.add")).toHaveAttribute("data-side", "B");
+  await expect(page.locator(".diff-body .diff-table tr.add .linenum").first()).toBeEmpty();
+  await expect(
+    page.locator(".diff-body .diff-table tr.add .linenum").nth(1).locator(".line-number"),
+  ).toHaveAttribute("data-line-num", "2");
+  await expect(page.locator(".diff-body .diff-table tr.add .diff-partial-codeline")).toHaveText(
+    '+    println!("detail");',
+  );
   await expect(page.locator(".diff-body .btnPop .ybtn.ybtn-info.ybtn-small")).toHaveCount(1);
 
   expect(browseWrap.x).toBeCloseTo(projectPage.x, 0);
