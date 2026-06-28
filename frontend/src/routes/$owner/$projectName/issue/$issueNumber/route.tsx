@@ -37,12 +37,12 @@ import {
 } from "../../../../../app-view-models";
 import { prefixBasePath } from "../../../../../runtime-config";
 import { ProjectIssueDetailPage } from "../../../../-issue-views";
+import { ProjectNotFoundPage } from "../../../../-project-views";
 import type { ProjectMilestoneViewModel } from "../../../../-view-models";
 import {
   BadRequestPage,
   classifyConnectFailure,
   ForbiddenPage,
-  NotFoundPage,
   useDocumentTitle,
 } from "../../../../-shared";
 
@@ -128,7 +128,16 @@ function IssueDetailRouteComponent() {
     return <ForbiddenPage href={routeHref} />;
   }
   if (failureKind === "not-found") {
-    return <NotFoundPage href={routeHref} />;
+    return (
+      <ProjectNotFoundPage
+        detail={detail}
+        ownerName={owner}
+        projectName={projectName}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+        targetType="issue_post"
+      />
+    );
   }
   if (failureKind === "bad-request") {
     return <BadRequestPage href={routeHref} />;

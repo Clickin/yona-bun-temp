@@ -2298,7 +2298,7 @@ test("project issue routes render forbidden and not-found shells when issue read
   await page.goto("/yona/admin/projectYobi/issues?pageNum=1");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
   await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
-  await expect(page.getByRole("link", { name: "Home" })).toHaveAttribute(
+  await expect(page.locator(".error-wrap .ybtn", { hasText: "Home" })).toHaveAttribute(
     "href",
     "/admin/projectYobi/issues",
   );
@@ -2306,24 +2306,104 @@ test("project issue routes render forbidden and not-found shells when issue read
   await page.goto("/yona/missing/projectYobi/issues?pageNum=1");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
   await expect(page.locator(".error-wrap > p").first()).toHaveText("Page not found");
-  await expect(page.getByRole("link", { name: "Home" })).toHaveAttribute(
+  await expect(page.locator(".error-wrap .ybtn", { hasText: "Home" })).toHaveAttribute(
     "href",
-    "/missing/projectYobi/issues",
+    "/missing/projectYobi",
   );
 
   await page.goto("/yona/admin/projectYobi/issue/1");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
   await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
-  await expect(page.getByRole("link", { name: "Home" })).toHaveAttribute(
+  await expect(page.locator(".error-wrap .ybtn", { hasText: "Home" })).toHaveAttribute(
     "href",
     "/admin/projectYobi/issue/1",
   );
 
   await page.goto("/yona/admin/projectYobi/issue/999");
+  await expect(page.locator(".project-page-wrap.project-notfound-page")).toBeVisible();
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
-  await expect(page.locator(".error-wrap > p").first()).toHaveText("Page not found");
-  await expect(page.getByRole("link", { name: "Home" })).toHaveAttribute(
+  await expect(page.locator(".error-wrap > p").first()).toHaveText("Issue does not exist");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute(
     "href",
-    "/admin/projectYobi/issue/999",
+    "/yona/admin/projectYobi/issues",
   );
+  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveText("List");
+  await expect(page.locator(".issue-info")).toHaveCount(0);
+  await expect(page.locator("#comment-form")).toHaveCount(0);
+
+  const header = await layoutBox(page, ".app-shell > .project-header-outer");
+  const headerInner = await layoutBox(
+    page,
+    ".app-shell > .project-header-outer .project-header-inner",
+  );
+  const projectMenu = await layoutBox(page, ".app-shell > .project-menu-outer");
+  const pageWrap = await layoutBox(page, ".app-shell > .page-wrap-outer");
+  const projectPage = await layoutBox(page, ".project-page-wrap.project-notfound-page");
+  const errorWrap = await layoutBox(page, ".project-page-wrap.project-notfound-page .error-wrap");
+  const icon = await layoutBox(
+    page,
+    ".project-page-wrap.project-notfound-page .error-wrap .ico.ico-err2",
+  );
+  const message = await layoutBox(page, ".project-page-wrap.project-notfound-page .error-wrap > p");
+  const button = await layoutBox(
+    page,
+    ".project-page-wrap.project-notfound-page .error-wrap .ybtn.ybtn-primary",
+  );
+  const styles = await page
+    .locator(".project-page-wrap.project-notfound-page")
+    .evaluate((element) => {
+      const errorWrapStyle = window.getComputedStyle(
+        element.querySelector(".error-wrap") as HTMLElement,
+      );
+      const messageStyle = window.getComputedStyle(
+        element.querySelector(".error-wrap > p") as HTMLElement,
+      );
+      const buttonStyle = window.getComputedStyle(element.querySelector(".ybtn") as HTMLElement);
+      return {
+        buttonDisplay: buttonStyle.display,
+        buttonHeight: buttonStyle.height,
+        buttonLineHeight: buttonStyle.lineHeight,
+        errorPaddingTop: errorWrapStyle.paddingTop,
+        iconTextAlign: errorWrapStyle.textAlign,
+        messageColor: messageStyle.color,
+        messageFontSize: messageStyle.fontSize,
+        messageFontWeight: messageStyle.fontWeight,
+        messageMarginBottom: messageStyle.marginBottom,
+        messageMarginTop: messageStyle.marginTop,
+      };
+    });
+
+  expect(Math.round(header.y)).toBe(0);
+  expect(Math.round(header.height)).toBe(120);
+  expect(Math.round(headerInner.height)).toBe(Math.round(header.height));
+  expect(projectMenu.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+  expect(Math.round(projectMenu.height)).toBe(40);
+  expect(pageWrap.y).toBeGreaterThanOrEqual(projectMenu.y + projectMenu.height - 1);
+  expect(projectPage.x).toBeGreaterThanOrEqual(pageWrap.x);
+  expect(projectPage.width).toBeLessThanOrEqual(pageWrap.width + 1);
+  expect(errorWrap.y).toBeGreaterThanOrEqual(projectPage.y);
+  expect(icon.y).toBeGreaterThanOrEqual(errorWrap.y);
+  expect(message.y).toBeGreaterThan(icon.y + icon.height - 1);
+  expect(button.y).toBeGreaterThan(message.y + message.height - 1);
+  expect(
+    Math.abs(icon.x + icon.width / 2 - (errorWrap.x + errorWrap.width / 2)),
+  ).toBeLessThanOrEqual(24);
+  expect(
+    Math.abs(message.x + message.width / 2 - (errorWrap.x + errorWrap.width / 2)),
+  ).toBeLessThanOrEqual(24);
+  expect(
+    Math.abs(button.x + button.width / 2 - (errorWrap.x + errorWrap.width / 2)),
+  ).toBeLessThanOrEqual(24);
+  expect(styles).toEqual({
+    buttonDisplay: "inline-block",
+    buttonHeight: "20px",
+    buttonLineHeight: "20px",
+    errorPaddingTop: "100px",
+    iconTextAlign: "center",
+    messageColor: "rgb(137, 137, 137)",
+    messageFontSize: "16px",
+    messageFontWeight: "700",
+    messageMarginBottom: "30px",
+    messageMarginTop: "30px",
+  });
 });

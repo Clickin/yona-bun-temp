@@ -897,6 +897,52 @@ export function ProjectErrorPage(props: {
   );
 }
 
+export function ProjectNotFoundPage(props: {
+  detail?: ProjectDetailViewModel | null;
+  ownerName: string;
+  projectName: string;
+  renderShell?: boolean;
+  runtimeConfig: RuntimeConfig;
+  targetType: "issue_post";
+}) {
+  const { t: messages } = useLegacyMessages();
+  const shellDetail =
+    props.detail ??
+    projectShellDetail({
+      ownerName: props.ownerName,
+      projectName: props.projectName,
+    });
+  const returnHref = buildProjectHref(
+    props.runtimeConfig,
+    props.ownerName,
+    props.projectName,
+    "issues",
+  );
+  const content = (
+    <div className="project-page-wrap project-notfound-page">
+      <div className="error-wrap">
+        <i className="ico ico-err2" />
+        <p>{messages("error.notfound.issue_post", { fallback: "error.notfound.issue_post" })}</p>
+        <a className="ybtn ybtn-primary" href={returnHref}>
+          {messages("button.list", { fallback: "button.list" })}
+        </a>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
+  return (
+    <main className="app-shell project-notfound-page">
+      <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="issue" detail={shellDetail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">{content}</div>
+    </main>
+  );
+}
+
 function ProjectKeymapHelp(props: {
   detail: ProjectDetailViewModel;
   mode?: "detail" | "list";
