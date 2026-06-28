@@ -379,6 +379,13 @@ test("maps public user profile files to the user workspace provenance slice", ()
     result.capabilities.map((entry) => entry.id),
     ["frontend-api-query-boundary", "public-user-profile"],
   );
+  assert.deepEqual(
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [
+      ["frontend-api-query-boundary", "partial"],
+      ["public-user-profile", "parity"],
+    ],
+  );
 });
 
 test("maps user statistics API client changes to user workspace provenance", () => {

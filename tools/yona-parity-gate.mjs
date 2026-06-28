@@ -340,7 +340,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "public-user-profile",
     label: "Public user profile",
-    status: "partial",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/users\.ts$/i,
       /^frontend\/src\/routes\/\$user\/route\.tsx$/i,
@@ -350,6 +350,9 @@ const DOMAIN_BUCKETS = [
     provenanceDocs: [
       "docs/provenance/phase-0b/user-workspace.md",
       "docs/provenance/core-parity-audit.md",
+      "docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md",
+      "docs/provenance/ui-parity-reports/template-first-p6-organization-directory-workspace.md",
+      "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
     ],
   },
   {
