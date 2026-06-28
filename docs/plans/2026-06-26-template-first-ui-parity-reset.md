@@ -200,8 +200,8 @@ Update 2026-06-27:
   anonymous desktop shell, mobile login dialog, authenticated side menu, create
   dropdown hidden/open state, guest navbar restrictions, project search scope,
   `/yona` base-path anchors, and raw-key absence. P0 no longer has a standalone
-  verifier-baseline blocker, though whole UI parity still requires the
-  integrated browser sweep.
+  verifier-baseline blocker; the integrated browser sweep evidence is recorded
+  below.
 - Integrated desktop browser sweep was rerun through the node curl proxy and a
   fresh local runtime DB:
   `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both node scripts/visual-parity-sweep.mjs`.
@@ -267,11 +267,11 @@ Update 2026-06-27:
   `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both node scripts/visual-parity-sweep.mjs`
   against the node-proxied legacy target and mounted Yoram. Local Yoram passed
   `174/174`, direct API surfaces passed `13/13`, and imported legacy-audit
-  pages covered `67/67` with zero missing pages. The whole-UI integrated
-  comparison remains unclosed because the legacy proxy target was unreachable:
-  Playwright timed out on `/users/loginform` waiting for `networkidle`, leaving
-  `legacyMissing 174`. This is an external legacy-reference availability
-  blocker; no current Yoram route failure was recorded.
+  pages covered `67/67` on both targets. Legacy passed `93/96`, with the
+  remaining legacy failures matching homelab sample-data/reference states;
+  comparison summary records `diffFailures 0`, `localFailures 0`, and the same
+  `22` status deltas already classified in
+  `docs/provenance/ui-parity-reports/README.md#integrated-status-delta-classification`.
 
 ## Closure Rule
 

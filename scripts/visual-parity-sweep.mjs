@@ -427,9 +427,11 @@ function normalizePath(baseUrl, href) {
 }
 
 async function login(page, baseUrl) {
-  await page.goto(urlFor(baseUrl, "/users/loginform"), { waitUntil: "networkidle" });
+  await page.goto(urlFor(baseUrl, "/users/loginform"), { waitUntil: "domcontentloaded" });
   const loginField = page.locator('input[name="loginIdOrEmail"], input#loginIdOrEmail').first();
   const passwordField = page.locator('input[name="password"], input#password').first();
+  await loginField.waitFor({ timeout: 10_000 }).catch(() => {});
+  await passwordField.waitFor({ timeout: 10_000 }).catch(() => {});
   if ((await loginField.count()) === 0 || (await passwordField.count()) === 0) {
     return false;
   }
@@ -542,7 +544,8 @@ async function apiLogin(page, baseUrl) {
 }
 
 async function discoverProjectPaths(page, baseUrl) {
-  await page.goto(urlFor(baseUrl, "/projects"), { waitUntil: "networkidle" });
+  await page.goto(urlFor(baseUrl, "/projects"), { waitUntil: "domcontentloaded" });
+  await page.waitForSelector("a[href]", { timeout: 10_000 }).catch(() => {});
   const hrefs = await page
     .locator("a[href]")
     .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href") ?? ""));

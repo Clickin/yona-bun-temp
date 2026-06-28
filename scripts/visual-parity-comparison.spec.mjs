@@ -114,6 +114,16 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /function localSettledSelectorForPath/u);
   assert.match(source, /label === "local" && loggedIn && !useRequestedPaths/u);
   assert.match(source, /waitUntil: "domcontentloaded"/u);
+  assert.match(
+    source,
+    /page\.goto\(urlFor\(baseUrl, "\/users\/loginform"\), \{ waitUntil: "domcontentloaded" \}\)/u,
+  );
+  assert.match(source, /loginField\.waitFor\(\{ timeout: 10_000 \}\)/u);
+  assert.match(
+    source,
+    /page\.goto\(urlFor\(baseUrl, "\/projects"\), \{ waitUntil: "domcontentloaded" \}\)/u,
+  );
+  assert.match(source, /page\.waitForSelector\("a\[href\]", \{ timeout: 10_000 \}\)/u);
   assert.match(source, /await page\.waitForSelector\(localSettledSelector/u);
   assert.match(source, /gnbInner: selectorState\("\.gnb-inner"\)/u);
   assert.match(source, /gnbUsermenu: selectorState\("\.gnb-usermenu"\)/u);
