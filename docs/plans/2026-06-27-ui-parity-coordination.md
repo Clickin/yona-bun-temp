@@ -905,6 +905,16 @@ A slice is closed only when:
 - M91 continues the import-alias cleanup follow-up for the workspace settings
   slice: `/user/editform/**` route files now use the established `@/*` source
   alias instead of deep relative imports, with no DOM or route behavior change.
+- M92 records the template-first UI parity gate checkpoint: active P0-P7
+  app-runtime UI surfaces are now represented by parity-status gate slices, and
+  `tests/yona-legacy-parity-gate.test.mjs` includes a representative
+  table-driven guard that fails if any active UI surface regresses to `gap`,
+  `partial`, or `deferred`. Remaining non-parity gate buckets are intentionally
+  non-UI infrastructure or deferred-scope tracking (`acl-baseline`,
+  `canonical-schema-and-persistence-foundation`,
+  `second-priority-deferred`, and `rust-foundation-and-runtime-bootstrap`), so
+  they are not blockers for current template-first UI closure unless a future
+  UI packet maps to them with concrete legacy evidence.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.
