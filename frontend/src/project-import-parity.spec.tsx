@@ -7,17 +7,35 @@ import { ProjectImportPage, validateLegacyProjectForm } from "./routes/-project-
 
 describe("project import parity", () => {
   it("renders the legacy git import form shell with owner handoff", () => {
+    const legacyImportTemplate = readFileSync(
+      join(process.cwd(), "../yona-original/app/views/project/importing.scala.html"),
+      "utf8",
+    );
     const html = renderToStaticMarkup(
       <ProjectImportPage
         csrfToken="csrf-123"
         ownerOptions={[
-          { organization: false, ownerName: "admin", selected: false },
-          { organization: true, ownerName: "weblabs", selected: true },
+          {
+            avatarUrl: "/yona/files/avatar-admin.png",
+            organization: false,
+            ownerName: "admin",
+            selected: false,
+          },
+          {
+            avatarUrl: "/yona/files/org-weblabs.png",
+            organization: true,
+            ownerName: "weblabs",
+            selected: true,
+          },
         ]}
         selectedOwnerName="weblabs"
       />,
     );
 
+    expect(legacyImportTemplate).toContain('data-avatar-url="@UserApp.currentUser().avatarUrl"');
+    expect(legacyImportTemplate).toContain(
+      'data-avatar-url="@urlToOrganizationLogo(orgUser.organization)"',
+    );
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="form-wrap new-project"');
@@ -40,6 +58,8 @@ describe("project import parity", () => {
     expect(html).not.toContain('placeholder="Login ID"');
     expect(html).not.toContain('placeholder="Password"');
     expect(html).toContain('id="project-owner"');
+    expect(html).toContain('data-avatar-url="/yona/files/avatar-admin.png"');
+    expect(html).toContain('data-avatar-url="/yona/files/org-weblabs.png"');
     expect(html).toContain('value="weblabs" selected=""');
     expect(html).toContain('id="project-name"');
     expect(html).toContain(
