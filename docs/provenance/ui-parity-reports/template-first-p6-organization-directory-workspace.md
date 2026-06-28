@@ -52,7 +52,7 @@ are implemented as REST JSON/API-return plus React-rendered legacy DOM.
 | gap | 0 |
 | deviation | 0 |
 | weak evidence | 0 |
-| covered | 18 |
+| covered | 17 |
 | not-applicable | 1 |
 | needs-parent-decision | 0 |
 

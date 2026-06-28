@@ -47,7 +47,7 @@ Source comparison by Subagent P0 found concrete reset blockers:
 | gap | 0 |
 | deviation | 0 |
 | weak evidence | 0 |
-| covered | 11 |
+| covered | 12 |
 
 ## Reset Findings
 

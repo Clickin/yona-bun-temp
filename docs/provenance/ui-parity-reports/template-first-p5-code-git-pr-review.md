@@ -59,7 +59,7 @@ below as implemented boundaries or non-comparable sample-data states.
 | gap | 0 |
 | deviation | 0 |
 | weak evidence | 0 |
-| covered | 41 |
+| covered | 14 |
 | not-applicable | 18 |
 | needs-parent-decision | 0 |
 

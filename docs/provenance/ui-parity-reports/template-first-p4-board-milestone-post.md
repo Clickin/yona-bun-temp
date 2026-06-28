@@ -51,7 +51,7 @@ recorded below as non-comparable sample-data states.
 | gap | 0 |
 | deviation | 0 |
 | weak evidence | 0 |
-| covered | 19 |
+| covered | 9 |
 | not-applicable | 5 |
 | needs-parent-decision | 0 |
 

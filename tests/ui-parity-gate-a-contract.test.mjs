@@ -27,6 +27,15 @@ const inventoryStatuses = [
   "needs-parent-decision",
 ];
 const blockingStatuses = new Set(["gap", "deviation", "weak evidence", "needs-parent-decision"]);
+const resetStatuses = [
+  "covered",
+  "gap",
+  "deviation",
+  "deferred",
+  "not-applicable",
+  "weak evidence",
+  "needs-parent-decision",
+];
 const templateFirstPackets = [
   "template-first-p0-global-shell",
   "template-first-p1-auth-public-home",
@@ -158,6 +167,17 @@ function templateFirstFindingRows(reportSource) {
   }
 
   return rows;
+}
+
+function templateFirstFindingCounts(rows) {
+  const counts = new Map(resetStatuses.map((status) => [status, 0]));
+
+  for (const row of rows) {
+    const status = row.status.startsWith("covered") ? "covered" : row.status;
+    counts.set(status, (counts.get(status) ?? 0) + 1);
+  }
+
+  return counts;
 }
 
 function parseInventoryCounts(resultInventorySection) {
@@ -346,8 +366,13 @@ test("template-first UI parity directive close condition stays satisfied", () =>
     assert.deepEqual(blockerRows(reportSource), [], `${packet} has row-level blockers`);
     assert.equal(findingRows.length > 0, true, `${packet} needs reset finding rows`);
 
-    for (const status of blockingStatuses) {
-      assert.equal(counts.get(status) ?? 0, 0, `${packet} has nonzero ${status} rows`);
+    const findingCounts = templateFirstFindingCounts(findingRows);
+    for (const status of resetStatuses) {
+      assert.equal(
+        counts.get(status) ?? 0,
+        findingCounts.get(status) ?? 0,
+        `${packet} ${status} summary must match finding rows`,
+      );
     }
 
     for (const [index, row] of findingRows.entries()) {
