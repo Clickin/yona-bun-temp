@@ -34,6 +34,126 @@ type ProjectMember = {
   userLabel: string;
 };
 
+const projectContainerPayload = () => ({
+  backgroundUrl: "",
+  boardCount: 1,
+  codeMemberOnly: false,
+  defaultTab: "readme",
+  enrollmentRequested: false,
+  isFavorited: false,
+  isForked: false,
+  isWatching: false,
+  logoUrl: "",
+  memberCount: 1,
+  members: [
+    {
+      avatarUrl: "/avatars/owner.png",
+      loginId: "owner",
+      role: "manager",
+      userLabel: "Owner",
+    },
+  ],
+  openIssueCount: 2,
+  openPullRequestCount: 0,
+  organizationName: "",
+  overview: "Project description",
+  ownerName: "owner",
+  projectId: 42,
+  projectName: "projectYobi",
+  projectScope: "public",
+  reviewCount: 0,
+  showAdmin: false,
+  showBoard: true,
+  showCode: true,
+  showIssue: true,
+  showMilestone: true,
+  showPullRequest: true,
+  showReview: true,
+  vcs: "GIT",
+  viewerCanEnroll: false,
+  viewerCanLeave: false,
+  viewerCanUpdate: false,
+  viewerCanWatch: false,
+  watchCount: 1,
+});
+
+async function routeProjectContainer(page: Page): Promise<void> {
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(projectContainerPayload()),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+}
+
+async function assertLegacyProjectErrorShell(page: Page, expectedMessage: string): Promise<void> {
+  await expect(page.locator(".project-page-wrap.project-error-page")).toBeVisible();
+  await expect(page.locator(".error-wrap > p").first()).toHaveText(expectedMessage);
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap .ybtn")).toHaveCount(0);
+
+  const navbar = await layoutBox(page, ".gnb-outer.project-header");
+  const header = await layoutBox(page, ".app-shell > .project-header-outer");
+  const headerInner = await layoutBox(
+    page,
+    ".app-shell > .project-header-outer .project-header-inner",
+  );
+  const projectMenu = await layoutBox(page, ".app-shell > .project-menu-outer");
+  const pageWrap = await layoutBox(page, ".app-shell > .page-wrap-outer");
+  const projectPage = await layoutBox(page, ".project-page-wrap.project-error-page");
+  const errorWrap = await layoutBox(page, ".project-page-wrap.project-error-page .error-wrap");
+  const icon = await layoutBox(
+    page,
+    ".project-page-wrap.project-error-page .error-wrap .ico.ico-err2",
+  );
+  const message = await layoutBox(page, ".project-page-wrap.project-error-page .error-wrap > p");
+  const styles = await page.locator(".project-page-wrap.project-error-page").evaluate((element) => {
+    const errorWrapStyle = window.getComputedStyle(
+      element.querySelector(".error-wrap") as HTMLElement,
+    );
+    const messageStyle = window.getComputedStyle(
+      element.querySelector(".error-wrap > p") as HTMLElement,
+    );
+    return {
+      errorPaddingTop: errorWrapStyle.paddingTop,
+      iconTextAlign: errorWrapStyle.textAlign,
+      messageColor: messageStyle.color,
+      messageFontSize: messageStyle.fontSize,
+      messageFontWeight: messageStyle.fontWeight,
+      messageMarginTop: messageStyle.marginTop,
+    };
+  });
+
+  expect(Math.round(navbar.y)).toBe(0);
+  expect(Math.round(header.y)).toBe(0);
+  expect(navbar.height).toBeLessThan(header.height);
+  expect(Math.round(header.height)).toBe(120);
+  expect(Math.round(headerInner.height)).toBe(Math.round(header.height));
+  expect(projectMenu.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+  expect(Math.round(projectMenu.height)).toBe(40);
+  expect(pageWrap.y).toBeGreaterThanOrEqual(projectMenu.y + projectMenu.height - 1);
+  expect(projectPage.x).toBeGreaterThanOrEqual(pageWrap.x);
+  expect(projectPage.width).toBeLessThanOrEqual(pageWrap.width + 1);
+  expect(errorWrap.y).toBeGreaterThanOrEqual(projectPage.y);
+  expect(icon.y).toBeGreaterThanOrEqual(errorWrap.y);
+  expect(message.y).toBeGreaterThan(icon.y + icon.height - 1);
+  expect(
+    Math.abs(icon.x + icon.width / 2 - (errorWrap.x + errorWrap.width / 2)),
+  ).toBeLessThanOrEqual(24);
+  expect(
+    Math.abs(message.x + message.width / 2 - (errorWrap.x + errorWrap.width / 2)),
+  ).toBeLessThanOrEqual(24);
+  expect(styles).toEqual({
+    errorPaddingTop: "100px",
+    iconTextAlign: "center",
+    messageColor: "rgb(137, 137, 137)",
+    messageFontSize: "16px",
+    messageFontWeight: "700",
+    messageMarginTop: "30px",
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.__YONA_RUNTIME_CONFIG__ = {
@@ -286,54 +406,7 @@ test("project members route renders the legacy forbidden shell for non-updaters"
   page,
 }) => {
   await page.setViewportSize({ height: 900, width: 1280 });
-  await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
-    await route.fulfill({
-      body: JSON.stringify({
-        backgroundUrl: "",
-        boardCount: 1,
-        codeMemberOnly: false,
-        defaultTab: "readme",
-        enrollmentRequested: false,
-        isFavorited: false,
-        isForked: false,
-        isWatching: false,
-        logoUrl: "",
-        memberCount: 1,
-        members: [
-          {
-            avatarUrl: "/avatars/owner.png",
-            loginId: "owner",
-            role: "manager",
-            userLabel: "Owner",
-          },
-        ],
-        openIssueCount: 2,
-        openPullRequestCount: 0,
-        organizationName: "",
-        overview: "Project description",
-        ownerName: "owner",
-        projectId: 42,
-        projectName: "projectYobi",
-        projectScope: "public",
-        reviewCount: 0,
-        showAdmin: false,
-        showBoard: true,
-        showCode: true,
-        showIssue: true,
-        showMilestone: true,
-        showPullRequest: true,
-        showReview: true,
-        vcs: "GIT",
-        viewerCanEnroll: false,
-        viewerCanLeave: false,
-        viewerCanUpdate: false,
-        viewerCanWatch: false,
-        watchCount: 1,
-      }),
-      headers: restJsonHeaders,
-      status: 200,
-    });
-  });
+  await routeProjectContainer(page);
   await page.route(apiV1Route("/owners/owner/projects/projectYobi/members"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -349,72 +422,36 @@ test("project members route renders the legacy forbidden shell for non-updaters"
   });
 
   await page.goto("/yona/owner/projectYobi/members");
-  await expect(page.locator(".project-page-wrap.project-error-page")).toBeVisible();
-  await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
-  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
-  await expect(page.locator(".error-wrap .ybtn")).toHaveCount(0);
+  await assertLegacyProjectErrorShell(page, "You are not authorized");
   await assertNoProjectAdminRawKeys(page);
   await expect(page.locator("#addNewMember")).toHaveCount(0);
   await expect(page.locator('[data-action="apply"]')).toHaveCount(0);
   await expect(page.locator('[data-action="delete"]')).toHaveCount(0);
+});
 
-  const navbar = await layoutBox(page, ".gnb-outer.project-header");
-  const header = await layoutBox(page, ".app-shell > .project-header-outer");
-  const headerInner = await layoutBox(
-    page,
-    ".app-shell > .project-header-outer .project-header-inner",
-  );
-  const projectMenu = await layoutBox(page, ".app-shell > .project-menu-outer");
-  const pageWrap = await layoutBox(page, ".app-shell > .page-wrap-outer");
-  const projectPage = await layoutBox(page, ".project-page-wrap.project-error-page");
-  const errorWrap = await layoutBox(page, ".project-page-wrap.project-error-page .error-wrap");
-  const icon = await layoutBox(
-    page,
-    ".project-page-wrap.project-error-page .error-wrap .ico.ico-err2",
-  );
-  const message = await layoutBox(page, ".project-page-wrap.project-error-page .error-wrap > p");
-  const styles = await page.locator(".project-page-wrap.project-error-page").evaluate((element) => {
-    const errorWrapStyle = window.getComputedStyle(
-      element.querySelector(".error-wrap") as HTMLElement,
-    );
-    const messageStyle = window.getComputedStyle(
-      element.querySelector(".error-wrap > p") as HTMLElement,
-    );
-    return {
-      errorPaddingTop: errorWrapStyle.paddingTop,
-      iconTextAlign: errorWrapStyle.textAlign,
-      messageColor: messageStyle.color,
-      messageFontSize: messageStyle.fontSize,
-      messageFontWeight: messageStyle.fontWeight,
-      messageMarginTop: messageStyle.marginTop,
-    };
+test("project members route renders the legacy bad-request project shell on list failure", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await routeProjectContainer(page);
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/members"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        error: {
+          code: "internal",
+          message: "boom",
+          status: 500,
+        },
+      }),
+      headers: restJsonHeaders,
+      status: 500,
+    });
   });
 
-  expect(Math.round(navbar.y)).toBe(0);
-  expect(Math.round(header.y)).toBe(0);
-  expect(navbar.height).toBeLessThan(header.height);
-  expect(Math.round(header.height)).toBe(120);
-  expect(Math.round(headerInner.height)).toBe(Math.round(header.height));
-  expect(projectMenu.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
-  expect(Math.round(projectMenu.height)).toBe(40);
-  expect(pageWrap.y).toBeGreaterThanOrEqual(projectMenu.y + projectMenu.height - 1);
-  expect(projectPage.x).toBeGreaterThanOrEqual(pageWrap.x);
-  expect(projectPage.width).toBeLessThanOrEqual(pageWrap.width + 1);
-  expect(errorWrap.y).toBeGreaterThanOrEqual(projectPage.y);
-  expect(icon.y).toBeGreaterThanOrEqual(errorWrap.y);
-  expect(message.y).toBeGreaterThan(icon.y + icon.height - 1);
-  expect(
-    Math.abs(icon.x + icon.width / 2 - (errorWrap.x + errorWrap.width / 2)),
-  ).toBeLessThanOrEqual(24);
-  expect(
-    Math.abs(message.x + message.width / 2 - (errorWrap.x + errorWrap.width / 2)),
-  ).toBeLessThanOrEqual(24);
-  expect(styles).toEqual({
-    errorPaddingTop: "100px",
-    iconTextAlign: "center",
-    messageColor: "rgb(137, 137, 137)",
-    messageFontSize: "16px",
-    messageFontWeight: "700",
-    messageMarginTop: "30px",
-  });
+  await page.goto("/yona/owner/projectYobi/members");
+  await assertLegacyProjectErrorShell(page, "The request cannot be fulfilled due to bad syntax");
+  await assertNoProjectAdminRawKeys(page);
+  await expect(page.locator("#addNewMember")).toHaveCount(0);
+  await expect(page.locator('[data-action="apply"]')).toHaveCount(0);
+  await expect(page.locator('[data-action="delete"]')).toHaveCount(0);
 });

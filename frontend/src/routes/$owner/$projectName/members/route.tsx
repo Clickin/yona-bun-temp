@@ -162,6 +162,16 @@ function ProjectMembersRouteComponent() {
     return <NotFoundPage href={routeHref} />;
   }
   if (failureKind === "bad-request") {
+    if (containerQuery.data) {
+      return (
+        <ProjectErrorPage
+          detail={toProjectContainerView(containerQuery.data)}
+          messageKey="error.badrequest"
+          renderShell={false}
+          runtimeConfig={runtimeConfig}
+        />
+      );
+    }
     return <BadRequestPage href={routeHref} />;
   }
 
