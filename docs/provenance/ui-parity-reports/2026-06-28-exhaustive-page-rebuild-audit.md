@@ -132,6 +132,13 @@ and checks anchor string overlap. The current static triage result is 134
 counts are queue triage only; rendered route verification is still required
 before any template is closed.
 
+The rendered verification queue derived from that matrix is:
+`docs/provenance/ui-parity-reports/2026-06-28-rendered-verification-queue.md`.
+It keeps all 242 templates in scope and splits them into 12 P0, 89 P1, 7 P2,
+and 134 P3 rendered verification rows. The exhaustive rebuild audit is not
+complete while any row in that queue lacks rendered route evidence against its
+owning Scala template and partials.
+
 ### `board/`
 
 | legacy template | packet | audit disposition |
