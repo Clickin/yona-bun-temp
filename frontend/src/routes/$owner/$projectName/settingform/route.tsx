@@ -1,10 +1,12 @@
 import * as React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   readCodeBranches,
   setDefaultCodeBranchRest,
   type CodeBranchListResponse,
 } from "../../../../api/code-branches";
+import { apiQueryKeys } from "../../../../api/query-keys";
 import { readProjectSettings, updateProject } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { prefixBasePath } from "../../../../runtime-config";
@@ -27,6 +29,7 @@ function ProjectSettingsRouteComponent() {
   const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(`/${owner}/${projectName}/settingform`);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
   );
@@ -125,6 +128,16 @@ function ProjectSettingsRouteComponent() {
             updated.ownerName,
             updated.projectName,
           );
+          queryClient.setQueryData(
+            apiQueryKeys.project.container(updated.ownerName, updated.projectName),
+            nextDetail,
+          );
+          if (owner !== updated.ownerName || projectName !== updated.projectName) {
+            queryClient.setQueryData(
+              apiQueryKeys.project.container(owner, projectName),
+              nextDetail,
+            );
+          }
           const nextView = toProjectContainerView(nextDetail);
           setDetail(nextView);
           if (nextView.showCode !== false && (!nextView.vcs || nextView.vcs === "GIT")) {

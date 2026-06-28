@@ -5,11 +5,24 @@ const restJsonHeaders = {
   "content-type": "application/json",
 };
 
-const apiV1Route = (path: string) => `**/api/v1${path}`;
+const apiV1Route = (path: string) => `**/v1${path}`;
 const PROJECT_ADMIN_RAW_KEY_PATTERN = /\b(?:project|button)\.[a-z][A-Za-z0-9_.-]*/;
+
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
 
 async function assertNoProjectAdminRawKeys(page: Page): Promise<void> {
   await expect(page.locator("body")).not.toContainText(PROJECT_ADMIN_RAW_KEY_PATTERN);
+}
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
 }
 
 async function installRuntime(page: Page): Promise<void> {
@@ -76,6 +89,13 @@ async function installRuntime(page: Page): Promise<void> {
         recentProjects: [],
         watchedProjects: [],
       }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(projectSettingsPayload()),
       headers: restJsonHeaders,
       status: 200,
     });
@@ -254,7 +274,8 @@ test("project settings saves menu, code access, reviewer and default branch stat
   await page.locator("#codeAccessibleAnyone").check();
   await page.locator("#menuSettingIssue").uncheck();
   await page.locator("#menuSettingReview").uncheck();
-  await page.locator("#project-reviewer-count").selectOption("3");
+  await page.locator('[data-id="project-reviewer-count"] .dropdown-toggle').click();
+  await page.locator('[data-id="project-reviewer-count"] li[data-value="3"] a').click();
   await page.locator("#project-default-branch").selectOption("feature/settings");
   await page.locator("#project-desc").fill("Updated settings overview");
   await page.locator("#save").click();
@@ -290,6 +311,72 @@ test("project settings saves menu, code access, reviewer and default branch stat
   const projectMenuLabels = page.locator(".project-menu-gruop .menu-name");
   await expect(projectMenuLabels.filter({ hasText: "Issue" })).toHaveCount(0);
   await expect(projectMenuLabels.filter({ hasText: "Review" })).toHaveCount(0);
+});
+
+test("project settings shell keeps legacy project layout size and alignment metrics", async ({
+  page,
+}) => {
+  await page.route(apiV1Route("/owners/owner/projects/projectYobi/settings"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(projectSettingsPayload()),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/projects/owner/projectYobi/branches"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(branchPayload()),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/yona/owner/projectYobi/settingform");
+
+  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".page-wrap-outer > .project-page-wrap")).toBeVisible();
+
+  const navbar = await layoutBox(page, ".gnb-outer.project-header");
+  const header = await layoutBox(page, ".project-header-outer");
+  const headerInner = await layoutBox(page, ".project-header-inner");
+  const projectMenu = await layoutBox(page, ".project-menu-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const settingSubmenu = await layoutBox(
+    page,
+    ".page-wrap-outer > .project-page-wrap > .nav.nav-tabs",
+  );
+  const form = await layoutBox(page, "#saveSetting");
+  const topBox = await layoutBox(page, "#saveSetting .box-wrap.top");
+  const leftColumn = await layoutBox(page, "#saveSetting .setting-box.left");
+  const rightColumn = await layoutBox(page, "#saveSetting .setting-box.right");
+  const logo = await layoutBox(page, "#saveSetting .logo-wrap");
+  const description = await layoutBox(page, "#project-desc");
+
+  expect(Math.round(navbar.y)).toBe(0);
+  expect(Math.round(header.y)).toBe(0);
+  expect(navbar.height).toBeLessThan(header.height);
+  expect(Math.round(header.height)).toBe(120);
+  expect(Math.round(headerInner.height)).toBe(Math.round(header.height));
+  expect(projectMenu.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+  expect(Math.round(projectMenu.height)).toBe(40);
+  expect(pageWrap.y).toBeGreaterThanOrEqual(projectMenu.y + projectMenu.height + 19);
+  expect(Math.abs(projectPage.y - pageWrap.y)).toBeLessThanOrEqual(1);
+  expect(settingSubmenu.y).toBeLessThan(form.y);
+
+  expect(Math.abs(leftColumn.y - rightColumn.y)).toBeLessThanOrEqual(1);
+  expect(leftColumn.x).toBeLessThan(rightColumn.x);
+  expect(rightColumn.x - (leftColumn.x + leftColumn.width)).toBeGreaterThanOrEqual(-2);
+  expect(Math.round(leftColumn.width)).toBeGreaterThanOrEqual(419);
+  expect(Math.round(rightColumn.width)).toBeGreaterThanOrEqual(419);
+  expect(Math.round(logo.width)).toBe(260);
+  expect(Math.round(logo.height)).toBe(188);
+  expect(description.width).toBeGreaterThanOrEqual(370);
+  expect(description.width).toBeLessThanOrEqual(rightColumn.width);
+  expect(topBox.height).toBeGreaterThanOrEqual(220);
 });
 
 test("project settings route renders the legacy forbidden shell for non-updaters", async ({

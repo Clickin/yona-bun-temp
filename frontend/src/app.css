@@ -1376,6 +1376,78 @@ h1 {
   display: inline-block;
 }
 
+.clearfix::before,
+.clearfix::after {
+  display: table;
+  content: "";
+  line-height: 0;
+}
+
+.clearfix::after {
+  clear: both;
+}
+
+.box-wrap .setting-box {
+  float: left;
+  width: 399px;
+}
+
+.box-wrap .setting-box.left {
+  padding-right: 20px;
+  border-right: 1px solid #fff;
+}
+
+.box-wrap .setting-box.right {
+  margin: 0;
+  padding-left: 20px;
+  border-left: 1px solid #d4d4d4;
+}
+
+.box-wrap .setting-box.left .logo-wrap {
+  display: inline-block;
+  width: 260px;
+  height: 188px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  border-radius: 10px;
+}
+
+.box-wrap .setting-box.left .logo-desc {
+  display: inline-block;
+  width: 120px;
+  margin-left: 10px;
+  font-size: 12px;
+  vertical-align: top;
+}
+
+.box-wrap .setting-box.left .logo-desc .point {
+  display: block;
+  clear: both;
+  font-weight: bold;
+  color: #51aacc;
+  text-transform: uppercase;
+}
+
+.box-wrap .setting-box.left .logo-desc .descs li {
+  margin-top: 10px;
+}
+
+.box-wrap .setting-box.left .logo-desc .descs li:last-of-type {
+  margin-top: 25px;
+}
+
+.box-wrap .setting-box.right .text,
+.box-wrap .setting-box.right .textarea {
+  width: 380px;
+}
+
+.box-wrap .setting-box.right .textarea {
+  height: 80px;
+  margin-bottom: 0;
+  resize: vertical;
+}
+
 .project-header-outer {
   height: 120px;
   background-color: #565656;

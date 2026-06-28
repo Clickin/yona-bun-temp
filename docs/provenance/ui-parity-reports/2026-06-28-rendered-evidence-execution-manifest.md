@@ -4,12 +4,13 @@ Status: active rendered-evidence plan
 Date: 2026-06-28
 Sources: P0/P1/P2/P3 source-pass reports, `output/playwright/visual-sweep/latest.json`
 
-This manifest maps all 242 source-pass rows to concrete rendered evidence collection units. Existing visual sweep data can prove that a route opened without screenshot diff failure, but it does not by itself close template parity. Each row still needs selector/copy/form/data-hook assertions or a precise `gap`, `deviation`, or `deferred` record.
+This manifest maps all 242 source-pass rows to concrete rendered evidence collection units. Existing visual sweep data can prove that a route opened without screenshot diff failure, but it does not by itself close template parity. Each row still needs selector/copy/form/data-hook assertions plus size/position/alignment evidence, or a precise `gap`, `deviation`, or `deferred` record.
 
 Source-pass rows mapped: 242
 Existing sweep: 2026-06-28T07:48:07.381Z; local 174/174; compared 96; diffFailures 0; localFailures 0
 Framed absence guard: `pnpm --dir frontend test src/auth-workspace-shell.spec.tsx` passed with 67 tests after asserting `layout_framed.scala.html` and `siteLayout_framed.scala.html` legacy iframe anchors are intentionally absent from active React/CSS.
 Project selector guard: `pnpm --dir frontend test src/project-settings-parity.spec.tsx src/project-home-tabs.spec.tsx src/issue-label-settings-i18n.spec.tsx` passed with 36 tests after asserting `project/header.scala.html`, `project/partial_dashboard_issuesbylabel.scala.html`, `project/partial_issuelabels_list.scala.html`, and `project/partial_webhooks_list.scala.html` against the Scala templates. Earlier focused project selector guards cover create/import/members/settings form anchors.
+Visual layout metric gate: selector-only evidence is not UI parity closure. Rows can only close as UI parity when rendered evidence includes size, position, and alignment checks, screenshot diff evidence, or an explicit documented exception. First representative metric guard: `pnpm --dir frontend test:e2e project-settings-parity.e2e.ts` covers `projectLayout.scala.html`, `project/header.scala.html`, `project/setting.scala.html`, and `project/partial_settingmenu.scala.html` by measuring the legacy navbar/header/menu/content vertical stack and settings form left/right column alignment against the legacy CSS anchors.
 
 ## Evidence Status Summary
 
@@ -18,7 +19,9 @@ Project selector guard: `pnpm --dir frontend test src/project-settings-parity.sp
 | sweep-supports-route-open | 232 | At least one candidate route exists in latest visual sweep and local route opened without diff/local failure. Selector assertions still needed. |
 | sweep-has-route-failure | 0 | A candidate route exists in latest sweep but had route/diff issues. |
 | targeted-absence-guard-passed | 2 | Framed iframe templates are intentionally retired; focused test verifies legacy iframe anchors and active React/CSS absence. |
-| targeted-selector-assertion-passed | 8 | Focused template-derived tests now assert the previously missing selector/form anchors. |
+| targeted-selector-assertion-passed | 8 | Focused template-derived tests assert previously missing selector/form anchors. This is structural evidence only and does not close visual UI parity without metric or screenshot evidence. |
+| visual-layout-metric-guard-passed | 4 | Focused Playwright metric test asserts legacy-derived size, position, and alignment for representative project settings shell/templates. |
+| visual-layout-metrics-needed | 238 | Rows still need size/position/alignment or screenshot-diff evidence before final UI parity closure. |
 
 ## Priority Coverage Summary
 

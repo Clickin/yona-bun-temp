@@ -3943,6 +3943,7 @@ export function ProjectSettingsPage(props: {
     ...projectMenuSettingsFromDetail(detail),
   });
   const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
+  const [reviewerCountMenuOpen, setReviewerCountMenuOpen] = React.useState(false);
 
   React.useEffect(() => {
     setFormState({
@@ -4262,7 +4263,9 @@ export function ProjectSettingsPage(props: {
                   >
                     <button
                       className="btn dropdown-toggle large"
+                      aria-expanded={reviewerCountMenuOpen}
                       data-toggle="dropdown"
+                      onClick={() => setReviewerCountMenuOpen((current) => !current)}
                       type="button"
                     >
                       <span className="d-label">{formState.defaultReviewerCount}</span>
@@ -4270,13 +4273,17 @@ export function ProjectSettingsPage(props: {
                         <span className="caret" />
                       </span>
                     </button>
-                    <ul className="dropdown-menu">
+                    <ul
+                      className="dropdown-menu"
+                      style={reviewerCountMenuOpen ? { display: "block" } : undefined}
+                    >
                       {reviewerCountOptions.map((count) => (
                         <li data-value={count} key={count}>
                           <a
                             href="#reviewer-count"
                             onClick={(event) => {
                               event.preventDefault();
+                              setReviewerCountMenuOpen(false);
                               setFormState((current) => ({
                                 ...current,
                                 defaultReviewerCount: count,

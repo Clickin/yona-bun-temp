@@ -4,7 +4,7 @@ Status: active P1 findings
 Date: 2026-06-28
 Sources: `2026-06-28-rendered-verification-queue.md`, `2026-06-28-static-react-owner-coverage.md`, `yona-original/app/views/**`, `frontend/src/routes/**`
 
-This pass expands all 89 P1 rendered-verification rows into source-level risk buckets. It does not close the rows. P1 exits only after rendered route evidence proves the missing legacy id/name/data anchors, form submit boundaries, and partial caller states, or after a `gap`, `deviation`, or `deferred` record is written.
+This pass expands all 89 P1 rendered-verification rows into source-level risk buckets. It does not close the rows. P1 exits only after rendered route evidence proves the missing legacy id/name/data anchors, form submit boundaries, partial caller states, and size/position/alignment parity, or after a `gap`, `deviation`, or `deferred` record is written.
 
 P1 row count: 89
 
@@ -13,7 +13,7 @@ P1 row count: 89
 | status | count | meaning |
 | --- | ---: | --- |
 | rendered-interaction-check-needed | 52 | Rows involving data hooks, form names, TanStack submit boundaries, comments, editors, uploads, diffs, or reviews. |
-| targeted-rendered-assertion-passed | 8 | Rows whose missing source-pass anchor was implemented and covered by a focused Scala-template-derived render assertion. |
+| targeted-rendered-assertion-passed | 8 | Rows whose missing source-pass anchor was implemented and covered by a focused Scala-template-derived render assertion; these still require visual layout metrics or screenshot evidence for final UI parity closure. |
 | caller-route-check-needed | 16 | Shared partial rows that must be verified through concrete caller routes. |
 | dynamic-selector-check-needed | 10 | Rows whose missing anchors are generated from entity IDs or Scala variables. |
 | rendered-selector-check-needed | 3 | Rows needing rendered selector/copy confirmation but no special interaction risk tag. |
