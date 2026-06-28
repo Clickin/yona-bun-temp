@@ -103,6 +103,99 @@ async function assertLegacyIssueCommentsShellMetrics(page: Page) {
   });
 }
 
+async function assertLegacyIssueEventTimelineMetrics(page: Page) {
+  const closedEvent = await layoutBox(page, "section#comments li#event-17.event");
+  const closedState = await layoutBox(page, "#event-17 > .state.closed");
+  const closedMessage = await layoutBox(page, "#event-17 > .event-message");
+  const closedSender = await layoutBox(page, "#event-17 .event-message a.usf-group");
+  const closedDate = await layoutBox(page, "#event-17 > .date");
+  const labelEvent = await layoutBox(page, "section#comments li#event-18.event");
+  const labelState = await layoutBox(page, "#event-18 > .state.label-added");
+  const labelMessage = await layoutBox(page, "#event-18 > .event-message");
+  const issueLabel = await layoutBox(page, "#event-18 .issue-label");
+  const assigneeEvent = await layoutBox(page, "section#comments li#event-20.event");
+  const assigneeState = await layoutBox(page, "#event-20 > .state.changed");
+  const assigneeSender = await layoutBox(
+    page,
+    "#event-20 .event-message a.usf-group:first-of-type",
+  );
+  const assigneeTarget = await layoutBox(
+    page,
+    "#event-20 .event-message a.usf-group:nth-of-type(2)",
+  );
+  const assigneeDate = await layoutBox(page, "#event-20 > .date");
+  const styles = await page.locator("#event-17").evaluate((element) => {
+    const eventStyle = window.getComputedStyle(element);
+    const stateStyle = window.getComputedStyle(element.querySelector(".state") as HTMLElement);
+    const messageStyle = window.getComputedStyle(
+      element.querySelector(".event-message") as HTMLElement,
+    );
+    const senderStyle = window.getComputedStyle(
+      element.querySelector("a.usf-group") as HTMLElement,
+    );
+    const dateStyle = window.getComputedStyle(element.querySelector(".date") as HTMLElement);
+    return {
+      dateDisplay: dateStyle.display,
+      eventDisplay: eventStyle.display,
+      messageDisplay: messageStyle.display,
+      senderDisplay: senderStyle.display,
+      stateDisplay: stateStyle.display,
+    };
+  });
+
+  await expect(page.locator("#event-17.event")).toHaveCount(1);
+  await expect(page.locator("#event-17 > .state.closed")).toContainText("Closed");
+  await expect(page.locator("#event-17 .event-message")).toContainText("owner closed this issue");
+  await expect(page.locator("#event-17 .event-message a.usf-group")).toHaveAttribute(
+    "href",
+    "/yona/owner",
+  );
+  await expect(page.locator("#event-17 .event-message a.usf-group")).toHaveAttribute(
+    "data-toggle",
+    "tooltip",
+  );
+  await expect(page.locator('#event-17 > .date > a[href="#event-17"]')).toContainText(
+    "1 minute ago",
+  );
+  await expect(page.locator("#event-18 > .state.label-added")).toContainText("Added");
+  await expect(page.locator("#event-18 .event-message a.usf-group")).toHaveAttribute(
+    "href",
+    "/yona/owner",
+  );
+  await expect(page.locator("#event-18 .issue-label")).toContainText("bug");
+  await expect(page.locator("#event-20 > .state.changed")).toContainText("Assigned");
+  await expect(page.locator("#event-20 .event-message a.usf-group").nth(0)).toHaveAttribute(
+    "href",
+    "/yona/owner",
+  );
+  await expect(page.locator("#event-20 .event-message a.usf-group").nth(1)).toHaveAttribute(
+    "href",
+    "/yona/assignee",
+  );
+  await expect(page.locator("#event-19")).toHaveCount(0);
+
+  expect(closedState.x).toBeGreaterThanOrEqual(closedEvent.x);
+  expect(closedMessage.x).toBeGreaterThan(closedState.x + closedState.width - 1);
+  expect(closedSender.x).toBeGreaterThanOrEqual(closedMessage.x);
+  expect(closedDate.x).toBeGreaterThan(closedMessage.x + closedMessage.width - 1);
+  expect(labelEvent.y).toBeGreaterThan(closedEvent.y + closedEvent.height - 1);
+  expect(labelState.x).toBeCloseTo(closedState.x, 0);
+  expect(labelMessage.x).toBeGreaterThan(labelState.x + labelState.width - 1);
+  expect(issueLabel.x).toBeGreaterThan(labelMessage.x);
+  expect(assigneeEvent.y).toBeGreaterThan(labelEvent.y + labelEvent.height - 1);
+  expect(assigneeState.x).toBeCloseTo(labelState.x, 0);
+  expect(assigneeSender.x).toBeGreaterThanOrEqual(labelMessage.x);
+  expect(assigneeTarget.x).toBeGreaterThan(assigneeSender.x + assigneeSender.width - 1);
+  expect(assigneeDate.x).toBeGreaterThan(assigneeTarget.x + assigneeTarget.width - 1);
+  expect(styles).toEqual({
+    dateDisplay: "inline",
+    eventDisplay: "list-item",
+    messageDisplay: "inline",
+    senderDisplay: "inline",
+    stateDisplay: "inline-block",
+  });
+}
+
 async function assertLegacyIssueCommentRowMetrics(page: Page) {
   const commentRow =
     "section#comments #timeline .timeline-list > ul.comments > li#comment-10.comment:not(.index-comment)";
@@ -1160,6 +1253,7 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await expect(fullTimeline).not.toContainText("issue.event.");
 
   await assertLegacyIssueCommentsShellMetrics(page);
+  await assertLegacyIssueEventTimelineMetrics(page);
   await expect(fullTimeline.locator("#comment-10")).toContainText("Editable comment");
   await assertLegacyIssueCommentRowMetrics(page);
   await fullTimeline.locator("#comment-10").hover();
