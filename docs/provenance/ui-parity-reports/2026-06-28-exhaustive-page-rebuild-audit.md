@@ -192,19 +192,19 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `code/branches.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/branches.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts branch tabs/table header/body column alignment, default branch marker, set-default/delete controls, data-request hooks, and mutation boundaries |
 | `code/compare.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
 | `code/compare_svn.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
 | `code/diff.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
-| `code/history.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/history.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts commit history branch/tabs/table column alignment plus path breadcrumb/table/browse/older ordering |
 | `code/nohead.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
 | `code/nohead_svn.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
-| `code/partial_branchrow.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/partial_branchrow.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts branch row name/commit/PR/actions column alignment and mutation data hooks |
 | `code/partial_nonrange_codecomment_thread.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
-| `code/partial_view_file.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
-| `code/partial_view_folder.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/partial_view_file.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts file header raw/open buttons, `#showCode`, code-line, and line-number alignment |
+| `code/partial_view_folder.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts folder/file rows, branch selector, breadcrumb, new/download controls, and viewer row ordering |
 | `code/svnDiff.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
-| `code/view.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/view.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts project shell, code tabs/header controls, and viewer order for folder/file routes |
 
 ### `common/`
 
