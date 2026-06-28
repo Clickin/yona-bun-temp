@@ -435,6 +435,21 @@ test("treats workspace settings route cleanup as a closed parity slice with coor
   );
 });
 
+test("treats attachment upload surfaces as a closed parity slice", () => {
+  const result = runGate([
+    "frontend/src/api/attachments.ts",
+    "crates/server/tests/assets_contract.rs",
+    "docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["attachment-and-asset-acl", "parity"]],
+  );
+});
+
 test("maps board posting frontend files before generic project routes", () => {
   const result = runGate([
     "frontend/src/api/boards.ts",

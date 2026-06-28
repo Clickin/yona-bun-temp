@@ -560,7 +560,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "attachment-and-asset-acl",
     label: "Attachment and asset ACL",
-    status: "gap",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/(?!public\/legacy-assets\/).*(asset|upload|attachment|resource)/i,
       /^crates\/(?:server|persistence|domain)\/.*(asset|upload|attachment|resource)/i,
@@ -569,6 +569,10 @@ const DOMAIN_BUCKETS = [
     provenanceDocs: [
       "docs/provenance/phase-0b/legacy-test-inventory.md",
       "docs/provenance/core-parity-audit.md",
+      "docs/provenance/ui-parity-reports/template-first-p0-global-shell.md",
+      "docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md",
+      "docs/provenance/ui-parity-reports/template-first-p6-organization-directory-workspace.md",
+      "docs/provenance/ui-parity-reports/ui-parity-user-account-settings.md",
     ],
   },
   {
