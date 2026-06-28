@@ -703,6 +703,51 @@ button[type="submit"]:focus {
   display: none;
 }
 
+.login-form-wrap,
+.signup-form-wrap {
+  position: relative;
+}
+
+.login-form-wrap .text,
+.signup-form-wrap .text {
+  width: 386px;
+  height: 27px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: bold;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  border-radius: 0 !important;
+}
+
+.login-form-wrap .text:focus,
+.signup-form-wrap .text:focus {
+  border-bottom: 1px solid #f36c22;
+  outline: none;
+}
+
+.login-form-wrap {
+  width: 400px;
+  margin: 54px auto 0;
+}
+
+.login-form-wrap .btns-row {
+  display: block;
+  margin: 0 auto 20px;
+  text-align: center;
+}
+
+.login-form-wrap .ybtn-fullsize {
+  width: 100%;
+}
+
+.frm-wrap dl,
+.frm-wrap dt,
+.frm-wrap dd {
+  padding: 0;
+  margin: 0;
+}
+
 .loginDialog {
   width: 460px;
   margin-left: -230px;

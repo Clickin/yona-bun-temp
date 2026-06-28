@@ -16,6 +16,19 @@ type AuthCapabilities = {
   socialLoginOnly?: boolean;
 };
 
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
+
 async function expectNoVisibleRawLegacyKeys(page: Page): Promise<void> {
   const bodyText = await page.locator("body").innerText();
   const rawKeys =
@@ -339,13 +352,10 @@ test("signup confirmation redirects to the legacy home flash target", async ({ p
 
   await page.goto("/yona/users/signupform");
   await expectNoVisibleRawLegacyKeys(page);
-  await expect(page.locator(".center-txt")).toContainText(
-    "Administrator admission is required for activation.",
-  );
+  const signupNotice = page.locator(".center-txt").first();
+  await expect(signupNotice).toContainText("Administrator admission is required for activation.");
   await expect(page.locator(".center-txt .obfuscate")).toHaveText("moc.elpmaxe@nimda");
-  await expect(page.locator(".center-txt")).toContainText(
-    "If needed, please contact moc.elpmaxe@nimda",
-  );
+  await expect(signupNotice).toContainText("If needed, please contact moc.elpmaxe@nimda");
 
   await page.locator("#loginId").fill("newuser");
   await page.locator("#uname").fill("New User");
@@ -464,6 +474,68 @@ test("lost and reset password browser states preserve legacy copy and redirects"
   await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator(".error-wrap")).toContainText("Wrong url to reset password.");
   await expect(page.locator("form[name='passwordReset']")).toHaveCount(0);
+});
+
+test("lost password shell keeps legacy full-page size and alignment metrics", async ({ page }) => {
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/yona/lostPassword");
+
+  await expectNoVisibleRawLegacyKeys(page);
+  await expect(page.locator(".gnb-outer")).toBeVisible();
+  await expect(page.locator(".page.full")).toBeVisible();
+  await expect(page.locator(".center-wrap.tag-line-wrap.reset-password")).toBeVisible();
+  await expect(page.locator(".login-form-wrap.frm-wrap form")).toBeVisible();
+
+  const navbar = await layoutBox(page, ".gnb-outer");
+  const main = await layoutBox(page, "main.app-shell");
+  const pageFull = await layoutBox(page, ".page.full");
+  const centerWrap = await layoutBox(page, ".center-wrap.tag-line-wrap.reset-password");
+  const title = await layoutBox(page, ".center-wrap.tag-line-wrap.reset-password .title");
+  const tagline = await layoutBox(page, ".center-wrap.tag-line-wrap.reset-password .tag-line");
+  const formWrap = await layoutBox(page, ".login-form-wrap.frm-wrap");
+  const form = await layoutBox(page, ".login-form-wrap.frm-wrap form");
+  const loginInput = await layoutBox(page, "#loginId");
+  const emailInput = await layoutBox(page, "#emailAddress");
+  const buttonRow = await layoutBox(page, ".login-form-wrap.frm-wrap .btns-row");
+  const submit = await layoutBox(page, ".login-form-wrap.frm-wrap button[type='submit']");
+  const footer = await layoutBox(page, ".page-footer-outer");
+
+  expect(navbar.y).toBeGreaterThanOrEqual(0);
+  expect(navbar.height).toBeGreaterThanOrEqual(38);
+  expect(navbar.height).toBeLessThanOrEqual(44);
+  expect(main.y).toBeGreaterThanOrEqual(navbar.y + navbar.height - 1);
+  expect(pageFull.y).toBeGreaterThanOrEqual(main.y);
+  expect(footer.y).toBeGreaterThan(pageFull.y + pageFull.height - 1);
+
+  expect(pageFull.width).toBeGreaterThanOrEqual(1100);
+  expect(centerWrap.width).toBeCloseTo(pageFull.width, 0);
+  expect(Math.abs(centerWrap.x + centerWrap.width / 2 - 640)).toBeLessThanOrEqual(2);
+  expect(title.y).toBeGreaterThanOrEqual(centerWrap.y);
+  expect(tagline.y).toBeGreaterThan(title.y + title.height - 1);
+
+  expect(formWrap.y).toBeGreaterThan(centerWrap.y + centerWrap.height - 1);
+  expect(formWrap.width).toBeGreaterThanOrEqual(386);
+  expect(formWrap.width).toBeLessThanOrEqual(404);
+  expect(Math.abs(formWrap.x + formWrap.width / 2 - 640)).toBeLessThanOrEqual(2);
+  expect(form.x).toBeCloseTo(formWrap.x, 0);
+  expect(form.width).toBeCloseTo(formWrap.width, 0);
+
+  expect(loginInput.y).toBeGreaterThanOrEqual(form.y);
+  expect(emailInput.y).toBeGreaterThan(loginInput.y + loginInput.height - 1);
+  expect(loginInput.x).toBeCloseTo(emailInput.x, 0);
+  expect(loginInput.width).toBeCloseTo(emailInput.width, 0);
+  expect(loginInput.width).toBeGreaterThanOrEqual(386);
+  expect(loginInput.width).toBeLessThanOrEqual(390);
+  expect(loginInput.x).toBeGreaterThanOrEqual(formWrap.x);
+  expect(loginInput.x + loginInput.width).toBeLessThanOrEqual(formWrap.x + formWrap.width);
+
+  expect(buttonRow.y).toBeGreaterThan(emailInput.y + emailInput.height - 1);
+  expect(submit.y).toBeGreaterThanOrEqual(buttonRow.y);
+  expect(submit.x).toBeCloseTo(formWrap.x, 0);
+  expect(submit.width).toBeCloseTo(formWrap.width, 0);
 });
 
 test("verify route renders success and invalid legacy public states", async ({ page }) => {

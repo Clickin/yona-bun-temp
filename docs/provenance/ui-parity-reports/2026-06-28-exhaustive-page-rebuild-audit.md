@@ -468,14 +468,14 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `site/data.scala.html` | P7 site-admin | metric guard passed: `site-admin-data-parity.e2e.ts` asserts warning/export/import ordering, export anchor, file input/import submit alignment, and TanStack mutation boundary |
 | `site/diagnostic.scala.html` | P7 site-admin | metric guard passed: `site-admin-diagnostic-parity.e2e.ts` asserts no-error/error branches, diagnostic pre-block alignment, and site-admin shell layout |
 | `site/issueList.scala.html` | P7 site-admin | metric guard passed: `site-admin-issue-list-parity.e2e.ts` asserts state tabs, post-style row avatar/info/meta alignment, anchors, and pagination |
-| `site/lostPassword.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
+| `site/lostPassword.scala.html` | P1 auth | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts reset title/tagline stack, centered form width, input alignment, full-width submit, footer order, resolved copy, and TanStack mutation boundary |
 | `site/mail.scala.html` | P7 site-admin | metric guard passed: `site-admin-mail-parity.e2e.ts` asserts form-horizontal label/control alignment, textarea sizing, alerts, and TanStack mutation submit boundary |
 | `site/massMail.scala.html` | P7 site-admin | metric guard passed: `site-admin-mail-parity.e2e.ts` asserts radio/control ordering, project selector input/button alignment, selected-project label, and TanStack mutation submit boundary |
 | `site/partial_pagination.scala.html` | P7 site-admin | metric guard passed: `site-admin-project-list-parity.e2e.ts` asserts rendered pagination position/link shape on `/sites/projectList` |
 | `site/partial_paginationForUserList.scala.html` | P7 site-admin | metric guard passed: `site-admin-user-list-parity.e2e.ts` asserts rendered pagination position/link shape on `/sites/userList` |
 | `site/postList.scala.html` | P7 site-admin | metric guard passed: `site-admin-post-list-parity.e2e.ts` asserts post-style row avatar/info/meta alignment, anchors, and pagination |
 | `site/projectList.scala.html` | P7 site-admin | metric guard passed: `site-admin-project-list-parity.e2e.ts` asserts title/filter alignment, listhead-to-row column alignment, delete modal hooks, and pagination |
-| `site/setting.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/setting.scala.html` | P7 site-admin | legacy-placeholder deviation recorded: Scala body is only `TODO` inside `siteMngLayout(message)` and legacy nav does not expose a setting page; React intentionally does not restore a visible `/sites/setting` TODO page |
 | `site/siteMngLayout.scala.html` | P7 site-admin | metric guard passed: site-admin e2e suite asserts shared navbar, breadcrumb, left nav, content column, and footer ordering across user/project/post/issue/mail/data/update/diagnostic routes |
 | `site/update.scala.html` | P7 site-admin | metric guard passed: `site-admin-update-parity.e2e.ts` asserts update/no-update/download branches, message ordering, and site-admin shell layout |
 | `site/userList.scala.html` | P7 site-admin | metric guard passed: `site-admin-user-list-parity.e2e.ts` asserts title/search alignment, tabs, listhead/row/pagination ordering, and user action hooks |
