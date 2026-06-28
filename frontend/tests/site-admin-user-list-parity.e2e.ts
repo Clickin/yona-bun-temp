@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,19 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
 
 function siteUsersPayload(input: {
   page?: number;
@@ -143,6 +156,82 @@ test("site admin user list keeps the legacy shell on a mobile viewport", async (
   await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
   await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@member");
   await expect(page.locator("#pagination.page-navigation-wrap .page-nums")).toBeVisible();
+});
+
+test("site admin user list keeps legacy shell size and alignment", async ({ page }) => {
+  await page.route(apiV1Route("/site/users**"), async (route) => {
+    const url = new URL(route.request().url());
+    await route.fulfill({
+      body: JSON.stringify(
+        siteUsersPayload({
+          query: url.searchParams.get("query") ?? "",
+          siteAdminCount: 1,
+          state: url.searchParams.get("state") ?? "ACTIVE",
+          totalPages: 2,
+          users: [
+            { id: 2, loginId: "member", name: "Member" },
+            { id: 3, loginId: "reviewer", name: "Reviewer" },
+          ],
+        }),
+      ),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/yona/sites/userList?state=ACTIVE&query=mem");
+
+  await expect(page.locator(".gnb-outer")).toBeVisible();
+  await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("Site management");
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
+  await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(2);
+
+  const navbar = await layoutBox(page, ".gnb-outer");
+  const breadcrumb = await layoutBox(page, ".site-breadcrumb-outer");
+  const breadcrumbInner = await layoutBox(page, ".site-breadcrumb-inner");
+  const pageOuter = await layoutBox(page, ".site-admin-page .page-wrap-outer");
+  const settingWrap = await layoutBox(page, ".site-setting-wrap");
+  const sidebar = await layoutBox(page, ".site-setting-wrap > .row-fluid > .span2");
+  const content = await layoutBox(page, ".site-setting-wrap > .row-fluid > .span10");
+  const titleArea = await layoutBox(page, ".site-setting-wrap .title_area");
+  const heading = await layoutBox(page, ".site-setting-wrap .title_area h2");
+  const search = await layoutBox(page, ".site-setting-wrap .form-search");
+  const tabs = await layoutBox(page, ".site-setting-wrap .span10 > .nav-tabs");
+  const listhead = await layoutBox(page, ".site-setting-wrap .listhead");
+  const firstItem = await layoutBox(page, ".site-setting-wrap .user-list-wrap .listitem");
+  const pagination = await layoutBox(page, "#pagination.page-navigation-wrap");
+  const footer = await layoutBox(page, ".page-footer-outer");
+
+  expect(navbar.y).toBeGreaterThanOrEqual(0);
+  expect(navbar.height).toBeGreaterThanOrEqual(38);
+  expect(navbar.height).toBeLessThanOrEqual(44);
+  expect(breadcrumb.y).toBeGreaterThanOrEqual(navbar.y + navbar.height - 1);
+  expect(pageOuter.y).toBeGreaterThanOrEqual(breadcrumb.y + breadcrumb.height + 8);
+  expect(footer.y).toBeGreaterThan(pageOuter.y + pageOuter.height - 1);
+
+  expect(breadcrumb.width).toBeGreaterThanOrEqual(1100);
+  expect(pageOuter.width).toBeGreaterThanOrEqual(1100);
+  expect(settingWrap.width).toBeGreaterThanOrEqual(1100);
+  expect(breadcrumbInner.x).toBeCloseTo(settingWrap.x, 0);
+
+  expect(sidebar.x).toBeLessThan(content.x);
+  expect(sidebar.width).toBeGreaterThanOrEqual(170);
+  expect(sidebar.width).toBeLessThanOrEqual(190);
+  expect(content.width).toBeGreaterThanOrEqual(840);
+  expect(Math.abs(sidebar.y - content.y)).toBeLessThanOrEqual(1);
+
+  expect(titleArea.x).toBeCloseTo(content.x, 0);
+  expect(titleArea.width).toBeCloseTo(content.width, 0);
+  expect(search.x).toBeGreaterThan(heading.x + heading.width);
+  expect(search.y).toBeGreaterThanOrEqual(titleArea.y);
+  expect(search.y + search.height).toBeLessThanOrEqual(titleArea.y + titleArea.height + 1);
+
+  expect(tabs.y).toBeGreaterThan(titleArea.y + titleArea.height - 1);
+  expect(listhead.y).toBeGreaterThan(tabs.y + tabs.height - 1);
+  expect(firstItem.y).toBeGreaterThanOrEqual(listhead.y + listhead.height - 1);
+  expect(Math.abs(firstItem.width - listhead.width)).toBeLessThanOrEqual(4);
+  expect(pagination.y).toBeGreaterThan(firstItem.y + firstItem.height);
 });
 
 test("site admin user list preserves legacy shell and toggles user state", async ({ page }) => {

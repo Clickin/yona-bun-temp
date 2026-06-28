@@ -12,6 +12,7 @@ Framed absence guard: `pnpm --dir frontend test src/auth-workspace-shell.spec.ts
 Project selector guard: `pnpm --dir frontend test src/project-settings-parity.spec.tsx src/project-home-tabs.spec.tsx src/issue-label-settings-i18n.spec.tsx` passed with 36 tests after asserting `project/header.scala.html`, `project/partial_dashboard_issuesbylabel.scala.html`, `project/partial_issuelabels_list.scala.html`, and `project/partial_webhooks_list.scala.html` against the Scala templates. Earlier focused project selector guards cover create/import/members/settings form anchors.
 Visual layout metric gate: selector-only evidence is not UI parity closure. Rows can only close as UI parity when rendered evidence includes size, position, and alignment checks, screenshot diff evidence, or an explicit documented exception. First representative metric guard: `pnpm --dir frontend test:e2e project-settings-parity.e2e.ts` covers `projectLayout.scala.html`, `project/header.scala.html`, `project/setting.scala.html`, and `project/partial_settingmenu.scala.html` by measuring the legacy navbar/header/menu/content vertical stack and settings form left/right column alignment against the legacy CSS anchors.
 Organization layout metric guard: `pnpm --dir frontend test:e2e organization-directory-admin-parity.e2e.ts` covers representative `organizationLayout.scala.html`, `organization/header.scala.html`, `organization/menu.scala.html`, `organization/setting.scala.html`, and `organization/partial_settingmenu.scala.html` layout evidence by measuring the legacy absolute navbar/header/menu/page stack and settings form left/right column alignment. This supports the organization shell/settings route only; remaining nested organization pages still need their own rendered content evidence.
+Site admin user-list layout metric guard: `pnpm --dir frontend test:e2e site-admin-user-list-parity.e2e.ts` covers representative `siteLayout.scala.html` and `site/userList.scala.html` layout evidence by measuring the root navbar, site admin breadcrumb, left settings nav, right content column, title/search alignment, tabs, list header, rows, pagination, and footer order. This supports the user-list route only; remaining site admin pages still need their own rendered content evidence.
 
 ## Evidence Status Summary
 
@@ -21,8 +22,8 @@ Organization layout metric guard: `pnpm --dir frontend test:e2e organization-dir
 | sweep-has-route-failure | 0 | A candidate route exists in latest sweep but had route/diff issues. |
 | targeted-absence-guard-passed | 2 | Framed iframe templates are intentionally retired; focused test verifies legacy iframe anchors and active React/CSS absence. |
 | targeted-selector-assertion-passed | 8 | Focused template-derived tests assert previously missing selector/form anchors. This is structural evidence only and does not close visual UI parity without metric or screenshot evidence. |
-| visual-layout-metric-guard-passed | 9 | Focused Playwright metric tests assert legacy-derived size, position, and alignment for representative project and organization settings shell/templates. |
-| visual-layout-metrics-needed | 233 | Rows still need size/position/alignment or screenshot-diff evidence before final UI parity closure. |
+| visual-layout-metric-guard-passed | 11 | Focused Playwright metric tests assert legacy-derived size, position, and alignment for representative project, organization settings, and site admin user-list shell/templates. |
+| visual-layout-metrics-needed | 231 | Rows still need size/position/alignment or screenshot-diff evidence before final UI parity closure. |
 
 ## Priority Coverage Summary
 
