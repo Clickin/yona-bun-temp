@@ -286,4 +286,5 @@ UI parity is complete only when:
 - the parent reruns the integrated browser sweep against embedded Yoram and
   node-proxied legacy Yona.
 
-Until then, “UI parity closed” must not be claimed.
+This closure remains valid only while the P0-P7 packet reports stay blocker-free
+and the integrated browser sweep has no diff or local failures.
