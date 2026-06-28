@@ -191,6 +191,91 @@ async function assertLegacyNoHeadMetrics(page: Page, expectedCommandBlocks: numb
   });
 }
 
+async function assertLegacyCommitDiffMetrics(page: Page) {
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const browseWrap = await layoutBox(page, "#code-browse-wrap.code-browse-wrap");
+  const tabs = await layoutBox(page, "#code-browse-wrap .nav.nav-tabs");
+  const codediff = await layoutBox(page, ".codediff-wrap");
+  const showCards = await layoutBox(page, ".codediff-wrap .btn-show-reviewcards");
+  const diffsWrap = await layoutBox(page, ".codediff-wrap .diffs-wrap");
+  const commitInfo = await layoutBox(page, ".codediff-wrap .commitInfo");
+  const diffBody = await layoutBox(page, ".codediff-wrap .diff-body");
+  const diffFile = await layoutBox(page, ".diff-body .diff-file.diff-container");
+  const diffHeader = await layoutBox(page, ".diff-body .diff-file h2");
+  const diffTable = await layoutBox(page, ".diff-body .diff-code.diff-table");
+  const firstLine = await layoutBox(page, ".diff-body .diff-table tbody tr:first-child");
+  const oldLineNum = await layoutBox(page, ".diff-body .diff-table tbody tr:first-child .linenum");
+  const codeCell = await layoutBox(page, ".diff-body .diff-table tbody tr:first-child .code");
+  const codePre = await layoutBox(
+    page,
+    ".diff-body .diff-table tbody tr:first-child .diff-partial-codeline",
+  );
+  const btnPop = await layoutBox(page, ".diff-body .btnPop");
+  const comments = await layoutBox(page, ".codediff-wrap > .diffs-wrap > .board-comment-wrap");
+  const review = await layoutBox(page, ".codediff-wrap > .review-wrap");
+  const styles = await page.locator(".diff-body .diff-file.diff-container").evaluate((element) => {
+    const fileStyle = window.getComputedStyle(element);
+    const tableStyle = window.getComputedStyle(element.querySelector(".diff-table") as HTMLElement);
+    const lineStyle = window.getComputedStyle(
+      element.querySelector(".diff-partial-codeline") as HTMLElement,
+    );
+    return {
+      fileBorderTopWidth: fileStyle.borderTopWidth,
+      fileDisplay: fileStyle.display,
+      lineDisplay: lineStyle.display,
+      lineWhiteSpace: lineStyle.whiteSpace,
+      tableBorderCollapse: tableStyle.borderCollapse,
+      tableDisplay: tableStyle.display,
+      tableLayout: tableStyle.tableLayout,
+    };
+  });
+
+  await expect(page.locator(".diff-body > .alert")).toHaveCount(0);
+  await expect(page.locator(".diff-body .diff-file.diff-container")).toHaveAttribute(
+    "data-file-path",
+    "src/main.rs",
+  );
+  await expect(page.locator(".diff-body .diff-file.diff-container")).toHaveAttribute(
+    "id",
+    "src-main-rs",
+  );
+  await expect(page.locator(".diff-body .diff-file h2 .filename")).toHaveText("src/main.rs");
+  await expect(page.locator(".diff-body .diff-stats .num-added")).toHaveText("+1");
+  await expect(page.locator(".diff-body .diff-stats .num-deleted")).toHaveText("-0");
+  await expect(page.locator(".diff-body .diff-table tr.range .hunk")).toHaveCount(1);
+  await expect(page.locator(".diff-body .diff-table tr.add")).toHaveCount(1);
+  await expect(page.locator(".diff-body .btnPop .ybtn.ybtn-info.ybtn-small")).toHaveCount(1);
+
+  expect(browseWrap.x).toBeCloseTo(projectPage.x, 0);
+  expect(browseWrap.width).toBeCloseTo(projectPage.width, 0);
+  expect(tabs.y).toBeGreaterThanOrEqual(browseWrap.y);
+  expect(codediff.y).toBeGreaterThan(tabs.y + tabs.height - 1);
+  expect(showCards.y).toBeGreaterThanOrEqual(codediff.y);
+  expect(diffsWrap.x).toBeCloseTo(codediff.x, 0);
+  expect(commitInfo.y).toBeGreaterThan(showCards.y + showCards.height - 1);
+  expect(diffBody.y).toBeGreaterThan(commitInfo.y + commitInfo.height - 1);
+  expect(diffFile.x).toBeCloseTo(diffBody.x, 0);
+  expect(diffFile.width).toBeCloseTo(diffBody.width, 0);
+  expect(diffHeader.y).toBeGreaterThanOrEqual(diffFile.y);
+  expect(diffTable.y).toBeGreaterThan(diffHeader.y + diffHeader.height - 1);
+  expect(firstLine.y).toBeGreaterThanOrEqual(diffTable.y);
+  expect(oldLineNum.x).toBeCloseTo(firstLine.x, 0);
+  expect(codeCell.x).toBeGreaterThan(oldLineNum.x + oldLineNum.width - 1);
+  expect(codePre.x).toBeGreaterThanOrEqual(codeCell.x);
+  expect(btnPop.y).toBeGreaterThan(diffFile.y);
+  expect(comments.y).toBeGreaterThan(diffBody.y + diffBody.height - 1);
+  expect(review.x).toBeGreaterThan(diffsWrap.x + diffsWrap.width - 1);
+  expect(styles).toEqual({
+    fileBorderTopWidth: "1px",
+    fileDisplay: "block",
+    lineDisplay: "block",
+    lineWhiteSpace: "pre",
+    tableBorderCollapse: "collapse",
+    tableDisplay: "table",
+    tableLayout: "fixed",
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await routeRuntimeShell(page);
 });
@@ -326,6 +411,8 @@ test("commit detail watch button toggles through REST with CSRF and preserves qu
   );
 
   await page.goto(`/yona/admin/projectYobi/commit/${commitId}?branch=main&path=src/main.rs`);
+
+  await assertLegacyCommitDiffMetrics(page);
 
   const watchButton = page.locator("#watch-button");
   await expect(watchButton).toBeVisible();
