@@ -196,6 +196,93 @@ async function assertLegacyIssueEventTimelineMetrics(page: Page) {
   });
 }
 
+async function assertLegacyIssueIndexCommentMetrics(page: Page) {
+  const indexRowSelector =
+    "aside.span-right-pane #comments .timeline-list > ul.comments > li#comment-10.comment.index-comment";
+  const shell = await layoutBox(page, "aside.span-right-pane #comments.board-comment-wrap");
+  const timeline = await layoutBox(page, "aside.span-right-pane #comments #timeline");
+  const header = await layoutBox(page, "aside.span-right-pane #comments .comment-header");
+  const list = await layoutBox(page, "aside.span-right-pane #comments ul.comments");
+  const row = await layoutBox(page, indexRowSelector);
+  const bodyWrap = await layoutBox(page, `${indexRowSelector} #comment-body-10`);
+  const body = await layoutBox(page, `${indexRowSelector} .comment-body`);
+  const bodyLink = await layoutBox(page, `${indexRowSelector} .comment-body > a`);
+  const authorRow = await layoutBox(page, `${indexRowSelector} .index-comment-author`);
+  const author = await layoutBox(page, `${indexRowSelector} .comment_author`);
+  const authorLink = await layoutBox(page, `${indexRowSelector} .comment_author > a`);
+  const agoDate = await layoutBox(page, `${indexRowSelector} .ago-date`);
+  const styles = await page.locator(indexRowSelector).evaluate((element) => {
+    const rowStyle = window.getComputedStyle(element);
+    const bodyStyle = window.getComputedStyle(
+      element.querySelector(".comment-body") as HTMLElement,
+    );
+    const authorRowStyle = window.getComputedStyle(
+      element.querySelector(".index-comment-author") as HTMLElement,
+    );
+    const authorStyle = window.getComputedStyle(
+      element.querySelector(".comment_author") as HTMLElement,
+    );
+    const agoStyle = window.getComputedStyle(element.querySelector(".ago-date") as HTMLElement);
+    const shareStyle = window.getComputedStyle(element.querySelector(".share-link") as HTMLElement);
+    return {
+      agoDisplay: agoStyle.display,
+      authorDisplay: authorStyle.display,
+      authorRowDisplay: authorRowStyle.display,
+      bodyDisplay: bodyStyle.display,
+      rowDisplay: rowStyle.display,
+      shareDisplay: shareStyle.display,
+    };
+  });
+
+  await expect(page.locator(indexRowSelector)).toHaveAttribute("data-location", "#comment-10");
+  await expect(page.locator(`${indexRowSelector} .comment-body > a`)).toHaveAttribute(
+    "href",
+    "#comment-10",
+  );
+  await expect(page.locator(`${indexRowSelector} .comment-body > a`)).toContainText(
+    "Editable comment",
+  );
+  await expect(page.locator(`${indexRowSelector} .comment-exists`)).toHaveCount(0);
+  await expect(page.locator(`${indexRowSelector} .comment_author > a`)).toHaveAttribute(
+    "href",
+    "/yona/admin",
+  );
+  await expect(page.locator(`${indexRowSelector} .comment_author > a`)).toHaveAttribute(
+    "data-toggle",
+    "tooltip",
+  );
+  await expect(page.locator(`${indexRowSelector} .comment_author strong`)).toContainText("Admin");
+  await expect(page.locator(`${indexRowSelector} .ago-date a.ago`)).toHaveAttribute(
+    "href",
+    "#comment-10",
+  );
+  await expect(page.locator(`${indexRowSelector} .ago-date a.ago`)).toContainText("just now");
+  await expect(page.locator(`${indexRowSelector} .ago-date a.share-link`)).toHaveCSS(
+    "display",
+    "none",
+  );
+
+  expect(timeline.x).toBeGreaterThanOrEqual(shell.x);
+  expect(header.y).toBeGreaterThanOrEqual(timeline.y);
+  expect(list.y).toBeGreaterThan(header.y + header.height - 1);
+  expect(row.y).toBeGreaterThanOrEqual(list.y);
+  expect(bodyWrap.y).toBeGreaterThanOrEqual(row.y);
+  expect(body.y).toBeGreaterThanOrEqual(bodyWrap.y);
+  expect(bodyLink.x).toBeGreaterThanOrEqual(body.x);
+  expect(authorRow.y).toBeGreaterThanOrEqual(row.y);
+  expect(author.x).toBeGreaterThanOrEqual(authorRow.x);
+  expect(authorLink.x).toBeGreaterThanOrEqual(author.x);
+  expect(agoDate.x).toBeGreaterThan(author.x + author.width - 1);
+  expect(styles).toEqual({
+    agoDisplay: "inline",
+    authorDisplay: "inline",
+    authorRowDisplay: "block",
+    bodyDisplay: "block",
+    rowDisplay: "list-item",
+    shareDisplay: "none",
+  });
+}
+
 async function assertLegacyIssueCommentRowMetrics(page: Page) {
   const commentRow =
     "section#comments #timeline .timeline-list > ul.comments > li#comment-10.comment:not(.index-comment)";
@@ -1252,6 +1339,7 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await expect(fullTimeline.locator("#event-19")).toHaveCount(0);
   await expect(fullTimeline).not.toContainText("issue.event.");
 
+  await assertLegacyIssueIndexCommentMetrics(page);
   await assertLegacyIssueCommentsShellMetrics(page);
   await assertLegacyIssueEventTimelineMetrics(page);
   await expect(fullTimeline.locator("#comment-10")).toContainText("Editable comment");
