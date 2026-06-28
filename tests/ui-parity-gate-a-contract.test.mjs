@@ -10,6 +10,12 @@ const phasePlanPath = path.join(
   "plans",
   "2026-06-26-full-ui-parity-subagent-phase.md",
 );
+const goalDirectivePath = path.join(
+  repoRoot,
+  "docs",
+  "plans",
+  "2026-06-28-template-first-ui-parity-goal-directive.md",
+);
 const reportsDir = path.join(repoRoot, "docs", "provenance", "ui-parity-reports");
 const inventoryStatuses = [
   "covered",
@@ -21,6 +27,16 @@ const inventoryStatuses = [
   "needs-parent-decision",
 ];
 const blockingStatuses = new Set(["gap", "deviation", "weak evidence", "needs-parent-decision"]);
+const templateFirstPackets = [
+  "template-first-p0-global-shell",
+  "template-first-p1-auth-public-home",
+  "template-first-p2-project-shell",
+  "template-first-p3-issues-editor-comments",
+  "template-first-p4-board-milestone-post",
+  "template-first-p5-code-git-pr-review",
+  "template-first-p6-organization-directory-workspace",
+  "template-first-p7-site-admin-error-security",
+];
 
 function readText(filePath) {
   return readFileSync(filePath, "utf8");
@@ -94,6 +110,20 @@ function parseSummaryCounts(summarySection) {
   }
 
   return { counts, totalRows };
+}
+
+function parseResetQueueCounts(summarySection) {
+  const counts = new Map();
+
+  for (const line of summarySection.split("\n")) {
+    const match = /^\| ([^|]+) \| (\d+) \|$/.exec(line.trim());
+    if (match === null || match[1] === "status") {
+      continue;
+    }
+    counts.set(match[1].trim().toLowerCase(), Number(match[2]));
+  }
+
+  return counts;
 }
 
 function parseInventoryCounts(resultInventorySection) {
@@ -263,6 +293,25 @@ test("full UI parity Gate A report summaries match their inventory rows", () => 
       Object.values(inventoryCounts).reduce((sum, count) => sum + count, 0),
       `${packet} total rows must match counted inventory statuses`,
     );
+  }
+});
+
+test("template-first UI parity directive close condition stays satisfied", () => {
+  const directive = readText(goalDirectivePath);
+  assert.match(directive, /Close only when all active P0-P7 report rows are covered/);
+  assert.match(directive, /no gap\/deviation\/weak-evidence row remains/);
+
+  for (const packet of templateFirstPackets) {
+    const reportPath = path.join(reportsDir, `${packet}.md`);
+    assert.equal(existsSync(reportPath), true, `${packet} needs a template-first report`);
+
+    const reportSource = readText(reportPath);
+    const counts = parseResetQueueCounts(section(reportSource, "Open Reset Queue Summary"));
+    assert.equal(counts.get("covered") > 0, true, `${packet} needs covered evidence`);
+
+    for (const status of blockingStatuses) {
+      assert.equal(counts.get(status) ?? 0, 0, `${packet} has nonzero ${status} rows`);
+    }
   }
 });
 
