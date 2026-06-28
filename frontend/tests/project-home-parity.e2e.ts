@@ -275,6 +275,143 @@ test("project home proves README fallback, history and dashboard tabs in the bro
   await expect(page.locator(".overview-label")).toContainText("High");
   await expect(page.locator(".overview-pullrequest")).toContainText("Dashboard PR");
 
+  const dashboardRow = await layoutBox(page, ".project-overview-home.row-fluid");
+  const leftColumn = await layoutBox(
+    page,
+    ".project-overview-home.row-fluid > .span6:nth-child(1)",
+  );
+  const rightColumn = await layoutBox(
+    page,
+    ".project-overview-home.row-fluid > .span6:nth-child(2)",
+  );
+  expect(leftColumn.x).toBeCloseTo(dashboardRow.x, 0);
+  expect(leftColumn.width).toBeGreaterThan(dashboardRow.width * 0.47);
+  expect(leftColumn.width).toBeLessThan(dashboardRow.width * 0.5);
+  expect(rightColumn.x).toBeGreaterThan(leftColumn.x + leftColumn.width);
+  expect(rightColumn.x).toBeGreaterThanOrEqual(dashboardRow.x + dashboardRow.width / 2 - 2);
+  expect(rightColumn.width).toBeGreaterThan(dashboardRow.width * 0.47);
+  expect(rightColumn.width).toBeLessThan(dashboardRow.width * 0.5);
+
+  const assigneeSection = page.locator(".overview-assignee").first();
+  await expect(assigneeSection.locator("> .row-fluid")).toHaveCount(2);
+  await expect(
+    assigneeSection.locator(".row-fluid").first().locator(".span6 .usf-group"),
+  ).toHaveAttribute("href", "/yona/owner/projectYobi/issues?state=open&assigneeLoginId=member");
+  await expect(
+    assigneeSection.locator(".row-fluid").first().locator(".span6 .usf-group"),
+  ).toHaveAttribute("title", "Member (@member)");
+  await expect(
+    assigneeSection.locator(".row-fluid").first().locator(".span3.num strong"),
+  ).toHaveText("2");
+  await expect(
+    assigneeSection.locator(".row-fluid").first().locator(".progress-warning"),
+  ).toHaveAttribute("title", "50%");
+  const assigneeRow = await layoutBox(page, ".overview-assignee > .row-fluid:first-child");
+  const assigneeNameColumn = await layoutBox(
+    page,
+    ".overview-assignee > .row-fluid:first-child > .span6",
+  );
+  const assigneeCountColumn = await layoutBox(
+    page,
+    ".overview-assignee > .row-fluid:first-child > .span3.num",
+  );
+  const assigneeProgressColumn = await layoutBox(
+    page,
+    ".overview-assignee > .row-fluid:first-child > .span3.nm",
+  );
+  const assigneeProgressBar = await layoutBox(
+    page,
+    ".overview-assignee > .row-fluid:first-child .progress .bar",
+  );
+  expect(assigneeNameColumn.x).toBeCloseTo(assigneeRow.x, 0);
+  expect(assigneeNameColumn.width).toBeGreaterThan(assigneeCountColumn.width);
+  expect(assigneeCountColumn.x).toBeGreaterThan(
+    assigneeNameColumn.x + assigneeNameColumn.width - 1,
+  );
+  expect(assigneeProgressColumn.x).toBeGreaterThan(
+    assigneeCountColumn.x + assigneeCountColumn.width - 1,
+  );
+  expect(assigneeProgressBar.width).toBeGreaterThan(assigneeProgressColumn.width * 0.45);
+  expect(assigneeProgressBar.width).toBeLessThan(assigneeProgressColumn.width * 0.55);
+
+  const milestoneSection = page.locator(".overview-milestone").first();
+  await expect(milestoneSection.locator("> .row-fluid")).toHaveCount(2);
+  await expect(milestoneSection.locator(".row-fluid").first().locator(".span6 a")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/issues?state=open&milestoneId=7",
+  );
+  await expect(
+    milestoneSection.locator(".row-fluid").first().locator(".span3.num strong"),
+  ).toHaveText("3");
+  await expect(
+    milestoneSection.locator(".row-fluid").first().locator(".progress-success"),
+  ).toHaveAttribute("title", "25%");
+  await expect(milestoneSection.locator(".row-fluid").nth(1).locator(".span6 a")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/issues?state=open&milestoneId=0",
+  );
+  const milestoneRow = await layoutBox(page, ".overview-milestone > .row-fluid:first-child");
+  const milestoneNameColumn = await layoutBox(
+    page,
+    ".overview-milestone > .row-fluid:first-child > .span6",
+  );
+  const milestoneCountColumn = await layoutBox(
+    page,
+    ".overview-milestone > .row-fluid:first-child > .span3.num",
+  );
+  const milestoneProgressColumn = await layoutBox(
+    page,
+    ".overview-milestone > .row-fluid:first-child > .span3.nm",
+  );
+  const milestoneProgressBar = await layoutBox(
+    page,
+    ".overview-milestone > .row-fluid:first-child .progress .bar",
+  );
+  expect(milestoneNameColumn.x).toBeCloseTo(milestoneRow.x, 0);
+  expect(milestoneNameColumn.width).toBeGreaterThan(milestoneCountColumn.width);
+  expect(milestoneCountColumn.x).toBeGreaterThan(
+    milestoneNameColumn.x + milestoneNameColumn.width - 1,
+  );
+  expect(milestoneProgressColumn.x).toBeGreaterThan(
+    milestoneCountColumn.x + milestoneCountColumn.width - 1,
+  );
+  expect(milestoneProgressBar.width).toBeGreaterThan(milestoneProgressColumn.width * 0.2);
+  expect(milestoneProgressBar.width).toBeLessThan(milestoneProgressColumn.width * 0.3);
+
+  const pullRequestSection = page.locator(".overview-pullrequest").first();
+  await expect(pullRequestSection.locator("> .row-fluid")).toHaveCount(1);
+  await expect(pullRequestSection.locator(".span9.title .usf-group")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/pullRequests?contributorId=2",
+  );
+  await expect(pullRequestSection.locator(".span9.title > a").nth(1)).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/pullRequest/3",
+  );
+  await expect(pullRequestSection.locator(".span3.num.right-txt")).toHaveText("2026-06-26");
+  await expect(pullRequestSection.locator(".right-txt.mt5 a")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/pullRequests",
+  );
+  const pullRequestRow = await layoutBox(page, ".overview-pullrequest > .row-fluid:first-child");
+  const pullRequestTitleColumn = await layoutBox(
+    page,
+    ".overview-pullrequest > .row-fluid:first-child > .span9.title",
+  );
+  const pullRequestDateColumn = await layoutBox(
+    page,
+    ".overview-pullrequest > .row-fluid:first-child > .span3.num.right-txt",
+  );
+  const pullRequestMoreLink = await layoutBox(page, ".overview-pullrequest > .right-txt.mt5");
+  expect(pullRequestTitleColumn.x).toBeCloseTo(pullRequestRow.x, 0);
+  expect(pullRequestTitleColumn.width).toBeGreaterThan(pullRequestDateColumn.width * 2.5);
+  expect(pullRequestDateColumn.x).toBeGreaterThan(
+    pullRequestTitleColumn.x + pullRequestTitleColumn.width - 1,
+  );
+  expect(pullRequestMoreLink.x + pullRequestMoreLink.width).toBeLessThanOrEqual(
+    pullRequestRow.x + pullRequestRow.width + 1,
+  );
+
   const labelSection = page.locator(".overview-label").first();
   await expect(labelSection).toHaveClass(/dl-horizontal/);
   await expect(labelSection.locator("> dt")).toHaveText("Priority");
@@ -290,11 +427,6 @@ test("project home proves README fallback, history and dashboard tabs in the bro
   await expect(labelSection.locator(".issue-label.list-label.active")).toHaveText("High");
   await expect(labelSection.locator(".span2.num strong")).toHaveText("4");
 
-  const dashboardRow = await layoutBox(page, ".project-overview-home.row-fluid");
-  const labelColumn = await layoutBox(
-    page,
-    ".project-overview-home.row-fluid > .span6:nth-child(2)",
-  );
   const overviewLabel = await layoutBox(page, ".overview-label");
   const labelDt = await layoutBox(page, ".overview-label > dt");
   const labelDd = await layoutBox(page, ".overview-label > dd");
@@ -304,9 +436,8 @@ test("project home proves README fallback, history and dashboard tabs in the bro
   const labelChip = await layoutBox(page, ".overview-label .issue-label[data-label-id='5']");
   const labelCount = await layoutBox(page, ".overview-label .span2.num strong");
 
-  expect(labelColumn.x).toBeGreaterThanOrEqual(dashboardRow.x + dashboardRow.width / 2 - 2);
-  expect(overviewLabel.x).toBeGreaterThanOrEqual(labelColumn.x);
-  expect(overviewLabel.width).toBeLessThanOrEqual(labelColumn.width);
+  expect(overviewLabel.x).toBeGreaterThanOrEqual(rightColumn.x);
+  expect(overviewLabel.width).toBeLessThanOrEqual(rightColumn.width);
   expect(labelDd.x).toBeGreaterThan(labelDt.x + labelDt.width - 1);
   expect(labelRow.y).toBeGreaterThanOrEqual(labelDd.y);
   expect(labelNameColumn.x).toBeCloseTo(labelRow.x, 0);
