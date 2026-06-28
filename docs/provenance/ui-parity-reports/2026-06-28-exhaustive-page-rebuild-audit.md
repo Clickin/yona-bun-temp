@@ -415,7 +415,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `project/change_vcs.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/create.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/delete.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
-| `project/header.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/header.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts 120px project header, inner/header y alignment, root navbar overlay position, and `data-project-id` selector guard remains covered by `project-settings-parity.spec.tsx` |
 | `project/home.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/importing.scala.html` | P7 import/P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/issuelabels.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
@@ -431,9 +431,9 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `project/partial_issuelabels_editlabel.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/partial_issuelabels_list.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/partial_readme.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
-| `project/partial_settingmenu.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_settingmenu.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts the settings submenu appears before `#saveSetting` inside `.project-page-wrap` |
 | `project/partial_webhooks_list.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
-| `project/setting.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/setting.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts settings form top box, left/right column x/y alignment, 260x188 logo area, description width, and mutation-capable form shell; hidden `watchingCount` selector remains covered by `project-settings-parity.spec.tsx` |
 | `project/statistics.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/transfer.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/watchers.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
