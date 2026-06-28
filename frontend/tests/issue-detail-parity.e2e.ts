@@ -274,6 +274,28 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     childOpenCount: 1,
     timeline: [
       {
+        comment: {
+          authorAvatarUrl: "",
+          authorLabel: "Admin",
+          authorLoginId: "admin",
+          contentsMarkdown: "Delete target comment",
+          createdLabel: "just now",
+          id: 30,
+          viewerCanDelete: true,
+          viewerCanUpdate: false,
+          viewerHasVoted: false,
+          voterCount: 0,
+          voters: [],
+        },
+        createdLabel: "just now",
+        eventType: "",
+        id: 30,
+        kind: "comment",
+        newValue: "",
+        oldValue: "",
+        senderLoginId: "admin",
+      },
+      {
         createdLabel: "1 minute ago",
         eventType: "ISSUE_STATE_CHANGED",
         id: 17,
@@ -439,8 +461,25 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     });
   });
 
+  await page.route(
+    apiV1Route("/projects/admin/projectYobi/issues/1/comments/30"),
+    async (route) => {
+      record(route.request());
+      currentIssue = {
+        ...currentIssue,
+        timeline: currentIssue.timeline.filter((item) => item.id !== 30),
+      };
+      await route.fulfill({
+        body: JSON.stringify(currentIssue),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
   await page.goto("/yona/admin/projectYobi/issue/1");
   await expect(page.locator("#helpKeys.modal.hide.fade.keymap-help")).toHaveCount(1);
+  await expect(page.locator("#comment-delete-modal.modal.hide.fade")).toHaveCount(1);
   await expect(page.locator("#issue-body-1 .tasklist.task-show")).toBeVisible();
   await expect(page.locator("#issue-body-1 .task-title")).toContainText("Tasks(1/2)");
   await expect(page.locator("#issue-body-1 .task-progress .bar.red")).toHaveAttribute(
@@ -727,6 +766,99 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await expect(fullTimeline.locator("#event-19")).toHaveCount(0);
   await expect(fullTimeline).not.toContainText("issue.event.");
 
+  await expect(fullTimeline.locator("#comment-30")).toContainText("Delete target comment");
+  const commentDeleteTrigger = fullTimeline.locator(
+    '#comment-30 [data-toggle="comment-delete"][data-request-uri="/yona/admin/projectYobi/issue/1/comment/30/delete"]',
+  );
+  await expect(commentDeleteTrigger).toHaveAttribute("title", "Delete comment");
+  await expect(commentDeleteTrigger.locator(".yobicon-trash")).toHaveCount(1);
+  const commentDeleteTriggerBox = await layoutBox(
+    page,
+    '#comment-30 [data-toggle="comment-delete"][data-request-uri="/yona/admin/projectYobi/issue/1/comment/30/delete"]',
+  );
+  await commentDeleteTrigger.click();
+  await expect(page.locator("#comment-delete-modal.modal.hide.fade.in")).toBeVisible();
+  await expect(page.locator("#comment-delete-modal .modal-header h3")).toContainText(
+    "Delete comment",
+  );
+  await expect(page.locator("#comment-delete-modal .modal-body p")).toContainText("won't");
+  await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
+    "data-request-uri",
+    "/yona/admin/projectYobi/issue/1/comment/30/delete",
+  );
+
+  const commentDeleteModal = await layoutBox(page, "#comment-delete-modal");
+  const commentDeleteHeader = await layoutBox(page, "#comment-delete-modal .modal-header");
+  const commentDeleteTitle = await layoutBox(page, "#comment-delete-modal .modal-header h3");
+  const commentDeleteClose = await layoutBox(page, "#comment-delete-modal .modal-header .close");
+  const commentDeleteBody = await layoutBox(page, "#comment-delete-modal .modal-body");
+  const commentDeleteFooter = await layoutBox(page, "#comment-delete-modal .modal-footer");
+  const commentDeleteYes = await layoutBox(page, "#comment-delete-confirm");
+  const commentDeleteNo = await layoutBox(
+    page,
+    '#comment-delete-modal .modal-footer .ybtn[data-dismiss="modal"]',
+  );
+  const commentDeleteViewportCenter = await page.evaluate(
+    () => document.documentElement.clientWidth / 2,
+  );
+  const commentDeleteStyles = await page.locator("#comment-delete-modal").evaluate((element) => {
+    const modalStyle = window.getComputedStyle(element);
+    const headerStyle = window.getComputedStyle(
+      element.querySelector(".modal-header") as HTMLElement,
+    );
+    const bodyStyle = window.getComputedStyle(element.querySelector(".modal-body") as HTMLElement);
+    const footerStyle = window.getComputedStyle(
+      element.querySelector(".modal-footer") as HTMLElement,
+    );
+    return {
+      backgroundColor: modalStyle.backgroundColor,
+      bodyPaddingLeft: bodyStyle.paddingLeft,
+      borderTopColor: footerStyle.borderTopColor,
+      footerDisplay: footerStyle.display,
+      footerJustifyContent: footerStyle.justifyContent,
+      footerPaddingLeft: footerStyle.paddingLeft,
+      headerBorderBottomWidth: headerStyle.borderBottomWidth,
+      headerPaddingLeft: headerStyle.paddingLeft,
+      position: modalStyle.position,
+      zIndex: modalStyle.zIndex,
+    };
+  });
+
+  expect(commentDeleteModal.width).toBeGreaterThanOrEqual(470);
+  expect(commentDeleteModal.width).toBeLessThanOrEqual(490);
+  expect(
+    Math.abs(commentDeleteModal.x + commentDeleteModal.width / 2 - commentDeleteViewportCenter),
+  ).toBeLessThanOrEqual(2);
+  expect(commentDeleteModal.y).toBeGreaterThanOrEqual(120);
+  expect(commentDeleteModal.y).toBeLessThanOrEqual(150);
+  expect(commentDeleteHeader.y).toBeCloseTo(commentDeleteModal.y + 1, 0);
+  expect(commentDeleteBody.y).toBeGreaterThan(
+    commentDeleteHeader.y + commentDeleteHeader.height - 1,
+  );
+  expect(commentDeleteFooter.y).toBeGreaterThan(commentDeleteBody.y + commentDeleteBody.height - 1);
+  expect(commentDeleteClose.x).toBeGreaterThan(commentDeleteTitle.x + commentDeleteTitle.width);
+  expect(commentDeleteYes.x).toBeGreaterThan(commentDeleteFooter.x + 300);
+  expect(commentDeleteNo.x).toBeGreaterThan(commentDeleteYes.x + commentDeleteYes.width - 1);
+  expect(commentDeleteTriggerBox.y).toBeGreaterThan(commentDeleteModal.y);
+  expect(commentDeleteStyles).toEqual({
+    backgroundColor: "rgb(255, 255, 255)",
+    bodyPaddingLeft: "16px",
+    borderTopColor: "rgb(221, 221, 221)",
+    footerDisplay: "flex",
+    footerJustifyContent: "flex-end",
+    footerPaddingLeft: "16px",
+    headerBorderBottomWidth: "1px",
+    headerPaddingLeft: "16px",
+    position: "fixed",
+    zIndex: "1000",
+  });
+
+  await page.locator('#comment-delete-modal .modal-footer .ybtn[data-dismiss="modal"]').click();
+  await expect(page.locator("#comment-delete-modal")).toBeHidden();
+  await commentDeleteTrigger.click();
+  await page.locator("#comment-delete-confirm").click();
+  await expect(fullTimeline.locator("#comment-30")).toHaveCount(0);
+
   await page.locator(".favorite-issue").click();
   await expect(page.locator(".favorite-issue .star")).toHaveClass(/starred/);
   await page.locator("#watch-button").click();
@@ -795,6 +927,11 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
         csrfToken: "csrf-123",
         method: "POST",
         path: "/owners/admin/projects/projectYobi/issues/1/sharers",
+      }),
+      expect.objectContaining({
+        csrfToken: "csrf-123",
+        method: "DELETE",
+        path: "/projects/admin/projectYobi/issues/1/comments/30",
       }),
       expect.objectContaining({
         csrfToken: "csrf-123",

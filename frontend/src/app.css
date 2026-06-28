@@ -3183,15 +3183,20 @@ div.markdown-preview {
 .issue-detail-page .modal {
   position: fixed;
   top: 18%;
-  left: 50%;
+  left: 50vw;
   z-index: 1000;
   width: min(480px, calc(100vw - 32px));
+  margin-left: 0;
   color: #333;
   background: #fff;
   border: 1px solid #999;
   border-radius: 4px;
   box-shadow: 0 3px 12px rgb(0 0 0 / 24%);
   transform: translateX(-50%);
+}
+
+.issue-detail-page .modal.fade.in {
+  top: 18%;
 }
 
 .issue-detail-page .keymap-help {
@@ -3219,12 +3224,14 @@ div.markdown-preview {
 }
 
 .issue-detail-page .modal-header h3 {
+  order: 1;
   margin: 0;
   font-size: 18px;
   font-weight: 400;
 }
 
 .issue-detail-page .modal-header .close {
+  order: 2;
   padding: 0;
   font-size: 20px;
   line-height: 20px;
