@@ -38,6 +38,21 @@ export function legacyIssueLabelClassName(baseClassName: string, color: string |
   return `${baseClassName} ${legacyIssueLabelTextClass(color)}`;
 }
 
+export function legacyIssueLabelStyle(
+  color: string | null | undefined,
+  options: { active?: boolean } = {},
+): React.CSSProperties {
+  const normalized = normalizedIssueLabelColor(color);
+  const style: React.CSSProperties = {
+    boxShadow: `inset 2px 0 0px ${normalized}`,
+  };
+  if (options.active ?? true) {
+    style.backgroundColor = normalized;
+    style.color = legacyIssueLabelTextClass(normalized);
+  }
+  return style;
+}
+
 export function useRequireAuthenticatedRoute(targetHref: string) {
   const { bootstrapping, currentSession, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();

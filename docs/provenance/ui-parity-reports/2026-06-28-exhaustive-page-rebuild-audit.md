@@ -226,7 +226,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `common/editor.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/fileUploader.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/footer.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts footer placement below navbar/content, full-width footer inner, provider links, and root/standalone footer separation |
-| `common/issueLabelColor.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/issueLabelColor.scala.html` | shared partials | metric guard passed: `vote-count-parity.e2e.ts` and `issue-detail-parity.e2e.ts` assert bright and dark labels in issue-list and subtask callers, active label background colors, generated text colors (`dimgray`/white), inset 2px box-shadow color, label href/data-label-id anchors, and label placement next to the count pair |
 | `common/loginDialog.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts modal width/center positioning, close button/form/input/submit/remember row order, error state, and REST mutation boundary |
 | `common/markdown.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/mySeriesMenuTab.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |

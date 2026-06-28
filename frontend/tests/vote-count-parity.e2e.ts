@@ -135,7 +135,7 @@ test.beforeEach(async ({ page }) => {
             dueDateOverdue: false,
             id: "101",
             issueNumber: "1",
-            labels: [],
+            labels: [{ categoryId: 4, color: "#ffeb3b", id: "7", name: "bright" }],
             milestoneTitle: "",
             ownerName: "admin",
             projectName: "projectYobi",
@@ -362,6 +362,13 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   await expect(
     page.locator("#issue-item-101 .comments-count .count-groups.item-count.strong"),
   ).toHaveCount(0);
+  await expect(page.locator('#issue-item-101 .issue-label[data-label-id="7"]')).toHaveText(
+    "bright",
+  );
+  await expect(page.locator('#issue-item-101 .issue-label[data-label-id="7"]')).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/issues?orderBy=updatedDate&orderDir=desc&labelIds=7",
+  );
   await expect(page.locator("#issue-item-101 .vote-count.vote-color")).toHaveAttribute(
     "href",
     "/yona/admin/projectYobi/issue/1#vote",
@@ -394,6 +401,7 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   ).resolves.toBe(false);
 
   const group = await layoutBox(page, "#issue-item-101 .item-count-groups");
+  const issueLabel = await layoutBox(page, '#issue-item-101 .issue-label[data-label-id="7"]');
   const commentLink = await layoutBox(page, "#issue-item-101 .comments-count.comments-count-color");
   const commentIcon = await layoutBox(
     page,
@@ -457,6 +465,16 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
         voteMarginLeft: voteLinkStyle.marginLeft,
       };
     });
+  const labelStyles = await page
+    .locator('#issue-item-101 .issue-label[data-label-id="7"]')
+    .evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return {
+        backgroundColor: style.backgroundColor,
+        boxShadow: style.boxShadow,
+        color: style.color,
+      };
+    });
 
   expect(commentLink.x).toBeGreaterThanOrEqual(group.x);
   expect(commentLink.y).toBeGreaterThanOrEqual(group.y);
@@ -484,6 +502,13 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   expect(sharerCount.x + sharerCount.width).toBeLessThanOrEqual(
     sharerLink.x + sharerLink.width + 1,
   );
+  expect(issueLabel.x).toBeGreaterThan(group.x + group.width - 1);
+  expect(issueLabel.y).toBeGreaterThanOrEqual(group.y - 2);
+  expect(labelStyles).toEqual({
+    backgroundColor: "rgb(255, 235, 59)",
+    boxShadow: "rgb(255, 235, 59) 2px 0px 0px 0px inset",
+    color: "rgb(105, 105, 105)",
+  });
   expect(countGroupStyles).toEqual({
     commentColor: "rgb(139, 0, 139)",
     commentCountFontWeight: "400",

@@ -27,7 +27,7 @@ import {
   type MarkdownTasklistToggleInput,
 } from "./-markdown-renderer";
 import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
-import { legacyIssueLabelClassName } from "./-shared";
+import { legacyIssueLabelClassName, legacyIssueLabelStyle } from "./-shared";
 import type {
   ProjectDetailViewModel,
   ProjectIssueDetailViewModel,
@@ -252,7 +252,7 @@ function IssueSubtaskItem(props: {
           data-label-id={label.id}
           href={`${listHref}&labelIds=${label.id}`}
           key={label.id}
-          style={{ backgroundColor: label.color || "#ddd" }}
+          style={legacyIssueLabelStyle(label.color)}
         >
           {label.name}
         </a>
@@ -287,7 +287,7 @@ function IssueDetailSelectedLabels(props: {
             data-label-id={label.id}
             href={`${listHref}&labelIds=${label.id}`}
             key={label.id}
-            style={{ background: label.color || "#ddd" }}
+            style={legacyIssueLabelStyle(label.color)}
           >
             {label.name}
           </a>
@@ -1554,7 +1554,7 @@ function ProjectIssueRows(props: {
                         1,
                       )}
                       key={label.id}
-                      style={{ backgroundColor: label.color || "#ddd" }}
+                      style={legacyIssueLabelStyle(label.color)}
                     >
                       {label.name}
                     </a>
@@ -1896,7 +1896,7 @@ function IssueMassUpdateDropdown(props: {
                       option.label.color,
                     )}
                     data-label-id={option.label.id}
-                    style={{ backgroundColor: option.label.color || "#ddd" }}
+                    style={legacyIssueLabelStyle(option.label.color)}
                   >
                     {option.label.name}
                   </span>
@@ -3342,7 +3342,7 @@ export function ProjectIssueDetailPage(props: {
                                 "label issue-label list-label active",
                                 label.color,
                               )}
-                              style={{ backgroundColor: label.color }}
+                              style={legacyIssueLabelStyle(label.color)}
                             >
                               {label.name}
                             </span>
@@ -4167,7 +4167,7 @@ export function UserIssueListPage(props: {
                                       "issues?state=open",
                                     )}&labelIds=${label.id}`}
                                     key={label.id}
-                                    style={{ background: label.color || "#ddd" }}
+                                    style={legacyIssueLabelStyle(label.color, { active: false })}
                                   >
                                     {label.name}
                                   </a>
@@ -6124,7 +6124,7 @@ export function ProjectIssueFormPage(props: {
                                   "label issue-label list-label active",
                                   label.color,
                                 )}
-                                style={{ backgroundColor: label.color }}
+                                style={legacyIssueLabelStyle(label.color)}
                               >
                                 {label.name}
                               </span>

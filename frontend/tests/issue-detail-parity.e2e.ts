@@ -521,6 +521,12 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await expect(
     page.locator(".subtasks .child-issue .vote-count .count-groups.item-count.strong"),
   ).toHaveText("1");
+  await expect(page.locator('.subtasks .child-issue .issue-label[data-label-id="6"]')).toHaveText(
+    "feature",
+  );
+  await expect(
+    page.locator('.subtasks .child-issue .issue-label[data-label-id="6"]'),
+  ).toHaveAttribute("href", "/yona/admin/projectYobi/issues?state=open&labelIds=6");
 
   const subtasks = await layoutBox(page, ".subtasks");
   const content = await layoutBox(page, ".issue-detail-page .board-body .content");
@@ -546,6 +552,10 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   const childVoteCount = await layoutBox(
     page,
     ".subtasks .child-issue .vote-count .count-groups.item-count",
+  );
+  const childLabel = await layoutBox(
+    page,
+    '.subtasks .child-issue .issue-label[data-label-id="6"]',
   );
   const childPairStyles = await page
     .locator(".subtasks .child-issue .font12.no-border-at-child")
@@ -602,6 +612,16 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
         wrapperFontSize: wrapperStyle.fontSize,
       };
     });
+  const childLabelStyles = await page
+    .locator('.subtasks .child-issue .issue-label[data-label-id="6"]')
+    .evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return {
+        backgroundColor: style.backgroundColor,
+        boxShadow: style.boxShadow,
+        color: style.color,
+      };
+    });
 
   expect(subtasks.y).toBeGreaterThanOrEqual(content.y + content.height + 38);
   expect(parentIssue.x).toBeGreaterThanOrEqual(subtasks.x);
@@ -615,8 +635,15 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   expect(childVote.x).toBeGreaterThan(childComment.x);
   expect(childVoteIcon.x).toBeGreaterThanOrEqual(childVote.x);
   expect(childVoteCount.x).toBeGreaterThan(childVoteIcon.x);
+  expect(childLabel.x).toBeGreaterThan(childPairWrap.x + childPairWrap.width - 1);
+  expect(childLabel.y).toBeGreaterThanOrEqual(childIssue.y - 1);
   expect(childCommentIcon.y).toBeLessThanOrEqual(childCommentCount.y + childCommentCount.height);
   expect(childVoteIcon.y).toBeLessThanOrEqual(childVoteCount.y + childVoteCount.height);
+  expect(childLabelStyles).toEqual({
+    backgroundColor: "rgb(33, 150, 243)",
+    boxShadow: "rgb(33, 150, 243) 2px 0px 0px 0px inset",
+    color: "rgb(255, 255, 255)",
+  });
   expect(childPairStyles).toEqual({
     childPaddingLeft: "3px",
     childPaddingRight: "3px",
