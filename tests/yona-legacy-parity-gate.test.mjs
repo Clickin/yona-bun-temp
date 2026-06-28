@@ -457,14 +457,14 @@ test("maps project scoped pull request routes before generic project routes", ()
   const result = runGate([
     "frontend/src/routes/$owner/$projectName/pullRequests/route.tsx",
     "frontend/tests/pull-request-review-read-parity.e2e.ts",
-    "docs/provenance/core-parity-audit.md",
+    "docs/provenance/ui-parity-reports/ui-parity-pull-request-review.md",
   ]);
 
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["pull-request-and-review"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["pull-request-and-review", "parity"]],
   );
 });
 
@@ -472,14 +472,14 @@ test("maps organization pull request routes before generic organization routes",
   const result = runGate([
     "frontend/src/routes/organizations/$organizationName/pullrequests/route.tsx",
     "frontend/tests/pull-request-review-read-parity.e2e.ts",
-    "docs/provenance/core-parity-audit.md",
+    "docs/provenance/ui-parity-reports/ui-parity-pull-request-review.md",
   ]);
 
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["pull-request-and-review"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["pull-request-and-review", "parity"]],
   );
 });
 

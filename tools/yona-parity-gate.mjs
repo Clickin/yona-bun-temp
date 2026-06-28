@@ -374,7 +374,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "pull-request-and-review",
     label: "Pull request and review",
-    status: "gap",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/.*(pulls|pull-requests?|pullrequests?|pull-request|reviews?)/i,
       /^frontend\/public\/images\/fork-pull\/fork\.jpg$/i,
