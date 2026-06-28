@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,19 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
 
 const rawSettingsKeyPattern =
   /userinfo\.[A-Za-z]|emails\.(?:click|main|send|set|sub|validation)|validation\.[A-Za-z]|user\.(?:confirmPassword|wrongPassword)/u;
@@ -156,6 +169,132 @@ test("workspace settings legacy aliases redirect to canonical account tabs witho
     await expect(page.locator(".page-wrap > .nav-tabs li.active a")).toContainText(selectedTabText);
     await expect(page.locator("body")).not.toContainText(rawSettingsKeyPattern);
   }
+});
+
+test("workspace account setting pages preserve legacy tab and form layout metrics", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+
+  await page.goto("/yona/user/editform");
+  await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("Account");
+  await expect(page.locator(".page-wrap > .nav.nav-tabs.mt20 > li")).toHaveCount(5);
+  await expect(page.locator(".page-wrap > .nav.nav-tabs.mt20 > li.active a")).toHaveAttribute(
+    "href",
+    "/yona/user/editform",
+  );
+  await expect(page.locator("#frmBasic input[name='loginId']")).toBeEditable({ editable: false });
+  await expect(page.locator("#frmBasic input[name='name'].text")).toBeVisible();
+  await expect(page.locator("#frmBasic input[name='email'][type='email'].text")).toBeVisible();
+  await expect(page.locator("#frmAvatar input[name='filePath']#avatarFile")).toHaveAttribute(
+    "accept",
+    "image/*",
+  );
+  await expect(page.locator("#avatarCropWrap.modal.hide")).toBeAttached();
+
+  const profilePageWrapOuter = await layoutBox(page, ".page-wrap-outer");
+  const profilePageWrap = await layoutBox(page, ".page-wrap");
+  const profileTabs = await layoutBox(page, ".page-wrap > .nav.nav-tabs.mt20");
+  const basicForm = await layoutBox(page, "#frmBasic.pull-left");
+  const avatarForm = await layoutBox(page, "#frmAvatar.pull-left");
+  const resetVisited = await layoutBox(page, ".reset-user-visited-list");
+  const profileStyles = await page.locator(".page-wrap").evaluate((element) => {
+    const basic = element.querySelector("#frmBasic") as HTMLElement;
+    const avatar = element.querySelector("#frmAvatar") as HTMLElement;
+    const reset = element.querySelector(".reset-user-visited-list") as HTMLElement;
+    return {
+      avatarBorderLeft: window.getComputedStyle(avatar).borderLeftWidth,
+      avatarFloat: window.getComputedStyle(avatar).float,
+      basicFloat: window.getComputedStyle(basic).float,
+      resetDisplay: window.getComputedStyle(reset).display,
+    };
+  });
+
+  expect(profilePageWrap.x).toBeGreaterThanOrEqual(profilePageWrapOuter.x);
+  expect(profilePageWrap.width).toBeLessThanOrEqual(profilePageWrapOuter.width + 1);
+  expect(profileTabs.y).toBeGreaterThanOrEqual(profilePageWrap.y);
+  expect(basicForm.y).toBeGreaterThan(profileTabs.y + profileTabs.height - 1);
+  expect(avatarForm.x).toBeGreaterThan(basicForm.x + basicForm.width - 1);
+  expect(Math.abs(avatarForm.y - basicForm.y)).toBeLessThanOrEqual(2);
+  expect(resetVisited.x).toBeGreaterThanOrEqual(basicForm.x);
+  expect(resetVisited.y).toBeGreaterThanOrEqual(basicForm.y);
+  expect(profileStyles).toEqual({
+    avatarBorderLeft: "1px",
+    avatarFloat: "left",
+    basicFloat: "left",
+    resetDisplay: "block",
+  });
+
+  await page.goto("/yona/user/editform/notifications#2");
+  await expect(page.locator(".page-wrap > .nav.nav-tabs.mt20 > li.active a")).toHaveAttribute(
+    "href",
+    "/yona/user/editform/notifications",
+  );
+  await expect(
+    page.locator("#notification-projects.unstyled.lst-stacked.span3.mr20"),
+  ).toBeVisible();
+  await expect(page.locator('#notification-projects li.active a[href="#2"]')).toHaveText(
+    "weblabs / projectTwo",
+  );
+  await expect(
+    page.locator('.tab-content [id="2"] table.table-striped.table-bordered'),
+  ).toBeVisible();
+  await expect(page.locator('.tab-content [id="2"] .switch')).toHaveAttribute(
+    "data-on-label",
+    "On",
+  );
+  const notificationTabs = await layoutBox(page, ".page-wrap > .nav.nav-tabs.mt20");
+  const projectList = await layoutBox(page, "#notification-projects");
+  const notificationContent = await layoutBox(page, ".page-wrap > div > .tab-content");
+  expect(projectList.y).toBeGreaterThan(notificationTabs.y + notificationTabs.height - 1);
+  expect(notificationContent.x).toBeGreaterThanOrEqual(projectList.x);
+  expect(notificationContent.y).toBeGreaterThanOrEqual(projectList.y);
+
+  await page.goto("/yona/user/editform/emails");
+  await expect(page.locator(".form-inline.inner-bubble input[name='email']")).toHaveAttribute(
+    "placeholder",
+    "New E-mail address",
+  );
+  await expect(page.locator("table.table.mt20 tr")).toHaveCount(3);
+  const emailTabs = await layoutBox(page, ".page-wrap > .nav.nav-tabs.mt20");
+  const emailForm = await layoutBox(page, ".form-inline.inner-bubble");
+  const emailDescription = await layoutBox(page, ".page-wrap > p");
+  const emailTable = await layoutBox(page, "table.table.mt20");
+  expect(emailForm.y).toBeGreaterThan(emailTabs.y + emailTabs.height - 1);
+  expect(emailDescription.y).toBeGreaterThan(emailForm.y + emailForm.height - 1);
+  expect(emailTable.y).toBeGreaterThan(emailDescription.y + emailDescription.height - 1);
+  expect(emailTable.width).toBeLessThanOrEqual(profilePageWrap.width + 1);
+
+  await page.goto("/yona/user/editform/token");
+  await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("User Token");
+  await expect(page.locator(".page-wrap > .nav.nav-tabs.mt20 > li.active a")).toHaveAttribute(
+    "href",
+    "/yona/user/editform/token",
+  );
+  const tokenTabs = await layoutBox(page, ".page-wrap > .nav.nav-tabs.mt20");
+  const tokenBox = await layoutBox(page, ".token-generate");
+  const tokenForm = await layoutBox(page, ".token-generate #frmBasic.pull-left");
+  const tokenInput = await layoutBox(page, ".token-generate #frmBasic input[name='name']");
+  const tokenButton = await layoutBox(page, ".token-generate #frmBasic button[type='submit']");
+  expect(tokenBox.y).toBeGreaterThan(tokenTabs.y + tokenTabs.height - 1);
+  expect(tokenForm.width).toBeGreaterThan(profilePageWrap.width * 0.85);
+  expect(tokenInput.width).toBeGreaterThan(tokenForm.width * 0.85);
+  expect(tokenButton.y).toBeGreaterThan(tokenInput.y + tokenInput.height - 1);
+
+  await page.goto("/yona/user/editform/password");
+  await expect(page.locator(".page-wrap > .nav.nav-tabs.mt20 > li.active a")).toHaveAttribute(
+    "href",
+    "/yona/user/editform/password",
+  );
+  await expect(page.locator("#frmPassword input[name='loginId']")).toHaveValue("door");
+  await expect(page.locator("a.ybtn.ybtn-fail")).toHaveAttribute("href", "/yona/lostPassword");
+  const passwordTabs = await layoutBox(page, ".page-wrap > .nav.nav-tabs.mt20");
+  const passwordForm = await layoutBox(page, "#frmPassword");
+  const passwordFirstInput = await layoutBox(page, "#oldPassword");
+  const passwordResetBlock = await layoutBox(page, ".page-wrap > .mt10");
+  expect(passwordForm.y).toBeGreaterThan(passwordTabs.y + passwordTabs.height - 1);
+  expect(passwordFirstInput.y).toBeGreaterThan(passwordForm.y);
+  expect(passwordResetBlock.y).toBeGreaterThan(passwordForm.y + passwordForm.height - 1);
 });
 
 test("workspace avatar invalid file and crop modal keep legacy settings selectors visible", async ({

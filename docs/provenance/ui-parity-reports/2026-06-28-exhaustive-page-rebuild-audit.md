@@ -494,13 +494,13 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `user/edit.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
-| `user/edit_emails.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
-| `user/edit_notifications.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
-| `user/edit_password.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
-| `user/edit_token.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/edit.scala.html` | P6 workspace/profile | metric guard passed: `workspace-settings-parity.e2e.ts` asserts account breadcrumb, five-tab edit menu, profile form/login-name-email/avatar/reset/crop-modal anchors, profile/avatar form float alignment, visited reset placement, and existing REST/TanStack profile/avatar/reset mutations |
+| `user/edit_emails.scala.html` | P6 workspace/profile | metric guard passed: `workspace-settings-parity.e2e.ts` asserts email tab, add-email inline form, description/table ordering, primary/sub-email rows, delete/set-main/validation data hooks, table placement, and existing REST/TanStack email mutations |
+| `user/edit_notifications.scala.html` | P6 workspace/profile | metric guard passed: `workspace-settings-parity.e2e.ts` asserts notification tab/hash activation, `#notification-projects`, active project pane/table/switch hooks, list/content placement, and existing REST/TanStack notification toggle mutation |
+| `user/edit_password.scala.html` | P6 workspace/profile | metric guard passed: `workspace-settings-parity.e2e.ts` asserts password tab, `#frmPassword` loginId/old/new/retyped fields, lost-password action block placement, validation errors, and existing REST/TanStack password mutation |
+| `user/edit_token.scala.html` | P6 workspace/profile | metric guard passed: `workspace-settings-parity.e2e.ts` asserts token breadcrumb/tab, `.token-generate #frmBasic`, 90% token input sizing, submit placement, and existing REST/TanStack token reset mutation |
 | `user/login.scala.html` | P1 auth | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts public login navbar/page/title/tagline stack, centered 400px form, 386px login/password input alignment, full-width submit, remember/forgot row alignment, redirect hidden field, resolved copy, and TanStack Query sign-in mutation boundary |
-| `user/partial_edit_tabmenu.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/partial_edit_tabmenu.scala.html` | P6 workspace/profile | metric guard passed: `workspace-settings-parity.e2e.ts` asserts the five legacy account tab hrefs, active class per profile/password/notifications/emails/token route, tab placement above each section, and no raw message keys |
 | `user/partial_issues.scala.html` | P6 workspace/profile | metric guard passed: `user-profile-parity.e2e.ts` asserts public profile issue row `issue-item-@issue.id`, legacy `href`/project/title/comment/user anchors, tooltip data attributes, subtask/child-list placeholders, and project/title/author/meta horizontal alignment |
 | `user/partial_milestones.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
 | `user/partial_postings.scala.html` | P6 workspace/profile | targeted absence recorded: `rg partial_postings yona-original/app/views` finds no legacy Scala caller; active board posting rows are covered by `board/partial_list.scala.html` metric guards instead of inventing a React profile posting route |
