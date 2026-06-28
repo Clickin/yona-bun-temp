@@ -53,7 +53,6 @@ import {
 import { ProjectNewPage, ProjectSettingsPage } from "./routes/-project-views";
 import type { ProjectIssueDetailViewModel } from "./routes/-view-models";
 import {
-  framedIframeSrcFromSearch,
   legacyFilesRuntimeConfig,
   legacyCommonScriptsExternalLinkTarget,
   legacyCommonScriptsShouldStartProgressForLink,
@@ -62,9 +61,28 @@ import {
 } from "./routes/__root";
 
 describe("auth and workspace views", () => {
-  it("keeps the legacy global navigation shell in the root route", () => {
+  it("ports the Scala global navigation and usermenu templates into the root SPA layout", () => {
     const source = fs.readFileSync(path.resolve(__dirname, "routes/__root.tsx"), "utf8");
+    const legacyNavbar = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/app/views/common/navbar.scala.html"),
+      "utf8",
+    );
+    const legacyUsermenu = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/app/views/common/usermenu.scala.html"),
+      "utf8",
+    );
+    const legacySidebar = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/app/views/sidebar.scala.html"),
+      "utf8",
+    );
 
+    expect(legacyNavbar).toContain('header class="gnb-outer');
+    expect(legacyNavbar).toContain('class="pin"');
+    expect(legacyNavbar).toContain('name="gnb-search-form"');
+    expect(legacyUsermenu).toContain('id="mySidenav"');
+    expect(legacyUsermenu).toContain('id="sidebar-open-btn"');
+    expect(legacyUsermenu).toContain("dropdwon-box-btn");
+    expect(legacySidebar).toContain('id="usermenu-tab-content-list"');
     expect(source).toContain(
       'className={`gnb-outer${searchScope.type !== "global" ? " project-header" : ""}`}',
     );
@@ -78,30 +96,26 @@ describe("auth and workspace views", () => {
     );
     expect(source).toContain("user.siteAdminLoggedInAffix.maxim");
     expect(source).toContain("<RootUpdateNotification />");
-    expect(source).toContain("<RootFramedShell />");
     expect(source).toContain("const [sidebarOpen, setSidebarOpen]");
     expect(source).toContain('event.key.toLowerCase() !== "f"');
     expect(source).toContain('document.addEventListener("click", onDocumentClick)');
     expect(source).toContain("onToggleSidebar={toggleSidebar}");
     expect(source).toContain('className={`sidenav${open ? " sidenav-open" : ""}`}');
-    expect(source).toContain('appPathname === "/sidebar"');
-    expect(source).toContain('document.body.classList.toggle("framed-body", framed)');
-    expect(source).toContain('className="sidebar hide-in-mobile"');
-    expect(source).toContain('id="sidebar"');
-    expect(source).toContain('id="sidebar-bottom"');
-    expect(source).toContain('id="mainFrame"');
-    expect(source).toContain('id="mainFrameId"');
-    expect(source).toContain('name="mainFrame"');
-    expect(source).toContain('className="mainFrame"');
-    expect(source).toContain("useFramedIframeSrc");
+    expect(source).toContain('<div id="mySidenav"');
+    expect(source).toContain('className="span5 right-menu span-hard-wrap"');
+    expect(source).toContain('id="usermenu-tab-content-list"');
     expect(source).not.toContain("window.location.search");
     expect(source).not.toContain("window.location.pathname");
-    expect(source).toContain('window.localStorage.setItem("shallWeOpenLeftNavigation", "true")');
-    expect(source).toContain('window.localStorage.setItem("shallWeOpenLeftNavigation", "false")');
-    expect(source).toContain("window.location.reload();");
-    expect(source).toContain("`/sidebar?${searchParams.toString()}`");
-    expect(source).toContain('className="pin-in-sidebar"');
-    expect(source).toContain("target={target}");
+    expect(source).not.toContain("<RootFramedShell />");
+    expect(source).not.toContain('document.body.classList.toggle("framed-body"');
+    expect(source).not.toContain('id="mainFrame"');
+    expect(source).not.toContain('id="mainFrameId"');
+    expect(source).not.toContain('name="mainFrame"');
+    expect(source).not.toContain("useFramedIframeSrc");
+    expect(source).not.toContain("shallWeOpenLeftNavigation");
+    expect(source).not.toContain("`/sidebar?${searchParams.toString()}`");
+    expect(source).not.toContain('className="pin-in-sidebar"');
+    expect(source).not.toContain("target={target}");
     expect(source).toContain('window.localStorage.getItem("sidebarActiveMenu")');
     expect(source).toContain('window.localStorage.setItem("sidebarActiveMenu", nextMenu)');
     expect(source).toContain(
@@ -114,8 +128,6 @@ describe("auth and workspace views", () => {
     expect(source).toContain('onClick={() => selectActiveMenu("myOrganizationList")}');
     expect(source).toContain('onClick={() => selectActiveMenu("myProjectList")}');
     expect(source).toContain('onClick={() => selectActiveMenu("myRecentIssueList")}');
-    expect(source).toContain('display: activeMenu === "myRecentIssueList" ? undefined : "none"');
-    expect(source).toContain('className="yobicon-refresh refresh-button"');
     expect(source).toContain('className="tab-content tab-box user-project-list"');
     expect(source).toContain("toggleFavoriteProject(");
     expect(source).toContain("ownerName,");
@@ -336,14 +348,12 @@ describe("auth and workspace views", () => {
     expect(appCss).toContain("padding: 10px 0;");
     expect(appCss).toContain(".page-footer-outer .page-footer");
     expect(appCss).toContain("line-height: 34px;");
-    expect(appCss).toContain(".framed-body {");
-    expect(appCss).toContain("overflow: hidden;");
+    expect(appCss).not.toContain(".framed-body {");
     expect(appCss).toContain(".sidebar {");
     expect(appCss).toContain("background-color: rgb(51 51 51);");
     expect(appCss).toContain("border-right: 1px solid #000;");
-    expect(appCss).toContain("#mainFrame {");
-    expect(appCss).toContain(".pin-in-sidebar {");
-    expect(appCss).toContain("background-color: #03a9f4;");
+    expect(appCss).not.toContain("#mainFrame {");
+    expect(appCss).not.toContain(".pin-in-sidebar {");
     expect(appCss).toContain(".pin {");
     expect(appCss).toContain("left: -6px;");
     expect(appCss).toContain(".pin-move-to-right");
@@ -422,37 +432,22 @@ describe("auth and workspace views", () => {
     expect(legacyUsermenuFavoredFromResponse({})).toBe(null);
   });
 
-  it("builds the legacy framed iframe src from /sidebar query params", () => {
-    expect(
-      framedIframeSrcFromSearch(
-        "?path=%2Fadmin%2FprojectYobi%2Fissue%2F1&hash=comment-7",
-        "/sidebar",
-        "/yona",
-        "/notifications",
-      ),
-    ).toBe("/yona/admin/projectYobi/issue/1#comment-7");
-
-    expect(
-      framedIframeSrcFromSearch(
-        "?path=%2Fyona%2Fadmin%2FprojectYobi",
-        "/sidebar",
-        "/yona",
-        "/notifications",
-      ),
-    ).toBe("/yona/admin/projectYobi");
-
-    expect(framedIframeSrcFromSearch("", "/sidebar", "/yona", "/notifications")).toBe(
-      "/yona/notifications",
+  it("keeps sidebar as a React SPA layout surface instead of a framed iframe route", () => {
+    const rootSource = fs.readFileSync(path.resolve(__dirname, "routes/__root.tsx"), "utf8");
+    const sidebarRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/sidebar/route.tsx"),
+      "utf8",
     );
 
-    expect(
-      framedIframeSrcFromSearch(
-        "?path=https%3A%2F%2Fexample.com%2Fphish",
-        "/sidebar",
-        "/yona",
-        "/notifications",
-      ),
-    ).toBe("/yona/notifications");
+    expect(rootSource).toContain("<RootSidebar open={sidebarOpen} />");
+    expect(rootSource).toContain('id="sidebar-open-btn"');
+    expect(rootSource).toContain('href="#mySidenav"');
+    expect(rootSource).toContain("onToggleSidebar();");
+    expect(rootSource).not.toContain("<iframe");
+    expect(rootSource).not.toContain("framedIframeSrcFromSearch");
+    expect(rootSource).not.toContain("RootFramedShell");
+    expect(sidebarRouteSource).not.toContain("<iframe");
+    expect(sidebarRouteSource).not.toContain("mainFrame");
   });
 
   it("renders the canonical login shell with legacy field names and recovery link", () => {

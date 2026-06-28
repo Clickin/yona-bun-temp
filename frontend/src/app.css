@@ -347,10 +347,6 @@ button[type="submit"]:focus {
   padding: 0 0 60px;
 }
 
-.framed-body {
-  overflow: hidden;
-}
-
 .sidebar {
   position: sticky;
   top: 0;
@@ -404,42 +400,12 @@ button[type="submit"]:focus {
   padding: 5px;
 }
 
-#mainFrame {
-  width: 100%;
-}
-
 .pin-move-to-right {
   left: 270px;
 }
 
 .pin-move-to-default-position {
   left: -2px;
-}
-
-.pin-in-sidebar {
-  position: absolute;
-  top: 9px;
-  right: -5px;
-  padding: 0 1px;
-  margin-right: 5px;
-  color: #3e2723;
-  font-size: 18px;
-  background-color: #03a9f4;
-  border: 0;
-  border-top-left-radius: 3px;
-  border-bottom-left-radius: 3px;
-  appearance: none;
-}
-
-.pin-in-sidebar i.yobicon-arrow-right,
-.pin-in-sidebar i.yobicon-arrow-left {
-  padding: 4px 2px;
-}
-
-.pin-in-sidebar:hover,
-.pin-in-sidebar i:hover {
-  color: #fff;
-  cursor: pointer;
 }
 
 .pin {

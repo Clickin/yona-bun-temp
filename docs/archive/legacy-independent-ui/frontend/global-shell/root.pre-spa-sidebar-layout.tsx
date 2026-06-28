@@ -29,6 +29,9 @@ function RootRouteComponent() {
   const { runtimeConfig } = Route.useRouteContext();
   const [loginDialogOpen, setLoginDialogOpen] = React.useState(false);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const appPathname = stripRuntimeBasePath(pathname, runtimeConfig.basePath);
+  const framed = appPathname === "/sidebar";
   const toggleSidebar = React.useCallback(() => setSidebarOpen((current) => !current), []);
 
   React.useEffect(() => {
@@ -37,10 +40,14 @@ function RootRouteComponent() {
     }
 
     document.body.id = "html-body";
-  }, []);
+    document.body.classList.toggle("framed-body", framed);
+    return () => {
+      document.body.classList.remove("framed-body");
+    };
+  }, [framed]);
 
   React.useEffect(() => {
-    if (typeof document === "undefined") {
+    if (framed || typeof document === "undefined") {
       return undefined;
     }
     const onKeyPress = (event: KeyboardEvent) => {
@@ -52,7 +59,7 @@ function RootRouteComponent() {
     };
     document.addEventListener("keypress", onKeyPress);
     return () => document.removeEventListener("keypress", onKeyPress);
-  }, []);
+  }, [framed]);
 
   React.useEffect(() => {
     if (!sidebarOpen || typeof document === "undefined") {
@@ -75,21 +82,25 @@ function RootRouteComponent() {
   return (
     <YonaQueryProvider>
       <AppRuntimeProvider runtimeConfig={runtimeConfig}>
-        <div className="main" id="main">
-          <RuntimeErrorBanner />
-          <SiteAdminLoggedInAffix />
-          <RootUpdateNotification />
-          <RootHeader
-            onOpenLoginDialog={() => setLoginDialogOpen(true)}
-            onToggleSidebar={toggleSidebar}
-          />
-          <RootSidebar open={sidebarOpen} />
-          <Outlet />
-          <RootFooter />
-          <LegacyGlobalContainers />
-          <LegacyCommonScriptsBridge />
-          <RootLoginDialog open={loginDialogOpen} onClose={() => setLoginDialogOpen(false)} />
-        </div>
+        {framed ? (
+          <RootFramedShell />
+        ) : (
+          <div className="main" id="main">
+            <RuntimeErrorBanner />
+            <SiteAdminLoggedInAffix />
+            <RootUpdateNotification />
+            <RootHeader
+              onOpenLoginDialog={() => setLoginDialogOpen(true)}
+              onToggleSidebar={toggleSidebar}
+            />
+            <RootSidebar open={sidebarOpen} />
+            <Outlet />
+            <RootFooter />
+            <LegacyGlobalContainers />
+            <LegacyCommonScriptsBridge />
+            <RootLoginDialog open={loginDialogOpen} onClose={() => setLoginDialogOpen(false)} />
+          </div>
+        )}
       </AppRuntimeProvider>
     </YonaQueryProvider>
   );
@@ -681,6 +692,96 @@ function RootUpdateNotification() {
   );
 }
 
+function RootFramedShell() {
+  const { currentSession } = useAppRuntime();
+  const iframeSrc = useFramedIframeSrc();
+  const [activeMenu, setActiveMenu] = useSidebarActiveMenu();
+
+  return (
+    <>
+      <div className="sidebar hide-in-mobile" id="sidebar">
+        {currentSession && !currentSession.isAnonymous ? (
+          <RootSidebarContent activeMenu={activeMenu} framed onActiveMenuChange={setActiveMenu} />
+        ) : null}
+        <div
+          className="sidebar-bottom"
+          id="sidebar-bottom"
+          style={{
+            bottom: "8px",
+            color: "gray",
+            display: activeMenu === "myRecentIssueList" ? undefined : "none",
+            position: "absolute",
+            right: "15px",
+          }}
+        >
+          Yona, made by{" "}
+          <i
+            className="yobicon-hearts"
+            style={{
+              color: "red",
+              verticalAlign: "middle",
+            }}
+          ></i>
+        </div>
+      </div>
+      <div className="show-in-mobile-100vh" id="mainFrame">
+        <iframe
+          className="mainFrame"
+          frameBorder="0"
+          height="100%"
+          id="mainFrameId"
+          name="mainFrame"
+          src={iframeSrc}
+          title="mainFrame"
+          width="100%"
+        ></iframe>
+        <LegacyGlobalContainers />
+      </div>
+    </>
+  );
+}
+
+function useFramedIframeSrc(): string {
+  const { currentSession, runtimeConfig } = useAppRuntime();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const appPathname = stripRuntimeBasePath(pathname, runtimeConfig.basePath);
+  const defaultPage = currentSession?.defaultLandingPath || "/notifications";
+
+  return framedIframeSrcFromSearch(
+    new URL(locationHref, "http://localhost").search,
+    appPathname,
+    runtimeConfig.basePath,
+    defaultPage,
+  );
+}
+
+export function framedIframeSrcFromSearch(
+  search: string,
+  pathname: string,
+  basePath: string,
+  defaultPage: string,
+): string {
+  const searchParams = new URLSearchParams(search);
+  const path = searchParams.get("path") || defaultPage;
+  const hash = searchParams.get("hash") ?? "";
+  const withHash = hash ? `${path}#${hash}` : path;
+
+  if (withHash.startsWith("http://") || withHash.startsWith("https://")) {
+    return prefixBasePath(basePath, defaultPage);
+  }
+
+  if (basePath !== "/" && (withHash === basePath || withHash.startsWith(`${basePath}/`))) {
+    return withHash;
+  }
+
+  if (withHash.startsWith("/")) {
+    return prefixBasePath(basePath, withHash);
+  }
+
+  return prefixBasePath(basePath, pathname === "/sidebar" ? `/${withHash}` : withHash);
+}
+
 function RootHeader({
   onOpenLoginDialog,
   onToggleSidebar,
@@ -735,8 +836,28 @@ function RootHeader({
     [navigate, selectedSearchAction],
   );
   const handlePinClick = React.useCallback(() => {
-    onToggleSidebar();
-  }, [onToggleSidebar]);
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (window.parent === window) {
+      window.localStorage.setItem("shallWeOpenLeftNavigation", "true");
+      const hash = window.location.hash.replace(/^#/u, "");
+      const searchParams = new URLSearchParams({
+        path: pathname,
+      });
+      if (hash) {
+        searchParams.set("hash", hash);
+      }
+      window.location.href = prefixBasePath(
+        runtimeConfig.basePath,
+        `/sidebar?${searchParams.toString()}`,
+      );
+    } else {
+      window.localStorage.setItem("shallWeOpenLeftNavigation", "false");
+      window.parent.location.href = window.location.href;
+    }
+  }, [pathname, runtimeConfig.basePath]);
 
   return (
     <header className={`gnb-outer${searchScope.type !== "global" ? " project-header" : ""}`}>
@@ -994,9 +1115,11 @@ function RootSidebar({ open }: { open: boolean }) {
 
 function RootSidebarContent({
   activeMenu,
+  framed = false,
   onActiveMenuChange,
 }: {
   activeMenu?: SidebarActiveMenu;
+  framed?: boolean;
   onActiveMenuChange?: (nextMenu: SidebarActiveMenu) => void;
 }) {
   const {
@@ -1043,18 +1166,39 @@ function RootSidebarContent({
   const profileHref = prefixBasePath(runtimeConfig.basePath, `/${currentSession.loginId}`);
   const accountHref = prefixBasePath(runtimeConfig.basePath, "/user/editform");
   const logoutHref = prefixBasePath(runtimeConfig.basePath, "/users/logout");
+  const target = framed ? "mainFrame" : undefined;
+  const handleSidebarPinClick = framed
+    ? () => {
+        if (typeof window === "undefined") {
+          return;
+        }
+        window.localStorage.setItem("shallWeOpenLeftNavigation", "false");
+        window.location.reload();
+      }
+    : undefined;
 
   return (
     <>
-      <div className="span5 right-menu span-hard-wrap">
+      <div className={framed ? "" : "span5 right-menu span-hard-wrap"}>
         <div className="row-fluid user-menu-wrap">
           <span className="user-menu">
-            <a href={profileHref}>
+            <a href={profileHref} target={target}>
+              {framed ? (
+                <span className="avatar-wrap smaller">
+                  <img
+                    alt={currentSession.userLabel || currentSession.loginId}
+                    src={
+                      workspaceOverview?.profile?.avatarUrl ||
+                      prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-64.png")
+                    }
+                  />
+                </span>
+              ) : null}
               {messages("userinfo.profile", { fallback: "userinfo.profile" })}
             </a>
           </span>
           <span className="user-menu">
-            <a href={accountHref}>
+            <a href={accountHref} target={target}>
               {messages("userinfo.accountSetting", { fallback: "userinfo.accountSetting" })}
             </a>
           </span>
@@ -1063,6 +1207,18 @@ function RootSidebarContent({
               {messages("title.logout", { fallback: "title.logout" })}
             </span>
           </a>
+          {framed ? (
+            <button
+              className="pin-in-sidebar"
+              data-placement="bottom"
+              data-toggle="tooltip"
+              onClick={handleSidebarPinClick}
+              title="Sidebar"
+              type="button"
+            >
+              <i className="yobicon-arrow-left"></i>
+            </button>
+          ) : null}
         </div>
         <ul className="nav nav-tabs nm">
           <li
@@ -1098,6 +1254,21 @@ function RootSidebarContent({
               })}
             </a>
           </li>
+          {framed ? (
+            <li>
+              <button
+                className="btn-transparent"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.location.reload();
+                  }
+                }}
+                type="button"
+              >
+                <i className="yobicon-refresh refresh-button"></i>
+              </button>
+            </li>
+          ) : null}
         </ul>
         <div className="tab-content tab-box user-project-list">
           <div id="usermenu-tab-content-list" className="tab-content">
