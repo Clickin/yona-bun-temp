@@ -777,6 +777,37 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     childOpenCount: 1,
     commentParentLinks: [{ id: 31, parentCommentId: 30 }],
     viewerUserId: 1,
+    issueVoters: [
+      {
+        avatarUrl: "/avatars/admin.png",
+        emailAddress: "admin@example.com",
+        loginId: "admin",
+        userId: 1,
+        userLabel: "Admin",
+      },
+      {
+        avatarUrl: "/avatars/door.png",
+        emailAddress: "door@example.com",
+        loginId: "door",
+        userId: 2,
+        userLabel: "Door",
+      },
+      {
+        avatarUrl: "/avatars/nori.png",
+        emailAddress: "nori@example.com",
+        loginId: "nori",
+        userId: 3,
+        userLabel: "Nori",
+      },
+      {
+        avatarUrl: "/avatars/owner.png",
+        emailAddress: "owner@example.com",
+        loginId: "owner",
+        userId: 4,
+        userLabel: "Owner",
+      },
+    ],
+    voterCount: 4,
     comments: [
       {
         attachments: [
@@ -1126,6 +1157,172 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await page.goto("/yona/admin/projectYobi/issue/1");
   await expect(page.locator("#helpKeys.modal.hide.fade.keymap-help")).toHaveCount(1);
   await expect(page.locator("#comment-delete-modal.modal.hide.fade")).toHaveCount(1);
+  await expect(page.locator(".voter-list-wrap .voter-list > li")).toHaveCount(4);
+  await expect(page.locator(".voter-list-wrap .avatar-wrap.smaller")).toHaveCount(3);
+  await expect(page.locator('.voter-list-wrap a[href="#voters"][data-toggle="modal"]')).toHaveText(
+    "and 1 others",
+  );
+  await expect(page.locator("#voters.modal.hide.voters-dialog")).toHaveCount(1);
+  await expect(page.locator("#voters .modal-header .close")).toHaveAttribute(
+    "data-dismiss",
+    "modal",
+  );
+  await expect(page.locator("#voters .modal-header h5.nm")).toHaveText(
+    "People who agree with this",
+  );
+  await expect(page.locator("#voters .modal-body ul.unstyled > li")).toHaveCount(4);
+  await expect(page.locator("#voters .modal-body .usf-group").first()).toHaveAttribute(
+    "href",
+    "/yona/admin",
+  );
+  await expect(page.locator("#voters .modal-body .usf-group").first()).toHaveAttribute(
+    "target",
+    "_blank",
+  );
+  await expect(page.locator("#voters .modal-body .name").first()).toHaveText("Admin");
+  await expect(page.locator("#voters .modal-body .loginid").first()).toContainText("@admin");
+  await expect(page.locator('#voters .modal-footer .ybtn[data-dismiss="modal"]')).toHaveText(
+    "Close",
+  );
+
+  const voterListWrap = await layoutBox(page, ".voter-list-wrap");
+  const voterList = await layoutBox(page, ".voter-list-wrap .voter-list");
+  const firstVoterAvatar = await layoutBox(page, ".voter-list-wrap .avatar-wrap.smaller");
+  const secondVoterAvatar = await layoutBox(
+    page,
+    ".voter-list-wrap .voter-list > li:nth-child(2) .avatar-wrap.smaller",
+  );
+  const voterMore = await layoutBox(page, '.voter-list-wrap a[href="#voters"]');
+  const voterStripStyles = await page.locator(".voter-list-wrap").evaluate((element) => {
+    const list = element.querySelector(".voter-list") as HTMLElement;
+    const item = list.querySelector("li") as HTMLElement;
+    const avatar = list.querySelector(".avatar-wrap.smaller") as HTMLElement;
+    const more = list.querySelector('a[href="#voters"]') as HTMLElement;
+    const wrapStyle = window.getComputedStyle(element);
+    const listStyle = window.getComputedStyle(list);
+    const itemStyle = window.getComputedStyle(item);
+    const avatarStyle = window.getComputedStyle(avatar);
+    const moreStyle = window.getComputedStyle(more);
+    return {
+      avatarDisplay: avatarStyle.display,
+      avatarHeight: avatarStyle.height,
+      avatarWidth: avatarStyle.width,
+      itemDisplay: itemStyle.display,
+      listDisplay: listStyle.display,
+      listMarginBottom: listStyle.marginBottom,
+      moreDisplay: moreStyle.display,
+      moreFontSize: moreStyle.fontSize,
+      wrapDisplay: wrapStyle.display,
+    };
+  });
+
+  expect(voterList.x).toBeGreaterThanOrEqual(voterListWrap.x);
+  expect(firstVoterAvatar.x).toBeGreaterThanOrEqual(voterList.x);
+  expect(secondVoterAvatar.x).toBeCloseTo(firstVoterAvatar.x, 0);
+  expect(secondVoterAvatar.y).toBeGreaterThan(firstVoterAvatar.y + firstVoterAvatar.height - 1);
+  expect(voterMore.x).toBeGreaterThanOrEqual(voterList.x);
+  expect(voterMore.x + voterMore.width).toBeLessThanOrEqual(voterList.x + voterList.width + 1);
+  expect(voterMore.y).toBeGreaterThan(secondVoterAvatar.y);
+  expect(voterStripStyles).toEqual({
+    avatarDisplay: "inline-block",
+    avatarHeight: "20px",
+    avatarWidth: "20px",
+    itemDisplay: "list-item",
+    listDisplay: "block",
+    listMarginBottom: "13px",
+    moreDisplay: "inline",
+    moreFontSize: "13px",
+    wrapDisplay: "block",
+  });
+
+  await page.locator("#voters").evaluate((element) => {
+    element.classList.remove("hide");
+    element.classList.add("in");
+  });
+  await expect(page.locator("#voters.modal.voters-dialog.in")).toBeVisible();
+  const votersModal = await layoutBox(page, "#voters");
+  const votersHeader = await layoutBox(page, "#voters .modal-header");
+  const votersTitle = await layoutBox(page, "#voters .modal-header h5");
+  const votersClose = await layoutBox(page, "#voters .modal-header .close");
+  const votersBody = await layoutBox(page, "#voters .modal-body");
+  const votersFirstRow = await layoutBox(page, "#voters .modal-body li:nth-child(1)");
+  const votersFirstLink = await layoutBox(page, "#voters .modal-body li:nth-child(1) .usf-group");
+  const votersFirstAvatar = await layoutBox(
+    page,
+    "#voters .modal-body li:nth-child(1) .avatar-wrap.mlarge",
+  );
+  const votersFirstName = await layoutBox(page, "#voters .modal-body li:nth-child(1) .name");
+  const votersFirstLogin = await layoutBox(page, "#voters .modal-body li:nth-child(1) .loginid");
+  const votersSecondRow = await layoutBox(page, "#voters .modal-body li:nth-child(2)");
+  const votersFooter = await layoutBox(page, "#voters .modal-footer");
+  const votersFooterClose = await layoutBox(
+    page,
+    '#voters .modal-footer .ybtn[data-dismiss="modal"]',
+  );
+  const votersViewportCenter = await page.evaluate(() => document.documentElement.clientWidth / 2);
+  const votersModalStyles = await page.locator("#voters").evaluate((element) => {
+    const modalStyle = window.getComputedStyle(element);
+    const header = element.querySelector(".modal-header") as HTMLElement;
+    const body = element.querySelector(".modal-body") as HTMLElement;
+    const footer = element.querySelector(".modal-footer") as HTMLElement;
+    const row = element.querySelector(".modal-body li") as HTMLElement;
+    const avatar = element.querySelector(".avatar-wrap.mlarge") as HTMLElement;
+    const headerStyle = window.getComputedStyle(header);
+    const bodyStyle = window.getComputedStyle(body);
+    const footerStyle = window.getComputedStyle(footer);
+    const rowStyle = window.getComputedStyle(row);
+    const avatarStyle = window.getComputedStyle(avatar);
+    return {
+      avatarDisplay: avatarStyle.display,
+      avatarHeight: avatarStyle.height,
+      avatarWidth: avatarStyle.width,
+      backgroundColor: modalStyle.backgroundColor,
+      bodyPaddingLeft: bodyStyle.paddingLeft,
+      footerDisplay: footerStyle.display,
+      footerJustifyContent: footerStyle.justifyContent,
+      headerBorderBottomWidth: headerStyle.borderBottomWidth,
+      headerDisplay: headerStyle.display,
+      position: modalStyle.position,
+      rowDisplay: rowStyle.display,
+      zIndex: modalStyle.zIndex,
+    };
+  });
+
+  expect(votersModal.width).toBeGreaterThanOrEqual(470);
+  expect(votersModal.width).toBeLessThanOrEqual(490);
+  expect(
+    Math.abs(votersModal.x + votersModal.width / 2 - votersViewportCenter),
+  ).toBeLessThanOrEqual(2);
+  expect(votersHeader.y).toBeCloseTo(votersModal.y + 1, 0);
+  expect(votersClose.x).toBeGreaterThan(votersTitle.x + votersTitle.width);
+  expect(votersBody.y).toBeGreaterThan(votersHeader.y + votersHeader.height - 1);
+  expect(votersFirstRow.y).toBeGreaterThanOrEqual(votersBody.y);
+  expect(votersFirstLink.x).toBeGreaterThanOrEqual(votersFirstRow.x);
+  expect(votersFirstAvatar.x).toBeGreaterThanOrEqual(votersFirstLink.x);
+  expect(votersFirstName.x).toBeGreaterThan(votersFirstAvatar.x + votersFirstAvatar.width - 1);
+  expect(votersFirstLogin.x).toBeGreaterThan(votersFirstName.x + votersFirstName.width - 1);
+  expect(votersSecondRow.y).toBeGreaterThan(votersFirstRow.y + votersFirstRow.height - 1);
+  expect(votersFooter.y).toBeGreaterThan(votersBody.y + votersBody.height - 1);
+  expect(votersFooterClose.x).toBeGreaterThan(votersFooter.x + votersFooter.width / 2);
+  expect(votersModalStyles).toEqual({
+    avatarDisplay: "inline-block",
+    avatarHeight: "32px",
+    avatarWidth: "32px",
+    backgroundColor: "rgb(255, 255, 255)",
+    bodyPaddingLeft: "16px",
+    footerDisplay: "flex",
+    footerJustifyContent: "flex-end",
+    headerBorderBottomWidth: "1px",
+    headerDisplay: "flex",
+    position: "fixed",
+    rowDisplay: "list-item",
+    zIndex: "1000",
+  });
+  await page.locator("#voters").evaluate((element) => {
+    element.classList.add("hide");
+    element.classList.remove("in");
+  });
+
   await expect(page.locator("#issue-body-1 .tasklist.task-show")).toBeVisible();
   await expect(page.locator("#issue-body-1 .task-title")).toContainText("Tasks(1/2)");
   await expect(page.locator("#issue-body-1 .task-progress .bar.red")).toHaveAttribute(
@@ -1879,7 +2076,7 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await expect(page.locator(".favorite-issue .star")).toHaveClass(/starred/);
   await page.locator("#watch-button").click();
   await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "true");
-  await page.locator("#vote a").click();
+  await page.locator("#vote > a.ybtn").click();
   await expect(page.locator("#vote")).toHaveClass(/voter-exists/);
 
   await page.locator("#issue-share-button").click();

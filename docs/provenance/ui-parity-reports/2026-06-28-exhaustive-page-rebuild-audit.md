@@ -354,8 +354,8 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `issue/partial_view_child.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/partial_view_childIssueList.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/partial_view_childIssueListOnly.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
-| `issue/partial_voter_list.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
-| `issue/partial_voters.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_voter_list.scala.html` | P3 issue | metric guard passed: `issue-detail-parity.e2e.ts` asserts `#voters.modal.hide.voters-dialog`, header/title/close button, body `ul.unstyled` voter rows, `.usf-group[target=_blank]` links, `.avatar-wrap.mlarge`, name/login id ordering, footer close button, centered issue-detail modal placement, body/header/footer display metrics, and row/avatar sizing |
+| `issue/partial_voters.scala.html` | P3 issue | metric guard passed: `issue-detail-parity.e2e.ts` asserts `.voter-list-wrap`, `.voter-list`, three `.avatar-wrap.smaller` entries, tooltip/modal "more" link, voter list vertical flow, 20px avatar metrics, list margin/display metrics, and the `href="#voters"` modal hook |
 | `issue/view.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 
 ### root layout and shared top-level partials
