@@ -681,14 +681,38 @@ function RootUpdateNotification() {
   const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig, setErrorMessage } =
     useAppRuntime();
   const [dismissed, setDismissed] = React.useState(false);
+  const queryClient = useQueryClient();
+  const updateQueryOptions = siteUpdateQueryOptions(runtimeConfig);
   const query = useQuery({
-    ...siteUpdateQueryOptions(runtimeConfig),
+    ...updateQueryOptions,
     enabled: !bootstrapping && Boolean(currentSession?.isSiteAdmin) && !dismissed,
   });
   const versionToUpdate = query.data?.versionToUpdate ?? null;
   const releaseUrl =
     query.data?.releaseUrl ?? prefixBasePath(runtimeConfig.basePath, "/sites/update");
   const unwatchUri = prefixBasePath(runtimeConfig.basePath, "/sites/unwatchUpdate");
+  const unwatchMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(unwatchUri, {
+        credentials: "same-origin",
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : undefined,
+        method: "POST",
+      });
+      if (!response.ok) {
+        throw new Error(`site.update.notification.hide.failed:${response.status}`);
+      }
+    },
+    onError: (error) => {
+      setErrorMessage(
+        error instanceof Error ? error.message : "site.update.notification.hide.failed",
+      );
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: updateQueryOptions.queryKey });
+      setDismissed(true);
+      setErrorMessage(null);
+    },
+  });
 
   if (!currentSession?.isSiteAdmin || dismissed || !versionToUpdate) {
     return null;
@@ -706,24 +730,9 @@ function RootUpdateNotification() {
         className="ybtn ybtn-small"
         data-request-method="post"
         data-request-uri={unwatchUri}
-        onClick={async (event) => {
+        onClick={(event) => {
           event.preventDefault();
-          try {
-            const response = await fetch(unwatchUri, {
-              credentials: "same-origin",
-              headers: csrfToken ? { "x-csrf-token": csrfToken } : undefined,
-              method: "POST",
-            });
-            if (!response.ok) {
-              throw new Error(`site.update.notification.hide.failed:${response.status}`);
-            }
-            setDismissed(true);
-            setErrorMessage(null);
-          } catch (error) {
-            setErrorMessage(
-              error instanceof Error ? error.message : "site.update.notification.hide.failed",
-            );
-          }
+          unwatchMutation.mutate();
         }}
         type="button"
       >

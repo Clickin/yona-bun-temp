@@ -583,6 +583,28 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   await installCommonApiMocks(page, {
     session: { isSiteAdmin: true, loginId: "admin", userLabel: "Administrator" },
   });
+  let updateHidePosts = 0;
+  await page.route(apiV1Route("/site/update"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        currentVersion: "v1.15.0",
+        error: null,
+        message: "",
+        releaseUrl: "https://github.com/yona-projects/yona/releases/tag/v1.16.0",
+        versionToUpdate: "v1.16.0",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route("**/sites/unwatchUpdate", async (route) => {
+    updateHidePosts += route.request().method() === "POST" ? 1 : 0;
+    await route.fulfill({
+      body: "",
+      headers: restJsonHeaders,
+      status: 204,
+    });
+  });
 
   await page.goto("/yona/me");
   await expectNoVisibleRawLegacyKeys(page);
@@ -590,6 +612,30 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   await expectNoDormantUserVoiceWidget(page);
 
   await expect(page.locator(".admin-logged-in-affix")).toBeVisible();
+  const updateNotice = page.locator("p.center-txt", {
+    has: page.locator('a[href="https://github.com/yona-projects/yona/releases/tag/v1.16.0"]'),
+  });
+  await expect(updateNotice).toBeVisible();
+  await expect(updateNotice.locator("a")).toHaveText("Software update: Yona v1.16.0 is available");
+  const updateHideButton = updateNotice.locator("button.ybtn.ybtn-small");
+  await expect(updateHideButton).toHaveAttribute("type", "button");
+  await expect(updateHideButton).toHaveAttribute("data-request-method", "post");
+  await expect(updateHideButton).toHaveAttribute("data-request-uri", "/yona/sites/unwatchUpdate");
+  await expect(updateHideButton).toHaveText("Hide");
+  await expect(updateNotice).toHaveCSS("text-align", "center");
+  const updateNoticeBox = await layoutBox(page, "p.center-txt");
+  const updateLinkBox = await layoutBox(
+    page,
+    'p.center-txt a[href="https://github.com/yona-projects/yona/releases/tag/v1.16.0"]',
+  );
+  const updateHideBox = await layoutBox(page, "p.center-txt button.ybtn.ybtn-small");
+  expect(updateNoticeBox.y).toBeGreaterThanOrEqual(0);
+  expect(updateLinkBox.x).toBeLessThan(updateHideBox.x);
+  expect(updateHideBox.y).toBeLessThan(updateLinkBox.y + updateLinkBox.height);
+  expect(updateHideBox.y + updateHideBox.height).toBeGreaterThan(updateLinkBox.y);
+  await updateHideButton.click();
+  await expect(updateNotice).toHaveCount(0);
+  expect(updateHidePosts).toBe(1);
   await expect(page.locator(".gnb-usermenu a[href='/yona/user/issues']")).toBeVisible();
   await expect(page.locator(".usermenu-icon-button[href='/yona/sites/userList']")).toBeVisible();
   await expect(page.locator("#sidebar-open-btn a[href='#mySidenav']")).toBeVisible();
