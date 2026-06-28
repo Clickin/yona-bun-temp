@@ -796,7 +796,21 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
       '#comment-30 .child-comments .deleteButtonX[data-toggle="comment-delete"]',
     ),
   ).toHaveAttribute("data-request-uri", "/yona/admin/projectYobi/issue/1/comment/31/delete");
+  await expect(fullTimeline.locator("#comment-30 .add-a-comment.pull-right")).toContainText(
+    "Reply",
+  );
+  await expect(fullTimeline.locator("#comment-30 .child-comment-input-form form")).toHaveAttribute(
+    "action",
+    "/yona/admin/projectYobi/issue/1/comments",
+  );
+  await expect(
+    fullTimeline.locator('#comment-30 .child-comment-input-form input[name="parentCommentId"]'),
+  ).toHaveValue("30");
+  await expect(
+    fullTimeline.locator('#comment-30 .child-comment-input-form textarea[name="contents"]'),
+  ).toHaveAttribute("placeholder", "Reply (CTRL + ENTER)");
 
+  const subcommentBody = await layoutBox(page, "#comment-30 .subcomment-media-body");
   const childComments = await layoutBox(page, "#comment-30 .child-comments");
   const childAnchor = await layoutBox(page, "#comment-30 .child-comments > #comment-31");
   const childOneLine = await layoutBox(page, "#comment-30 .child-comments .one-line-comment");
@@ -804,9 +818,49 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     page,
     "#comment-30 .child-comments .one-line-comment .contents",
   );
+  const childForm = await page.locator("#comment-30 .child-comment-input-form").boundingBox();
+  expect(childForm, "hidden child comment form should not reserve visible layout").toBeNull();
+  const childCommentStyles = await page
+    .locator("#comment-30 .subcomment-media-body")
+    .evaluate((element) => {
+      const bodyStyle = window.getComputedStyle(element);
+      const addCommentElement = element.previousElementSibling as HTMLElement;
+      const addCommentStyle = window.getComputedStyle(addCommentElement);
+      const contents = element.querySelector(".one-line-comment .contents") as HTMLElement;
+      const contentsStyle = window.getComputedStyle(contents);
+      const deleteButton = element.querySelector(".deleteButtonX") as HTMLElement;
+      const deleteStyle = window.getComputedStyle(deleteButton);
+      const inputForm = element.querySelector(".child-comment-input-form") as HTMLElement;
+      const inputFormStyle = window.getComputedStyle(inputForm);
+      const textarea = element.querySelector("textarea") as HTMLElement;
+      const textareaStyle = window.getComputedStyle(textarea);
+      return {
+        addBorderColor: addCommentStyle.borderTopColor,
+        addColor: addCommentStyle.color,
+        addDisplay: addCommentStyle.display,
+        addFontSize: addCommentStyle.fontSize,
+        addMarginTop: addCommentStyle.marginTop,
+        bodyMarginLeft: bodyStyle.marginLeft,
+        bodyTextAlign: bodyStyle.textAlign,
+        contentsBorderBottomStyle: contentsStyle.borderBottomStyle,
+        contentsBorderBottomWidth: contentsStyle.borderBottomWidth,
+        contentsMarginLeft: contentsStyle.marginLeft,
+        contentsPaddingBottom: contentsStyle.paddingBottom,
+        contentsPaddingLeft: contentsStyle.paddingLeft,
+        contentsPaddingTop: contentsStyle.paddingTop,
+        deleteAlignItems: deleteStyle.alignItems,
+        deleteColor: deleteStyle.color,
+        deleteDisplay: deleteStyle.display,
+        formDisplay: inputFormStyle.display,
+        textareaBorderBottomWidth: textareaStyle.borderBottomWidth,
+        textareaMarginTop: textareaStyle.marginTop,
+        textareaPaddingLeft: textareaStyle.paddingLeft,
+      };
+    });
   const childAnchorDisplay = await page
     .locator("#comment-30 .child-comments > #comment-31")
     .evaluate((element) => window.getComputedStyle(element).display);
+  expect(subcommentBody.x).toBeGreaterThan(childComments.x - 1);
   expect(childAnchorDisplay).toBe("block");
   expect(childAnchor.x).toBeCloseTo(childComments.x, 0);
   expect(childAnchor.width).toBeCloseTo(childComments.width, 0);
@@ -815,6 +869,28 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   expect(childOneLine.y).toBeGreaterThanOrEqual(childAnchor.y);
   expect(childContents.x).toBeGreaterThanOrEqual(childOneLine.x);
   expect(childContents.y).toBeGreaterThanOrEqual(childOneLine.y);
+  expect(childCommentStyles).toEqual({
+    addBorderColor: "rgb(0, 176, 232)",
+    addColor: "rgb(0, 176, 232)",
+    addDisplay: "none",
+    addFontSize: "12px",
+    addMarginTop: "-32px",
+    bodyMarginLeft: "60px",
+    bodyTextAlign: "right",
+    contentsBorderBottomStyle: "dashed",
+    contentsBorderBottomWidth: "1px",
+    contentsMarginLeft: "12px",
+    contentsPaddingBottom: "4px",
+    contentsPaddingLeft: "10px",
+    contentsPaddingTop: "5px",
+    deleteAlignItems: "center",
+    deleteColor: "rgb(255, 0, 0)",
+    deleteDisplay: "inline-flex",
+    formDisplay: "none",
+    textareaBorderBottomWidth: "1px",
+    textareaMarginTop: "5px",
+    textareaPaddingLeft: "10px",
+  });
 
   const commentDeleteTrigger = fullTimeline.locator(
     '#comment-30 [data-toggle="comment-delete"][data-request-uri="/yona/admin/projectYobi/issue/1/comment/30/delete"]',

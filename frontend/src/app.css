@@ -3294,7 +3294,8 @@ div.markdown-preview {
   display: inline-block;
 }
 
-.board-view .board-comment-wrap .comments .add-a-comment {
+.board-view .board-comment-wrap .comments .add-a-comment,
+.issue-detail-page .board-comment-wrap .comments .add-a-comment {
   position: relative;
   right: 10px;
   z-index: 2;
@@ -3308,7 +3309,8 @@ div.markdown-preview {
   border-radius: 3px;
 }
 
-.board-view .board-comment-wrap .comments .add-a-comment:hover {
+.board-view .board-comment-wrap .comments .add-a-comment:hover,
+.issue-detail-page .board-comment-wrap .comments .add-a-comment:hover {
   display: block;
   cursor: pointer;
   box-shadow: 1px 1px 2px #e0e0e0;
@@ -3414,29 +3416,34 @@ div.markdown-preview {
   background-color: #e1f5fe;
 }
 
-.board-view .board-comment-wrap .comments .subcomment-media-body {
+.board-view .board-comment-wrap .comments .subcomment-media-body,
+.issue-detail-page .board-comment-wrap .comments .subcomment-media-body {
   margin-left: 60px;
   text-align: right;
 }
 
-.board-view .board-comment-wrap .comments .one-line-comment .contents {
+.board-view .board-comment-wrap .comments .one-line-comment .contents,
+.issue-detail-page .board-comment-wrap .comments .one-line-comment .contents {
   margin-left: 12px;
   padding: 5px 0 4px 10px;
   text-align: left;
   border-bottom: 1px dashed #ccc;
 }
 
-.board-view .board-comment-wrap .comments .deleteButtonX {
+.board-view .board-comment-wrap .comments .deleteButtonX,
+.issue-detail-page .board-comment-wrap .comments .deleteButtonX {
   display: inline-flex;
   align-items: center;
   color: red;
 }
 
-.board-view .board-comment-wrap .comments .child-comment-input-form {
+.board-view .board-comment-wrap .comments .child-comment-input-form,
+.issue-detail-page .board-comment-wrap .comments .child-comment-input-form {
   display: none;
 }
 
-.board-view .board-comment-wrap .comments .child-comment-input-form textarea {
+.board-view .board-comment-wrap .comments .child-comment-input-form textarea,
+.issue-detail-page .board-comment-wrap .comments .child-comment-input-form textarea {
   margin-top: 5px;
   margin-bottom: 0;
   padding-left: 10px;
