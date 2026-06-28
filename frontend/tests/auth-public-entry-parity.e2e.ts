@@ -369,6 +369,7 @@ test("auth aliases redirect to the legacy public entry routes", async ({ page })
 });
 
 test("anonymous help page keeps the legacy FAQ shell and item-wide toggle", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
   await installRuntimeConfig(page);
   await installAuthEntryMocks(page);
 
@@ -384,6 +385,31 @@ test("anonymous help page keeps the legacy FAQ shell and item-wide toggle", asyn
   );
   await expect(page.locator("body")).not.toContainText("title.help");
   await expect(page.locator("body")).not.toContainText("app.name");
+
+  const nav = await layoutBox(page, ".gnb-outer");
+  const breadcrumb = await layoutBox(page, ".site-breadcrumb-outer");
+  const breadcrumbInner = await layoutBox(page, ".site-breadcrumb-inner");
+  const pageWrapOuter = await layoutBox(page, ".page-wrap-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap");
+  const qas = await layoutBox(page, ".qas");
+  const firstRow = await layoutBox(page, ".qas > .qa:first-child");
+  const firstQuestionWrap = await layoutBox(page, ".qas > .qa:first-child .question-wrap");
+  const firstQuestionIcon = await layoutBox(page, ".qas > .qa:first-child .yobicon-q.q");
+  const firstQuestionLink = await layoutBox(page, ".qas > .qa:first-child .question");
+  const footer = await layoutBox(page, ".page-footer-outer");
+
+  expect(Math.round(nav.height)).toBe(40);
+  expect(breadcrumb.y).toBeGreaterThanOrEqual(nav.y + nav.height - 1);
+  expect(breadcrumbInner.width).toBeCloseTo(pageWrap.width, 0);
+  expect(pageWrapOuter.y).toBeGreaterThanOrEqual(breadcrumb.y + breadcrumb.height - 1);
+  expect(pageWrap.x).toBeCloseTo(breadcrumbInner.x, 0);
+  expect(qas.x).toBeCloseTo(pageWrap.x, 0);
+  expect(qas.width).toBeCloseTo(pageWrap.width, 0);
+  expect(firstRow.y).toBeGreaterThanOrEqual(qas.y);
+  expect(firstQuestionWrap.y).toBeGreaterThanOrEqual(firstRow.y);
+  expect(firstQuestionIcon.x).toBeGreaterThanOrEqual(firstQuestionWrap.x);
+  expect(firstQuestionLink.x).toBeGreaterThan(firstQuestionIcon.x + firstQuestionIcon.width - 1);
+  expect(footer.y).toBeGreaterThan(qas.y + qas.height - 1);
 
   const firstQuestion = page.locator(".qas > .qa").first();
   await expect(firstQuestion).not.toHaveClass(/open/);

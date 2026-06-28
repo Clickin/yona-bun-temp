@@ -21,6 +21,19 @@ type WorkspaceState = {
   recentProjects?: Array<{ ownerName: string; projectName: string }>;
 };
 
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
+
 async function expectNoVisibleRawLegacyKeys(page: Page): Promise<void> {
   const bodyText = await page.locator("body").innerText();
   const rawKeys =
@@ -319,9 +332,37 @@ test("standalone legacy pages suppress root chrome", async ({ page }) => {
 
   await page.goto("/yona/_UIKit");
   await expectNoVisibleRawLegacyKeys(page);
+  await expect(page.locator("#mySidenav")).toHaveCount(0);
+  await expect(page.locator("header.gnb-outer")).toHaveCount(1);
   await expect(page.locator("header.gnb-outer .subtitle")).toHaveText("Yobi UI");
   await expect(page.locator(".page-wrap-outer")).toContainText("Buttons");
   await expect(page.locator(".page-footer-outer")).toContainText("NAVER Corp.");
+
+  const uiHeader = await layoutBox(page, "header.gnb-outer");
+  const subtitle = await layoutBox(page, "header.gnb-outer .subtitle");
+  const uiPageOuter = await layoutBox(page, ".page-wrap-outer");
+  const uiPage = await layoutBox(page, ".container.page-wrap > .page");
+  const firstHeading = await layoutBox(page, ".container.page-wrap > .page h3:first-child");
+  const firstButton = await layoutBox(page, ".container.page-wrap > .page .ybtn:first-of-type");
+  const uploadButton = await layoutBox(page, ".fake-file-wrap");
+  const firstDropdown = await layoutBox(page, ".btn-group[data-name='assigneeId']");
+  const searchForm = await layoutBox(page, ".form-search");
+  const footer = await layoutBox(page, ".page-footer-outer");
+
+  expect(Math.round(uiHeader.height)).toBe(40);
+  expect(subtitle.y).toBeGreaterThanOrEqual(uiHeader.y);
+  expect(Math.round(subtitle.height)).toBeGreaterThanOrEqual(24);
+  expect(
+    Math.abs(subtitle.x + subtitle.width / 2 - (uiHeader.x + uiHeader.width / 2)),
+  ).toBeLessThanOrEqual(2);
+  expect(uiPageOuter.y).toBeGreaterThanOrEqual(uiHeader.y + uiHeader.height - 1);
+  expect(uiPage.width).toBeGreaterThanOrEqual(900);
+  expect(firstHeading.y).toBeGreaterThanOrEqual(uiPage.y);
+  expect(firstButton.y).toBeGreaterThan(firstHeading.y + firstHeading.height - 1);
+  expect(uploadButton.y).toBeGreaterThan(firstButton.y);
+  expect(firstDropdown.y).toBeGreaterThan(uploadButton.y);
+  expect(searchForm.y).toBeGreaterThan(firstDropdown.y);
+  expect(footer.y).toBeGreaterThan(uiPage.y + uiPage.height - 1);
 });
 
 test("project route search scope exposes project, group, and global actions from browser DOM", async ({

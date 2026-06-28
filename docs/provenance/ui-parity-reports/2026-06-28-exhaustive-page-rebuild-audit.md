@@ -286,11 +286,11 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `help/UIKit.scala.html` | P1 help | reopen: inspect Scala anchors before JSX reuse |
+| `help/UIKit.scala.html` | P1 help | metric guard passed: `root-shell-parity.e2e.ts` asserts standalone no-root-sidebar UI kit header, page, button/upload/dropdown/search stack, and internal footer order |
 | `help/experimental.scala.html` | P1 help | reopen: inspect Scala anchors before JSX reuse |
 | `help/keymap.scala.html` | P1 help | reopen: inspect Scala anchors before JSX reuse |
 | `help/markdown.scala.html` | P1 help | reopen: inspect Scala anchors before JSX reuse |
-| `help/toc.scala.html` | P1 help | reopen: inspect Scala anchors before JSX reuse |
+| `help/toc.scala.html` | P1 help | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts site help navbar/breadcrumb/page/FAQ stack, question icon/link alignment, footer order, and item-wide toggle |
 
 ### `index/`
 

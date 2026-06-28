@@ -106,7 +106,7 @@ function RootRouteComponent() {
   );
 }
 
-const STANDALONE_CHROME_PATHS = new Set(["/restart", "/secret"]);
+const STANDALONE_CHROME_PATHS = new Set(["/_UIKit", "/restart", "/secret"]);
 const STANDALONE_FOOTER_PATHS = new Set(["/_UIKit", ...STANDALONE_CHROME_PATHS]);
 const NON_PROJECT_TOP_LEVEL_PATHS = new Set([
   "_UIKit",
