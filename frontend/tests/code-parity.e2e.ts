@@ -20,7 +20,10 @@ async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
   return box as LayoutBox;
 }
 
+let projectVcs = "GIT";
+
 test.beforeEach(async ({ page }) => {
+  projectVcs = "GIT";
   let branchDefault = "main";
   let deleteMeVisible = true;
   const branchListPayload = () => ({
@@ -161,6 +164,7 @@ test.beforeEach(async ({ page }) => {
         viewerCanEnroll: false,
         viewerCanUpdate: true,
         viewerCanWatch: true,
+        vcs: projectVcs,
         watchCount: 0,
       }),
       headers: restJsonHeaders,
@@ -615,5 +619,52 @@ test("compare route keeps legacy code compare shell metrics", async ({ page }) =
     marginBottom: "12px",
     paddingTop: "12px",
     whiteSpace: "normal",
+  });
+});
+
+test("SVN compare route keeps legacy hidden-origin diff shell metrics", async ({ page }) => {
+  projectVcs = "Subversion";
+
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/yona/admin/projectYobi/compare/1234567..abcdef1");
+
+  await expect(page.locator(".project-page-wrap .code-browse-wrap")).toBeVisible();
+  await expect(page.locator(".commitInfo .commitId")).toContainText(
+    "@1234567890abcdef1234567890abcdef12345678..abcdef1234567890abcdef1234567890abcdef12",
+  );
+  await expect(page.locator(".diff-body.discommentable")).toHaveCount(0);
+  await expect(page.locator(".diff-wrap #commit.diff-body.hide")).toHaveAttribute(
+    "data-commit-origin",
+    "true",
+  );
+  await expect(page.locator(".diff-wrap #commit")).toContainText('println!("compare")');
+
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const browseWrap = await layoutBox(page, ".code-browse-wrap");
+  const commitInfo = await layoutBox(page, ".commitInfo");
+  const commitId = await layoutBox(page, ".commitInfo .commitId");
+  const diffWrap = await layoutBox(page, ".diff-wrap");
+  const originState = await page.locator(".diff-wrap #commit").evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return {
+      display: style.display,
+      id: element.id,
+      origin: element.getAttribute("data-commit-origin"),
+    };
+  });
+
+  expect(browseWrap.x).toBeCloseTo(projectPage.x, 0);
+  expect(browseWrap.width).toBeCloseTo(projectPage.width, 0);
+  expect(commitInfo.x).toBeCloseTo(browseWrap.x, 0);
+  expect(commitInfo.width).toBeCloseTo(browseWrap.width, 0);
+  expect(commitId.x).toBeGreaterThanOrEqual(commitInfo.x);
+  expect(commitId.y).toBeGreaterThanOrEqual(commitInfo.y);
+  expect(diffWrap.y).toBeGreaterThan(commitInfo.y + commitInfo.height - 1);
+  expect(diffWrap.x).toBeCloseTo(browseWrap.x, 0);
+  expect(diffWrap.width).toBeCloseTo(browseWrap.width, 0);
+  expect(originState).toEqual({
+    display: "none",
+    id: "commit",
+    origin: "true",
   });
 });

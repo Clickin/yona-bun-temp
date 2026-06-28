@@ -1126,6 +1126,7 @@ export function CodeComparePage(props: {
   const files = compare?.files ?? [];
   const revA = compare?.commitA?.commitId ?? compare?.revA ?? "";
   const revB = compare?.commitB?.commitId ?? compare?.revB ?? "";
+  const isSvn = isSvnProject(detail);
 
   const pageBody = (
     <div className="project-page-wrap">
@@ -1143,6 +1144,12 @@ export function CodeComparePage(props: {
             </p>
             {files.length === 0 ? (
               <div className="alert">{legacyMessage(props.messages, "code.noChanges")}</div>
+            ) : isSvn ? (
+              <div className="diff-wrap">
+                <div className="diff-body hide" data-commit-origin="true" id="commit">
+                  {files.map((file) => file.patch).join("\n")}
+                </div>
+              </div>
             ) : (
               <div className="diff-body discommentable">
                 {files.map((file) => (
