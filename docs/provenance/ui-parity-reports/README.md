@@ -25,6 +25,7 @@ Current template-first reset reports:
 - `2026-06-28-rendered-verification-queue.md`
 - `2026-06-28-p0-rendered-audit-pass.md`
 - `2026-06-28-p1-source-audit-pass.md`
+- `2026-06-28-p2-p3-source-audit-pass.md`
 - `template-first-p0-global-shell.md`
 - `template-first-p1-auth-public-home.md`
 - `template-first-p2-project-shell.md`
@@ -59,6 +60,9 @@ Rules:
 - The 2026-06-28 P1 source audit pass expands the 89 P1 rows into risk buckets
   for rendered interaction, caller-route, dynamic selector, and selector/copy
   checks. It does not close those rows.
+- The 2026-06-28 P2/P3 source audit pass expands the remaining 7 P2 rows and
+  134 P3 rows. At that point all 242 queue rows have source-pass follow-up
+  requirements, but rendered evidence is still required for closure.
 - Explorer reports must not propose new UX or new product structure. Findings
   must be framed as `covered`, `gap`, `deviation`, `deferred`,
   `not-applicable`, or `needs-parent-decision`.

@@ -153,6 +153,14 @@ interaction checks, 18 caller-route checks, 11 dynamic selector checks, and 3
 rendered selector checks. This is not P1 closure; it identifies the rendered
 evidence each row still needs.
 
+The P2/P3 source pass is:
+`docs/provenance/ui-parity-reports/2026-06-28-p2-p3-source-audit-pass.md`.
+It expands the remaining 7 P2 rows and 134 P3 rows. Across the P0, P1, and
+P2/P3 passes, all 242 legacy templates now have a source-pass follow-up row.
+This still is not exhaustive audit completion: rendered route evidence, or a
+precise `gap`, `deviation`, or `deferred` record, is required before any row
+leaves the queue.
+
 ### `board/`
 
 | legacy template | packet | audit disposition |

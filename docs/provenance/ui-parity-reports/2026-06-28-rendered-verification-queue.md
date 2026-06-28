@@ -21,6 +21,13 @@ It expands the 89 P1 rows into rendered interaction, caller-route, dynamic
 selector, and selector/copy checks. It does not close them without rendered
 route evidence.
 
+P2/P3 source pass:
+`docs/provenance/ui-parity-reports/2026-06-28-p2-p3-source-audit-pass.md`.
+It expands the remaining 7 P2 rows and 134 P3 rows. Together with the P0 and
+P1 passes, all 242 queue rows now have source-pass follow-up requirements, but
+the queue remains open until rendered evidence or explicit
+`gap`/`deviation`/`deferred` records exist.
+
 ## Lane Summary
 
 | lane | count | required next evidence |
