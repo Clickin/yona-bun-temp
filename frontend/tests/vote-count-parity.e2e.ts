@@ -335,6 +335,52 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     listDisplay: "block",
   });
 
+  const issueTabsSelector = ".issue-list-page ul.nav.nav-tabs.nm:has(#toggle-show-subtasks)";
+  await expect(page.locator(".issue-list-page .span10.span-hard-wrap#span10")).toHaveCount(1);
+  await expect(page.locator("#span10 > .pull-right .ybtn.ybtn-success")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/issueform",
+  );
+  await expect(page.locator("#span10 > .pull-right .ybtn.ybtn-success")).toHaveText("New issue");
+  await expect(page.locator(`${issueTabsSelector} > li[data-pjax]`)).toHaveCount(2);
+  await expect(page.locator(`${issueTabsSelector} > li:nth-child(1)`)).toHaveClass(/active/);
+  await expect(page.locator(`${issueTabsSelector} > li:nth-child(1) > a`)).toHaveAttribute(
+    "state",
+    "open",
+  );
+  await expect(page.locator(`${issueTabsSelector} > li:nth-child(2) > a`)).toHaveAttribute(
+    "state",
+    "closed",
+  );
+  await expect(page.locator(`${issueTabsSelector} > li:nth-child(1) .num-badge`)).toHaveText("1");
+  await expect(page.locator(`${issueTabsSelector} > li:nth-child(2) .num-badge`)).toHaveText("0");
+  await expect(page.locator(".issue-list-page .filter-wrap.board")).toHaveCount(1);
+  await expect(page.locator(".issue-list-page .filters.pull-right > a.filter")).toHaveCount(4);
+  await expect(
+    page.locator(".issue-list-page .filters.pull-right > a.filter").nth(0),
+  ).toHaveAttribute("orderby", "dueDate");
+  await expect(
+    page.locator(".issue-list-page .filters.pull-right > a.filter").nth(1),
+  ).toHaveAttribute("orderby", "updatedDate");
+  await expect(
+    page.locator(".issue-list-page .filters.pull-right > a.filter.active"),
+  ).toHaveAttribute("orderby", "updatedDate");
+  await expect(
+    page.locator(".issue-list-page .filters.pull-right > a.filter.active"),
+  ).toHaveAttribute("orderdir", "asc");
+  await expect(
+    page.locator(".issue-list-page .filters.pull-right > a.filter").nth(3),
+  ).toContainText("Comments");
+  await expect(page.locator(".issue-list-page .pull-left .ybtn.small")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/issues?orderBy=updatedDate&orderDir=desc&format=xls",
+  );
+  await expect(page.locator(".issue-list-page .pull-left .ybtn.small")).toContainText(
+    "Download as Excel",
+  );
+  await expect(page.locator(".issue-list-page .pull-left .yobicon-file-excel")).toHaveCount(1);
+  await expect(page.locator(".issue-list-page #pagination")).toHaveAttribute("data-total", "1");
+
   await expect(page.locator(".issue-list-page form#search")).toHaveAttribute(
     "action",
     "/yona/admin/projectYobi/issues",
@@ -439,6 +485,74 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
         optionWidth: optionStyle.width,
       };
     });
+  const span10 = await layoutBox(page, ".issue-list-page #span10");
+  const newIssueWrap = await layoutBox(page, "#span10 > .pull-right");
+  const newIssueButton = await layoutBox(page, "#span10 > .pull-right .ybtn.ybtn-success");
+  const tabs = await layoutBox(page, issueTabsSelector);
+  const openTab = await layoutBox(page, `${issueTabsSelector} > li:nth-child(1)`);
+  const openTabLink = await layoutBox(page, `${issueTabsSelector} > li:nth-child(1) > a`);
+  const openTabBadge = await layoutBox(page, `${issueTabsSelector} > li:nth-child(1) .num-badge`);
+  const closedTabLink = await layoutBox(page, `${issueTabsSelector} > li:nth-child(2) > a`);
+  const wrapperFilterWrap = await layoutBox(page, ".issue-list-page .filter-wrap.board");
+  const filters = await layoutBox(page, ".issue-list-page .filters.pull-right");
+  const dueDateFilter = await layoutBox(page, ".issue-list-page .filters > a.filter:nth-child(1)");
+  const updatedDateFilter = await layoutBox(
+    page,
+    ".issue-list-page .filters > a.filter:nth-child(2)",
+  );
+  const createdDateFilter = await layoutBox(
+    page,
+    ".issue-list-page .filters > a.filter:nth-child(3)",
+  );
+  const commentsFilter = await layoutBox(page, ".issue-list-page .filters > a.filter:nth-child(4)");
+  const excelWrap = await layoutBox(page, ".issue-list-page .pull-left:has(.yobicon-file-excel)");
+  const excelButton = await layoutBox(page, ".issue-list-page .pull-left .ybtn.small");
+  const excelIcon = await layoutBox(page, ".issue-list-page .pull-left .yobicon-file-excel");
+  const pagination = await layoutBox(page, ".issue-list-page #pagination");
+  const normalListForWrap = await layoutBox(
+    page,
+    ".issue-list-page .post-list-wrap.row-fluid:not([data-list])",
+  );
+  const listWrapStyles = await page.locator(".issue-list-page #span10").evaluate((element) => {
+    const newIssue = element.querySelector(":scope > .pull-right .ybtn") as HTMLElement;
+    const tabsElement = element.querySelector("ul.nav.nav-tabs.nm") as HTMLElement;
+    const activeTab = tabsElement.querySelector("li.active") as HTMLElement;
+    const activeTabLink = activeTab.querySelector("a") as HTMLElement;
+    const filterWrapElement = element.querySelector(".filter-wrap.board") as HTMLElement;
+    const filtersElement = element.querySelector(".filters.pull-right") as HTMLElement;
+    const activeFilter = filtersElement.querySelector("a.active") as HTMLElement;
+    const excelWrapElement = element.querySelector(
+      ".pull-left:has(.yobicon-file-excel)",
+    ) as HTMLElement;
+    const paginationElement = element.querySelector("#pagination") as HTMLElement;
+    const newIssueStyle = window.getComputedStyle(newIssue);
+    const tabsStyle = window.getComputedStyle(tabsElement);
+    const activeTabStyle = window.getComputedStyle(activeTab);
+    const activeTabLinkStyle = window.getComputedStyle(activeTabLink);
+    const filterWrapStyle = window.getComputedStyle(filterWrapElement);
+    const filtersStyle = window.getComputedStyle(filtersElement);
+    const activeFilterStyle = window.getComputedStyle(activeFilter);
+    const excelWrapStyle = window.getComputedStyle(excelWrapElement);
+    const paginationStyle = window.getComputedStyle(paginationElement);
+    return {
+      activeFilterDisplay: activeFilterStyle.display,
+      activeFilterFontWeight: activeFilterStyle.fontWeight,
+      activeTabBackground: activeTabStyle.backgroundColor,
+      activeTabLinkDisplay: activeTabLinkStyle.display,
+      activeTabLinkPadding: `${activeTabLinkStyle.paddingTop} ${activeTabLinkStyle.paddingRight} ${activeTabLinkStyle.paddingBottom} ${activeTabLinkStyle.paddingLeft}`,
+      excelWrapFloat: excelWrapStyle.float,
+      excelWrapPadding: excelWrapStyle.padding,
+      filtersFloat: filtersStyle.float,
+      filterWrapDisplay: filterWrapStyle.display,
+      filterWrapMarginTop: filterWrapStyle.marginTop,
+      newIssueDisplay: newIssueStyle.display,
+      newIssueHeight: newIssueStyle.height,
+      paginationDisplay: paginationStyle.display,
+      paginationMarginTop: paginationStyle.marginTop,
+      tabsDisplay: tabsStyle.display,
+      tabsMarginBottom: tabsStyle.marginBottom,
+    };
+  });
 
   expect(searchForm.x).toBeGreaterThanOrEqual(leftMenu.x);
   expect(searchForm.x + searchForm.width).toBeLessThanOrEqual(leftMenu.x + leftMenu.width + 1);
@@ -488,6 +602,50 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     optionWidth: "190.625px",
   });
 
+  expect(span10.x).toBeGreaterThan(leftMenu.x + leftMenu.width - 1);
+  expect(span10.y).toBeCloseTo(leftMenu.y, 0);
+  expect(newIssueWrap.x).toBeGreaterThan(span10.x + span10.width / 2);
+  expect(newIssueButton.x + newIssueButton.width).toBeLessThanOrEqual(span10.x + span10.width + 1);
+  expect(tabs.x).toBeGreaterThanOrEqual(span10.x);
+  expect(tabs.y).toBeGreaterThanOrEqual(newIssueButton.y - 1);
+  expect(openTab.x).toBeGreaterThanOrEqual(tabs.x);
+  expect(openTabLink.x).toBeGreaterThanOrEqual(openTab.x);
+  expect(openTabBadge.x).toBeGreaterThan(openTabLink.x);
+  expect(closedTabLink.x).toBeGreaterThan(openTabLink.x + openTabLink.width - 1);
+  expect(wrapperFilterWrap.x).toBeGreaterThanOrEqual(span10.x);
+  expect(wrapperFilterWrap.y).toBeGreaterThan(tabs.y + tabs.height - 1);
+  expect(filters.x).toBeGreaterThan(wrapperFilterWrap.x + wrapperFilterWrap.width / 2);
+  expect(filters.x + filters.width).toBeLessThanOrEqual(
+    wrapperFilterWrap.x + wrapperFilterWrap.width + 1,
+  );
+  expect(dueDateFilter.x).toBeGreaterThanOrEqual(filters.x);
+  expect(updatedDateFilter.x).toBeGreaterThan(dueDateFilter.x + dueDateFilter.width - 1);
+  expect(createdDateFilter.x).toBeGreaterThan(updatedDateFilter.x + updatedDateFilter.width - 1);
+  expect(commentsFilter.x).toBeGreaterThan(createdDateFilter.x + createdDateFilter.width - 1);
+  expect(excelWrap.x).toBeGreaterThanOrEqual(span10.x);
+  expect(excelWrap.y).toBeGreaterThan(normalListForWrap.y + normalListForWrap.height - 1);
+  expect(excelButton.x).toBeGreaterThanOrEqual(excelWrap.x);
+  expect(excelIcon.x).toBeGreaterThanOrEqual(excelButton.x);
+  expect(pagination.y).toBeGreaterThanOrEqual(excelWrap.y - 1);
+  expect(listWrapStyles).toEqual({
+    activeFilterDisplay: "inline",
+    activeFilterFontWeight: "700",
+    activeTabBackground: "rgba(0, 0, 0, 0)",
+    activeTabLinkDisplay: "block",
+    activeTabLinkPadding: "8px 12px 8px 12px",
+    excelWrapFloat: "left",
+    excelWrapPadding: "10px",
+    filtersFloat: "right",
+    filterWrapDisplay: "block",
+    filterWrapMarginTop: "5px",
+    newIssueDisplay: "inline-block",
+    newIssueHeight: "20px",
+    paginationDisplay: "flex",
+    paginationMarginTop: "16px",
+    tabsDisplay: "block",
+    tabsMarginBottom: "0px",
+  });
+
   const twoColumn = page.locator(".issue-list-page .two-column-icon.mr10.hide-in-mobile");
   await expect(twoColumn).toHaveAttribute("id", "two-column-mode-checkbox");
   await expect(twoColumn).toHaveAttribute("title", "Two Column Mode");
@@ -508,8 +666,6 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   await expect(page.locator("#toggle-show-subtasks")).toHaveAttribute("type", "checkbox");
   await expect(page.locator(".issue-list-page .show-subtasks-text")).toHaveText("Show subtask");
 
-  const issueTabsSelector = ".issue-list-page ul.nav.nav-tabs.nm:has(#toggle-show-subtasks)";
-  const tabs = await layoutBox(page, issueTabsSelector);
   const closedTab = await layoutBox(page, `${issueTabsSelector} > li:nth-child(2)`);
   const twoColumnLi = await layoutBox(page, `${issueTabsSelector} > li:nth-child(3)`);
   const twoColumnBox = await layoutBox(page, ".issue-list-page .two-column-icon");
