@@ -350,7 +350,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `issue/partial_searchform.scala.html` | P3 issue | metric guard passed: `vote-count-parity.e2e.ts` asserts the left-menu issue search form with hidden query fields, search input/button hooks, top search bar 20px sizing, advanced author/assignee/milestone/due-date filter stack, calendar button placement, label-manage action placement, advanced spacing, option margins, and left-menu containment |
 | `issue/partial_select_label.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/partial_select_subtask.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
-| `issue/partial_show_selected_label.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_show_selected_label.scala.html` | P3 issue | metric guard passed: `issue-detail-parity.e2e.ts` asserts the read-only issue detail selected-label `<dl>` with `dt` label copy, `dd > a.label.issue-label.active.static[data-label-id]`, legacy issue-list filter href, label text/color, absence of editable label select/fallback controls, right-pane containment, `dl/dt/dd/a` vertical ordering, and label display/color/spacing metrics |
 | `issue/partial_view_child.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/partial_view_childIssueList.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/partial_view_childIssueListOnly.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |

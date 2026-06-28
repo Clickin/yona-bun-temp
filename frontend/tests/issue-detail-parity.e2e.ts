@@ -756,6 +756,107 @@ test.beforeEach(async ({ page }) => {
   await installRuntime(page);
 });
 
+test("issue detail selected labels preserve legacy selected-label metrics", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.route(apiV1Route("/projects/admin/projectYobi/issues/1"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(
+        issueDetail({
+          labels: [{ color: "#f44336", id: "5", name: "bug" }],
+          viewerCanUpdate: false,
+        }),
+      ),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/admin/projectYobi/issue/1");
+
+  const selectedLabel = page.locator(
+    '#issueUpdateForm > dl:has(.label.issue-label.active.static[data-label-id="5"])',
+  );
+  await expect(selectedLabel).toHaveCount(1);
+  await expect(selectedLabel.locator("> dt")).toHaveText("Label");
+  await expect(selectedLabel.locator("> dd > a")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/issues?state=open&labelIds=5",
+  );
+  await expect(selectedLabel.locator("> dd > a")).toHaveAttribute("data-label-id", "5");
+  await expect(selectedLabel.locator("> dd > a")).toHaveClass(/label issue-label active static/u);
+  await expect(selectedLabel.locator("> dd > a")).toHaveText("bug");
+  await expect(page.locator("#issueUpdateForm select#labelIds")).toHaveCount(0);
+  await expect(page.locator("#issueUpdateForm .issue-labels-fallback")).toHaveCount(0);
+
+  const issueInfo = await layoutBox(page, ".issue-detail-page .issue-info");
+  const form = await layoutBox(page, "#issueUpdateForm");
+  const labelDl = await layoutBox(
+    page,
+    '#issueUpdateForm > dl:has(.label.issue-label.active.static[data-label-id="5"])',
+  );
+  const labelDt = await layoutBox(
+    page,
+    '#issueUpdateForm > dl:has(.label.issue-label.active.static[data-label-id="5"]) > dt',
+  );
+  const labelDd = await layoutBox(
+    page,
+    '#issueUpdateForm > dl:has(.label.issue-label.active.static[data-label-id="5"]) > dd',
+  );
+  const labelAnchor = await layoutBox(
+    page,
+    '#issueUpdateForm > dl:has(.label.issue-label.active.static[data-label-id="5"]) > dd > a',
+  );
+  const selectedLabelStyles = await selectedLabel.evaluate((element) => {
+    const dt = element.querySelector("dt") as HTMLElement;
+    const dd = element.querySelector("dd") as HTMLElement;
+    const anchor = element.querySelector("a") as HTMLElement;
+    const dlStyle = window.getComputedStyle(element);
+    const dtStyle = window.getComputedStyle(dt);
+    const ddStyle = window.getComputedStyle(dd);
+    const anchorStyle = window.getComputedStyle(anchor);
+    return {
+      anchorBackgroundColor: anchorStyle.backgroundColor,
+      anchorBorderRadius: anchorStyle.borderRadius,
+      anchorBoxShadow: anchorStyle.boxShadow,
+      anchorColor: anchorStyle.color,
+      anchorDisplay: anchorStyle.display,
+      anchorMarginRight: anchorStyle.marginRight,
+      anchorPaddingLeft: anchorStyle.paddingLeft,
+      ddDisplay: ddStyle.display,
+      ddPaddingTop: ddStyle.paddingTop,
+      dlDisplay: dlStyle.display,
+      dlMarginBottom: dlStyle.marginBottom,
+      dtDisplay: dtStyle.display,
+      dtFontWeight: dtStyle.fontWeight,
+    };
+  });
+
+  expect(form.x).toBeGreaterThanOrEqual(issueInfo.x);
+  expect(form.x + form.width).toBeLessThanOrEqual(issueInfo.x + issueInfo.width + 1);
+  expect(labelDl.x).toBeGreaterThanOrEqual(form.x);
+  expect(labelDl.x + labelDl.width).toBeLessThanOrEqual(form.x + form.width + 1);
+  expect(labelDt.x).toBeGreaterThanOrEqual(labelDl.x);
+  expect(labelDd.y).toBeGreaterThan(labelDt.y + labelDt.height - 1);
+  expect(labelAnchor.x).toBeGreaterThanOrEqual(labelDd.x);
+  expect(labelAnchor.y).toBeGreaterThanOrEqual(labelDd.y);
+  expect(labelAnchor.x + labelAnchor.width).toBeLessThanOrEqual(labelDd.x + labelDd.width + 1);
+  expect(selectedLabelStyles).toEqual({
+    anchorBackgroundColor: "rgb(244, 67, 54)",
+    anchorBorderRadius: "3px",
+    anchorBoxShadow: "rgb(244, 67, 54) 2px 0px 0px 0px inset",
+    anchorColor: "rgb(255, 255, 255)",
+    anchorDisplay: "inline-block",
+    anchorMarginRight: "4px",
+    anchorPaddingLeft: "6px",
+    ddDisplay: "block",
+    ddPaddingTop: "5px",
+    dlDisplay: "block",
+    dlMarginBottom: "20px",
+    dtDisplay: "block",
+    dtFontWeight: "400",
+  });
+});
+
 test("issue detail actions, metadata sidebar, and delete modal mutate through REST", async ({
   page,
 }) => {
