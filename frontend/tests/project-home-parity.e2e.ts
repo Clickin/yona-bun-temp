@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -15,8 +15,12 @@ type LayoutBox = {
 };
 
 async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
-  const box = await page.locator(selector).first().boundingBox();
-  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return locatorBox(page.locator(selector).first(), selector);
+}
+
+async function locatorBox(locator: Locator, label: string): Promise<LayoutBox> {
+  const box = await locator.boundingBox();
+  expect(box, `${label} should have a measurable rendered box`).not.toBeNull();
   return box as LayoutBox;
 }
 
@@ -258,14 +262,78 @@ test("project home proves README fallback, history and dashboard tabs in the bro
   await expect(page.locator("body")).not.toContainText("project.dashboard");
   await expect(page.locator("body")).not.toContainText("project.history.type");
 
+  const homeHeader = await layoutBox(page, ".project-home-header.row-fluid");
+  const homeOverview = await layoutBox(page, ".project-home-header .project-overview.span9");
+  const cloneWrap = await layoutBox(page, ".project-home-header .project-clone-wrap.span3");
+  const homeContentRowLocator = page
+    .locator(".project-page-wrap > .row-fluid")
+    .filter({ has: page.locator(".span-left-pane") })
+    .first();
+  const homeContentRow = await locatorBox(homeContentRowLocator, "project home content row");
+  const leftPane = await layoutBox(page, ".span-left-pane");
+  const rightPane = await layoutBox(page, ".span-right-pane");
+  const tabsBox = await locatorBox(projectHomeTabs, "project home tabs");
+  const readmeFallback = await layoutBox(page, ".bubble-wrap.gray.readme");
+  const rightBubble = await layoutBox(page, ".bubble-wrap.gray.project-home");
+
+  expect(homeOverview.x).toBeCloseTo(homeHeader.x, 0);
+  expect(homeOverview.width).toBeGreaterThan(homeHeader.width * 0.72);
+  expect(homeOverview.width).toBeLessThan(homeHeader.width * 0.75);
+  expect(cloneWrap.x).toBeGreaterThan(homeOverview.x + homeOverview.width);
+  expect(cloneWrap.width).toBeGreaterThan(homeHeader.width * 0.22);
+  expect(cloneWrap.width).toBeLessThan(homeHeader.width * 0.24);
+  expect(leftPane.x).toBeCloseTo(homeContentRow.x, 0);
+  expect(leftPane.width).toBeGreaterThan(homeContentRow.width * 0.72);
+  expect(leftPane.width).toBeLessThan(homeContentRow.width * 0.75);
+  expect(rightPane.x).toBeGreaterThan(leftPane.x + leftPane.width);
+  expect(rightPane.width).toBeGreaterThan(homeContentRow.width * 0.22);
+  expect(rightPane.width).toBeLessThan(homeContentRow.width * 0.24);
+  expect(tabsBox.x).toBeCloseTo(leftPane.x, 0);
+  expect(tabsBox.width).toBeLessThanOrEqual(leftPane.width + 1);
+  expect(readmeFallback.x).toBeGreaterThanOrEqual(leftPane.x);
+  expect(readmeFallback.y).toBeGreaterThan(tabsBox.y + tabsBox.height - 1);
+  expect(readmeFallback.width).toBeLessThanOrEqual(leftPane.width + 1);
+  expect(rightBubble.x).toBeGreaterThanOrEqual(rightPane.x);
+  expect(rightBubble.width).toBeLessThanOrEqual(rightPane.width + 1);
+
   await projectHomeTabs.locator("a[href$='?tabId=history']").click();
   await expect(page).toHaveURL(/\/yona\/owner\/projectYobi\?tabId=history$/);
   await expect(projectHomeTabs.locator("li.active")).toContainText("History");
-  await expect(page.locator(".activity-streams .activity-stream")).toContainText("Owner");
-  await expect(page.locator(".activity-streams .activity-stream")).toContainText(
-    "New issue added.",
+  const activityStream = page.locator(".activity-streams .activity-stream").first();
+  await expect(activityStream).toContainText("Owner");
+  await expect(activityStream).toContainText("New issue added.");
+  await expect(activityStream).toContainText("History issue");
+  await expect(activityStream.locator(".actor")).toHaveAttribute("href", "/yona/owner");
+  await expect(activityStream.locator(".where")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/issue/1",
   );
-  await expect(page.locator(".activity-streams .activity-stream")).toContainText("History issue");
+  await expect(activityStream.locator(".title")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/issue/1",
+  );
+  await expect(activityStream.locator(".date")).toHaveAttribute("title", "2026-06-26");
+
+  const historyContainer = await layoutBox(page, ".tab-pane.active > .content-container.nm");
+  const historyMainStream = await layoutBox(page, ".main-stream");
+  const historyList = await layoutBox(page, ".activity-streams.unstyled");
+  const historyItem = await layoutBox(page, ".activity-streams .activity-stream");
+  const historyAvatar = await layoutBox(page, ".activity-stream .avatar-wrap.pull-left.mr10");
+  const historyDescription = await layoutBox(page, ".activity-stream .activity-desc");
+  const historyHeader = await layoutBox(page, ".activity-stream .header-text");
+  const historyActor = await layoutBox(page, ".activity-stream .header-text .actor");
+  const historyDate = await layoutBox(page, ".activity-stream .others .date");
+
+  expect(historyContainer.x).toBeGreaterThanOrEqual(leftPane.x);
+  expect(historyContainer.width).toBeLessThanOrEqual(leftPane.width + 1);
+  expect(historyMainStream.x).toBeCloseTo(historyContainer.x, 0);
+  expect(historyMainStream.width).toBeCloseTo(historyContainer.width, 0);
+  expect(historyList.x).toBeCloseTo(historyMainStream.x, 0);
+  expect(historyItem.x).toBeCloseTo(historyList.x, 0);
+  expect(historyAvatar.x).toBeCloseTo(historyItem.x, 0);
+  expect(historyDescription.width).toBeGreaterThan(historyAvatar.width);
+  expect(historyActor.x).toBeGreaterThan(historyAvatar.x + historyAvatar.width);
+  expect(historyHeader.y).toBeLessThan(historyDate.y);
 
   await projectHomeTabs.locator("a[href$='?tabId=dashboard']").click();
   await expect(page).toHaveURL(/\/yona\/owner\/projectYobi\?tabId=dashboard$/);

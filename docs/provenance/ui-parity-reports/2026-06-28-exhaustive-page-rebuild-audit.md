@@ -426,7 +426,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `project/create.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/delete.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/header.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts 120px project header, inner/header y alignment, root navbar overlay position, and `data-project-id` selector guard remains covered by `project-settings-parity.spec.tsx` |
-| `project/home.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/home.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy project home header row, span9 overview/span3 clone layout, tabbed span9 left pane, span3 right pane, README fallback, project-home sidebar bubble, history/dashboard tab navigation, leave modal flow, and resolved copy |
 | `project/importing.scala.html` | P7 import/P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/issuelabels.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/list.scala.html` | P6 directory/P2 project | reopen: inspect Scala anchors before JSX reuse |
@@ -436,7 +436,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `project/partial_dashboard_issuesbylabel.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy `.dl-horizontal.overview-label`, category/label/count anchors, row-fluid span10/span2 alignment, and right dashboard column placement |
 | `project/partial_dashboard_issuesbymilestone.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy `.overview-milestone` rows, milestone/no-milestone anchors, count/progress copy, span6/span3/span3 ordering, count placement, and progress width |
 | `project/partial_dashboard_pullrequests.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy `.overview-pullrequest` row, contributor/detail/more anchors, date column, span9/span3 ordering, right alignment, and title/date widths |
-| `project/partial_history.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_history.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy `.content-container.nm > .main-stream > .activity-streams.unstyled`, activity row/avatar/text/date anchors, actor/where/title links, avatar-to-text alignment, and header/date order |
 | `project/partial_issuelabels_editcategory.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/partial_issuelabels_editlabel.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/partial_issuelabels_list.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
