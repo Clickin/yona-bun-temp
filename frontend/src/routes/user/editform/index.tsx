@@ -1,13 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  resetVisitedProjects,
-  updateProfile,
-  uploadProfileAvatar,
-} from "../../../auth-workspace-client";
-import { useAppRuntime } from "../../../app-runtime-context";
-import { prefixBasePath } from "../../../runtime-config";
-import { type ProfileUpdateInput, WorkspaceSettingsPage } from "../../-workspace-settings-view";
-import { useCurrentHref, useRequireAuthenticatedRoute } from "../../-shared";
+import { resetVisitedProjects, updateProfile, uploadProfileAvatar } from "@/auth-workspace-client";
+import { useAppRuntime } from "@/app-runtime-context";
+import { prefixBasePath } from "@/runtime-config";
+import { type ProfileUpdateInput, WorkspaceSettingsPage } from "@/routes/-workspace-settings-view";
+import { useCurrentHref, useRequireAuthenticatedRoute } from "@/routes/-shared";
 
 export const Route = createFileRoute("/user/editform/")({
   component: EditProfileRouteComponent,

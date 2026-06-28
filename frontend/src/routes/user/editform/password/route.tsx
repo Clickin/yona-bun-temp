@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { changePassword } from "../../../../auth-workspace-client";
-import { useAppRuntime } from "../../../../app-runtime-context";
-import { prefixBasePath } from "../../../../runtime-config";
-import { WorkspaceSettingsPage } from "../../../-workspace-settings-view";
-import { useCurrentHref, useDocumentTitle, useRequireAuthenticatedRoute } from "../../../-shared";
+import { changePassword } from "@/auth-workspace-client";
+import { useAppRuntime } from "@/app-runtime-context";
+import { prefixBasePath } from "@/runtime-config";
+import { WorkspaceSettingsPage } from "@/routes/-workspace-settings-view";
+import { useCurrentHref, useDocumentTitle, useRequireAuthenticatedRoute } from "@/routes/-shared";
 
 export const Route = createFileRoute("/user/editform/password")({
   component: EditPasswordRouteComponent,

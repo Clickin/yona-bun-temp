@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { resetApiToken } from "../../../../auth-workspace-client";
-import { useAppRuntime } from "../../../../app-runtime-context";
-import { WorkspaceSettingsPage } from "../../../-workspace-settings-view";
-import { useCurrentHref, useRequireAuthenticatedRoute } from "../../../-shared";
+import { resetApiToken } from "@/auth-workspace-client";
+import { useAppRuntime } from "@/app-runtime-context";
+import { WorkspaceSettingsPage } from "@/routes/-workspace-settings-view";
+import { useCurrentHref, useRequireAuthenticatedRoute } from "@/routes/-shared";
 
 export const Route = createFileRoute("/user/editform/token")({
   component: EditTokenRouteComponent,

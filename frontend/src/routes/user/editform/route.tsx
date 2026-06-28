@@ -1,9 +1,9 @@
 import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
-import { useAppRuntime } from "../../../app-runtime-context";
+import { useAppRuntime } from "@/app-runtime-context";
 import {
   type WorkspaceSettingsSection,
   WorkspaceSettingsShell,
-} from "../../-workspace-settings-view";
+} from "@/routes/-workspace-settings-view";
 
 export const Route = createFileRoute("/user/editform")({
   component: EditFormLayoutRouteComponent,

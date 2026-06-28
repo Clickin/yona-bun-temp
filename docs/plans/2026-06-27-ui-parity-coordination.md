@@ -902,6 +902,9 @@ A slice is closed only when:
   under `/user/editform/**` now fail if they import or render
   `WorkspaceSettingsShell` instead of delegating account-settings chrome to the
   `/user/editform` parent route.
+- M91 continues the import-alias cleanup follow-up for the workspace settings
+  slice: `/user/editform/**` route files now use the established `@/*` source
+  alias instead of deep relative imports, with no DOM or route behavior change.
 - Follow-up modernization after parity slices: continue mechanically rewriting
   remaining deep relative frontend imports to `@/*` in small no-behavior-change
   batches.

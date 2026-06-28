@@ -83,7 +83,10 @@ const PARITY_SLICES = [
       /^frontend\/src\/routes\/__root\.tsx$/i,
     ],
     testKeywords: ["public-landing", "home-route", "layout-parity"],
-    provenanceDocs: ["docs/provenance/core-parity-audit.md"],
+    provenanceDocs: [
+      "docs/provenance/core-parity-audit.md",
+      "docs/provenance/ui-parity-reports/template-first-p0-global-shell.md",
+    ],
   },
   {
     id: "public-project-directory",
@@ -440,7 +443,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "workspace-recent-favorite-default-landing",
     label: "Workspace recent/favorite/default landing",
-    status: "partial",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/.*\/me/i,
       /^frontend\/src\/api\/workspace\.ts$/i,
@@ -451,7 +454,14 @@ const DOMAIN_BUCKETS = [
       /^crates\/(?:domain|persistence|server)\/.*(workspace|default-landing|favorite|recent)/i,
     ],
     testKeywords: ["workspace", "default-landing", "favorite", "recent", "me", "user-files"],
-    provenanceDocs: ["docs/provenance/phase-0b/project.md", "docs/provenance/core-parity-audit.md"],
+    provenanceDocs: [
+      "docs/provenance/phase-0b/user-workspace.md",
+      "docs/provenance/core-parity-audit.md",
+      "docs/provenance/ui-parity-reports/ui-parity-user-account-settings.md",
+      "docs/provenance/ui-parity-reports/ui-parity-root-navigation-shell.md",
+      "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
+      "docs/plans/2026-06-27-ui-parity-coordination.md",
+    ],
   },
   {
     id: "notification-inbox-and-mail-staging",

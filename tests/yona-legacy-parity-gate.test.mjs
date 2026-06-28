@@ -195,7 +195,7 @@ test("accepts template-first P0 report as global shell implementation evidence",
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
     result.capabilities.map((entry) => entry.id).sort(),
-    ["auth-account-lifecycle", "rust-foundation-and-runtime-bootstrap"].sort(),
+    ["auth-account-lifecycle", "public-landing", "rust-foundation-and-runtime-bootstrap"].sort(),
   );
 });
 
@@ -410,6 +410,21 @@ test("maps user files route changes to the workspace provenance slice", () => {
   assert.deepEqual(
     result.capabilities.map((entry) => entry.id),
     ["workspace-recent-favorite-default-landing"],
+  );
+});
+
+test("treats workspace settings route cleanup as a closed parity slice with coordination evidence", () => {
+  const result = runGate([
+    "frontend/src/routes/user/editform/index.tsx",
+    "frontend/src/routes/user/editform/password/route.tsx",
+    "docs/plans/2026-06-27-ui-parity-coordination.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["workspace-recent-favorite-default-landing", "parity"]],
   );
 });
 
