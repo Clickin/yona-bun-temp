@@ -1,5 +1,7 @@
 import * as React from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { apiQueryKeys } from "../../../../api/query-keys";
 import { createProjectMilestone, readProjectContainer } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
@@ -21,6 +23,7 @@ function NewMilestoneFormRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/newMilestoneForm`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -30,6 +33,37 @@ function NewMilestoneFormRouteComponent() {
   >(null);
 
   useDocumentTitle("title.newMilestone");
+
+  const createMilestoneMutation = useMutation({
+    mutationFn: (input: {
+      attachmentIds: number[];
+      contentsMarkdown: string;
+      dueDate: string;
+      state: string;
+      title: string;
+    }) =>
+      createProjectMilestone(runtimeConfig, csrfToken, {
+        attachmentIds: input.attachmentIds.map(BigInt),
+        contentsMarkdown: input.contentsMarkdown,
+        dueDate: input.dueDate,
+        ownerName: owner,
+        projectName,
+        state: input.state,
+        title: input.title,
+      }),
+    onSuccess: (response) => {
+      const milestoneId = response.milestone?.id ? Number(response.milestone.id) : 0;
+      void queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.base(owner, projectName),
+      });
+      void navigate({
+        href: prefixBasePath(
+          runtimeConfig.basePath,
+          `/${owner}/${projectName}/milestone/${milestoneId}`,
+        ),
+      });
+    },
+  });
 
   React.useEffect(() => {
     let cancelled = false;
@@ -81,22 +115,7 @@ function NewMilestoneFormRouteComponent() {
       messages={messages}
       mode="create"
       onSubmit={async (input) => {
-        const response = await createProjectMilestone(runtimeConfig, csrfToken, {
-          attachmentIds: input.attachmentIds.map(BigInt),
-          contentsMarkdown: input.contentsMarkdown,
-          dueDate: input.dueDate,
-          ownerName: owner,
-          projectName,
-          state: input.state,
-          title: input.title,
-        });
-        const milestoneId = response.milestone?.id ? Number(response.milestone.id) : 0;
-        void navigate({
-          href: prefixBasePath(
-            runtimeConfig.basePath,
-            `/${owner}/${projectName}/milestone/${milestoneId}`,
-          ),
-        });
+        await createMilestoneMutation.mutateAsync(input);
       }}
       owner={owner}
       projectName={projectName}

@@ -1,5 +1,7 @@
 import * as React from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { apiQueryKeys } from "../../../../../../api/query-keys";
 import {
   readProjectContainer,
   readProjectMilestone,
@@ -28,6 +30,7 @@ function ProjectMilestoneEditFormRouteComponent() {
   const { owner, projectName, milestoneId } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const routeHref = `/${owner}/${projectName}/milestone/${milestoneId}/editform`;
   const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
     null,
@@ -39,6 +42,40 @@ function ProjectMilestoneEditFormRouteComponent() {
   >(null);
 
   useDocumentTitle("title.editMilestone");
+
+  const updateMilestoneMutation = useMutation({
+    mutationFn: (input: {
+      attachmentIds: number[];
+      contentsMarkdown: string;
+      dueDate: string;
+      state: string;
+      title: string;
+    }) =>
+      updateProjectMilestone(runtimeConfig, csrfToken, {
+        attachmentIds: input.attachmentIds.map(BigInt),
+        contentsMarkdown: input.contentsMarkdown,
+        dueDate: input.dueDate,
+        milestoneId: BigInt(Number(milestoneId)),
+        ownerName: owner,
+        projectName,
+        state: input.state,
+        title: input.title,
+      }),
+    onSuccess: (response) => {
+      const nextMilestoneId = response.milestone?.id
+        ? Number(response.milestone.id)
+        : Number(milestoneId);
+      void queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.base(owner, projectName),
+      });
+      void navigate({
+        href: prefixBasePath(
+          runtimeConfig.basePath,
+          `/${owner}/${projectName}/milestone/${nextMilestoneId}`,
+        ),
+      });
+    },
+  });
 
   React.useEffect(() => {
     let cancelled = false;
@@ -95,25 +132,7 @@ function ProjectMilestoneEditFormRouteComponent() {
       messages={messages}
       mode="edit"
       onSubmit={async (input) => {
-        const response = await updateProjectMilestone(runtimeConfig, csrfToken, {
-          attachmentIds: input.attachmentIds.map(BigInt),
-          contentsMarkdown: input.contentsMarkdown,
-          dueDate: input.dueDate,
-          milestoneId: BigInt(Number(milestoneId)),
-          ownerName: owner,
-          projectName,
-          state: input.state,
-          title: input.title,
-        });
-        const nextMilestoneId = response.milestone?.id
-          ? Number(response.milestone.id)
-          : Number(milestoneId);
-        void navigate({
-          href: prefixBasePath(
-            runtimeConfig.basePath,
-            `/${owner}/${projectName}/milestone/${nextMilestoneId}`,
-          ),
-        });
+        await updateMilestoneMutation.mutateAsync(input);
       }}
       owner={owner}
       projectName={projectName}

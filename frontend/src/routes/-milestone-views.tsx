@@ -1435,7 +1435,8 @@ export function ProjectMilestoneFormPage(props: {
                         setValidationMessage(null);
                       }}
                       placeholder={legacyMessage(props.messages, "title.text")}
-                      data-legacy-tabindex="1"
+                      // oxlint-disable-next-line jsx-a11y/tabindex-no-positive -- legacy milestone form parity keeps tabindex="1".
+                      tabIndex={1}
                       type="text"
                       value={title}
                     />
@@ -1577,7 +1578,7 @@ export function ProjectMilestoneFormPage(props: {
   );
 
   if (props.renderShell === false) {
-    return content;
+    return <div className="milestone-form-page">{content}</div>;
   }
 
   return (
