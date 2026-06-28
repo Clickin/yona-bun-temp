@@ -489,15 +489,15 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `user/edit_notifications.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
 | `user/edit_password.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
 | `user/edit_token.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
-| `user/login.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
+| `user/login.scala.html` | P1 auth | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts public login navbar/page/title/tagline stack, centered 400px form, 386px login/password input alignment, full-width submit, remember/forgot row alignment, redirect hidden field, resolved copy, and TanStack Query sign-in mutation boundary |
 | `user/partial_edit_tabmenu.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
 | `user/partial_issues.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
 | `user/partial_milestones.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
 | `user/partial_postings.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
 | `user/partial_projectlist.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
 | `user/partial_pullRequests.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
-| `user/resetPassword.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
-| `user/signup.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
+| `user/resetPassword.scala.html` | P1 auth | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts reset-password navbar/page/title/tagline stack, centered 400px form, 386px password/retyped-password input alignment, full-width submit, hash hidden field, footer order, resolved copy, and TanStack Query complete-reset mutation boundary |
+| `user/signup.scala.html` | P1 auth | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts public signup navbar/page/title/tagline stack, centered 400px form, label/input vertical ordering, 386px field alignment, full-width submit, login action row, resolved copy, and TanStack Query register mutation boundary |
 | `user/userFiles.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
 | `user/verified.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
 | `user/view.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |

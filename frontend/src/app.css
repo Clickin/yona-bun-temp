@@ -731,13 +731,31 @@ button[type="submit"]:focus {
   margin: 54px auto 0;
 }
 
+.signup-form-wrap {
+  width: 400px;
+  margin: 14px auto 0;
+}
+
 .login-form-wrap .btns-row {
   display: block;
   margin: 0 auto 20px;
   text-align: center;
 }
 
-.login-form-wrap .ybtn-fullsize {
+.signup-form-wrap .btns-row {
+  display: block;
+  margin: 0 auto 20px;
+  text-align: center;
+}
+
+.signup-form-wrap .act-row {
+  color: #999;
+  text-align: right;
+}
+
+.ybtn.ybtn-fullsize {
+  box-sizing: border-box;
+  display: block;
   width: 100%;
 }
 

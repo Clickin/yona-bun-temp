@@ -685,6 +685,190 @@ test("lost password shell keeps legacy full-page size and alignment metrics", as
   expect(submit.width).toBeCloseTo(formWrap.width, 0);
 });
 
+test("login shell keeps legacy full-page size and alignment metrics", async ({ page }) => {
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/yona/users/loginform?redirectUrl=/admin/sample");
+
+  await expectNoVisibleRawLegacyKeys(page);
+  await expect(page.locator(".page.full")).toBeVisible();
+  await expect(page.locator(".center-wrap.tag-line-wrap.login")).toBeVisible();
+  await expect(page.locator("main .login-form-wrap.frm-wrap form")).toBeVisible();
+  await expect(page.locator("#remember-me")).toBeChecked();
+
+  const navbar = await layoutBox(page, ".gnb-outer");
+  const main = await layoutBox(page, "main.app-shell");
+  const pageFull = await layoutBox(page, ".page.full");
+  const centerWrap = await layoutBox(page, ".center-wrap.tag-line-wrap.login");
+  const title = await layoutBox(page, ".center-wrap.tag-line-wrap.login .title");
+  const tagline = await layoutBox(page, ".center-wrap.tag-line-wrap.login .tag-line");
+  const formWrap = await layoutBox(page, "main .login-form-wrap.frm-wrap");
+  const form = await layoutBox(page, "main .login-form-wrap.frm-wrap form");
+  const loginInput = await layoutBox(page, "#loginIdOrEmailD");
+  const passwordInput = await layoutBox(page, "main .login-form-wrap.frm-wrap #password");
+  const buttonRow = await layoutBox(page, "main .login-form-wrap.frm-wrap .btns-row");
+  const submit = await layoutBox(page, "main .login-form-wrap.frm-wrap button[type='submit']");
+  const actionRow = await layoutBox(page, "main .login-form-wrap.frm-wrap .act-row");
+  const remember = await layoutBox(page, "main .login-form-wrap.frm-wrap .remember-me-wrap");
+  const links = await layoutBox(page, "main .login-form-wrap.frm-wrap .links-wrap");
+  const footer = await layoutBox(page, ".page-footer-outer");
+
+  expect(Math.round(navbar.height)).toBe(40);
+  expect(main.y).toBeGreaterThanOrEqual(navbar.y + navbar.height - 1);
+  expect(pageFull.y).toBeGreaterThanOrEqual(main.y);
+  expect(pageFull.width).toBeGreaterThanOrEqual(1100);
+  expect(centerWrap.width).toBeCloseTo(pageFull.width, 0);
+  expect(
+    Math.abs(centerWrap.x + centerWrap.width / 2 - (pageFull.x + pageFull.width / 2)),
+  ).toBeLessThanOrEqual(2);
+  expect(title.y).toBeGreaterThanOrEqual(centerWrap.y);
+  expect(tagline.y).toBeGreaterThan(title.y + title.height - 1);
+
+  expect(formWrap.y).toBeGreaterThan(centerWrap.y + centerWrap.height - 1);
+  expect(Math.round(formWrap.width)).toBe(400);
+  expect(
+    Math.abs(formWrap.x + formWrap.width / 2 - (pageFull.x + pageFull.width / 2)),
+  ).toBeLessThanOrEqual(2);
+  expect(form.x).toBeCloseTo(formWrap.x, 0);
+  expect(form.width).toBeCloseTo(formWrap.width, 0);
+  expect(loginInput.x).toBeCloseTo(passwordInput.x, 0);
+  expect(loginInput.width).toBeCloseTo(passwordInput.width, 0);
+  expect(loginInput.width).toBeGreaterThanOrEqual(386);
+  expect(loginInput.width).toBeLessThanOrEqual(390);
+  expect(passwordInput.y).toBeGreaterThan(loginInput.y + loginInput.height - 1);
+  expect(buttonRow.y).toBeGreaterThan(passwordInput.y + passwordInput.height - 1);
+  expect(submit.x).toBeCloseTo(formWrap.x, 0);
+  expect(submit.width).toBeCloseTo(formWrap.width, 0);
+  expect(actionRow.y).toBeGreaterThan(submit.y + submit.height - 1);
+  expect(remember.x).toBeCloseTo(formWrap.x, 0);
+  expect(links.x + links.width).toBeLessThanOrEqual(formWrap.x + formWrap.width + 1);
+  expect(footer.y).toBeGreaterThan(pageFull.y + pageFull.height - 1);
+});
+
+test("signup shell keeps legacy full-page size and alignment metrics", async ({ page }) => {
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/yona/users/signupform");
+
+  await expectNoVisibleRawLegacyKeys(page);
+  await expect(page.locator(".page.full")).toBeVisible();
+  await expect(page.locator(".center-wrap.tag-line-wrap.signup")).toBeVisible();
+  await expect(page.locator("form[name='signup']")).toBeVisible();
+
+  const navbar = await layoutBox(page, ".gnb-outer");
+  const main = await layoutBox(page, "main.app-shell");
+  const pageFull = await layoutBox(page, ".page.full");
+  const centerWrap = await layoutBox(page, ".center-wrap.tag-line-wrap.signup");
+  const title = await layoutBox(page, ".center-wrap.tag-line-wrap.signup .title");
+  const tagline = await layoutBox(page, ".center-wrap.tag-line-wrap.signup .tag-line");
+  const formWrap = await layoutBox(page, ".signup-form-wrap.frm-wrap");
+  const form = await layoutBox(page, "form[name='signup']");
+  const loginLabel = await layoutBox(page, "label[for='loginId']");
+  const loginInput = await layoutBox(page, "#loginId");
+  const nameInput = await layoutBox(page, "#uname");
+  const emailInput = await layoutBox(page, "#email");
+  const passwordInput = await layoutBox(page, ".signup-form-wrap #password");
+  const retypedPassword = await layoutBox(page, "#retypedPassword");
+  const buttonRow = await layoutBox(page, ".signup-form-wrap .btns-row");
+  const submit = await layoutBox(page, ".signup-form-wrap button[type='submit']");
+  const actionRow = await layoutBox(page, ".signup-form-wrap .act-row");
+  const footer = await layoutBox(page, ".page-footer-outer");
+
+  expect(Math.round(navbar.height)).toBe(40);
+  expect(main.y).toBeGreaterThanOrEqual(navbar.y + navbar.height - 1);
+  expect(pageFull.width).toBeGreaterThanOrEqual(1100);
+  expect(centerWrap.width).toBeCloseTo(pageFull.width, 0);
+  expect(
+    Math.abs(centerWrap.x + centerWrap.width / 2 - (pageFull.x + pageFull.width / 2)),
+  ).toBeLessThanOrEqual(2);
+  expect(title.y).toBeGreaterThanOrEqual(centerWrap.y);
+  expect(tagline.y).toBeGreaterThan(title.y + title.height - 1);
+
+  expect(formWrap.y).toBeGreaterThan(centerWrap.y + centerWrap.height - 1);
+  expect(Math.round(formWrap.width)).toBe(400);
+  expect(
+    Math.abs(formWrap.x + formWrap.width / 2 - (pageFull.x + pageFull.width / 2)),
+  ).toBeLessThanOrEqual(2);
+  expect(form.x).toBeCloseTo(formWrap.x, 0);
+  expect(form.width).toBeCloseTo(formWrap.width, 0);
+  expect(loginLabel.y).toBeLessThan(loginInput.y);
+  for (const input of [nameInput, emailInput, passwordInput, retypedPassword]) {
+    expect(input.x).toBeCloseTo(loginInput.x, 0);
+    expect(input.width).toBeCloseTo(loginInput.width, 0);
+  }
+  expect(loginInput.width).toBeGreaterThanOrEqual(386);
+  expect(loginInput.width).toBeLessThanOrEqual(390);
+  expect(nameInput.y).toBeGreaterThan(loginInput.y + loginInput.height - 1);
+  expect(emailInput.y).toBeGreaterThan(nameInput.y + nameInput.height - 1);
+  expect(passwordInput.y).toBeGreaterThan(emailInput.y + emailInput.height - 1);
+  expect(retypedPassword.y).toBeGreaterThan(passwordInput.y + passwordInput.height - 1);
+  expect(buttonRow.y).toBeGreaterThan(retypedPassword.y + retypedPassword.height - 1);
+  expect(submit.x).toBeCloseTo(formWrap.x, 0);
+  expect(submit.width).toBeCloseTo(formWrap.width, 0);
+  expect(actionRow.y).toBeGreaterThan(submit.y + submit.height - 1);
+  expect(actionRow.x + actionRow.width).toBeLessThanOrEqual(formWrap.x + formWrap.width + 1);
+  expect(footer.y).toBeGreaterThan(pageFull.y + pageFull.height - 1);
+});
+
+test("reset password shell keeps legacy full-page size and alignment metrics", async ({ page }) => {
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/yona/resetPassword?s=hash-123");
+
+  await expectNoVisibleRawLegacyKeys(page);
+  await expect(page.locator(".page.full")).toBeVisible();
+  await expect(page.locator(".center-wrap.tag-line-wrap.reset-password")).toBeVisible();
+  await expect(page.locator("form[name='passwordReset']")).toBeVisible();
+  await expect(page.locator("input[name='hashString']")).toHaveValue("hash-123");
+
+  const navbar = await layoutBox(page, ".gnb-outer");
+  const main = await layoutBox(page, "main.app-shell");
+  const pageFull = await layoutBox(page, ".page.full");
+  const centerWrap = await layoutBox(page, ".center-wrap.tag-line-wrap.reset-password");
+  const title = await layoutBox(page, ".center-wrap.tag-line-wrap.reset-password .title");
+  const tagline = await layoutBox(page, ".center-wrap.tag-line-wrap.reset-password .tag-line");
+  const formWrap = await layoutBox(page, ".login-form-wrap.frm-wrap");
+  const form = await layoutBox(page, "form[name='passwordReset']");
+  const passwordInput = await layoutBox(page, "form[name='passwordReset'] #password");
+  const retypedPassword = await layoutBox(page, "#retypedPassword");
+  const buttonRow = await layoutBox(page, ".login-form-wrap.frm-wrap .btns-row");
+  const submit = await layoutBox(page, ".login-form-wrap.frm-wrap button[type='submit']");
+  const footer = await layoutBox(page, ".page-footer-outer");
+
+  expect(Math.round(navbar.height)).toBe(40);
+  expect(main.y).toBeGreaterThanOrEqual(navbar.y + navbar.height - 1);
+  expect(pageFull.width).toBeGreaterThanOrEqual(1100);
+  expect(centerWrap.width).toBeCloseTo(pageFull.width, 0);
+  expect(
+    Math.abs(centerWrap.x + centerWrap.width / 2 - (pageFull.x + pageFull.width / 2)),
+  ).toBeLessThanOrEqual(2);
+  expect(title.y).toBeGreaterThanOrEqual(centerWrap.y);
+  expect(tagline.y).toBeGreaterThan(title.y + title.height - 1);
+
+  expect(formWrap.y).toBeGreaterThan(centerWrap.y + centerWrap.height - 1);
+  expect(Math.round(formWrap.width)).toBe(400);
+  expect(
+    Math.abs(formWrap.x + formWrap.width / 2 - (pageFull.x + pageFull.width / 2)),
+  ).toBeLessThanOrEqual(2);
+  expect(form.x).toBeCloseTo(formWrap.x, 0);
+  expect(form.width).toBeCloseTo(formWrap.width, 0);
+  expect(passwordInput.x).toBeCloseTo(retypedPassword.x, 0);
+  expect(passwordInput.width).toBeCloseTo(retypedPassword.width, 0);
+  expect(passwordInput.width).toBeGreaterThanOrEqual(386);
+  expect(passwordInput.width).toBeLessThanOrEqual(390);
+  expect(retypedPassword.y).toBeGreaterThan(passwordInput.y + passwordInput.height - 1);
+  expect(buttonRow.y).toBeGreaterThan(retypedPassword.y + retypedPassword.height - 1);
+  expect(submit.x).toBeCloseTo(formWrap.x, 0);
+  expect(submit.width).toBeCloseTo(formWrap.width, 0);
+  expect(footer.y).toBeGreaterThan(pageFull.y + pageFull.height - 1);
+});
+
 test("verify route renders success and invalid legacy public states", async ({ page }) => {
   await installRuntimeConfig(page);
   await installAuthEntryMocks(page);
