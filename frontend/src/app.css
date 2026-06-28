@@ -4419,6 +4419,64 @@ div.markdown-preview {
   color: #fff;
 }
 
+.issue-list-page .left-menu #search hr.hide-in-mobile {
+  margin: 12px 0;
+}
+
+.issue-list-page .left-menu .search-bar {
+  position: relative;
+  height: 20px;
+  padding: 4px 25px 4px 5px;
+  line-height: 20px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.issue-list-page .left-menu .search-bar .textbox {
+  width: 100%;
+  height: 20px;
+  min-height: 20px;
+  padding: 0 5px;
+  margin: 0 -5px;
+  border: 0 none;
+}
+
+.issue-list-page .left-menu .search-bar .search-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  height: 20px;
+  background-color: transparent;
+  border: 0;
+  outline: 0 none;
+}
+
+.issue-list-page .left-menu .srch-advanced {
+  margin-top: 10px;
+}
+
+.issue-list-page .left-menu .issue-option {
+  width: 100%;
+  margin-bottom: 16px !important;
+}
+
+.issue-list-page .left-menu .issue-option dt {
+  margin-bottom: 5px;
+}
+
+.issue-list-page .left-menu .issue-option dd {
+  margin: 0;
+}
+
+.issue-list-page .left-menu .issue-option select {
+  width: 100%;
+}
+
+.issue-list-page .left-menu .labels-wrap {
+  position: relative;
+}
+
 .search-box-wrap {
   margin-bottom: 16px;
 }

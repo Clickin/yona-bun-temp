@@ -306,6 +306,159 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     listDisplay: "block",
   });
 
+  await expect(page.locator(".issue-list-page form#search")).toHaveAttribute(
+    "action",
+    "/yona/admin/projectYobi/issues",
+  );
+  await expect(page.locator(".issue-list-page form#search")).toHaveAttribute("method", "get");
+  await expect(page.locator('form#search input[name="orderBy"]')).toHaveValue("updatedDate");
+  await expect(page.locator('form#search input[name="orderDir"]')).toHaveValue("desc");
+  await expect(page.locator('form#search input[name="state"]')).toHaveValue("");
+  await expect(page.locator('form#search input[name="filter"][data-search="filter"]')).toHaveCount(
+    1,
+  );
+  await expect(
+    page.locator('form#search button[data-submit="submit"] .yobicon-search'),
+  ).toHaveCount(1);
+  await expect(page.locator("#advanced-search-form.srch-advanced.hide-in-mobile")).toHaveCount(1);
+  await expect(
+    page.locator('#advanced-search-form select#authorId[data-toggle="select2"]'),
+  ).toHaveAttribute("data-format", "user");
+  await expect(
+    page.locator('#advanced-search-form select#assigneeId[data-search="assigneeId"]'),
+  ).toHaveAttribute("data-container-css-class", "fullsize");
+  await expect(page.locator("#advanced-search-form select#milestoneId")).toHaveAttribute(
+    "data-format",
+    "milestone",
+  );
+  await expect(
+    page.locator('#advanced-search-form input#issueDueDate[name="dueDate"]'),
+  ).toHaveAttribute("data-toggle", "calendar");
+  await expect(page.locator("#advanced-search-form .btn-calendar .yobicon-calendar2")).toHaveCount(
+    1,
+  );
+  await expect(page.locator("#advanced-search-form .labels-wrap .ybtn-mini")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/issue/labelsform",
+  );
+  const searchForm = await layoutBox(page, ".issue-list-page form#search");
+  const searchHr = await layoutBox(page, ".issue-list-page form#search hr.hide-in-mobile");
+  const searchWrap = await layoutBox(page, ".issue-list-page form#search > .search");
+  const searchBar = await layoutBox(page, ".issue-list-page form#search .search > .search-bar");
+  const searchInput = await layoutBox(page, 'form#search input[name="filter"]');
+  const searchButton = await layoutBox(page, 'form#search button[data-submit="submit"]');
+  const advancedForm = await layoutBox(page, "#advanced-search-form");
+  const authorOption = await layoutBox(page, "#advanced-search-form .issue-option:nth-of-type(1)");
+  const assigneeOption = await layoutBox(
+    page,
+    "#advanced-search-form .issue-option:nth-of-type(2)",
+  );
+  const milestoneOption = await layoutBox(
+    page,
+    "#advanced-search-form .issue-option:nth-of-type(3)",
+  );
+  const dueDateOption = await layoutBox(page, "#advanced-search-form .issue-option:nth-of-type(4)");
+  const authorTerm = await layoutBox(
+    page,
+    "#advanced-search-form .issue-option:nth-of-type(1) > dt",
+  );
+  const authorSelect = await layoutBox(page, "#advanced-search-form select#authorId");
+  const dueDateInput = await layoutBox(page, "#advanced-search-form input#issueDueDate");
+  const calendarButton = await layoutBox(page, "#advanced-search-form .btn-calendar");
+  const labelsWrap = await layoutBox(page, "#advanced-search-form .labels-wrap");
+  const labelManage = await layoutBox(page, "#advanced-search-form .labels-wrap .ybtn-mini");
+  const searchFormStyles = await page
+    .locator("form#search > .search > .search-bar")
+    .evaluate((element) => {
+      const input = element.querySelector(".textbox") as HTMLElement;
+      const button = element.querySelector(".search-btn") as HTMLElement;
+      const advanced = document.querySelector("#advanced-search-form") as HTMLElement;
+      const option = advanced.querySelector(".issue-option") as HTMLElement;
+      const optionDt = option.querySelector("dt") as HTMLElement;
+      const optionDd = option.querySelector("dd") as HTMLElement;
+      const labelsWrap = advanced.querySelector(".labels-wrap") as HTMLElement;
+      const barStyle = window.getComputedStyle(element);
+      const inputStyle = window.getComputedStyle(input);
+      const buttonStyle = window.getComputedStyle(button);
+      const advancedStyle = window.getComputedStyle(advanced);
+      const optionStyle = window.getComputedStyle(option);
+      const optionDtStyle = window.getComputedStyle(optionDt);
+      const optionDdStyle = window.getComputedStyle(optionDd);
+      const labelsWrapStyle = window.getComputedStyle(labelsWrap);
+      return {
+        advancedMarginTop: advancedStyle.marginTop,
+        barBackground: barStyle.backgroundColor,
+        barBorderColor: barStyle.borderTopColor,
+        barBorderRadius: barStyle.borderRadius,
+        barHeight: barStyle.height,
+        barLineHeight: barStyle.lineHeight,
+        barPadding: `${barStyle.paddingTop} ${barStyle.paddingRight} ${barStyle.paddingBottom} ${barStyle.paddingLeft}`,
+        buttonBackground: buttonStyle.backgroundColor,
+        buttonBorderTopWidth: buttonStyle.borderTopWidth,
+        buttonHeight: buttonStyle.height,
+        buttonPosition: buttonStyle.position,
+        buttonRight: buttonStyle.right,
+        buttonTop: buttonStyle.top,
+        inputBorderTopWidth: inputStyle.borderTopWidth,
+        inputHeight: inputStyle.height,
+        inputMargin: `${inputStyle.marginTop} ${inputStyle.marginRight} ${inputStyle.marginBottom} ${inputStyle.marginLeft}`,
+        inputPadding: `${inputStyle.paddingTop} ${inputStyle.paddingRight} ${inputStyle.paddingBottom} ${inputStyle.paddingLeft}`,
+        labelsWrapPosition: labelsWrapStyle.position,
+        optionDdMargin: `${optionDdStyle.marginTop} ${optionDdStyle.marginRight} ${optionDdStyle.marginBottom} ${optionDdStyle.marginLeft}`,
+        optionDtMarginBottom: optionDtStyle.marginBottom,
+        optionMarginBottom: optionStyle.marginBottom,
+        optionWidth: optionStyle.width,
+      };
+    });
+
+  expect(searchForm.x).toBeGreaterThanOrEqual(leftMenu.x);
+  expect(searchForm.x + searchForm.width).toBeLessThanOrEqual(leftMenu.x + leftMenu.width + 1);
+  expect(searchHr.y).toBeGreaterThan(commentedFilter.y + commentedFilter.height - 1);
+  expect(searchWrap.y).toBeGreaterThan(searchHr.y);
+  expect(searchBar.x).toBeGreaterThanOrEqual(searchForm.x);
+  expect(searchBar.x + searchBar.width).toBeLessThanOrEqual(searchForm.x + searchForm.width + 1);
+  expect(searchInput.x).toBeGreaterThanOrEqual(searchBar.x);
+  expect(searchInput.y).toBeGreaterThanOrEqual(searchBar.y);
+  expect(searchButton.x).toBeGreaterThan(searchInput.x + searchInput.width - 1);
+  expect(searchButton.x + searchButton.width).toBeLessThanOrEqual(
+    searchBar.x + searchBar.width + 1,
+  );
+  expect(advancedForm.y).toBeGreaterThan(searchBar.y + searchBar.height - 1);
+  expect(authorOption.y).toBeGreaterThanOrEqual(advancedForm.y);
+  expect(assigneeOption.y).toBeGreaterThan(authorOption.y + authorOption.height - 1);
+  expect(milestoneOption.y).toBeGreaterThan(assigneeOption.y + assigneeOption.height - 1);
+  expect(dueDateOption.y).toBeGreaterThan(milestoneOption.y + milestoneOption.height - 1);
+  expect(authorTerm.y).toBeLessThan(authorSelect.y);
+  expect(authorSelect.width).toBeLessThanOrEqual(authorOption.width);
+  expect(dueDateInput.x).toBeGreaterThanOrEqual(dueDateOption.x);
+  expect(calendarButton.x).toBeGreaterThan(dueDateInput.x + dueDateInput.width - 1);
+  expect(labelsWrap.y).toBeGreaterThan(dueDateOption.y + dueDateOption.height - 1);
+  expect(labelManage.x).toBeGreaterThanOrEqual(labelsWrap.x);
+  expect(searchFormStyles).toEqual({
+    advancedMarginTop: "10px",
+    barBackground: "rgb(255, 255, 255)",
+    barBorderColor: "rgb(204, 204, 204)",
+    barBorderRadius: "3px",
+    barHeight: "20px",
+    barLineHeight: "20px",
+    barPadding: "4px 25px 4px 5px",
+    buttonBackground: "rgba(0, 0, 0, 0)",
+    buttonBorderTopWidth: "0px",
+    buttonHeight: "20px",
+    buttonPosition: "absolute",
+    buttonRight: "5px",
+    buttonTop: "5px",
+    inputBorderTopWidth: "0px",
+    inputHeight: "20px",
+    inputMargin: "0px -5px 0px -5px",
+    inputPadding: "0px 5px 0px 5px",
+    labelsWrapPosition: "relative",
+    optionDdMargin: "0px 0px 0px 0px",
+    optionDtMarginBottom: "5px",
+    optionMarginBottom: "16px",
+    optionWidth: "190.625px",
+  });
+
   const twoColumn = page.locator(".issue-list-page .two-column-icon.mr10.hide-in-mobile");
   await expect(twoColumn).toHaveAttribute("id", "two-column-mode-checkbox");
   await expect(twoColumn).toHaveAttribute("title", "Two Column Mode");
