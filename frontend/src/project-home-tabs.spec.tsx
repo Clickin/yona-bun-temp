@@ -542,6 +542,13 @@ describe("project home tab parity", () => {
   });
 
   it("renders project dashboard label rows from container data", () => {
+    const legacyDashboardLabelsTemplate = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "../../yona-original/app/views/project/partial_dashboard_issuesbylabel.scala.html",
+      ),
+      "utf8",
+    );
     const html = renderProjectHome("/yona/yona/projectYobi?tabId=dashboard", {
       dashboard: {
         labels: [
@@ -561,6 +568,7 @@ describe("project home tab parity", () => {
 
     expect(html).toContain('class="issue-label list-label active"');
     expect(html).toContain("overview-label");
+    expect(legacyDashboardLabelsTemplate).toContain('data-label-id="@label.id"');
     expect(html).toContain('data-label-id="7"');
     expect(html).toContain('href="/yona/yona/projectYobi/issues?state=open&amp;labelIds=7"');
     expect(html).toContain("Guide");

@@ -1100,6 +1100,7 @@ export function ProjectHeader(props: {
               </span>
               <span
                 className="user-project-list"
+                data-project-id={detail.projectId ?? 0}
                 onClick={() =>
                   props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName)
                 }

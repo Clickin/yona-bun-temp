@@ -815,6 +815,7 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
         "unexpected project container response body: {json}"
     );
     let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
+    assert_eq!(payload["projectId"], authorization.project.id);
     assert_eq!(payload["showIssue"], true);
     assert_eq!(payload["showBoard"], true);
     assert_eq!(payload["showCode"], false);
@@ -1378,6 +1379,11 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
         .await
         .unwrap();
     assert_eq!(first_detail.status(), StatusCode::OK);
+    let first_detail_json: serde_json::Value =
+        serde_json::from_str(&response_json(first_detail).await).expect("project detail json");
+    assert!(first_detail_json["projectId"].as_i64().unwrap_or_default() > 0);
+    assert_eq!(first_detail_json["ownerName"], "admin");
+    assert_eq!(first_detail_json["projectName"], "projectYobi");
 
     let non_guest_enroll = app
         .clone()

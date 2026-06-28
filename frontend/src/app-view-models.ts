@@ -324,6 +324,7 @@ export function toProjectDetailView(
     organizationName: detail.organizationName,
     overview: detail.overview,
     ownerName: detail.ownerName,
+    projectId: Number(detail.projectId ?? 0),
     projectName: detail.projectName,
     projectScope: detail.projectScope,
     viewerCanEnroll: detail.viewerCanEnroll,
@@ -480,6 +481,7 @@ export function toProjectContainerView(
     overview: detail.overview,
     overviewEditable: detail.overviewEditable,
     ownerName: detail.ownerName,
+    projectId: Number(detail.projectId ?? 0),
     projectName: detail.projectName,
     projectScope: detail.projectScope,
     readmeFile: detailWithReadme.readmeFile

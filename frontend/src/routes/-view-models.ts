@@ -276,6 +276,7 @@ export interface ProjectDetailViewModel {
   overview: string;
   overviewEditable?: boolean;
   ownerName: string;
+  projectId?: number;
   projectName: string;
   projectScope: string;
   readmeFile?: {

@@ -454,6 +454,8 @@ pub struct OrganizationAdminMember {
 #[serde(rename_all = "camelCase")]
 pub struct ProjectContainer {
     #[serde(default)]
+    pub project_id: i64,
+    #[serde(default)]
     pub owner_name: String,
     #[serde(default)]
     pub project_name: String,
@@ -536,6 +538,8 @@ pub struct ProjectContainer {
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectDetail {
+    #[serde(default)]
+    pub project_id: i64,
     #[serde(default)]
     pub owner_name: String,
     #[serde(default)]

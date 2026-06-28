@@ -31,6 +31,7 @@ const projectDetail = {
   organizationName: "team",
   overview: "Overview",
   ownerName: "admin",
+  projectId: 99,
   projectName: "projectYobi",
   projectScope: "protected",
   showBoard: false,
@@ -541,6 +542,13 @@ describe("project settings parity", () => {
   });
 
   it("renders existing webhook rows with the legacy list shell", () => {
+    const legacyWebhookListTemplate = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "../../yona-original/app/views/project/partial_webhooks_list.scala.html",
+      ),
+      "utf8",
+    );
     const html = renderToStaticMarkup(
       <ProjectWebhooksPage
         detail={{
@@ -570,6 +578,7 @@ describe("project settings parity", () => {
 
     expect(html).toContain('class="webhook-list-wrap" id="webhooksList"');
     expect(html).toContain('class="row-fluid list-head"');
+    expect(legacyWebhookListTemplate).toContain('data-webhook-id="@webhook.id"');
     expect(html).toContain('class="row-fluid list-item vertical-align" data-webhook-id="7"');
     expect(html).toContain('<h6 class="mr20 truncate">https://example.test/hook</h6>');
     expect(html).toContain("<h6>NONE</h6>");
@@ -674,6 +683,10 @@ describe("project settings parity", () => {
   });
 
   it("opts the bounded P4-A project literals into provided legacy message lookups", () => {
+    const legacyHeaderTemplate = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/app/views/project/header.scala.html"),
+      "utf8",
+    );
     const source = fs.readFileSync(path.resolve(__dirname, "routes/-project-views.tsx"), "utf8");
     const messages = (
       key: string,
@@ -840,6 +853,8 @@ describe("project settings parity", () => {
       />,
     );
 
+    expect(legacyHeaderTemplate).toContain('data-project-id="@project.id"');
+    expect(headerHtml).toContain('data-project-id="99"');
     expect(headerHtml).toContain(">ORIGIN_LOOKUP</span>");
     expect(watchersHtml).toContain(">WATCHER_TITLE_LOOKUP</strong>");
     expect(watchersHtml).toContain(">WATCHER_DESCRIPTION_LOOKUP</p>");

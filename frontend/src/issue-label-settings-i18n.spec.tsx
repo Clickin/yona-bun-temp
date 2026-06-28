@@ -62,6 +62,13 @@ describe("project issue label settings legacy i18n opt-in", () => {
   });
 
   it("resolves legacy label controls without AppRuntimeContext messages", () => {
+    const legacyIssueLabelsListTemplate = readFileSync(
+      new URL(
+        "../../yona-original/app/views/project/partial_issuelabels_list.scala.html",
+        import.meta.url,
+      ),
+      "utf8",
+    );
     const html = renderIssueLabelSettings();
 
     expect(html).toContain(
@@ -81,6 +88,12 @@ describe("project issue label settings legacy i18n opt-in", () => {
     expect(html).toContain(">Category</strong>");
     expect(html).toContain(">Name</strong>");
     expect(html).toContain("In this category, you can choose&lt;br&gt;only a single label");
+    expect(legacyIssueLabelsListTemplate).toContain('data-category="@category.id"');
+    expect(legacyIssueLabelsListTemplate).toContain('data-label-id="@label.id"');
+    expect(html).toContain('data-category="10"');
+    expect(html).toContain('data-category-id="10"');
+    expect(html).toContain('data-label-id="100"');
+    expect(html).toContain('data-label-name="High"');
     expect(html).toContain(">Delete</button>");
     expect(html).toContain(">Edit</button>");
     expect(html).not.toContain(">label.copy</button>");

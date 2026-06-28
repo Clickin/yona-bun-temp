@@ -1229,6 +1229,7 @@ pub(crate) fn project_detail_from_record(
     viewer_can_enroll: bool,
 ) -> ProjectDetail {
     ProjectDetail {
+        project_id: authorization.project.id,
         owner_name: authorization.project.owner_name.clone(),
         project_name: authorization.project.project_name.clone(),
         organization_name: authorization
@@ -1706,6 +1707,7 @@ pub(crate) async fn build_project_container_response(
         overview: authorization.project.overview.clone().unwrap_or_default(),
         overview_editable: viewer_can_update,
         owner_name: authorization.project.owner_name.clone(),
+        project_id: authorization.project.id,
         project_name: authorization.project.project_name.clone(),
         project_scope: authorization.project.project_scope.clone(),
         review_count: if show_review {

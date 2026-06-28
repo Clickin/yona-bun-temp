@@ -2488,6 +2488,14 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   coverage: `pnpm --dir frontend exec vitest run src/auth-workspace-shell.spec.tsx`
   and `pnpm --dir frontend exec tsc --noEmit`; browser coverage:
   `pnpm --dir frontend test:e2e -- tests/root-shell-parity.e2e.ts --grep "authenticated site admin shell"`.
+- 2026-06-28 project header dynamic id evidence: `ProjectDetail` and
+  `ProjectContainer` REST payloads now expose `projectId` so the React
+  `project/header.scala.html` port can preserve the legacy
+  `data-project-id="@project.id"` favorite-project anchor without hard-coding a
+  fixture id. Focused coverage:
+  `pnpm --dir frontend test src/project-settings-parity.spec.tsx src/project-home-tabs.spec.tsx src/issue-label-settings-i18n.spec.tsx`,
+  `pnpm agent:cargo -- --outside-sandbox check -p yoram-server`, and
+  `pnpm agent:cargo-test -- --outside-sandbox -p yoram-server --test org_project_contract`.
 - 2026-06-26 issue comment detail contract tightening:
   `crates/server/src/api_types.rs`, `crates/server/src/routes/issues.rs`, and
   `crates/server/src/routes/issues/meta.rs` now include comment `authorId` and
