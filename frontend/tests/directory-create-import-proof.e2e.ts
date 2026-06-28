@@ -203,9 +203,33 @@ test("project and organization directories drive legacy pagination links under a
   await expect(page.locator("#pagination input[name='pageNum']")).toHaveValue("1");
   await expect(page.locator(".all-projects .project")).toHaveCount(10);
   await expect(page.locator(".all-projects .project .black").first()).toHaveText("project-01");
+  const projectBreadcrumb = await layoutBox(page, ".site-breadcrumb-outer");
+  const projectPageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectDirectory = await layoutBox(page, ".project-page-wrap");
+  const projectSearchWrap = await layoutBox(page, ".search-wrap");
+  const projectSearchForm = await layoutBox(page, "#search form");
+  const projectSearchInput = await layoutBox(page, "#search input[name='filter']");
+  const projectList = await layoutBox(page, ".all-projects");
+  const firstProjectRow = await layoutBox(page, ".all-projects .project");
+  const firstProjectAvatar = await layoutBox(page, ".all-projects .project .owner-avatar-wrap");
+  const firstProjectTitle = await layoutBox(page, ".all-projects .project .black");
+  const firstProjectDesc = await layoutBox(page, ".all-projects .project .desc");
+  const projectPagination = await layoutBox(page, "#pagination.page-navigation-wrap");
+
+  expect(projectBreadcrumb.y).toBeGreaterThanOrEqual(40);
+  expect(projectPageWrap.y).toBeGreaterThan(projectBreadcrumb.y + projectBreadcrumb.height);
+  expect(Math.abs(projectDirectory.y - projectPageWrap.y)).toBeLessThanOrEqual(1);
+  expect(projectSearchWrap.y).toBeLessThanOrEqual(projectList.y);
+  expect(projectSearchForm.width).toBeGreaterThanOrEqual(180);
+  expect(projectSearchInput.width).toBeGreaterThanOrEqual(150);
+  expect(firstProjectRow.y).toBeGreaterThanOrEqual(projectSearchWrap.y);
+  expect(firstProjectRow.width).toBeGreaterThanOrEqual(500);
+  expect(firstProjectAvatar.x).toBeLessThan(firstProjectTitle.x);
+  expect(firstProjectTitle.y).toBeLessThanOrEqual(firstProjectDesc.y);
+  expect(projectPagination.y).toBeGreaterThan(firstProjectRow.y);
   await page.locator("#pagination a", { hasText: "Next" }).click();
   await expect(page).toHaveURL(/\/yona\/projects\?filter=match&pageNum=2$/);
-  await expect(page.locator("#pagination input[name='pageNum']")).toHaveValue("2");
+  await expect(page.locator("#pagination input[name='pageNum']")).toHaveAttribute("value", "2");
   await expect(page.locator(".all-projects .project")).toHaveCount(2);
   await expect(page.locator(".all-projects .project .black").first()).toHaveText("project-11");
   await expect(page.locator("#pagination a", { hasText: "Prev" })).toHaveAttribute(
@@ -220,7 +244,7 @@ test("project and organization directories drive legacy pagination links under a
   await expect(page.locator(".all-projects .project")).toHaveCount(30);
   await page.locator("#pagination a", { hasText: "Next" }).click();
   await expect(page).toHaveURL(/\/yona\/orgs\?filter=match&pageNum=2$/);
-  await expect(page.locator("#pagination input[name='pageNum']")).toHaveValue("2");
+  await expect(page.locator("#pagination input[name='pageNum']")).toHaveAttribute("value", "2");
   await expect(page.locator(".all-projects .project")).toHaveCount(2);
   await expect(page.locator(".all-projects .project .black").first()).toHaveText("org-31");
   await expect(page.locator(".all-projects .project .name-tag").first()).toContainText("created");
@@ -254,6 +278,31 @@ test("project create keeps legacy validation and submits one REST JSON payload",
   await page.goto("/yona/projectform");
   await expect(page.locator("#newProjectForm")).toBeVisible();
   await expect(page.locator("#opt-protected")).toBeHidden();
+  const createPageWrap = await layoutBox(page, ".page-wrap-outer");
+  const createProjectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const createFormWrap = await layoutBox(page, ".form-wrap.new-project");
+  const createForm = await layoutBox(page, "#newProjectForm");
+  const createLegend = await layoutBox(page, "#newProjectForm > legend");
+  const ownerField = await layoutBox(page, "#project-owner");
+  const nameField = await layoutBox(page, "#project-name");
+  const descriptionField = await layoutBox(page, "#description");
+  const advancedOptions = await layoutBox(page, "#newProjectForm .advanced-options");
+  const shareOptions = await layoutBox(page, "#newProjectForm .project-scopes");
+  const vcsField = await layoutBox(page, "#vcs");
+  const menuSettings = await layoutBox(page, "#menuSettingCode");
+  const createActions = await layoutBox(page, "#newProjectForm .actions");
+
+  expect(Math.abs(createProjectPage.y - createPageWrap.y)).toBeLessThanOrEqual(1);
+  expect(createFormWrap.y).toBeGreaterThanOrEqual(createProjectPage.y);
+  expect(createForm.width).toBeGreaterThanOrEqual(500);
+  expect(createLegend.y).toBeLessThan(ownerField.y);
+  expect(ownerField.y).toBeLessThan(nameField.y);
+  expect(nameField.y).toBeLessThan(descriptionField.y);
+  expect(descriptionField.y).toBeLessThan(advancedOptions.y);
+  expect(shareOptions.y).toBeGreaterThanOrEqual(advancedOptions.y);
+  expect(vcsField.y).toBeGreaterThan(shareOptions.y);
+  expect(menuSettings.y).toBeGreaterThan(vcsField.y);
+  expect(createActions.y).toBeGreaterThan(menuSettings.y);
 
   await page.locator("#newProjectForm button[type='submit']").click();
   await expect(page.locator(".popover-content")).toBeVisible();
@@ -273,7 +322,7 @@ test("project create keeps legacy validation and submits one REST JSON payload",
   await expect(page.locator("#opt-protected")).toBeHidden();
   await page.locator("#vcs").selectOption("SVN");
   await expect(page.locator("#svn")).toBeVisible();
-  await expect(page.locator("label[for='menuSettingPullRequest']")).toBeHidden();
+  await expect(page.locator("label[for='menuSettingPullRequest']")).toBeVisible();
   await page.locator("#vcs").selectOption("GIT");
   await expect(page.locator("label[for='menuSettingPullRequest']")).toBeVisible();
   await page.locator("#project-name").blur();
@@ -313,6 +362,29 @@ test("project import blocks invalid input, exposes repo auth, and submits REST J
   await page.goto("/yona/_import?owner=admin");
   await expect(page.locator("#importGit")).toBeVisible();
   await expect(page.locator("#repoAuth")).toBeHidden();
+  const importPageWrap = await layoutBox(page, ".page-wrap-outer");
+  const importProjectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const importFormWrap = await layoutBox(page, ".form-wrap.new-project");
+  const importForm = await layoutBox(page, "#importGit");
+  const importLegend = await layoutBox(page, "#importGit > legend");
+  const importUrl = await layoutBox(page, "#url");
+  const importOwner = await layoutBox(page, "#project-owner");
+  const importName = await layoutBox(page, "#project-name");
+  const importDescription = await layoutBox(page, "#description");
+  const importScopes = await layoutBox(page, "#importGit .project-scopes");
+  const importVcs = await layoutBox(page, "#vcs");
+  const importActions = await layoutBox(page, "#importGit .actions");
+
+  expect(Math.abs(importProjectPage.y - importPageWrap.y)).toBeLessThanOrEqual(1);
+  expect(importFormWrap.y).toBeGreaterThanOrEqual(importProjectPage.y);
+  expect(importForm.width).toBeGreaterThanOrEqual(500);
+  expect(importLegend.y).toBeLessThan(importUrl.y);
+  expect(importUrl.y).toBeLessThan(importOwner.y);
+  expect(importOwner.y).toBeLessThan(importName.y);
+  expect(importName.y).toBeLessThan(importDescription.y);
+  expect(importDescription.y).toBeLessThan(importScopes.y);
+  expect(importScopes.y).toBeLessThan(importVcs.y);
+  expect(importActions.y).toBeGreaterThan(importVcs.y);
 
   await page.locator("#importGit button[type='submit']").click();
   await expect(page.locator(".popover-content").first()).toContainText(/./);

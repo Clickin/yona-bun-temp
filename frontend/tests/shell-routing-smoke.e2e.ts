@@ -2030,6 +2030,27 @@ test("project watchers route renders the legacy watcher directory shell", async 
     "src",
     "/avatars/admin.png",
   );
+  const header = await layoutBox(page, ".project-header-outer");
+  const menu = await layoutBox(page, ".project-menu-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".page-wrap-outer .project-page-wrap");
+  const title = await layoutBox(page, ".project-page-wrap h4");
+  const description = await layoutBox(page, ".project-page-wrap > p");
+  const members = await layoutBox(page, "ul.members.project.row-fluid");
+  const firstMember = await layoutBox(page, "li.member.span6.span-hard-wrap");
+  const avatar = await layoutBox(page, "li.member.span6.span-hard-wrap .avatar-wrap.mlarge");
+  const memberName = await layoutBox(page, "li.member.span6.span-hard-wrap .member-name");
+  const memberId = await layoutBox(page, "li.member.span6.span-hard-wrap .member-id");
+
+  expect(Math.round(header.height)).toBe(120);
+  expect(Math.round(menu.height)).toBe(40);
+  expect(pageWrap.y).toBeGreaterThanOrEqual(menu.y + menu.height);
+  expect(Math.abs(projectPage.y - pageWrap.y)).toBeLessThanOrEqual(1);
+  expect(title.y).toBeLessThan(description.y);
+  expect(description.y).toBeLessThan(members.y);
+  expect(firstMember.width).toBeGreaterThanOrEqual(300);
+  expect(avatar.x).toBeLessThanOrEqual(memberName.x);
+  expect(memberName.y).toBeLessThanOrEqual(memberId.y);
 });
 
 test("project milestone routes render list detail and form shells", async ({ page }) => {

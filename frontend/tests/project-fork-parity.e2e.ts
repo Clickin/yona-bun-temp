@@ -319,6 +319,24 @@ test("project fork route renders the legacy existing-fork notice without submitt
   );
   await expect(page.locator("#helpMessage a.primary-txt")).toHaveText("owner / projectYobiFork");
   await expect(page.locator('button[type="submit"].ybtn-info')).toBeDisabled();
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".project-page-wrap");
+  const forkWrap = await layoutBox(page, ".content-wrap.frm-wrap");
+  const legend = await layoutBox(page, "form.form-horizontal fieldset > legend");
+  const help = await layoutBox(page, "#helpMessage.well");
+  const icon = await layoutBox(page, "#helpMessage .ico-err2");
+  const forkLink = await layoutBox(page, "#helpMessage a.primary-txt");
+  const ownerGroup = await layoutBox(page, ".control-group:has(#project-owner)");
+  const nameGroup = await layoutBox(page, ".control-group:has(#inputName)");
+  const actions = await layoutBox(page, ".content-wrap.frm-wrap .actions");
+
+  expect(Math.abs(projectPage.y - pageWrap.y)).toBeLessThanOrEqual(1);
+  expect(forkWrap.width).toBeGreaterThan(700);
+  expect(legend.y).toBeLessThan(help.y);
+  expect(icon.x).toBeLessThan(forkLink.x);
+  expect(help.y).toBeLessThan(ownerGroup.y);
+  expect(ownerGroup.y).toBeLessThan(nameGroup.y);
+  expect(actions.y).toBeGreaterThan(nameGroup.y);
 
   await page.locator("form.form-horizontal").evaluate((form) => {
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
