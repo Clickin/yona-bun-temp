@@ -257,7 +257,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `error/forbidden_organization.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
 | `error/internalServerError_default.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
 | `error/notfound.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
-| `error/notfound_default.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `error/notfound_default.scala.html` | P7 error/security | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts the default not-found shell when secret setup is disabled, root GNB/footer presence, standalone secret-page chrome suppression, `.page-wrap-outer`/`.project-page-wrap`/`.error-wrap` placement, centered `.ico.ico-err2`, resolved not-found copy, 100px vertical padding, 30px message margins, 16px bold gray message, and centered `.ybtn.ybtn-info` home action |
 | `error/requestTextEntityTooLarge.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
 
 ### `git/`

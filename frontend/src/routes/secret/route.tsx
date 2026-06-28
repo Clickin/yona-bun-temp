@@ -34,7 +34,7 @@ function SecretAdminSetupRouteComponent() {
   }
 
   if (authUiCapabilities && authUiCapabilities.secretSetupRequired === false) {
-    return <NotFoundPage href="/secret" />;
+    return <NotFoundPage href="/" />;
   }
 
   return (

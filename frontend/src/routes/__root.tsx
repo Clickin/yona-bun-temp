@@ -27,9 +27,23 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
 
 function RootRouteComponent() {
   const { runtimeConfig } = Route.useRouteContext();
+
+  return (
+    <YonaQueryProvider>
+      <AppRuntimeProvider runtimeConfig={runtimeConfig}>
+        <RootChromeFrame runtimeConfig={runtimeConfig} />
+      </AppRuntimeProvider>
+    </YonaQueryProvider>
+  );
+}
+
+function RootChromeFrame({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { authUiCapabilities } = useAppRuntime();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const appPathname = stripRuntimeBasePath(pathname, runtimeConfig.basePath);
-  const standaloneChrome = STANDALONE_CHROME_PATHS.has(appPathname);
+  const standaloneChrome =
+    STANDALONE_CHROME_PATHS.has(appPathname) ||
+    (appPathname === "/secret" && authUiCapabilities?.secretSetupRequired !== false);
   const [loginDialogOpen, setLoginDialogOpen] = React.useState(false);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const toggleSidebar = React.useCallback(() => setSidebarOpen((current) => !current), []);
@@ -80,33 +94,29 @@ function RootRouteComponent() {
   }, [sidebarOpen, standaloneChrome]);
 
   return (
-    <YonaQueryProvider>
-      <AppRuntimeProvider runtimeConfig={runtimeConfig}>
-        <div className="main" id="main">
-          <RuntimeErrorBanner />
-          <SiteAdminLoggedInAffix />
-          <RootUpdateNotification />
-          {standaloneChrome ? null : (
-            <>
-              <RootHeader
-                onOpenLoginDialog={() => setLoginDialogOpen(true)}
-                onToggleSidebar={toggleSidebar}
-              />
-              <RootSidebar open={sidebarOpen} />
-            </>
-          )}
-          <Outlet />
-          <RootFooter />
-          <LegacyGlobalContainers />
-          <LegacyCommonScriptsBridge />
-          <RootLoginDialog open={loginDialogOpen} onClose={() => setLoginDialogOpen(false)} />
-        </div>
-      </AppRuntimeProvider>
-    </YonaQueryProvider>
+    <div className="main" id="main">
+      <RuntimeErrorBanner />
+      <SiteAdminLoggedInAffix />
+      <RootUpdateNotification />
+      {standaloneChrome ? null : (
+        <>
+          <RootHeader
+            onOpenLoginDialog={() => setLoginDialogOpen(true)}
+            onToggleSidebar={toggleSidebar}
+          />
+          <RootSidebar open={sidebarOpen} />
+        </>
+      )}
+      <Outlet />
+      <RootFooter />
+      <LegacyGlobalContainers />
+      <LegacyCommonScriptsBridge />
+      <RootLoginDialog open={loginDialogOpen} onClose={() => setLoginDialogOpen(false)} />
+    </div>
   );
 }
 
-const STANDALONE_CHROME_PATHS = new Set(["/_UIKit", "/restart", "/secret"]);
+const STANDALONE_CHROME_PATHS = new Set(["/_UIKit", "/restart"]);
 const STANDALONE_FOOTER_PATHS = new Set(["/_UIKit", ...STANDALONE_CHROME_PATHS]);
 const NON_PROJECT_TOP_LEVEL_PATHS = new Set([
   "_UIKit",
@@ -161,10 +171,13 @@ const SIDEBAR_ACTIVE_MENUS = new Set<SidebarActiveMenu>([
 
 function RootFooter() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const { runtimeConfig } = useAppRuntime();
+  const { authUiCapabilities, runtimeConfig } = useAppRuntime();
   const appPathname = stripRuntimeBasePath(pathname, runtimeConfig.basePath);
 
-  if (STANDALONE_FOOTER_PATHS.has(appPathname)) {
+  if (
+    STANDALONE_FOOTER_PATHS.has(appPathname) ||
+    (appPathname === "/secret" && authUiCapabilities?.secretSetupRequired !== false)
+  ) {
     return null;
   }
 

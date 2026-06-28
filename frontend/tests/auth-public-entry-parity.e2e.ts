@@ -38,6 +38,55 @@ async function expectNoVisibleRawLegacyKeys(page: Page): Promise<void> {
   expect(rawKeys, `visible raw legacy message keys in:\n${bodyText}`).toEqual([]);
 }
 
+async function assertDefaultErrorShellMetrics(page: Page) {
+  const navbar = await layoutBox(page, ".gnb-outer");
+  const pageOuter = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".project-page-wrap");
+  const errorWrap = await layoutBox(page, ".error-wrap");
+  const icon = await layoutBox(page, ".error-wrap .ico.ico-err2");
+  const message = await layoutBox(page, ".error-wrap > p");
+  const button = await layoutBox(page, ".error-wrap .ybtn.ybtn-info");
+  const footer = await layoutBox(page, ".page-footer-outer");
+  const styles = await page.locator(".error-wrap").evaluate((element) => {
+    const wrap = window.getComputedStyle(element);
+    const paragraph = window.getComputedStyle(element.querySelector("p") as HTMLElement);
+    return {
+      color: paragraph.color,
+      fontSize: paragraph.fontSize,
+      fontWeight: paragraph.fontWeight,
+      marginBottom: paragraph.marginBottom,
+      marginTop: paragraph.marginTop,
+      paddingBottom: wrap.paddingBottom,
+      paddingTop: wrap.paddingTop,
+      textAlign: wrap.textAlign,
+    };
+  });
+
+  expect(navbar.height).toBeGreaterThanOrEqual(38);
+  expect(navbar.height).toBeLessThanOrEqual(44);
+  expect(pageOuter.y).toBeGreaterThanOrEqual(navbar.y + navbar.height - 1);
+  expect(projectPage.x).toBeCloseTo(pageOuter.x, 0);
+  expect(projectPage.width).toBeCloseTo(pageOuter.width, 0);
+  expect(errorWrap.x).toBeCloseTo(projectPage.x, 0);
+  expect(errorWrap.width).toBeCloseTo(projectPage.width, 0);
+  expect(icon.x + icon.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(message.x + message.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(button.x + button.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(message.y).toBeGreaterThan(icon.y + icon.height);
+  expect(button.y).toBeGreaterThan(message.y + message.height);
+  expect(footer.y).toBeGreaterThan(pageOuter.y + pageOuter.height - 1);
+  expect(styles).toEqual({
+    color: "rgb(137, 137, 137)",
+    fontSize: "16px",
+    fontWeight: "700",
+    marginBottom: "30px",
+    marginTop: "30px",
+    paddingBottom: "100px",
+    paddingTop: "100px",
+    textAlign: "center",
+  });
+}
+
 async function installRuntimeConfig(page: Page): Promise<void> {
   await page.addInitScript(() => {
     window.__YONA_RUNTIME_CONFIG__ = {
@@ -141,6 +190,24 @@ function signedInSession() {
     userLabel: "Administrator",
   };
 }
+
+test("secret setup disabled renders the legacy default not-found shell", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page, { secretSetupRequired: false });
+
+  await page.goto("/yona/secret");
+  await expectNoVisibleRawLegacyKeys(page);
+
+  await expect(page).toHaveTitle("Page not found");
+  await expect(page.locator(".gnb-outer")).toBeVisible();
+  await expect(page.locator(".secret-page")).toHaveCount(0);
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap > p")).toHaveText("Page not found");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", "/");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toContainText("Home");
+  await assertDefaultErrorShellMetrics(page);
+});
 
 test("first-run secret admin setup keeps the legacy form shell and REST submit boundary", async ({
   page,
