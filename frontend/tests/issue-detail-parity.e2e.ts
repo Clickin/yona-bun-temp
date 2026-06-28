@@ -1241,6 +1241,106 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
   });
 
   await page.goto("/yona/admin/projectYobi/issue/1");
+  await expect(page.locator("#comment-form")).toHaveAttribute(
+    "action",
+    "/yona/admin/projectYobi/issue/1/comments",
+  );
+  await expect(page.locator("#comment-form")).toHaveAttribute("method", "post");
+  await expect(page.locator("#comment-form")).toHaveAttribute("enctype", "multipart/form-data");
+  await expect(page.locator("#comment-form .write-comment-box")).toHaveCount(1);
+  await expect(page.locator("#comment-form .textarea-box")).toHaveCount(1);
+  await expect(page.locator("#editor-contents-comment-body")).toHaveAttribute("name", "contents");
+  await expect(page.locator("#editor-contents-comment-body")).toHaveClass(
+    /editorSeries content comment nm/,
+  );
+  await expect(page.locator("#comment-form .temporaryUploadFiles")).toHaveAttribute(
+    "name",
+    "temporaryUploadFiles",
+  );
+  await expect(page.locator("#comment-form #dynamic-comment-btn.ybtn.hidden")).toHaveAttribute(
+    "type",
+    "button",
+  );
+  await expect(page.locator("#comment-form .notification-receiver-title")).toContainText(
+    "Notification receivers",
+  );
+
+  const commentForm = await layoutBox(page, "#comment-form");
+  const writeCommentBox = await layoutBox(page, "#comment-form .write-comment-box");
+  const editorTabs = await layoutBox(page, "#comment-form .nav.nav-tabs.nm.small");
+  const textareaBox = await layoutBox(page, "#comment-form .textarea-box");
+  const commentEditor = await layoutBox(page, "#editor-contents-comment-body");
+  const uploadWrap = await layoutBox(page, "#comment-form .upload-wrap");
+  const writeCommentWrap = await layoutBox(page, "#comment-form .write-comment-wrap");
+  const submitButton = await layoutBox(page, "#comment-form .ybtn.ybtn-success[type=submit]");
+  const commentFormStyles = await page.locator("#comment-form").evaluate((element) => {
+    const writeBox = element.querySelector(".write-comment-box") as HTMLElement;
+    const writeBoxStyle = window.getComputedStyle(writeBox);
+    const textareaBoxElement = element.querySelector(".textarea-box") as HTMLElement;
+    const textareaBoxStyle = window.getComputedStyle(textareaBoxElement);
+    const textarea = element.querySelector("textarea.comment") as HTMLElement;
+    const textareaStyle = window.getComputedStyle(textarea);
+    const upload = element.querySelector(".upload-wrap") as HTMLElement;
+    const uploadStyle = window.getComputedStyle(upload);
+    const dynamicButton = element.querySelector("#dynamic-comment-btn") as HTMLElement;
+    const dynamicButtonStyle = window.getComputedStyle(dynamicButton);
+    const notification = element.querySelector(".notification-receiver") as HTMLElement;
+    const notificationStyle = window.getComputedStyle(notification);
+    const notificationTitle = element.querySelector(".notification-receiver-title") as HTMLElement;
+    const notificationTitleStyle = window.getComputedStyle(notificationTitle);
+    return {
+      dynamicButtonDisplay: dynamicButtonStyle.display,
+      notificationBackgroundColor: notificationStyle.backgroundColor,
+      notificationDisplay: notificationStyle.display,
+      notificationPaddingLeft: notificationStyle.paddingLeft,
+      notificationTitleColor: notificationTitleStyle.color,
+      textareaBorderBottomLeftRadius: textareaStyle.borderBottomLeftRadius,
+      textareaBorderBottomRightRadius: textareaStyle.borderBottomRightRadius,
+      textareaBoxPaddingRight: textareaBoxStyle.paddingRight,
+      textareaFontSize: textareaStyle.fontSize,
+      textareaHeight: textareaStyle.height,
+      textareaMarginTop: textareaStyle.marginTop,
+      textareaResize: textareaStyle.resize,
+      uploadBackgroundColor: uploadStyle.backgroundColor,
+      uploadBorderBottomLeftRadius: uploadStyle.borderBottomLeftRadius,
+      uploadMarginBottom: uploadStyle.marginBottom,
+      uploadPaddingTop: uploadStyle.paddingTop,
+      writeBoxPaddingBottom: writeBoxStyle.paddingBottom,
+      writeBoxPaddingLeft: writeBoxStyle.paddingLeft,
+    };
+  });
+
+  expect(writeCommentBox.x).toBeCloseTo(commentForm.x, 0);
+  expect(writeCommentBox.y).toBeGreaterThanOrEqual(commentForm.y);
+  expect(editorTabs.x).toBeGreaterThanOrEqual(writeCommentBox.x);
+  expect(textareaBox.x).toBeCloseTo(editorTabs.x, 0);
+  expect(commentEditor.x).toBeGreaterThanOrEqual(textareaBox.x);
+  expect(commentEditor.y).toBeGreaterThan(editorTabs.y + editorTabs.height - 1);
+  expect(uploadWrap.y).toBeGreaterThan(commentEditor.y + commentEditor.height - 1);
+  expect(writeCommentWrap.y).toBeGreaterThan(uploadWrap.y + uploadWrap.height - 1);
+  expect(submitButton.x).toBeGreaterThan(writeCommentWrap.x);
+  expect(submitButton.y).toBeGreaterThanOrEqual(writeCommentWrap.y);
+  expect(commentFormStyles).toEqual({
+    dynamicButtonDisplay: "none",
+    notificationBackgroundColor: "rgb(247, 247, 247)",
+    notificationDisplay: "none",
+    notificationPaddingLeft: "10px",
+    notificationTitleColor: "rgb(153, 153, 153)",
+    textareaBorderBottomLeftRadius: "3px",
+    textareaBorderBottomRightRadius: "3px",
+    textareaBoxPaddingRight: "14px",
+    textareaFontSize: "13px",
+    textareaHeight: "160px",
+    textareaMarginTop: "0px",
+    textareaResize: "vertical",
+    uploadBackgroundColor: "rgb(239, 239, 239)",
+    uploadBorderBottomLeftRadius: "5px",
+    uploadMarginBottom: "10px",
+    uploadPaddingTop: "10px",
+    writeBoxPaddingBottom: "15px",
+    writeBoxPaddingLeft: "54px",
+  });
+
   await expect(page.locator(".markdown-help")).toBeVisible();
   await expect(page.locator(".markdown-help-nav .help-nav")).toHaveCount(10);
   await expect(page.locator(".markdown-help-wrap .markdown-help-item")).toHaveCount(10);

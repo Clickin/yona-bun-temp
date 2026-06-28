@@ -5208,6 +5208,7 @@ function IssueCommentForm(props: {
       action={props.action}
       encType="multipart/form-data"
       id="comment-form"
+      method="post"
       onSubmit={(event) => {
         event.preventDefault();
         const nextContents = contentsMarkdown.trim();
