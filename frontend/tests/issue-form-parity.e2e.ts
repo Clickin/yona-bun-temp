@@ -20,6 +20,15 @@ async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
   return box as LayoutBox;
 }
 
+async function assertLegacyCalendarCallerContract(page: Page) {
+  await expect(page.locator("#issueDueDate")).toHaveAttribute("data-toggle", "calendar");
+  await expect(page.locator("#issueDueDate")).toHaveAttribute("name", "dueDate");
+  await expect(page.locator("#issue-form .btn-calendar .yobicon-calendar2")).toHaveCount(1);
+  await expect(page.locator('script[src*="moment-with-langs.min.js"]')).toHaveCount(0);
+  await expect(page.locator('script[src*="pikaday/pikaday.js"]')).toHaveCount(0);
+  await expect(page.locator('script[src*="yobi.ui.Calendar.js"]')).toHaveCount(0);
+}
+
 async function assertLegacyIssueCreateFormShellMetrics(page: Page) {
   const pageWrapOuter = await layoutBox(page, ".page-wrap-outer");
   const projectPageWrap = await layoutBox(page, ".page-wrap-outer .project-page-wrap");
@@ -88,6 +97,7 @@ async function assertLegacyIssueCreateFormShellMetrics(page: Page) {
   await expect(page.locator("#draft-save-btn")).toHaveAttribute("data-placement", "top");
   await expect(page.locator('input[name="referCommentId"]')).toHaveValue("55");
   await expect(page.locator("#isDraft")).toHaveValue("false");
+  await assertLegacyCalendarCallerContract(page);
 
   expect(projectPageWrap.y).toBeGreaterThanOrEqual(pageWrapOuter.y);
   expect(projectPageWrap.width).toBeLessThanOrEqual(pageWrapOuter.width + 1);
@@ -205,6 +215,7 @@ async function assertLegacyIssueEditFormShellMetrics(page: Page) {
   await expect(page.locator("#notificationMail")).toHaveAttribute("value", "yes");
   await expect(page.locator("#button-draft-publish")).toHaveCount(0);
   await expect(page.locator("#draft-save-btn")).toHaveCount(0);
+  await assertLegacyCalendarCallerContract(page);
 
   expect(projectPageWrap.y).toBeGreaterThanOrEqual(pageWrapOuter.y);
   expect(projectPageWrap.width).toBeLessThanOrEqual(pageWrapOuter.width + 1);
