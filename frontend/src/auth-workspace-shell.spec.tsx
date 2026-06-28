@@ -954,7 +954,7 @@ describe("auth and workspace views", () => {
     expect(source).toContain("onResetPassword?.({");
   });
 
-  it("routes auth form submits through REST JSON wrappers instead of legacy form posts", () => {
+  it("routes auth form submits through TanStack Query mutations instead of legacy form posts", () => {
     const routeContracts = [
       ["routes/users/loginform/route.tsx", "signInWithPassword"],
       ["routes/users/signupform/route.tsx", "registerWithPassword"],
@@ -964,8 +964,12 @@ describe("auth and workspace views", () => {
 
     for (const [routeFile, restWrapper] of routeContracts) {
       const source = fs.readFileSync(path.resolve(__dirname, routeFile), "utf8");
+      expect(source, routeFile).toContain("useMutation");
+      expect(source, routeFile).toContain("@tanstack/react-query");
       expect(source, routeFile).toContain(`import { ${restWrapper} }`);
-      expect(source, routeFile).toContain(`await ${restWrapper}(runtimeConfig, csrfToken, input)`);
+      expect(source, routeFile).toContain("useMutation({");
+      expect(source, routeFile).toContain(`${restWrapper}(runtimeConfig, csrfToken, input)`);
+      expect(source, routeFile).toContain("mutateAsync(input)");
       expect(source, routeFile).toContain("useNavigate");
       expect(source, routeFile).toContain("prefixBasePath");
       expect(source, routeFile).toContain("void navigate({ href:");
@@ -985,7 +989,9 @@ describe("auth and workspace views", () => {
   it("keeps the root login dialog redirect inside TanStack navigation", () => {
     const source = fs.readFileSync(path.resolve(__dirname, "routes/__root.tsx"), "utf8");
 
+    expect(source).toContain("useMutation({");
     expect(source).toContain("signInWithPassword(runtimeConfig, csrfToken, input)");
+    expect(source).toContain("signInMutation.mutateAsync(input)");
     expect(source).toContain("refreshWorkspace(session)");
     expect(source).toContain("useNavigate");
     expect(source).toContain("prefixBasePath");

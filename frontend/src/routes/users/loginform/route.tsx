@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RestApiError } from "../../../api/rest-client";
 import { signInWithPassword } from "../../../auth-workspace-client";
@@ -44,9 +45,16 @@ function LoginRouteComponent() {
     setCurrentSession,
     setErrorMessage,
   } = useAppRuntime();
-  const [pending, setPending] = React.useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const currentHref = useCurrentHref();
+  const signInMutation = useMutation({
+    mutationFn: (input: { identifier: string; password: string; rememberMe: boolean }) =>
+      signInWithPassword(runtimeConfig, csrfToken, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries();
+    },
+  });
   useDocumentTitle("title.login");
 
   if (bootstrapping) {
@@ -61,14 +69,13 @@ function LoginRouteComponent() {
     <LoginPage
       authUiCapabilities={authUiCapabilities}
       csrfToken={csrfToken}
-      pending={pending}
+      pending={signInMutation.isPending}
       routeHref={currentHref}
       runtimeConfig={runtimeConfig}
       onSignIn={async (input) => {
-        setPending(true);
         setErrorMessage(null);
         try {
-          const session = await signInWithPassword(runtimeConfig, csrfToken, input);
+          const session = await signInMutation.mutateAsync(input);
           setCurrentSession(session);
           await refreshWorkspace(session);
           const searchParams = new URL(currentHref, "http://localhost").searchParams;
@@ -79,8 +86,6 @@ function LoginRouteComponent() {
           void navigate({ href: prefixBasePath(runtimeConfig.basePath, nextHref) });
         } catch (error) {
           setErrorMessage(legacyLoginFailureMessage(error));
-        } finally {
-          setPending(false);
         }
       }}
     />

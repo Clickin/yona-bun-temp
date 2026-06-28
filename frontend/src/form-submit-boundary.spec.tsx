@@ -418,8 +418,12 @@ describe("React form submit boundary", () => {
 
     for (const { file, legacyAction, wrapper } of authRouteWrappers) {
       const source = readRouteSource(file);
+      expect(source, file).toContain("useMutation");
+      expect(source, file).toContain("@tanstack/react-query");
       expect(source, file).toContain(`import { ${wrapper} }`);
-      expect(source, file).toContain(`await ${wrapper}(runtimeConfig, csrfToken, input)`);
+      expect(source, file).toContain("useMutation({");
+      expect(source, file).toContain(`${wrapper}(runtimeConfig, csrfToken, input)`);
+      expect(source, file).toContain("mutateAsync(input)");
       expect(source, file).not.toContain(`appHref(runtimeConfig, "${legacyAction}")`);
       expect(source, file).not.toContain(`action="${legacyAction}"`);
       expect(source, file).not.toContain(`action={${legacyAction}`);

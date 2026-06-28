@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RestApiError } from "../../../api/rest-client";
 import { registerWithPassword } from "../../../auth-workspace-client";
@@ -44,8 +45,20 @@ function RegisterRouteComponent() {
     setCurrentSession,
     setErrorMessage,
   } = useAppRuntime();
-  const [pending, setPending] = React.useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const registerMutation = useMutation({
+    mutationFn: (input: {
+      emailAddress: string;
+      loginId: string;
+      name: string;
+      password: string;
+      retypedPassword: string;
+    }) => registerWithPassword(runtimeConfig, csrfToken, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries();
+    },
+  });
   useDocumentTitle("title.signup");
 
   if (bootstrapping) {
@@ -60,13 +73,12 @@ function RegisterRouteComponent() {
     <RegisterPage
       authUiCapabilities={authUiCapabilities}
       csrfToken={csrfToken}
-      pending={pending}
+      pending={registerMutation.isPending}
       runtimeConfig={runtimeConfig}
       onRegister={async (input) => {
-        setPending(true);
         setErrorMessage(null);
         try {
-          const session = await registerWithPassword(runtimeConfig, csrfToken, input);
+          const session = await registerMutation.mutateAsync(input);
           setCurrentSession(session);
           if (!session.isAnonymous) {
             await refreshWorkspace(session);
@@ -85,8 +97,6 @@ function RegisterRouteComponent() {
           }
         } catch (error) {
           setErrorMessage(legacySignupFailureMessage(error));
-        } finally {
-          setPending(false);
         }
       }}
     />

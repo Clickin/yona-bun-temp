@@ -17,10 +17,6 @@ function readSearchParams(href: string): URLSearchParams {
   return new URL(href, "http://yona.local").searchParams;
 }
 
-function siteNameForTitle(runtimeConfig: RuntimeConfig): string {
-  return runtimeConfig.siteName?.trim() || "Yona";
-}
-
 function readEnabledSocialProviders(
   authUiCapabilities: AuthUiCapabilitiesViewModel | null | undefined,
 ): string[] {
@@ -42,6 +38,43 @@ function readDefaultAdminContact(
     | null
     | undefined;
   return capabilities?.defaultAdminContact ?? "";
+}
+
+function ProviderLogo({
+  provider,
+  runtimeConfig,
+}: {
+  provider: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  if (provider === "github") {
+    return (
+      <span className="auth-provider-logo">
+        <span className="github"></span> <span className="provider-name">Sign in with github</span>
+      </span>
+    );
+  }
+
+  if (provider === "google") {
+    return (
+      <span className="auth-provider-logo">
+        <img
+          alt="login with Google"
+          src={appHref(
+            runtimeConfig,
+            "/assets/images/provider-logo/btn_google_light_normal_ios.svg",
+          )}
+        />{" "}
+        Sign in with Google
+      </span>
+    );
+  }
+
+  return <span className="auth-provider-logo">{provider}</span>;
+}
+
+function siteNameForTitle(runtimeConfig: RuntimeConfig): string {
+  return runtimeConfig.siteName?.trim() || "Yona";
 }
 
 function LoginForTitle({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -89,50 +122,7 @@ function LegacyObfuscatedMessage({ message }: { message: string }) {
   );
 }
 
-function GithubLogo() {
-  return (
-    <span className="github">
-      <svg aria-hidden="true" height="24" version="1.1" viewBox="0 0 16 16" width="19">
-        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59 0.4 0.07 0.55-0.17 0.55-0.38 0-0.19-0.01-0.82-0.01-1.49-2.01 0.37-2.53-0.49-2.69-0.94-0.09-0.23-0.48-0.94-0.82-1.13-0.28-0.15-0.68-0.52-0.01-0.53 0.63-0.01 1.08 0.58 1.23 0.82 0.72 1.21 1.87 0.87 2.33 0.66 0.07-0.52 0.28-0.87 0.51-1.07-1.78-0.2-3.64-0.89-3.64-3.95 0-0.87 0.31-1.59 0.82-2.15-0.08-0.2-0.36-1.02 0.08-2.12 0 0 0.67-0.21 2.2 0.82 0.64-0.18 1.32-0.27 2-0.27 0.68 0 1.36 0.09 2 0.27 1.53-1.04 2.2-0.82 2.2-0.82 0.44 1.1 0.16 1.92 0.08 2.12 0.51 0.56 0.82 1.27 0.82 2.15 0 3.07-1.87 3.75-3.65 3.95 0.29 0.25 0.54 0.73 0.54 1.48 0 1.07-0.01 1.93-0.01 2.2 0 0.21 0.15 0.46 0.55 0.38C13.71 14.53 16 11.53 16 8 16 3.58 12.42 0 8 0z"></path>
-      </svg>
-    </span>
-  );
-}
-
-function ProviderLogo({
-  provider,
-  runtimeConfig,
-}: {
-  provider: string;
-  runtimeConfig: RuntimeConfig;
-}) {
-  if (provider === "github") {
-    return (
-      <span className="auth-provider-logo">
-        <GithubLogo /> <span className="provider-name">Sign in with github</span>
-      </span>
-    );
-  }
-
-  if (provider === "google") {
-    return (
-      <span className="auth-provider-logo">
-        <img
-          alt="login with Google"
-          src={appHref(
-            runtimeConfig,
-            "/assets/images/provider-logo/btn_google_light_normal_ios.svg",
-          )}
-        />{" "}
-        Sign in with Google
-      </span>
-    );
-  }
-
-  return null;
-}
-
-function SocialProviderRows({
+function SocialProviderButtons({
   authUiCapabilities,
   runtimeConfig,
 }: {
@@ -141,13 +131,15 @@ function SocialProviderRows({
 }) {
   const messages = useLegacyMessages();
   const providers = readEnabledSocialProviders(authUiCapabilities);
+  if (providers.length === 0) {
+    return null;
+  }
 
   return (
     <div className="btns-row nm">
-      {providers.length > 0 && !authUiCapabilities?.socialLoginOnly ? (
+      {!authUiCapabilities?.socialLoginOnly ? (
         <div className="social-login-title-line">
-          {" "}
-          {messages.t("title.or", { fallback: "title.or" })}{" "}
+          {messages.t("title.or", { fallback: "title.or" })}
         </div>
       ) : null}
       {providers.map((provider) => (
@@ -277,7 +269,8 @@ export function LoginPage({
                   fallback: "app.warn.support.social.login.only",
                 })}
               </div>
-            ) : canRenderLocalForm ? (
+            ) : null}
+            {canRenderLocalForm ? (
               <>
                 <dl>
                   <dd>
@@ -315,47 +308,47 @@ export function LoginPage({
                     />
                   </dd>
                 </dl>
-
                 <div className="btns-row">
                   <button className="ybtn ybtn-primary ybtn-large ybtn-fullsize" type="submit">
                     {messages.t("button.login", { fallback: "button.login" })}
                   </button>
                 </div>
+                <SocialProviderButtons
+                  authUiCapabilities={authUiCapabilities}
+                  runtimeConfig={runtimeConfig}
+                />
+                <div className="act-row mt5">
+                  <div className="remember-me-wrap pull-left">
+                    <input
+                      checked={formState.rememberMe}
+                      className="checkbox"
+                      id="remember-me"
+                      name="rememberMe"
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          rememberMe: event.target.checked,
+                        }))
+                      }
+                      type="checkbox"
+                    />
+                    <label className="bg-checkbox" htmlFor="remember-me">
+                      {messages.t("title.rememberMe", { fallback: "title.rememberMe" })}
+                    </label>
+                  </div>
+                  <div className="links-wrap pull-right">
+                    <a href={appHref(runtimeConfig, "/lostPassword")}>
+                      {messages.t("title.forgotpassword", { fallback: "title.forgotpassword" })}
+                    </a>
+                  </div>
+                </div>
               </>
             ) : null}
-
-            <SocialProviderRows
-              authUiCapabilities={authUiCapabilities}
-              runtimeConfig={runtimeConfig}
-            />
-
-            {canRenderLocalForm ? (
-              <div className="act-row mt5">
-                <div className="remember-me-wrap pull-left">
-                  <input
-                    checked={formState.rememberMe}
-                    className="checkbox"
-                    id="remember-me"
-                    name="rememberMe"
-                    onChange={(event) =>
-                      setFormState((current) => ({
-                        ...current,
-                        rememberMe: event.target.checked,
-                      }))
-                    }
-                    type="checkbox"
-                  />
-                  <label className="bg-checkbox" htmlFor="remember-me">
-                    {messages.t("title.rememberMe", { fallback: "title.rememberMe" })}
-                  </label>
-                </div>
-
-                <div className="links-wrap pull-right">
-                  <a href={appHref(runtimeConfig, "/lostPassword")}>
-                    {messages.t("title.forgotpassword", { fallback: "title.forgotpassword" })}
-                  </a>
-                </div>
-              </div>
+            {!canRenderLocalForm ? (
+              <SocialProviderButtons
+                authUiCapabilities={authUiCapabilities}
+                runtimeConfig={runtimeConfig}
+              />
             ) : null}
           </form>
         </div>
@@ -387,6 +380,7 @@ export function LegacyLoginDialog({
   const messages = messagesOverride
     ? { t: messagesOverride, language: legacyMessages.language }
     : legacyMessages;
+  const canRenderLocalForm = authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly;
 
   return (
     <div
@@ -397,7 +391,13 @@ export function LegacyLoginDialog({
     >
       <div className="modal-body">
         <div className="pull-right">
-          <button className="close mr10" data-dismiss="modal" onClick={onClose} type="button">
+          <button
+            aria-label={messages.t("button.close", { fallback: "button.close" })}
+            className="close mr10"
+            data-dismiss="modal"
+            onClick={onClose}
+            type="button"
+          >
             &times;
           </button>
         </div>
@@ -420,7 +420,8 @@ export function LegacyLoginDialog({
                 fallback: "app.warn.support.social.login.only",
               })}
             </div>
-          ) : (
+          ) : null}
+          {canRenderLocalForm ? (
             <>
               <dl>
                 <dd>
@@ -444,7 +445,6 @@ export function LegacyLoginDialog({
                   />
                 </dd>
               </dl>
-
               <div className="error">
                 <i className="yobicon-error"></i>
                 <span className="error-message">
@@ -455,43 +455,41 @@ export function LegacyLoginDialog({
                     : ""}
                 </span>
               </div>
-
               <div className="btns-row nm">
                 <button className="ybtn ybtn-primary fullsize" type="submit">
                   {messages.t("button.login", { fallback: "button.login" })}
                 </button>
               </div>
             </>
-          )}
-
-          <SocialProviderRows
+          ) : null}
+          <SocialProviderButtons
             authUiCapabilities={authUiCapabilities}
             runtimeConfig={runtimeConfig}
           />
-
-          {!authUiCapabilities?.socialLoginOnly ? (
-            <div className="act-row right-txt mt20">
-              <div className="pull-left">
-                <input
-                  defaultChecked
-                  className="checkbox"
-                  id="remember-meD"
-                  name="rememberMe"
-                  type="checkbox"
-                />
-                <label className="bg-checkbox" htmlFor="remember-meD">
-                  {messages.t("title.rememberMe", { fallback: "title.rememberMe" })}
-                </label>
+          {canRenderLocalForm ? (
+            <>
+              <div className="act-row right-txt mt20">
+                <div className="pull-left">
+                  <input
+                    defaultChecked
+                    className="checkbox"
+                    id="remember-meD"
+                    name="rememberMe"
+                    type="checkbox"
+                  />
+                  <label className="bg-checkbox" htmlFor="remember-meD">
+                    {messages.t("title.rememberMe", { fallback: "title.rememberMe" })}
+                  </label>
+                </div>
+                <a href={appHref(runtimeConfig, "/lostPassword")}>
+                  {messages.t("title.resetPassword", { fallback: "title.resetPassword" })}
+                </a>
+                <span className="gray-txt ml10 mr10">|</span>
+                <a href={appHref(runtimeConfig, "/users/signupform")}>
+                  {messages.t("title.signup", { fallback: "title.signup" })}
+                </a>
               </div>
-
-              <a href={appHref(runtimeConfig, "/lostPassword")}>
-                {messages.t("title.resetPassword", { fallback: "title.resetPassword" })}
-              </a>
-              <span className="gray-txt ml10 mr10">|</span>
-              <a href={appHref(runtimeConfig, "/users/signupform")}>
-                {messages.t("title.signup", { fallback: "title.signup" })}
-              </a>
-            </div>
+            </>
           ) : null}
         </form>
       </div>
@@ -537,7 +535,6 @@ export function RegisterPage({
             {messages.t("app.description", { fallback: "app.description" })}
           </p>
         </div>
-
         {authUiCapabilities?.signupRequireConfirm ? (
           <div className="center-txt">
             <p>{messages.t("title.signupConfirmDesc", { fallback: "title.signupConfirmDesc" })}</p>
@@ -551,7 +548,6 @@ export function RegisterPage({
             </p>
           </div>
         ) : null}
-
         <div className="signup-form-wrap frm-wrap">
           <form
             name="signup"
@@ -567,7 +563,8 @@ export function RegisterPage({
                   fallback: "app.warn.support.social.login.only",
                 })}
               </div>
-            ) : authUiCapabilities !== null ? (
+            ) : null}
+            {authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly ? (
               <>
                 <dl>
                   <dt>
@@ -592,7 +589,6 @@ export function RegisterPage({
                       value={formState.loginId}
                     />
                   </dd>
-
                   <dt>
                     <label htmlFor="uname">
                       {messages.t("user.name", { fallback: "user.name" })}
@@ -612,7 +608,6 @@ export function RegisterPage({
                       value={formState.name}
                     />
                   </dd>
-
                   <dt>
                     <label htmlFor="email">
                       {messages.t("user.email", { fallback: "user.email" })}
@@ -631,11 +626,10 @@ export function RegisterPage({
                         }))
                       }
                       placeholder=""
-                      type="text"
+                      type="email"
                       value={formState.emailAddress}
                     />
                   </dd>
-
                   <dt>
                     <label htmlFor="password">
                       {messages.t("user.password", { fallback: "user.password" })}
@@ -658,7 +652,6 @@ export function RegisterPage({
                       value={formState.password}
                     />
                   </dd>
-
                   <dt>
                     <label htmlFor="retypedPassword">
                       {messages.t("validation.retypePassword", {
@@ -684,13 +677,11 @@ export function RegisterPage({
                     />
                   </dd>
                 </dl>
-
                 <div className="btns-row">
                   <button className="ybtn ybtn-primary ybtn-large ybtn-fullsize" type="submit">
                     {messages.t("user.signupBtn", { fallback: "user.signupBtn" })}
                   </button>
                 </div>
-
                 <div className="act-row">
                   {messages.t("user.isAlreadySignupUser", {
                     fallback: "user.isAlreadySignupUser",
@@ -725,9 +716,16 @@ export function LostPasswordPage({
     loginId: "",
   });
   const searchParams = readSearchParams(routeHref);
-  const isSent = searchParams.get("requested") === "1";
-  const errorMessage =
-    searchParams.get("error") === "invalid" ? "site.resetPasswordEmail.invalidRequest" : null;
+  const feedback =
+    searchParams.get("requested") === "1"
+      ? { body: null, heading: "site.mail.sended", kind: "success" as const }
+      : searchParams.get("error") === "invalid"
+        ? {
+            body: "site.resetPasswordEmail.invalidRequest",
+            heading: "site.mail.fail",
+            kind: "error" as const,
+          }
+        : null;
 
   return (
     <main className="app-shell">
@@ -740,27 +738,21 @@ export function LostPasswordPage({
             {messages.t("app.description", { fallback: "app.description" })}
           </p>
         </div>
-
         <div className="login-form-wrap frm-wrap">
-          {isSent ? (
-            <div className="alert alert-success">
-              <button className="close" data-dismiss="alert" type="button">
+          {feedback ? (
+            <div className={`alert alert-${feedback.kind === "success" ? "success" : "error"}`}>
+              <button
+                aria-label={messages.t("button.close", { fallback: "button.close" })}
+                className="close"
+                data-dismiss="alert"
+                type="button"
+              >
                 &times;
               </button>
-              <h4>{messages.t("site.mail.sended", { fallback: "site.mail.sended" })}</h4>
+              <h4>{messages.t(feedback.heading, { fallback: feedback.heading })}</h4>
+              {feedback.body ? messages.t(feedback.body, { fallback: feedback.body }) : null}
             </div>
           ) : null}
-
-          {errorMessage ? (
-            <div className="alert alert-error">
-              <button className="close" data-dismiss="alert" type="button">
-                &times;
-              </button>
-              <h4>{messages.t("site.mail.fail", { fallback: "site.mail.fail" })}</h4>
-              {messages.t(errorMessage, { fallback: errorMessage })}
-            </div>
-          ) : null}
-
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -796,12 +788,11 @@ export function LostPasswordPage({
                   }
                   placeholder={messages.t("user.email", { fallback: "user.email" })}
                   required
-                  type="text"
+                  type="email"
                   value={formState.emailAddress}
                 />
               </dd>
             </dl>
-
             <div className="btns-row">
               <button className="ybtn ybtn-primary ybtn-large ybtn-fullsize" type="submit">
                 {messages.t("button.confirm", { fallback: "button.confirm" })}
@@ -854,7 +845,6 @@ export function ResetPasswordPage({
             {messages.t("app.description", { fallback: "app.description" })}
           </p>
         </div>
-
         <div className="login-form-wrap frm-wrap">
           <form
             name="passwordReset"
@@ -904,7 +894,6 @@ export function ResetPasswordPage({
                 />
               </dd>
             </dl>
-
             <div className="btns-row">
               <button className="ybtn ybtn-primary ybtn-fullsize" type="submit">
                 {messages.t("button.confirm", { fallback: "button.confirm" })}

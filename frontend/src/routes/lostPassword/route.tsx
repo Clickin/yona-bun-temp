@@ -1,3 +1,4 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAppRuntime } from "../../app-runtime-context";
 import { requestPasswordReset } from "../../auth-workspace-client";
@@ -12,7 +13,15 @@ export const Route = createFileRoute("/lostPassword")({
 function LostPasswordRouteComponent() {
   const { csrfToken, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const currentHref = useCurrentHref();
+  const passwordResetMutation = useMutation({
+    mutationFn: (input: { emailAddress: string; loginId: string }) =>
+      requestPasswordReset(runtimeConfig, csrfToken, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries();
+    },
+  });
   useDocumentTitle("site.resetPasswordEmail.title");
   return (
     <LostPasswordPage
@@ -21,7 +30,7 @@ function LostPasswordRouteComponent() {
       runtimeConfig={runtimeConfig}
       onRequestReset={async (input) => {
         try {
-          const result = await requestPasswordReset(runtimeConfig, csrfToken, input);
+          const result = await passwordResetMutation.mutateAsync(input);
           void navigate({ href: prefixBasePath(runtimeConfig.basePath, result.redirectPath) });
         } catch {
           void navigate({

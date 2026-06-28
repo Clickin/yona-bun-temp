@@ -1,3 +1,4 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAppRuntime } from "../../app-runtime-context";
 import { completePasswordReset } from "../../auth-workspace-client";
@@ -12,7 +13,15 @@ export const Route = createFileRoute("/resetPassword")({
 function ResetPasswordRouteComponent() {
   const { csrfToken, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const currentHref = useCurrentHref();
+  const resetPasswordMutation = useMutation({
+    mutationFn: (input: { hashString: string; password: string; retypedPassword: string }) =>
+      completePasswordReset(runtimeConfig, csrfToken, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries();
+    },
+  });
   useDocumentTitle("title.resetPassword");
   return (
     <ResetPasswordPage
@@ -21,7 +30,7 @@ function ResetPasswordRouteComponent() {
       runtimeConfig={runtimeConfig}
       onResetPassword={async (input) => {
         try {
-          const result = await completePasswordReset(runtimeConfig, csrfToken, input);
+          const result = await resetPasswordMutation.mutateAsync(input);
           void navigate({ href: prefixBasePath(runtimeConfig.basePath, result.redirectPath) });
         } catch {
           const suffix = input.hashString ? `&s=${encodeURIComponent(input.hashString)}` : "";

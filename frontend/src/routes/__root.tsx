@@ -6,7 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { readProjectContainerQueryOptions } from "../api/org-project";
 import { siteUpdateQueryOptions } from "../api/site-admin";
 import { RestApiError } from "../api/rest-client";
@@ -1599,6 +1599,7 @@ function RootAnonymousMenu({ onOpenLoginDialog }: { onOpenLoginDialog: () => voi
 
 function RootLoginDialog({ onClose, open }: { onClose: () => void; open: boolean }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const {
     authUiCapabilities,
     csrfToken,
@@ -1608,8 +1609,14 @@ function RootLoginDialog({ onClose, open }: { onClose: () => void; open: boolean
     setCurrentSession,
     setErrorMessage,
   } = useAppRuntime();
-  const [pending, setPending] = React.useState(false);
   const [dialogErrorMessage, setDialogErrorMessage] = React.useState<string | null>(null);
+  const signInMutation = useMutation({
+    mutationFn: (input: { identifier: string; password: string; rememberMe: boolean }) =>
+      signInWithPassword(runtimeConfig, csrfToken, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries();
+    },
+  });
 
   if (currentSession && !currentSession.isAnonymous) {
     return null;
@@ -1627,14 +1634,13 @@ function RootLoginDialog({ onClose, open }: { onClose: () => void; open: boolean
       }}
       runtimeConfig={runtimeConfig}
       onSignIn={async (input) => {
-        if (pending) {
+        if (signInMutation.isPending) {
           return;
         }
-        setPending(true);
         setDialogErrorMessage(null);
         setErrorMessage(null);
         try {
-          const session = await signInWithPassword(runtimeConfig, csrfToken, input);
+          const session = await signInMutation.mutateAsync(input);
           setCurrentSession(session);
           await refreshWorkspace(session);
           void navigate({
@@ -1645,8 +1651,6 @@ function RootLoginDialog({ onClose, open }: { onClose: () => void; open: boolean
           });
         } catch (error) {
           setDialogErrorMessage(legacyLoginFailureMessage(error));
-        } finally {
-          setPending(false);
         }
       }}
     />
