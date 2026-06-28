@@ -8,8 +8,21 @@ const restJsonHeaders = {
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 const PROJECT_ADMIN_RAW_KEY_PATTERN = /\b(?:project|button)\.[a-z][A-Za-z0-9_.-]*/;
 
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
 async function assertNoProjectAdminRawKeys(page: Page): Promise<void> {
   await expect(page.locator("body")).not.toContainText(PROJECT_ADMIN_RAW_KEY_PATTERN);
+}
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
 }
 
 const projectContainerPayload = () => ({
@@ -175,11 +188,61 @@ test("project transfer route preserves the legacy request shell", async ({ page 
 
   await page.goto("/yona/owner/projectYobi/transfer");
   await expect(page.locator("#subMenuProjectTransfer")).toHaveClass(/active/);
+  await expect(page.locator(".bubble-wrap.gray.wp > .row-fluid")).toHaveCount(2);
+  await expect(
+    page.locator(".bubble-wrap.gray.wp > .row-fluid").first().locator(".cu-label"),
+  ).toHaveText("new owner or group");
+  await expect(
+    page.locator(".bubble-wrap.gray.wp > .row-fluid").nth(1).locator(".cu-label"),
+  ).toHaveText("Transfer");
+  await expect(page.locator(".bubble-wrap.gray.wp .notice")).toHaveCount(5);
   await expect(page.locator("#owner")).toBeVisible();
   await expect(page.locator("#accept")).toBeVisible();
   await expect(page.locator("#btnTransfer")).toBeVisible();
   await expect(page.locator("#alertTransfer")).toHaveClass(/hide/);
   await assertNoProjectAdminRawKeys(page);
+
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const settingMenu = await layoutBox(
+    page,
+    ".page-wrap-outer > .project-page-wrap > .nav.nav-tabs",
+  );
+  const transferBubble = await layoutBox(page, ".bubble-wrap.gray.wp");
+  const ownerRow = await layoutBox(page, ".bubble-wrap.gray.wp > .row-fluid:first-child");
+  const ownerLabel = await layoutBox(
+    page,
+    ".bubble-wrap.gray.wp > .row-fluid:first-child .cu-label",
+  );
+  const ownerDesc = await layoutBox(page, ".bubble-wrap.gray.wp > .row-fluid:first-child .cu-desc");
+  const ownerInput = await layoutBox(page, "#owner");
+  const transferRow = await layoutBox(page, ".bubble-wrap.gray.wp > .row-fluid:nth-child(2)");
+  const transferLabel = await layoutBox(
+    page,
+    ".bubble-wrap.gray.wp > .row-fluid:nth-child(2) .cu-label",
+  );
+  const transferDesc = await layoutBox(
+    page,
+    ".bubble-wrap.gray.wp > .row-fluid:nth-child(2) .cu-desc",
+  );
+  const acceptCheckbox = await layoutBox(page, "#accept");
+  const acceptLabel = await layoutBox(page, "label[for='accept']");
+  const bottomActions = await layoutBox(page, ".box-wrap.bottom");
+  const transferButton = await layoutBox(page, "#btnTransfer");
+
+  expect(transferBubble.y).toBeGreaterThan(settingMenu.y + settingMenu.height - 1);
+  expect(transferBubble.x).toBeGreaterThanOrEqual(projectPage.x);
+  expect(transferBubble.width).toBeLessThanOrEqual(projectPage.width + 1);
+  expect(ownerLabel.x).toBeGreaterThanOrEqual(ownerRow.x);
+  expect(ownerDesc.x).toBeGreaterThan(ownerLabel.x + ownerLabel.width - 1);
+  expect(ownerInput.x).toBeGreaterThanOrEqual(ownerDesc.x);
+  expect(transferRow.y).toBeGreaterThan(ownerRow.y + ownerRow.height - 1);
+  expect(transferLabel.x).toBeCloseTo(ownerLabel.x, 0);
+  expect(transferDesc.x).toBeCloseTo(ownerDesc.x, 0);
+  expect(acceptLabel.x).toBeGreaterThan(acceptCheckbox.x + acceptCheckbox.width - 1);
+  expect(Math.abs(acceptLabel.y - acceptCheckbox.y)).toBeLessThanOrEqual(6);
+  expect(bottomActions.y).toBeGreaterThan(transferBubble.y + transferBubble.height - 1);
+  expect(transferButton.x).toBeGreaterThanOrEqual(bottomActions.x);
+  expect(transferButton.y).toBeGreaterThanOrEqual(bottomActions.y);
 
   await page.locator("#owner").fill("recipient");
   await page.locator("#btnTransfer").click();
@@ -192,6 +255,22 @@ test("project transfer route preserves the legacy request shell", async ({ page 
   await page.locator("#accept").check();
   await page.locator("#btnTransfer").click();
   await expect(page.locator("#alertTransfer")).not.toHaveClass(/hide/);
+  const modal = await layoutBox(page, "#alertTransfer");
+  const modalHeader = await layoutBox(page, "#alertTransfer .modal-header");
+  const modalBody = await layoutBox(page, "#alertTransfer .modal-body");
+  const modalFooter = await layoutBox(page, "#alertTransfer .modal-footer");
+  const confirmButton = await layoutBox(page, "#btnTransferExec");
+  const cancelButton = await layoutBox(
+    page,
+    "#alertTransfer .modal-footer .ybtn:not(#btnTransferExec)",
+  );
+
+  expect(modal.width).toBeGreaterThan(300);
+  expect(Math.abs(modalHeader.y - modal.y)).toBeLessThanOrEqual(1);
+  expect(modalBody.y).toBeGreaterThan(modalHeader.y + modalHeader.height - 1);
+  expect(modalFooter.y).toBeGreaterThan(modalBody.y + modalBody.height - 1);
+  expect(confirmButton.x).toBeLessThan(cancelButton.x);
+  expect(Math.abs(confirmButton.y - cancelButton.y)).toBeLessThanOrEqual(2);
   await page.locator("#btnTransferExec").click();
   await expect.poll(() => requested).toBe(true);
 });

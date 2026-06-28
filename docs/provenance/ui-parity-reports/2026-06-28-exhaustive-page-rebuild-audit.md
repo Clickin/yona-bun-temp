@@ -445,7 +445,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `project/partial_webhooks_list.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/setting.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts settings form top box, left/right column x/y alignment, 260x188 logo area, description width, and mutation-capable form shell; hidden `watchingCount` selector remains covered by `project-settings-parity.spec.tsx` |
 | `project/statistics.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
-| `project/transfer.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/transfer.scala.html` | P2 project | metric guard passed: `project-transfer-parity.e2e.ts` asserts legacy settings shell ownership, transfer submenu active state, `.bubble-wrap.gray.wp` two-row transfer form, `#owner` name field, five notice rows, checkbox/label alignment, bottom transfer button, validation alert, `#alertTransfer` modal header/body/footer order, confirm/cancel alignment, and TanStack Query REST POST with CSRF/destination payload |
 | `project/watchers.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/webhooks.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 
