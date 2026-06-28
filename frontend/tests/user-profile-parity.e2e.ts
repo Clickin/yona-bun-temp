@@ -69,6 +69,7 @@ function profileIssue() {
     authorLabel: "Door",
     authorLoginId: "door",
     commentCount: 1,
+    id: 101,
     issueNumber: 11,
     ownerName: "owner",
     projectName: "publicYobi",
@@ -227,6 +228,168 @@ test("public user profile route preserves the legacy user view shell", async ({ 
   await expect(page.getByText("Default landing")).toHaveCount(0);
   await expect(page.getByText("Sign out")).toHaveCount(0);
   await expect(page.getByText("Edit Profile")).toHaveCount(0);
+});
+
+test("public user profile issue and project partials preserve legacy row anchors and metrics", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.route(/\/api\/v1\/users\/door\/profile(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(
+        profilePayload({
+          issueItems: [profileIssue()],
+          memberProjects: [
+            {
+              ...profileProject(),
+              isWatching: false,
+              originOwnerName: "origin",
+              originProjectName: "upstream",
+              projectScope: "private",
+              viewerCanLeave: true,
+              viewerCanWatch: true,
+            },
+          ],
+          selected: "issues",
+        }),
+      ),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/door?daysAgo=7&selected=issues");
+  await expect(page.locator(".nav.nav-tabs > li.active a[href='#issues']")).toBeVisible();
+  await expect(page.locator("#issues .post-list-wrap.my-issues .post-item")).toHaveCount(1);
+  await expect(page.locator("#issue-item-101")).toHaveAttribute(
+    "href",
+    "/yona/owner/publicYobi/issue/11",
+  );
+  await expect(page.locator("#issue-item-101 .title.project")).toHaveAttribute(
+    "href",
+    "/yona/owner/publicYobi",
+  );
+  await expect(page.locator("#issue-item-101 .title.project")).toHaveAttribute(
+    "data-toggle",
+    "tooltip",
+  );
+  await expect(page.locator("#issue-item-101 .title.project")).toHaveAttribute(
+    "data-placement",
+    "bottom",
+  );
+  await expect(page.locator("#issue-item-101 .infos-item.post-id")).toHaveText("#11");
+  await expect(page.locator("#issue-item-101 .title-cell > a.title")).toHaveAttribute(
+    "href",
+    "/yona/owner/publicYobi/issue/11",
+  );
+  await expect(page.locator("#issue-item-101 .item-count-groups .num-comments")).toHaveAttribute(
+    "href",
+    "/yona/owner/publicYobi/issue/11#comments",
+  );
+  await expect(page.locator("#issue-item-101 .for-subtask-progressbar")).toBeAttached();
+  await expect(page.locator("#issue-item-101 .child-issue-list.hide")).toBeAttached();
+  await expect(page.locator("#issue-item-101 .author-cell").first()).toHaveAttribute(
+    "href",
+    "/yona/door",
+  );
+  await expect(page.locator("#issue-item-101 .author-cell").first()).toHaveAttribute(
+    "title",
+    "door",
+  );
+
+  const issueList = await layoutBox(page, "#issues .post-list-wrap.my-issues");
+  const issueRow = await layoutBox(page, "#issue-item-101");
+  const issueProjectCell = await layoutBox(page, "#issue-item-101 .project-name-in-my-issues");
+  const issueTitleWrap = await layoutBox(page, "#issue-item-101 .title-wrap.span5");
+  const issueAuthorCell = await layoutBox(
+    page,
+    "#issue-item-101 .author.project-name-in-my-issues",
+  );
+  const issueMetaCell = await layoutBox(page, "#issue-item-101 .infos.meta");
+  const issueStyles = await page.locator("#issues").evaluate((element) => {
+    const list = element.querySelector(".post-list-wrap.my-issues") as HTMLElement;
+    const row = element.querySelector("#issue-item-101") as HTMLElement;
+    return {
+      listDisplay: window.getComputedStyle(list).display,
+      rowDisplay: window.getComputedStyle(row).display,
+    };
+  });
+
+  expect(issueRow.y).toBeGreaterThanOrEqual(issueList.y);
+  expect(issueProjectCell.x).toBeGreaterThanOrEqual(issueRow.x);
+  expect(issueTitleWrap.x).toBeGreaterThan(issueProjectCell.x + issueProjectCell.width - 1);
+  expect(issueAuthorCell.x).toBeGreaterThan(issueTitleWrap.x + issueTitleWrap.width - 1);
+  expect(issueMetaCell.x).toBeGreaterThan(issueAuthorCell.x + issueAuthorCell.width - 1);
+  expect(issueStyles).toEqual({ listDisplay: "block", rowDisplay: "block" });
+
+  await page.locator(".nav.nav-tabs > li a[href='#projects']").click();
+  await expect(page.locator(".nav.nav-tabs > li.active a[href='#projects']")).toBeVisible();
+  await expect(page.locator(".user-streams.all-projects .project")).toHaveCount(1);
+  await expect(page.locator(".user-streams.all-projects .avatar-wrap.small")).toHaveAttribute(
+    "href",
+    "/yona/owner/publicYobi",
+  );
+  await expect(page.locator(".user-streams.all-projects .project-name")).toHaveAttribute(
+    "href",
+    "/yona/owner/publicYobi",
+  );
+  await expect(page.locator(".user-streams.all-projects .yobicon-split.vmiddle")).toBeAttached();
+  await expect(
+    page.locator(".user-streams.all-projects .yobicon-lock.yobicon-small"),
+  ).toBeAttached();
+  await expect(page.locator(".user-streams.all-projects .owner-name-small")).toHaveAttribute(
+    "href",
+    "/yona/owner",
+  );
+  await expect(page.locator(".user-streams.all-projects .ybtn.watchBtn")).toHaveAttribute(
+    "href",
+    "/yona/owner/publicYobi/watch",
+  );
+  await expect(page.locator(".user-streams.all-projects .ybtn.watchBtn .num-badge")).toHaveText(
+    "3",
+  );
+  await expect(page.locator(".user-streams.all-projects .leaveProject")).toHaveAttribute(
+    "data-projectname",
+    "publicYobi",
+  );
+  await expect(page.locator(".user-streams.all-projects .leaveProject")).toHaveAttribute(
+    "href",
+    "/yona/info/leave/owner/publicYobi",
+  );
+
+  const projectList = await layoutBox(page, ".user-streams.all-projects");
+  const projectRow = await layoutBox(page, ".user-streams.all-projects .project");
+  const projectInfo = await layoutBox(page, ".user-streams.all-projects .info-wrap");
+  const projectAvatar = await layoutBox(page, ".user-streams.all-projects .avatar-wrap.small");
+  const projectText = await layoutBox(
+    page,
+    ".user-streams.all-projects .info-wrap > .pull-left:nth-child(2)",
+  );
+  const projectStats = await layoutBox(page, ".user-streams.all-projects .stats-wrap.pull-right");
+  const projectStyles = await page.locator(".user-streams.all-projects").evaluate((element) => {
+    const row = element.querySelector(".project") as HTMLElement;
+    const avatarRail = element.querySelector(".info-wrap > .pull-left") as HTMLElement;
+    const stats = element.querySelector(".stats-wrap") as HTMLElement;
+    return {
+      avatarFloat: window.getComputedStyle(avatarRail).float,
+      rowDisplay: window.getComputedStyle(row).display,
+      statsFloat: window.getComputedStyle(stats).float,
+    };
+  });
+
+  expect(projectRow.y).toBeGreaterThanOrEqual(projectList.y);
+  expect(projectInfo.x).toBeGreaterThanOrEqual(projectRow.x);
+  expect(projectAvatar.x).toBeGreaterThanOrEqual(projectInfo.x);
+  expect(projectText.x).toBeGreaterThan(projectAvatar.x + projectAvatar.width - 1);
+  expect(projectStats.x).toBeGreaterThan(projectText.x);
+  expect(projectStats.x + projectStats.width).toBeLessThanOrEqual(
+    projectRow.x + projectRow.width + 1,
+  );
+  expect(projectStyles).toEqual({
+    avatarFloat: "left",
+    rowDisplay: "list-item",
+    statsFloat: "right",
+  });
 });
 
 test("public user profile tabs preserve the legacy selected query state on click", async ({

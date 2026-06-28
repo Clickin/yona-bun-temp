@@ -29,6 +29,7 @@ export interface WorkspaceOverviewViewModel {
     authorLabel: string;
     authorLoginId?: string;
     commentCount: number;
+    id?: number;
     issueNumber: number;
     ownerName: string;
     projectName: string;

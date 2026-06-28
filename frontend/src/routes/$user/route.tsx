@@ -47,6 +47,7 @@ function toPublicProfileOverview(
       authorLabel: item.authorLabel,
       authorLoginId: item.authorLoginId ?? "",
       commentCount: item.commentCount,
+      id: Number(item.id ?? item.issueNumber),
       issueNumber: Number(item.issueNumber),
       ownerName: item.ownerName,
       projectName: item.projectName,

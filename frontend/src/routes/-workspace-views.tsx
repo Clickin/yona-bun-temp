@@ -668,8 +668,9 @@ function PublicProfileIssueItems(props: {
           <li
             className="post-item title"
             data-href={issueUrl}
-            id={`issue-item-${issue.ownerName}-${issue.projectName}-${issue.issueNumber}`}
+            id={`issue-item-${issue.id ?? issue.issueNumber}`}
             key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
+            {...{ href: issueUrl }}
           >
             <div className="span12 span-hard-wrap">
               <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
@@ -770,7 +771,7 @@ function PublicProfileIssuePersonCell({
         data-placement="bottom"
         data-toggle="tooltip"
         href={appHref(runtimeConfig, userInfoHref(trimmedLoginId))}
-        title={label}
+        title={trimmedLoginId}
       >
         {label}
       </a>
@@ -781,7 +782,7 @@ function PublicProfileIssuePersonCell({
       className="infos-item infos-link-item author-cell"
       data-placement="bottom"
       data-toggle="tooltip"
-      title={label}
+      title={loginId?.trim() || label}
     >
       {label}
     </span>
