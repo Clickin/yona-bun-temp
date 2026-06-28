@@ -3560,6 +3560,11 @@ div.markdown-preview {
   gap: 8px;
 }
 
+.site-admin-page .project-select-row #input-project {
+  box-sizing: border-box;
+  width: 100%;
+}
+
 .site-admin-page #selected-projects {
   display: flex;
   flex-wrap: wrap;

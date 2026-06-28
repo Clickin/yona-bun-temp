@@ -1509,7 +1509,7 @@ export function SiteAdminMailPage({
                   <label className="control-label" htmlFor="mail-to" {...legacyLabelName("to")}>
                     {legacyMessage(messages, "site.mail.to")}
                   </label>
-                  <div className="controls">
+                  <div className="controls project-select-row">
                     <input
                       className="span4"
                       id="mail-to"
@@ -1648,7 +1648,7 @@ export function SiteAdminMassMailPage({
                   className={mode === "projects" ? "control-group" : "control-group hide"}
                   id="project-list-wrap"
                 >
-                  <div className="controls">
+                  <div className="controls project-select-row">
                     <input
                       autoComplete="off"
                       className="span3"

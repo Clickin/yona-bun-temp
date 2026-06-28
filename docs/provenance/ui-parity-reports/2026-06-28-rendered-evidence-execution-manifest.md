@@ -15,6 +15,7 @@ Organization layout metric guard: `pnpm --dir frontend test:e2e organization-dir
 Site admin user-list layout metric guard: `pnpm --dir frontend test:e2e site-admin-user-list-parity.e2e.ts` covers representative `siteLayout.scala.html` and `site/userList.scala.html` layout evidence by measuring the root navbar, site admin breadcrumb, left settings nav, right content column, title/search alignment, tabs, list header, rows, pagination, and footer order. This supports the user-list route only; remaining site admin pages still need their own rendered content evidence.
 Site admin project-list layout metric guard: `pnpm --dir frontend test:e2e site-admin-project-list-parity.e2e.ts` covers representative `site/projectList.scala.html` and `site/partial_pagination.scala.html` layout evidence by measuring the root navbar, site admin breadcrumb, left settings nav, title/filter alignment, list header-to-row column alignment, pagination position, and footer order. This supports the project-list route only; remaining site admin pages still need their own rendered content evidence.
 Site admin post/issue list layout metric guard: `pnpm --dir frontend test:e2e site-admin-post-list-parity.e2e.ts site-admin-issue-list-parity.e2e.ts` covers representative `site/postList.scala.html` and `site/issueList.scala.html` layout evidence by measuring the root navbar, site admin breadcrumb, left settings nav, title/tabs ordering, post-style row avatar/info/meta alignment, pagination position, and footer order. This supports the post-list and issue-list routes only; remaining site admin pages still need their own rendered content evidence.
+Site admin mail/mass-mail layout metric guard: `pnpm --dir frontend test:e2e site-admin-mail-parity.e2e.ts` covers representative `site/mail.scala.html` and `site/massMail.scala.html` layout evidence by measuring the root navbar, site admin breadcrumb, left settings nav, mail form label/control alignment, textarea sizing, mass-mail radio/control ordering, project selector input/button alignment, and mutation-triggering controls.
 
 ## Evidence Status Summary
 
@@ -24,8 +25,8 @@ Site admin post/issue list layout metric guard: `pnpm --dir frontend test:e2e si
 | sweep-has-route-failure | 0 | A candidate route exists in latest sweep but had route/diff issues. |
 | targeted-absence-guard-passed | 2 | Framed iframe templates are intentionally retired; focused test verifies legacy iframe anchors and active React/CSS absence. |
 | targeted-selector-assertion-passed | 8 | Focused template-derived tests assert previously missing selector/form anchors. This is structural evidence only and does not close visual UI parity without metric or screenshot evidence. |
-| visual-layout-metric-guard-passed | 15 | Focused Playwright metric tests assert legacy-derived size, position, and alignment for representative project, organization settings, and site admin user/project/post/issue list shell/templates. |
-| visual-layout-metrics-needed | 227 | Rows still need size/position/alignment or screenshot-diff evidence before final UI parity closure. |
+| visual-layout-metric-guard-passed | 17 | Focused Playwright metric tests assert legacy-derived size, position, and alignment for representative project, organization settings, and site admin user/project/post/issue/mail/mass-mail shell/templates. |
+| visual-layout-metrics-needed | 225 | Rows still need size/position/alignment or screenshot-diff evidence before final UI parity closure. |
 
 ## Priority Coverage Summary
 
