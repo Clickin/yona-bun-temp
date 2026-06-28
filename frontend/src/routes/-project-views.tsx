@@ -3368,6 +3368,21 @@ export function ProjectForkPage(props: {
   );
   const canSubmit =
     Boolean(props.forkOptions?.canFork) && owner.trim().length > 0 && name.trim().length > 0;
+
+  const forkingContent = (
+    <div className="project-page-wrap">
+      <div className="content-wrap frm-wrap">
+        <legend>
+          {legacyMessage(messages, "fork.forking", {
+            args: [detail.ownerName, detail.projectName, owner, name],
+          })}
+        </legend>
+        <p>{legacyMessage(messages, "fork.forking.message.1")}</p>
+        <p>{legacyMessage(messages, "fork.forking.message.2")}</p>
+      </div>
+    </div>
+  );
+
   const content = (
     <div className="project-page-wrap">
       <div className="content-wrap frm-wrap">
@@ -3553,6 +3568,20 @@ export function ProjectForkPage(props: {
       </div>
     </div>
   );
+
+  if (props.pending) {
+    if (props.renderShell === false) {
+      return forkingContent;
+    }
+
+    return (
+      <main className="app-shell">
+        <ProjectHeader detail={detail} messages={messages} runtimeConfig={props.runtimeConfig} />
+        <ProjectMenu activeMenu="pullRequest" detail={detail} runtimeConfig={props.runtimeConfig} />
+        <div className="page-wrap-outer">{forkingContent}</div>
+      </main>
+    );
+  }
 
   if (props.renderShell === false) {
     return content;

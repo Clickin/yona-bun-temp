@@ -253,7 +253,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `common/uploadForm.scala.html` | shared partials | metric guard passed: `issue-detail-parity.e2e.ts` asserts the legacy issue comment upload form caller with `#upload.upload-wrap.content-footer`, `data-resource-type=ISSUE_COMMENT`, `.attach-wrap`, `.help-droppable`, `.btn-wrap`, `.fake-file-wrap`, `input.file[name=filePath][multiple]`, `.plain`, `.help-pastable`, `.attached-files.unstyled`, `.right-txt.help`, uploader size/position metrics, paste/drop upload requests, and hidden `temporaryUploadFiles` submit body |
 | `common/usermenu.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts anonymous login/signup links, authenticated issue/admin/sidebar/create menu alignment, right-side 360px sidebar open/close, profile/account/logout rows, and guest variant |
 | `common/usermenu_tab_content_list.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts sidebar tab row ordering, tab content placement, and organization/project/recent issue pane x-alignment/content |
-| `common/uservoice.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/uservoice.scala.html` | P0 global shell | targeted absence guard passed: legacy search finds no active Scala caller for the dormant UserVoice SDK fragment; `root-shell-parity.e2e.ts` asserts active React root/authenticated/standalone shell routes do not inject `widget.uservoice.com`, `classic_widget`, the legacy widget key script, body-visible UserVoice text, or `window.UserVoice` while preserving the navbar feedback link from `common/navbar.scala.html` |
 | `common/voteCount.scala.html` | shared partials | metric guard passed: `vote-count-parity.e2e.ts` asserts the legacy visible issue-list caller row, `.vote-count.vote-color`, `.count-groups.item-icon`, `.yobicon-hearts`, `.count-groups.item-count.strong`, mounted issue `#vote` href, `.item-count-groups` border/line-height, icon/count horizontal order and vertical overlap, primary color, and legacy padding/font metrics |
 
 ### `error/`
@@ -274,7 +274,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `git/clone.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/clone.scala.html` | P5 git/pr | metric guard passed: `project-fork-parity.e2e.ts` stalls the TanStack fork mutation and asserts the legacy fork-clone pending shell with `.project-page-wrap`, `.content-wrap.frm-wrap`, `legend` `fork.forking` source/target copy, both `fork.forking.message.*` paragraphs, form absence during pending clone, and redirect-bound mutation still using the existing REST/TanStack boundary |
 | `git/create.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
 | `git/edit.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
 | `git/fork.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |

@@ -131,6 +131,10 @@ test("project fork route preserves the legacy fork shell and posts REST mutation
 }) => {
   let requested = false;
   let requestCount = 0;
+  let releaseForkResponse: () => void = () => {};
+  const forkResponseGate = new Promise<void>((resolve) => {
+    releaseForkResponse = resolve;
+  });
 
   await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
     await route.fulfill({
@@ -176,6 +180,7 @@ test("project fork route preserves the legacy fork shell and posts REST mutation
       projectScope: "protected",
     });
     requested = true;
+    await forkResponseGate;
     await route.fulfill({
       body: JSON.stringify({
         ok: true,
@@ -221,6 +226,17 @@ test("project fork route preserves the legacy fork shell and posts REST mutation
   await page.locator("#protected").check();
   await page.locator('button[type="submit"].ybtn-info').click();
   await expect.poll(() => requested).toBe(true);
+  await expect(page.locator(".content-wrap.frm-wrap > legend")).toHaveText(
+    "Forking owner / projectYobi project into team / projectFork project",
+  );
+  await expect(page.locator(".content-wrap.frm-wrap > p").nth(0)).toHaveText(
+    "Please wait. This process may take a long time depending on the number of files and the history of the original project.",
+  );
+  await expect(page.locator(".content-wrap.frm-wrap > p").nth(1)).toHaveText(
+    "You will be moved automatically to the new project after this process ends.",
+  );
+  await expect(page.locator(".content-wrap.frm-wrap form")).toHaveCount(0);
+  releaseForkResponse();
 });
 
 test("project fork route renders the legacy existing-fork notice without submitting", async ({
