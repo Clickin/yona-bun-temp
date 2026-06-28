@@ -225,12 +225,12 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `common/debug.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/editor.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/fileUploader.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
-| `common/footer.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/footer.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts footer placement below navbar/content, full-width footer inner, provider links, and root/standalone footer separation |
 | `common/issueLabelColor.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
-| `common/loginDialog.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/loginDialog.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts modal width/center positioning, close button/form/input/submit/remember row order, error state, and REST mutation boundary |
 | `common/markdown.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/mySeriesMenuTab.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
-| `common/navbar.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/navbar.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts 40px navbar, pin/logo/nav/search/usermenu horizontal alignment, anonymous/auth/admin/guest variants, feedback link, and search form anchors |
 | `common/notificationMail.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/partial_history.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/reviewForm.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
@@ -241,8 +241,8 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `common/tasklistBar.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/twoColumnModeCheckboxArea.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/uploadForm.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
-| `common/usermenu.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
-| `common/usermenu_tab_content_list.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/usermenu.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts anonymous login/signup links, authenticated issue/admin/sidebar/create menu alignment, right-side 360px sidebar open/close, profile/account/logout rows, and guest variant |
+| `common/usermenu_tab_content_list.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts sidebar tab row ordering, tab content placement, and organization/project/recent issue pane x-alignment/content |
 | `common/uservoice.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
 | `common/voteCount.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 
