@@ -2552,6 +2552,35 @@ h1 {
   background-color: #f5f5f5 !important;
 }
 
+.issue-list-page .mass-update-form .btn-group {
+  position: relative;
+  display: inline-block;
+  font-size: 0;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.issue-list-page .mass-update-form .btn-group + .btn-group {
+  margin-left: 5px;
+}
+
+.issue-list-page .mass-update-form .btn-group > .btn {
+  position: relative;
+  font-size: 13px;
+}
+
+.issue-list-page .mass-update-form .btn-group.check-all label {
+  display: inline-block;
+  padding: 4px 12px;
+  margin: 0;
+  line-height: 20px;
+  vertical-align: middle;
+}
+
+.issue-list-page .mass-update-form .btn-group.check-all input {
+  margin: 4px 0 0;
+}
+
 .issue-list-page .post-item .mass-update-check {
   float: left;
   margin-right: 15px;

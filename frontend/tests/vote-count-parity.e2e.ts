@@ -86,6 +86,20 @@ test.beforeEach(async ({ page }) => {
         boardCount: 0,
         cloneUrl: "https://example.com/admin/projectYobi.git",
         codeMemberOnly: false,
+        dashboard: {
+          assignees: [
+            {
+              avatarUrl: "/avatars/door.png",
+              loginId: "door",
+              openIssueCount: 1,
+              userId: 2,
+              userLabel: "Door",
+            },
+          ],
+          labels: [],
+          milestones: [],
+          unassignedOpenIssueCount: 0,
+        },
         defaultTab: "readme",
         enrollmentRequested: false,
         isFavorited: false,
@@ -189,7 +203,11 @@ test.beforeEach(async ({ page }) => {
 
   await page.route(apiV1Route("/owners/admin/projects/projectYobi/labels"), async (route) => {
     await route.fulfill({
-      body: JSON.stringify({ labels: [] }),
+      body: JSON.stringify({
+        labels: [
+          { categoryId: 4, categoryName: "Type", color: "#ffeb3b", id: "7", name: "bright" },
+        ],
+      }),
       headers: restJsonHeaders,
       status: 200,
     });
@@ -199,7 +217,18 @@ test.beforeEach(async ({ page }) => {
     /\/api\/v1\/owners\/admin\/projects\/projectYobi\/milestones(?:\?.*)?$/,
     async (route) => {
       await route.fulfill({
-        body: JSON.stringify({ milestones: [] }),
+        body: JSON.stringify({
+          milestones: [
+            {
+              dueDate: "",
+              id: 9,
+              issueClosedCount: 0,
+              issueOpenCount: 1,
+              state: "open",
+              title: "v1.0",
+            },
+          ],
+        }),
         headers: restJsonHeaders,
         status: 200,
       });
@@ -678,6 +707,22 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   await expect(page.locator("#issue-item-101 .span3.hide-in-mobile")).toHaveCount(1);
   await expect(page.locator("#issue-item-101 .mass-update-check.hide-in-mobile")).toHaveCount(1);
   await expect(page.locator("#issue-item-101 .issue-item-row")).toHaveCount(1);
+  await expect(page.locator(".mass-update-wrap.hide-in-mobile")).toHaveCount(1);
+  await expect(page.locator("#mass-update-form.mass-update-form.pull-left")).toHaveCount(1);
+  await expect(page.locator(".btn-group.check-all #check-all")).toHaveAttribute(
+    "data-target",
+    "checked-issue",
+  );
+  await expect(page.locator("#state")).toHaveAttribute("data-name", "state");
+  await expect(page.locator("#assignee")).toHaveAttribute("data-name", "assignee.id");
+  await expect(page.locator("#milestone")).toHaveAttribute("data-name", "milestone.id");
+  await expect(page.locator("#attaching-label")).toHaveAttribute("data-name", "attachingLabelIds");
+  await expect(page.locator("#detaching-label")).toHaveAttribute("data-name", "detachingLabelIds");
+  await expect(page.locator("#state .dropdown-toggle.medium")).toBeDisabled();
+  await expect(page.locator("#assignee .dropdown-toggle.medium")).toBeDisabled();
+  await expect(page.locator("#milestone .dropdown-toggle.medium")).toBeDisabled();
+  await expect(page.locator("#attaching-label .dropdown-toggle.medium")).toBeDisabled();
+  await expect(page.locator("#detaching-label .dropdown-toggle.medium")).toBeDisabled();
   await expect(page.locator("#issue-item-101 .title-wrap .post-id")).toHaveText("#1");
   await expect(page.locator("#issue-item-101 .infos .infos-link-item")).toHaveText("Nori");
   await expect(page.locator("#issue-item-101 .avatar-wrap.assinee")).toHaveAttribute(
@@ -770,6 +815,19 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     };
   });
   const row = await layoutBox(page, "#issue-item-101");
+  const filterWrap = await layoutBox(page, ".issue-list-page .filter-wrap.board");
+  const massUpdateWrap = await layoutBox(page, ".mass-update-wrap.hide-in-mobile");
+  const massUpdateForm = await layoutBox(page, "#mass-update-form");
+  const checkAllGroup = await layoutBox(page, ".btn-group.check-all");
+  const checkAllInput = await layoutBox(page, "#check-all");
+  const stateGroup = await layoutBox(page, "#state");
+  const stateButton = await layoutBox(page, "#state .dropdown-toggle.medium");
+  const stateButtonLabel = await layoutBox(page, "#state .d-label");
+  const stateButtonCaret = await layoutBox(page, "#state .d-caret");
+  const assigneeGroup = await layoutBox(page, "#assignee");
+  const milestoneGroup = await layoutBox(page, "#milestone");
+  const attachingLabelGroup = await layoutBox(page, "#attaching-label");
+  const detachingLabelGroup = await layoutBox(page, "#detaching-label");
   const leftColumn = await layoutBox(page, "#issue-item-101 .span9.span-hard-wrap");
   const rightColumn = await layoutBox(page, "#issue-item-101 .span3.hide-in-mobile");
   const massCheck = await layoutBox(page, "#issue-item-101 .mass-update-check.hide-in-mobile");
@@ -851,6 +909,99 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
       titleWhiteSpace: titleStyle.whiteSpace,
     };
   });
+  const massUpdateStyles = await page.locator("#mass-update-form").evaluate((element) => {
+    const formStyle = window.getComputedStyle(element);
+    const checkAll = element.querySelector(".btn-group.check-all") as HTMLElement;
+    const checkAllInput = element.querySelector("#check-all") as HTMLElement;
+    const button = element.querySelector("#state .dropdown-toggle.medium") as HTMLElement;
+    const buttonStyle = window.getComputedStyle(button);
+    const checkAllStyle = window.getComputedStyle(checkAll);
+    const checkAllInputStyle = window.getComputedStyle(checkAllInput);
+    return {
+      buttonDisplay: buttonStyle.display,
+      buttonHeight: buttonStyle.height,
+      buttonPadding: `${buttonStyle.paddingTop} ${buttonStyle.paddingRight} ${buttonStyle.paddingBottom} ${buttonStyle.paddingLeft}`,
+      checkAllDisplay: checkAllStyle.display,
+      checkAllInputMarginTop: checkAllInputStyle.marginTop,
+      formDisplay: formStyle.display,
+      formFloat: formStyle.float,
+    };
+  });
+
+  expect(massUpdateWrap.x).toBeGreaterThanOrEqual(filterWrap.x);
+  expect(massUpdateWrap.y).toBeGreaterThanOrEqual(filterWrap.y);
+  expect(massUpdateForm.x).toBeGreaterThanOrEqual(massUpdateWrap.x);
+  expect(massUpdateForm.y).toBeGreaterThanOrEqual(massUpdateWrap.y);
+  expect(checkAllGroup.x).toBeGreaterThanOrEqual(massUpdateForm.x);
+  expect(checkAllInput.x).toBeGreaterThanOrEqual(checkAllGroup.x);
+  expect(stateGroup.x).toBeGreaterThan(checkAllGroup.x + checkAllGroup.width - 1);
+  expect(assigneeGroup.x).toBeGreaterThan(stateGroup.x + stateGroup.width - 1);
+  expect(milestoneGroup.x).toBeGreaterThan(assigneeGroup.x + assigneeGroup.width - 1);
+  expect(attachingLabelGroup.x).toBeGreaterThan(milestoneGroup.x + milestoneGroup.width - 1);
+  expect(detachingLabelGroup.x).toBeGreaterThan(
+    attachingLabelGroup.x + attachingLabelGroup.width - 1,
+  );
+  expect(stateGroup.y).toBeCloseTo(checkAllGroup.y, 0);
+  expect(assigneeGroup.y).toBeCloseTo(stateGroup.y, 0);
+  expect(milestoneGroup.y).toBeCloseTo(stateGroup.y, 0);
+  expect(attachingLabelGroup.y).toBeCloseTo(stateGroup.y, 0);
+  expect(detachingLabelGroup.y).toBeCloseTo(stateGroup.y, 0);
+  expect(stateButtonLabel.x).toBeGreaterThanOrEqual(stateButton.x);
+  expect(stateButtonCaret.x).toBeGreaterThan(stateButtonLabel.x + stateButtonLabel.width - 1);
+  expect(stateButtonCaret.x + stateButtonCaret.width).toBeLessThanOrEqual(
+    stateButton.x + stateButton.width + 1,
+  );
+  expect(massUpdateStyles).toEqual({
+    buttonDisplay: "inline-block",
+    buttonHeight: "30px",
+    buttonPadding: "4px 12px 4px 12px",
+    checkAllDisplay: "inline-block",
+    checkAllInputMarginTop: "4px",
+    formDisplay: "block",
+    formFloat: "left",
+  });
+
+  await page.locator("#issue-101").check();
+  await expect(page.locator("#state .dropdown-toggle.medium")).toBeEnabled();
+  await expect(page.locator("#assignee .dropdown-toggle.medium")).toBeEnabled();
+  await expect(page.locator("#milestone .dropdown-toggle.medium")).toBeEnabled();
+  await expect(page.locator("#attaching-label .dropdown-toggle.medium")).toBeEnabled();
+  await expect(page.locator("#detaching-label .dropdown-toggle.medium")).toBeEnabled();
+  await expect(page.locator("#check-all")).toHaveJSProperty("checked", false);
+
+  await page.locator("#state .dropdown-toggle.medium").click();
+  await expect(page.locator("#state")).toHaveClass(/open/);
+  await expect(page.locator("#state .mass-update-list > li")).toHaveCount(2);
+  await expect(page.locator("#state .mass-update-list > li").nth(0)).toHaveAttribute(
+    "data-value",
+    "OPEN",
+  );
+  await expect(page.locator("#state .mass-update-list > li").nth(1)).toHaveAttribute(
+    "data-value",
+    "CLOSED",
+  );
+  await expect(page.locator("#state .mass-update-list")).toContainText("Open");
+  await expect(page.locator("#state .mass-update-list")).toContainText("Closed");
+  const openStateButton = await layoutBox(page, "#state .dropdown-toggle.medium");
+  const openStateMenu = await layoutBox(page, "#state .mass-update-list");
+  expect(openStateMenu.x).toBeGreaterThanOrEqual(openStateButton.x - 1);
+  expect(openStateMenu.y).toBeGreaterThanOrEqual(openStateButton.y + openStateButton.height - 1);
+
+  await page.locator("#attaching-label .dropdown-toggle.medium").click();
+  await expect(page.locator("#attaching-label")).toHaveClass(/open/);
+  await expect(page.locator("#attach-label-list > li.disabled")).toHaveAttribute(
+    "data-category",
+    "4",
+  );
+  await expect(page.locator('#attach-label-list [data-label-id="7"]')).toHaveText("bright");
+  await expect(page.locator("#attach-label-list > li.divider")).toHaveAttribute(
+    "data-category",
+    "4",
+  );
+  const openLabelButton = await layoutBox(page, "#attaching-label .dropdown-toggle.medium");
+  const openLabelMenu = await layoutBox(page, "#attach-label-list");
+  expect(openLabelMenu.x).toBeGreaterThanOrEqual(openLabelButton.x - 1);
+  expect(openLabelMenu.y).toBeGreaterThanOrEqual(openLabelButton.y + openLabelButton.height - 1);
 
   expect(draftList.y).toBeGreaterThanOrEqual(list.y);
   expect(normalList.y).toBeGreaterThan(draftList.y + draftList.height - 1);
