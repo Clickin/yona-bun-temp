@@ -309,7 +309,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `index/myRecentIssueList.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 | `index/myRecentIssueList_partial.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 | `index/notifications.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
-| `index/partial_intro.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/partial_intro.scala.html` | P1/P6 home workspace | metric guard passed: `root-shell-parity.e2e.ts`, `route-parity.spec.tsx`, and `auth-workspace-shell.spec.tsx` assert legacy anonymous home intro structure/copy, full-width home shell, legacy photo background, 750px centered intro cover, centered heading/tagline/signup action, six feature cells, 330px feature item width, row wrapping, icon/info/title x-alignment, and footer ordering |
 | `index/partial_notifications.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 | `index/sidebar.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 

@@ -32,7 +32,7 @@ export function HomePage({
   const siteName = runtimeConfig.siteName?.trim() || "Yona";
 
   return (
-    <main className="app-shell">
+    <main className="app-shell home-page">
       {flashMessageKey ? (
         <div className="yobi-notification alert alert-success" data-toggle="yobi-notify">
           {legacyMessage(messages, flashMessageKey)}

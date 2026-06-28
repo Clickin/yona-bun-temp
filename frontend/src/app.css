@@ -336,6 +336,7 @@ button[type="submit"]:focus {
 
 .app-shell:has(> .project-header-outer),
 .app-shell:has(> .project-menu-outer),
+.app-shell.home-page,
 .app-shell.issue-list-page,
 .app-shell.issue-detail-page,
 .app-shell.issue-form-page,
@@ -935,8 +936,11 @@ button[type="submit"]:focus {
 
 .siteintro {
   border-bottom: 1px solid #333;
-  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), #333;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)),
+    url("/yona/legacy-assets/images/bg-samples/photo-svetacreative.jpg");
   background-position: center center;
+  background-repeat: no-repeat;
   background-size: cover;
 }
 
@@ -996,7 +1000,7 @@ button[type="submit"]:focus {
   font-size: 16px;
   font-weight: normal;
   color: #fff;
-  letter-spacing: 0;
+  letter-spacing: 1.1px;
   opacity: 0.5;
 }
 

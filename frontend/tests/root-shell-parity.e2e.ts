@@ -201,6 +201,25 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
   await expect(page.locator("#mySidenav")).toHaveCount(0);
   await expect(page.locator(".page-footer-outer .page-footer")).toBeVisible();
   await expect(page.locator("#loginDialog.modal.hide")).toHaveCount(1);
+  await expect(page.locator(".siteintro-bg.row")).toBeVisible();
+  await expect(page.locator(".site-heading")).toHaveText(
+    "21st Century Software Development Platform",
+  );
+  await expect(page.locator(".site-features > li")).toHaveText([
+    "Just focus on what you have to do",
+  ]);
+  await expect(page.locator(".signup-btn .ybtn.ybtn-success.ybtn-padding")).toHaveText(
+    "Sign up for Yona",
+  );
+  await expect(page.locator(".feature .feature-wrap > li")).toHaveCount(6);
+  await expect(page.locator(".feature .feature-title")).toHaveText([
+    "Project / Organization",
+    "Code management",
+    "Issue tracker",
+    "Private repositories",
+    "Code review",
+    "Team play",
+  ]);
 
   const nav = await layoutBox(page, ".gnb-outer");
   const navInner = await layoutBox(page, ".gnb-outer .gnb-inner");
@@ -211,6 +230,33 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
   const userMenu = await layoutBox(page, ".gnb-usermenu");
   const loginLink = await layoutBox(page, "#required-logged-in");
   const signupButton = await layoutBox(page, ".gnb-usermenu a.ybtn.ybtn-success");
+  const appShell = await layoutBox(page, "main.app-shell");
+  const siteIntroBg = await layoutBox(page, ".siteintro-bg.row");
+  const siteIntro = await layoutBox(page, ".siteintro");
+  const siteIntroCover = await layoutBox(page, ".siteintro-cover");
+  const siteIntroWrap = await layoutBox(page, ".siteintro-wrap");
+  const siteHeading = await layoutBox(page, ".site-heading");
+  const siteFeature = await layoutBox(page, ".site-features > li");
+  const introSignupWrap = await layoutBox(page, ".siteintro .signup-btn");
+  const introSignupButton = await layoutBox(page, ".siteintro .signup-btn .ybtn");
+  const feature = await layoutBox(page, ".feature");
+  const featureHeading = await layoutBox(page, ".feature > h2");
+  const featureWrap = await layoutBox(page, ".feature .feature-wrap");
+  const firstFeature = await layoutBox(page, ".feature .feature-wrap > li:first-child");
+  const firstFeatureIcon = await layoutBox(
+    page,
+    ".feature .feature-wrap > li:first-child .feature-image",
+  );
+  const firstFeatureInfo = await layoutBox(
+    page,
+    ".feature .feature-wrap > li:first-child .feature-info",
+  );
+  const firstFeatureTitle = await layoutBox(
+    page,
+    ".feature .feature-wrap > li:first-child .feature-title",
+  );
+  const secondFeature = await layoutBox(page, ".feature .feature-wrap > li:nth-child(2)");
+  const fourthFeature = await layoutBox(page, ".feature .feature-wrap > li:nth-child(4)");
   const footerOuter = await layoutBox(page, ".page-footer-outer");
   const footerInner = await layoutBox(page, ".page-footer-outer .page-footer");
 
@@ -227,7 +273,38 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
   expect(userMenu.y).toBeCloseTo(navInner.y, 0);
   expect(loginLink.x).toBeGreaterThanOrEqual(userMenu.x);
   expect(signupButton.x).toBeGreaterThan(loginLink.x + loginLink.width - 1);
+  expect(appShell.y).toBeGreaterThanOrEqual(nav.y + nav.height - 1);
+  expect(siteIntroBg.x).toBeCloseTo(0, 0);
+  expect(siteIntroBg.width).toBeGreaterThanOrEqual(1280);
+  expect(siteIntro.y).toBeCloseTo(appShell.y, 0);
+  expect(siteIntro.width).toBeCloseTo(siteIntroBg.width, 0);
+  await expect(page.locator(".siteintro")).toHaveCSS(
+    "background-image",
+    /photo-svetacreative\.jpg/u,
+  );
+  expect(Math.round(siteIntroCover.width)).toBe(750);
+  expect(Math.abs(siteIntroCover.x + siteIntroCover.width / 2 - 640)).toBeLessThanOrEqual(1);
+  expect(siteIntroWrap.x).toBeGreaterThanOrEqual(siteIntroCover.x);
+  expect(siteHeading.y).toBeGreaterThanOrEqual(siteIntroCover.y + 55);
+  expect(siteHeading.width).toBeCloseTo(siteIntroCover.width, 0);
+  expect(siteFeature.y).toBeGreaterThan(siteHeading.y + siteHeading.height - 1);
+  expect(Math.abs(siteFeature.x + siteFeature.width / 2 - 640)).toBeLessThanOrEqual(3);
+  await expect(page.locator(".site-features > li")).toHaveCSS("letter-spacing", "1.1px");
+  expect(introSignupWrap.y).toBeGreaterThan(siteFeature.y + siteFeature.height + 30);
+  expect(Math.abs(introSignupButton.x + introSignupButton.width / 2 - 640)).toBeLessThanOrEqual(2);
+  expect(feature.y).toBeGreaterThanOrEqual(siteIntro.y + siteIntro.height - 1);
+  expect(feature.width).toBeLessThanOrEqual(1240);
+  expect(featureHeading.y).toBeGreaterThanOrEqual(feature.y);
+  expect(Math.abs(featureHeading.x + featureHeading.width / 2 - 640)).toBeLessThanOrEqual(2);
+  expect(featureWrap.y).toBeGreaterThan(featureHeading.y + featureHeading.height - 1);
+  expect(Math.round(firstFeature.width)).toBe(330);
+  expect(secondFeature.x).toBeGreaterThan(firstFeature.x + firstFeature.width + 35);
+  expect(fourthFeature.y).toBeGreaterThan(firstFeature.y + firstFeature.height - 1);
+  expect(firstFeatureIcon.x).toBeCloseTo(firstFeature.x, 0);
+  expect(firstFeatureInfo.x).toBeCloseTo(firstFeature.x + 55, 0);
+  expect(firstFeatureTitle.x).toBeCloseTo(firstFeatureInfo.x, 0);
   expect(footerOuter.y).toBeGreaterThan(nav.y + nav.height);
+  expect(footerOuter.y).toBeGreaterThan(feature.y + feature.height - 1);
   expect(footerInner.x).toBeCloseTo(0, 0);
   expect(footerInner.width).toBeGreaterThanOrEqual(navInner.width);
 
