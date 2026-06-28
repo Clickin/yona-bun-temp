@@ -373,8 +373,8 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `migration/home.scala.html` | P7 migration | reopen: inspect Scala anchors before JSX reuse |
-| `migration/migrationPageLayout.scala.html` | P7 migration | reopen: inspect Scala anchors before JSX reuse |
+| `migration/home.scala.html` | P7 migration | metric guard passed: `migration-parity.e2e.ts` asserts `yobi-migration` panel, system message, source/destination warnings, search inputs, disabled import controls, progress/table ordering, and no active native migration form |
+| `migration/migrationPageLayout.scala.html` | P7 migration | metric guard passed: `migration-parity.e2e.ts` asserts legacy navbar/footer shell, migration content placement, fixed Bootstrap row/span column alignment, and resolved copy without raw message keys |
 
 ### `milestone/`
 
