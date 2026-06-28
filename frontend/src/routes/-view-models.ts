@@ -14,7 +14,15 @@ export interface WorkspaceOverviewViewModel {
   defaultLandingPath: string;
   daysAgo?: number;
   emails?: Array<{ emailAddress: string; id: string; valid: boolean }>;
-  favoriteProjects: Array<{ ownerName: string; projectName: string }>;
+  favoriteProjects: Array<{
+    logoUrl?: string;
+    ownerId?: string | number;
+    ownerName: string;
+    overview?: string;
+    projectId?: string | number;
+    projectName: string;
+    projectScope?: string;
+  }>;
   issueItems?: Array<{
     assigneeLabel: string;
     assigneeLoginId?: string;
@@ -69,7 +77,15 @@ export interface WorkspaceOverviewViewModel {
     title: string;
     updatedLabel: string;
   }>;
-  recentProjects: Array<{ ownerName: string; projectName: string }>;
+  recentProjects: Array<{
+    logoUrl?: string;
+    ownerId?: string | number;
+    ownerName: string;
+    overview?: string;
+    projectId?: string | number;
+    projectName: string;
+    projectScope?: string;
+  }>;
   watchedProjects?: Array<{
     notifications: Array<{ enabled: boolean; eventType: string; label: string }>;
     ownerName: string;

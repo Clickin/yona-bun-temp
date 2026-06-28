@@ -16,10 +16,24 @@ type SessionState = {
 };
 
 type WorkspaceState = {
-  favoriteProjects?: Array<{ ownerName: string; projectName: string }>;
+  favoriteProjects?: Array<{
+    ownerId?: string | number;
+    ownerName: string;
+    overview?: string;
+    projectId?: string | number;
+    projectName: string;
+    projectScope?: string;
+  }>;
   isGuest?: boolean;
   memberProjects?: Array<{ ownerName: string; projectName: string }>;
-  recentProjects?: Array<{ ownerName: string; projectName: string }>;
+  recentProjects?: Array<{
+    ownerId?: string | number;
+    ownerName: string;
+    overview?: string;
+    projectId?: string | number;
+    projectName: string;
+    projectScope?: string;
+  }>;
 };
 
 type LayoutBox = {
@@ -138,7 +152,13 @@ async function installCommonApiMocks(
         defaultLandingPath,
         emails: [],
         favoriteProjects: workspace.favoriteProjects ?? [
-          { ownerName: "admin", projectName: "sample" },
+          {
+            ownerId: 11,
+            ownerName: "admin",
+            overview: "Sample project",
+            projectId: 101,
+            projectName: "sample",
+          },
         ],
         issueItems: [
           {
@@ -177,7 +197,15 @@ async function installCommonApiMocks(
           sinceLabel: "2026-06-26",
         },
         pullRequestItems: [],
-        recentProjects: workspace.recentProjects ?? [{ ownerName: "admin", projectName: "sample" }],
+        recentProjects: workspace.recentProjects ?? [
+          {
+            ownerId: 11,
+            ownerName: "admin",
+            overview: "Sample project",
+            projectId: 101,
+            projectName: "sample",
+          },
+        ],
         watchedProjects: [],
       }),
       headers: restJsonHeaders,
@@ -564,10 +592,18 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   const sidebarTabs = await layoutBox(page, "#mySidenav .nav.nav-tabs");
   const sidebarTabContent = await layoutBox(page, "#usermenu-tab-content-list");
   const orgPane = await layoutBox(page, "#myOrganizationList");
+  const orgRow = await layoutBox(page, "#myOrganizationList > li.org-li > .org-list");
+  const orgProjectRow = await layoutBox(page, "#myOrganizationList .project-ul .project-list");
+  const orgProjectStar = await layoutBox(page, "#myOrganizationList .project-ul .star-project");
   await page.locator('#mySidenav .nav.nav-tabs a[href="#myProjectList"]').click();
   const projectPane = await layoutBox(page, "#myProjectList");
+  const projectRow = await layoutBox(page, "#myProjectList > li.user-li > .project-list");
+  const projectStar = await layoutBox(page, "#myProjectList .star-project");
   await page.locator('#mySidenav .nav.nav-tabs a[href="#myRecentIssueList"]').click();
   const recentPane = await layoutBox(page, "#myRecentIssueList");
+  const recentIssueRow = await layoutBox(page, "#myRecentIssueList > li.user-li > .project-list");
+  const recentIssueMarker = await layoutBox(page, "#myRecentIssueList .issue-title-start");
+  const recentIssueTitle = await layoutBox(page, "#myRecentIssueList .issue-title");
 
   expect(Math.round(sidebar.width)).toBeGreaterThanOrEqual(360);
   expect(Math.round(sidebar.width)).toBeLessThanOrEqual(362);
@@ -580,6 +616,82 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   expect(orgPane.x).toBeCloseTo(sidebarTabContent.x, 0);
   expect(projectPane.x).toBeCloseTo(sidebarTabContent.x, 0);
   expect(recentPane.x).toBeCloseTo(sidebarTabContent.x, 0);
+  await expect(page.locator("#myOrganizationList > li.org-li")).toHaveCount(1);
+  await expect(page.locator("#myOrganizationList .org-name")).toContainText("admin");
+  await expect(page.locator("#myOrganizationList .sub-project-counter")).toContainText("1");
+  await expect(page.locator("#myOrganizationList .star-org")).toHaveAttribute(
+    "data-organization-id",
+    "11",
+  );
+  await expect(page.locator("#myOrganizationList .star-org .star")).toHaveClass(/starred/);
+  await expect(page.locator("#myOrganizationList .project-ul > li.user-li")).toHaveAttribute(
+    "data-location",
+    "/yona/admin/sample",
+  );
+  await expect(page.locator("#myOrganizationList .project-ul .project-list")).toHaveAttribute(
+    "data-toggle",
+    "popover",
+  );
+  await expect(page.locator("#myOrganizationList .project-ul .project-list")).toHaveAttribute(
+    "data-content",
+    "Sample project",
+  );
+  await expect(page.locator("#myOrganizationList .project-ul .star-project")).toHaveAttribute(
+    "data-project-id",
+    "101",
+  );
+  await expect(page.locator("#myOrganizationList .project-name a")).toHaveAttribute(
+    "href",
+    "/yona/admin/sample",
+  );
+  await expect(page.locator("#myOrganizationList .project-owner a")).toHaveAttribute(
+    "href",
+    "/yona/admin",
+  );
+  expect(orgProjectRow.y).toBeGreaterThan(orgRow.y + orgRow.height - 1);
+  expect(orgProjectRow.x).toBeGreaterThanOrEqual(orgRow.x);
+  expect(orgProjectStar.x).toBeGreaterThanOrEqual(orgProjectRow.x);
+  expect(orgProjectStar.y).toBeGreaterThanOrEqual(orgProjectRow.y);
+  expect(orgProjectStar.y).toBeLessThanOrEqual(orgProjectRow.y + orgProjectRow.height);
+  await expect(page.locator("#myProjectList > li.user-li")).toHaveAttribute(
+    "data-location",
+    "/yona/admin/sample",
+  );
+  await expect(page.locator("#myProjectList .star-project")).toHaveAttribute(
+    "data-project-id",
+    "101",
+  );
+  await expect(page.locator("#myProjectList .project-list")).toHaveAttribute(
+    "data-toggle",
+    "popover",
+  );
+  expect(projectStar.x).toBeGreaterThanOrEqual(projectRow.x);
+  expect(projectStar.y).toBeGreaterThanOrEqual(projectRow.y);
+  expect(projectStar.y).toBeLessThanOrEqual(projectRow.y + projectRow.height);
+  await expect(page.locator("#myRecentIssueList > li.user-li")).toHaveAttribute(
+    "data-location",
+    "/yona/admin/sample/issue/7",
+  );
+  await expect(page.locator("#myRecentIssueList .project-list")).toHaveAttribute(
+    "data-toggle",
+    "popover",
+  );
+  await expect(page.locator("#myRecentIssueList .project-list")).toHaveAttribute(
+    "data-content",
+    "#7",
+  );
+  await expect
+    .poll(() =>
+      page.locator("#myRecentIssueList .issue-title-start").evaluate((marker) => {
+        const title = marker.parentElement?.querySelector(".issue-title");
+        return Boolean(
+          title && marker.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+        );
+      }),
+    )
+    .toBe(true);
+  expect(recentIssueTitle.y).toBeGreaterThanOrEqual(recentIssueMarker.y);
+  expect(recentIssueRow.y).toBeGreaterThanOrEqual(recentPane.y);
   await page.locator(".admin-logged-in-affix").click();
   await expect(page.locator("#mySidenav")).toHaveCSS("width", "0px");
   await expect(page.locator("#mySidenav .user-menu a[href='/yona/admin']")).toContainText(

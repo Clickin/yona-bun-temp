@@ -155,6 +155,15 @@ type RootSearchScope =
   | { ownerName: string; projectName: string; type: "project" };
 type RootMessageResolver = (key: string, options: { fallback: string }) => string;
 type SidebarActiveMenu = "myOrganizationList" | "myProjectList" | "myRecentIssueList";
+type SidebarProject = {
+  logoUrl?: string;
+  ownerId?: string | number;
+  ownerName: string;
+  overview?: string;
+  projectId?: string | number;
+  projectName: string;
+  projectScope?: string;
+};
 type LegacyFilesRuntimeConfig = {
   maxFileSize: number;
   sListURL: string;
@@ -1131,6 +1140,7 @@ function RootSidebarContent({
               id="myOrganizationList"
               noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
               onToggleFavorite={toggleSidebarProjectFavorite}
+              organizationMode
               projects={workspaceOverview?.favoriteProjects ?? []}
               runtimeConfig={runtimeConfig}
             />
@@ -1163,6 +1173,7 @@ function SidebarProjectList({
   id,
   noResultsLabel,
   onToggleFavorite,
+  organizationMode = false,
   projects,
   runtimeConfig,
 }: {
@@ -1174,7 +1185,8 @@ function SidebarProjectList({
     projectName: string,
     starElement: HTMLElement,
   ) => Promise<void>;
-  projects: Array<{ ownerName: string; projectName: string }>;
+  organizationMode?: boolean;
+  projects: SidebarProject[];
   runtimeConfig: RuntimeConfig;
 }) {
   if (projects.length === 0) {
@@ -1185,55 +1197,141 @@ function SidebarProjectList({
     );
   }
 
-  return (
-    <ul className={`tab-pane user-ul ${active ? "active" : ""}`} id={id}>
-      {projects.map((project) => {
-        const projectHref = prefixBasePath(
-          runtimeConfig.basePath,
-          `/${project.ownerName}/${project.projectName}`,
-        );
-        const ownerHref = prefixBasePath(runtimeConfig.basePath, `/${project.ownerName}`);
-        return (
-          <li className="user-li " data-location={projectHref} key={`${id}:${projectHref}`}>
-            <div className="project-list project-flex-container">
+  if (organizationMode) {
+    const groupedProjects = new Map<string, SidebarProject[]>();
+    for (const project of projects) {
+      const group = groupedProjects.get(project.ownerName) ?? [];
+      group.push(project);
+      groupedProjects.set(project.ownerName, group);
+    }
+
+    return (
+      <ul className={`tab-pane user-ul ${active ? "active" : ""}`} id={id}>
+        {[...groupedProjects.entries()].map(([ownerName, ownerProjects]) => (
+          <li className="org-li" key={`${id}:org:${ownerName}`}>
+            <div className="org-list project-flex-container all-orgs">
               <div className="project-item project-item-container">
                 <div className="flex-item site-logo">
-                  <i className="project-avatar">
-                    <span className="dummy-25px"> </span>
-                  </i>
+                  <i className="yobicon-angle-right"></i>
                 </div>
-                <div className="projectName-owner flex-item">
-                  <div className="project-name flex-item">
-                    <a href={projectHref}>{project.projectName}</a>
-                  </div>
-                  <div className="project-owner flex-item">
-                    <a href={ownerHref}>{project.ownerName}</a>
+                <div className="projectName-owner all-org-names flex-item">
+                  <div className="project-name org-name flex-item">{ownerName}</div>
+                  <div className="project-owner flex-item sub-project-counter">
+                    {ownerProjects.length}
                   </div>
                 </div>
               </div>
-              <button
-                className="star-project flex-item"
-                data-owner-name={project.ownerName}
-                data-project-id={`${project.ownerName}/${project.projectName}`}
-                data-project-name={project.projectName}
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  const star = event.currentTarget.querySelector<HTMLElement>("i");
-                  if (!star || !onToggleFavorite) {
-                    return;
-                  }
-                  void onToggleFavorite(project.ownerName, project.projectName, star);
-                }}
-                type="button"
+              <div
+                className="star-org flex-item"
+                data-organization-id={ownerProjects[0]?.ownerId ?? ownerName}
               >
-                <i className="star material-icons">star</i>
-              </button>
+                <i className="star starred material-icons">star</i>
+              </div>
             </div>
+            <ul className="project-ul">
+              {ownerProjects.map((project) => (
+                <SidebarProjectItem
+                  key={`${id}:org:${ownerName}:${project.ownerName}/${project.projectName}`}
+                  onToggleFavorite={onToggleFavorite}
+                  project={project}
+                  runtimeConfig={runtimeConfig}
+                />
+              ))}
+            </ul>
           </li>
-        );
-      })}
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <ul className={`tab-pane user-ul ${active ? "active" : ""}`} id={id}>
+      {projects.map((project) => (
+        <SidebarProjectItem
+          key={`${id}:${project.ownerName}/${project.projectName}`}
+          onToggleFavorite={onToggleFavorite}
+          project={project}
+          runtimeConfig={runtimeConfig}
+        />
+      ))}
     </ul>
+  );
+}
+
+function SidebarProjectItem({
+  onToggleFavorite,
+  project,
+  runtimeConfig,
+}: {
+  onToggleFavorite?: (
+    ownerName: string,
+    projectName: string,
+    starElement: HTMLElement,
+  ) => Promise<void>;
+  project: SidebarProject;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const projectHref = prefixBasePath(
+    runtimeConfig.basePath,
+    `/${project.ownerName}/${project.projectName}`,
+  );
+  const ownerHref = prefixBasePath(runtimeConfig.basePath, `/${project.ownerName}`);
+  const projectId = project.projectId ?? `${project.ownerName}/${project.projectName}`;
+  const isPrivate = project.projectScope === "private" || project.projectScope === "PRIVATE";
+
+  return (
+    <li className="user-li " data-location={projectHref}>
+      <div
+        className="project-list project-flex-container"
+        data-content={project.overview}
+        data-placement={project.overview ? "right" : undefined}
+        data-toggle={project.overview ? "popover" : undefined}
+        data-trigger={project.overview ? "hover" : undefined}
+      >
+        <div className="project-item project-item-container">
+          <div className="flex-item site-logo">
+            <i className="project-avatar">
+              {project.logoUrl ? (
+                <img
+                  alt=""
+                  className="logo"
+                  src={prefixBasePath(runtimeConfig.basePath, project.logoUrl)}
+                />
+              ) : (
+                <span className="dummy-25px"> </span>
+              )}
+            </i>
+          </div>
+          <div className="projectName-owner flex-item">
+            <div className="project-name flex-item">
+              <a href={projectHref}>{project.projectName}</a>
+              {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
+            </div>
+            <div className="project-owner flex-item">
+              <a href={ownerHref}>{project.ownerName}</a>
+            </div>
+          </div>
+        </div>
+        <button
+          className="star-project flex-item"
+          data-owner-name={project.ownerName}
+          data-project-id={projectId}
+          data-project-name={project.projectName}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const star = event.currentTarget.querySelector<HTMLElement>("i");
+            if (!star || !onToggleFavorite) {
+              return;
+            }
+            void onToggleFavorite(project.ownerName, project.projectName, star);
+          }}
+          type="button"
+        >
+          <i className="star material-icons">star</i>
+        </button>
+      </div>
+    </li>
   );
 }
 
@@ -1289,7 +1387,22 @@ function SidebarIssueList({
         );
         return (
           <li className="user-li" data-location={href} key={href}>
-            <a href={href}>{issue.title}</a>
+            <div
+              className="project-list project-flex-container"
+              data-content={`#${issue.issueNumber}`}
+              data-placement="right"
+              data-toggle="popover"
+              data-trigger="hover"
+            >
+              <div className="project-item project-item-container">
+                <div className="issue-item projectName-owner flex-item">
+                  <div className="issue-title-start">-</div>
+                  <div className="issue-title flex-item">
+                    <a href={href}>{issue.title}</a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </li>
         );
       })}

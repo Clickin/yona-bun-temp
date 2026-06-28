@@ -27,8 +27,13 @@ function toWorkspaceOverview(
       valid: email.valid,
     })),
     favoriteProjects: overview.favoriteProjects.map((project) => ({
+      logoUrl: project.logoUrl,
+      ownerId: project.ownerId,
       ownerName: project.ownerName,
+      overview: project.overview,
+      projectId: project.projectId,
       projectName: project.projectName,
+      projectScope: project.projectScope,
     })),
     issueItems: overview.issueItems.map((item) => ({
       assigneeLabel: item.assigneeLabel,
@@ -77,8 +82,13 @@ function toWorkspaceOverview(
       updatedLabel: item.updatedLabel,
     })),
     recentProjects: overview.recentProjects.map((project) => ({
+      logoUrl: project.logoUrl,
+      ownerId: project.ownerId,
       ownerName: project.ownerName,
+      overview: project.overview,
+      projectId: project.projectId,
       projectName: project.projectName,
+      projectScope: project.projectScope,
     })),
     watchedProjects: overview.watchedProjects.map((project) => ({
       notifications: project.notifications.map((notification) => ({
