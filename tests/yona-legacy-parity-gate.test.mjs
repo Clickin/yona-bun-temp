@@ -283,14 +283,14 @@ test("maps project label API files to the issue lifecycle slice", () => {
   const result = runGate([
     "frontend/src/api/project-labels.ts",
     "crates/server/tests/issue_label_contract.rs",
-    "docs/provenance/core-parity-audit.md",
+    "docs/provenance/ui-parity-reports/ui-parity-issues.md",
   ]);
 
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["issue-lifecycle"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["issue-lifecycle", "parity"]],
   );
 });
 

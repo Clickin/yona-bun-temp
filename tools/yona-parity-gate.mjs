@@ -124,7 +124,7 @@ const PARITY_SLICES = [
   {
     id: "issue-lifecycle",
     label: "Issue lifecycle",
-    status: "gap",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/project-labels\.ts$/i,
       /^frontend\/src\/routes\/-milestone-views\.tsx$/i,
@@ -137,6 +137,8 @@ const PARITY_SLICES = [
       "docs/provenance/core-parity-audit.md",
       "docs/provenance/ui-parity-reports/ui-parity-board-milestone.md",
       "docs/provenance/ui-parity-reports/ui-parity-issues.md",
+      "docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md",
+      "docs/provenance/ui-parity-reports/template-first-p4-board-milestone-post.md",
       "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
     ],
   },
@@ -491,7 +493,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "issue-lifecycle",
     label: "Issue lifecycle",
-    status: "gap",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/project-labels\.ts$/i,
       /^frontend\/src\/routes\/-milestone-views\.tsx$/i,
@@ -499,7 +501,12 @@ const DOMAIN_BUCKETS = [
       /^crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,
     ],
     testKeywords: ["issue", "issues", "label", "milestone", "route-parity"],
-    provenanceDocs: ["docs/provenance/phase-0b/issue.md", "docs/provenance/core-parity-audit.md"],
+    provenanceDocs: [
+      "docs/provenance/phase-0b/issue.md",
+      "docs/provenance/core-parity-audit.md",
+      "docs/provenance/ui-parity-reports/ui-parity-issues.md",
+      "docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md",
+    ],
   },
   {
     id: "search",
