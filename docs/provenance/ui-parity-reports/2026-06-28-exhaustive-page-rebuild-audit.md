@@ -110,6 +110,360 @@ status below means only that the audit has started; it does not certify parity.
 | Existing P0-P7 reports contain many `covered in current follow-up` rows that predate the destructive rebuild directive. | weak closure basis | Treat reports as route/evidence index only; each row must be rechecked against Scala templates. |
 | Some legacy server-rendered fragments are now REST/API-return plus React render. | conversion boundary | Preserve React-rendered DOM parity, but do not reintroduce server HTML injection as runtime data. |
 
+## Full Legacy Template Inventory
+
+Every legacy Scala template is assigned to a rebuild packet below. `reopen`
+means the template must still be inspected before its active React owner can be
+treated as parity evidence.
+
+### `board/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `board/create.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
+| `board/edit.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
+| `board/list.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
+| `board/partial_comments.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
+| `board/partial_list.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
+| `board/view.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
+
+### `code/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `code/branches.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/compare.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/compare_svn.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/diff.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/history.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/nohead.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/nohead_svn.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/partial_branchrow.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/partial_nonrange_codecomment_thread.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/partial_view_file.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/partial_view_folder.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/svnDiff.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/view.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+
+### `common/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `common/attachmentFile.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/branchItem.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/calendar.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/childComments.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/childCommentsAnchorDiv.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/child_commentForm.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/commentAndVoterPairDisplay.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/commentCount.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/commentDeleteModal.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/commentForm.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/commentUpdateForm.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/commitMsg.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/debug.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/editor.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/fileUploader.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/footer.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/issueLabelColor.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/loginDialog.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/markdown.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/mySeriesMenuTab.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/navbar.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/notificationMail.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/partial_history.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/reviewForm.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/scripts.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/select2.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/sharerCount.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/showSubtasksCheckbox.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/tasklistBar.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/twoColumnModeCheckboxArea.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/uploadForm.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/usermenu.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/usermenu_tab_content_list.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/uservoice.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `common/voteCount.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+
+### `error/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `error/badrequest.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `error/badrequest_default.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `error/forbidden.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `error/forbidden_default.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `error/forbidden_organization.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `error/internalServerError_default.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `error/notfound.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `error/notfound_default.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `error/requestTextEntityTooLarge.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+
+### `git/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `git/clone.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/create.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/edit.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/fork.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/list.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/partial_branch.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/partial_forklist.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/partial_info.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/partial_list.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/partial_merge_result.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/partial_pull_request_event.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/partial_recently_pushed_branches.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/partial_reviewlist.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/partial_search.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/partial_state.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/view.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/viewChanges.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+
+### `help/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `help/UIKit.scala.html` | P1 help | reopen: inspect Scala anchors before JSX reuse |
+| `help/experimental.scala.html` | P1 help | reopen: inspect Scala anchors before JSX reuse |
+| `help/keymap.scala.html` | P1 help | reopen: inspect Scala anchors before JSX reuse |
+| `help/markdown.scala.html` | P1 help | reopen: inspect Scala anchors before JSX reuse |
+| `help/toc.scala.html` | P1 help | reopen: inspect Scala anchors before JSX reuse |
+
+### `index/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `index/allOrganizationList.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/allOrganizationList_partial.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/allProjectList.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/allProjectList_partial.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/displayProjects.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/index.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/myOrganizationList.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/myOrganizationList_partial.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/myProjectList.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/myProjectList_partial.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/myRecentIssueList.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/myRecentIssueList_partial.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/notifications.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/partial_intro.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/partial_notifications.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/sidebar.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+
+### `issue/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `issue/create.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/edit.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/list.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/my_list.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/my_partial_list.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/my_partial_list_quicksearch.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/my_partial_search.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_assignee.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_comment.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_comments.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_event_timeline.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_index_comment.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_index_comments.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_index_event_timeline.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_list.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_list_draft.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_list_quicksearch.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_list_subtask.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_list_wrap.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_massupdate.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_searchform.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_select_label.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_select_subtask.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_show_selected_label.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_view_child.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_view_childIssueList.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_view_childIssueListOnly.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_voter_list.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_voters.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/view.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+
+### root layout and shared top-level partials
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `layout.scala.html` | P0/P7 layout | reopen: inspect Scala anchors before JSX reuse |
+| `layout_framed.scala.html` | P0/P7 layout | reference-only for active SPA sidebar decision |
+| `organizationLayout.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `partial_comment_form_on_thread.scala.html` | shared P5/P3 diff/comment | reopen: inspect Scala anchors before JSX reuse |
+| `partial_comment_thread.scala.html` | shared P5/P3 diff/comment | reopen: inspect Scala anchors before JSX reuse |
+| `partial_diff.scala.html` | shared P5/P3 diff/comment | reopen: inspect Scala anchors before JSX reuse |
+| `partial_diff_comment_on_line.scala.html` | shared P5/P3 diff/comment | reopen: inspect Scala anchors before JSX reuse |
+| `partial_diff_line.scala.html` | shared P5/P3 diff/comment | reopen: inspect Scala anchors before JSX reuse |
+| `partial_filediff.scala.html` | shared P5/P3 diff/comment | reopen: inspect Scala anchors before JSX reuse |
+| `partial_update_notification.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
+| `projectLayout.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `projectMenu.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `restricted.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `sidebar.scala.html` | P0/P6 sidebar | reopen under SPA root-layout sidebar decision |
+| `siteLayout.scala.html` | P0/P7 layout | reopen: inspect Scala anchors before JSX reuse |
+| `siteLayout_framed.scala.html` | P0/P7 layout | reference-only unless a concrete app-runtime route still needs framed semantics |
+
+### `migration/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `migration/home.scala.html` | P7 migration | reopen: inspect Scala anchors before JSX reuse |
+| `migration/migrationPageLayout.scala.html` | P7 migration | reopen: inspect Scala anchors before JSX reuse |
+
+### `milestone/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `milestone/create.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
+| `milestone/edit.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
+| `milestone/list.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
+| `milestone/partial_status.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
+| `milestone/view.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
+
+### `organization/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `organization/create.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/deleteForm.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/group_board_list.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/group_board_list_partial.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/group_issue_list.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/group_issue_list_partial.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/group_issue_list_quicksearch.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/group_issue_search_partial.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/group_pullrequest_list.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/group_pullrequest_list_partial.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/header.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/list.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/members.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/menu.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/partial_settingmenu.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/setting.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/view.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+
+### `project/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `project/change_vcs.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/create.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/delete.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/header.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/home.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/importing.scala.html` | P7 import/P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/issuelabels.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/list.scala.html` | P6 directory/P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/members.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_dashboard.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_dashboard_issuesbyassignee.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_dashboard_issuesbylabel.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_dashboard_issuesbymilestone.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_dashboard_pullrequests.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_history.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_issuelabels_editcategory.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_issuelabels_editlabel.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_issuelabels_list.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_readme.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_settingmenu.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_webhooks_list.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/setting.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/statistics.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/transfer.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/watchers.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/webhooks.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+
+### `reviewthread/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `reviewthread/list.scala.html` | P5 review | reopen: inspect Scala anchors before JSX reuse |
+| `reviewthread/partial_list.scala.html` | P5 review | reopen: inspect Scala anchors before JSX reuse |
+
+### `search/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `search/partial_issue_comments.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_issues.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_milestones.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_post_comments.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_posts.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_projects.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_reviews.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_search.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_users.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/result.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+
+### `site/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `site/data.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/diagnostic.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/issueList.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/lostPassword.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
+| `site/mail.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/massMail.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/partial_pagination.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/partial_paginationForUserList.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/postList.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/projectList.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/setting.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/siteMngLayout.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/update.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/userList.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+
+### `user/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `user/edit.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/edit_emails.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/edit_notifications.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/edit_password.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/edit_token.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/login.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
+| `user/partial_edit_tabmenu.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/partial_issues.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/partial_milestones.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/partial_postings.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/partial_projectlist.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/partial_pullRequests.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/resetPassword.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
+| `user/signup.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
+| `user/userFiles.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+| `user/verified.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
+| `user/view.scala.html` | P6 workspace/profile | reopen: inspect Scala anchors before JSX reuse |
+
+### `welcome/`
+
+| legacy template | packet | audit disposition |
+| --- | --- | --- |
+| `welcome/restart.scala.html` | P1/P7 setup | reopen: inspect Scala anchors before JSX reuse |
+| `welcome/secret.scala.html` | P1/P7 setup | reopen: inspect Scala anchors before JSX reuse |
+
+## Rebuild Execution Queue
+
+The queue is ordered by blast radius and dependency shape, not by prior
+completion claims.
+
+| order | packet | reason | concrete first slice |
+| ---: | --- | --- | --- |
+| 1 | P0 global shell | Every page inherits this surface; tests already exposed stale React-contract assumptions. | Split `__root.tsx` into template-named partial components for navbar, usermenu/sidebar, footer, scripts bridge. |
+| 2 | P1 auth/public/home/help | Bounded public routes, already partially archived and rebuilt. | Finish home/help/secret/restart from `index/partial_intro.scala.html`, `help/*.scala.html`, `welcome/*.scala.html`. |
+| 3 | P2 project shell | Project header/menu wraps most project workflows. | Archive `$owner/$projectName` shell pieces and port `projectLayout`, `project/header`, `projectMenu`, `project/home`. |
+| 4 | P6 directory/organization/workspace | Organization and workspace layouts affect search/navigation and user landing flows. | Port project/org directory pages and organization shell before workspace profile/settings. |
+| 5 | P3 issue list/detail | Largest user workflow, many common partials. | Port issue list/search wrapper, then issue detail/comment/timeline partials. |
+| 6 | P4 board/milestone | Shares comment/editor/list patterns with P3 but smaller. | Port board list/detail/form, then milestone list/detail/form. |
+| 7 | P5 code/git/PR/review | Broadest UI and diff/code helpers; depends on project shell being stable. | Split code browser/history from PR/review before touching shared syntax/diff helpers. |
+| 8 | P7 site-admin/error/migration | Large admin surface but route-isolated. | Port `siteMngLayout` and concrete admin list/form pages from `site/*.scala.html`. |
+
 ## Verification Baseline For This Audit Turn
 
 Commands run before this ledger:
