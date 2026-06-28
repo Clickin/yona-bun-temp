@@ -10,11 +10,10 @@ import {
 } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toOrganizationAdminView } from "../../../../app-view-models";
-import { OrganizationMembersPage } from "../../../-organization-views";
+import { OrganizationErrorPage, OrganizationMembersPage } from "../../../-organization-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
-  ForbiddenPage,
   NotFoundPage,
   useRequireAuthenticatedRoute,
 } from "../../../-shared";
@@ -72,7 +71,15 @@ function OrganizationMembersRouteComponent() {
     );
   }
   if (failureKind === "forbidden") {
-    return <ForbiddenPage href={routeHref} />;
+    return (
+      <OrganizationErrorPage
+        messageKey="error.forbidden"
+        messages={messages}
+        organizationName={organizationName}
+        renderShell={false}
+        runtimeConfig={runtimeConfig}
+      />
+    );
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={routeHref} />;

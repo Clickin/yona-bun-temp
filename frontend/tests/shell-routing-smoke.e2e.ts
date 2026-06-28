@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,19 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string) {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
 
 function restErrorEnvelope(code: string, message: string, status: number) {
   return {
@@ -900,6 +913,7 @@ test("organization admin routes redirect anonymous viewers to login with a retur
 test("organization admin routes render forbidden and not-found shells for authenticated viewers", async ({
   page,
 }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
   await page.route(apiV1Route("/session"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -935,6 +949,42 @@ test("organization admin routes render forbidden and not-found shells for authen
       status: 200,
     });
   });
+  await page.route(apiV1Route("/organizations/weblabs/container"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        adminMembers: [],
+        description: "web labs",
+        enrollmentRequested: false,
+        memberMembers: [],
+        organizationName: "weblabs",
+        viewerCanCreateProject: false,
+        viewerCanEnroll: false,
+        viewerCanLeave: false,
+        viewerCanUpdate: false,
+        visibleProjects: [],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/organizations/missinglabs/container"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        adminMembers: [],
+        description: "missing labs",
+        enrollmentRequested: false,
+        memberMembers: [],
+        organizationName: "missinglabs",
+        viewerCanCreateProject: false,
+        viewerCanEnroll: false,
+        viewerCanLeave: false,
+        viewerCanUpdate: false,
+        visibleProjects: [],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
 
   await page.route(apiV1Route("/organizations/*/admin"), async (route) => {
     if (route.request().url().includes("/organizations/missinglabs/admin")) {
@@ -956,12 +1006,75 @@ test("organization admin routes render forbidden and not-found shells for authen
   });
 
   await page.goto("/yona/organizations/weblabs/members");
+  await expect(page.locator(".project-page-wrap.organization-error-page")).toBeVisible();
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
   await expect(page.locator(".error-wrap > p").first()).toHaveText("You are not authorized");
-  await expect(page.locator(".error-wrap a.ybtn")).toHaveAttribute(
-    "href",
-    "/organizations/weblabs/members",
+  await expect(page.locator(".error-wrap a.ybtn")).toHaveCount(0);
+  await expect(page.locator("#addNewMember")).toHaveCount(0);
+  await expect(page.locator('[data-action="apply"]')).toHaveCount(0);
+  await expect(page.locator('[data-action="delete"]')).toHaveCount(0);
+
+  const header = await layoutBox(page, ".app-shell > .project-header-outer");
+  const headerInner = await layoutBox(
+    page,
+    ".app-shell > .project-header-outer .project-header-inner",
   );
+  const projectMenu = await layoutBox(page, ".app-shell > .project-menu-outer");
+  const pageWrap = await layoutBox(page, ".app-shell > .page-wrap-outer");
+  const projectPage = await layoutBox(page, ".project-page-wrap.organization-error-page");
+  const errorWrap = await layoutBox(page, ".project-page-wrap.organization-error-page .error-wrap");
+  const icon = await layoutBox(
+    page,
+    ".project-page-wrap.organization-error-page .error-wrap .ico.ico-err2",
+  );
+  const message = await layoutBox(
+    page,
+    ".project-page-wrap.organization-error-page .error-wrap > p",
+  );
+  const styles = await page
+    .locator(".project-page-wrap.organization-error-page")
+    .evaluate((element) => {
+      const errorWrapStyle = window.getComputedStyle(
+        element.querySelector(".error-wrap") as HTMLElement,
+      );
+      const messageStyle = window.getComputedStyle(
+        element.querySelector(".error-wrap > p") as HTMLElement,
+      );
+      return {
+        errorPaddingTop: errorWrapStyle.paddingTop,
+        iconTextAlign: errorWrapStyle.textAlign,
+        messageColor: messageStyle.color,
+        messageFontSize: messageStyle.fontSize,
+        messageFontWeight: messageStyle.fontWeight,
+        messageMarginTop: messageStyle.marginTop,
+      };
+    });
+
+  expect(Math.round(header.y)).toBe(0);
+  expect(Math.round(header.height)).toBe(120);
+  expect(Math.round(headerInner.height)).toBe(Math.round(header.height));
+  expect(projectMenu.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+  expect(Math.round(projectMenu.height)).toBe(40);
+  expect(pageWrap.y).toBeGreaterThanOrEqual(projectMenu.y + projectMenu.height - 1);
+  expect(projectPage.x).toBeGreaterThanOrEqual(pageWrap.x);
+  expect(projectPage.width).toBeLessThanOrEqual(pageWrap.width + 1);
+  expect(errorWrap.y).toBeGreaterThanOrEqual(projectPage.y);
+  expect(icon.y).toBeGreaterThanOrEqual(errorWrap.y);
+  expect(message.y).toBeGreaterThan(icon.y + icon.height - 1);
+  expect(
+    Math.abs(icon.x + icon.width / 2 - (errorWrap.x + errorWrap.width / 2)),
+  ).toBeLessThanOrEqual(24);
+  expect(
+    Math.abs(message.x + message.width / 2 - (errorWrap.x + errorWrap.width / 2)),
+  ).toBeLessThanOrEqual(24);
+  expect(styles).toEqual({
+    errorPaddingTop: "100px",
+    iconTextAlign: "center",
+    messageColor: "rgb(137, 137, 137)",
+    messageFontSize: "16px",
+    messageFontWeight: "700",
+    messageMarginTop: "30px",
+  });
 
   await page.goto("/yona/organizations/missinglabs/deleteForm");
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);

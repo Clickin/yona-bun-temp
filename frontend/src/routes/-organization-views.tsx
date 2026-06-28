@@ -1844,6 +1844,48 @@ export function OrganizationMembersPage(props: {
   );
 }
 
+export function OrganizationErrorPage(props: {
+  messageKey: string;
+  messages?: LegacyMessageLookup;
+  organizationName: string;
+  renderShell?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail: OrganizationDetailViewModel = {
+    description: "",
+    organizationName: props.organizationName,
+    viewerCanUpdate: false,
+  };
+  const content = (
+    <div className="project-page-wrap organization-error-page">
+      <div className="error-wrap">
+        <i className="ico ico-err2" />
+        <p>{legacyMessage(props.messages, props.messageKey)}</p>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
+  return (
+    <main className="app-shell">
+      <OrganizationHeader
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <OrganizationMenu
+        detail={detail}
+        messages={props.messages}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <div className="page-wrap-outer">{content}</div>
+    </main>
+  );
+}
+
 export function OrganizationDeletePage(props: {
   detail: OrganizationAdminViewModel | null | undefined;
   messages?: LegacyMessageLookup;
