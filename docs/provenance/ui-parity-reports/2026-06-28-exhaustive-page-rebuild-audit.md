@@ -400,18 +400,18 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `organization/create.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/create.scala.html` | P6 organization | metric guard passed: `directory-create-import-proof.e2e.ts` asserts legacy organization create form shell, `form[name=new-org]` fields/actions ordering, input/textarea sizing, validation branch, and TanStack Query REST POST redirect boundary |
 | `organization/deleteForm.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts legacy settings shell ownership, active delete tab, `.box-wrap.bottom` delete action placement, `#btnDelete`, `#alertDeletion` modal header/body/footer order, confirm button placement, and TanStack Query REST DELETE redirect |
-| `organization/group_board_list.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
-| `organization/group_board_list_partial.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
-| `organization/group_issue_list.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
-| `organization/group_issue_list_partial.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
-| `organization/group_issue_list_quicksearch.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
-| `organization/group_issue_search_partial.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
-| `organization/group_pullrequest_list.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
-| `organization/group_pullrequest_list_partial.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/group_board_list.scala.html` | P6 organization | metric guard passed: `board-posting-parity.e2e.ts` asserts organization board shell stack, toolbar form, project selector/search/two-column controls, filter/list ordering, row avatar/title/info/project alignment, pagination placement, and legacy sort anchors |
+| `organization/group_board_list_partial.scala.html` | P6 organization | metric guard passed: `board-posting-parity.e2e.ts` asserts organization board row partial avatar/title/meta/project/comment/id placement, post row width, and pagination relation |
+| `organization/group_issue_list.scala.html` | P6 organization | metric guard passed: `shell-routing-smoke.e2e.ts` asserts organization issue shell stack, left quicksearch/content columns, tabs/filter/list ordering, cross-project issue anchors, assignee/due-date rail placement, and visible project selector/search controls |
+| `organization/group_issue_list_partial.scala.html` | P6 organization | metric guard passed: `shell-routing-smoke.e2e.ts` asserts generated `#issue-item-*` row, author/avatar/title/info/project/id anchors, assignee avatar/link, due-date rail, and row placement |
+| `organization/group_issue_list_quicksearch.scala.html` | P6 organization | metric guard passed: `shell-routing-smoke.e2e.ts` asserts left-menu quicksearch form placement, project select before search input, tabs below search, and open/closed count copy |
+| `organization/group_issue_search_partial.scala.html` | P6 organization | metric guard passed: `shell-routing-smoke.e2e.ts` asserts organization issue search form controls, query-derived state, project selector/search input layout, and issue-list content column alignment |
+| `organization/group_pullrequest_list.scala.html` | P6 organization | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts organization PR shell stack, left search/content columns, search form before tabs, tab content/list ordering, row width, and REST error shells |
+| `organization/group_pullrequest_list_partial.scala.html` | P6 organization | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts organization PR row avatar/title/info/state placement and list partial width/alignment |
 | `organization/header.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts 120px organization header, inner/header y alignment, and root navbar overlay position |
-| `organization/list.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organization/list.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts site breadcrumb/page-wrap/search form/list ordering, filtered organization row count, avatar/title/description/name-tag placement, and mobile shell retention |
 | `organization/members.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts legacy settings shell ownership, active members tab, `#addNewMember` typeahead form/input/button placement, `.members.project.row-fluid` two-column member rows, role/delete anchors, enrollment request row placement, member delete modal order, and TanStack Query add/role/delete mutations |
 | `organization/menu.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts 40px organization menu placement directly below the header and before page content |
 | `organization/partial_settingmenu.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts the settings submenu appears before `#saveSetting` inside `.project-page-wrap` |

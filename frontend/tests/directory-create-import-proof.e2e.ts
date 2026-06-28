@@ -9,6 +9,19 @@ const apiV1Route = (path: string) => `**/api/v1${path}`;
 
 type JsonRecord = Record<string, unknown>;
 
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
+
 function projectItems(count: number) {
   return Array.from({ length: count }, (_, index) => {
     const number = index + 1;
@@ -369,6 +382,28 @@ test("organization create keeps legacy validation and submits one REST JSON payl
 
   await page.goto("/yona/organizations/new");
   await expect(page.locator("form[name='new-org']")).toBeVisible();
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const formWrap = await layoutBox(page, ".form-wrap.new-project");
+  const form = await layoutBox(page, "form[name='new-org']");
+  const legend = await layoutBox(page, "form[name='new-org'] legend");
+  const fieldList = await layoutBox(page, "form[name='new-org'] dl");
+  const nameInput = await layoutBox(page, "#name");
+  const descriptionInput = await layoutBox(page, "#descr");
+  const actions = await layoutBox(page, "form[name='new-org'] .actions");
+  const submit = await layoutBox(page, "form[name='new-org'] button[type='submit']");
+
+  expect(Math.abs(projectPage.y - pageWrap.y)).toBeLessThanOrEqual(1);
+  expect(formWrap.y).toBeGreaterThanOrEqual(projectPage.y);
+  expect(form.y).toBeGreaterThanOrEqual(formWrap.y);
+  expect(form.width).toBeGreaterThanOrEqual(500);
+  expect(legend.y).toBeLessThan(fieldList.y);
+  expect(nameInput.y).toBeLessThan(descriptionInput.y);
+  expect(nameInput.width).toBeGreaterThanOrEqual(150);
+  expect(descriptionInput.width).toBeGreaterThanOrEqual(nameInput.width);
+  expect(actions.y).toBeGreaterThan(descriptionInput.y);
+  expect(submit.x).toBeGreaterThanOrEqual(actions.x);
+
   await page.locator("#name").fill("bad/name");
   await page.locator("form[name='new-org'] button[type='submit']").click();
   await expect(page.locator(".msg.wrongName")).toBeVisible();

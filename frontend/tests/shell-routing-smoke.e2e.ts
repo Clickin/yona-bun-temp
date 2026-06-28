@@ -1907,6 +1907,41 @@ test("organization issue route renders cross-project issue inbox", async ({ page
   );
   await expect(page.locator(".group-project-name")).toHaveText("projectAlpha");
   await expect(page.locator(".post-id.margin-right-5")).toHaveText("#7");
+
+  const header = await layoutBox(page, ".project-header-outer");
+  const menu = await layoutBox(page, ".project-menu-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const issueWrap = await layoutBox(page, ".row-fluid.issue-list-wrap");
+  const leftMenu = await layoutBox(page, ".left-menu.span2.span-hard-wrap");
+  const content = await layoutBox(page, "#span10.span10.span-hard-wrap");
+  const searchForm = await layoutBox(page, "form#search");
+  const projectSelect = await layoutBox(page, "#projects");
+  const searchInput = await layoutBox(page, ".search-bar");
+  const tabs = await layoutBox(page, ".nav.nav-tabs.nm");
+  const filterWrap = await layoutBox(page, ".filter-wrap.small-heights");
+  const postList = await layoutBox(page, ".post-list-wrap");
+  const issueRow = await layoutBox(page, "#issue-item-207");
+  const avatar = await layoutBox(page, "#issue-item-207 .avatar-wrap.mlarge");
+  const title = await layoutBox(page, "#issue-item-207 .title-wrap");
+  const infos = await layoutBox(page, "#issue-item-207 .infos");
+  const dueDate = await layoutBox(page, "#issue-item-207 .span2.hide-in-mobile");
+
+  expect(Math.round(header.height)).toBe(120);
+  expect(Math.round(menu.height)).toBe(40);
+  expect(pageWrap.y).toBeGreaterThanOrEqual(menu.y + menu.height);
+  expect(issueWrap.y).toBeGreaterThanOrEqual(pageWrap.y);
+  expect(leftMenu.x).toBeLessThan(content.x);
+  expect(Math.abs(leftMenu.y - content.y)).toBeLessThanOrEqual(1);
+  expect(content.width).toBeGreaterThan(700);
+  expect(tabs.y).toBeLessThan(searchForm.y);
+  expect(projectSelect.x).toBeLessThanOrEqual(searchInput.x);
+  expect(searchInput.width).toBeGreaterThanOrEqual(180);
+  expect(tabs.y).toBeLessThan(filterWrap.y);
+  expect(filterWrap.y).toBeLessThanOrEqual(postList.y);
+  expect(issueRow.y).toBeGreaterThanOrEqual(postList.y);
+  expect(avatar.x).toBeLessThan(title.x);
+  expect(title.y).toBeLessThan(infos.y);
+  expect(dueDate.x).toBeGreaterThan(title.x);
 });
 
 test("project issue label management route renders the legacy label editor shell", async ({

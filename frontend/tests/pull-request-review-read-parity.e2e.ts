@@ -702,6 +702,38 @@ test("renders organization PR lists and REST error shells", async ({ page }) => 
   const orgList = await layoutBox(page, ".post-list-wrap");
   expect(orgList.y).toBeGreaterThan(orgTabs.y);
   expect(orgList.width).toBeGreaterThan(700);
+  const header = await layoutBox(page, ".project-header-outer");
+  const menu = await layoutBox(page, ".project-menu-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const listWrap = await layoutBox(page, ".row-fluid.cb");
+  const leftMenu = await layoutBox(page, ".left-menu.span2.search-wrap");
+  const content = await layoutBox(page, "#span10.span10.span-hard-wrap");
+  const searchForm = await layoutBox(page, "form#search");
+  const searchInput = await layoutBox(page, ".search-bar");
+  const tabContent = await layoutBox(page, ".tab-content");
+  const row = await layoutBox(page, ".post-list-wrap .post-item");
+  const avatar = await layoutBox(page, ".post-list-wrap .avatar-wrap.mlarge");
+  const title = await layoutBox(page, ".post-list-wrap .title-wrap");
+  const infos = await layoutBox(page, ".post-list-wrap .infos");
+  const state = await layoutBox(page, ".post-list-wrap .state");
+
+  expect(Math.round(header.height)).toBe(120);
+  expect(Math.round(menu.height)).toBe(40);
+  expect(pageWrap.y).toBeGreaterThanOrEqual(menu.y + menu.height + 19);
+  expect(Math.abs(projectPage.y - pageWrap.y)).toBeLessThanOrEqual(1);
+  expect(listWrap.y).toBeGreaterThanOrEqual(projectPage.y);
+  expect(leftMenu.x).toBeLessThan(content.x);
+  expect(Math.abs(leftMenu.y - content.y)).toBeLessThanOrEqual(1);
+  expect(content.width).toBeGreaterThan(700);
+  expect(searchForm.y).toBeLessThanOrEqual(orgTabs.y);
+  expect(searchInput.width).toBeGreaterThanOrEqual(160);
+  expect(orgTabs.y).toBeLessThan(tabContent.y);
+  expect(tabContent.y).toBeLessThanOrEqual(orgList.y);
+  expect(row.width).toBeGreaterThanOrEqual(700);
+  expect(avatar.x).toBeLessThan(title.x);
+  expect(title.y).toBeLessThan(infos.y);
+  expect(state.x).toBeGreaterThan(title.x);
 
   await page.goto("/yona/organizations/acme/closedPullrequests?pageNum=1");
   await expect(page.locator(".state.closed")).toBeVisible();

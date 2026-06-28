@@ -139,6 +139,31 @@ test("direct organization directory preserves the legacy list shell", async ({ p
   await expect(page.locator(".all-projects .project")).toHaveCount(1);
   await expect(page.locator(".all-projects .project .black")).toHaveText("weblabs");
   await expect(page.locator(".all-projects .project .name-tag")).toContainText("created");
+
+  const breadcrumb = await layoutBox(page, ".site-breadcrumb-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const searchWrap = await layoutBox(page, ".search-wrap");
+  const searchForm = await layoutBox(page, "#search form");
+  const searchInput = await layoutBox(page, "#search input[name='filter']");
+  const projectList = await layoutBox(page, ".all-projects");
+  const projectRow = await layoutBox(page, ".all-projects .project");
+  const avatar = await layoutBox(page, ".all-projects .project .owner-avatar-wrap");
+  const title = await layoutBox(page, ".all-projects .project .black");
+  const description = await layoutBox(page, ".all-projects .project .desc");
+  const nameTag = await layoutBox(page, ".all-projects .project .name-tag");
+
+  expect(Math.round(breadcrumb.y)).toBeGreaterThanOrEqual(40);
+  expect(pageWrap.y).toBeGreaterThan(breadcrumb.y + breadcrumb.height);
+  expect(Math.abs(projectPage.y - pageWrap.y)).toBeLessThanOrEqual(1);
+  expect(searchWrap.y).toBeLessThanOrEqual(projectList.y);
+  expect(searchForm.width).toBeGreaterThanOrEqual(180);
+  expect(searchInput.width).toBeGreaterThanOrEqual(150);
+  expect(projectRow.y).toBeGreaterThanOrEqual(searchWrap.y);
+  expect(projectRow.width).toBeGreaterThanOrEqual(500);
+  expect(avatar.x).toBeLessThan(title.x);
+  expect(title.y).toBeLessThanOrEqual(description.y);
+  expect(nameTag.y).toBeGreaterThanOrEqual(description.y);
 });
 
 test("direct organization directory keeps its legacy shell on a mobile viewport", async ({
