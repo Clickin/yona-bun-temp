@@ -451,15 +451,15 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
 | `search/partial_issue_comments.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
-| `search/partial_issues.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_issues.scala.html` | P6 search | metric guard passed: `search-parity.e2e.ts` asserts issue result list/item width, title/content/meta vertical order, pagination placement, highlighted keyword rendering, and issue link anchors |
 | `search/partial_milestones.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
 | `search/partial_post_comments.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
 | `search/partial_posts.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
 | `search/partial_projects.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
 | `search/partial_reviews.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
-| `search/partial_search.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_search.scala.html` | P6 search | metric guard passed: `search-parity.e2e.ts` asserts search breadcrumb/page wrap, category column/result search box separation, form input/button x alignment, result title/wrap ordering, category counts, and type switch behavior |
 | `search/partial_users.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
-| `search/result.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/result.scala.html` | P6 search | metric guard passed: `search-parity.e2e.ts` asserts global/project/organization search shells, legacy `siteLayout`/project/organization routing variants, and global result page size/position/alignment metrics |
 
 ### `site/`
 

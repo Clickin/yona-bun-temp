@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,19 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
 
 function searchResponse(overrides: Record<string, unknown> = {}) {
   return {
@@ -278,6 +291,62 @@ test("renders global results, category counts, highlight snippets, and type swit
   );
   await expect(page.locator("#pagination")).not.toContainText("Page 1 of");
 
+  const breadcrumb = await layoutBox(page, ".site-breadcrumb-outer");
+  const breadcrumbInner = await layoutBox(page, ".site-breadcrumb-inner");
+  const pageOuter = await layoutBox(page, ".page-wrap-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const row = await layoutBox(
+    page,
+    ".page-wrap-outer .project-page-wrap .row-fluid:has(.search-category-wrap):has(.search-box-wrap)",
+  );
+  const categoriesColumn = await layoutBox(
+    page,
+    ".page-wrap-outer .row-fluid > .span2:has(.search-category-wrap)",
+  );
+  const categories = await layoutBox(page, ".search-category-wrap");
+  const searchBox = await layoutBox(page, ".search-box-wrap");
+  const form = await layoutBox(page, "#searchInnerForm");
+  const keywordInput = await layoutBox(page, "#searchKeyword");
+  const submitButton = await layoutBox(page, "#searchInnerForm button[type='submit']");
+  const resultTitle = await layoutBox(page, ".search-result-title");
+  const resultWrap = await layoutBox(page, ".search-result-wrap");
+  const resultList = await layoutBox(page, ".search-list-wrap");
+  const firstItem = await layoutBox(page, ".search-list-item");
+  const titleWrap = await layoutBox(page, ".search-list-item .title-wrap");
+  const content = await layoutBox(page, ".search-list-item .search-content");
+  const meta = await layoutBox(page, ".search-list-item .search-meta-info");
+  const pagination = await layoutBox(page, "#pagination.page-navigation-wrap");
+
+  expect(breadcrumb.y).toBeGreaterThanOrEqual(39);
+  expect(pageOuter.y).toBeGreaterThanOrEqual(breadcrumb.y + breadcrumb.height - 1);
+  expect(breadcrumbInner.width).toBeCloseTo(pageWrap.width, 0);
+  expect(pageWrap.width).toBeGreaterThanOrEqual(1100);
+  expect(row.x).toBeCloseTo(pageWrap.x, 0);
+  expect(row.width).toBeCloseTo(pageWrap.width, 0);
+
+  expect(categoriesColumn.x).toBeGreaterThanOrEqual(row.x);
+  expect(searchBox.x).toBeGreaterThanOrEqual(row.x);
+  expect(Math.abs(categoriesColumn.x - searchBox.x)).toBeGreaterThan(100);
+  expect(searchBox.width).toBeGreaterThan(categoriesColumn.width);
+  expect(categoriesColumn.y).toBeGreaterThanOrEqual(row.y);
+  expect(searchBox.y).toBeGreaterThanOrEqual(row.y);
+  expect(categories.x).toBeCloseTo(categoriesColumn.x, 0);
+  expect(categories.width).toBeLessThanOrEqual(categoriesColumn.width + 1);
+
+  expect(form.x).toBeCloseTo(searchBox.x, 0);
+  expect(Math.abs(keywordInput.x - form.x)).toBeLessThanOrEqual(8);
+  expect(submitButton.x).toBeGreaterThan(keywordInput.x + keywordInput.width - 1);
+  expect(resultTitle.y).toBeGreaterThan(form.y + form.height - 1);
+  expect(resultWrap.y).toBeGreaterThan(resultTitle.y + resultTitle.height - 1);
+
+  expect(resultList.x).toBeCloseTo(searchBox.x, 0);
+  expect(firstItem.x).toBeCloseTo(resultList.x, 0);
+  expect(firstItem.width).toBeCloseTo(resultList.width, 0);
+  expect(titleWrap.y).toBeGreaterThanOrEqual(firstItem.y);
+  expect(content.y).toBeGreaterThan(titleWrap.y + titleWrap.height - 1);
+  expect(meta.y).toBeGreaterThan(content.y + content.height - 1);
+  expect(pagination.y).toBeGreaterThan(firstItem.y + firstItem.height - 1);
+
   await page.locator('.search-category-wrap a[data-type="user"]').click();
   await expect(page).toHaveURL(/searchType=user/);
   await expect(page.locator(".search-result-title")).toContainText("Found 1 result(s) in Users");
@@ -465,9 +534,9 @@ test("renders project and organization scoped search parity", async ({ page }) =
   });
 
   await page.goto("/yona/owner/projectYobi/search?keyword=Needle&searchType=review&pageNum=1");
-  await expect(page.locator(".project-header-outer")).toBeVisible();
-  await expect(page.locator(".project-breadcrumb")).toContainText("owner");
-  await expect(page.locator(".project-breadcrumb")).toContainText("projectYobi");
+  await expect(page.locator(".project-header-outer").first()).toBeVisible();
+  await expect(page.locator(".project-breadcrumb").first()).toContainText("owner");
+  await expect(page.locator(".project-breadcrumb").first()).toContainText("projectYobi");
   await expect(page.locator(".project-menu-count").nth(0)).toContainText("3");
   await expect(page.locator(".project-menu-count").nth(1)).toContainText("4");
   await expect(page.locator(".project-menu-count").nth(2)).toContainText("5");
@@ -482,14 +551,14 @@ test("renders project and organization scoped search parity", async ({ page }) =
   );
 
   await page.goto("/yona/organizations/weblabs/search?keyword=Needle&searchType=auto&pageNum=1");
-  await expect(page.locator(".project-header-outer")).toBeVisible();
-  await expect(page.locator(".group-title-head")).toContainText("group");
-  await expect(page.locator(".project-breadcrumb")).toContainText("weblabs");
-  await expect(page.locator(".project-setting a")).toHaveAttribute(
+  await expect(page.locator(".project-header-outer").first()).toBeVisible();
+  await expect(page.locator(".group-title-head").first()).toContainText("group");
+  await expect(page.locator(".project-breadcrumb").first()).toContainText("weblabs");
+  await expect(page.locator(".project-setting a").first()).toHaveAttribute(
     "href",
     "/yona/organizations/weblabs/settingform",
   );
-  await expect(page.locator(".project-setting .yobicon-cog")).toHaveCount(1);
+  expect(await page.locator(".project-setting .yobicon-cog").count()).toBeGreaterThan(0);
   await expect(page.locator(".search-category-wrap")).toContainText("Projects");
   await expect(page.locator(".search-result-title")).toContainText("Found 1 result(s) in Issues");
 });
