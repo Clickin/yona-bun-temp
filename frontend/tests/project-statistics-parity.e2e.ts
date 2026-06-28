@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,19 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
 
 const projectContainerPayload = () => ({
   backgroundUrl: "",
@@ -134,4 +147,17 @@ test("project statistics route preserves the legacy under-construction shell", a
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".project-page-wrap")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+
+  const projectHeader = await layoutBox(page, ".project-header-outer");
+  const projectMenu = await layoutBox(page, ".project-menu-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const heading = await layoutBox(page, ".project-page-wrap > h1");
+
+  expect(projectMenu.y).toBeGreaterThanOrEqual(projectHeader.y + projectHeader.height - 1);
+  expect(pageWrap.y).toBeGreaterThanOrEqual(projectMenu.y + projectMenu.height - 1);
+  expect(projectPage.width).toBeGreaterThanOrEqual(900);
+  expect(heading.x).toBeCloseTo(projectPage.x, 0);
+  expect(heading.y).toBeGreaterThanOrEqual(projectPage.y);
+  expect(heading.width).toBeCloseTo(projectPage.width, 0);
 });

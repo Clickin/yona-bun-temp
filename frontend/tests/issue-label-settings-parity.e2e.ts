@@ -7,6 +7,19 @@ const restJsonHeaders = {
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
+
 function projectContainer(viewerCanUpdate = true) {
   return {
     cloneUrl: "https://example.com/admin/projectYobi.git",
@@ -284,6 +297,51 @@ test("issue label settings preserve typeahead, new-category choice, and edit mod
 
   await expect(page.locator("#frmNewLabel")).toBeVisible();
   await expect(page.locator("#copyLabel")).toBeVisible();
+
+  const projectHeader = await layoutBox(page, ".project-header-outer");
+  const projectMenu = await layoutBox(page, ".project-menu-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".project-page-wrap.label-editor-wrap");
+  const settingTabs = await layoutBox(page, ".project-page-wrap > .nav-tabs");
+  const activeTab = await layoutBox(page, "#subMenuIssueLabel");
+  const copyForm = await layoutBox(page, "#copyLabel");
+  const newForm = await layoutBox(page, "#frmNewLabel");
+  const copyInputs = await layoutBox(page, "#copyLabel .form-wrap");
+  const copySubmit = await layoutBox(page, "#copyLabel .btn-submit");
+  const newInputs = await layoutBox(page, "#frmNewLabel .form-wrap");
+  const newSubmit = await layoutBox(page, "#frmNewLabel .btn-submit");
+  const presetColors = await layoutBox(page, "#frmNewLabel .label-preset-colors");
+  const labelsList = await layoutBox(page, "#labelsList");
+  const listHead = await layoutBox(page, "#labelsList .list-head");
+  const categoryWrap = await layoutBox(page, "#labelsList .category-wrap");
+  const categoryName = await layoutBox(page, "#labelsList .category-name");
+  const labelsTable = await layoutBox(page, "#labelsList table");
+  const labelBadge = await layoutBox(page, "#labelsList .issue-label.active");
+  const actions = await layoutBox(page, "#labelsList td.actions");
+
+  expect(projectMenu.y).toBeGreaterThanOrEqual(projectHeader.y + projectHeader.height - 1);
+  expect(pageWrap.y).toBeGreaterThanOrEqual(projectMenu.y + projectMenu.height - 1);
+  expect(projectPage.width).toBeGreaterThanOrEqual(900);
+  expect(settingTabs.x).toBeCloseTo(projectPage.x, 0);
+  expect(settingTabs.width).toBeCloseTo(projectPage.width, 0);
+  expect(activeTab.y).toBeGreaterThanOrEqual(settingTabs.y);
+  expect(copyForm.y).toBeGreaterThan(settingTabs.y + settingTabs.height - 1);
+  expect(newForm.y).toBeGreaterThan(copyForm.y + copyForm.height - 1);
+  expect(copyInputs.x).toBeGreaterThanOrEqual(copyForm.x);
+  expect(copySubmit.x).toBeGreaterThanOrEqual(copyForm.x);
+  expect(copySubmit.y).toBeGreaterThanOrEqual(copyInputs.y);
+  expect(newInputs.x).toBeGreaterThanOrEqual(newForm.x);
+  expect(newSubmit.x).toBeGreaterThanOrEqual(newForm.x);
+  expect(newSubmit.y).toBeGreaterThanOrEqual(newInputs.y);
+  expect(presetColors.y).toBeGreaterThan(newInputs.y);
+  expect(labelsList.y).toBeGreaterThan(newForm.y + newForm.height - 1);
+  expect(labelsList.width).toBeCloseTo(projectPage.width, 0);
+  expect(listHead.y).toBeGreaterThanOrEqual(labelsList.y);
+  expect(categoryWrap.y).toBeGreaterThan(listHead.y + listHead.height - 1);
+  expect(categoryName.x).toBeLessThan(labelsTable.x);
+  expect(labelBadge.x).toBeGreaterThan(categoryName.x + categoryName.width - 1);
+  expect(actions.x).toBeGreaterThan(labelBadge.x + labelBadge.width - 1);
+
   await page.locator('#frmNewLabel input[name="category"]').fill("Ty");
   await expect(page.locator(".typeahead.dropdown-menu")).toContainText("Type");
   await page.locator(".typeahead.dropdown-menu button", { hasText: "Type" }).click();
@@ -307,6 +365,19 @@ test("issue label settings preserve typeahead, new-category choice, and edit mod
 
   await page.locator('button[data-update-uri$="/issue/labels/5"]').click();
   await expect(page.locator("#editLabel")).toBeVisible();
+  const editLabelModal = await layoutBox(page, "#editLabel");
+  const editLabelMessage = await layoutBox(page, "#editLabel .edit-label-form");
+  const editLabelCategory = await layoutBox(page, '#editLabel select[name="category.id"]');
+  const editLabelName = await layoutBox(page, '#editLabel input[name="name"]');
+  const editLabelColors = await layoutBox(page, "#editLabel .label-preset-colors.edit");
+  const editLabelButtons = await layoutBox(page, "#editLabel .buttons");
+
+  expect(editLabelModal.width).toBeGreaterThanOrEqual(400);
+  expect(editLabelMessage.y).toBeGreaterThanOrEqual(editLabelModal.y);
+  expect(editLabelCategory.x).toBeLessThan(editLabelName.x);
+  expect(editLabelColors.y).toBeGreaterThan(editLabelName.y + editLabelName.height - 1);
+  expect(editLabelButtons.y).toBeGreaterThan(editLabelColors.y + editLabelColors.height - 1);
+
   await expect(page.locator('#editLabel input[name="name"]')).toHaveValue("bug");
   await page.locator('#editLabel input[name="name"]').fill("defect");
   await page.locator('#editLabel input[name="color"]').fill("#ff7770");
@@ -318,6 +389,19 @@ test("issue label settings preserve typeahead, new-category choice, and edit mod
 
   await page.locator('button[data-category-update-uri$="/issue/labelCategories/4"]').click();
   await expect(page.locator("#editCategory")).toBeVisible();
+  const editCategoryModal = await layoutBox(page, "#editCategory");
+  const editCategoryMessage = await layoutBox(page, "#editCategory .edit-label-category-form");
+  const editCategoryName = await layoutBox(page, '#editCategory input[name="name"]');
+  const editCategoryDesc = await layoutBox(page, "#editCategory .desc");
+  const editCategorySelect = await layoutBox(page, '#editCategory select[name="isExclusive"]');
+  const editCategoryButtons = await layoutBox(page, "#editCategory .buttons");
+
+  expect(editCategoryModal.width).toBeGreaterThanOrEqual(400);
+  expect(editCategoryMessage.y).toBeGreaterThanOrEqual(editCategoryModal.y);
+  expect(editCategoryDesc.y).toBeGreaterThan(editCategoryName.y + editCategoryName.height - 1);
+  expect(editCategorySelect.x).toBeGreaterThan(editCategoryDesc.x);
+  expect(editCategoryButtons.y).toBeGreaterThan(editCategoryDesc.y + editCategoryDesc.height - 1);
+
   await expect(page.locator('#editCategory input[name="name"]')).toHaveValue("Type");
   await page.locator('#editCategory input[name="name"]').fill("Kind");
   await page.locator('#editCategory select[name="isExclusive"]').selectOption("true");
