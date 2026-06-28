@@ -302,7 +302,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "auth-account-lifecycle",
     label: "Auth and account lifecycle",
-    status: "gap",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/src\/app-runtime-context\.tsx$/i,
       /^frontend\/src\/routes\/-shared\.tsx$/i,
@@ -333,6 +333,8 @@ const DOMAIN_BUCKETS = [
       "docs/provenance/legacy-porting-progress.md",
       "docs/provenance/phase-0b/legacy-test-inventory.md",
       "docs/provenance/auth-deferred-oauth-ldap.md",
+      "docs/provenance/ui-parity-reports/ui-parity-auth-public-entry.md",
+      "docs/provenance/ui-parity-reports/template-first-p1-auth-public-home.md",
       "docs/plans/2026-06-21-deferred-parity-goal-directive.md",
       "docs/provenance/ui-parity-reports/ui-parity-site-admin-setup.md",
       "docs/provenance/ui-parity-reports/template-first-p0-global-shell.md",

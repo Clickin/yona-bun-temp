@@ -126,19 +126,19 @@ test("maps anonymous help route changes to the help parity slice", () => {
 
 test("marks partial legacy slices as expected non-parity until audit evidence lands", () => {
   const result = runGate([
-    "crates/server/src/session.rs",
-    "crates/server/tests/auth_workspace_contract.rs",
+    "frontend/src/app-view-models.ts",
+    "frontend/src/route-parity.spec.tsx",
   ]);
 
   assert.equal(result.verdict, "expected-nonparity");
   assert.equal(shouldBlockForStrictGate(result), true);
-  assert.match(result.summary, /Auth and account lifecycle/);
+  assert.match(result.summary, /Shared frontend view models/);
 });
 
 test("passes partial legacy slices when tests and parity audit updates land together", () => {
   const result = runGate([
-    "crates/server/src/session.rs",
-    "crates/server/tests/auth_workspace_contract.rs",
+    "frontend/src/app-view-models.ts",
+    "frontend/src/route-parity.spec.tsx",
     "docs/provenance/core-parity-audit.md",
   ]);
 
@@ -154,14 +154,14 @@ test("maps auth runtime context changes to the account lifecycle slice", () => {
     "frontend/src/routes/lostPassword/route.tsx",
     "frontend/src/routes/resetPassword/route.tsx",
     "frontend/src/auth-workspace-shell.spec.tsx",
-    "docs/provenance/core-parity-audit.md",
+    "docs/provenance/ui-parity-reports/template-first-p1-auth-public-home.md",
   ]);
 
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["auth-account-lifecycle"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["auth-account-lifecycle", "parity"]],
   );
 });
 
@@ -169,14 +169,14 @@ test("maps restricted sample route changes to the account lifecycle slice", () =
   const result = runGate([
     "frontend/src/routes/-restricted-view.tsx",
     "frontend/src/restricted-route-parity.spec.tsx",
-    "docs/provenance/legacy-porting-progress.md",
+    "docs/provenance/ui-parity-reports/template-first-p7-site-admin-error-security.md",
   ]);
 
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["auth-account-lifecycle"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["auth-account-lifecycle", "parity"]],
   );
 });
 
