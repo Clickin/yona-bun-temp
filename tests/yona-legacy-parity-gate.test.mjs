@@ -126,19 +126,19 @@ test("maps anonymous help route changes to the help parity slice", () => {
 
 test("marks partial legacy slices as expected non-parity until audit evidence lands", () => {
   const result = runGate([
-    "frontend/src/app-view-models.ts",
-    "frontend/src/route-parity.spec.tsx",
+    "crates/persistence/src/repo.rs",
+    "crates/server/tests/rest_contract.rs",
   ]);
 
   assert.equal(result.verdict, "expected-nonparity");
   assert.equal(shouldBlockForStrictGate(result), true);
-  assert.match(result.summary, /Shared frontend view models/);
+  assert.match(result.summary, /Canonical schema and persistence foundation/);
 });
 
 test("passes partial legacy slices when tests and parity audit updates land together", () => {
   const result = runGate([
-    "frontend/src/app-view-models.ts",
-    "frontend/src/route-parity.spec.tsx",
+    "crates/persistence/src/repo.rs",
+    "crates/server/tests/rest_contract.rs",
     "docs/provenance/core-parity-audit.md",
   ]);
 
@@ -221,8 +221,8 @@ test("maps shared frontend view model changes to shared view model evidence", ()
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["shared-frontend-view-models"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["shared-frontend-view-models", "parity"]],
   );
 });
 
