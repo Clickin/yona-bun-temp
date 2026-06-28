@@ -113,6 +113,75 @@ async function assertLegacyForbiddenDefaultMetrics(page: Page) {
   });
 }
 
+async function assertLegacySearchConversationRow(
+  page: Page,
+  {
+    author,
+    authorHref,
+    createdLabel,
+    href,
+    number,
+    snippet,
+    title,
+  }: {
+    author: string;
+    authorHref: string;
+    createdLabel: string;
+    href: string;
+    number: string;
+    snippet: string;
+    title: string;
+  },
+): Promise<void> {
+  await expect(page.locator(".search-list-wrap")).toHaveCount(1);
+  await expect(page.locator(".search-list-item")).toHaveCount(1);
+  await expect(page.locator(".title-wrap .post-id")).toHaveText(`#${number}`);
+  await expect(page.locator(".title-wrap .title")).toHaveAttribute("href", href);
+  await expect(page.locator(".title-wrap .title")).toContainText(title);
+  await expect(page.locator(".search-content .search-content-body")).toContainText(snippet);
+  await expect(page.locator(".search-meta-info .project-link.meta-item")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi",
+  );
+  await expect(page.locator(".search-meta-info .project-link.meta-item")).toHaveText(
+    "owner/projectYobi",
+  );
+  await expect(page.locator(`.search-meta-info .meta-item[href="${authorHref}"]`)).toHaveAttribute(
+    "data-toggle",
+    "tooltip",
+  );
+  await expect(page.locator(`.search-meta-info .meta-item[href="${authorHref}"]`)).toHaveAttribute(
+    "data-placement",
+    "top",
+  );
+  await expect(page.locator(`.search-meta-info .meta-item[href="${authorHref}"]`)).toHaveAttribute(
+    "title",
+    author,
+  );
+  await expect(page.locator(`.search-meta-info .meta-item[href="${authorHref}"]`)).toHaveText(
+    author[0].toUpperCase() + author.slice(1),
+  );
+  await expect(page.locator(".search-meta-info .meta-item").nth(2)).toHaveAttribute(
+    "title",
+    createdLabel,
+  );
+  await expect(page.locator(".search-meta-info .meta-item").nth(2)).toHaveText(createdLabel);
+
+  const list = await layoutBox(page, ".search-list-wrap");
+  const item = await layoutBox(page, ".search-list-item");
+  const titleWrap = await layoutBox(page, ".search-list-item .title-wrap");
+  const content = await layoutBox(page, ".search-list-item .search-content");
+  const meta = await layoutBox(page, ".search-list-item .search-meta-info");
+  const pagination = await layoutBox(page, "#pagination");
+
+  expect(item.x).toBeCloseTo(list.x, 0);
+  expect(item.width).toBeCloseTo(list.width, 0);
+  expect(titleWrap.y).toBeGreaterThanOrEqual(item.y);
+  expect(content.y).toBeGreaterThan(titleWrap.y + titleWrap.height - 1);
+  expect(meta.y).toBeGreaterThan(content.y + content.height - 1);
+  expect(pagination.y).toBeGreaterThan(item.y + item.height - 1);
+}
+
 function searchResponse(overrides: Record<string, unknown> = {}) {
   return {
     context: {
@@ -546,28 +615,37 @@ test("renders global results, category counts, highlight snippets, and type swit
   expect(projectMeta.y).toBeGreaterThan(projectContent.y + projectContent.height - 1);
 
   await page.locator('.search-category-wrap a[data-type="issue_comment"]').click();
-  await expect(page.locator(".title-wrap .post-id")).toContainText("#1");
-  await expect(page.locator(".title-wrap .title")).toHaveAttribute(
-    "href",
-    "/yona/owner/projectYobi/issue/1#comment-2",
-  );
-  await expect(page.locator(".title-wrap .title")).toContainText("Re) Needle issue title");
+  await assertLegacySearchConversationRow(page, {
+    author: "commenter",
+    authorHref: "/yona/commenter",
+    createdLabel: "2026-05-03",
+    href: "/yona/owner/projectYobi/issue/1#comment-2",
+    number: "1",
+    snippet: "Needle issue reply",
+    title: "Re) Needle issue title",
+  });
 
   await page.locator('.search-category-wrap a[data-type="post_comment"]').click();
-  await expect(page.locator(".title-wrap .post-id")).toContainText("#3");
-  await expect(page.locator(".title-wrap .title")).toHaveAttribute(
-    "href",
-    "/yona/owner/projectYobi/post/3#comment-4",
-  );
-  await expect(page.locator(".title-wrap .title")).toContainText("Re) Needle post title");
+  await assertLegacySearchConversationRow(page, {
+    author: "commenter",
+    authorHref: "/yona/commenter",
+    createdLabel: "2026-05-04",
+    href: "/yona/owner/projectYobi/post/3#comment-4",
+    number: "3",
+    snippet: "Needle post reply",
+    title: "Re) Needle post title",
+  });
 
   await page.locator('.search-category-wrap a[data-type="review"]').click();
-  await expect(page.locator(".title-wrap .post-id")).toContainText("#7");
-  await expect(page.locator(".title-wrap .title")).toHaveAttribute(
-    "href",
-    "/yona/owner/projectYobi/pullRequest/7#comment-8",
-  );
-  await expect(page.locator(".title-wrap .title")).toContainText("Re) Needle pull request");
+  await assertLegacySearchConversationRow(page, {
+    author: "reviewer",
+    authorHref: "/yona/reviewer",
+    createdLabel: "2026-05-05",
+    href: "/yona/owner/projectYobi/pullRequest/7#comment-8",
+    number: "7",
+    snippet: "Needle review reply",
+    title: "Re) Needle pull request",
+  });
 });
 
 test("global search keeps the legacy result shell on a mobile viewport", async ({ page }) => {
