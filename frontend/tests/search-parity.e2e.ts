@@ -805,6 +805,76 @@ test("persists the notification welcome guide toggle with the legacy localStorag
 
   await page.goto("/yona/notifications");
 
+  await expect(page.locator(".notification-page .nav.nav-tabs")).toHaveCount(1);
+  await expect(
+    page.locator(".notification-page .nav.nav-tabs > li:nth-child(1).active a"),
+  ).toHaveAttribute("href", "/yona/notifications");
+  await expect(
+    page.locator(".notification-page .nav.nav-tabs > li:nth-child(1).active a"),
+  ).toHaveText("Notification");
+  await expect(
+    page.locator(".notification-page .nav.nav-tabs > li:nth-child(2) a"),
+  ).toHaveAttribute("href", "/yona/user/issues");
+  await expect(page.locator(".notification-page .nav.nav-tabs > li:nth-child(2) a")).toHaveText(
+    "My Issues",
+  );
+  await expect(
+    page.locator(".notification-page .nav.nav-tabs > li:nth-child(3) a"),
+  ).toHaveAttribute("href", "/yona/user/files");
+  await expect(page.locator(".notification-page .nav.nav-tabs > li:nth-child(3) a")).toHaveText(
+    "My Files",
+  );
+  const setDefaultButton = page.locator(".notification-page #setDefaultLoginPage");
+  await expect(setDefaultButton).toHaveAttribute("type", "button");
+  await expect(setDefaultButton).toHaveAttribute("class", /ybtn/);
+  await expect(setDefaultButton).toHaveAttribute("class", /hide-in-mobile/);
+  await expect(setDefaultButton).toHaveAttribute("data-url", "notifications");
+  await expect(setDefaultButton).toHaveAttribute("data-toggle", "popover");
+  await expect(setDefaultButton).toHaveAttribute("data-trigger", "hover");
+  await expect(setDefaultButton).toHaveAttribute("data-placement", "bottom");
+  await expect(setDefaultButton).toHaveAttribute("title", "Set to default page");
+  await expect(setDefaultButton).toContainText("Set to default page");
+
+  const mySeriesTabs = await layoutBox(page, ".notification-page .nav.nav-tabs");
+  const notiTab = await layoutBox(page, ".notification-page .nav.nav-tabs > li:nth-child(1)");
+  const issuesTab = await layoutBox(page, ".notification-page .nav.nav-tabs > li:nth-child(2)");
+  const filesTab = await layoutBox(page, ".notification-page .nav.nav-tabs > li:nth-child(3)");
+  const defaultTab = await layoutBox(page, ".notification-page .nav.nav-tabs > li:nth-child(4)");
+  const defaultButtonBox = await layoutBox(page, ".notification-page #setDefaultLoginPage");
+  const notificationWrap = await layoutBox(page, ".notification-page .notification-wrap");
+  const mySeriesStyles = await page
+    .locator(".notification-page .nav.nav-tabs")
+    .evaluate((element) => {
+      const nav = window.getComputedStyle(element);
+      const active = window.getComputedStyle(element.querySelector("li.active a") as HTMLElement);
+      const button = window.getComputedStyle(
+        element.querySelector("#setDefaultLoginPage") as HTMLElement,
+      );
+      return {
+        activeBorderBottomColor: active.borderBottomColor,
+        buttonDisplay: button.display,
+        buttonFontSize: button.fontSize,
+        buttonHeight: button.height,
+        marginBottom: nav.marginBottom,
+      };
+    });
+  expect(notiTab.x).toBeGreaterThanOrEqual(mySeriesTabs.x);
+  expect(issuesTab.x).toBeGreaterThan(notiTab.x);
+  expect(filesTab.x).toBeGreaterThan(issuesTab.x);
+  expect(defaultTab.x).toBeGreaterThan(filesTab.x);
+  expect(defaultButtonBox.x).toBeGreaterThan(filesTab.x);
+  expect(issuesTab.y).toBeCloseTo(notiTab.y, 0);
+  expect(filesTab.y).toBeCloseTo(notiTab.y, 0);
+  expect(defaultButtonBox.y).toBeGreaterThanOrEqual(mySeriesTabs.y);
+  expect(notificationWrap.y).toBeGreaterThan(mySeriesTabs.y + mySeriesTabs.height - 1);
+  expect(mySeriesStyles).toEqual({
+    activeBorderBottomColor: "rgba(0, 0, 0, 0)",
+    buttonDisplay: "inline-block",
+    buttonFontSize: "14px",
+    buttonHeight: "30px",
+    marginBottom: "15px",
+  });
+
   await expect(page.locator(".site-guide-outer")).toBeVisible();
   await expect(page.locator(".site-guide-outer")).not.toHaveClass(/hide/);
   await page.locator("#toggleIntro").click();
