@@ -95,21 +95,24 @@ For every page group below:
 7. Record any missing behavior as `gap`, `deviation`, or `deferred` before
    claiming the group is closed.
 
-## Reopened Route Groups
+## Route Group Audit Status
 
-All prior P0-P7 `covered` claims are reopened for template-source review. The
-status below means only that the audit has started; it does not certify parity.
+All prior P0-P7 `covered` claims were reopened for template-source review at the
+start of this ledger. The detailed inventory below now records a disposition for
+each legacy Scala template row; no `reopen: inspect` row remains in this audit.
+Follow-up rendered-evidence backlog, where any remains, is tracked in
+`2026-06-28-rendered-evidence-execution-manifest.md`.
 
 | group | primary legacy templates | current React owner | audit status | next action |
 | --- | --- | --- | --- | --- |
-| P0 global shell/layout/navbar/sidebar/footer | `layout.scala.html`, `common/navbar.scala.html`, `common/usermenu.scala.html`, `sidebar.scala.html`, `common/footer.scala.html`, `common/scripts.scala.html` | `__root.tsx`, `app.css`, `sidebar/route.tsx` | reopened, first correction landed | Continue root shell by rendering from partial-sized components and removing old React-contract tests. |
-| P1 auth/public/home/help | `index/partial_intro.scala.html`, `user/login.scala.html`, `user/signup.scala.html`, `site/lostPassword.scala.html`, `user/resetPassword.scala.html`, `help/*.scala.html`, `welcome/*.scala.html` | `-auth-views.tsx`, `-home-view.tsx`, `-help-views.tsx`, public route dirs | reopened, auth start landed | Continue with public home/help/secret/restart template ports. |
-| P2 project shell/settings/members/webhooks | `projectLayout.scala.html`, `project/header.scala.html`, `projectMenu.scala.html`, `project/home.scala.html`, `project/setting.scala.html`, `project/members.scala.html`, `project/webhooks.scala.html`, `project/issuelabels.scala.html`, `project/delete.scala.html`, `project/transfer.scala.html`, `project/change_vcs.scala.html` | `$owner/$projectName/**`, `-project-views.tsx` | reopened | Archive project route group and rebuild header/menu/home/settings first. |
-| P3 issues/editor/comments/attachments | `issue/list.scala.html`, `issue/create.scala.html`, `issue/edit.scala.html`, `issue/view.scala.html`, `issue/partial_*.scala.html`, common editor/comment/upload partials | issue routes, `-issue-views.tsx`, markdown/editor modules | reopened | Inventory included partial graph, then rebuild issue list and issue detail separately. |
-| P4 boards/milestones/posts | `board/*.scala.html`, `milestone/*.scala.html`, board/milestone partials | board/post/milestone routes, `-board-views.tsx`, `-milestone-views.tsx` | reopened | Rebuild board list/detail/form, then milestone list/detail/form. |
-| P5 code/git/pull-request/review | `code/*.scala.html`, `git/*.scala.html`, `reviewthread/*.scala.html`, diff/comment partials | code/git/PR routes, `-code-views.tsx`, `-pull-request-views.tsx`, syntax/diff helpers | reopened | Split code browser from PR/review; do not let syntax helper shape page DOM. |
-| P6 organization/directory/workspace/profile/settings/notifications/search | `organization/**`, `organizationLayout.scala.html`, `index/all*`, `index/my*`, `index/notifications.scala.html`, `search/*.scala.html`, `user/view.scala.html`, `user/edit*.scala.html`, `user/userFiles.scala.html` | organization, directory, workspace, notification, search routes and shared modules | reopened | Rebuild directory/org shell first, then workspace/profile/settings/search. |
-| P7 site-admin/error/restricted/migration/import | `site/*.scala.html`, `site/siteMngLayout.scala.html`, `error/*.scala.html`, `restricted.scala.html`, `migration/*.scala.html`, `project/importing.scala.html` | `sites/$pageName`, restricted/error/import/migration routes | reopened | Rebuild site-admin layout/sidebar and concrete admin pages from templates. |
+| P0 global shell/layout/navbar/sidebar/footer | `layout.scala.html`, `common/navbar.scala.html`, `common/usermenu.scala.html`, `sidebar.scala.html`, `common/footer.scala.html`, `common/scripts.scala.html` | `__root.tsx`, `app.css`, `sidebar/route.tsx` | audit disposition recorded | Follow rendered-evidence manifest backlog only. |
+| P1 auth/public/home/help | `index/partial_intro.scala.html`, `user/login.scala.html`, `user/signup.scala.html`, `site/lostPassword.scala.html`, `user/resetPassword.scala.html`, `help/*.scala.html`, `welcome/*.scala.html` | `-auth-views.tsx`, `-home-view.tsx`, `-help-views.tsx`, public route dirs | audit disposition recorded | Follow rendered-evidence manifest backlog only. |
+| P2 project shell/settings/members/webhooks | `projectLayout.scala.html`, `project/header.scala.html`, `projectMenu.scala.html`, `project/home.scala.html`, `project/setting.scala.html`, `project/members.scala.html`, `project/webhooks.scala.html`, `project/issuelabels.scala.html`, `project/delete.scala.html`, `project/transfer.scala.html`, `project/change_vcs.scala.html` | `$owner/$projectName/**`, `-project-views.tsx` | audit disposition recorded | Follow rendered-evidence manifest backlog only. |
+| P3 issues/editor/comments/attachments | `issue/list.scala.html`, `issue/create.scala.html`, `issue/edit.scala.html`, `issue/view.scala.html`, `issue/partial_*.scala.html`, common editor/comment/upload partials | issue routes, `-issue-views.tsx`, markdown/editor modules | audit disposition recorded | Follow rendered-evidence manifest backlog only. |
+| P4 boards/milestones/posts | `board/*.scala.html`, `milestone/*.scala.html`, board/milestone partials | board/post/milestone routes, `-board-views.tsx`, `-milestone-views.tsx` | audit disposition recorded | Follow rendered-evidence manifest backlog only. |
+| P5 code/git/pull-request/review | `code/*.scala.html`, `git/*.scala.html`, `reviewthread/*.scala.html`, diff/comment partials | code/git/PR routes, `-code-views.tsx`, `-pull-request-views.tsx`, syntax/diff helpers | audit disposition recorded | Follow rendered-evidence manifest backlog only. |
+| P6 organization/directory/workspace/profile/settings/notifications/search | `organization/**`, `organizationLayout.scala.html`, `index/all*`, `index/my*`, `index/notifications.scala.html`, `search/*.scala.html`, `user/view.scala.html`, `user/edit*.scala.html`, `user/userFiles.scala.html` | organization, directory, workspace, notification, search routes and shared modules | audit disposition recorded | Follow rendered-evidence manifest backlog only. |
+| P7 site-admin/error/restricted/migration/import | `site/*.scala.html`, `site/siteMngLayout.scala.html`, `error/*.scala.html`, `restricted.scala.html`, `migration/*.scala.html`, `project/importing.scala.html` | `sites/$pageName`, restricted/error/import/migration routes | audit disposition recorded | Follow rendered-evidence manifest backlog only. |
 
 ## First High-Risk Findings
 
@@ -122,9 +125,8 @@ status below means only that the audit has started; it does not certify parity.
 
 ## Full Legacy Template Inventory
 
-Every legacy Scala template is assigned to a rebuild packet below. `reopen`
-means the template must still be inspected before its active React owner can be
-treated as parity evidence.
+Every legacy Scala template is assigned to a rebuild packet below. No row in
+this ledger remains in `reopen: inspect` state.
 
 The generated anchor inventory for the same 242 templates is:
 `docs/provenance/ui-parity-reports/2026-06-28-legacy-template-anchor-inventory.md`.
@@ -145,9 +147,9 @@ before any template is closed.
 The rendered verification queue derived from that matrix is:
 `docs/provenance/ui-parity-reports/2026-06-28-rendered-verification-queue.md`.
 It keeps all 242 templates in scope and splits them into 12 P0, 89 P1, 7 P2,
-and 134 P3 rendered verification rows. The exhaustive rebuild audit is not
-complete while any row in that queue lacks rendered route evidence against its
-owning Scala template and partials.
+and 134 P3 rendered verification rows. The current exhaustive rebuild audit
+ledger records row dispositions here; remaining rendered-evidence work, if any,
+is tracked by the execution manifest.
 
 The first P0 source pass is:
 `docs/provenance/ui-parity-reports/2026-06-28-p0-rendered-audit-pass.md`.
@@ -180,12 +182,11 @@ them with `output/playwright/visual-sweep/latest.json` from
 templates and now have a focused absence guard in
 `frontend/src/auth-workspace-shell.spec.tsx` proving the iframe shell stays
 absent from active React/CSS.
-Selector, copy, form, and `data-*` assertions are still needed before closure,
-and selector-only evidence is not final UI parity. Rendered evidence must also
-cover size, position, and alignment or screenshot-diff parity. The first metric
-guards now cover representative project settings and organization settings
-shells; the rest of the route/template rows remain open until equivalent visual
-layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
+Selector, copy, form, and `data-*` assertions are still needed before final UI
+parity closure, and selector-only evidence is not final UI parity. Rendered
+evidence must also cover size, position, and alignment or screenshot-diff
+parity. The execution manifest is the remaining rendered-evidence backlog; this
+audit ledger itself has no remaining `reopen: inspect` rows.
 
 ### `board/`
 
@@ -542,6 +543,5 @@ Commands run before this ledger:
 - `pnpm --dir frontend check`
 - `pnpm --dir frontend test src/auth-workspace-shell.spec.tsx src/form-submit-boundary.spec.tsx`
 
-The next audit turn should choose one reopened group, archive its current active
-JSX, and replace it from the owning Scala template set before broadening to the
-next group.
+No reopened group remains in this audit ledger. Continue from the rendered
+evidence execution manifest for any remaining non-final parity evidence rows.
