@@ -349,6 +349,19 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   });
 
   await expect(page.locator("#issue-item-101")).toContainText("Pilot issue");
+  await expect(
+    page.locator("#issue-item-101 .comments-count.comments-count-color"),
+  ).toHaveAttribute("href", "/yona/admin/projectYobi/issue/1#comments");
+  await expect(page.locator("#issue-item-101 .comments-count .count-groups.item-icon")).toHaveCount(
+    1,
+  );
+  await expect(page.locator("#issue-item-101 .comments-count .yobicon-comment2")).toHaveCount(1);
+  await expect(page.locator("#issue-item-101 .comments-count .count-groups.item-count")).toHaveText(
+    "3",
+  );
+  await expect(
+    page.locator("#issue-item-101 .comments-count .count-groups.item-count.strong"),
+  ).toHaveCount(0);
   await expect(page.locator("#issue-item-101 .vote-count.vote-color")).toHaveAttribute(
     "href",
     "/yona/admin/projectYobi/issue/1#vote",
@@ -381,6 +394,15 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   ).resolves.toBe(false);
 
   const group = await layoutBox(page, "#issue-item-101 .item-count-groups");
+  const commentLink = await layoutBox(page, "#issue-item-101 .comments-count.comments-count-color");
+  const commentIcon = await layoutBox(
+    page,
+    "#issue-item-101 .comments-count .count-groups.item-icon",
+  );
+  const commentCount = await layoutBox(
+    page,
+    "#issue-item-101 .comments-count .count-groups.item-count",
+  );
   const voteLink = await layoutBox(page, "#issue-item-101 .vote-count.vote-color");
   const voteIcon = await layoutBox(page, "#issue-item-101 .vote-count .count-groups.item-icon");
   const voteCount = await layoutBox(page, "#issue-item-101 .vote-count .count-groups.item-count");
@@ -390,35 +412,62 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     page,
     "#issue-item-101 .sharer-color .count-groups.item-count",
   );
-  const voteStyles = await page.locator("#issue-item-101 .vote-count").evaluate((element) => {
-    const groupElement = element.closest(".item-count-groups") as HTMLElement;
-    const groupStyle = window.getComputedStyle(groupElement);
-    const link = window.getComputedStyle(element);
-    const icon = window.getComputedStyle(element.querySelector(".item-icon") as HTMLElement);
-    const count = window.getComputedStyle(element.querySelector(".item-count") as HTMLElement);
-    const sharerLinkElement = groupElement.querySelector(".sharer-color") as HTMLElement;
-    const sharerIconElement = sharerLinkElement.querySelector(".item-icon") as HTMLElement;
-    const sharerCountElement = sharerLinkElement.querySelector(".item-count") as HTMLElement;
-    const sharerLinkStyle = window.getComputedStyle(sharerLinkElement);
-    const sharerIconStyle = window.getComputedStyle(sharerIconElement);
-    const sharerCountStyle = window.getComputedStyle(sharerCountElement);
-    return {
-      color: link.color,
-      countPaddingRight: count.paddingRight,
-      groupBorderTopWidth: groupStyle.borderTopWidth,
-      groupLineHeight: groupStyle.lineHeight,
-      iconFontSize: icon.fontSize,
-      iconLineHeight: icon.lineHeight,
-      iconPaddingTop: icon.paddingTop,
-      sharerColor: sharerLinkStyle.color,
-      sharerCountPaddingRight: sharerCountStyle.paddingRight,
-      sharerIconFontSize: sharerIconStyle.fontSize,
-      sharerIconLineHeight: sharerIconStyle.lineHeight,
-      sharerIconPaddingTop: sharerIconStyle.paddingTop,
-      sharerMarginLeft: sharerLinkStyle.marginLeft,
-    };
-  });
+  const countGroupStyles = await page
+    .locator("#issue-item-101 .item-count-groups")
+    .evaluate((groupElement) => {
+      const groupStyle = window.getComputedStyle(groupElement);
+      const commentLinkElement = groupElement.querySelector(".comments-count") as HTMLElement;
+      const commentIconElement = commentLinkElement.querySelector(".item-icon") as HTMLElement;
+      const commentCountElement = commentLinkElement.querySelector(".item-count") as HTMLElement;
+      const voteLinkElement = groupElement.querySelector(".vote-count") as HTMLElement;
+      const voteIconElement = voteLinkElement.querySelector(".item-icon") as HTMLElement;
+      const voteCountElement = voteLinkElement.querySelector(".item-count") as HTMLElement;
+      const sharerLinkElement = groupElement.querySelector(".sharer-color") as HTMLElement;
+      const sharerIconElement = sharerLinkElement.querySelector(".item-icon") as HTMLElement;
+      const sharerCountElement = sharerLinkElement.querySelector(".item-count") as HTMLElement;
+      const commentLinkStyle = window.getComputedStyle(commentLinkElement);
+      const commentIconStyle = window.getComputedStyle(commentIconElement);
+      const commentCountStyle = window.getComputedStyle(commentCountElement);
+      const voteLinkStyle = window.getComputedStyle(voteLinkElement);
+      const voteIconStyle = window.getComputedStyle(voteIconElement);
+      const voteCountStyle = window.getComputedStyle(voteCountElement);
+      const sharerLinkStyle = window.getComputedStyle(sharerLinkElement);
+      const sharerIconStyle = window.getComputedStyle(sharerIconElement);
+      const sharerCountStyle = window.getComputedStyle(sharerCountElement);
+      return {
+        commentColor: commentLinkStyle.color,
+        commentCountFontWeight: commentCountStyle.fontWeight,
+        commentCountPaddingRight: commentCountStyle.paddingRight,
+        commentIconFontSize: commentIconStyle.fontSize,
+        commentIconLineHeight: commentIconStyle.lineHeight,
+        commentIconPaddingTop: commentIconStyle.paddingTop,
+        groupBorderTopWidth: groupStyle.borderTopWidth,
+        groupLineHeight: groupStyle.lineHeight,
+        sharerColor: sharerLinkStyle.color,
+        sharerCountPaddingRight: sharerCountStyle.paddingRight,
+        sharerIconFontSize: sharerIconStyle.fontSize,
+        sharerIconLineHeight: sharerIconStyle.lineHeight,
+        sharerIconPaddingTop: sharerIconStyle.paddingTop,
+        sharerMarginLeft: sharerLinkStyle.marginLeft,
+        voteColor: voteLinkStyle.color,
+        voteCountPaddingRight: voteCountStyle.paddingRight,
+        voteIconFontSize: voteIconStyle.fontSize,
+        voteIconLineHeight: voteIconStyle.lineHeight,
+        voteIconPaddingTop: voteIconStyle.paddingTop,
+        voteMarginLeft: voteLinkStyle.marginLeft,
+      };
+    });
 
+  expect(commentLink.x).toBeGreaterThanOrEqual(group.x);
+  expect(commentLink.y).toBeGreaterThanOrEqual(group.y);
+  expect(commentIcon.x).toBeGreaterThanOrEqual(commentLink.x);
+  expect(commentCount.x).toBeGreaterThan(commentIcon.x);
+  expect(commentIcon.y).toBeLessThanOrEqual(commentCount.y + commentCount.height);
+  expect(commentCount.y).toBeLessThanOrEqual(commentIcon.y + commentIcon.height);
+  expect(commentCount.x + commentCount.width).toBeLessThanOrEqual(
+    commentLink.x + commentLink.width + 1,
+  );
+  expect(voteLink.x).toBeGreaterThan(commentLink.x);
   expect(voteLink.x).toBeGreaterThanOrEqual(group.x);
   expect(voteLink.y).toBeGreaterThanOrEqual(group.y);
   expect(voteIcon.x).toBeGreaterThanOrEqual(voteLink.x);
@@ -435,19 +484,26 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   expect(sharerCount.x + sharerCount.width).toBeLessThanOrEqual(
     sharerLink.x + sharerLink.width + 1,
   );
-  expect(voteStyles).toEqual({
-    color: "rgb(243, 108, 34)",
-    countPaddingRight: "5px",
+  expect(countGroupStyles).toEqual({
+    commentColor: "rgb(139, 0, 139)",
+    commentCountFontWeight: "400",
+    commentCountPaddingRight: "5px",
+    commentIconFontSize: "9px",
+    commentIconLineHeight: "12px",
+    commentIconPaddingTop: "2px",
     groupBorderTopWidth: "1px",
     groupLineHeight: "14px",
-    iconFontSize: "9px",
-    iconLineHeight: "12px",
-    iconPaddingTop: "2px",
     sharerColor: "rgb(0, 127, 202)",
     sharerCountPaddingRight: "5px",
     sharerIconFontSize: "9px",
     sharerIconLineHeight: "12px",
     sharerIconPaddingTop: "2px",
     sharerMarginLeft: "-5px",
+    voteColor: "rgb(243, 108, 34)",
+    voteCountPaddingRight: "5px",
+    voteIconFontSize: "9px",
+    voteIconLineHeight: "12px",
+    voteIconPaddingTop: "2px",
+    voteMarginLeft: "-5px",
   });
 });

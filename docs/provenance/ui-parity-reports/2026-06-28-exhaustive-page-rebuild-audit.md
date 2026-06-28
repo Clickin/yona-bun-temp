@@ -217,7 +217,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `common/childCommentsAnchorDiv.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/child_commentForm.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/commentAndVoterPairDisplay.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
-| `common/commentCount.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/commentCount.scala.html` | shared partials | metric guard passed: `vote-count-parity.e2e.ts` asserts the legacy visible issue-list caller row, `.comments-count.comments-count-color`, `.count-groups.item-icon`, `.yobicon-comment2`, plain `.count-groups.item-count`, mounted issue `#comments` href, `.item-count-groups` border/line-height, first-link placement, comment icon/count horizontal ordering and vertical overlap, magenta comment color, non-strong font weight, and legacy icon/count padding and font metrics |
 | `common/commentDeleteModal.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/commentForm.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/commentUpdateForm.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
