@@ -20,6 +20,15 @@ async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
   return box as LayoutBox;
 }
 
+async function assertLegacyMarkdownAssetContract(page: Page) {
+  await expect(page.locator('link[href*="highlight/styles/default.css"]')).toHaveCount(0);
+  await expect(page.locator('script[src*="highlight/highlight.pack.js"]')).toHaveCount(0);
+  await expect(page.locator('script[src*="marked.js"]')).toHaveCount(0);
+  await expect(page.locator("script", { hasText: "yobi.Markdown.init" })).toHaveCount(0);
+  await expect(page.locator("#issue-body-1 .content.markdown-wrap")).toContainText("issue open");
+  await expect(page.locator("#issue-body-1 .content.markdown-wrap .task-list-item")).toHaveCount(2);
+}
+
 async function assertLegacyIssueViewShellMetrics(page: Page) {
   const pageWrap = await layoutBox(page, ".project-page-wrap.board-view");
   const header = await layoutBox(page, ".project-page-wrap.board-view > .board-header.issue");
@@ -94,6 +103,7 @@ async function assertLegacyIssueViewShellMetrics(page: Page) {
     "data-allowed-update",
     "true",
   );
+  await assertLegacyMarkdownAssetContract(page);
   await expect(page.locator("#attachments.attachments")).toHaveCount(1);
   await expect(page.locator(".board-actrow #watch-button")).toHaveAttribute(
     "data-watching",
