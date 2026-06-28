@@ -268,14 +268,14 @@ test("accepts notification route parity tests as notification frontend evidence"
   const result = runGate([
     "frontend/src/routes/notification/route.tsx",
     "frontend/src/route-parity.spec.tsx",
-    "docs/provenance/core-parity-audit.md",
+    "docs/provenance/ui-parity-reports/ui-parity-search-notification.md",
   ]);
 
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["notification-inbox-and-mail-staging"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["notification-inbox-and-mail-staging", "parity"]],
   );
 });
 

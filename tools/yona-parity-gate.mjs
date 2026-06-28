@@ -473,7 +473,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "notification-inbox-and-mail-staging",
     label: "Notification inbox and mail staging",
-    status: "partial",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/notifications\.ts$/i,
       /^frontend\/src\/routes\/notifications?\/route\.tsx$/i,
@@ -484,6 +484,8 @@ const DOMAIN_BUCKETS = [
       "docs/provenance/phase-0b/issue.md",
       "docs/provenance/phase-0b/legacy-test-inventory.md",
       "docs/provenance/core-parity-audit.md",
+      "docs/provenance/ui-parity-reports/ui-parity-search-notification.md",
+      "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
     ],
   },
   {
