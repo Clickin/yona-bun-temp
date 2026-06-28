@@ -169,7 +169,39 @@ test.beforeEach(async ({ page }) => {
             authorLabel: "Nori",
             authorLoginId: "nori",
             childClosedCount: 1,
-            childIssues: [],
+            childIssues: [
+              {
+                assigneeLabel: "Door",
+                commentCount: 2,
+                createdLabel: "2026-04-14",
+                isDraft: false,
+                issueNumber: "11",
+                labels: [
+                  {
+                    categoryId: 4,
+                    categoryIsExclusive: false,
+                    categoryName: "Type",
+                    color: "#2196f3",
+                    id: "8",
+                    name: "child",
+                  },
+                ],
+                state: "open",
+                title: "Open child issue",
+                voterCount: 1,
+              },
+              {
+                assigneeLabel: "",
+                commentCount: 0,
+                createdLabel: "2026-04-13",
+                isDraft: false,
+                issueNumber: "12",
+                labels: [],
+                state: "closed",
+                title: "Closed child issue",
+                voterCount: 0,
+              },
+            ],
             childOpenCount: 2,
             commentCount: 3,
             dueDateLabel: "2026-05-01",
@@ -241,6 +273,7 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
 }) => {
   await page.setViewportSize({ height: 900, width: 1280 });
   await page.goto("/yona/admin/projectYobi/issues?pageNum=1");
+  const parentCountSelector = "#issue-item-101 .infos > .infos-item.item-count-groups";
 
   const quickSearch = page.locator(".issue-list-page .left-menu .lst-stacked.unstyled");
   await expect(quickSearch).toHaveCount(1);
@@ -810,17 +843,19 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
 
   await expect(page.locator("#issue-item-101")).toContainText("Pilot issue");
   await expect(
-    page.locator("#issue-item-101 .comments-count.comments-count-color"),
+    page.locator(`${parentCountSelector} > .comments-count.comments-count-color`),
   ).toHaveAttribute("href", "/yona/admin/projectYobi/issue/1#comments");
-  await expect(page.locator("#issue-item-101 .comments-count .count-groups.item-icon")).toHaveCount(
-    1,
-  );
-  await expect(page.locator("#issue-item-101 .comments-count .yobicon-comment2")).toHaveCount(1);
-  await expect(page.locator("#issue-item-101 .comments-count .count-groups.item-count")).toHaveText(
-    "3",
-  );
   await expect(
-    page.locator("#issue-item-101 .comments-count .count-groups.item-count.strong"),
+    page.locator(`${parentCountSelector} > .comments-count .count-groups.item-icon`),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(`${parentCountSelector} > .comments-count .yobicon-comment2`),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(`${parentCountSelector} > .comments-count .count-groups.item-count`),
+  ).toHaveText("3");
+  await expect(
+    page.locator(`${parentCountSelector} > .comments-count .count-groups.item-count.strong`),
   ).toHaveCount(0);
   await expect(page.locator('#issue-item-101 .issue-label[data-label-id="7"]')).toHaveText(
     "bright",
@@ -829,34 +864,38 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     "href",
     "/yona/admin/projectYobi/issues?orderBy=updatedDate&orderDir=desc&labelIds=7",
   );
-  await expect(page.locator("#issue-item-101 .vote-count.vote-color")).toHaveAttribute(
+  await expect(page.locator(`${parentCountSelector} > .vote-count.vote-color`)).toHaveAttribute(
     "href",
     "/yona/admin/projectYobi/issue/1#vote",
   );
-  await expect(page.locator("#issue-item-101 .vote-count .count-groups.item-icon")).toHaveCount(1);
-  await expect(page.locator("#issue-item-101 .vote-count .yobicon-hearts")).toHaveCount(1);
   await expect(
-    page.locator("#issue-item-101 .vote-count .count-groups.item-count.strong"),
+    page.locator(`${parentCountSelector} > .vote-count .count-groups.item-icon`),
+  ).toHaveCount(1);
+  await expect(page.locator(`${parentCountSelector} > .vote-count .yobicon-hearts`)).toHaveCount(1);
+  await expect(
+    page.locator(`${parentCountSelector} > .vote-count .count-groups.item-count.strong`),
   ).toHaveText("1");
-  await expect(page.locator("#issue-item-101 .sharer-color")).toHaveAttribute(
+  await expect(page.locator(`${parentCountSelector} > .sharer-color`)).toHaveAttribute(
     "data-toggle",
     "tooltip",
   );
-  await expect(page.locator("#issue-item-101 .sharer-color")).toHaveAttribute(
+  await expect(page.locator(`${parentCountSelector} > .sharer-color`)).toHaveAttribute(
     "data-placement",
     "bottom",
   );
-  await expect(page.locator("#issue-item-101 .sharer-color")).toHaveAttribute(
+  await expect(page.locator(`${parentCountSelector} > .sharer-color`)).toHaveAttribute(
     "title",
     "Issue Sharer",
   );
-  await expect(page.locator("#issue-item-101 .sharer-color .yobicon-friends")).toHaveCount(1);
+  await expect(page.locator(`${parentCountSelector} > .sharer-color .yobicon-friends`)).toHaveCount(
+    1,
+  );
   await expect(
-    page.locator("#issue-item-101 .sharer-color .count-groups.item-count.strong"),
+    page.locator(`${parentCountSelector} > .sharer-color .count-groups.item-count.strong`),
   ).toHaveText("2");
   await expect(
     page
-      .locator("#issue-item-101 .sharer-color")
+      .locator(`${parentCountSelector} > .sharer-color`)
       .evaluate((element) => element.hasAttribute("href")),
   ).resolves.toBe(false);
   await expect(page.locator("#issue-item-101 .span9.span-hard-wrap")).toHaveCount(1);
@@ -912,6 +951,60 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     "href",
     "/yona/admin/projectYobi/issue/77",
   );
+  await expect(page.locator("#issue-item-101 .child-issue-list.hide")).toHaveCount(1);
+  await expect(
+    page.locator("#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue"),
+  ).toHaveCount(2);
+  await expect(
+    page.locator(
+      "#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(1) .state-label.open",
+    ),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(
+      "#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(1) .twoColumeModeTarget:has(.item-name)",
+    ),
+  ).toHaveAttribute("href", "/yona/admin/projectYobi/issue/11");
+  await expect(
+    page.locator(
+      "#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(1) .item-name",
+    ),
+  ).toContainText("#11 Open child issue - Door");
+  await expect(
+    page.locator(
+      '#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(1) .issue-label[data-label-id="8"]',
+    ),
+  ).toHaveAttribute("data-category-id", "4");
+  await expect(
+    page.locator(
+      '#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(1) .issue-label[data-label-id="8"]',
+    ),
+  ).toHaveAttribute("href", "/yona/admin/projectYobi/issues?state=open&labelIds=8");
+  await expect(
+    page.locator(
+      '#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(1) .issue-label[data-label-id="8"]',
+    ),
+  ).toHaveText("child");
+  await expect(
+    page.locator(
+      "#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(1) .comments-count.comments-count-color",
+    ),
+  ).toHaveAttribute("href", "/yona/admin/projectYobi/issue/11#comments");
+  await expect(
+    page.locator(
+      "#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(1) .vote-count.vote-color",
+    ),
+  ).toHaveAttribute("href", "/yona/admin/projectYobi/issue/11#vote");
+  await expect(
+    page.locator(
+      "#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(1) .child-issue-date",
+    ),
+  ).toHaveAttribute("title", "2026-04-14");
+  await expect(
+    page.locator(
+      "#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(2) .state-label.closed .yobicon-checkmark",
+    ),
+  ).toHaveCount(1);
   await expect(page.locator('.post-list-wrap.row-fluid[data-list="draft-issues"]')).toHaveCount(1);
   await expect(page.locator('#issue-item-102[data-item="issue-item"]')).toHaveCount(1);
   await expect(page.locator("#issue-item-102")).toHaveAttribute(
@@ -1265,71 +1358,182 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     titleWhiteSpace: "nowrap",
   });
 
-  const group = await layoutBox(page, "#issue-item-101 .item-count-groups");
+  await expect(page.locator("#issue-item-101 .child-issue-list.hide")).toBeHidden();
+  await page.locator("#issue-item-101 .child-issue-list").evaluate((element) => {
+    element.classList.remove("hide");
+  });
+  await page.locator("#issue-item-101 .issue-item-row").hover();
+
+  const childList = await layoutBox(page, "#issue-item-101 .child-issue-list");
+  const childListInner = await layoutBox(page, "#issue-item-101 .child-issue-list > .child-issues");
+  const firstChild = await layoutBox(
+    page,
+    "#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(1)",
+  );
+  const firstChildState = await layoutBox(
+    page,
+    "#issue-item-101 .child-issue-list .issue-item.child-issue:nth-child(1) .state-label.open",
+  );
+  const firstChildLink = await layoutBox(
+    page,
+    "#issue-item-101 .child-issue-list .issue-item.child-issue:nth-child(1) > .twoColumeModeTarget",
+  );
+  const firstChildName = await layoutBox(
+    page,
+    "#issue-item-101 .child-issue-list .issue-item.child-issue:nth-child(1) .item-name",
+  );
+  const firstChildPair = await layoutBox(
+    page,
+    "#issue-item-101 .child-issue-list .issue-item.child-issue:nth-child(1) .font12.no-border-at-child",
+  );
+  const firstChildLabel = await layoutBox(
+    page,
+    '#issue-item-101 .child-issue-list .issue-item.child-issue:nth-child(1) .issue-label[data-label-id="8"]',
+  );
+  const firstChildDate = await layoutBox(
+    page,
+    "#issue-item-101 .child-issue-list .issue-item.child-issue:nth-child(1) .child-issue-date",
+  );
+  const secondChild = await layoutBox(
+    page,
+    "#issue-item-101 .child-issue-list > .child-issues > .issue-item.child-issue:nth-child(2)",
+  );
+  const secondChildState = await layoutBox(
+    page,
+    "#issue-item-101 .child-issue-list .issue-item.child-issue:nth-child(2) .state-label.closed",
+  );
+  const childListStyles = await page
+    .locator("#issue-item-101 .child-issue-list")
+    .evaluate((element) => {
+      const wrapperStyle = window.getComputedStyle(element);
+      const firstChild = element.querySelector(".issue-item.child-issue") as HTMLElement;
+      const closedState = element.querySelector(".state-label.closed") as HTMLElement;
+      const closedIcon = element.querySelector(
+        ".state-label.closed .yobicon-checkmark",
+      ) as HTMLElement;
+      const childDate = element.querySelector(".child-issue-date") as HTMLElement;
+      const childLabel = element.querySelector(".issue-label") as HTMLElement;
+      const childStyle = window.getComputedStyle(firstChild);
+      const closedStateStyle = window.getComputedStyle(closedState);
+      const closedIconStyle = window.getComputedStyle(closedIcon);
+      const childDateStyle = window.getComputedStyle(childDate);
+      const childLabelStyle = window.getComputedStyle(childLabel);
+      return {
+        childDateColor: childDateStyle.color,
+        childDateDisplay: childDateStyle.display,
+        childDisplay: childStyle.display,
+        childLabelBackgroundColor: childLabelStyle.backgroundColor,
+        childLabelBoxShadow: childLabelStyle.boxShadow,
+        childLabelColor: childLabelStyle.color,
+        childPaddingLeft: childStyle.paddingLeft,
+        closedIconColor: closedIconStyle.color,
+        closedStateBackgroundColor: closedStateStyle.backgroundColor,
+        wrapperColor: wrapperStyle.color,
+        wrapperDisplay: wrapperStyle.display,
+      };
+    });
+
+  expect(childList.x).toBeGreaterThanOrEqual(infos.x);
+  expect(childList.y).toBeGreaterThanOrEqual(infos.y);
+  expect(childListInner.x).toBeGreaterThanOrEqual(childList.x);
+  expect(firstChild.y).toBeGreaterThanOrEqual(childListInner.y);
+  expect(firstChildState.x).toBeGreaterThanOrEqual(firstChild.x);
+  expect(firstChildLink.x).toBeGreaterThanOrEqual(firstChildState.x + firstChildState.width - 1);
+  expect(firstChildName.x).toBeGreaterThanOrEqual(firstChildLink.x);
+  expect(firstChildPair.x).toBeGreaterThan(firstChildLink.x + firstChildLink.width - 1);
+  expect(firstChildLabel.x).toBeGreaterThan(firstChildPair.x + firstChildPair.width - 1);
+  expect(firstChildDate.x).toBeGreaterThan(firstChildLabel.x + firstChildLabel.width - 1);
+  expect(secondChild.y).toBeGreaterThan(firstChild.y + firstChild.height - 1);
+  expect(secondChildState.x).toBeGreaterThanOrEqual(secondChild.x);
+  expect(childListStyles).toEqual({
+    childDateColor: "rgb(211, 211, 211)",
+    childDateDisplay: "inline-block",
+    childDisplay: "block",
+    childLabelBackgroundColor: "rgb(33, 150, 243)",
+    childLabelBoxShadow: "rgb(33, 150, 243) 2px 0px 0px 0px inset",
+    childLabelColor: "rgb(255, 255, 255)",
+    childPaddingLeft: "0px",
+    closedIconColor: "rgb(253, 105, 86)",
+    closedStateBackgroundColor: "rgba(0, 0, 0, 0)",
+    wrapperColor: "rgb(102, 102, 102)",
+    wrapperDisplay: "block",
+  });
+
+  const group = await layoutBox(page, parentCountSelector);
   const issueLabel = await layoutBox(page, '#issue-item-101 .issue-label[data-label-id="7"]');
-  const commentLink = await layoutBox(page, "#issue-item-101 .comments-count.comments-count-color");
+  const commentLink = await layoutBox(
+    page,
+    `${parentCountSelector} > .comments-count.comments-count-color`,
+  );
   const commentIcon = await layoutBox(
     page,
-    "#issue-item-101 .comments-count .count-groups.item-icon",
+    `${parentCountSelector} > .comments-count .count-groups.item-icon`,
   );
   const commentCount = await layoutBox(
     page,
-    "#issue-item-101 .comments-count .count-groups.item-count",
+    `${parentCountSelector} > .comments-count .count-groups.item-count`,
   );
-  const voteLink = await layoutBox(page, "#issue-item-101 .vote-count.vote-color");
-  const voteIcon = await layoutBox(page, "#issue-item-101 .vote-count .count-groups.item-icon");
-  const voteCount = await layoutBox(page, "#issue-item-101 .vote-count .count-groups.item-count");
-  const sharerLink = await layoutBox(page, "#issue-item-101 .sharer-color");
-  const sharerIcon = await layoutBox(page, "#issue-item-101 .sharer-color .count-groups.item-icon");
+  const voteLink = await layoutBox(page, `${parentCountSelector} > .vote-count.vote-color`);
+  const voteIcon = await layoutBox(
+    page,
+    `${parentCountSelector} > .vote-count .count-groups.item-icon`,
+  );
+  const voteCount = await layoutBox(
+    page,
+    `${parentCountSelector} > .vote-count .count-groups.item-count`,
+  );
+  const sharerLink = await layoutBox(page, `${parentCountSelector} > .sharer-color`);
+  const sharerIcon = await layoutBox(
+    page,
+    `${parentCountSelector} > .sharer-color .count-groups.item-icon`,
+  );
   const sharerCount = await layoutBox(
     page,
-    "#issue-item-101 .sharer-color .count-groups.item-count",
+    `${parentCountSelector} > .sharer-color .count-groups.item-count`,
   );
-  const countGroupStyles = await page
-    .locator("#issue-item-101 .item-count-groups")
-    .evaluate((groupElement) => {
-      const groupStyle = window.getComputedStyle(groupElement);
-      const commentLinkElement = groupElement.querySelector(".comments-count") as HTMLElement;
-      const commentIconElement = commentLinkElement.querySelector(".item-icon") as HTMLElement;
-      const commentCountElement = commentLinkElement.querySelector(".item-count") as HTMLElement;
-      const voteLinkElement = groupElement.querySelector(".vote-count") as HTMLElement;
-      const voteIconElement = voteLinkElement.querySelector(".item-icon") as HTMLElement;
-      const voteCountElement = voteLinkElement.querySelector(".item-count") as HTMLElement;
-      const sharerLinkElement = groupElement.querySelector(".sharer-color") as HTMLElement;
-      const sharerIconElement = sharerLinkElement.querySelector(".item-icon") as HTMLElement;
-      const sharerCountElement = sharerLinkElement.querySelector(".item-count") as HTMLElement;
-      const commentLinkStyle = window.getComputedStyle(commentLinkElement);
-      const commentIconStyle = window.getComputedStyle(commentIconElement);
-      const commentCountStyle = window.getComputedStyle(commentCountElement);
-      const voteLinkStyle = window.getComputedStyle(voteLinkElement);
-      const voteIconStyle = window.getComputedStyle(voteIconElement);
-      const voteCountStyle = window.getComputedStyle(voteCountElement);
-      const sharerLinkStyle = window.getComputedStyle(sharerLinkElement);
-      const sharerIconStyle = window.getComputedStyle(sharerIconElement);
-      const sharerCountStyle = window.getComputedStyle(sharerCountElement);
-      return {
-        commentColor: commentLinkStyle.color,
-        commentCountFontWeight: commentCountStyle.fontWeight,
-        commentCountPaddingRight: commentCountStyle.paddingRight,
-        commentIconFontSize: commentIconStyle.fontSize,
-        commentIconLineHeight: commentIconStyle.lineHeight,
-        commentIconPaddingTop: commentIconStyle.paddingTop,
-        groupBorderTopWidth: groupStyle.borderTopWidth,
-        groupLineHeight: groupStyle.lineHeight,
-        sharerColor: sharerLinkStyle.color,
-        sharerCountPaddingRight: sharerCountStyle.paddingRight,
-        sharerIconFontSize: sharerIconStyle.fontSize,
-        sharerIconLineHeight: sharerIconStyle.lineHeight,
-        sharerIconPaddingTop: sharerIconStyle.paddingTop,
-        sharerMarginLeft: sharerLinkStyle.marginLeft,
-        voteColor: voteLinkStyle.color,
-        voteCountPaddingRight: voteCountStyle.paddingRight,
-        voteIconFontSize: voteIconStyle.fontSize,
-        voteIconLineHeight: voteIconStyle.lineHeight,
-        voteIconPaddingTop: voteIconStyle.paddingTop,
-        voteMarginLeft: voteLinkStyle.marginLeft,
-      };
-    });
+  const countGroupStyles = await page.locator(parentCountSelector).evaluate((groupElement) => {
+    const groupStyle = window.getComputedStyle(groupElement);
+    const commentLinkElement = groupElement.querySelector(".comments-count") as HTMLElement;
+    const commentIconElement = commentLinkElement.querySelector(".item-icon") as HTMLElement;
+    const commentCountElement = commentLinkElement.querySelector(".item-count") as HTMLElement;
+    const voteLinkElement = groupElement.querySelector(".vote-count") as HTMLElement;
+    const voteIconElement = voteLinkElement.querySelector(".item-icon") as HTMLElement;
+    const voteCountElement = voteLinkElement.querySelector(".item-count") as HTMLElement;
+    const sharerLinkElement = groupElement.querySelector(".sharer-color") as HTMLElement;
+    const sharerIconElement = sharerLinkElement.querySelector(".item-icon") as HTMLElement;
+    const sharerCountElement = sharerLinkElement.querySelector(".item-count") as HTMLElement;
+    const commentLinkStyle = window.getComputedStyle(commentLinkElement);
+    const commentIconStyle = window.getComputedStyle(commentIconElement);
+    const commentCountStyle = window.getComputedStyle(commentCountElement);
+    const voteLinkStyle = window.getComputedStyle(voteLinkElement);
+    const voteIconStyle = window.getComputedStyle(voteIconElement);
+    const voteCountStyle = window.getComputedStyle(voteCountElement);
+    const sharerLinkStyle = window.getComputedStyle(sharerLinkElement);
+    const sharerIconStyle = window.getComputedStyle(sharerIconElement);
+    const sharerCountStyle = window.getComputedStyle(sharerCountElement);
+    return {
+      commentColor: commentLinkStyle.color,
+      commentCountFontWeight: commentCountStyle.fontWeight,
+      commentCountPaddingRight: commentCountStyle.paddingRight,
+      commentIconFontSize: commentIconStyle.fontSize,
+      commentIconLineHeight: commentIconStyle.lineHeight,
+      commentIconPaddingTop: commentIconStyle.paddingTop,
+      groupBorderTopWidth: groupStyle.borderTopWidth,
+      groupLineHeight: groupStyle.lineHeight,
+      sharerColor: sharerLinkStyle.color,
+      sharerCountPaddingRight: sharerCountStyle.paddingRight,
+      sharerIconFontSize: sharerIconStyle.fontSize,
+      sharerIconLineHeight: sharerIconStyle.lineHeight,
+      sharerIconPaddingTop: sharerIconStyle.paddingTop,
+      sharerMarginLeft: sharerLinkStyle.marginLeft,
+      voteColor: voteLinkStyle.color,
+      voteCountPaddingRight: voteCountStyle.paddingRight,
+      voteIconFontSize: voteIconStyle.fontSize,
+      voteIconLineHeight: voteIconStyle.lineHeight,
+      voteIconPaddingTop: voteIconStyle.paddingTop,
+      voteMarginLeft: voteLinkStyle.marginLeft,
+    };
+  });
   const labelStyles = await page
     .locator('#issue-item-101 .issue-label[data-label-id="7"]')
     .evaluate((element) => {

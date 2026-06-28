@@ -2759,6 +2759,27 @@ h1 {
   padding: 0 5px 0 0;
 }
 
+.issue-list-page .child-issue-list {
+  color: #666;
+}
+
+.issue-list-page .child-issue-list .closed {
+  background-color: transparent !important;
+}
+
+.issue-list-page .child-issue-list .yobicon-checkmark {
+  color: #fd6956;
+}
+
+.issue-list-page .child-issue .child-issue-date {
+  display: none;
+  color: lightgrey;
+}
+
+.issue-list-page .issue-item-row:hover .child-issue-date {
+  display: inline-block;
+}
+
 .issue-list-page .empty-avatar-wrap {
   width: 32px;
   height: 32px;

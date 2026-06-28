@@ -301,6 +301,7 @@ function IssueSubtaskItem(props: {
             "label issue-label list-label active twoColumeModeTarget",
             label.color,
           )}
+          data-category-id={label.categoryId ?? ""}
           data-label-id={label.id}
           href={`${listHref}&labelIds=${label.id}`}
           key={label.id}

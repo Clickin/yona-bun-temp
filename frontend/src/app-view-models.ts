@@ -54,7 +54,14 @@ type IssueChildRestItem = {
   createdLabel: string;
   isDraft?: boolean;
   issueNumber: bigint | number;
-  labels: Array<{ color: string; id: bigint | number; name: string }>;
+  labels: Array<{
+    categoryId?: bigint | number | null;
+    categoryIsExclusive?: boolean;
+    categoryName?: string;
+    color: string;
+    id: bigint | number;
+    name: string;
+  }>;
   state: string;
   title: string;
   voterCount?: number;
@@ -68,6 +75,9 @@ function toIssueChildView(child: IssueChildRestItem) {
     isDraft: child.isDraft ?? false,
     issueNumber: Number(child.issueNumber),
     labels: child.labels.map((label) => ({
+      categoryId: Number(label.categoryId ?? 0) || null,
+      categoryIsExclusive: label.categoryIsExclusive ?? false,
+      categoryName: label.categoryName ?? "",
       color: label.color,
       id: Number(label.id),
       name: label.name,

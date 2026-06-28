@@ -234,12 +234,21 @@ export type RestIssueListItem = ListProjectIssuesResponse["items"][number] & {
   childClosedCount?: number;
   childIssues?: Array<{
     assigneeLabel: string;
+    commentCount?: number;
     createdLabel: string;
     isDraft?: boolean;
     issueNumber: bigint | number;
-    labels: Array<{ color: string; id: bigint | number; name: string }>;
+    labels: Array<{
+      categoryId?: bigint | number | null;
+      categoryIsExclusive?: boolean;
+      categoryName?: string;
+      color: string;
+      id: bigint | number;
+      name: string;
+    }>;
     state: string;
     title: string;
+    voterCount?: number;
   }>;
   childOpenCount?: number;
   commentParentLinks?: Array<{
@@ -289,12 +298,21 @@ export type RestIssueDetailResponse = ReadIssueDetailResponse & {
   childClosedCount?: number;
   childIssues?: Array<{
     assigneeLabel: string;
+    commentCount?: number;
     createdLabel: string;
     isDraft?: boolean;
     issueNumber: bigint | number;
-    labels: Array<{ color: string; id: bigint | number; name: string }>;
+    labels: Array<{
+      categoryId?: bigint | number | null;
+      categoryIsExclusive?: boolean;
+      categoryName?: string;
+      color: string;
+      id: bigint | number;
+      name: string;
+    }>;
     state: string;
     title: string;
+    voterCount?: number;
   }>;
   childOpenCount?: number;
   createdLabel?: string;
