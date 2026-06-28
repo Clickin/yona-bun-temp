@@ -478,6 +478,43 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     });
   });
 
+  await page.route(apiV1Route("/projects/admin/projectYobi/issues/1/comments"), async (route) => {
+    record(route.request());
+    const body = route.request().postDataJSON() as {
+      attachmentIds?: string[];
+      contentsMarkdown?: string;
+      parentCommentId?: number;
+    };
+    currentIssue = {
+      ...currentIssue,
+      commentParentLinks: [
+        ...(currentIssue.commentParentLinks as Array<{ id: number; parentCommentId: number }>),
+        { id: 32, parentCommentId: Number(body.parentCommentId ?? 0) },
+      ],
+      comments: [
+        ...(currentIssue.comments as Array<Record<string, unknown>>),
+        {
+          authorAvatarUrl: "",
+          authorLabel: "Admin",
+          authorLoginId: "admin",
+          contentsMarkdown: body.contentsMarkdown ?? "",
+          createdLabel: "just now",
+          id: 32,
+          viewerCanDelete: false,
+          viewerCanUpdate: false,
+          viewerHasVoted: false,
+          voterCount: 0,
+          voters: [],
+        },
+      ],
+    };
+    await route.fulfill({
+      body: JSON.stringify(currentIssue),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
   await page.route(
     apiV1Route("/projects/admin/projectYobi/issues/1/comments/30"),
     async (route) => {
@@ -803,12 +840,34 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     "action",
     "/yona/admin/projectYobi/issue/1/comments",
   );
+  await expect(fullTimeline.locator("#comment-30 .child-comment-input-form form")).toHaveAttribute(
+    "method",
+    "post",
+  );
+  await expect(fullTimeline.locator("#comment-30 .child-comment-input-form form")).toHaveAttribute(
+    "enctype",
+    "multipart/form-data",
+  );
   await expect(
     fullTimeline.locator('#comment-30 .child-comment-input-form input[name="parentCommentId"]'),
   ).toHaveValue("30");
   await expect(
     fullTimeline.locator('#comment-30 .child-comment-input-form textarea[name="contents"]'),
   ).toHaveAttribute("placeholder", "Reply (CTRL + ENTER)");
+  await expect(
+    fullTimeline.locator('#comment-30 .child-comment-input-form textarea[name="contents"]'),
+  ).toHaveAttribute("markdown", "true");
+  await expect(
+    fullTimeline.locator("#comment-30 .child-comment-input-form .ybtn.ybtn-success"),
+  ).toHaveAttribute("data-legacy-label", "OK");
+  await expect(
+    fullTimeline.locator(
+      '#comment-30 .child-comment-input-form .ybtn.ybtn-success span[aria-hidden="true"]',
+    ),
+  ).toHaveText("OK");
+  await expect(
+    fullTimeline.locator("#comment-30 .child-comment-input-form .notification-receiver-title"),
+  ).toContainText("Notification receivers");
 
   const subcommentBody = await layoutBox(page, "#comment-30 .subcomment-media-body");
   const childComments = await layoutBox(page, "#comment-30 .child-comments");
@@ -832,8 +891,12 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
       const deleteStyle = window.getComputedStyle(deleteButton);
       const inputForm = element.querySelector(".child-comment-input-form") as HTMLElement;
       const inputFormStyle = window.getComputedStyle(inputForm);
+      const oneLineBox = inputForm.querySelector(".oneline-comment-box") as HTMLElement;
+      const oneLineBoxStyle = window.getComputedStyle(oneLineBox);
       const textarea = element.querySelector("textarea") as HTMLElement;
       const textareaStyle = window.getComputedStyle(textarea);
+      const notificationReceiver = inputForm.querySelector(".notification-receiver") as HTMLElement;
+      const notificationStyle = window.getComputedStyle(notificationReceiver);
       return {
         addBorderColor: addCommentStyle.borderTopColor,
         addColor: addCommentStyle.color,
@@ -852,9 +915,16 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
         deleteColor: deleteStyle.color,
         deleteDisplay: deleteStyle.display,
         formDisplay: inputFormStyle.display,
+        notificationBackgroundColor: notificationStyle.backgroundColor,
+        notificationDisplay: notificationStyle.display,
+        notificationMarginLeft: notificationStyle.marginLeft,
+        notificationPaddingLeft: notificationStyle.paddingLeft,
+        oneLineBoxDisplay: oneLineBoxStyle.display,
+        oneLineBoxMarginLeft: oneLineBoxStyle.marginLeft,
         textareaBorderBottomWidth: textareaStyle.borderBottomWidth,
         textareaMarginTop: textareaStyle.marginTop,
         textareaPaddingLeft: textareaStyle.paddingLeft,
+        textareaWidth: textareaStyle.width,
       };
     });
   const childAnchorDisplay = await page
@@ -887,10 +957,43 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     deleteColor: "rgb(255, 0, 0)",
     deleteDisplay: "inline-flex",
     formDisplay: "none",
+    notificationBackgroundColor: "rgb(247, 247, 247)",
+    notificationDisplay: "none",
+    notificationMarginLeft: "12px",
+    notificationPaddingLeft: "10px",
+    oneLineBoxDisplay: "flex",
+    oneLineBoxMarginLeft: "12px",
     textareaBorderBottomWidth: "1px",
     textareaMarginTop: "5px",
     textareaPaddingLeft: "10px",
+    textareaWidth: "100%",
   });
+
+  await page
+    .locator('#comment-30 .child-comment-input-form textarea[name="contents"]')
+    .evaluate((element) => {
+      const textarea = element as HTMLTextAreaElement;
+      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+      setter?.call(textarea, "Nested **reply**");
+      textarea.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText" }));
+    });
+  await page
+    .locator("#comment-30 .child-comment-input-form form")
+    .evaluate((element) => (element as HTMLFormElement).requestSubmit());
+  await expect
+    .poll(() =>
+      requests.some(
+        (request) =>
+          request.path === "/projects/admin/projectYobi/issues/1/comments" &&
+          (request.body as { contentsMarkdown?: string; parentCommentId?: number })
+            .contentsMarkdown === "Nested **reply**" &&
+          Number(
+            (request.body as { contentsMarkdown?: string; parentCommentId?: number })
+              .parentCommentId,
+          ) === 30,
+      ),
+    )
+    .toBe(true);
 
   const commentDeleteTrigger = fullTimeline.locator(
     '#comment-30 [data-toggle="comment-delete"][data-request-uri="/yona/admin/projectYobi/issue/1/comment/30/delete"]',

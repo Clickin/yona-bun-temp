@@ -3055,6 +3055,7 @@ export function ProjectIssueDetailPage(props: {
                                   `issue/${issueNumber}/comments`,
                                 )}
                                 encType="multipart/form-data"
+                                method="post"
                                 onSubmit={(event) => {
                                   event.preventDefault();
                                   const contents = (childCommentDrafts[comment.id] ?? "").trim();

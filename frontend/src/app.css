@@ -3442,8 +3442,15 @@ div.markdown-preview {
   display: none;
 }
 
+.board-view .board-comment-wrap .comments .child-comment-input-form .oneline-comment-box,
+.issue-detail-page .board-comment-wrap .comments .child-comment-input-form .oneline-comment-box {
+  display: flex;
+  margin-left: 12px;
+}
+
 .board-view .board-comment-wrap .comments .child-comment-input-form textarea,
 .issue-detail-page .board-comment-wrap .comments .child-comment-input-form textarea {
+  width: 100%;
   margin-top: 5px;
   margin-bottom: 0;
   padding-left: 10px;
@@ -3452,6 +3459,17 @@ div.markdown-preview {
   border: none;
   border-bottom: 1px solid #ccc;
   border-radius: 0;
+}
+
+.board-view .board-comment-wrap .comments .child-comment-input-form .notification-receiver,
+.issue-detail-page .board-comment-wrap .comments .child-comment-input-form .notification-receiver {
+  display: none;
+  margin-left: 12px;
+  padding: 5px 5px 5px 10px;
+  text-align: start;
+  background-color: #f7f7f7;
+  border-bottom-right-radius: 3px;
+  border-bottom-left-radius: 3px;
 }
 
 .board-view .board-comment-wrap .comment-update-form {
