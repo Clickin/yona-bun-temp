@@ -1821,6 +1821,16 @@ function CommitDiscussionThread(props: {
           <i className="yobicon-post2"></i>
         </button>
       </div>
+      {props.thread.path ? (
+        <div className="thread-header">
+          <span className={`badge state ${state}`}>
+            {legacyMessage(props.messages, `issue.state.${state}`)}
+          </span>
+          <button className="ybtn ybtn-default ybtn-small btn-thread-minimize" type="button">
+            <i className="yobicon-maximize"></i>
+          </button>
+        </div>
+      ) : null}
       <ul className="comments">
         {props.thread.comments.map((comment) => (
           <li className="comment" id={`comment-${comment.id}`} key={comment.id}>

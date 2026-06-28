@@ -307,6 +307,9 @@ async function assertLegacyInlineDiffCommentRowMetrics(page: Page) {
   );
   const thread = await layoutBox(page, "#thread-31.comment-thread-wrap");
   const threadButton = await layoutBox(page, "#thread-31 .btn-thread-here.btn-thread-minimize");
+  const threadHeader = await layoutBox(page, "#thread-31 > .thread-header");
+  const threadState = await layoutBox(page, "#thread-31 > .thread-header .badge.state.open");
+  const minimizeButton = await layoutBox(page, "#thread-31 > .thread-header .btn-thread-minimize");
   const threadList = await layoutBox(page, "#thread-31 > ul.comments");
   const comment = await layoutBox(page, "#thread-31 #comment-32.comment");
   const replyForm = await layoutBox(page, "#thread-31 .thread-comment-form");
@@ -318,9 +321,17 @@ async function assertLegacyInlineDiffCommentRowMetrics(page: Page) {
       const threadStyle = window.getComputedStyle(
         element.querySelector(".comment-thread-wrap") as HTMLElement,
       );
+      const headerStyle = window.getComputedStyle(
+        element.querySelector(".thread-header") as HTMLElement,
+      );
+      const badgeStyle = window.getComputedStyle(
+        element.querySelector(".thread-header .badge.state.open") as HTMLElement,
+      );
       return {
+        badgeDisplay: badgeStyle.display,
         cellDisplay: cellStyle.display,
         cellPaddingLeft: cellStyle.paddingLeft,
+        headerDisplay: headerStyle.display,
         rowDisplay: rowStyle.display,
         threadDisplay: threadStyle.display,
       };
@@ -341,6 +352,11 @@ async function assertLegacyInlineDiffCommentRowMetrics(page: Page) {
   await expect(page.locator("#thread-31")).toHaveAttribute("data-range-endline", "2");
   await expect(page.locator("#thread-31")).toHaveAttribute("data-range-startside", "B");
   await expect(page.locator("#thread-31")).toHaveAttribute("data-range-endside", "B");
+  await expect(page.locator("#thread-31 > .btn-thread-here .yobicon-post2")).toHaveCount(1);
+  await expect(page.locator("#thread-31 > .thread-header .badge.state.open")).toContainText("Open");
+  await expect(
+    page.locator("#thread-31 > .thread-header .btn-thread-minimize .yobicon-maximize"),
+  ).toHaveCount(1);
 
   expect(commentRow.y).toBeGreaterThan(addRow.y + addRow.height - 1);
   expect(commentRow.x).toBeCloseTo(addRow.x, 0);
@@ -350,12 +366,19 @@ async function assertLegacyInlineDiffCommentRowMetrics(page: Page) {
   expect(thread.x).toBeGreaterThanOrEqual(commentCell.x);
   expect(thread.width).toBeLessThanOrEqual(commentCell.width + 1);
   expect(threadButton.y).toBeGreaterThanOrEqual(thread.y);
-  expect(threadList.y).toBeGreaterThanOrEqual(thread.y);
+  expect(threadHeader.y).toBeGreaterThanOrEqual(threadButton.y);
+  expect(threadHeader.x).toBeGreaterThanOrEqual(thread.x);
+  expect(threadHeader.width).toBeLessThanOrEqual(thread.width + 1);
+  expect(threadState.y).toBeGreaterThanOrEqual(threadHeader.y);
+  expect(minimizeButton.x).toBeGreaterThan(threadState.x + threadState.width - 1);
+  expect(threadList.y).toBeGreaterThan(threadHeader.y + threadHeader.height - 1);
   expect(comment.y).toBeGreaterThanOrEqual(threadList.y);
   expect(replyForm.y).toBeGreaterThan(comment.y + comment.height - 1);
   expect(styles).toEqual({
+    badgeDisplay: "inline",
     cellDisplay: "table-cell",
     cellPaddingLeft: "1px",
+    headerDisplay: "block",
     rowDisplay: "table-row",
     threadDisplay: "block",
   });
