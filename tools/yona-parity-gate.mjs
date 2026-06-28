@@ -148,7 +148,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "project-markdown-rendering",
     label: "Project Markdown rendering",
-    status: "partial",
+    status: "parity",
     implementationPatterns: [
       /^crates\/server\/src\/lib\.rs$/i,
       /^crates\/server\/src\/markdown\.rs$/i,
@@ -176,6 +176,10 @@ const DOMAIN_BUCKETS = [
       "docs/provenance/core-parity-audit.md",
       "docs/provenance/ui-parity-reports/ui-parity-board-milestone.md",
       "docs/provenance/ui-parity-reports/ui-parity-issues.md",
+      "docs/provenance/ui-parity-reports/ui-parity-code-vcs.md",
+      "docs/provenance/ui-parity-reports/ui-parity-fragment-security-db.md",
+      "docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md",
+      "docs/provenance/ui-parity-reports/template-first-p4-board-milestone-post.md",
       "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
     ],
   },

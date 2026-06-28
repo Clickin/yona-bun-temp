@@ -298,15 +298,14 @@ test("maps monolithic server Markdown renderer changes with focused evidence", (
   const result = runGate([
     "crates/server/src/lib.rs",
     "crates/server/tests/issue_core_contract.rs",
-    "docs/provenance/phase-0b/issue.md",
-    "docs/provenance/legacy-porting-progress.md",
+    "docs/provenance/ui-parity-reports/ui-parity-issues.md",
   ]);
 
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["project-markdown-rendering"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["project-markdown-rendering", "parity"]],
   );
 });
 
@@ -316,16 +315,15 @@ test("maps PR and code Markdown renderer changes with focused evidence", () => {
     "crates/server/tests/pull_request_read_contract.rs",
     "crates/server/tests/pull_request_mutation_contract.rs",
     "crates/server/tests/code_browser_contract.rs",
-    "docs/provenance/phase-0b/pull-request-review.md",
-    "docs/provenance/phase-0b/code-browser.md",
-    "docs/provenance/legacy-porting-progress.md",
+    "docs/provenance/ui-parity-reports/ui-parity-pull-request-review.md",
+    "docs/provenance/ui-parity-reports/ui-parity-code-vcs.md",
   ]);
 
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["project-markdown-rendering"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["project-markdown-rendering", "parity"]],
   );
 });
 
@@ -336,14 +334,14 @@ test("maps Markdown tasklist surface opt-ins to the renderer capability", () => 
     "frontend/src/routes/-board-views.tsx",
     "frontend/src/routes/-issue-views.tsx",
     "frontend/src/markdown-renderer.spec.tsx",
-    "docs/provenance/legacy-porting-progress.md",
+    "docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md",
   ]);
 
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["project-markdown-rendering"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["project-markdown-rendering", "parity"]],
   );
 });
 
