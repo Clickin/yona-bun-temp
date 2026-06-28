@@ -596,6 +596,7 @@ function PostingHistoryModal(props: {
   viewerLabel?: string;
   viewerLoginId?: string;
 }) {
+  const [isOpen, setIsOpen] = React.useState(false);
   const historyMarkdown = props.historyMarkdown ?? "";
   if (!historyMarkdown.trim()) {
     return null;
@@ -603,15 +604,23 @@ function PostingHistoryModal(props: {
 
   return (
     <div className="posting-history">
-      <a data-toggle="modal" href="#-yona-posting-history">
+      <a
+        data-toggle="modal"
+        href="#-yona-posting-history"
+        onClick={(event) => {
+          event.preventDefault();
+          setIsOpen(true);
+        }}
+      >
         <span>{legacyMessage(props.messages, props.linkLabel)}</span>
       </a>
-      <div className="modal hide" id="-yona-posting-history">
+      <div className={`modal${isOpen ? "" : " hide"}`} id="-yona-posting-history">
         <div className="modal-header">
           <button
             aria-label={legacyMessage(props.messages, "button.close")}
             className="close"
             data-dismiss="modal"
+            onClick={() => setIsOpen(false)}
             type="button"
           >
             ×
@@ -630,7 +639,12 @@ function PostingHistoryModal(props: {
           projectName={props.projectName}
         />
         <div className="modal-footer">
-          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
+          <button
+            className="ybtn ybtn-info ybtn-small"
+            data-dismiss="modal"
+            onClick={() => setIsOpen(false)}
+            type="button"
+          >
             {legacyMessage(props.messages, "button.confirm")}
           </button>
         </div>

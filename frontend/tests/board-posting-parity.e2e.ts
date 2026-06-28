@@ -640,7 +640,84 @@ test("project board detail supports watch and comment create update delete", asy
     "Changed title from old board post",
   );
   await expect(page.locator("#-yona-posting-history strong")).toHaveText("title");
+  await expect(page.locator("#-yona-posting-history .modal-header h5.nm")).toHaveText(
+    "Change history",
+  );
+  await expect(page.locator("#-yona-posting-history .modal-body > p")).toContainText(
+    "Changed title from old board post",
+  );
+  await expect(page.locator("#-yona-posting-history .modal-footer .ybtn-info")).toContainText(
+    "Confirm",
+  );
   await expect(page.locator(".board-comment-wrap")).toContainText("First board comment");
+
+  const historyLink = await layoutBox(page, ".posting-history a");
+  const hiddenHistoryModal = await page.locator("#-yona-posting-history").evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return {
+      display: style.display,
+      id: element.id,
+      modalClass: element.getAttribute("class"),
+    };
+  });
+  await page.locator(".posting-history a").click();
+  const historyModal = await layoutBox(page, "#-yona-posting-history.modal");
+  const modalHeader = await layoutBox(page, "#-yona-posting-history .modal-header");
+  const closeButton = await layoutBox(page, "#-yona-posting-history .modal-header .close");
+  const modalTitle = await layoutBox(page, "#-yona-posting-history .modal-header h5.nm");
+  const modalBody = await layoutBox(page, "#-yona-posting-history .modal-body");
+  const modalParagraph = await layoutBox(page, "#-yona-posting-history .modal-body > p");
+  const modalFooter = await layoutBox(page, "#-yona-posting-history .modal-footer");
+  const confirmButton = await layoutBox(page, "#-yona-posting-history .modal-footer .ybtn-info");
+  const openHistoryModalStyles = await page
+    .locator("#-yona-posting-history")
+    .evaluate((element) => {
+      const modalStyle = window.getComputedStyle(element);
+      const bodyStyle = window.getComputedStyle(
+        element.querySelector(".modal-body") as HTMLElement,
+      );
+      const paragraphStyle = window.getComputedStyle(
+        element.querySelector(".modal-body > p") as HTMLElement,
+      );
+      const footerStyle = window.getComputedStyle(
+        element.querySelector(".modal-footer") as HTMLElement,
+      );
+      return {
+        bodyDisplay: bodyStyle.display,
+        display: modalStyle.display,
+        footerDisplay: footerStyle.display,
+        paragraphDisplay: paragraphStyle.display,
+        position: modalStyle.position,
+      };
+    });
+
+  expect(hiddenHistoryModal).toEqual({
+    display: "none",
+    id: "-yona-posting-history",
+    modalClass: "modal hide",
+  });
+  expect(historyLink.y).toBeGreaterThanOrEqual(0);
+  expect(Math.round(historyModal.width)).toBe(562);
+  expect(Math.abs(historyModal.x + historyModal.width / 2 - 640)).toBeLessThanOrEqual(2);
+  expect(modalHeader.y).toBeGreaterThanOrEqual(historyModal.y);
+  expect(closeButton.x).toBeGreaterThan(modalHeader.x + modalHeader.width / 2);
+  expect(closeButton.y).toBeGreaterThanOrEqual(modalHeader.y);
+  expect(modalTitle.x).toBeGreaterThanOrEqual(modalHeader.x);
+  expect(modalBody.y).toBeGreaterThan(modalHeader.y + modalHeader.height - 1);
+  expect(modalParagraph.x).toBeGreaterThanOrEqual(modalBody.x);
+  expect(modalParagraph.width).toBeLessThanOrEqual(modalBody.width + 1);
+  expect(modalFooter.y).toBeGreaterThan(modalBody.y + modalBody.height - 1);
+  expect(confirmButton.y).toBeGreaterThanOrEqual(modalFooter.y);
+  expect(confirmButton.x).toBeGreaterThanOrEqual(modalFooter.x);
+  expect(openHistoryModalStyles).toEqual({
+    bodyDisplay: "block",
+    display: "block",
+    footerDisplay: "block",
+    paragraphDisplay: "block",
+    position: "fixed",
+  });
+  await page.locator("#-yona-posting-history .modal-footer .ybtn-info").click();
+  await expect(page.locator("#-yona-posting-history")).toBeHidden();
 
   const labelRequest = page.waitForRequest(
     (request) => request.url().endsWith("/posts/1/labels") && request.method() === "PATCH",

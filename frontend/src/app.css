@@ -687,7 +687,15 @@ button[type="submit"]:focus {
 }
 
 .modal-header .close {
+  float: right;
+  padding: 0;
   margin-top: 2px;
+  font-size: 20px;
+  line-height: 20px;
+  color: #777;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .modal-header h3 {
