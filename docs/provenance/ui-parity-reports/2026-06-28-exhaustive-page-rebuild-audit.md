@@ -424,7 +424,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | --- | --- | --- |
 | `project/change_vcs.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/create.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
-| `project/delete.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/delete.scala.html` | P2 project | metric guard passed: `project-delete-parity.e2e.ts` asserts legacy settings shell ownership, delete submenu active state, `.bubble-wrap.gray.wp` confirmation body, `.cu-label`/`.cu-desc` layout, checkbox/label alignment, bottom delete button, validation alert, `#alertDeletion` modal header/body/footer order, confirm/cancel alignment, forbidden branch, and TanStack Query REST DELETE with CSRF |
 | `project/header.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts 120px project header, inner/header y alignment, root navbar overlay position, and `data-project-id` selector guard remains covered by `project-settings-parity.spec.tsx` |
 | `project/home.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy project home header row, span9 overview/span3 clone layout, tabbed span9 left pane, span3 right pane, README fallback, project-home sidebar bubble, history/dashboard tab navigation, leave modal flow, and resolved copy |
 | `project/importing.scala.html` | P7 import/P2 project | reopen: inspect Scala anchors before JSX reuse |
