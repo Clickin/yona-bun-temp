@@ -196,6 +196,79 @@ async function assertLegacyIssueEventTimelineMetrics(page: Page) {
   });
 }
 
+async function assertLegacyIssueIndexCommentsShellMetrics(page: Page) {
+  const shell = await layoutBox(page, "aside.span-right-pane #comments.board-comment-wrap");
+  const timeline = await layoutBox(page, "aside.span-right-pane #comments > #timeline");
+  const timelineList = await layoutBox(
+    page,
+    "aside.span-right-pane #comments > #timeline > .timeline-list",
+  );
+  const header = await layoutBox(
+    page,
+    "aside.span-right-pane #comments .timeline-list > .comment-header",
+  );
+  const headerLabel = await layoutBox(
+    page,
+    "aside.span-right-pane #comments .comment-header > strong:first-of-type",
+  );
+  const headerCount = await layoutBox(
+    page,
+    "aside.span-right-pane #comments .comment-header > strong.num",
+  );
+  const list = await layoutBox(
+    page,
+    "aside.span-right-pane #comments .timeline-list > ul.comments",
+  );
+  const firstComment = await layoutBox(
+    page,
+    "aside.span-right-pane #comments .timeline-list > ul.comments > li#comment-10.index-comment",
+  );
+  const styles = await page.locator("aside.span-right-pane #comments").evaluate((element) => {
+    const shellStyle = window.getComputedStyle(element);
+    const headerStyle = window.getComputedStyle(
+      element.querySelector(".comment-header") as HTMLElement,
+    );
+    const listStyle = window.getComputedStyle(element.querySelector("ul.comments") as HTMLElement);
+    const firstCommentStyle = window.getComputedStyle(
+      element.querySelector("li.index-comment") as HTMLElement,
+    );
+    return {
+      firstCommentDisplay: firstCommentStyle.display,
+      headerDisplay: headerStyle.display,
+      listDisplay: listStyle.display,
+      listStyleType: listStyle.listStyleType,
+      shellDisplay: shellStyle.display,
+    };
+  });
+
+  await expect(page.locator("aside.span-right-pane #comments.board-comment-wrap")).toHaveCount(1);
+  await expect(
+    page.locator("aside.span-right-pane #comments .comment-header > strong:first-of-type"),
+  ).toContainText("Comment");
+  await expect(
+    page.locator("aside.span-right-pane #comments .comment-header > strong.num"),
+  ).toContainText("2");
+  await expect(page.locator("aside.span-right-pane #comments ul.comments")).toHaveCount(1);
+  await expect(page.locator("aside.span-right-pane #comments li.event")).toHaveCount(0);
+  await expect(page.locator("aside.span-right-pane #comments li.index-comment")).toHaveCount(1);
+
+  expect(timeline.x).toBeGreaterThanOrEqual(shell.x);
+  expect(timeline.width).toBeLessThanOrEqual(shell.width + 1);
+  expect(timelineList.x).toBeGreaterThanOrEqual(timeline.x);
+  expect(header.y).toBeGreaterThanOrEqual(timelineList.y);
+  expect(headerLabel.x).toBeGreaterThanOrEqual(header.x);
+  expect(headerCount.x).toBeGreaterThan(headerLabel.x + headerLabel.width - 1);
+  expect(list.y).toBeGreaterThanOrEqual(timelineList.y);
+  expect(firstComment.y).toBeGreaterThanOrEqual(list.y);
+  expect(styles).toEqual({
+    firstCommentDisplay: "list-item",
+    headerDisplay: "block",
+    listDisplay: "block",
+    listStyleType: "none",
+    shellDisplay: "block",
+  });
+}
+
 async function assertLegacyIssueIndexCommentMetrics(page: Page) {
   const indexRowSelector =
     "aside.span-right-pane #comments .timeline-list > ul.comments > li#comment-10.comment.index-comment";
@@ -1339,6 +1412,7 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await expect(fullTimeline.locator("#event-19")).toHaveCount(0);
   await expect(fullTimeline).not.toContainText("issue.event.");
 
+  await assertLegacyIssueIndexCommentsShellMetrics(page);
   await assertLegacyIssueIndexCommentMetrics(page);
   await assertLegacyIssueCommentsShellMetrics(page);
   await assertLegacyIssueEventTimelineMetrics(page);
