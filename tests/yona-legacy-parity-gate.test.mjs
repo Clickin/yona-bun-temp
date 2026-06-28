@@ -498,6 +498,21 @@ test("treats organization directory and shell routes as a closed parity slice", 
   );
 });
 
+test("accepts template-first P2 project shell evidence for project view changes", () => {
+  const result = runGate([
+    "frontend/src/routes/-project-views.tsx",
+    "frontend/src/project-home-tabs.spec.tsx",
+    "docs/provenance/ui-parity-reports/template-first-p2-project-shell.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["project-core-cru-and-enrollment", "partial"]],
+  );
+});
+
 test("treats canonical migration crate as active canonical work, not deferred scope", () => {
   const result = runGate([
     "crates/migration/src/m20260407_000003_create_org_project_baseline_tables.rs",

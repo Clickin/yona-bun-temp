@@ -443,6 +443,7 @@ const DOMAIN_BUCKETS = [
       "docs/provenance/ui-parity-reports/ui-parity-board-milestone.md",
       "docs/provenance/ui-parity-reports/ui-parity-issues.md",
       "docs/provenance/ui-parity-reports/ui-parity-project-home-admin.md",
+      "docs/provenance/ui-parity-reports/template-first-p2-project-shell.md",
       "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
     ],
   },
