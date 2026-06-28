@@ -20,6 +20,49 @@ async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
   return box as LayoutBox;
 }
 
+async function assertLegacyErrorPageMetrics(page: Page) {
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".project-page-wrap");
+  const errorWrap = await layoutBox(page, ".error-wrap");
+  const icon = await layoutBox(page, ".error-wrap .ico-404");
+  const message = await layoutBox(page, ".error-wrap > p");
+  const button = await layoutBox(page, ".error-wrap .ybtn.ybtn-info");
+  const styles = await page.locator(".error-wrap").evaluate((element) => {
+    const wrap = window.getComputedStyle(element);
+    const paragraph = window.getComputedStyle(element.querySelector("p") as HTMLElement);
+    return {
+      color: paragraph.color,
+      fontSize: paragraph.fontSize,
+      fontWeight: paragraph.fontWeight,
+      marginBottom: paragraph.marginBottom,
+      marginTop: paragraph.marginTop,
+      paddingBottom: wrap.paddingBottom,
+      paddingTop: wrap.paddingTop,
+      textAlign: wrap.textAlign,
+    };
+  });
+
+  expect(projectPage.x).toBeCloseTo(pageWrap.x, 0);
+  expect(projectPage.width).toBeCloseTo(pageWrap.width, 0);
+  expect(errorWrap.x).toBeCloseTo(projectPage.x, 0);
+  expect(errorWrap.width).toBeCloseTo(projectPage.width, 0);
+  expect(icon.x + icon.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(message.x + message.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(button.x + button.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(message.y).toBeGreaterThan(icon.y + icon.height);
+  expect(button.y).toBeGreaterThan(message.y + message.height);
+  expect(styles).toEqual({
+    color: "rgb(137, 137, 137)",
+    fontSize: "16px",
+    fontWeight: "700",
+    marginBottom: "30px",
+    marginTop: "30px",
+    paddingBottom: "100px",
+    paddingTop: "100px",
+    textAlign: "center",
+  });
+}
+
 function searchResponse(overrides: Record<string, unknown> = {}) {
   return {
     context: {
@@ -627,6 +670,7 @@ test("shows an invalid query shell without sending a REST search request", async
   await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toContainText("Home");
   await expect(page.locator(".invalid-query")).toHaveCount(0);
   await expect(page.locator("#searchInnerForm")).toHaveCount(0);
+  await assertLegacyErrorPageMetrics(page);
   expect(searchApiCalls).toBe(0);
 
   await page.goto("/yona/owner/projectYobi/search?keyword=Needle&searchType=project&pageNum=1");
@@ -657,6 +701,7 @@ test("keeps failed REST search on the legacy bad-request shell", async ({ page }
   await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
   await expect(page.locator(".runtime-error-banner")).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText("Search failed.");
+  await assertLegacyErrorPageMetrics(page);
 });
 
 test("renders hostile search result text as inert text", async ({ page }) => {

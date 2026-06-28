@@ -251,7 +251,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
 | `error/badrequest.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
-| `error/badrequest_default.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `error/badrequest_default.scala.html` | P7 error/security | metric guard passed: `search-parity.e2e.ts` asserts the default bad-request shell, `.page-wrap-outer`/`.project-page-wrap`/`.error-wrap` placement, centered `.ico-404`, resolved bad-request copy, 100px vertical padding, 30px message margins, 16px bold gray message, centered `.ybtn.ybtn-info` home action, and search form/error banner absence |
 | `error/forbidden.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
 | `error/forbidden_default.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
 | `error/forbidden_organization.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |

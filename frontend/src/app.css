@@ -2086,6 +2086,27 @@ h1 {
   text-align: center;
 }
 
+.error-wrap .ico,
+.error-wrap .ico-404 {
+  display: inline-block;
+  background-image: url("/yona/legacy-assets/images/sprite.png");
+  background-repeat: no-repeat;
+  vertical-align: middle;
+}
+
+.error-wrap .ico-err1 {
+  width: 62px;
+  height: 82px;
+  background-position: -5px -160px;
+}
+
+.error-wrap .ico-err2,
+.error-wrap .ico-404 {
+  width: 50px;
+  height: 80px;
+  background-position: -80px -160px;
+}
+
 .error-wrap p {
   margin: 30px 0;
   color: #898989;
