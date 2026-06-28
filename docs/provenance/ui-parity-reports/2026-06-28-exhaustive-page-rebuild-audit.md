@@ -390,7 +390,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `milestone/create.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
+| `milestone/create.scala.html` | P4 milestone | metric guard passed: `milestone-delete-modal-parity.e2e.ts` asserts legacy create form fields/attrs, null uploader resource id, left/right pane positioning, editor/uploader/action ordering, due-date picker placement, and TanStack Query POST submit boundary |
 | `milestone/edit.scala.html` | P4 milestone | metric guard passed: `milestone-delete-modal-parity.e2e.ts` asserts legacy edit form fields/attrs, left/right pane positioning, editor/uploader/action ordering, due-date picker placement, and TanStack Query PATCH submit boundary |
 | `milestone/list.scala.html` | P4 milestone | metric guard passed: `milestone-delete-modal-parity.e2e.ts` asserts project shell stack, milestone tabs/new button/filter/search/list ordering, list item width, progress placement, and issue link anchors |
 | `milestone/partial_status.scala.html` | P4 milestone | metric guard passed: `milestone-delete-modal-parity.e2e.ts` asserts milestone progress percent/bar width, closed/open issue count copy, due date/status copy, and list/detail route state toggles |

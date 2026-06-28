@@ -375,6 +375,129 @@ test("milestone create form keeps invalid submit validation in React before REST
   expect(createRequestCount).toBe(0);
 });
 
+test("milestone create form keeps legacy fields, layout metrics, and REST submit boundary", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.route(
+    /\/api\/v1\/owners\/admin\/projects\/projectYobi\/milestones$/,
+    async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({
+          body: JSON.stringify({
+            milestone: {
+              ...milestonePayload("closed").milestone,
+              contentsMarkdown: "Created milestone body",
+              dueDateLabel: "2026-07-01",
+              id: "9",
+              state: "closed",
+              title: "v1.1",
+            },
+          }),
+          headers: restJsonHeaders,
+          status: 200,
+        });
+        return;
+      }
+      await route.fallback();
+    },
+  );
+  await page.route(
+    /\/api\/v1\/owners\/admin\/projects\/projectYobi\/milestones\/9$/,
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          milestone: {
+            ...milestonePayload("closed").milestone,
+            contentsMarkdown: "Created milestone body",
+            dueDateLabel: "2026-07-01",
+            id: "9",
+            state: "closed",
+            title: "v1.1",
+          },
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
+  await page.goto("/yona/admin/projectYobi/newMilestoneForm");
+
+  await expect(page.locator(".milestone-form-page #milestone-form")).toBeVisible();
+  await expect(page.locator("#milestone-form")).not.toHaveAttribute("action", /.+/);
+  await expect(page.locator("#title")).toHaveAttribute("name", "title");
+  await expect(page.locator("#title")).toHaveAttribute("maxlength", "250");
+  await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
+  await expect(page.locator("#title")).toHaveAttribute("placeholder", "Title");
+  await expect(page.locator("#title")).toHaveValue("");
+  await expect(page.locator("#editor-contents-content-body")).toHaveAttribute("name", "contents");
+  await expect(page.locator("#editor-contents-content-body")).toHaveValue("");
+  await expect(page.locator("#milestone-open")).toHaveAttribute("name", "state");
+  await expect(page.locator("#milestone-open")).toHaveAttribute("value", "open");
+  await expect(page.locator("#milestone-open")).toBeChecked();
+  await expect(page.locator("#milestone-close")).toHaveAttribute("name", "state");
+  await expect(page.locator("#milestone-close")).toHaveAttribute("value", "closed");
+  await expect(page.locator("#dueDate")).toHaveAttribute("name", "dueDate");
+  await expect(page.locator("#dueDate")).toHaveClass(/due-date/);
+  await expect(page.locator("#dueDate")).toHaveValue("");
+  await expect(page.locator("#datepicker.date-picker")).toBeAttached();
+  await expect(page.locator('.upload-wrap[data-resource-type="MILESTONE"]')).not.toHaveAttribute(
+    "data-resource-id",
+    /.+/,
+  );
+  await expect(page.locator('#milestone-form button[type="submit"]')).toHaveText("Save");
+  await expect(
+    page.locator('#milestone-form .actrow a[href="/yona/admin/projectYobi/milestones"]'),
+  ).toHaveText("Cancel");
+
+  const form = await layoutBox(page, "#milestone-form");
+  const title = await layoutBox(page, "#title");
+  const leftPane = await layoutBox(page, "#milestone-form .span9.span-left-pane");
+  const rightPane = await layoutBox(page, "#milestone-form .span3.span-hard-wrap");
+  const editor = await layoutBox(page, "#editor-contents-content-body");
+  const uploader = await layoutBox(page, '.upload-wrap[data-resource-type="MILESTONE"]');
+  const actions = await layoutBox(page, "#milestone-form .actrow.right-txt");
+  const stateOption = await layoutBox(page, "#milestone-form .issue-option:nth-of-type(1)");
+  const dueDateOption = await layoutBox(page, "#milestone-form .issue-option:nth-of-type(2)");
+  const dueDate = await layoutBox(page, "#dueDate");
+  const datePicker = await layoutBox(page, "#datepicker.date-picker");
+
+  expect(title.y).toBeGreaterThanOrEqual(form.y);
+  expect(leftPane.y).toBeGreaterThan(title.y + title.height - 1);
+  expect(rightPane.y).toBeCloseTo(leftPane.y, 0);
+  expect(rightPane.x).toBeGreaterThan(leftPane.x + leftPane.width - 1);
+  expect(editor.x).toBeGreaterThanOrEqual(leftPane.x);
+  expect(editor.width).toBeLessThanOrEqual(leftPane.width);
+  expect(uploader.y).toBeGreaterThan(editor.y + editor.height - 1);
+  expect(actions.y).toBeGreaterThan(uploader.y + uploader.height - 1);
+  expect(stateOption.y).toBeGreaterThanOrEqual(rightPane.y);
+  expect(dueDateOption.y).toBeGreaterThan(stateOption.y + stateOption.height - 1);
+  expect(dueDate.x).toBeGreaterThanOrEqual(dueDateOption.x);
+  expect(datePicker.y).toBeGreaterThanOrEqual(dueDate.y + dueDate.height - 1);
+
+  const createRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith("/owners/admin/projects/projectYobi/milestones") &&
+      request.method() === "POST",
+  );
+  await page.locator("#title").fill("v1.1");
+  await page.locator("#editor-contents-content-body").fill("Created milestone body");
+  await page.locator("#milestone-close").check();
+  await page.locator("#dueDate").fill("2026-07-01");
+  await page.locator('#milestone-form button[type="submit"]').click();
+
+  const body = (await createRequest).postDataJSON() as Record<string, unknown>;
+  expect(body).toMatchObject({
+    attachmentIds: [],
+    contentsMarkdown: "Created milestone body",
+    dueDate: "2026-07-01",
+    state: "closed",
+    title: "v1.1",
+  });
+  await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/milestone\/9$/);
+});
+
 test("milestone edit form keeps legacy fields, layout metrics, and REST submit boundary", async ({
   page,
 }) => {
