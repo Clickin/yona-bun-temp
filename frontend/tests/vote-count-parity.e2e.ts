@@ -20,6 +20,82 @@ async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
   return box as LayoutBox;
 }
 
+async function assertLegacyIssueListPageShellMetrics(page: Page) {
+  const appShell = await layoutBox(page, "main.app-shell.issue-list-page");
+  const projectHeader = await layoutBox(page, ".issue-list-page .project-header-outer");
+  const projectMenu = await layoutBox(page, ".issue-list-page .project-menu-outer");
+  const pageWrapOuter = await layoutBox(page, ".issue-list-page > .page-wrap-outer");
+  const projectPageWrap = await layoutBox(page, ".issue-list-page .project-page-wrap");
+  const issueWrap = await layoutBox(page, ".issue-list-page .row-fluid.issue-list-wrap");
+  const leftMenu = await layoutBox(page, ".issue-list-page .left-menu.span2.span-hard-wrap");
+  const contentPane = await layoutBox(page, ".issue-list-page #span10.span10.span-hard-wrap");
+  const newIssueButton = await layoutBox(page, "#span10 > .pull-right .ybtn.ybtn-success");
+  const stateTabs = await layoutBox(page, ".issue-list-page ul.nav.nav-tabs.nm");
+  const filterWrap = await layoutBox(page, ".issue-list-page .filter-wrap.board");
+  const firstList = await layoutBox(page, ".issue-list-page ul.post-list-wrap.row-fluid");
+  const pagination = await layoutBox(page, ".issue-list-page #pagination");
+  const styles = await page.locator(".issue-list-page").evaluate((element) => {
+    const shell = window.getComputedStyle(element);
+    const pageWrap = window.getComputedStyle(
+      element.querySelector(".page-wrap-outer") as HTMLElement,
+    );
+    const projectPage = window.getComputedStyle(
+      element.querySelector(".project-page-wrap") as HTMLElement,
+    );
+    const issueWrap = window.getComputedStyle(
+      element.querySelector(".issue-list-wrap") as HTMLElement,
+    );
+    const left = window.getComputedStyle(element.querySelector(".left-menu") as HTMLElement);
+    const content = window.getComputedStyle(element.querySelector("#span10") as HTMLElement);
+    return {
+      contentFloat: content.float,
+      issueWrapDisplay: issueWrap.display,
+      leftFloat: left.float,
+      pageWrapDisplay: pageWrap.display,
+      projectPageDisplay: projectPage.display,
+      shellDisplay: shell.display,
+    };
+  });
+
+  await expect(page.locator("main.app-shell.issue-list-page")).toHaveCount(1);
+  await expect(page.locator(".issue-list-page .project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".issue-list-page .project-menu-outer")).toHaveCount(1);
+  await expect(page.locator(".issue-list-page .row-fluid.issue-list-wrap")).toHaveAttribute(
+    "pjax-container",
+    "",
+  );
+  await expect(page.locator("#span10 > .pull-right .ybtn.ybtn-success")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/issueform",
+  );
+  await expect(page.locator("#pagination")).toHaveAttribute("data-total", "1");
+
+  expect(projectHeader.y).toBeGreaterThanOrEqual(appShell.y);
+  expect(projectMenu.y).toBeGreaterThan(projectHeader.y + projectHeader.height - 1);
+  expect(pageWrapOuter.y).toBeGreaterThan(projectMenu.y + projectMenu.height - 1);
+  expect(projectPageWrap.x).toBeGreaterThanOrEqual(pageWrapOuter.x);
+  expect(projectPageWrap.width).toBeLessThanOrEqual(pageWrapOuter.width + 1);
+  expect(issueWrap.y).toBeGreaterThanOrEqual(projectPageWrap.y);
+  expect(issueWrap.x).toBeGreaterThanOrEqual(projectPageWrap.x);
+  expect(leftMenu.x).toBeGreaterThanOrEqual(issueWrap.x);
+  expect(contentPane.x).toBeGreaterThan(leftMenu.x + leftMenu.width - 1);
+  expect(contentPane.width).toBeGreaterThan(leftMenu.width);
+  expect(Math.abs(contentPane.y - leftMenu.y)).toBeLessThanOrEqual(2);
+  expect(newIssueButton.x).toBeGreaterThan(contentPane.x + contentPane.width / 2);
+  expect(stateTabs.y).toBeGreaterThanOrEqual(contentPane.y);
+  expect(filterWrap.y).toBeGreaterThan(stateTabs.y + stateTabs.height - 1);
+  expect(firstList.y).toBeGreaterThan(filterWrap.y + filterWrap.height - 1);
+  expect(pagination.y).toBeGreaterThan(firstList.y + firstList.height - 1);
+  expect(styles).toEqual({
+    contentFloat: "left",
+    issueWrapDisplay: "block",
+    leftFloat: "left",
+    pageWrapDisplay: "block",
+    projectPageDisplay: "block",
+    shellDisplay: "block",
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.__YONA_RUNTIME_CONFIG__ = {
@@ -273,6 +349,7 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
 }) => {
   await page.setViewportSize({ height: 900, width: 1280 });
   await page.goto("/yona/admin/projectYobi/issues?pageNum=1");
+  await assertLegacyIssueListPageShellMetrics(page);
   const parentCountSelector = "#issue-item-101 .infos > .infos-item.item-count-groups";
 
   const quickSearch = page.locator(".issue-list-page .left-menu .lst-stacked.unstyled");
