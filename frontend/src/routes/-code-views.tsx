@@ -1923,7 +1923,7 @@ function CommitDiscussionThread(props: {
     >
       <div className="btn-thread-here btn-thread-minimize">
         <button className="ybtn ybtn-default ybtn-small" type="button">
-          <i className="yobicon-post2"></i>
+          <i className={props.thread.path ? "yobicon-post2" : "yobicon-comments"}></i>
         </button>
       </div>
       {props.thread.path ? (
@@ -2072,17 +2072,20 @@ function CommitDiscussionThread(props: {
                   </button>
                 </form>
               ) : (
-                <MarkdownRenderer
-                  className="comment-body markdown-wrap"
-                  basePath={props.runtimeConfig.basePath}
-                  commitReferences={commitDiscussionMarkdownCommitReferences(props.commitDetail)}
-                  data-via-email={comment.viaEmail ? "true" : undefined}
-                  issueReferences={comment.issueReferences}
-                  markdown={comment.contentsMarkdown}
-                  mentionReferences={comment.mentionReferences}
-                  ownerName={props.commitDetail.ownerName}
-                  projectName={props.commitDetail.projectName}
-                />
+                <>
+                  <MarkdownRenderer
+                    className="comment-body markdown-wrap"
+                    basePath={props.runtimeConfig.basePath}
+                    commitReferences={commitDiscussionMarkdownCommitReferences(props.commitDetail)}
+                    data-via-email={comment.viaEmail ? "true" : undefined}
+                    issueReferences={comment.issueReferences}
+                    markdown={comment.contentsMarkdown}
+                    mentionReferences={comment.mentionReferences}
+                    ownerName={props.commitDetail.ownerName}
+                    projectName={props.commitDetail.projectName}
+                  />
+                  <div className="attachments" data-attachments="[]"></div>
+                </>
               )}
             </div>
           </li>

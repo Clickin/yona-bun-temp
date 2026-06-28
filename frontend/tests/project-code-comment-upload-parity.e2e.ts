@@ -408,6 +408,124 @@ async function assertLegacyInlineDiffCommentRowMetrics(page: Page) {
   });
 }
 
+async function assertLegacyNonRangedCommitThreadMetrics(page: Page) {
+  const commentsWrap = await layoutBox(page, ".codediff-wrap > .diffs-wrap > .board-comment-wrap");
+  const nonRangedWrap = await layoutBox(page, ".non-ranged-threads-wrap");
+  const thread = await layoutBox(page, "#thread-11.comment-thread-wrap.open");
+  const threadButton = await layoutBox(page, "#thread-11 > .btn-thread-here.btn-thread-minimize");
+  const comments = await layoutBox(page, "#thread-11 > ul.comments");
+  const comment = await layoutBox(page, "#thread-11 #comment-21.comment");
+  const avatar = await layoutBox(page, "#thread-11 #comment-21 .comment-avatar");
+  const avatarLink = await layoutBox(page, "#thread-11 #comment-21 .avatar-wrap");
+  const mediaBody = await layoutBox(page, "#thread-11 #comment-21 .media-body");
+  const metaInfo = await layoutBox(page, "#thread-11 #comment-21 .meta-info");
+  const author = await layoutBox(page, "#thread-11 #comment-21 .comment_author.pull-left");
+  const ago = await layoutBox(page, "#thread-11 #comment-21 .ago");
+  const deleteButton = await layoutBox(page, "#thread-11 #comment-21 .edit.pull-right .close");
+  const body = await layoutBox(page, "#thread-11 #comment-21 .comment-body.markdown-wrap");
+  const attachments = await layoutBox(page, "#thread-11 #comment-21 .attachments");
+  const replyForm = await layoutBox(page, "#thread-11 .thread-comment-form");
+  const attrs = await page.locator("#thread-11").evaluate((element) => ({
+    endLine: element.getAttribute("data-range-endline"),
+    endSide: element.getAttribute("data-range-endside"),
+    path: element.getAttribute("data-range-path"),
+    startLine: element.getAttribute("data-range-startline"),
+    startSide: element.getAttribute("data-range-startside"),
+    toggle: element.getAttribute("data-toggle"),
+  }));
+  const styles = await page.locator("#thread-11").evaluate((element) => {
+    const threadStyle = window.getComputedStyle(element);
+    const commentsStyle = window.getComputedStyle(
+      element.querySelector("ul.comments") as HTMLElement,
+    );
+    const commentStyle = window.getComputedStyle(element.querySelector(".comment") as HTMLElement);
+    const avatarStyle = window.getComputedStyle(
+      element.querySelector(".comment-avatar") as HTMLElement,
+    );
+    const bodyStyle = window.getComputedStyle(
+      element.querySelector(".comment-body") as HTMLElement,
+    );
+    const attachmentsStyle = window.getComputedStyle(
+      element.querySelector(".attachments") as HTMLElement,
+    );
+    return {
+      attachmentsDisplay: attachmentsStyle.display,
+      avatarDisplay: avatarStyle.display,
+      bodyDisplay: bodyStyle.display,
+      commentDisplay: commentStyle.display,
+      commentsDisplay: commentsStyle.display,
+      threadDisplay: threadStyle.display,
+    };
+  });
+
+  await expect(page.locator("#thread-11 > .thread-header")).toHaveCount(0);
+  await expect(page.locator("#thread-11 > .btn-thread-here .yobicon-comments")).toHaveCount(1);
+  await expect(page.locator("#thread-11 > .btn-thread-here .yobicon-post2")).toHaveCount(0);
+  await expect(page.locator("#thread-11 #comment-21 .avatar-wrap")).toHaveAttribute(
+    "href",
+    "/yona/admin",
+  );
+  await expect(page.locator("#thread-11 #comment-21 .avatar-wrap")).toHaveAttribute(
+    "data-toggle",
+    "tooltip",
+  );
+  await expect(page.locator("#thread-11 #comment-21 .avatar-wrap")).toHaveAttribute(
+    "data-placement",
+    "top",
+  );
+  await expect(page.locator("#thread-11 #comment-21 .comment_author strong")).toHaveText("admin");
+  await expect(page.locator("#thread-11 #comment-21 .ago a")).toHaveAttribute(
+    "href",
+    "#comment-21",
+  );
+  await expect(page.locator("#thread-11 #comment-21 .edit .close")).toHaveAttribute(
+    "data-request-method",
+    "delete",
+  );
+  await expect(page.locator("#thread-11 #comment-21 .comment-body")).toContainText(
+    "Existing comment",
+  );
+  await expect(page.locator("#thread-11 #comment-21 .attachments")).toHaveAttribute(
+    "data-attachments",
+    "[]",
+  );
+  expect(attrs).toEqual({
+    endLine: null,
+    endSide: null,
+    path: null,
+    startLine: null,
+    startSide: null,
+    toggle: null,
+  });
+
+  expect(nonRangedWrap.y).toBeGreaterThanOrEqual(commentsWrap.y);
+  expect(thread.y).toBeGreaterThanOrEqual(nonRangedWrap.y);
+  expect(thread.x).toBeGreaterThanOrEqual(nonRangedWrap.x);
+  expect(thread.width).toBeLessThanOrEqual(nonRangedWrap.width + 1);
+  expect(threadButton.y).toBeGreaterThanOrEqual(thread.y);
+  expect(comments.y).toBeGreaterThanOrEqual(threadButton.y);
+  expect(comment.y).toBeGreaterThanOrEqual(comments.y);
+  expect(avatar.x).toBeGreaterThanOrEqual(comment.x);
+  expect(avatarLink.x).toBeGreaterThanOrEqual(avatar.x);
+  expect(mediaBody.x).toBeGreaterThanOrEqual(comment.x);
+  expect(mediaBody.y).toBeGreaterThanOrEqual(avatar.y);
+  expect(metaInfo.y).toBeGreaterThanOrEqual(mediaBody.y);
+  expect(author.x).toBeGreaterThanOrEqual(metaInfo.x);
+  expect(ago.x).toBeGreaterThan(author.x + author.width - 1);
+  expect(deleteButton.x).toBeGreaterThan(ago.x + ago.width - 1);
+  expect(body.y).toBeGreaterThan(metaInfo.y + metaInfo.height - 1);
+  expect(attachments.y).toBeGreaterThanOrEqual(body.y + body.height - 1);
+  expect(replyForm.y).toBeGreaterThan(comment.y + comment.height - 1);
+  expect(styles).toEqual({
+    attachmentsDisplay: "block",
+    avatarDisplay: "block",
+    bodyDisplay: "block",
+    commentDisplay: "list-item",
+    commentsDisplay: "block",
+    threadDisplay: "block",
+  });
+}
+
 async function assertLegacyThreadReplyFormMetrics(page: Page) {
   const thread = await layoutBox(page, "#thread-31.comment-thread-wrap");
   const commentList = await layoutBox(page, "#thread-31 > ul.comments");
@@ -815,6 +933,7 @@ test("commit thread reply editor submits pasted image uploads", async ({ page })
   );
 
   await page.goto(`/yona/admin/projectYobi/commit/${commitId}`);
+  await assertLegacyNonRangedCommitThreadMetrics(page);
   const replyEditor = page.locator("#thread-11 .thread-comment-form textarea");
 
   await replyEditor.evaluate((element) => {
