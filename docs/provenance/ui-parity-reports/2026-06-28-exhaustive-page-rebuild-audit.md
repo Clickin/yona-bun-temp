@@ -354,7 +354,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | --- | --- | --- |
 | `layout.scala.html` | P0/P7 layout | reopen: inspect Scala anchors before JSX reuse |
 | `layout_framed.scala.html` | P0/P7 layout | reference-only for active SPA sidebar decision |
-| `organizationLayout.scala.html` | P6 organization | reopen: inspect Scala anchors before JSX reuse |
+| `organizationLayout.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts root navbar, organization header/menu/page-wrap stack, settings submenu placement, and left/right settings form alignment; nested organization content rows remain open separately |
 | `partial_comment_form_on_thread.scala.html` | shared P5/P3 diff/comment | reopen: inspect Scala anchors before JSX reuse |
 | `partial_comment_thread.scala.html` | shared P5/P3 diff/comment | reopen: inspect Scala anchors before JSX reuse |
 | `partial_diff.scala.html` | shared P5/P3 diff/comment | reopen: inspect Scala anchors before JSX reuse |
@@ -362,11 +362,11 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `partial_diff_line.scala.html` | shared P5/P3 diff/comment | reopen: inspect Scala anchors before JSX reuse |
 | `partial_filediff.scala.html` | shared P5/P3 diff/comment | reopen: inspect Scala anchors before JSX reuse |
 | `partial_update_notification.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
-| `projectLayout.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `projectLayout.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts root navbar, project header/menu/page-wrap stack, settings submenu placement, and left/right settings form alignment; nested project content rows remain open separately |
 | `projectMenu.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `restricted.scala.html` | P7 error/security | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts root navbar/footer, direct `siteLayout` content stack, 560x315 iframe, user label/email, verification marker, provider/user ID, and session expiry copy |
 | `sidebar.scala.html` | P0/P6 sidebar | reopen under SPA root-layout sidebar decision |
-| `siteLayout.scala.html` | P0/P7 layout | reopen: inspect Scala anchors before JSX reuse |
+| `siteLayout.scala.html` | P0/P7 layout | metric guard passed: site-admin user/project/update metric guards assert root navbar/footer, site admin breadcrumb, left settings nav, right content column, and representative content ordering; nested site-admin content rows remain open separately |
 | `siteLayout_framed.scala.html` | P0/P7 layout | reference-only unless a concrete app-runtime route still needs framed semantics |
 
 ### `migration/`
