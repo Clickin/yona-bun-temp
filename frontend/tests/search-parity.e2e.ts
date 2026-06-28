@@ -783,6 +783,74 @@ test("renders the legacy default internal-server-error shell for failed REST sea
   await assertLegacyErrorPageMetrics(page);
 });
 
+test("renders the legacy request-text-too-large shell for 413 REST search", async ({ page }) => {
+  await page.route(/\/api\/v1\/search(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        error: { code: "payload_too_large", message: "request text is too large", status: 413 },
+      }),
+      headers: restJsonHeaders,
+      status: 413,
+    });
+  });
+
+  await page.goto("/yona/search?keyword=Needle&searchType=issue&pageNum=1");
+
+  await expect(page.locator(".request-text-too-large-page .error-wrap")).toBeVisible();
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(0);
+  await expect(page.locator(".error-wrap > p")).toHaveText([
+    "Request text entity too large",
+    'Text length exceeds maximum allowed text "102400" bytes.',
+  ]);
+  await expect(page.locator(".error-wrap .ybtn")).toHaveCount(0);
+  await expect(page.locator("#searchInnerForm")).toHaveCount(0);
+  await expect(page.locator(".runtime-error-banner")).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText("Search failed.");
+  await expect(page.locator("body")).not.toContainText("error.tooLargeText");
+
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".project-page-wrap");
+  const errorWrap = await layoutBox(page, ".error-wrap");
+  const icon = await layoutBox(page, ".error-wrap .ico.ico-err2");
+  const title = await layoutBox(page, ".error-wrap > p:nth-of-type(1)");
+  const limit = await layoutBox(page, ".error-wrap > p:nth-of-type(2)");
+  const styles = await page.locator(".error-wrap").evaluate((element) => {
+    const wrap = window.getComputedStyle(element);
+    const titleStyle = window.getComputedStyle(element.querySelector("p") as HTMLElement);
+    return {
+      color: titleStyle.color,
+      fontSize: titleStyle.fontSize,
+      fontWeight: titleStyle.fontWeight,
+      marginBottom: titleStyle.marginBottom,
+      marginTop: titleStyle.marginTop,
+      paddingBottom: wrap.paddingBottom,
+      paddingTop: wrap.paddingTop,
+      textAlign: wrap.textAlign,
+    };
+  });
+
+  expect(projectPage.x).toBeCloseTo(pageWrap.x, 0);
+  expect(projectPage.width).toBeCloseTo(pageWrap.width, 0);
+  expect(errorWrap.x).toBeCloseTo(projectPage.x, 0);
+  expect(errorWrap.width).toBeCloseTo(projectPage.width, 0);
+  expect(icon.x + icon.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(title.x + title.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(limit.x + limit.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(title.y).toBeGreaterThan(icon.y + icon.height);
+  expect(limit.y).toBeGreaterThan(title.y + title.height);
+  expect(styles).toEqual({
+    color: "rgb(137, 137, 137)",
+    fontSize: "16px",
+    fontWeight: "700",
+    marginBottom: "30px",
+    marginTop: "30px",
+    paddingBottom: "100px",
+    paddingTop: "100px",
+    textAlign: "center",
+  });
+});
+
 test("renders the legacy default forbidden shell for forbidden REST search", async ({ page }) => {
   await page.route(/\/api\/v1\/search(?:\?.*)?$/, async (route) => {
     await route.fulfill({

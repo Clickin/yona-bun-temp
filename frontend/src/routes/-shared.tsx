@@ -122,6 +122,10 @@ export function isInternalServerFailure(error: unknown): boolean {
   return status !== null && status >= 500;
 }
 
+export function isPayloadTooLargeFailure(error: unknown): boolean {
+  return readHttpStatus(error) === 413;
+}
+
 function RouteStatusPage({
   buttonClassName = "ybtn ybtn-info",
   href,
@@ -171,6 +175,43 @@ export function NotFoundPage({ href }: { href: string }) {
 
 export function InternalServerErrorPage({ href = "/" }: { href?: string }) {
   return <RouteStatusPage href={href} iconClassName="ico-404" title="error.internalServerError" />;
+}
+
+const LEGACY_DEFAULT_MAX_TEXT_LENGTH = "102400";
+
+export function RequestTextEntityTooLargePage() {
+  const { currentSession } = useAppRuntime();
+  const messages = useLegacyMessages();
+  const title = messages.t("error.tooLargeText.title", {
+    fallback: "error.tooLargeText.title",
+  });
+  useDocumentTitle(title);
+
+  return (
+    <main className="app-shell request-text-too-large-page">
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="error-wrap">
+            <i className="ico ico-err2"></i>
+            <p>{title}</p>
+            <p>
+              {messages.t("error.tooLargeText.limit", {
+                args: [LEGACY_DEFAULT_MAX_TEXT_LENGTH],
+                fallback: "error.tooLargeText.limit",
+              })}
+            </p>
+            {currentSession?.isSiteAdmin ? (
+              <p>
+                {messages.t("error.tooLargeText.admin", {
+                  fallback: "error.tooLargeText.admin",
+                })}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }
 
 export function RedirectPage({

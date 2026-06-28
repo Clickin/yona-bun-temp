@@ -32,7 +32,9 @@ import {
   ForbiddenPage,
   InternalServerErrorPage,
   isInternalServerFailure,
+  isPayloadTooLargeFailure,
   NotFoundPage,
+  RequestTextEntityTooLargePage,
   useDocumentTitle,
 } from "./-shared";
 import { OrganizationHeader, OrganizationMenu } from "./-organization-views";
@@ -634,7 +636,12 @@ export function SearchRoutePage({
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const { bootstrapping, messages, runtimeConfig } = useAppRuntime();
   const [failureKind, setFailureKind] = React.useState<
-    null | "bad-request" | "forbidden" | "internal-server-error" | "not-found"
+    | null
+    | "bad-request"
+    | "forbidden"
+    | "internal-server-error"
+    | "not-found"
+    | "request-text-too-large"
   >(null);
   const routeQuery = readSearchRouteQuery(locationHref);
   const routeInvalid =
@@ -732,6 +739,10 @@ export function SearchRoutePage({
       setFailureKind(nextFailureKind);
       return;
     }
+    if (isPayloadTooLargeFailure(routeError)) {
+      setFailureKind("request-text-too-large");
+      return;
+    }
     if (isInternalServerFailure(routeError)) {
       setFailureKind("internal-server-error");
       return;
@@ -762,6 +773,9 @@ export function SearchRoutePage({
   }
   if (failureKind === "internal-server-error") {
     return <InternalServerErrorPage href={prefixBasePath(runtimeConfig.basePath, "/")} />;
+  }
+  if (failureKind === "request-text-too-large") {
+    return <RequestTextEntityTooLargePage />;
   }
   if (failureKind === "bad-request") {
     return <BadRequestPage href={prefixBasePath(runtimeConfig.basePath, "/")} />;
