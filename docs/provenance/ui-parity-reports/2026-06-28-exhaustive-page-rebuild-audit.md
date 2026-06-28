@@ -311,7 +311,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `index/notifications.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 | `index/partial_intro.scala.html` | P1/P6 home workspace | metric guard passed: `root-shell-parity.e2e.ts`, `route-parity.spec.tsx`, and `auth-workspace-shell.spec.tsx` assert legacy anonymous home intro structure/copy, full-width home shell, legacy photo background, 750px centered intro cover, centered heading/tagline/signup action, six feature cells, 330px feature item width, row wrapping, icon/info/title x-alignment, and footer ordering |
 | `index/partial_notifications.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
-| `index/sidebar.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/sidebar.scala.html` | P1/P6 home workspace | intentional deviation recorded: thin wrapper around `siteLayout_framed`; active React keeps sidebar as SPA root layout surface and does not restore iframe/framed shell |
 
 ### `issue/`
 
@@ -365,7 +365,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `projectLayout.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts root navbar, project header/menu/page-wrap stack, settings submenu placement, and left/right settings form alignment; nested project content rows remain open separately |
 | `projectMenu.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `restricted.scala.html` | P7 error/security | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts root navbar/footer, direct `siteLayout` content stack, 560x315 iframe, user label/email, verification marker, provider/user ID, and session expiry copy |
-| `sidebar.scala.html` | P0/P6 sidebar | reopen under SPA root-layout sidebar decision |
+| `sidebar.scala.html` | P0/P6 sidebar | metric guard passed: `root-shell-parity.e2e.ts` and `auth-workspace-shell.spec.tsx` assert SPA `#mySidenav` rendering, 0px/360px open-close states, right-edge placement, profile/account/logout rows, tab ordering, organization/project/recent pane alignment, guest/anonymous suppression, localStorage active-tab hooks, and framed-only `mainFrame`/pin/iframe anchors intentionally absent |
 | `siteLayout.scala.html` | P0/P7 layout | metric guard passed: site-admin user/project/update metric guards assert root navbar/footer, site admin breadcrumb, left settings nav, right content column, and representative content ordering; nested site-admin content rows remain open separately |
 | `siteLayout_framed.scala.html` | P0/P7 layout | reference-only unless a concrete app-runtime route still needs framed semantics |
 
