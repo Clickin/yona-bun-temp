@@ -143,7 +143,7 @@ test.beforeEach(async ({ page }) => {
             title: "Pilot issue",
             updatedLabel: "2026-04-15",
             voterCount: 1,
-            watcherCount: 0,
+            watcherCount: 2,
             weight: 0,
           },
         ],
@@ -358,17 +358,50 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   await expect(
     page.locator("#issue-item-101 .vote-count .count-groups.item-count.strong"),
   ).toHaveText("1");
+  await expect(page.locator("#issue-item-101 .sharer-color")).toHaveAttribute(
+    "data-toggle",
+    "tooltip",
+  );
+  await expect(page.locator("#issue-item-101 .sharer-color")).toHaveAttribute(
+    "data-placement",
+    "bottom",
+  );
+  await expect(page.locator("#issue-item-101 .sharer-color")).toHaveAttribute(
+    "title",
+    "Issue Sharer",
+  );
+  await expect(page.locator("#issue-item-101 .sharer-color .yobicon-friends")).toHaveCount(1);
+  await expect(
+    page.locator("#issue-item-101 .sharer-color .count-groups.item-count.strong"),
+  ).toHaveText("2");
+  await expect(
+    page
+      .locator("#issue-item-101 .sharer-color")
+      .evaluate((element) => element.hasAttribute("href")),
+  ).resolves.toBe(false);
 
   const group = await layoutBox(page, "#issue-item-101 .item-count-groups");
   const voteLink = await layoutBox(page, "#issue-item-101 .vote-count.vote-color");
   const voteIcon = await layoutBox(page, "#issue-item-101 .vote-count .count-groups.item-icon");
   const voteCount = await layoutBox(page, "#issue-item-101 .vote-count .count-groups.item-count");
+  const sharerLink = await layoutBox(page, "#issue-item-101 .sharer-color");
+  const sharerIcon = await layoutBox(page, "#issue-item-101 .sharer-color .count-groups.item-icon");
+  const sharerCount = await layoutBox(
+    page,
+    "#issue-item-101 .sharer-color .count-groups.item-count",
+  );
   const voteStyles = await page.locator("#issue-item-101 .vote-count").evaluate((element) => {
     const groupElement = element.closest(".item-count-groups") as HTMLElement;
     const groupStyle = window.getComputedStyle(groupElement);
     const link = window.getComputedStyle(element);
     const icon = window.getComputedStyle(element.querySelector(".item-icon") as HTMLElement);
     const count = window.getComputedStyle(element.querySelector(".item-count") as HTMLElement);
+    const sharerLinkElement = groupElement.querySelector(".sharer-color") as HTMLElement;
+    const sharerIconElement = sharerLinkElement.querySelector(".item-icon") as HTMLElement;
+    const sharerCountElement = sharerLinkElement.querySelector(".item-count") as HTMLElement;
+    const sharerLinkStyle = window.getComputedStyle(sharerLinkElement);
+    const sharerIconStyle = window.getComputedStyle(sharerIconElement);
+    const sharerCountStyle = window.getComputedStyle(sharerCountElement);
     return {
       color: link.color,
       countPaddingRight: count.paddingRight,
@@ -377,6 +410,12 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
       iconFontSize: icon.fontSize,
       iconLineHeight: icon.lineHeight,
       iconPaddingTop: icon.paddingTop,
+      sharerColor: sharerLinkStyle.color,
+      sharerCountPaddingRight: sharerCountStyle.paddingRight,
+      sharerIconFontSize: sharerIconStyle.fontSize,
+      sharerIconLineHeight: sharerIconStyle.lineHeight,
+      sharerIconPaddingTop: sharerIconStyle.paddingTop,
+      sharerMarginLeft: sharerLinkStyle.marginLeft,
     };
   });
 
@@ -384,10 +423,18 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   expect(voteLink.y).toBeGreaterThanOrEqual(group.y);
   expect(voteIcon.x).toBeGreaterThanOrEqual(voteLink.x);
   expect(voteCount.x).toBeGreaterThan(voteIcon.x);
+  expect(sharerLink.x).toBeGreaterThan(voteLink.x);
+  expect(sharerIcon.x).toBeGreaterThanOrEqual(sharerLink.x);
+  expect(sharerCount.x).toBeGreaterThan(sharerIcon.x);
+  expect(sharerIcon.y).toBeLessThanOrEqual(sharerCount.y + sharerCount.height);
+  expect(sharerCount.y).toBeLessThanOrEqual(sharerIcon.y + sharerIcon.height);
   expect(Math.max(voteIcon.y, voteCount.y)).toBeLessThanOrEqual(
     Math.min(voteIcon.y + voteIcon.height, voteCount.y + voteCount.height),
   );
   expect(voteCount.x + voteCount.width).toBeLessThanOrEqual(voteLink.x + voteLink.width + 1);
+  expect(sharerCount.x + sharerCount.width).toBeLessThanOrEqual(
+    sharerLink.x + sharerLink.width + 1,
+  );
   expect(voteStyles).toEqual({
     color: "rgb(243, 108, 34)",
     countPaddingRight: "5px",
@@ -396,5 +443,11 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     iconFontSize: "9px",
     iconLineHeight: "12px",
     iconPaddingTop: "2px",
+    sharerColor: "rgb(0, 127, 202)",
+    sharerCountPaddingRight: "5px",
+    sharerIconFontSize: "9px",
+    sharerIconLineHeight: "12px",
+    sharerIconPaddingTop: "2px",
+    sharerMarginLeft: "-5px",
   });
 });

@@ -1517,11 +1517,11 @@ function ProjectIssueRows(props: {
                         </a>
                       ) : null}
                       {item.watcherCount > 0 ? (
+                        // oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy common/sharerCount.scala.html renders a tooltip anchor without href.
                         <a
                           className="sharer-color"
                           data-placement="bottom"
                           data-toggle="tooltip"
-                          href={`${issueHref}#sharers`}
                           title={legacyMessage(props.messages, "issue.sharer")}
                         >
                           <span className="count-groups item-icon">
