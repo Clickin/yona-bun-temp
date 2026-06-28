@@ -21,6 +21,7 @@ Current template-first reset reports:
 
 - `2026-06-28-exhaustive-page-rebuild-audit.md`
 - `2026-06-28-legacy-template-anchor-inventory.md`
+- `2026-06-28-static-react-owner-coverage.md`
 - `template-first-p0-global-shell.md`
 - `template-first-p1-auth-public-home.md`
 - `template-first-p2-project-shell.md`
@@ -42,6 +43,10 @@ Rules:
 - The 2026-06-28 generated anchor inventory is a checklist for every legacy
   Scala template. It does not close parity by itself; it identifies the DOM and
   message anchors that subsequent rebuilt JSX and tests must verify.
+- The 2026-06-28 static React owner coverage matrix maps all 242 legacy
+  templates to likely `frontend/src/routes/**` owner files and records anchor
+  overlap. It is triage evidence only; rendered route checks still decide
+  parity.
 - Explorer reports must not propose new UX or new product structure. Findings
   must be framed as `covered`, `gap`, `deviation`, `deferred`,
   `not-applicable`, or `needs-parent-decision`.

@@ -123,6 +123,15 @@ and included template/helper calls from each Scala file. Use it as the first
 checklist when rewriting tests and JSX, then verify the rendered route against
 the owning template and partials.
 
+The generated static React owner coverage matrix is:
+`docs/provenance/ui-parity-reports/2026-06-28-static-react-owner-coverage.md`.
+It maps all 242 legacy templates to likely `frontend/src/routes/**` owner files
+and checks anchor string overlap. The current static triage result is 134
+`static-anchor-candidate`, 93 `partial-static-match`, 3
+`needs-static-review`, 12 `no-static-anchors`, and 0 `needs-owner-map`. These
+counts are queue triage only; rendered route verification is still required
+before any template is closed.
+
 ### `board/`
 
 | legacy template | packet | audit disposition |
