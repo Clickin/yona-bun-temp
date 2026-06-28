@@ -20,6 +20,118 @@ async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
   return box as LayoutBox;
 }
 
+async function assertLegacyIssueCreateFormShellMetrics(page: Page) {
+  const pageWrapOuter = await layoutBox(page, ".page-wrap-outer");
+  const projectPageWrap = await layoutBox(page, ".page-wrap-outer .project-page-wrap");
+  const contentWrap = await layoutBox(page, ".page-wrap-outer .content-wrap.frm-wrap");
+  const form = await layoutBox(page, "#issue-form");
+  const titleRow = await layoutBox(page, "#issue-form > .row-fluid > .span12");
+  const titleDl = await layoutBox(page, "#issue-form > .row-fluid > .span12 > dl");
+  const titleDd = await layoutBox(page, "#issue-form > .row-fluid > .span12 > dl > dd");
+  const titleSpan = await layoutBox(page, "#issue-form .span12 .span11");
+  const titleInput = await layoutBox(page, "#title.text.title");
+  const optionToggle = await layoutBox(page, "#issue-form .subtask-message");
+  const subtaskWrap = await layoutBox(page, "#issue-form .subtask-wrap.show");
+  const bodyRow = await layoutBox(page, "#issue-form > .row-fluid > .row-fluid");
+  const leftPane = await layoutBox(page, "#issue-form .span9.span-left-pane");
+  const rightMenu = await layoutBox(page, "#issue-form .span3.span-hard-wrap.right-menu");
+  const editorDl = await layoutBox(page, "#issue-form .span-left-pane > dl");
+  const editorShell = await layoutBox(page, '#issue-form [data-toggle="markdown-editor"]');
+  const editorTextarea = await layoutBox(page, "#editor-body-content-body");
+  const uploader = await layoutBox(page, "#issue-form #upload.upload-wrap");
+  const actionRow = await layoutBox(page, "#issue-form .actrow.right-txt");
+  const saveButton = await layoutBox(page, "#button-save");
+  const draftButton = await layoutBox(page, "#draft-save-btn");
+  const cancelButton = await layoutBox(
+    page,
+    '#issue-form .actrow a[data-legacy-href="history.back"]',
+  );
+  const assigneeOption = await layoutBox(
+    page,
+    "#issue-form .right-menu > dl.issue-option:nth-of-type(1)",
+  );
+  const milestoneOption = await layoutBox(page, "#issue-form #milestoneOption.issue-option");
+  const dueDateOption = await layoutBox(page, "#issueDueDate");
+  const labelOption = await layoutBox(
+    page,
+    "#issue-form .right-menu > dl.issue-option:has(#labelIds)",
+  );
+  const rightMenuStyles = await page.locator("#issue-form .right-menu").evaluate((element) => {
+    const issueOption = element.querySelector("dl.issue-option") as HTMLElement;
+    const dt = issueOption.querySelector("dt") as HTMLElement;
+    const dd = issueOption.querySelector("dd") as HTMLElement;
+    const searchBar = element.querySelector(".search.search-bar") as HTMLElement;
+    const calendarButton = element.querySelector(".btn-calendar") as HTMLElement;
+    return {
+      calendarDisplay: window.getComputedStyle(calendarButton).display,
+      ddDisplay: window.getComputedStyle(dd).display,
+      dlDisplay: window.getComputedStyle(issueOption).display,
+      dtDisplay: window.getComputedStyle(dt).display,
+      menuFloat: window.getComputedStyle(element).float,
+      searchBarDisplay: window.getComputedStyle(searchBar).display,
+    };
+  });
+
+  await expect(page.locator("#issue-form")).toHaveAttribute("enctype", "multipart/form-data");
+  await expect(page.locator("#title")).toHaveAttribute("maxlength", "250");
+  await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
+  await expect(page.locator("#title")).toHaveAttribute(
+    "title",
+    "press 'Tab' or 'Enter' to move cursor to content area",
+  );
+  await expect(page.locator("#editor-body-content-body")).toHaveAttribute("name", "body");
+  await expect(page.locator("#editor-body-content-body")).toHaveAttribute(
+    "data-editor-mode",
+    "content-body",
+  );
+  await expect(page.locator("#editor-body-content-body")).toHaveAttribute("tabindex", "2");
+  await expect(page.locator("#draft-save-btn")).toHaveAttribute("data-placement", "top");
+  await expect(page.locator('input[name="referCommentId"]')).toHaveValue("55");
+  await expect(page.locator("#isDraft")).toHaveValue("false");
+
+  expect(projectPageWrap.y).toBeGreaterThanOrEqual(pageWrapOuter.y);
+  expect(projectPageWrap.width).toBeLessThanOrEqual(pageWrapOuter.width + 1);
+  expect(contentWrap.x).toBeGreaterThanOrEqual(projectPageWrap.x);
+  expect(contentWrap.y).toBeGreaterThanOrEqual(projectPageWrap.y);
+  expect(form.x).toBeGreaterThanOrEqual(contentWrap.x);
+  expect(form.width).toBeLessThanOrEqual(contentWrap.width + 1);
+  expect(titleRow.y).toBeGreaterThanOrEqual(form.y);
+  expect(titleDl.x).toBeGreaterThanOrEqual(titleRow.x);
+  expect(titleDd.y).toBeGreaterThanOrEqual(titleDl.y);
+  expect(titleSpan.x).toBeGreaterThanOrEqual(titleDd.x);
+  expect(titleInput.x).toBeGreaterThanOrEqual(titleSpan.x);
+  expect(titleInput.width).toBeLessThanOrEqual(titleSpan.width + 1);
+  expect(optionToggle.x).toBeGreaterThan(titleInput.x + titleInput.width - 1);
+  expect(subtaskWrap.x).toBeGreaterThanOrEqual(titleDd.x);
+  expect(subtaskWrap.y).toBeGreaterThanOrEqual(titleDd.y);
+  expect(bodyRow.y).toBeGreaterThanOrEqual(subtaskWrap.y);
+  expect(leftPane.x).toBeGreaterThanOrEqual(bodyRow.x);
+  expect(rightMenu.x).toBeGreaterThan(leftPane.x + leftPane.width - 1);
+  expect(rightMenu.width).toBeLessThan(leftPane.width);
+  expect(Math.abs(rightMenu.y - leftPane.y)).toBeLessThanOrEqual(2);
+  expect(editorDl.y).toBeGreaterThanOrEqual(leftPane.y);
+  expect(editorShell.y).toBeGreaterThanOrEqual(editorDl.y);
+  expect(editorTextarea.x).toBeGreaterThanOrEqual(editorShell.x);
+  expect(editorTextarea.width).toBeLessThanOrEqual(editorShell.width + 1);
+  expect(uploader.y).toBeGreaterThan(editorShell.y + editorShell.height - 1);
+  expect(actionRow.y).toBeGreaterThan(uploader.y + uploader.height - 1);
+  expect(saveButton.x).toBeGreaterThanOrEqual(actionRow.x);
+  expect(draftButton.x).toBeGreaterThan(saveButton.x + saveButton.width - 1);
+  expect(cancelButton.x).toBeGreaterThan(draftButton.x + draftButton.width - 1);
+  expect(assigneeOption.y).toBeGreaterThanOrEqual(rightMenu.y);
+  expect(milestoneOption.y).toBeGreaterThan(assigneeOption.y + assigneeOption.height - 1);
+  expect(dueDateOption.y).toBeGreaterThan(milestoneOption.y);
+  expect(labelOption.y).toBeGreaterThan(dueDateOption.y);
+  expect(rightMenuStyles).toEqual({
+    calendarDisplay: "inline-block",
+    ddDisplay: "block",
+    dlDisplay: "block",
+    dtDisplay: "block",
+    menuFloat: "left",
+    searchBarDisplay: "block",
+  });
+}
+
 const projectContainer = {
   cloneUrl: "https://example.com/admin/projectYobi.git",
   dashboard: {
@@ -306,6 +418,7 @@ test("project issue create form validates, submits REST JSON, and redirects to d
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".content-wrap.frm-wrap")).toBeVisible();
   await expect(page.locator("#issue-form")).toBeVisible();
+  await assertLegacyIssueCreateFormShellMetrics(page);
   await expect(page.locator("#targetProjectId")).toBeVisible();
   await expect(page.locator("#targetProjectId")).toHaveAttribute("name", "targetProjectId");
   await expect(page.locator("#targetProjectId")).toHaveAttribute("data-format", "projects");

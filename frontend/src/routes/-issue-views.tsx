@@ -5819,7 +5819,7 @@ export function ProjectIssueFormPage(props: {
                             setTitle(event.currentTarget.value);
                           }}
                           placeholder={legacyMessage(messages, "title")}
-                          data-legacy-tabindex="1"
+                          tabIndex={Number("1")}
                           title={
                             props.mode === "create"
                               ? legacyMessage(messages, "title.help.key")
@@ -5911,7 +5911,7 @@ export function ProjectIssueFormPage(props: {
                           onSearchMentionUsers={props.onSearchMentionUsers}
                           placeholder=""
                           runtimeConfig={props.runtimeConfig}
-                          data-legacy-tabindex="2"
+                          tabIndex={Number("2")}
                           value={bodyMarkdown}
                         />
                       </LegacyMarkdownEditorShell>

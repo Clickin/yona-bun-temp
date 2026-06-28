@@ -327,7 +327,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `issue/create.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/create.scala.html` | P3 issue | metric guard passed: `issue-form-parity.e2e.ts` asserts the issue create form shell with `.page-wrap-outer`, `.project-page-wrap`, `.content-wrap.frm-wrap`, `#issue-form`, title row, subtask option row, left editor/uploader/action column, right option menu, save/draft/cancel button order, right-menu option ordering, legacy title/body tabindex anchors, hidden referComment/isDraft fields, and REST/TanStack submit/draft payload continuity |
 | `issue/edit.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/list.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/my_list.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
