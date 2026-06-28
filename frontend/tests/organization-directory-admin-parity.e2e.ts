@@ -441,6 +441,55 @@ test("organization home, settings, members, and delete screens expose legacy int
   );
   await expect(page.locator(".organization-project-list .project")).toHaveCount(2);
 
+  const homeHeader = await layoutBox(page, ".project-header-outer");
+  const homeMenu = await layoutBox(page, ".project-menu-outer");
+  const homePageWrap = await layoutBox(page, ".page-wrap-outer");
+  const homeProjectPage = await layoutBox(page, ".project-page-wrap.organization-home-wrap");
+  const overviewHeader = await layoutBox(page, ".project-home-header.row-fluid");
+  const descriptionBox = await layoutBox(page, "#project-description");
+  const homeBody = await layoutBox(page, ".organization-home-body");
+  const leftPane = await layoutBox(page, ".organization-home-body .span-left-pane");
+  const rightPane = await layoutBox(page, ".organization-home-body .span-right-pane");
+  const searchWrap = await layoutBox(page, ".project-search-wrap");
+  const searchInput = await layoutBox(page, "#mylist-filter");
+  const newProjectButton = await layoutBox(page, "a.ybtn.ybtn-primary");
+  const projectList = await layoutBox(page, ".project-list-wrap.organization-project-list");
+  const firstProject = await layoutBox(page, ".organization-project-list .project:first-child");
+  const firstProjectAvatar = await layoutBox(
+    page,
+    ".organization-project-list .project:first-child .owner-avatar-wrap",
+  );
+  const firstProjectTitle = await layoutBox(
+    page,
+    ".organization-project-list .project:first-child .black",
+  );
+  const firstProjectStats = await layoutBox(
+    page,
+    ".organization-project-list .project:first-child .stats-wrap",
+  );
+  const memberBubble = await layoutBox(page, ".span-right-pane .bubble-wrap.gray.project-home");
+
+  expect(homeMenu.y).toBeGreaterThanOrEqual(homeHeader.y + homeHeader.height - 1);
+  expect(homePageWrap.y).toBeGreaterThanOrEqual(homeMenu.y + homeMenu.height - 1);
+  expect(homeProjectPage.width).toBeGreaterThanOrEqual(900);
+  expect(overviewHeader.x).toBeCloseTo(homeProjectPage.x, 0);
+  expect(overviewHeader.width).toBeCloseTo(homeProjectPage.width, 0);
+  expect(descriptionBox.y).toBeGreaterThanOrEqual(overviewHeader.y);
+  expect(homeBody.y).toBeGreaterThan(overviewHeader.y + overviewHeader.height - 1);
+  expect(leftPane.x).toBeCloseTo(homeBody.x, 0);
+  expect(rightPane.x).toBeGreaterThan(leftPane.x + leftPane.width - 1);
+  expect(rightPane.y).toBeCloseTo(leftPane.y, 0);
+  expect(searchWrap.y).toBeGreaterThanOrEqual(leftPane.y);
+  expect(newProjectButton.x).toBeGreaterThan(searchInput.x + searchInput.width - 1);
+  expect(projectList.y).toBeGreaterThan(searchWrap.y + searchWrap.height - 1);
+  expect(firstProject.y).toBeGreaterThanOrEqual(projectList.y);
+  expect(firstProjectAvatar.x).toBeGreaterThanOrEqual(firstProject.x);
+  expect(firstProjectTitle.x).toBeGreaterThanOrEqual(firstProject.x);
+  expect(firstProjectStats.x).toBeGreaterThan(firstProjectTitle.x + firstProjectTitle.width - 1);
+  expect(memberBubble.x).toBeGreaterThan(leftPane.x + leftPane.width - 1);
+  expect(memberBubble.y).toBeGreaterThanOrEqual(rightPane.y);
+  expect(homePageWrap.y).toBeGreaterThanOrEqual(homeMenu.y + homeMenu.height - 1);
+
   await page.locator("#mylist-filter").fill("api");
   await expect(page.locator(".organization-project-list .project")).toHaveCount(1);
   await expect(page.locator(".organization-project-list .project .black")).toHaveText(
@@ -467,6 +516,53 @@ test("organization home, settings, members, and delete screens expose legacy int
   await page.goto("/yona/organizations/weblabs-renamed/members");
   await expect(page.locator("#addNewMember")).toBeVisible();
   await expect(page.locator("#loginId")).toHaveAttribute("placeholder", "Add new member ID.");
+
+  const membersProjectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const membersSubmenu = await layoutBox(page, ".project-page-wrap > .nav-tabs");
+  const activeMembersTab = await layoutBox(page, ".project-page-wrap > .nav-tabs li.active");
+  const addMemberBubble = await layoutBox(page, ".inner-bubble");
+  const addMemberForm = await layoutBox(page, "#addNewMember");
+  const addMemberInput = await layoutBox(page, "#loginId");
+  const addMemberButton = await layoutBox(page, "#addNewMember button[type='submit']");
+  const memberList = await layoutBox(page, "ul.members.project.row-fluid");
+  const firstMember = await layoutBox(page, "ul.members.project.row-fluid > li.member:first-child");
+  const secondMember = await layoutBox(
+    page,
+    "ul.members.project.row-fluid > li.member:nth-child(2)",
+  );
+  const firstAvatar = await layoutBox(
+    page,
+    "ul.members.project.row-fluid > li.member:first-child .avatar-wrap",
+  );
+  const firstName = await layoutBox(
+    page,
+    "ul.members.project.row-fluid > li.member:first-child .member-name",
+  );
+  const firstSetting = await layoutBox(
+    page,
+    "ul.members.project.row-fluid > li.member:first-child .member-setting",
+  );
+  const enrollmentLegend = await layoutBox(page, ".project-page-wrap > legend");
+  const enrollmentRow = await layoutBox(page, ".project-page-wrap > legend + .row-fluid");
+
+  expect(membersProjectPage.width).toBeGreaterThanOrEqual(900);
+  expect(membersSubmenu.x).toBeCloseTo(membersProjectPage.x, 0);
+  expect(membersSubmenu.width).toBeCloseTo(membersProjectPage.width, 0);
+  expect(activeMembersTab.y).toBeGreaterThanOrEqual(membersSubmenu.y);
+  expect(addMemberBubble.y).toBeGreaterThan(membersSubmenu.y + membersSubmenu.height - 1);
+  expect(addMemberForm.y).toBeGreaterThanOrEqual(addMemberBubble.y);
+  expect(addMemberButton.x).toBeGreaterThan(addMemberInput.x + addMemberInput.width - 1);
+  expect(memberList.y).toBeGreaterThan(addMemberBubble.y + addMemberBubble.height - 1);
+  expect(firstMember.x).toBeGreaterThanOrEqual(memberList.x);
+  expect(secondMember.x).toBeGreaterThan(firstMember.x + firstMember.width - 1);
+  expect(secondMember.y).toBeCloseTo(firstMember.y, 0);
+  expect(firstAvatar.x).toBeGreaterThanOrEqual(firstMember.x);
+  expect(firstName.x).toBeGreaterThanOrEqual(firstMember.x);
+  expect(firstName.y).toBeGreaterThanOrEqual(firstMember.y);
+  expect(firstSetting.y).toBeGreaterThan(firstName.y);
+  expect(enrollmentLegend.y).toBeGreaterThan(memberList.y + memberList.height - 1);
+  expect(enrollmentRow.y).toBeGreaterThan(enrollmentLegend.y);
+
   await page.locator("#loginId").fill("new");
   await expect(page.locator(".typeahead.dropdown-menu")).toBeVisible();
   await page.locator(".typeahead.dropdown-menu a", { hasText: "Newbie @newbie" }).click();
@@ -492,6 +588,18 @@ test("organization home, settings, members, and delete screens expose legacy int
     .click();
   await expect(page.locator("#alertDeletion")).toBeVisible();
   await expect(page.locator("#alertDeletion .modal-header h3")).toHaveText("Delete a group member");
+  const memberDeleteModal = await layoutBox(page, "#alertDeletion");
+  const memberDeleteHeader = await layoutBox(page, "#alertDeletion .modal-header");
+  const memberDeleteBody = await layoutBox(page, "#alertDeletion .modal-body");
+  const memberDeleteFooter = await layoutBox(page, "#alertDeletion .modal-footer");
+  const memberDeleteButton = await layoutBox(page, "#deleteBtn");
+
+  expect(memberDeleteModal.width).toBeGreaterThanOrEqual(500);
+  expect(memberDeleteHeader.y).toBeGreaterThanOrEqual(memberDeleteModal.y);
+  expect(memberDeleteBody.y).toBeGreaterThan(memberDeleteHeader.y + memberDeleteHeader.height - 1);
+  expect(memberDeleteFooter.y).toBeGreaterThan(memberDeleteBody.y + memberDeleteBody.height - 1);
+  expect(memberDeleteButton.y).toBeGreaterThanOrEqual(memberDeleteFooter.y);
+
   await page.locator("#alertDeletion").getByRole("button", { name: "No" }).click();
   await expect(page.locator("#alertDeletion")).toBeHidden();
   await page
@@ -504,11 +612,37 @@ test("organization home, settings, members, and delete screens expose legacy int
 
   await page.goto("/yona/organizations/weblabs-renamed/deleteForm");
   await expect(page.locator("#btnDelete")).toHaveText("Delete This Group");
+  const deleteProjectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const deleteSubmenu = await layoutBox(page, ".project-page-wrap > .nav-tabs");
+  const activeDeleteTab = await layoutBox(page, ".project-page-wrap > .nav-tabs li.active");
+  const deleteActionRow = await layoutBox(page, ".project-page-wrap > .box-wrap.bottom");
+  const deleteButton = await layoutBox(page, "#btnDelete");
+
+  expect(deleteProjectPage.width).toBeGreaterThanOrEqual(900);
+  expect(deleteSubmenu.x).toBeCloseTo(deleteProjectPage.x, 0);
+  expect(deleteSubmenu.width).toBeCloseTo(deleteProjectPage.width, 0);
+  expect(activeDeleteTab.y).toBeGreaterThanOrEqual(deleteSubmenu.y);
+  expect(deleteActionRow.y).toBeGreaterThan(deleteSubmenu.y + deleteSubmenu.height - 1);
+  expect(deleteButton.x).toBeGreaterThanOrEqual(deleteActionRow.x);
+  expect(deleteButton.y).toBeGreaterThanOrEqual(deleteActionRow.y);
+
   await page.locator("#btnDelete").click();
   await expect(page.locator("#alertDeletion")).toBeVisible();
   await expect(page.locator("#alertDeletion .modal-header h3")).toHaveText(
     "Do you want to delete this group?",
   );
+  const orgDeleteModal = await layoutBox(page, "#alertDeletion");
+  const orgDeleteHeader = await layoutBox(page, "#alertDeletion .modal-header");
+  const orgDeleteBody = await layoutBox(page, "#alertDeletion .modal-body");
+  const orgDeleteFooter = await layoutBox(page, "#alertDeletion .modal-footer");
+  const orgDeleteConfirm = await layoutBox(page, "#btnDeleteExec");
+
+  expect(orgDeleteModal.width).toBeGreaterThanOrEqual(500);
+  expect(orgDeleteHeader.y).toBeGreaterThanOrEqual(orgDeleteModal.y);
+  expect(orgDeleteBody.y).toBeGreaterThan(orgDeleteHeader.y + orgDeleteHeader.height - 1);
+  expect(orgDeleteFooter.y).toBeGreaterThan(orgDeleteBody.y + orgDeleteBody.height - 1);
+  expect(orgDeleteConfirm.y).toBeGreaterThanOrEqual(orgDeleteFooter.y);
+
   await page.locator("#alertDeletion").getByRole("button", { name: "No" }).click();
   await expect(page.locator("#alertDeletion")).toBeHidden();
   await page.locator("#btnDelete").click();
