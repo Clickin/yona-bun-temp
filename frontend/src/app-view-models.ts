@@ -78,6 +78,29 @@ function toIssueChildView(child: IssueChildRestItem) {
   };
 }
 
+type IssueAttachmentRestItem = {
+  id: bigint | number | string;
+  mimeType?: string;
+  name: string;
+  size?: bigint | number | string;
+  sizeLabel?: string;
+  url: string;
+};
+
+function toIssueAttachmentView(attachment: IssueAttachmentRestItem) {
+  return {
+    id: Number(attachment.id),
+    mimeType: attachment.mimeType ?? "",
+    name: attachment.name,
+    size:
+      typeof attachment.size === "bigint"
+        ? Number(attachment.size)
+        : (attachment.size ?? attachment.sizeLabel ?? ""),
+    sizeLabel: attachment.sizeLabel,
+    url: attachment.url,
+  };
+}
+
 function issueReferencesFrom(value: unknown): IssueReferenceMetadata[] {
   return normalizeIssueReferences(
     (value as { issueReferences?: Partial<IssueReferenceMetadata>[] } | null | undefined)
@@ -815,6 +838,9 @@ export function toProjectIssueDetailView(
     createdLabel: response.createdLabel ?? "",
     dueDateLabel: response.dueDateLabel ?? "",
     comments: response.comments.map((comment) => ({
+      attachments: ((comment.attachments ?? []) as IssueAttachmentRestItem[]).map(
+        toIssueAttachmentView,
+      ),
       authorAvatarUrl: comment.authorAvatarUrl,
       authorId: Number(comment.authorId ?? 0),
       authorLabel: comment.authorLabel,
@@ -878,6 +904,9 @@ export function toProjectIssueDetailView(
     timeline: response.timeline.map((item) => ({
       comment: item.comment
         ? {
+            attachments: ((item.comment.attachments ?? []) as IssueAttachmentRestItem[]).map(
+              toIssueAttachmentView,
+            ),
             authorAvatarUrl: item.comment.authorAvatarUrl,
             authorId: Number(item.comment.authorId ?? 0),
             authorLabel: item.comment.authorLabel,

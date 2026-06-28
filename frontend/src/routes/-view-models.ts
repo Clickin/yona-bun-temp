@@ -434,6 +434,14 @@ export interface ProjectIssueDetailViewModel {
   createdLabel: string;
   dueDateLabel: string;
   comments: Array<{
+    attachments?: Array<{
+      id: number;
+      mimeType?: string;
+      name: string;
+      size?: number | string;
+      sizeLabel?: string;
+      url: string;
+    }>;
     authorAvatarUrl: string;
     authorId?: number;
     authorLabel: string;
@@ -486,6 +494,14 @@ export interface ProjectIssueDetailViewModel {
   state: string;
   timeline: Array<{
     comment?: {
+      attachments?: Array<{
+        id: number;
+        mimeType?: string;
+        name: string;
+        size?: number | string;
+        sizeLabel?: string;
+        url: string;
+      }>;
       authorAvatarUrl: string;
       authorId?: number;
       authorLabel: string;

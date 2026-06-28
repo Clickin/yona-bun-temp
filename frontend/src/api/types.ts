@@ -28,11 +28,15 @@ export type YonaIssueListItem = YonaRecord & {
 
 export type YonaAttachment = YonaRecord & {
   id: bigint | number | string;
+  mimeType?: string;
   name: string;
+  size?: bigint | number | string;
+  sizeLabel?: string;
   url: string;
 };
 
 export type YonaIssueComment = YonaRecord & {
+  attachments?: YonaAttachment[];
   voters: YonaUserItem[];
 };
 

@@ -220,7 +220,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `common/attachmentFile.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/attachmentFile.scala.html` | shared partials | metric guard passed: `issue-detail-parity.e2e.ts` asserts the legacy comment update attachment caller with `.attachment-files .attached-file.attached-file-marker`, `data-name`/`data-href`/`data-mime`, `i.mimetype`, `strong.name`, `span.size`, delete button `data-id`, file/name/size/delete x-order, attachment container placement, and legacy attached-file display/background/border/height/line-height/margin/padding metrics |
 | `common/branchItem.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/calendar.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/childComments.scala.html` | shared partials | metric guard passed: `issue-detail-parity.e2e.ts` asserts the legacy nested issue-comment caller with `.add-a-comment.pull-right`, `.subcomment-media-body`, `.child-comments`, `.one-line-comment`, `.contents`, hidden `.subcomment-author`, child author/date/delete hooks, child form action/`parentCommentId`/textarea placeholder, zero-height child anchor, right-aligned 60px subcomment body, dashed content divider, hidden child form, and legacy color/padding/margin metrics |

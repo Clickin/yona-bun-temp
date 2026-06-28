@@ -9,6 +9,7 @@ import type {
   ProjectIssueReferencesResponse,
 } from "../api/issue-meta";
 import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
+import type { YonaAttachment } from "../api/types";
 import { translateLegacyResource } from "../api/translation";
 import {
   LEGACY_DEFAULT_LANGUAGE,
@@ -52,6 +53,47 @@ function legacyMessage(
   return messages
     ? messages(key, { ...options, fallback })
     : lookupLegacyMessage(LEGACY_DEFAULT_LANGUAGE, key, { ...options, fallback });
+}
+
+function legacyAttachmentHref(runtimeConfig: RuntimeConfig, attachment: YonaAttachment) {
+  if (typeof attachment.url === "string" && attachment.url.length > 0) {
+    return attachment.url.startsWith("/")
+      ? prefixBasePath(runtimeConfig.basePath, attachment.url)
+      : attachment.url;
+  }
+  return prefixBasePath(
+    runtimeConfig.basePath,
+    `/files/${encodeURIComponent(String(attachment.id))}`,
+  );
+}
+
+function legacyAttachmentSize(attachment: YonaAttachment) {
+  return String(attachment.sizeLabel ?? attachment.size ?? "");
+}
+
+function LegacyAttachedFileMarker(props: {
+  attachment: YonaAttachment;
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <div
+      className="attached-file attached-file-marker"
+      data-href={legacyAttachmentHref(props.runtimeConfig, props.attachment)}
+      data-mime={props.attachment.mimeType ?? ""}
+      data-name={props.attachment.name}
+    >
+      <i className="mimetype"></i>
+      <strong className="name">{props.attachment.name}</strong>
+      <span className="size">{legacyAttachmentSize(props.attachment)}</span>
+      <button
+        className="btn-transparent btn-delete"
+        data-id={String(props.attachment.id)}
+        type="button"
+      >
+        &times;
+      </button>
+    </div>
+  );
 }
 
 type IssueChildViewModel = ProjectIssueDetailViewModel["childIssues"][number];
@@ -2913,6 +2955,7 @@ export function ProjectIssueDetailPage(props: {
                             <div hidden={!commentIsEditing}>
                               <IssueCommentEditForm
                                 action={commentEditAction}
+                                attachments={comment.attachments ?? []}
                                 commentId={comment.id}
                                 csrfToken={props.csrfToken}
                                 getIssueReferencesQueryOptions={
@@ -5359,6 +5402,7 @@ function DisabledIssueCommentBox(props: { messages?: LegacyMessageLookup }) {
 
 function IssueCommentEditForm(props: {
   action: string;
+  attachments?: YonaAttachment[];
   commentId: number;
   csrfToken?: string;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
@@ -5484,7 +5528,15 @@ function IssueCommentEditForm(props: {
             defaultValue=""
           />
           <div className={`preview-${props.commentId}`}></div>
-          <div className="attachment-files"></div>
+          <div className="attachment-files">
+            {(props.attachments ?? []).map((attachment) => (
+              <LegacyAttachedFileMarker
+                attachment={attachment}
+                key={String(attachment.id)}
+                runtimeConfig={props.runtimeConfig}
+              />
+            ))}
+          </div>
           <div
             data-resourceid={props.commentId}
             data-resourcetype="ISSUE_COMMENT"

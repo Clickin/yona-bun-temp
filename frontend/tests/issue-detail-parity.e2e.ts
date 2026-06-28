@@ -293,6 +293,15 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     timeline: [
       {
         comment: {
+          attachments: [
+            {
+              id: 710,
+              mimeType: "text/plain",
+              name: "legacy-comment.txt",
+              size: "2 KB",
+              url: "/files/710",
+            },
+          ],
           authorAvatarUrl: "",
           authorId: 1,
           authorLabel: "Admin",
@@ -934,6 +943,19 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await expect(commentUpdateForm.locator('input[name="temporaryUploadFiles"]')).toHaveValue("");
   await expect(commentUpdateForm.locator(".preview-10")).toHaveCount(1);
   await expect(commentUpdateForm.locator(".attachment-files")).toHaveCount(1);
+  const commentUpdateAttachment = commentUpdateForm.locator(
+    ".attachment-files .attached-file.attached-file-marker",
+  );
+  await expect(commentUpdateAttachment).toHaveCount(1);
+  await expect(commentUpdateAttachment).toHaveAttribute("data-name", "legacy-comment.txt");
+  await expect(commentUpdateAttachment).toHaveAttribute("data-href", "/yona/files/710");
+  await expect(commentUpdateAttachment).toHaveAttribute("data-mime", "text/plain");
+  await expect(commentUpdateAttachment.locator("i.mimetype")).toHaveCount(1);
+  await expect(commentUpdateAttachment.locator("strong.name")).toHaveText("legacy-comment.txt");
+  await expect(commentUpdateAttachment.locator("span.size")).toHaveText("2 KB");
+  await expect(
+    commentUpdateAttachment.locator("button.btn-transparent.btn-delete"),
+  ).toHaveAttribute("data-id", "710");
   await expect(commentUpdateForm.locator("div#upload-10")).toHaveAttribute(
     "data-resourcetype",
     "ISSUE_COMMENT",
@@ -953,8 +975,34 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   );
   const commentUpdateCancel = await layoutBox(page, "#comment-editform-10 .ybtn-cancel");
   const commentUpdateSave = await layoutBox(page, "#comment-editform-10 .ybtn-info");
+  const commentUpdateAttachmentFiles = await layoutBox(
+    page,
+    "#comment-editform-10 .attachment-files",
+  );
+  const commentUpdateAttachedFile = await layoutBox(
+    page,
+    "#comment-editform-10 .attached-file-marker",
+  );
+  const commentUpdateAttachedName = await layoutBox(
+    page,
+    "#comment-editform-10 .attached-file-marker .name",
+  );
+  const commentUpdateAttachedSize = await layoutBox(
+    page,
+    "#comment-editform-10 .attached-file-marker .size",
+  );
+  const commentUpdateAttachedDelete = await layoutBox(
+    page,
+    "#comment-editform-10 .attached-file-marker .btn-delete",
+  );
   const commentUpdateStyles = await commentUpdateForm.evaluate((element) => {
     const formStyle = window.getComputedStyle(element);
+    const attachedFile = window.getComputedStyle(
+      element.querySelector(".attached-file-marker") as HTMLElement,
+    );
+    const attachmentFiles = window.getComputedStyle(
+      element.querySelector(".attachment-files") as HTMLElement,
+    );
     const textareaBox = window.getComputedStyle(
       element.querySelector(".textarea-box") as HTMLElement,
     );
@@ -967,6 +1015,14 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     );
     return {
       actionRowTextAlign: actionRow.textAlign,
+      attachedFileBackgroundColor: attachedFile.backgroundColor,
+      attachedFileBorderTopColor: attachedFile.borderTopColor,
+      attachedFileDisplay: attachedFile.display,
+      attachedFileHeight: attachedFile.height,
+      attachedFileLineHeight: attachedFile.lineHeight,
+      attachedFileMarginLeft: attachedFile.marginLeft,
+      attachedFilePaddingLeft: attachedFile.paddingLeft,
+      attachmentFilesBorderTopColor: attachmentFiles.borderTopColor,
       display: formStyle.display,
       dropOverlayDisplay: dropOverlay.display,
       textareaBoxMarginBottom: textareaBox.marginBottom,
@@ -983,8 +1039,21 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   expect(commentUpdateUploadLabel.x).toBeGreaterThanOrEqual(commentUpdateActionRow.x);
   expect(commentUpdateCancel.x).toBeGreaterThan(commentUpdateUploadLabel.x);
   expect(commentUpdateSave.x).toBeGreaterThan(commentUpdateCancel.x);
+  expect(commentUpdateAttachmentFiles.y).toBeGreaterThan(commentUpdateActionRow.y);
+  expect(commentUpdateAttachedFile.x).toBeGreaterThanOrEqual(commentUpdateAttachmentFiles.x);
+  expect(commentUpdateAttachedName.x).toBeGreaterThan(commentUpdateAttachedFile.x);
+  expect(commentUpdateAttachedSize.x).toBeGreaterThan(commentUpdateAttachedName.x);
+  expect(commentUpdateAttachedDelete.x).toBeGreaterThan(commentUpdateAttachedSize.x);
   expect(commentUpdateStyles).toEqual({
     actionRowTextAlign: "right",
+    attachedFileBackgroundColor: "rgb(250, 250, 250)",
+    attachedFileBorderTopColor: "rgb(204, 204, 204)",
+    attachedFileDisplay: "inline-block",
+    attachedFileHeight: "30px",
+    attachedFileLineHeight: "30px",
+    attachedFileMarginLeft: "4px",
+    attachedFilePaddingLeft: "10px",
+    attachmentFilesBorderTopColor: "rgb(221, 221, 221)",
     display: "block",
     dropOverlayDisplay: "none",
     textareaBoxMarginBottom: "10px",
