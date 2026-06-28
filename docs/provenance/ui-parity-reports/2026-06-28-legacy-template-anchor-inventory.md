@@ -8,6 +8,60 @@ This inventory mechanically extracts DOM and template anchors from every legacy 
 
 Template count: 242
 
+## React Anchor/Link Baseline
+
+Current scan date: 2026-06-28
+
+Command evidence:
+
+- Node multiline JSX tag scan of `frontend/src/routes/**/*.tsx` using
+  `/<a\b[\s\S]*?>/g` -> 529 React route/view anchor tags.
+- `rg -n "<Link(\\s|>)" frontend/src -g '*.tsx' --count-matches | awk -F: '{s+=$2} END {print s+0}'` -> 0 TanStack Router `Link` tags.
+
+This means the current React surface has not yet been migrated to typed
+TanStack Router links. The destructive template port must not treat existing
+`<a>` usage as final parity. Each owning template closure must classify anchors
+with the following decision:
+
+| rendered intent | React treatment |
+| --- | --- |
+| Internal SPA page navigation with a route-tree target and typed search params | Convert to TanStack Router `Link` and assert generated `href` plus active/search behavior. |
+| Hash anchors, markdown heading anchors, comment/event anchors, tab/modal/dropdown triggers, and same-page controls | Keep `<a>` when the default anchor behavior or legacy `data-toggle` contract is the UX. |
+| Downloads, raw/blob/file endpoints, external URLs, `mailto:`, target-blank links, and non-SPA fallback endpoints | Keep `<a>` and assert href/target/download attributes. |
+| Legacy state-changing action anchors or `data-request-uri` commands | Convert the visible control to a button plus TanStack Query mutation, while preserving legacy `data-*` hooks where parity tests require them. |
+| Form submit buttons | Keep as forms/buttons, but submit through TanStack Query mutation boundaries instead of native Play form posts. |
+
+Future rendered metric guards must include the final anchor decision in their
+evidence text whenever a template contains navigational or action anchors.
+
+Current React route/view anchor distribution:
+
+| file | total | hash | data-toggle | target `_blank` | download/raw | mailto | data-request/action | plain/dynamic nav |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `frontend/src/routes/-issue-views.tsx` | 82 | 13 | 20 | 5 | 0 | 0 | 1 | 50 |
+| `frontend/src/routes/-pull-request-views.tsx` | 66 | 9 | 26 | 0 | 0 | 0 | 5 | 33 |
+| `frontend/src/routes/-project-views.tsx` | 61 | 6 | 5 | 4 | 0 | 0 | 1 | 50 |
+| `frontend/src/routes/-code-views.tsx` | 47 | 4 | 6 | 4 | 3 | 0 | 1 | 34 |
+| `frontend/src/routes/-organization-views.tsx` | 40 | 0 | 5 | 0 | 0 | 0 | 2 | 33 |
+| `frontend/src/routes/-workspace-views.tsx` | 38 | 10 | 12 | 0 | 0 | 0 | 0 | 26 |
+| `frontend/src/routes/__root.tsx` | 31 | 8 | 9 | 5 | 0 | 0 | 0 | 17 |
+| `frontend/src/routes/-board-views.tsx` | 30 | 6 | 10 | 1 | 0 | 0 | 0 | 16 |
+| `frontend/src/routes/sites/$pageName/route.tsx` | 25 | 0 | 0 | 0 | 1 | 0 | 0 | 24 |
+| `frontend/src/routes/-milestone-views.tsx` | 22 | 1 | 4 | 1 | 0 | 0 | 0 | 17 |
+| `frontend/src/routes/-ui-kit-views.tsx` | 15 | 4 | 0 | 0 | 0 | 0 | 0 | 11 |
+| `frontend/src/routes/-search-views.tsx` | 12 | 0 | 3 | 0 | 0 | 0 | 0 | 9 |
+| `frontend/src/routes/-directory-views.tsx` | 11 | 0 | 0 | 0 | 0 | 0 | 0 | 11 |
+| `frontend/src/routes/-markdown-renderer.tsx` | 11 | 4 | 2 | 0 | 0 | 0 | 0 | 7 |
+| `frontend/src/routes/notification/route.tsx` | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 10 |
+| `frontend/src/routes/user/files/route.tsx` | 8 | 0 | 0 | 3 | 1 | 0 | 0 | 4 |
+| `frontend/src/routes/-auth-views.tsx` | 6 | 0 | 0 | 0 | 0 | 0 | 0 | 6 |
+| `frontend/src/routes/-help-views.tsx` | 6 | 1 | 0 | 0 | 0 | 0 | 0 | 5 |
+| `frontend/src/routes/-workspace-settings-view.tsx` | 3 | 1 | 1 | 0 | 0 | 0 | 0 | 2 |
+| `frontend/src/routes/-shared.tsx` | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 2 |
+| `frontend/src/routes/-home-view.tsx` | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
+| `frontend/src/routes/restart/route.tsx` | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
+| `frontend/src/routes/secret/route.tsx` | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
+
 ## board/
 
 | template | packet | ids | classes | names | forms/actions | data attrs | message keys | includes/calls |

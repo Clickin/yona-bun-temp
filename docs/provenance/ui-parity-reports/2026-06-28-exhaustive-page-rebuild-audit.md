@@ -80,9 +80,19 @@ For every page group below:
    copy, modal markup, and form controls.
 4. Keep form submit and data loading inside typed REST/TanStack Query
    boundaries. Do not restore native Play form posts as active React behavior.
-5. Rewrite tests to assert legacy template anchors and rendered behavior. Do
+5. Classify every legacy and React `<a>` during the template port:
+   - Use TanStack Router `Link` for internal SPA navigation once the target
+     route/search contract is represented in the route tree.
+   - Keep a plain `<a>` for hash anchors, tabs/modals/dropdowns, downloads,
+     external URLs, `mailto:`, raw/blob/file endpoints, and legacy anchors whose
+     browser-default behavior is the UX being preserved.
+   - Convert action links to buttons plus TanStack Query mutations when the
+     legacy anchor is actually a state-changing command.
+   - Assert the final `href`, `data-*` hooks, active state, and rendered
+     position/size in the owning parity test.
+6. Rewrite tests to assert legacy template anchors and rendered behavior. Do
    not preserve tests that only encode previous React structure.
-6. Record any missing behavior as `gap`, `deviation`, or `deferred` before
+7. Record any missing behavior as `gap`, `deviation`, or `deferred` before
    claiming the group is closed.
 
 ## Reopened Route Groups
