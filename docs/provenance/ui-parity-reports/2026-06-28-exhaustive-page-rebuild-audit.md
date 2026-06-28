@@ -139,6 +139,13 @@ and 134 P3 rendered verification rows. The exhaustive rebuild audit is not
 complete while any row in that queue lacks rendered route evidence against its
 owning Scala template and partials.
 
+The first P0 source pass is:
+`docs/provenance/ui-parity-reports/2026-06-28-p0-rendered-audit-pass.md`.
+It opens the 12 P0 rows and classifies them as source-match checks,
+intentional framed-layout deviations, gap candidates, or thin-wrapper caller
+checks. This is not P0 closure; each row still needs rendered route evidence or
+an explicit `gap`, `deviation`, or `deferred` record.
+
 ### `board/`
 
 | legacy template | packet | audit disposition |

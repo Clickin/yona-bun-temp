@@ -23,6 +23,7 @@ Current template-first reset reports:
 - `2026-06-28-legacy-template-anchor-inventory.md`
 - `2026-06-28-static-react-owner-coverage.md`
 - `2026-06-28-rendered-verification-queue.md`
+- `2026-06-28-p0-rendered-audit-pass.md`
 - `template-first-p0-global-shell.md`
 - `template-first-p1-auth-public-home.md`
 - `template-first-p2-project-shell.md`
@@ -51,6 +52,9 @@ Rules:
 - The 2026-06-28 rendered verification queue turns the static coverage matrix
   into P0/P1/P2/P3 route-check work. It is the active checklist for finishing
   the exhaustive page rebuild audit.
+- The 2026-06-28 P0 rendered audit pass opens the 12 highest-priority rows and
+  records source-level findings. It does not close those rows without rendered
+  route evidence.
 - Explorer reports must not propose new UX or new product structure. Findings
   must be framed as `covered`, `gap`, `deviation`, `deferred`,
   `not-applicable`, or `needs-parent-decision`.

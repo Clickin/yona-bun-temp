@@ -10,6 +10,11 @@ Template rows: 242
 P0/P1/P2 rendered audit rows: 108
 P3 confirmation rows: 134
 
+P0 source pass:
+`docs/provenance/ui-parity-reports/2026-06-28-p0-rendered-audit-pass.md`.
+It opens the 12 highest-priority rows but does not close them without rendered
+route evidence.
+
 ## Lane Summary
 
 | lane | count | required next evidence |
