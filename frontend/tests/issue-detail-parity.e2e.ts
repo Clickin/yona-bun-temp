@@ -250,6 +250,8 @@ async function assertLegacyIssueIndexCommentsShellMetrics(page: Page) {
   ).toContainText("2");
   await expect(page.locator("aside.span-right-pane #comments ul.comments")).toHaveCount(1);
   await expect(page.locator("aside.span-right-pane #comments li.event")).toHaveCount(0);
+  await expect(page.locator("aside.span-right-pane #comments li.event-index")).toHaveCount(0);
+  await expect(page.locator("section#comments li#event-17.event")).toHaveCount(1);
   await expect(page.locator("aside.span-right-pane #comments li.index-comment")).toHaveCount(1);
 
   expect(timeline.x).toBeGreaterThanOrEqual(shell.x);
