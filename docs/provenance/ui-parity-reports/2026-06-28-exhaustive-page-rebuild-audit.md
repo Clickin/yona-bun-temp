@@ -382,8 +382,8 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | --- | --- | --- |
 | `milestone/create.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
 | `milestone/edit.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
-| `milestone/list.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
-| `milestone/partial_status.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
+| `milestone/list.scala.html` | P4 milestone | metric guard passed: `milestone-delete-modal-parity.e2e.ts` asserts project shell stack, milestone tabs/new button/filter/search/list ordering, list item width, progress placement, and issue link anchors |
+| `milestone/partial_status.scala.html` | P4 milestone | metric guard passed: `milestone-delete-modal-parity.e2e.ts` asserts milestone progress percent/bar width, closed/open issue count copy, due date/status copy, and list/detail route state toggles |
 | `milestone/view.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
 
 ### `organization/`
