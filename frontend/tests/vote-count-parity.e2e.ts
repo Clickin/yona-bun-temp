@@ -128,9 +128,9 @@ test.beforeEach(async ({ page }) => {
             assigneeLoginId: "door",
             authorLabel: "Nori",
             authorLoginId: "nori",
-            childClosedCount: 0,
+            childClosedCount: 1,
             childIssues: [],
-            childOpenCount: 0,
+            childOpenCount: 2,
             commentCount: 3,
             dueDateLabel: "2026-05-01",
             dueDateOverdue: false,
@@ -139,6 +139,8 @@ test.beforeEach(async ({ page }) => {
             labels: [{ categoryId: 4, color: "#ffeb3b", id: "7", name: "bright" }],
             milestoneTitle: "",
             ownerName: "admin",
+            parentIssueNumber: "77",
+            parentIssueTitle: "Parent issue title keeps legacy truncation",
             projectName: "projectYobi",
             state: "open",
             title: "Pilot issue",
@@ -417,6 +419,26 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   await expect(page.locator("#issue-item-101 .span3 .mr20.mt10.pull-right")).toContainText(
     "2026-05-01",
   );
+  await expect(
+    page.locator("#issue-item-101 .for-subtask-progressbar .subtask-progress.upload-progress"),
+  ).toHaveClass(/red-outline/);
+  await expect(
+    page.locator("#issue-item-101 .for-subtask-progressbar .subtask-progress .bar"),
+  ).toHaveClass(/red/);
+  await expect(page.locator("#issue-item-101 .subtask-progress .bar")).toHaveAttribute(
+    "title",
+    "Subtask",
+  );
+  await expect(page.locator("#issue-item-101 .subtask-progress.completion-ratio")).toHaveText(
+    "1/3",
+  );
+  await expect(page.locator("#issue-item-101 .infos-item.subtask a")).toHaveText(
+    "#77 Parent iss...",
+  );
+  await expect(page.locator("#issue-item-101 .infos-item.subtask a")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/issue/77",
+  );
 
   const list = await layoutBox(page, ".issue-list-page .post-list-wrap.row-fluid");
   const row = await layoutBox(page, "#issue-item-101");
@@ -431,6 +453,15 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   const infos = await layoutBox(page, "#issue-item-101 .infos");
   const authorInfo = await layoutBox(page, "#issue-item-101 .infos .infos-link-item");
   const updatedInfo = await layoutBox(page, "#issue-item-101 .infos > .infos-item:nth-child(2)");
+  const subtaskWrapper = await layoutBox(page, "#issue-item-101 .for-subtask-progressbar");
+  const subtaskProgress = await layoutBox(
+    page,
+    "#issue-item-101 .for-subtask-progressbar .subtask-progress.upload-progress",
+  );
+  const subtaskBar = await layoutBox(page, "#issue-item-101 .subtask-progress .bar");
+  const subtaskRatio = await layoutBox(page, "#issue-item-101 .subtask-progress.completion-ratio");
+  const parentSubtask = await layoutBox(page, "#issue-item-101 .infos-item.subtask");
+  const parentSubtaskLink = await layoutBox(page, "#issue-item-101 .infos-item.subtask a");
   const assigneeWrap = await layoutBox(page, "#issue-item-101 .avatar-wrap.assinee");
   const assigneeImage = await layoutBox(page, "#issue-item-101 .avatar-wrap.assinee img");
   const dueDate = await layoutBox(page, "#issue-item-101 .span3 .mr20.mt10.pull-right");
@@ -444,6 +475,12 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     const rightRail = element.querySelector(".span3.hide-in-mobile") as HTMLElement;
     const avatar = element.querySelector(".avatar-wrap.assinee") as HTMLElement;
     const due = element.querySelector(".span3 .mr20.mt10.pull-right") as HTMLElement;
+    const subtaskProgress = element.querySelector(
+      ".for-subtask-progressbar .subtask-progress.upload-progress",
+    ) as HTMLElement;
+    const subtaskBar = element.querySelector(".subtask-progress .bar") as HTMLElement;
+    const subtaskRatio = element.querySelector(".subtask-progress.completion-ratio") as HTMLElement;
+    const parentSubtask = element.querySelector(".infos-item.subtask") as HTMLElement;
     const leftStyle = window.getComputedStyle(left);
     const rightStyle = window.getComputedStyle(right);
     const titleStyle = window.getComputedStyle(titleElement);
@@ -452,6 +489,10 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     const rightRailStyle = window.getComputedStyle(rightRail);
     const avatarStyle = window.getComputedStyle(avatar);
     const dueStyle = window.getComputedStyle(due);
+    const subtaskProgressStyle = window.getComputedStyle(subtaskProgress);
+    const subtaskBarStyle = window.getComputedStyle(subtaskBar);
+    const subtaskRatioStyle = window.getComputedStyle(subtaskRatio);
+    const parentSubtaskStyle = window.getComputedStyle(parentSubtask);
     return {
       avatarDisplay: avatarStyle.display,
       avatarHeight: avatarStyle.height,
@@ -468,6 +509,15 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
       rightRailTextAlign: rightRailStyle.textAlign,
       rowDisplay: rowStyle.display,
       rowPadding: `${rowStyle.paddingTop} ${rowStyle.paddingRight} ${rowStyle.paddingBottom} ${rowStyle.paddingLeft}`,
+      parentSubtaskDisplay: parentSubtaskStyle.display,
+      parentSubtaskFontSize: parentSubtaskStyle.fontSize,
+      subtaskBarHeight: subtaskBarStyle.height,
+      subtaskBarWidth: subtaskBarStyle.width,
+      subtaskProgressDisplay: subtaskProgressStyle.display,
+      subtaskProgressHeight: subtaskProgressStyle.height,
+      subtaskProgressWidth: subtaskProgressStyle.width,
+      subtaskRatioDisplay: subtaskRatioStyle.display,
+      subtaskRatioFontSize: subtaskRatioStyle.fontSize,
       titleDisplay: titleStyle.display,
       titleLineHeight: titleStyle.lineHeight,
       titleWhiteSpace: titleStyle.whiteSpace,
@@ -494,6 +544,19 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   expect(infos.y).toBeGreaterThan(titleWrap.y);
   expect(authorInfo.x).toBeGreaterThanOrEqual(infos.x);
   expect(updatedInfo.x).toBeGreaterThan(authorInfo.x + authorInfo.width - 1);
+  expect(subtaskWrapper.x).toBeGreaterThanOrEqual(infos.x);
+  expect(subtaskWrapper.y).toBeLessThanOrEqual(infos.y + infos.height);
+  expect(subtaskProgress.x).toBeGreaterThanOrEqual(subtaskWrapper.x);
+  expect(subtaskProgress.y).toBeGreaterThanOrEqual(updatedInfo.y - 2);
+  expect(subtaskProgress.y).toBeGreaterThanOrEqual(infos.y - 2);
+  expect(subtaskBar.x).toBeGreaterThanOrEqual(subtaskProgress.x);
+  expect(subtaskBar.width).toBeGreaterThan(0);
+  expect(subtaskBar.width).toBeLessThan(subtaskProgress.width);
+  expect(subtaskRatio.x).toBeGreaterThanOrEqual(infos.x);
+  expect(subtaskRatio.y).toBeGreaterThanOrEqual(infos.y - 2);
+  expect(parentSubtask.x).toBeGreaterThanOrEqual(infos.x);
+  expect(parentSubtaskLink.x).toBeGreaterThanOrEqual(parentSubtask.x);
+  expect(parentSubtask.y).toBeLessThanOrEqual(infos.y + infos.height);
   expect(assigneeWrap.x).toBeGreaterThanOrEqual(rightColumn.x);
   expect(assigneeWrap.x + assigneeWrap.width).toBeLessThanOrEqual(
     rightColumn.x + rightColumn.width + 1,
@@ -522,6 +585,15 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     rightRailTextAlign: "start",
     rowDisplay: "block",
     rowPadding: "10px 10px 10px 10px",
+    parentSubtaskDisplay: "block",
+    parentSubtaskFontSize: "9.6px",
+    subtaskBarHeight: "7px",
+    subtaskBarWidth: "9.89062px",
+    subtaskProgressDisplay: "inline-block",
+    subtaskProgressHeight: "7px",
+    subtaskProgressWidth: "30px",
+    subtaskRatioDisplay: "inline-block",
+    subtaskRatioFontSize: "9.6px",
     titleDisplay: "block",
     titleLineHeight: "20px",
     titleWhiteSpace: "nowrap",

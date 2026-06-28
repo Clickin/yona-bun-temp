@@ -344,7 +344,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `issue/partial_list.scala.html` | P3 issue | metric guard passed: `vote-count-parity.e2e.ts` asserts the legacy project issue-list row with `.post-list-wrap.row-fluid`, `li.post-item.title`, left `.span9.span-hard-wrap`, right `.span3.hide-in-mobile`, mass-update checkbox, title/infos stack, count/label group, assignee avatar rail, due-date rail, row padding, title nowrap, and Bootstrap column ordering/alignment |
 | `issue/partial_list_draft.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/partial_list_quicksearch.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
-| `issue/partial_list_subtask.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_list_subtask.scala.html` | P3 issue | metric guard passed: `vote-count-parity.e2e.ts` asserts both child-progress and parent-link branches inside a project issue-list row, restored legacy `.for-subtask-progressbar` CSS, `.subtask-progress.upload-progress.red-outline`, `.bar.red`, completion ratio text, parent issue backlink/truncation, 30px progress width, 7px bar height, one-third bar width, font sizing, and placement inside `.infos` |
 | `issue/partial_list_wrap.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/partial_massupdate.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/partial_searchform.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
