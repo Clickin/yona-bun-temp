@@ -213,6 +213,99 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
   await page.setViewportSize({ height: 900, width: 1280 });
   await page.goto("/yona/admin/projectYobi/issues?pageNum=1");
 
+  const quickSearch = page.locator(".issue-list-page .left-menu .lst-stacked.unstyled");
+  await expect(quickSearch).toHaveCount(1);
+  await expect(quickSearch.locator("> li")).toHaveCount(4);
+  await expect(quickSearch.locator("> li.active")).toHaveCount(1);
+  await expect(quickSearch.locator("> li.active > a")).toContainText("Open");
+  await expect(quickSearch.locator("> li:nth-child(2) > a")).toContainText("Assigned");
+  await expect(quickSearch.locator("> li:nth-child(3) > a")).toContainText("Created");
+  await expect(quickSearch.locator("> li:nth-child(4) > a")).toContainText("Commented");
+  await expect(quickSearch.locator("> li.active .num-badge")).toHaveText("1");
+  await expect(quickSearch.locator("> li:nth-child(2) .num-badge")).toHaveText("0");
+  await expect(quickSearch.locator("> li.active > a")).toHaveAttribute("data-assignee-id", "");
+  await expect(quickSearch.locator("> li.active > a")).toHaveAttribute("data-author-id", "");
+  await expect(quickSearch.locator("> li.active > a")).toHaveAttribute("data-commenter-id", "");
+  await expect(quickSearch.locator("> li.active > a")).toHaveAttribute("data-milestone-id", "");
+  await expect(quickSearch.locator("> li.active > a")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/issues?orderBy=updatedDate&orderDir=desc",
+  );
+  const issueWrap = await layoutBox(page, ".issue-list-page .row-fluid.issue-list-wrap");
+  const leftMenu = await layoutBox(page, ".issue-list-page .left-menu.span2.span-hard-wrap");
+  const quickSearchBox = await layoutBox(page, ".issue-list-page .left-menu .lst-stacked");
+  const allFilter = await layoutBox(page, ".issue-list-page .lst-stacked > li:nth-child(1)");
+  const assignedFilter = await layoutBox(page, ".issue-list-page .lst-stacked > li:nth-child(2)");
+  const createdFilter = await layoutBox(page, ".issue-list-page .lst-stacked > li:nth-child(3)");
+  const commentedFilter = await layoutBox(page, ".issue-list-page .lst-stacked > li:nth-child(4)");
+  const allAnchor = await layoutBox(page, ".issue-list-page .lst-stacked > li:nth-child(1) > a");
+  const allBadge = await layoutBox(
+    page,
+    ".issue-list-page .lst-stacked > li:nth-child(1) .num-badge",
+  );
+  const assignedBadge = await layoutBox(
+    page,
+    ".issue-list-page .lst-stacked > li:nth-child(2) .num-badge",
+  );
+  const quickSearchStyles = await page
+    .locator(".issue-list-page .lst-stacked > li:nth-child(1)")
+    .evaluate((element) => {
+      const list = element.closest(".lst-stacked") as HTMLElement;
+      const anchor = element.querySelector("a") as HTMLElement;
+      const badge = element.querySelector(".num-badge") as HTMLElement;
+      const listStyle = window.getComputedStyle(list);
+      const itemStyle = window.getComputedStyle(element);
+      const anchorStyle = window.getComputedStyle(anchor);
+      const badgeStyle = window.getComputedStyle(badge);
+      return {
+        activeBackground: itemStyle.backgroundColor,
+        activeBorderRadius: itemStyle.borderRadius,
+        activeColor: itemStyle.color,
+        activeFontWeight: itemStyle.fontWeight,
+        activeOverflow: itemStyle.overflow,
+        activePadding: `${itemStyle.paddingTop} ${itemStyle.paddingRight} ${itemStyle.paddingBottom} ${itemStyle.paddingLeft}`,
+        anchorDisplay: anchorStyle.display,
+        badgeBorderRadius: badgeStyle.borderRadius,
+        badgeColor: badgeStyle.color,
+        badgeFontSize: badgeStyle.fontSize,
+        badgeLineHeight: badgeStyle.lineHeight,
+        badgePadding: `${badgeStyle.paddingTop} ${badgeStyle.paddingRight} ${badgeStyle.paddingBottom} ${badgeStyle.paddingLeft}`,
+        itemFontSize: itemStyle.fontSize,
+        listDisplay: listStyle.display,
+      };
+    });
+
+  expect(leftMenu.x).toBeGreaterThanOrEqual(issueWrap.x);
+  expect(quickSearchBox.x).toBeGreaterThanOrEqual(leftMenu.x);
+  expect(quickSearchBox.x + quickSearchBox.width).toBeLessThanOrEqual(
+    leftMenu.x + leftMenu.width + 1,
+  );
+  expect(allFilter.y).toBeGreaterThanOrEqual(quickSearchBox.y);
+  expect(assignedFilter.y).toBeGreaterThan(allFilter.y + allFilter.height - 1);
+  expect(createdFilter.y).toBeGreaterThan(assignedFilter.y + assignedFilter.height - 1);
+  expect(commentedFilter.y).toBeGreaterThan(createdFilter.y + createdFilter.height - 1);
+  expect(allAnchor.x).toBeGreaterThanOrEqual(allFilter.x);
+  expect(allAnchor.width).toBeLessThanOrEqual(allFilter.width);
+  expect(allBadge.x).toBeGreaterThan(allAnchor.x);
+  expect(allBadge.x + allBadge.width).toBeLessThanOrEqual(allFilter.x + allFilter.width + 1);
+  expect(assignedBadge.x).toBeCloseTo(allBadge.x, 0);
+  expect(quickSearchStyles).toEqual({
+    activeBackground: "rgb(81, 170, 204)",
+    activeBorderRadius: "6px",
+    activeColor: "rgb(255, 255, 255)",
+    activeFontWeight: "700",
+    activeOverflow: "auto",
+    activePadding: "8px 8px 8px 8px",
+    anchorDisplay: "block",
+    badgeBorderRadius: "10px",
+    badgeColor: "rgb(255, 255, 255)",
+    badgeFontSize: "12px",
+    badgeLineHeight: "18px",
+    badgePadding: "0px 2px 0px 2px",
+    itemFontSize: "13px",
+    listDisplay: "block",
+  });
+
   const twoColumn = page.locator(".issue-list-page .two-column-icon.mr10.hide-in-mobile");
   await expect(twoColumn).toHaveAttribute("id", "two-column-mode-checkbox");
   await expect(twoColumn).toHaveAttribute("title", "Two Column Mode");

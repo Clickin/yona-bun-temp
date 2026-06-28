@@ -4390,6 +4390,35 @@ div.markdown-preview {
   border-radius: 10px;
 }
 
+.lst-stacked li {
+  padding: 8px;
+  font-size: 13px;
+}
+
+.lst-stacked li a {
+  display: block;
+}
+
+.lst-stacked li .num-badge {
+  padding: 0 2px;
+}
+
+.lst-stacked li.active {
+  overflow: auto;
+  color: #fff;
+  font-weight: bold;
+  background: #51aacc;
+  border-radius: 6px;
+}
+
+.lst-stacked li.active .num-badge {
+  color: #fff;
+}
+
+.lst-stacked li.active a:hover {
+  color: #fff;
+}
+
 .search-box-wrap {
   margin-bottom: 16px;
 }
