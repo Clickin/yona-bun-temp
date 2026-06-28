@@ -1422,6 +1422,7 @@ export function ProjectNewPage(props: {
                 >
                   {ownerOptions.map((option) => (
                     <option
+                      data-avatar-url={option.avatarUrl ?? ""}
                       data-type={option.organization ? "group" : "user"}
                       key={option.ownerName}
                       value={option.ownerName}
@@ -1862,6 +1863,7 @@ export function ProjectImportPage(props: {
                 >
                   {ownerOptions.map((option) => (
                     <option
+                      data-avatar-url={option.avatarUrl ?? ""}
                       data-type={option.organization ? "group" : "user"}
                       key={option.ownerName}
                       value={option.ownerName}
@@ -4009,6 +4011,7 @@ export function ProjectSettingsPage(props: {
         }}
       >
         <div className="bubble-wrap gray" style={{ overflow: "visible" }}>
+          <input name="watchingCount" type="hidden" value={detail.watchCount ?? 0} />
           <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: 20 }}>
             <div className="setting-box left">
               <div className="logo-wrap" style={{ backgroundImage: `url('${logoUrl}')` }} />

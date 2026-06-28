@@ -32,8 +32,8 @@ use crate::{
     require_session, require_valid_csrf, resolve_issue_reference_search_project,
     rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
     rest_repository, rewrite_project_readme_markdown_links, send_project_transfer_request_mail,
-    AssetMode, BrowserRuntimeConfig, ConnectError, Context, PilotBackend, PilotRepository,
-    PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
+    workspace_avatar_url, AssetMode, BrowserRuntimeConfig, ConnectError, Context, PilotBackend,
+    PilotRepository, PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
     RestMentionReferenceMetadata, RestProjectDeleteResponse, RestRouteError,
 };
 use yoram_domain::{
@@ -1094,6 +1094,8 @@ struct RestProjectCreateFormOptionsQuery {
 
 #[derive(Serialize)]
 struct RestProjectCreateOwnerOption {
+    #[serde(rename = "avatarUrl")]
+    avatar_url: String,
     #[serde(rename = "ownerName")]
     owner_name: String,
     organization: bool,
@@ -1645,7 +1647,18 @@ async fn rest_project_create_form_options(
         })?;
 
     let mut owner_names = Vec::new();
-    owner_names.push((actor.login_id.clone(), false));
+    owner_names.push((
+        actor.login_id.clone(),
+        false,
+        workspace_avatar_url(
+            repository,
+            actor.id,
+            &actor.email_address,
+            &service.base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ));
     let organizations = repository
         .list_organizations()
         .await
@@ -1661,26 +1674,39 @@ async fn rest_project_create_form_options(
             continue;
         };
         if can_create_organization_project(authorization.viewer.is_organization_admin) {
-            owner_names.push((authorization.organization.organization_name, true));
+            owner_names.push((
+                authorization.organization.organization_name,
+                true,
+                organization_logo_url(
+                    repository,
+                    &service.base_path,
+                    authorization.organization.id,
+                )
+                .await
+                .map_err(RestRouteError::from_connect_error)?,
+            ));
         }
     }
 
     let requested_owner = query.owner.unwrap_or_default();
     let selected_owner_name = owner_names
         .iter()
-        .find(|(owner_name, _)| {
+        .find(|(owner_name, _, _)| {
             normalize_identifier(owner_name) == normalize_identifier(&requested_owner)
         })
-        .map(|(owner_name, _)| owner_name.clone())
+        .map(|(owner_name, _, _)| owner_name.clone())
         .unwrap_or_else(|| actor.login_id.clone());
     let owner_options = owner_names
         .into_iter()
-        .map(|(owner_name, organization)| RestProjectCreateOwnerOption {
-            selected: normalize_identifier(&owner_name)
-                == normalize_identifier(&selected_owner_name),
-            owner_name,
-            organization,
-        })
+        .map(
+            |(owner_name, organization, avatar_url)| RestProjectCreateOwnerOption {
+                avatar_url,
+                selected: normalize_identifier(&owner_name)
+                    == normalize_identifier(&selected_owner_name),
+                owner_name,
+                organization,
+            },
+        )
         .collect();
 
     Ok(Json(RestProjectCreateFormOptionsResponse {

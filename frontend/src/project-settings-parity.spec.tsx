@@ -97,6 +97,10 @@ describe("project settings parity", () => {
   });
 
   it("renders the legacy project setting form shell and controls", () => {
+    const legacySettingTemplate = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/app/views/project/setting.scala.html"),
+      "utf8",
+    );
     const html = renderToStaticMarkup(
       <ProjectSettingsPage
         defaultBranch="main"
@@ -133,6 +137,8 @@ describe("project settings parity", () => {
     expect(html).not.toContain('action="/yona/admin/projectYobi/setting"');
     expect(html).not.toContain('method="post"');
     expect(html).toContain('class="bubble-wrap gray"');
+    expect(legacySettingTemplate).toContain('name="watchingCount"');
+    expect(html).toContain('type="hidden" name="watchingCount"');
     expect(html).toContain('class="box-wrap top clearfix frm-wrap"');
     expect(html).toContain('class="setting-box left"');
     expect(html).toContain('class="logo-wrap"');

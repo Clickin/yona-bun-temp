@@ -16,23 +16,43 @@ import {
 
 describe("project create parity", () => {
   it("renders the legacy owner select with user and organization options", () => {
+    const legacyCreateTemplate = readFileSync(
+      join(process.cwd(), "../yona-original/app/views/project/create.scala.html"),
+      "utf8",
+    );
     const html = renderToStaticMarkup(
       <ProjectNewPage
         ownerOptions={[
-          { organization: false, ownerName: "admin", selected: false },
-          { organization: true, ownerName: "weblabs", selected: true },
+          {
+            avatarUrl: "/yona/files/avatar-admin.png",
+            organization: false,
+            ownerName: "admin",
+            selected: false,
+          },
+          {
+            avatarUrl: "/yona/files/org-weblabs.png",
+            organization: true,
+            ownerName: "weblabs",
+            selected: true,
+          },
         ]}
         selectedOwnerName="weblabs"
       />,
     );
 
+    expect(legacyCreateTemplate).toContain('data-avatar-url="@UserApp.currentUser().avatarUrl"');
+    expect(legacyCreateTemplate).toContain(
+      'data-avatar-url="@urlToOrganizationLogo(orgUser.organization)"',
+    );
     expect(html).toContain('id="project-owner"');
     expect(html).toContain('name="owner"');
     expect(html).toContain('data-toggle="select2"');
     expect(html).toContain('data-format="user"');
     expect(html).toContain('data-type="user"');
+    expect(html).toContain('data-avatar-url="/yona/files/avatar-admin.png"');
     expect(html).toContain('value="admin"');
     expect(html).toContain('data-type="group"');
+    expect(html).toContain('data-avatar-url="/yona/files/org-weblabs.png"');
     expect(html).toContain('value="weblabs" selected=""');
   });
 

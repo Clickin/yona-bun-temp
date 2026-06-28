@@ -66,6 +66,7 @@ export type ProjectImportResponse = {
 };
 
 export type ProjectCreateOwnerOption = {
+  avatarUrl?: string;
   organization: boolean;
   ownerName: string;
   selected: boolean;

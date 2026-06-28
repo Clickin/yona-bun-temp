@@ -1317,9 +1317,14 @@ async fn project_create_form_options_expose_legacy_owner_selector_choices() {
     assert_eq!(json["ownerOptions"][0]["ownerName"], "admin");
     assert_eq!(json["ownerOptions"][0]["organization"], false);
     assert_eq!(json["ownerOptions"][0]["selected"], false);
+    assert!(json["ownerOptions"][0]["avatarUrl"]
+        .as_str()
+        .expect("user owner avatar url")
+        .contains("gravatar.com/avatar/"));
     assert_eq!(json["ownerOptions"][1]["ownerName"], "weblabs");
     assert_eq!(json["ownerOptions"][1]["organization"], true);
     assert_eq!(json["ownerOptions"][1]["selected"], true);
+    assert_eq!(json["ownerOptions"][1]["avatarUrl"], "");
 }
 
 #[tokio::test]
