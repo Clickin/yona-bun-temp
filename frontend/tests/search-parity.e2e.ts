@@ -275,6 +275,8 @@ test("renders global results, category counts, highlight snippets, and type swit
             href: "/owner/projectYobi",
             id: "project-1",
             number: "",
+            originOwnerName: "upstream",
+            originProjectName: "originProject",
             ownerName: "owner",
             projectName: "projectYobi",
             snippets: [
@@ -448,8 +450,42 @@ test("renders global results, category counts, highlight snippets, and type swit
     "/yona/users/needle-user",
   );
   await expect(page.locator(".search-list-item.project .avatar-wrap")).toBeVisible();
+  await expect(page.locator(".search-list-item.project .avatar-wrap")).toHaveAttribute(
+    "data-toggle",
+    "tooltip",
+  );
+  await expect(page.locator(".search-list-item.project .avatar-wrap")).toHaveAttribute(
+    "data-placement",
+    "top",
+  );
+  await expect(page.locator(".search-list-item.project .avatar-wrap")).toHaveAttribute(
+    "title",
+    "needle-user",
+  );
+  await expect(page.locator(".search-list-item.project .avatar-wrap img")).toHaveAttribute(
+    "width",
+    "32",
+  );
+  await expect(page.locator(".search-list-item.project .avatar-wrap img")).toHaveAttribute(
+    "height",
+    "32",
+  );
   await expect(page.locator(".title.user-link")).toContainText("Needle User (@needle-user)");
   await expect(page.locator(".infos.nm")).toContainText("Member since 2026-05-01");
+  const userList = await layoutBox(page, ".search-list-wrap");
+  const userItem = await layoutBox(page, ".search-list-item.project");
+  const userAvatar = await layoutBox(page, ".search-list-item.project .avatar-wrap");
+  const userTitleWrap = await layoutBox(page, ".search-list-item.project .title-wrap");
+  const userInfo = await layoutBox(page, ".search-list-item.project .infos.nm");
+  const userPagination = await layoutBox(page, "#pagination");
+  expect(userItem.x).toBeCloseTo(userList.x, 0);
+  expect(userItem.width).toBeCloseTo(userList.width, 0);
+  expect(userAvatar.x).toBeCloseTo(userItem.x, 0);
+  expect(Math.round(userAvatar.width)).toBeGreaterThanOrEqual(32);
+  expect(userTitleWrap.x).toBeGreaterThanOrEqual(userItem.x);
+  expect(userTitleWrap.y).toBeGreaterThanOrEqual(userItem.y);
+  expect(userInfo.y).toBeGreaterThan(userTitleWrap.y + userTitleWrap.height - 1);
+  expect(userPagination.y).toBeGreaterThan(userItem.y + userItem.height - 1);
 
   await page.locator('.search-category-wrap a[data-type="project"]').click();
   await expect(page).toHaveURL(/searchType=project/);
@@ -461,8 +497,53 @@ test("renders global results, category counts, highlight snippets, and type swit
     "src",
     "/yona/assets/images/project_default_logo.png",
   );
-  await expect(page.locator(".search-meta-info.np")).toContainText("Create a project 2026-05-01");
-  await expect(page.locator(".search-meta-info.np")).toContainText("Latest code update 2026-05-02");
+  await expect(page.locator(".search-meta-info.nm.np")).toContainText("Forked from");
+  await expect(
+    page.locator(".search-meta-info.nm.np .yobicon-split.yobicon-white.vmiddle"),
+  ).toHaveCount(1);
+  await expect(page.locator(".search-meta-info.nm.np .project-link")).toHaveAttribute(
+    "href",
+    "/yona/upstream/originProject",
+  );
+  await expect(page.locator(".search-meta-info.nm.np .project-link")).toHaveText(
+    "upstream/originProject",
+  );
+  await expect(page.locator(".search-content.np .search-content-body")).toContainText(
+    "Needle project overview",
+  );
+  const projectMetaLocator = page.locator(
+    ".search-list-item.project > .search-meta-info.np:not(.nm)",
+  );
+  await expect(projectMetaLocator).toContainText("Create a project 2026-05-01");
+  await expect(projectMetaLocator).toContainText("Latest code update 2026-05-02");
+  await expect(projectMetaLocator.locator(".meta-info strong").first()).toHaveAttribute(
+    "title",
+    "2026-05-01",
+  );
+  await expect(projectMetaLocator.locator(".meta-info strong").last()).toHaveAttribute(
+    "title",
+    "2026-05-02",
+  );
+  const projectList = await layoutBox(page, ".search-list-wrap");
+  const projectItem = await layoutBox(page, ".search-list-item.project");
+  const projectAvatar = await layoutBox(page, ".search-list-item.project .avatar-wrap");
+  const projectTitleWrap = await layoutBox(page, ".search-list-item.project .title-wrap");
+  const projectForkMeta = await layoutBox(
+    page,
+    ".search-list-item.project .search-meta-info.nm.np",
+  );
+  const projectContent = await layoutBox(page, ".search-list-item.project .search-content.np");
+  const projectMeta = await layoutBox(
+    page,
+    ".search-list-item.project > .search-meta-info.np:not(.nm)",
+  );
+  expect(projectItem.x).toBeCloseTo(projectList.x, 0);
+  expect(projectItem.width).toBeCloseTo(projectList.width, 0);
+  expect(projectAvatar.x).toBeCloseTo(projectItem.x, 0);
+  expect(projectTitleWrap.x).toBeGreaterThanOrEqual(projectItem.x);
+  expect(projectForkMeta.y).toBeGreaterThan(projectTitleWrap.y + projectTitleWrap.height - 1);
+  expect(projectContent.y).toBeGreaterThan(projectForkMeta.y + projectForkMeta.height - 1);
+  expect(projectMeta.y).toBeGreaterThan(projectContent.y + projectContent.height - 1);
 
   await page.locator('.search-category-wrap a[data-type="issue_comment"]').click();
   await expect(page.locator(".title-wrap .post-id")).toContainText("#1");

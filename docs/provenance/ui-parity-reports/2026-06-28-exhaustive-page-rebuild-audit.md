@@ -465,10 +465,10 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `search/partial_milestones.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
 | `search/partial_post_comments.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
 | `search/partial_posts.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
-| `search/partial_projects.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_projects.scala.html` | P6 search | metric guard passed: `search-parity.e2e.ts` asserts project result row `.search-list-item.project`, avatar/logo anchor, `.title.project-link`, fork-origin `.search-meta-info.nm.np` with split icon class and origin project link, overview `.search-content.np`, created/code-update `.search-meta-info.np` strong title attributes, and row/list/title/fork/content/meta vertical ordering |
 | `search/partial_reviews.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
 | `search/partial_search.scala.html` | P6 search | metric guard passed: `search-parity.e2e.ts` asserts search breadcrumb/page wrap, category column/result search box separation, form input/button x alignment, result title/wrap ordering, category counts, and type switch behavior |
-| `search/partial_users.scala.html` | P6 search | reopen: inspect Scala anchors before JSX reuse |
+| `search/partial_users.scala.html` | P6 search | metric guard passed: `search-parity.e2e.ts` asserts user result row `.search-list-item.project`, avatar tooltip `data-toggle`/`data-placement`/title hooks, 32x32 avatar attributes, `.title.user-link` copy/href, `.infos.nm .infos-item` member-since copy, pagination anchor, and list/item/avatar/title/info vertical placement |
 | `search/result.scala.html` | P6 search | metric guard passed: `search-parity.e2e.ts` asserts global/project/organization search shells, legacy `siteLayout`/project/organization routing variants, and global result page size/position/alignment metrics |
 
 ### `site/`
