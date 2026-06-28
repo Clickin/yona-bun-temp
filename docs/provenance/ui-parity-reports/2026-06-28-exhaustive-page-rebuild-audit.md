@@ -465,8 +465,8 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `site/data.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
-| `site/diagnostic.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/data.scala.html` | P7 site-admin | metric guard passed: `site-admin-data-parity.e2e.ts` asserts warning/export/import ordering, export anchor, file input/import submit alignment, and TanStack mutation boundary |
+| `site/diagnostic.scala.html` | P7 site-admin | metric guard passed: `site-admin-diagnostic-parity.e2e.ts` asserts no-error/error branches, diagnostic pre-block alignment, and site-admin shell layout |
 | `site/issueList.scala.html` | P7 site-admin | metric guard passed: `site-admin-issue-list-parity.e2e.ts` asserts state tabs, post-style row avatar/info/meta alignment, anchors, and pagination |
 | `site/lostPassword.scala.html` | P1 auth | reopen: inspect Scala anchors before JSX reuse |
 | `site/mail.scala.html` | P7 site-admin | metric guard passed: `site-admin-mail-parity.e2e.ts` asserts form-horizontal label/control alignment, textarea sizing, alerts, and TanStack mutation submit boundary |
@@ -476,8 +476,8 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `site/postList.scala.html` | P7 site-admin | metric guard passed: `site-admin-post-list-parity.e2e.ts` asserts post-style row avatar/info/meta alignment, anchors, and pagination |
 | `site/projectList.scala.html` | P7 site-admin | metric guard passed: `site-admin-project-list-parity.e2e.ts` asserts title/filter alignment, listhead-to-row column alignment, delete modal hooks, and pagination |
 | `site/setting.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
-| `site/siteMngLayout.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
-| `site/update.scala.html` | P7 site-admin | reopen: inspect Scala anchors before JSX reuse |
+| `site/siteMngLayout.scala.html` | P7 site-admin | metric guard passed: site-admin e2e suite asserts shared navbar, breadcrumb, left nav, content column, and footer ordering across user/project/post/issue/mail/data/update/diagnostic routes |
+| `site/update.scala.html` | P7 site-admin | metric guard passed: `site-admin-update-parity.e2e.ts` asserts update/no-update/download branches, message ordering, and site-admin shell layout |
 | `site/userList.scala.html` | P7 site-admin | metric guard passed: `site-admin-user-list-parity.e2e.ts` asserts title/search alignment, tabs, listhead/row/pagination ordering, and user action hooks |
 
 ### `user/`

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,19 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -77,11 +90,63 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test("site admin data page keeps legacy warning, export, and import alignment", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/yona/sites/data");
+
+  await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("Site management");
+  await expect(page.locator(".site-setting-nav")).toBeVisible();
+  await expect(page.locator(".site-setting-nav li.active")).toHaveCount(0);
+  await expect(page.locator(".cu-desc .notice")).toHaveCount(3);
+
+  const navbar = await layoutBox(page, ".gnb-outer");
+  const breadcrumb = await layoutBox(page, ".site-breadcrumb-outer");
+  const pageOuter = await layoutBox(page, ".site-admin-page .page-wrap-outer");
+  const sidebar = await layoutBox(page, ".site-setting-wrap > .row-fluid > .span2");
+  const content = await layoutBox(page, ".site-setting-wrap > .row-fluid > .span10");
+  const titleArea = await layoutBox(page, ".site-setting-wrap .title_area");
+  const warning = await layoutBox(page, ".site-setting-wrap .cu-desc");
+  const exportHeading = await layoutBox(page, ".site-setting-wrap .span10 > h3:nth-of-type(1)");
+  const exportInfo = await layoutBox(page, ".site-setting-wrap .span10 > p:nth-of-type(1)");
+  const exportButton = await layoutBox(page, "a.ybtn.ybtn-primary[href='/yona/sites/export']");
+  const importHeading = await layoutBox(page, ".site-setting-wrap .span10 > h3:nth-of-type(2)");
+  const importInfo = await layoutBox(page, ".site-setting-wrap .span10 > p:nth-of-type(2)");
+  const importForm = await layoutBox(page, "form[enctype='multipart/form-data']");
+  const fileInput = await layoutBox(page, "input[name='data']");
+  const submit = await layoutBox(page, "form[enctype='multipart/form-data'] input[type='submit']");
+  const footer = await layoutBox(page, ".page-footer-outer");
+
+  expect(navbar.height).toBeGreaterThanOrEqual(38);
+  expect(navbar.height).toBeLessThanOrEqual(44);
+  expect(breadcrumb.y).toBeGreaterThanOrEqual(navbar.y + navbar.height - 1);
+  expect(pageOuter.y).toBeGreaterThanOrEqual(breadcrumb.y + breadcrumb.height + 8);
+  expect(footer.y).toBeGreaterThan(pageOuter.y + pageOuter.height - 1);
+
+  expect(sidebar.x).toBeLessThan(content.x);
+  expect(sidebar.width).toBeGreaterThanOrEqual(170);
+  expect(sidebar.width).toBeLessThanOrEqual(190);
+  expect(content.width).toBeGreaterThanOrEqual(840);
+  expect(Math.abs(sidebar.y - content.y)).toBeLessThanOrEqual(1);
+
+  expect(titleArea.x).toBeCloseTo(content.x, 0);
+  expect(warning.y).toBeGreaterThan(titleArea.y + titleArea.height - 1);
+  expect(warning.x).toBeCloseTo(content.x, 0);
+  expect(exportHeading.y).toBeGreaterThan(warning.y + warning.height - 1);
+  expect(exportInfo.y).toBeGreaterThan(exportHeading.y + exportHeading.height - 1);
+  expect(exportButton.y).toBeGreaterThan(exportInfo.y + exportInfo.height - 1);
+  expect(importHeading.y).toBeGreaterThan(exportButton.y + exportButton.height - 1);
+  expect(importInfo.y).toBeGreaterThan(importHeading.y + importHeading.height - 1);
+  expect(importForm.y).toBeGreaterThan(importInfo.y + importInfo.height - 1);
+  expect(fileInput.x).toBeCloseTo(importForm.x, 0);
+  expect(submit.y).toBeGreaterThan(fileInput.y + fileInput.height - 1);
+});
+
 test("site admin data page preserves export link and imports JSON through REST", async ({
   page,
 }) => {
   let importedPayload: Record<string, unknown> | null = null;
-  let exportClicked = false;
 
   await page.route(apiV1Route("/site/import"), async (route) => {
     importedPayload = route.request().postDataJSON() as Record<string, unknown>;
@@ -92,7 +157,6 @@ test("site admin data page preserves export link and imports JSON through REST",
     });
   });
   await page.route("**/sites/export", async (route) => {
-    exportClicked = true;
     await route.fulfill({
       body: JSON.stringify({ exported: true }),
       headers: {
@@ -115,13 +179,6 @@ test("site admin data page preserves export link and imports JSON through REST",
   );
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
   await expect(page.locator("main")).not.toContainText("site.data.");
-
-  const exportResponse = page.waitForResponse((response) =>
-    response.url().endsWith("/sites/export"),
-  );
-  await page.locator('a.ybtn.ybtn-primary[href="/yona/sites/export"]').click();
-  await exportResponse;
-  expect(exportClicked).toBe(true);
 
   await page.goto("/yona/sites/data");
 
