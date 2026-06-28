@@ -430,7 +430,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `project/importing.scala.html` | P7 import/P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/issuelabels.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/list.scala.html` | P6 directory/P2 project | reopen: inspect Scala anchors before JSX reuse |
-| `project/members.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/members.scala.html` | P2 project | metric guard passed: `project-members-parity.e2e.ts` asserts legacy project settings shell, `#addNewMember` form/input/button placement, `.members.project.row-fluid` two-column member rows, owner/member role/delete anchors, enrollment request legend/row placement, and TanStack Query member add/role/delete mutations |
 | `project/partial_dashboard.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy `.content-container.nm > .project-overview-home.row-fluid` shell, left/right span6 placement, section stacking, headings/copy, and no unresolved message keys |
 | `project/partial_dashboard_issuesbyassignee.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy `.overview-assignee` rows, assignee/unassigned anchors, avatar/title/count/progress copy, span6/span3/span3 ordering, count placement, and progress width |
 | `project/partial_dashboard_issuesbylabel.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy `.dl-horizontal.overview-label`, category/label/count anchors, row-fluid span10/span2 alignment, and right dashboard column placement |
@@ -442,12 +442,12 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `project/partial_issuelabels_list.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/partial_readme.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy `.bubble-wrap.gray.readme` wrapper for empty Git/SVN fallback, Git README file, and DB-backed README post; verifies `.readme-wrap > header + .readme-body.markdown-wrap`, book icon class, edit/create links, mention links, and wrapper/header/body placement |
 | `project/partial_settingmenu.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts the settings submenu appears before `#saveSetting` inside `.project-page-wrap` |
-| `project/partial_webhooks_list.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_webhooks_list.scala.html` | P2 project | metric guard passed: `project-webhooks-parity.e2e.ts` asserts `#webhooksList.webhook-list-wrap`, empty `.error-wrap`, created row `data-webhook-id`, payload/secret/type/git-push anchors, delete hook, list placement below create form, and TanStack Query webhook delete mutation |
 | `project/setting.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts settings form top box, left/right column x/y alignment, 260x188 logo area, description width, and mutation-capable form shell; hidden `watchingCount` selector remains covered by `project-settings-parity.spec.tsx` |
 | `project/statistics.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/transfer.scala.html` | P2 project | metric guard passed: `project-transfer-parity.e2e.ts` asserts legacy settings shell ownership, transfer submenu active state, `.bubble-wrap.gray.wp` two-row transfer form, `#owner` name field, five notice rows, checkbox/label alignment, bottom transfer button, validation alert, `#alertTransfer` modal header/body/footer order, confirm/cancel alignment, and TanStack Query REST POST with CSRF/destination payload |
 | `project/watchers.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
-| `project/webhooks.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/webhooks.scala.html` | P2 project | metric guard passed: `project-webhooks-parity.e2e.ts` asserts legacy webhook settings shell, active submenu, `#formNewWebhook`, legend/form-actions/payload/secret/submit/radio/help/list ordering, JSON git-push toggle behavior, validation alert, and TanStack Query webhook create/delete mutations |
 
 ### `reviewthread/`
 

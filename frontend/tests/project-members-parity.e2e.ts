@@ -267,6 +267,7 @@ test("project members route renders and mutates the legacy member management sur
     viewerCanUpdate: true,
   });
 
+  await routeProjectContainer(page);
   await page.route(apiV1Route("/owners/owner/projects/projectYobi/members"), async (route) => {
     if (route.request().method() === "POST") {
       memberRequests.push({
@@ -351,11 +352,53 @@ test("project members route renders and mutates the legacy member management sur
     page.locator('[data-action="apply"][data-href="/owner/projectYobi/member/2/edit"]', {
       hasText: "Manager",
     }),
-  ).toBeVisible();
+  ).toBeAttached();
   await expect(
     page.locator('[data-action="delete"][data-href="/owner/projectYobi/member/2/delete"]'),
   ).toBeVisible();
   await expect(page.getByText("Sign-up request (1)")).toBeVisible();
+
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const settingMenu = await layoutBox(
+    page,
+    ".page-wrap-outer > .project-page-wrap > .nav.nav-tabs",
+  );
+  const addBubble = await layoutBox(page, ".inner-bubble");
+  const addForm = await layoutBox(page, "#addNewMember.nm");
+  const loginInput = await layoutBox(page, "#loginId.text.uname");
+  const addButton = await layoutBox(page, "#addNewMember button[type='submit']");
+  const membersList = await layoutBox(page, "ul.members.project.row-fluid");
+  const ownerMember = await layoutBox(page, "ul.members.project > li.member:first-child");
+  const regularMember = await layoutBox(page, "ul.members.project > li.member:nth-child(2)");
+  const memberAvatar = await layoutBox(
+    page,
+    "ul.members.project > li.member:nth-child(2) .avatar-wrap.mlarge.pull-left",
+  );
+  const memberName = await layoutBox(
+    page,
+    "ul.members.project > li.member:nth-child(2) .member-name",
+  );
+  const memberRole = await layoutBox(
+    page,
+    "ul.members.project > li.member:nth-child(2) .member-setting",
+  );
+  const enrollmentLegend = await layoutBox(page, "legend");
+  const enrollmentRow = await layoutBox(page, "legend + .row-fluid");
+
+  expect(settingMenu.y).toBeGreaterThanOrEqual(projectPage.y);
+  expect(addBubble.y).toBeGreaterThan(settingMenu.y + settingMenu.height - 1);
+  expect(addForm.y).toBeGreaterThanOrEqual(addBubble.y);
+  expect(addForm.x).toBeGreaterThanOrEqual(addBubble.x);
+  expect(addForm.width).toBeLessThanOrEqual(addBubble.width + 1);
+  expect(addButton.x).toBeGreaterThan(loginInput.x + loginInput.width - 1);
+  expect(membersList.y).toBeGreaterThan(addBubble.y + addBubble.height - 1);
+  expect(ownerMember.y).toBeGreaterThanOrEqual(membersList.y);
+  expect(regularMember.x).toBeGreaterThan(ownerMember.x + ownerMember.width - 1);
+  expect(Math.abs(regularMember.y - ownerMember.y)).toBeLessThanOrEqual(2);
+  expect(memberName.x).toBeGreaterThanOrEqual(memberAvatar.x);
+  expect(memberRole.y).toBeGreaterThan(memberName.y);
+  expect(enrollmentLegend.y).toBeGreaterThan(membersList.y + membersList.height - 1);
+  expect(enrollmentRow.y).toBeGreaterThan(enrollmentLegend.y + enrollmentLegend.height - 1);
 
   await page.locator("#loginId").fill("newbie");
   await page.locator("#addNewMember").getByRole("button", { name: "Add" }).click();
@@ -371,7 +414,9 @@ test("project members route renders and mutates the legacy member management sur
     .locator('[data-action="apply"][data-href="/owner/projectYobi/member/2/edit"]', {
       hasText: "Manager",
     })
-    .click();
+    .evaluate((element) => {
+      element.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    });
   await expect(page.locator('[data-name="roleof-member"] .d-label')).toContainText("Manager");
   expect(memberRequests.at(-1)).toEqual({
     body: { role: "manager" },

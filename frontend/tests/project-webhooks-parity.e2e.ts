@@ -8,6 +8,19 @@ const restJsonHeaders = {
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 const PROJECT_ADMIN_RAW_KEY_PATTERN = /\b(?:project|button)\.[a-z][A-Za-z0-9_.-]*/;
 
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
+
 async function assertNoProjectAdminRawKeys(page: Page): Promise<void> {
   await expect(page.locator("body")).not.toContainText(PROJECT_ADMIN_RAW_KEY_PATTERN);
 }
@@ -192,6 +205,38 @@ test("project webhooks route preserves the legacy CRUD shell", async ({ page }) 
   await expect(page.locator("#formNewWebhook")).toBeVisible();
   await expect(page.locator("#webhooksList .error-wrap")).toBeVisible();
   await assertNoProjectAdminRawKeys(page);
+
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const settingMenu = await layoutBox(
+    page,
+    ".page-wrap-outer > .project-page-wrap > .nav.nav-tabs",
+  );
+  const webhookPage = await layoutBox(page, ".project-page-wrap.webhook-editor-wrap");
+  const form = await layoutBox(page, "#formNewWebhook.new-webhook-wrap");
+  const legend = await layoutBox(page, "#formNewWebhook .form-legend");
+  const actions = await layoutBox(page, "#formNewWebhook .form-wrap.form-actions");
+  const payload = await layoutBox(page, "#formNewWebhook .input-webhook-payload");
+  const secret = await layoutBox(page, "#formNewWebhook .input-webhook-secret");
+  const submit = await layoutBox(page, "#formNewWebhook .btn-submit");
+  const typeRow = await layoutBox(
+    page,
+    "#formNewWebhook .form-wrap.form-actions > div:nth-child(2)",
+  );
+  const help = await layoutBox(page, "#formNewWebhook > div:nth-child(3)");
+  const list = await layoutBox(page, "#webhooksList.webhook-list-wrap");
+
+  expect(webhookPage.x).toBeGreaterThanOrEqual(projectPage.x);
+  expect(webhookPage.width).toBeLessThanOrEqual(projectPage.width + 1);
+  expect(settingMenu.y).toBeGreaterThanOrEqual(projectPage.y);
+  expect(form.y).toBeGreaterThan(settingMenu.y + settingMenu.height - 1);
+  expect(legend.y).toBeGreaterThanOrEqual(form.y);
+  expect(actions.y).toBeGreaterThan(legend.y + legend.height - 1);
+  expect(payload.x).toBeGreaterThanOrEqual(actions.x);
+  expect(secret.x).toBeGreaterThan(payload.x + payload.width - 1);
+  expect(submit.x).toBeGreaterThan(secret.x + secret.width - 1);
+  expect(typeRow.y).toBeGreaterThan(payload.y + payload.height - 1);
+  expect(help.y).toBeGreaterThan(actions.y + actions.height - 1);
+  expect(list.y).toBeGreaterThan(form.y + form.height - 1);
 
   await page.locator("#formNewWebhook").evaluate((form) => {
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
