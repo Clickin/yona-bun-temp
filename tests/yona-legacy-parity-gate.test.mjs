@@ -23,6 +23,182 @@ const runGate = (changedFiles) =>
     repoRoot: TEST_REPO_ROOT,
   });
 
+test("active template-first UI parity surfaces are closed in the gate", () => {
+  const uiParityCases = [
+    [
+      "public-landing",
+      [
+        "frontend/src/routes/index.tsx",
+        "frontend/tests/public-landing-parity.e2e.ts",
+        "docs/provenance/ui-parity-reports/template-first-p0-global-shell.md",
+      ],
+    ],
+    [
+      "public-project-directory",
+      [
+        "frontend/src/routes/projects/route.tsx",
+        "frontend/src/project-directory-route.spec.tsx",
+        "docs/provenance/core-parity-audit.md",
+      ],
+    ],
+    [
+      "public-organization-directory",
+      [
+        "frontend/src/routes/orgs/route.tsx",
+        "frontend/src/organization-directory-route.spec.tsx",
+        "docs/provenance/core-parity-audit.md",
+      ],
+    ],
+    [
+      "anonymous-help-route",
+      [
+        "frontend/src/routes/-help-views.tsx",
+        "frontend/src/help-route-parity.spec.tsx",
+        "docs/agents/06-phase-plan.md",
+      ],
+    ],
+    [
+      "project-markdown-rendering",
+      [
+        "frontend/src/routes/-markdown-renderer.tsx",
+        "frontend/src/markdown-renderer.spec.tsx",
+        "docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md",
+      ],
+    ],
+    [
+      "shared-frontend-view-models",
+      [
+        "frontend/src/app-view-models.ts",
+        "frontend/src/auth-workspace-shell.spec.tsx",
+        "docs/provenance/core-parity-audit.md",
+      ],
+    ],
+    [
+      "frontend-api-query-boundary",
+      [
+        "frontend/src/api/query-keys.ts",
+        "frontend/src/api-query.spec.ts",
+        "docs/provenance/ui-parity-reports/ui-parity-search-notification.md",
+      ],
+    ],
+    [
+      "board-posting-core",
+      [
+        "frontend/src/routes/-board-views.tsx",
+        "frontend/tests/board-posting-parity.e2e.ts",
+        "docs/provenance/core-parity-audit.md",
+      ],
+    ],
+    [
+      "auth-account-lifecycle",
+      [
+        "frontend/src/routes/users/loginform/route.tsx",
+        "frontend/tests/auth-public-entry-parity.e2e.ts",
+        "docs/provenance/ui-parity-reports/template-first-p1-auth-public-home.md",
+      ],
+    ],
+    [
+      "public-user-profile",
+      [
+        "frontend/src/routes/$user/route.tsx",
+        "frontend/tests/user-profile-parity.e2e.ts",
+        "docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md",
+      ],
+    ],
+    [
+      "pull-request-and-review",
+      [
+        "frontend/src/routes/$owner/$projectName/pullRequests/route.tsx",
+        "frontend/tests/pull-request-review-read-parity.e2e.ts",
+        "docs/provenance/ui-parity-reports/ui-parity-pull-request-review.md",
+      ],
+    ],
+    [
+      "organization-core-cru",
+      [
+        "frontend/src/routes/-organization-views.tsx",
+        "frontend/tests/organization-parity.e2e.ts",
+        "docs/provenance/ui-parity-reports/ui-parity-directory-organization.md",
+      ],
+    ],
+    [
+      "project-core-cru-and-enrollment",
+      [
+        "frontend/src/routes/-project-views.tsx",
+        "frontend/src/project-home-tabs.spec.tsx",
+        "docs/provenance/ui-parity-reports/template-first-p2-project-shell.md",
+      ],
+    ],
+    [
+      "workspace-recent-favorite-default-landing",
+      [
+        "frontend/src/routes/user/editform/index.tsx",
+        "frontend/src/workspace-settings-parity.spec.tsx",
+        "docs/plans/2026-06-27-ui-parity-coordination.md",
+      ],
+    ],
+    [
+      "notification-inbox-and-mail-staging",
+      [
+        "frontend/src/routes/notification/route.tsx",
+        "frontend/src/route-parity.spec.tsx",
+        "docs/provenance/ui-parity-reports/ui-parity-search-notification.md",
+      ],
+    ],
+    [
+      "issue-lifecycle",
+      [
+        "frontend/src/routes/-issue-views.tsx",
+        "frontend/tests/issue-detail-parity.e2e.ts",
+        "docs/provenance/ui-parity-reports/ui-parity-issues.md",
+      ],
+    ],
+    [
+      "search",
+      [
+        "frontend/src/routes/-search-views.tsx",
+        "frontend/src/search-i18n.spec.tsx",
+        "docs/provenance/core-parity-audit.md",
+      ],
+    ],
+    [
+      "site-admin-core",
+      [
+        "frontend/src/api/site-admin.ts",
+        "frontend/tests/site-admin-user-list-parity.e2e.ts",
+        "docs/provenance/core-parity-audit.md",
+      ],
+    ],
+    [
+      "repository-and-smart-http",
+      [
+        "frontend/src/routes/-code-views.tsx",
+        "frontend/tests/project-code-comment-upload-parity.e2e.ts",
+        "docs/provenance/core-parity-audit.md",
+      ],
+    ],
+    [
+      "attachment-and-asset-acl",
+      [
+        "frontend/src/api/attachments.ts",
+        "crates/server/tests/assets_contract.rs",
+        "docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md",
+      ],
+    ],
+  ];
+
+  for (const [expectedId, changedFiles] of uiParityCases) {
+    const result = runGate(changedFiles);
+    const capability = result.capabilities.find((entry) => entry.id === expectedId);
+
+    assert.equal(result.verdict, "pass", expectedId);
+    assert.notEqual(capability, undefined, expectedId);
+    assert.notEqual(capability.status, "gap", expectedId);
+    assert.notEqual(capability.status, "partial", expectedId);
+    assert.notEqual(capability.status, "deferred", expectedId);
+  }
+});
+
 test("passes when only documentation changes are present", () => {
   const result = runGate(["docs/agents/09-llm-onboarding-checklist.md"]);
 
