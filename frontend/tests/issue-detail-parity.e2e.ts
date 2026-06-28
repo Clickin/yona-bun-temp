@@ -273,6 +273,7 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     ],
     childOpenCount: 1,
     commentParentLinks: [{ id: 31, parentCommentId: 30 }],
+    viewerUserId: 1,
     comments: [
       {
         authorAvatarUrl: "",
@@ -290,6 +291,29 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
       },
     ],
     timeline: [
+      {
+        comment: {
+          authorAvatarUrl: "",
+          authorId: 1,
+          authorLabel: "Admin",
+          authorLoginId: "admin",
+          contentsMarkdown: "Editable **comment**",
+          createdLabel: "just now",
+          id: 10,
+          viewerCanDelete: false,
+          viewerCanUpdate: true,
+          viewerHasVoted: false,
+          voterCount: 0,
+          voters: [],
+        },
+        createdLabel: "just now",
+        eventType: "",
+        id: 10,
+        kind: "comment",
+        newValue: "",
+        oldValue: "",
+        senderLoginId: "admin",
+      },
       {
         comment: {
           authorAvatarUrl: "",
@@ -364,7 +388,7 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   ) => {
     const url = new URL(request.url());
     requests.push({
-      body: request.method() === "POST" ? request.postDataJSON() : null,
+      body: ["POST", "PUT"].includes(request.method()) ? request.postDataJSON() : null,
       csrfToken: request.headers()["x-csrf-token"] ?? "",
       method: request.method(),
       path: url.pathname.replace("/yona/api/v1", ""),
@@ -523,6 +547,39 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
         ...currentIssue,
         timeline: currentIssue.timeline.filter((item) => item.id !== 30),
       };
+      await route.fulfill({
+        body: JSON.stringify(currentIssue),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
+  await page.route(
+    apiV1Route("/projects/admin/projectYobi/issues/1/comments/10"),
+    async (route) => {
+      record(route.request());
+      const request = route.request();
+      if (request.method() === "PUT") {
+        const body = request.postDataJSON() as {
+          attachmentIds?: string[];
+          contentsMarkdown?: string;
+        };
+        currentIssue = {
+          ...currentIssue,
+          timeline: currentIssue.timeline.map((item) =>
+            item.id === 10 && "comment" in item
+              ? {
+                  ...item,
+                  comment: {
+                    ...item.comment,
+                    contentsMarkdown: body.contentsMarkdown ?? item.comment.contentsMarkdown,
+                  },
+                }
+              : item,
+          ),
+        };
+      }
       await route.fulfill({
         body: JSON.stringify(currentIssue),
         headers: restJsonHeaders,
@@ -819,6 +876,137 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   );
   await expect(fullTimeline.locator("#event-19")).toHaveCount(0);
   await expect(fullTimeline).not.toContainText("issue.event.");
+
+  await expect(fullTimeline.locator("#comment-10")).toContainText("Editable comment");
+  await fullTimeline.locator("#comment-10").hover();
+  await fullTimeline.locator("#comment-10 button:has(.yobicon-edit-2)").click();
+  const commentUpdateForm = fullTimeline.locator("#comment-editform-10.comment-update-form");
+  await expect(commentUpdateForm).toBeVisible();
+  await expect(commentUpdateForm.locator("form")).toHaveAttribute(
+    "action",
+    "/yona/admin/projectYobi/issue/1/comments/10",
+  );
+  await expect(commentUpdateForm.locator("form")).toHaveAttribute("method", "post");
+  await expect(commentUpdateForm.locator("form")).toHaveAttribute("enctype", "multipart/form-data");
+  await expect(commentUpdateForm.locator('input[type="hidden"][name="id"]')).toHaveValue("10");
+  await expect(commentUpdateForm.locator('[data-toggle="markdown-editor"].mt10')).toHaveCount(1);
+  await expect(commentUpdateForm.locator('a[href="#edit-10"][data-mode="edit"]')).toHaveAttribute(
+    "data-toggle",
+    "tab",
+  );
+  await expect(
+    commentUpdateForm.locator('a[href="#preview-10"][data-mode="preview"]'),
+  ).toHaveAttribute("data-toggle", "tab");
+  await expect(commentUpdateForm.locator("#edit-10.tab-pane.active")).toHaveCount(1);
+  await expect(commentUpdateForm.locator("#preview-10.tab-pane")).toHaveCount(1);
+  await expect(commentUpdateForm.locator("#editor-contents-10")).toHaveAttribute(
+    "name",
+    "contents",
+  );
+  await expect(commentUpdateForm.locator("#editor-contents-10")).toHaveAttribute(
+    "data-editor-mode",
+    "update-comment-body",
+  );
+  await expect(commentUpdateForm.locator("#editor-contents-10")).toHaveAttribute(
+    "markdown",
+    "true",
+  );
+  await expect(
+    commentUpdateForm.locator(".markdown-preview.markdown-wrap.update-comment-body"),
+  ).toHaveCount(1);
+  await expect(commentUpdateForm.locator(".upload-drop-here .msg")).toContainText(
+    "Drag & Drop files here to upload.",
+  );
+  await expect(commentUpdateForm.locator(".file-upload__label.ybtn")).toContainText("File upload");
+  await expect(
+    commentUpdateForm.locator("input.file-upload__input[name=filePath]"),
+  ).toHaveAttribute("multiple", "");
+  await expect(commentUpdateForm.locator(".send-notification-check")).toHaveAttribute(
+    "data-toggle",
+    "popover",
+  );
+  await expect(commentUpdateForm.locator('input[name="notificationMail"]')).toBeChecked();
+  await expect(commentUpdateForm.locator(".ybtn.ybtn-cancel")).toHaveAttribute(
+    "data-comment-id",
+    "10",
+  );
+  await expect(commentUpdateForm.locator(".ybtn.ybtn-info[type=submit]")).toContainText("Save");
+  await expect(commentUpdateForm.locator('input[name="temporaryUploadFiles"]')).toHaveValue("");
+  await expect(commentUpdateForm.locator(".preview-10")).toHaveCount(1);
+  await expect(commentUpdateForm.locator(".attachment-files")).toHaveCount(1);
+  await expect(commentUpdateForm.locator("div#upload-10")).toHaveAttribute(
+    "data-resourcetype",
+    "ISSUE_COMMENT",
+  );
+  await expect(commentUpdateForm.locator("div#upload-10")).toHaveAttribute("data-resourceid", "10");
+
+  const commentUpdateBox = await layoutBox(page, "#comment-editform-10 .write-comment-box");
+  const commentUpdateWrap = await layoutBox(page, "#comment-editform-10 .write-comment-wrap");
+  const commentUpdateEditor = await layoutBox(page, "#comment-editform-10 #editor-contents-10");
+  const commentUpdateActionRow = await layoutBox(
+    page,
+    "#comment-editform-10 .comment-update-button.upload-button-line",
+  );
+  const commentUpdateUploadLabel = await layoutBox(
+    page,
+    "#comment-editform-10 .file-upload__label",
+  );
+  const commentUpdateCancel = await layoutBox(page, "#comment-editform-10 .ybtn-cancel");
+  const commentUpdateSave = await layoutBox(page, "#comment-editform-10 .ybtn-info");
+  const commentUpdateStyles = await commentUpdateForm.evaluate((element) => {
+    const formStyle = window.getComputedStyle(element);
+    const textareaBox = window.getComputedStyle(
+      element.querySelector(".textarea-box") as HTMLElement,
+    );
+    const textarea = window.getComputedStyle(element.querySelector("textarea") as HTMLElement);
+    const actionRow = window.getComputedStyle(
+      element.querySelector(".comment-update-button") as HTMLElement,
+    );
+    const dropOverlay = window.getComputedStyle(
+      element.querySelector(".upload-drop-here") as HTMLElement,
+    );
+    return {
+      actionRowTextAlign: actionRow.textAlign,
+      display: formStyle.display,
+      dropOverlayDisplay: dropOverlay.display,
+      textareaBoxMarginBottom: textareaBox.marginBottom,
+      textareaBoxPaddingRight: textareaBox.paddingRight,
+      textareaHeight: textarea.height,
+      textareaResize: textarea.resize,
+    };
+  });
+  expect(commentUpdateWrap.x).toBeGreaterThanOrEqual(commentUpdateBox.x);
+  expect(commentUpdateEditor.y).toBeGreaterThan(commentUpdateWrap.y);
+  expect(commentUpdateActionRow.y).toBeGreaterThan(
+    commentUpdateEditor.y + commentUpdateEditor.height - 1,
+  );
+  expect(commentUpdateUploadLabel.x).toBeGreaterThanOrEqual(commentUpdateActionRow.x);
+  expect(commentUpdateCancel.x).toBeGreaterThan(commentUpdateUploadLabel.x);
+  expect(commentUpdateSave.x).toBeGreaterThan(commentUpdateCancel.x);
+  expect(commentUpdateStyles).toEqual({
+    actionRowTextAlign: "right",
+    display: "block",
+    dropOverlayDisplay: "none",
+    textareaBoxMarginBottom: "10px",
+    textareaBoxPaddingRight: "2px",
+    textareaHeight: "160px",
+    textareaResize: "vertical",
+  });
+
+  await commentUpdateForm.locator("#editor-contents-10").fill("Edited **comment**");
+  await commentUpdateForm.locator("form").evaluate((element) => {
+    (element as HTMLFormElement).requestSubmit();
+  });
+  await expect
+    .poll(() =>
+      requests.some(
+        (request) =>
+          request.path === "/projects/admin/projectYobi/issues/1/comments/10" &&
+          request.method === "PUT" &&
+          (request.body as { contentsMarkdown?: string }).contentsMarkdown === "Edited **comment**",
+      ),
+    )
+    .toBe(true);
 
   await expect(fullTimeline.locator("#comment-30")).toContainText("Delete target comment");
   await expect(fullTimeline.locator("#comment-30 .child-comments > #comment-31")).toHaveCount(1);

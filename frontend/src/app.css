@@ -3512,11 +3512,13 @@ div.markdown-preview {
   border-bottom-left-radius: 3px;
 }
 
-.board-view .board-comment-wrap .comment-update-form {
+.board-view .board-comment-wrap .comment-update-form,
+.issue-detail-page .board-comment-wrap .comment-update-form {
   display: none;
 }
 
-.board-view .board-comment-wrap .comment-update-form .textarea-box {
+.board-view .board-comment-wrap .comment-update-form .textarea-box,
+.issue-detail-page .board-comment-wrap .comment-update-form .textarea-box {
   padding-right: 2px;
   margin-bottom: 10px;
 }
