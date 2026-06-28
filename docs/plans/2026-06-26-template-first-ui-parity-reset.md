@@ -246,9 +246,7 @@ Update 2026-06-27:
 - P7 site-admin/error/security now has a template-first reset report at
   `docs/provenance/ui-parity-reports/template-first-p7-site-admin-error-security.md`.
   With this file, P0-P7 all have template-first packet reports and no packet
-  retains integrated status-delta `needs-parent-decision` rows. Whole UI parity
-  still requires a final closure audit for any remaining `gap`, `deviation`,
-  `weak evidence`, or stale non-zero summary rows across all parity reports.
+  retains integrated status-delta `needs-parent-decision` rows.
 - Final closure audit pass checked the current report set with
   `rg -n "\| (gap|deviation|weak evidence|needs-parent-decision) \| [1-9]"`
   across `docs/provenance/ui-parity-reports`,
@@ -258,24 +256,13 @@ Update 2026-06-27:
   integrated sweep status deltas are the classified `covered`/`not-applicable`
   rows in
   `docs/provenance/ui-parity-reports/README.md#integrated-status-delta-classification`.
-
-1. Parent runs a final closure audit across all template-first reports and
-   existing parity reports for any non-zero `gap`, `deviation`, `weak evidence`,
-   or `needs-parent-decision` summary rows.
-2. Subagent A maps any remaining P0/P2/P3 stale rows first because shell,
-   project header/menu, issue/editor/comment surfaces define most repeated
-   visual contracts.
-3. Subagent B resolves any remaining P4 stale rows against comparable legacy
-   sample data or documented classification.
-4. Subagent C resolves any remaining P5 stale rows, including Git/SVN-visible
-   UI states, export/download routes, PR diff tabs, repository browser, branch,
-   compare, commit, and search behavior.
-5. Parent updates existing `docs/provenance/ui-parity-reports/*.md` to use the
-   audit queue format above and reopens rows that were closed by reachability
-   rather than pixel-visible parity.
-6. Workers then port shell components and route families from templates in
-   packet order. A packet can be split further only after its template mapping
-   is complete.
+- 2026-06-28 checkpoint: `tests/ui-parity-gate-a-contract.test.mjs` now guards
+  the P0-P7 template-first close condition, including report existence,
+  zero row-level blockers, non-empty legacy/current/evidence columns, per-report
+  summary counts matching finding rows, and the parent completion-audit totals
+  matching the packet summaries. Future work reopens this plan only when new
+  legacy evidence or a browser-visible parity defect creates a concrete packet
+  row.
 
 ## Closure Rule
 
