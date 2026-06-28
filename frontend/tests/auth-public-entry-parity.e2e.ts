@@ -466,6 +466,57 @@ test("anonymous help page keeps the legacy FAQ shell and item-wide toggle", asyn
   expect(firstQuestionLink.x).toBeGreaterThan(firstQuestionIcon.x + firstQuestionIcon.width - 1);
   expect(footer.y).toBeGreaterThan(qas.y + qas.height - 1);
 
+  await expect(page.locator("#experimentalHelp.modal.hide.fade")).toHaveCount(1);
+  await page.locator("#experimentalHelp").evaluate((element) => {
+    element.className = "modal fade in";
+  });
+  await expect(page.locator("#experimentalHelp.modal.fade.in")).toBeVisible();
+  await expect(page.locator("#experimentalHelp")).toContainText(
+    "Experimental function: A new feature is on the way..",
+  );
+  await expect(page.locator("#experimentalHelp")).toContainText(
+    "Work on this function is underway; it can be modified or interrupted at any moment.",
+  );
+
+  const experimentalModal = await layoutBox(page, "#experimentalHelp");
+  const experimentalBody = await layoutBox(page, "#experimentalHelp > .modal-body");
+  const experimentalTitle = await layoutBox(page, "#experimentalHelp h4.center-txt");
+  const experimentalDescription = await layoutBox(
+    page,
+    "#experimentalHelp p.modal-body.center-txt",
+  );
+  const experimentalAction = await layoutBox(page, "#experimentalHelp .actrow.center-txt");
+  const experimentalConfirm = await layoutBox(page, "#experimentalHelp .actrow .ybtn-info");
+  const viewportCenter = await page.evaluate(() => document.documentElement.clientWidth / 2);
+
+  expect(Math.round(experimentalModal.width)).toBe(562);
+  expect(
+    Math.abs(experimentalModal.x + experimentalModal.width / 2 - viewportCenter),
+  ).toBeLessThanOrEqual(1);
+  expect(experimentalModal.y).toBeCloseTo(90, 0);
+  expect(experimentalBody.x).toBeCloseTo(experimentalModal.x + 1, 0);
+  expect(experimentalBody.y).toBeCloseTo(experimentalModal.y + 1, 0);
+  expect(experimentalTitle.x).toBeCloseTo(experimentalBody.x + 15, 0);
+  expect(experimentalTitle.width).toBeCloseTo(experimentalBody.width - 30, 0);
+  expect(experimentalDescription.y).toBeGreaterThan(
+    experimentalTitle.y + experimentalTitle.height - 1,
+  );
+  expect(experimentalDescription.x).toBeCloseTo(experimentalBody.x + 15, 0);
+  expect(experimentalAction.y).toBeGreaterThan(
+    experimentalDescription.y + experimentalDescription.height - 1,
+  );
+  expect(
+    Math.abs(
+      experimentalConfirm.x +
+        experimentalConfirm.width / 2 -
+        (experimentalModal.x + experimentalModal.width / 2),
+    ),
+  ).toBeLessThanOrEqual(1);
+  await page.locator("#experimentalHelp").evaluate((element) => {
+    element.className = "modal hide fade";
+  });
+  await expect(page.locator("#experimentalHelp.modal.hide.fade")).toHaveCount(1);
+
   const firstQuestion = page.locator(".qas > .qa").first();
   await expect(firstQuestion).not.toHaveClass(/open/);
   await firstQuestion.locator(".question-wrap").click();

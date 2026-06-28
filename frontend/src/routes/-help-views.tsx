@@ -84,7 +84,42 @@ export function HelpTocPage({
           </ul>
         </div>
       </div>
+      <LegacyExperimentalHelp messages={messageLookup} />
     </>
+  );
+}
+
+export function LegacyExperimentalHelp({ messages }: { messages?: LegacyMessageLookup } = {}) {
+  const [descriptionBeforeBreak, descriptionAfterBreak] = legacyMessage(
+    messages,
+    "common.experimental.description",
+  ).split("<br>");
+
+  return (
+    <div className="modal hide fade" id="experimentalHelp" role="dialog" tabIndex={-1}>
+      <div className="modal-body">
+        <div>
+          <h4 className="center-txt">
+            <i className="yobicon-flaskfull mr10 vmiddle"></i>
+            {legacyMessage(messages, "common.experimental.title")}
+          </h4>
+          <p className="modal-body center-txt">
+            {descriptionBeforeBreak}
+            {descriptionAfterBreak ? (
+              <>
+                <br />
+                {descriptionAfterBreak}
+              </>
+            ) : null}
+          </p>
+        </div>
+        <p className="actrow center-txt">
+          <button className="ybtn ybtn-info" data-dismiss="modal" type="button">
+            {legacyMessage(messages, "button.confirm")}
+          </button>
+        </p>
+      </div>
+    </div>
   );
 }
 

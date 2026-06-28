@@ -287,7 +287,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
 | `help/UIKit.scala.html` | P1 help | metric guard passed: `root-shell-parity.e2e.ts` asserts standalone no-root-sidebar UI kit header, page, button/upload/dropdown/search stack, and internal footer order |
-| `help/experimental.scala.html` | P1 help | reopen: inspect Scala anchors before JSX reuse |
+| `help/experimental.scala.html` | P1 help | metric guard passed: `auth-public-entry-parity.e2e.ts` and `help-route-parity.spec.tsx` assert hidden `#experimentalHelp.modal.hide.fade`, modal body/title/icon/description/action/confirm anchors, resolved HTML message copy, 560px modal width, viewport-centered placement, 10% top placement, body padding, centered title/description/action, and confirm centering |
 | `help/keymap.scala.html` | P1 help | metric guard passed: `issue-detail-parity.e2e.ts` asserts keymap trigger placement, modal hidden/open transition, 640px content width with padding/border, viewport-centered modal placement, row/column x-order, shortcut button width, label adjacency, action row placement, confirm centering, and close behavior |
 | `help/markdown.scala.html` | P1 help | metric guard passed: `issue-detail-parity.e2e.ts` asserts markdown help nav/wrap placement, ten nav/items, active toggle behavior, input/output `span6` column alignment, syntax pre sizing, resolved copy/sample anchors, and editor submit flow after toggling |
 | `help/toc.scala.html` | P1 help | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts site help navbar/breadcrumb/page/FAQ stack, question icon/link alignment, footer order, and item-wide toggle |

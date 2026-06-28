@@ -703,6 +703,10 @@ button[type="submit"]:focus {
   display: none;
 }
 
+#experimentalHelp .actrow {
+  display: block;
+}
+
 .login-form-wrap,
 .signup-form-wrap {
   position: relative;

@@ -3,7 +3,7 @@ import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { createLegacyI18nRuntime } from "./i18n";
-import { HelpTocPage } from "./routes/-help-views";
+import { HelpTocPage, LegacyExperimentalHelp } from "./routes/-help-views";
 
 describe("legacy help route parity", () => {
   it("keeps the anonymous legacy /_help route mounted in React", () => {
@@ -70,6 +70,40 @@ describe("legacy help route parity", () => {
     expect(html).toContain("게시판에서는 어떠한 것들을 할수 있나요?");
     expect(html).toContain("https://github.com/doortts/yona#korean");
     expect(html).toContain("https://github.com/nforge/yobi/issues");
+  });
+
+  it("renders the orphaned legacy experimental help modal shell", () => {
+    const legacyView = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/app/views/help/experimental.scala.html"),
+      { encoding: "utf8" },
+    );
+    const html = renderToStaticMarkup(<LegacyExperimentalHelp />);
+
+    expect(legacyView).toContain('id="experimentalHelp"');
+    expect(legacyView).toContain('class="modal hide fade"');
+    expect(legacyView).toContain('class="yobicon-flaskfull mr10 vmiddle"');
+    expect(legacyView).toContain('@Messages("common.experimental.title")');
+    expect(legacyView).toContain('@Html(Messages("common.experimental.description"))');
+    expect(html).toContain('id="experimentalHelp"');
+    expect(html).toContain('class="modal hide fade"');
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('tabindex="-1"');
+    expect(html).toContain('class="modal-body"');
+    expect(html).toContain('class="yobicon-flaskfull mr10 vmiddle"');
+    expect(html).toContain("Experimental function: A new feature is on the way..");
+    expect(html).toContain("Work on this function is underway;");
+    expect(html).toContain("<br/>");
+    expect(html).toContain('class="actrow center-txt"');
+    expect(html).toContain('data-dismiss="modal"');
+    expect(html).toContain(">Confirm</button>");
+  });
+
+  it("renders the experimental help modal inside the legacy /_help route shell", () => {
+    const html = renderToStaticMarkup(<HelpTocPage />);
+
+    expect(html).toContain('id="experimentalHelp"');
+    expect(html).toContain('class="modal hide fade"');
+    expect(html).toContain("Experimental function: A new feature is on the way..");
   });
 
   it("renders legacy app.name FAQ copy from the runtime site name", () => {
