@@ -233,6 +233,46 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
   await expectNoDormantDebugFragment(page);
   await expectNoDormantUserVoiceWidget(page);
 
+  await expect(page.locator("body#html-body > #root > #main.main")).toHaveCount(1);
+  await expect(page.locator('head meta[http-equiv="X-UA-Compatible"]')).toHaveAttribute(
+    "content",
+    "IE=edge,chrome=1",
+  );
+  await expect(page.locator('head meta[name="viewport"]')).toHaveAttribute(
+    "content",
+    "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
+  );
+  await expect(page.locator('head meta[http-equiv="Content-Type"]')).toHaveAttribute(
+    "content",
+    "text/html; charset=UTF-8",
+  );
+  await expect(page.locator('head meta[property="og:title"]')).toHaveAttribute("content", "Yona");
+  await expect(page.locator('head meta[property="og:type"]')).toHaveAttribute("content", "website");
+  await expect(page.locator('head meta[name="twitter:card"]')).toHaveAttribute(
+    "content",
+    "summary",
+  );
+  await expect(page.locator('head meta[name="twitter:title"]')).toHaveAttribute("content", "Yona");
+
+  await expect(page.locator("#yobiDialog.modal.hide.yobiDialog")).toHaveCount(1);
+  await expect(page.locator("#yobiDialog .btn-dismiss .btn-transparent")).toHaveAttribute(
+    "data-dismiss",
+    "modal",
+  );
+  await expect(page.locator("#yobiDialog .buttons .ybtn.ybtn-info")).toHaveText("Confirm");
+  await expect(page.locator("#yobiDialog .buttons .ybtn.ybtn-info")).toHaveAttribute(
+    "data-dismiss",
+    "modal",
+  );
+  await expect(page.locator("#yobiToasts.yobiToasts")).toHaveCount(1);
+  await expect
+    .poll(() =>
+      page
+        .locator('script#tplYobiToast[type="text/x-jquery-tmpl"]')
+        .evaluate((node) => node.innerHTML),
+    )
+    .toContain('class="toast"');
+
   await expect(page.locator(".gnb-outer .gnb-inner")).toBeVisible();
   await expect(page.locator('a.logo.logo-letter[href="/yona"]')).toBeVisible();
   await expect(page.locator('form[name="gnb-search-form"] input[name="keyword"]')).toBeVisible();
@@ -719,4 +759,22 @@ test("project route search scope exposes project, group, and global actions from
   await expect(
     page.locator("a[data-toggle='search-scope'][data-action='/yona/search']"),
   ).toContainText("All");
+
+  await page
+    .locator("a[data-toggle='search-scope'][data-action='/yona/organizations/org/search']")
+    .evaluate((anchor) => {
+      anchor.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    });
+  await expect(page.locator("#gnb-search-scope-title")).toContainText("Group");
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    "/yona/organizations/org/search",
+  );
+  await page.locator('form[name="gnb-search-form"] input[name="keyword"]').fill("Needle");
+  await page.locator('form[name="gnb-search-form"]').evaluate((form) => {
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+  await expect(page).toHaveURL(
+    /\/yona\/organizations\/org\/search\?searchType=auto&keyword=Needle$/u,
+  );
 });
