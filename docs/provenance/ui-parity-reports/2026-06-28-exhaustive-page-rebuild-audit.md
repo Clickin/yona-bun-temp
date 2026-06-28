@@ -244,7 +244,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `common/usermenu.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts anonymous login/signup links, authenticated issue/admin/sidebar/create menu alignment, right-side 360px sidebar open/close, profile/account/logout rows, and guest variant |
 | `common/usermenu_tab_content_list.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts sidebar tab row ordering, tab content placement, and organization/project/recent issue pane x-alignment/content |
 | `common/uservoice.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
-| `common/voteCount.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/voteCount.scala.html` | shared partials | metric guard passed: `vote-count-parity.e2e.ts` asserts the legacy visible issue-list caller row, `.vote-count.vote-color`, `.count-groups.item-icon`, `.yobicon-hearts`, `.count-groups.item-count.strong`, mounted issue `#vote` href, `.item-count-groups` border/line-height, icon/count horizontal order and vertical overlap, primary color, and legacy padding/font metrics |
 
 ### `error/`
 
