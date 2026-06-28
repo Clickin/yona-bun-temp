@@ -1417,6 +1417,78 @@ h1 {
   padding: 4px 15px;
 }
 
+.show-subtasks-li {
+  margin-left: -18px;
+}
+
+.two-column-icon,
+.show-subtasks {
+  display: inline-block;
+  margin-left: 10px;
+  line-height: 37px;
+}
+
+.two-column-icon i,
+.show-subtasks i {
+  margin-right: 5px;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.two-column-icon label,
+.show-subtasks label {
+  padding-top: 4px;
+  padding-left: 0;
+}
+
+.two-column-icon #two-column-mode,
+.show-subtasks #toggle-show-subtasks {
+  float: none;
+  width: auto;
+  min-height: 0;
+  margin: 4px 4px 0 2px;
+  padding: 0;
+  vertical-align: top;
+  border: 0;
+  box-shadow: none;
+}
+
+.two-column-icon-border,
+.show-subtasks-button-border {
+  padding: 3px 3px 0;
+  color: #03a9f4;
+  border: 1px solid #03afff;
+  border-radius: 3px;
+}
+
+.two-column-icon-border:hover,
+.show-subtasks-button-border:hover {
+  color: #fff0ff;
+  background-color: #03afff;
+}
+
+.two-column-icon-border:hover .two-column-mode-text,
+.show-subtasks-button-border:hover .show-subtasks-text {
+  color: #fff0ff;
+}
+
+.two-column-icon-selected,
+.show-subtasks-selected {
+  background-color: #aee5ff;
+}
+
+.two-column-icon-selected .two-column-mode-text,
+.show-subtasks-selected .show-subtasks-text {
+  color: #0293d6;
+}
+
+.two-column-mode-text,
+.show-subtasks-text {
+  padding: 0 4px 0 0;
+  line-height: 20px;
+  vertical-align: text-bottom;
+}
+
 .page-wrap-outer {
   min-height: 450px;
   margin-top: 10px;
