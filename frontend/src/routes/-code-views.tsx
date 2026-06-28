@@ -404,6 +404,39 @@ function codeHistoryHref(
   return `${href}?page=${page}`;
 }
 
+function branchItemName(branch: string) {
+  const refsHeadsPrefix = "refs/heads/";
+  const refsTagsPrefix = "refs/tags/";
+  if (branch.startsWith(refsHeadsPrefix)) {
+    return branch.slice(refsHeadsPrefix.length);
+  }
+  if (branch.startsWith(refsTagsPrefix)) {
+    return branch.slice(refsTagsPrefix.length);
+  }
+  if (branch.startsWith("refs/")) {
+    const afterRefs = branch.slice("refs/".length);
+    const slashIndex = afterRefs.indexOf("/");
+    if (slashIndex >= 0) {
+      return afterRefs.slice(slashIndex + 1);
+    }
+  }
+  return branch;
+}
+
+function branchItemType(branch: string) {
+  const names = branch.split("/");
+  if (names[0] !== "refs" || names.length < 2) {
+    return branch;
+  }
+  if (names[1] === "heads") {
+    return "branch";
+  }
+  if (names[1] === "tags") {
+    return "tag";
+  }
+  return names[1] ?? branch;
+}
+
 function pullRequestHref(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
@@ -897,6 +930,14 @@ export function CodeCommitDetailPage(props: {
   const pageBody = (
     <div className="project-page-wrap">
       <div className="code-browse-wrap" id="code-browse-wrap">
+        {!commitDetail?.noHead ? (
+          <CommitBranchDropdown
+            branches={commitDetail?.branches ?? []}
+            detail={detail}
+            runtimeConfig={props.runtimeConfig}
+            selectedBranch={selectedBranch}
+          />
+        ) : null}
         <nav aria-label="Code tabs" className="nav nav-tabs">
           <a
             href={codeHref(
@@ -971,6 +1012,63 @@ export function CodeCommitDetailPage(props: {
       <ProjectMenu activeMenu="code" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">{pageBody}</div>
     </main>
+  );
+}
+
+function CommitBranchDropdown(props: {
+  branches: Array<{ name: string }>;
+  detail: ProjectDetailViewModel;
+  runtimeConfig: RuntimeConfig;
+  selectedBranch: string;
+}) {
+  if (props.branches.length === 0) {
+    return null;
+  }
+
+  return (
+    <div
+      className="btn-group branches pull-right"
+      data-activate="manual"
+      data-name="branch"
+      id="branches"
+    >
+      <button className="btn dropdown-toggle large" data-toggle="dropdown" type="button">
+        <span className="d-label">{props.selectedBranch || "HEAD"}</span>
+        <span className="d-caret">
+          <span className="caret" />
+        </span>
+      </button>
+      <ul className="dropdown-menu">
+        {props.branches.map((branch) => {
+          const itemName = branchItemName(branch.name);
+          const itemType = branchItemType(branch.name);
+          const href = codeHistoryHref(
+            props.runtimeConfig,
+            props.detail.ownerName,
+            props.detail.projectName,
+            itemName,
+          );
+          return (
+            <li
+              data-selected={branch.name === props.selectedBranch ? "true" : undefined}
+              data-value={branch.name}
+              key={branch.name}
+            >
+              <a href={href}>
+                {branch.name.startsWith("refs/") ? (
+                  <>
+                    <span className={`label ${itemType}`}>{itemType}</span>
+                    {itemName}
+                  </>
+                ) : (
+                  branch.name
+                )}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

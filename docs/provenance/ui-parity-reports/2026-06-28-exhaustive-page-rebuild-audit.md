@@ -213,7 +213,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `code/partial_nonrange_codecomment_thread.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
 | `code/partial_view_file.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts file header raw/open buttons, `#showCode`, code-line, and line-number alignment |
 | `code/partial_view_folder.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts folder/file rows, branch selector, breadcrumb, new/download controls, and viewer row ordering |
-| `code/svnDiff.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/svnDiff.scala.html` | P5 code | metric guard passed: `project-code-comment-upload-parity.e2e.ts` asserts the legacy commit detail SVN diff shell with `#branches.btn-group.branches.pull-right` before code tabs, selected branch label, branch dropdown source, commit diff shell ordering, and comment/watch mutation preservation |
 | `code/view.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts project shell, code tabs/header controls, and viewer order for folder/file routes |
 
 ### `common/`
@@ -221,7 +221,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
 | `common/attachmentFile.scala.html` | shared partials | metric guard passed: `issue-detail-parity.e2e.ts` asserts the legacy comment update attachment caller with `.attachment-files .attached-file.attached-file-marker`, `data-name`/`data-href`/`data-mime`, `i.mimetype`, `strong.name`, `span.size`, delete button `data-id`, file/name/size/delete x-order, attachment container placement, and legacy attached-file display/background/border/height/line-height/margin/padding metrics |
-| `common/branchItem.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/branchItem.scala.html` | shared partials | metric guard passed: `project-code-comment-upload-parity.e2e.ts` asserts the legacy `svnDiff.scala.html` caller renders branch item `li[data-value]`, selected `data-selected`, branch/tag label display, Scala-compatible refs item name trimming, encoded history hrefs, and dropdown/button placement metrics |
 | `common/calendar.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/childComments.scala.html` | shared partials | metric guard passed: `issue-detail-parity.e2e.ts` asserts the legacy nested issue-comment caller with `.add-a-comment.pull-right`, `.subcomment-media-body`, `.child-comments`, `.one-line-comment`, `.contents`, hidden `.subcomment-author`, child author/date/delete hooks, child form action/`parentCommentId`/textarea placeholder, zero-height child anchor, right-aligned 60px subcomment body, dashed content divider, hidden child form, and legacy color/padding/margin metrics |
 | `common/childCommentsAnchorDiv.scala.html` | shared partials | metric guard passed: `issue-detail-parity.e2e.ts` asserts the legacy nested issue-comment caller renders an empty `#comment-{childId}` anchor before `.one-line-comment`, preserves child comment `#comment-*` hrefs and delete hooks, and measures the zero-height anchor block x/width/y placement against `.child-comments` and the child row |

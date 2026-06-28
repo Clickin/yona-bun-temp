@@ -23,7 +23,7 @@ async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
 
 function commitDetailPayload(threads: unknown[] = [], isWatching = false) {
   return {
-    branches: [{ name: "main" }],
+    branches: [{ name: "main" }, { name: "refs/heads/release/2026" }],
     breadcrumbs: [],
     commit: {
       authorDate: "2026-04-21",
@@ -194,6 +194,8 @@ async function assertLegacyNoHeadMetrics(page: Page, expectedCommandBlocks: numb
 async function assertLegacyCommitDiffMetrics(page: Page) {
   const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
   const browseWrap = await layoutBox(page, "#code-browse-wrap.code-browse-wrap");
+  const branchDropdown = await layoutBox(page, "#branches.btn-group.branches.pull-right");
+  const branchButton = await layoutBox(page, "#branches .dropdown-toggle.large");
   const tabs = await layoutBox(page, "#code-browse-wrap .nav.nav-tabs");
   const codediff = await layoutBox(page, ".codediff-wrap");
   const showCards = await layoutBox(page, ".codediff-wrap .btn-show-reviewcards");
@@ -267,9 +269,31 @@ async function assertLegacyCommitDiffMetrics(page: Page) {
     '+    println!("detail");',
   );
   await expect(page.locator(".diff-body .btnPop .ybtn.ybtn-info.ybtn-small")).toHaveCount(1);
+  await expect(page.locator("#branches")).toHaveAttribute("data-name", "branch");
+  await expect(page.locator("#branches")).toHaveAttribute("data-activate", "manual");
+  await expect(page.locator("#branches .d-label")).toHaveText("main");
+  await expect(page.locator('#branches li[data-value="main"]')).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(page.locator('#branches li[data-value="main"] a')).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/commits/main",
+  );
+  await expect(
+    page.locator('#branches li[data-value="refs/heads/release/2026"] .label'),
+  ).toHaveText("branch");
+  await expect(page.locator('#branches li[data-value="refs/heads/release/2026"] a')).toHaveText(
+    "branchrelease/2026",
+  );
+  await expect(
+    page.locator('#branches li[data-value="refs/heads/release/2026"] a'),
+  ).toHaveAttribute("href", "/yona/admin/projectYobi/commits/release%2F2026");
 
   expect(browseWrap.x).toBeCloseTo(projectPage.x, 0);
   expect(browseWrap.width).toBeCloseTo(projectPage.width, 0);
+  expect(branchDropdown.x).toBeGreaterThan(tabs.x);
+  expect(branchButton.y).toBeCloseTo(tabs.y, 0);
   expect(tabs.y).toBeGreaterThanOrEqual(browseWrap.y);
   expect(codediff.y).toBeGreaterThan(tabs.y + tabs.height - 1);
   expect(showCards.y).toBeGreaterThanOrEqual(codediff.y);
