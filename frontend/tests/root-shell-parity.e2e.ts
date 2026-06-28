@@ -592,16 +592,35 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   const sidebarTabs = await layoutBox(page, "#mySidenav .nav.nav-tabs");
   const sidebarTabContent = await layoutBox(page, "#usermenu-tab-content-list");
   const orgPane = await layoutBox(page, "#myOrganizationList");
-  const orgRow = await layoutBox(page, "#myOrganizationList > li.org-li > .org-list");
+  const orgSearch = await layoutBox(page, "#myOrganizationList .search-input.org-search");
+  const organizationsList = await layoutBox(page, "#myOrganizationList #organizations");
+  const orgRow = await layoutBox(
+    page,
+    "#myOrganizationList #organizations > li.org-li > .org-list",
+  );
   const orgProjectRow = await layoutBox(page, "#myOrganizationList .project-ul .project-list");
   const orgProjectStar = await layoutBox(page, "#myOrganizationList .project-ul .star-project");
   await page.locator('#mySidenav .nav.nav-tabs a[href="#myProjectList"]').click();
   const projectPane = await layoutBox(page, "#myProjectList");
-  const projectRow = await layoutBox(page, "#myProjectList > li.user-li > .project-list");
+  const projectSearch = await layoutBox(page, "#myProjectList .search-input.project-search#query");
+  const projectSubtabs = await layoutBox(page, "#myProjectList .subtab-wrap.subtab-group");
+  const recentlyVisitedPane = await layoutBox(page, "#myProjectList #recentlyVisited");
+  const projectRow = await layoutBox(
+    page,
+    "#myProjectList #recentlyVisited > li.user-li > .project-list",
+  );
   const projectStar = await layoutBox(page, "#myProjectList .star-project");
   await page.locator('#mySidenav .nav.nav-tabs a[href="#myRecentIssueList"]').click();
   const recentPane = await layoutBox(page, "#myRecentIssueList");
-  const recentIssueRow = await layoutBox(page, "#myRecentIssueList > li.user-li > .project-list");
+  const recentSearch = await layoutBox(
+    page,
+    "#myRecentIssueList .search-input.project-search#query",
+  );
+  const recentIssuesPane = await layoutBox(page, "#myRecentIssueList #recentlyVisitedIssues");
+  const recentIssueRow = await layoutBox(
+    page,
+    "#myRecentIssueList #recentlyVisitedIssues > li.user-li > .project-list",
+  );
   const recentIssueMarker = await layoutBox(page, "#myRecentIssueList .issue-title-start");
   const recentIssueTitle = await layoutBox(page, "#myRecentIssueList .issue-title");
 
@@ -616,7 +635,18 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   expect(orgPane.x).toBeCloseTo(sidebarTabContent.x, 0);
   expect(projectPane.x).toBeCloseTo(sidebarTabContent.x, 0);
   expect(recentPane.x).toBeCloseTo(sidebarTabContent.x, 0);
-  await expect(page.locator("#myOrganizationList > li.org-li")).toHaveCount(1);
+  expect(orgSearch.y).toBeGreaterThanOrEqual(orgPane.y);
+  expect(organizationsList.y).toBeGreaterThan(orgSearch.y + orgSearch.height - 1);
+  await expect(page.locator("#myOrganizationList .search-result .group .bar")).toHaveCount(1);
+  await expect(page.locator("#myOrganizationList .search-input.org-search")).toHaveAttribute(
+    "autocomplete",
+    "off",
+  );
+  await expect(page.locator("#myOrganizationList .search-input.org-search")).toHaveAttribute(
+    "placeholder",
+    "Type name",
+  );
+  await expect(page.locator("#myOrganizationList #organizations > li.org-li")).toHaveCount(1);
   await expect(page.locator("#myOrganizationList .org-name")).toContainText("admin");
   await expect(page.locator("#myOrganizationList .sub-project-counter")).toContainText("1");
   await expect(page.locator("#myOrganizationList .star-org")).toHaveAttribute(
@@ -653,7 +683,25 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   expect(orgProjectStar.x).toBeGreaterThanOrEqual(orgProjectRow.x);
   expect(orgProjectStar.y).toBeGreaterThanOrEqual(orgProjectRow.y);
   expect(orgProjectStar.y).toBeLessThanOrEqual(orgProjectRow.y + orgProjectRow.height);
-  await expect(page.locator("#myProjectList > li.user-li")).toHaveAttribute(
+  expect(projectSearch.y).toBeGreaterThanOrEqual(projectPane.y);
+  expect(projectSubtabs.y).toBeGreaterThan(projectSearch.y + projectSearch.height - 1);
+  expect(recentlyVisitedPane.y).toBeGreaterThan(projectSubtabs.y + projectSubtabs.height - 1);
+  await expect(page.locator("#myProjectList .search-input.project-search#query")).toHaveAttribute(
+    "autocomplete",
+    "off",
+  );
+  await expect(page.locator("#myProjectList .search-input.project-search#query")).toHaveAttribute(
+    "placeholder",
+    "Type name",
+  );
+  await expect
+    .poll(() =>
+      page
+        .locator("#myProjectList .nav-subtab.unstyled a")
+        .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href"))),
+    )
+    .toEqual(["#recentlyVisited", "#createdByMe", "#watching", "#joinmember"]);
+  await expect(page.locator("#myProjectList #recentlyVisited > li.user-li")).toHaveAttribute(
     "data-location",
     "/yona/admin/sample",
   );
@@ -668,10 +716,17 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   expect(projectStar.x).toBeGreaterThanOrEqual(projectRow.x);
   expect(projectStar.y).toBeGreaterThanOrEqual(projectRow.y);
   expect(projectStar.y).toBeLessThanOrEqual(projectRow.y + projectRow.height);
-  await expect(page.locator("#myRecentIssueList > li.user-li")).toHaveAttribute(
-    "data-location",
-    "/yona/admin/sample/issue/7",
-  );
+  expect(recentSearch.y).toBeGreaterThanOrEqual(recentPane.y);
+  expect(recentIssuesPane.y).toBeGreaterThan(recentSearch.y + recentSearch.height - 1);
+  await expect(
+    page.locator("#myRecentIssueList .search-input.project-search#query"),
+  ).toHaveAttribute("autocomplete", "off");
+  await expect(
+    page.locator("#myRecentIssueList .search-input.project-search#query"),
+  ).toHaveAttribute("placeholder", "Type name");
+  await expect(
+    page.locator("#myRecentIssueList #recentlyVisitedIssues > li.user-li"),
+  ).toHaveAttribute("data-location", "/yona/admin/sample/issue/7");
   await expect(page.locator("#myRecentIssueList .project-list")).toHaveAttribute(
     "data-toggle",
     "popover",

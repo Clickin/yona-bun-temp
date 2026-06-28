@@ -1138,28 +1138,39 @@ function RootSidebarContent({
             <SidebarProjectList
               active={selectedActiveMenu === "myOrganizationList"}
               id="myOrganizationList"
+              listId="organizations"
               noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
               onToggleFavorite={toggleSidebarProjectFavorite}
               organizationMode
               projects={workspaceOverview?.favoriteProjects ?? []}
               runtimeConfig={runtimeConfig}
+              searchClassName="org-search"
+              searchPlaceholder={messages("title.type.name", { fallback: "title.type.name" })}
             />
-            <SidebarProjectList
+            <SidebarProjectTabs
               active={selectedActiveMenu === "myProjectList"}
               id="myProjectList"
               noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
               onToggleFavorite={toggleSidebarProjectFavorite}
-              projects={[
-                ...(workspaceOverview?.recentProjects ?? []),
-                ...(workspaceOverview?.watchedProjects ?? []),
-              ]}
+              recentProjects={workspaceOverview?.recentProjects ?? []}
               runtimeConfig={runtimeConfig}
+              searchPlaceholder={messages("title.type.name", { fallback: "title.type.name" })}
+              tabLabels={{
+                createdByMe: messages("title.createdByMe", { fallback: "title.createdByMe" }),
+                joinmember: messages("title.joinmember", { fallback: "title.joinmember" }),
+                recentlyVisited: messages("title.recently.visited", {
+                  fallback: "title.recently.visited",
+                }),
+                watching: messages("title.watching", { fallback: "title.watching" }),
+              }}
+              watchedProjects={workspaceOverview?.watchedProjects ?? []}
             />
             <SidebarIssueList
               active={selectedActiveMenu === "myRecentIssueList"}
               issues={workspaceOverview?.issueItems ?? []}
               noResultsLabel={messages("title.no.results", { fallback: "title.no.results" })}
               runtimeConfig={runtimeConfig}
+              searchPlaceholder={messages("title.type.name", { fallback: "title.type.name" })}
             />
           </div>
         </div>
@@ -1171,9 +1182,235 @@ function RootSidebarContent({
 function SidebarProjectList({
   active = false,
   id,
+  listId = id,
   noResultsLabel,
   onToggleFavorite,
   organizationMode = false,
+  projects,
+  runtimeConfig,
+  searchClassName,
+  searchPlaceholder,
+}: {
+  active?: boolean;
+  id: string;
+  listId?: string;
+  noResultsLabel: string;
+  onToggleFavorite?: (
+    ownerName: string,
+    projectName: string,
+    starElement: HTMLElement,
+  ) => Promise<void>;
+  organizationMode?: boolean;
+  projects: SidebarProject[];
+  runtimeConfig: RuntimeConfig;
+  searchClassName?: string;
+  searchPlaceholder?: string;
+}) {
+  const content = (() => {
+    if (projects.length === 0) {
+      return (
+        <div className="no-result tab-pane user-ul" id={listId}>
+          {noResultsLabel}
+        </div>
+      );
+    }
+
+    if (organizationMode) {
+      const groupedProjects = new Map<string, SidebarProject[]>();
+      for (const project of projects) {
+        const group = groupedProjects.get(project.ownerName) ?? [];
+        group.push(project);
+        groupedProjects.set(project.ownerName, group);
+      }
+
+      return (
+        <ul className="tab-pane user-ul" id={listId}>
+          {[...groupedProjects.entries()].map(([ownerName, ownerProjects]) => (
+            <li className="org-li" key={`${id}:org:${ownerName}`}>
+              <div className="org-list project-flex-container all-orgs">
+                <div className="project-item project-item-container">
+                  <div className="flex-item site-logo">
+                    <i className="yobicon-angle-right"></i>
+                  </div>
+                  <div className="projectName-owner all-org-names flex-item">
+                    <div className="project-name org-name flex-item">{ownerName}</div>
+                    <div className="project-owner flex-item sub-project-counter">
+                      {ownerProjects.length}
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className="star-org flex-item"
+                  data-organization-id={ownerProjects[0]?.ownerId ?? ownerName}
+                >
+                  <i className="star starred material-icons">star</i>
+                </div>
+              </div>
+              <ul className="project-ul">
+                {ownerProjects.map((project) => (
+                  <SidebarProjectItem
+                    key={`${id}:org:${ownerName}:${project.ownerName}/${project.projectName}`}
+                    onToggleFavorite={onToggleFavorite}
+                    project={project}
+                    runtimeConfig={runtimeConfig}
+                  />
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    return (
+      <ul className="tab-pane user-ul" id={listId}>
+        {projects.map((project) => (
+          <SidebarProjectItem
+            key={`${id}:${project.ownerName}/${project.projectName}`}
+            onToggleFavorite={onToggleFavorite}
+            project={project}
+            runtimeConfig={runtimeConfig}
+          />
+        ))}
+      </ul>
+    );
+  })();
+
+  return (
+    <div className={`tab-pane user-project-list ${active ? "active" : ""}`} id={id}>
+      {searchPlaceholder ? (
+        <div className="search-result">
+          <div className="group">
+            <input
+              autoComplete="off"
+              className={`search-input ${searchClassName ?? "project-search"}`}
+              id={searchClassName === "project-search" ? "query" : undefined}
+              placeholder={searchPlaceholder}
+              type="text"
+            />
+            <span className="bar"></span>
+          </div>
+          {content}
+        </div>
+      ) : (
+        content
+      )}
+    </div>
+  );
+}
+
+function SidebarProjectTabs({
+  active = false,
+  id,
+  noResultsLabel,
+  onToggleFavorite,
+  recentProjects,
+  runtimeConfig,
+  searchPlaceholder,
+  tabLabels,
+  watchedProjects,
+}: {
+  active?: boolean;
+  id: string;
+  noResultsLabel: string;
+  onToggleFavorite?: (
+    ownerName: string,
+    projectName: string,
+    starElement: HTMLElement,
+  ) => Promise<void>;
+  recentProjects: SidebarProject[];
+  runtimeConfig: RuntimeConfig;
+  searchPlaceholder: string;
+  tabLabels: {
+    createdByMe: string;
+    joinmember: string;
+    recentlyVisited: string;
+    watching: string;
+  };
+  watchedProjects: SidebarProject[];
+}) {
+  return (
+    <div className={`tab-pane user-project-list ${active ? "active" : ""}`} id={id}>
+      <div>
+        <div className="search-result">
+          <div className="tab-pane myproject-list-wrap">
+            <div className="group">
+              <input
+                autoComplete="off"
+                className="search-input project-search"
+                id="query"
+                placeholder={searchPlaceholder}
+                type="text"
+              />
+              <span className="bar"></span>
+            </div>
+            <div className="subtab-wrap subtab-group">
+              <ul className="nav-subtab unstyled">
+                <li className="active">
+                  <a data-toggle="tab" href="#recentlyVisited">
+                    {tabLabels.recentlyVisited}
+                  </a>
+                </li>
+                <li>
+                  <a data-toggle="tab" href="#createdByMe">
+                    {tabLabels.createdByMe}
+                  </a>
+                </li>
+                <li>
+                  <a data-toggle="tab" href="#watching">
+                    {tabLabels.watching}
+                  </a>
+                </li>
+                <li>
+                  <a data-toggle="tab" href="#joinmember">
+                    {tabLabels.joinmember}
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div className="tab-content">
+              <SidebarProjectListItems
+                active
+                id="recentlyVisited"
+                noResultsLabel={noResultsLabel}
+                onToggleFavorite={onToggleFavorite}
+                projects={recentProjects}
+                runtimeConfig={runtimeConfig}
+              />
+              <SidebarProjectListItems
+                id="watching"
+                noResultsLabel={noResultsLabel}
+                onToggleFavorite={onToggleFavorite}
+                projects={watchedProjects}
+                runtimeConfig={runtimeConfig}
+              />
+              <SidebarProjectListItems
+                id="createdByMe"
+                noResultsLabel={noResultsLabel}
+                onToggleFavorite={onToggleFavorite}
+                projects={[]}
+                runtimeConfig={runtimeConfig}
+              />
+              <SidebarProjectListItems
+                id="joinmember"
+                noResultsLabel={noResultsLabel}
+                onToggleFavorite={onToggleFavorite}
+                projects={[]}
+                runtimeConfig={runtimeConfig}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SidebarProjectListItems({
+  active = false,
+  id,
+  noResultsLabel,
+  onToggleFavorite,
   projects,
   runtimeConfig,
 }: {
@@ -1185,7 +1422,6 @@ function SidebarProjectList({
     projectName: string,
     starElement: HTMLElement,
   ) => Promise<void>;
-  organizationMode?: boolean;
   projects: SidebarProject[];
   runtimeConfig: RuntimeConfig;
 }) {
@@ -1194,53 +1430,6 @@ function SidebarProjectList({
       <div className={`no-result tab-pane user-ul ${active ? "active" : ""}`} id={id}>
         {noResultsLabel}
       </div>
-    );
-  }
-
-  if (organizationMode) {
-    const groupedProjects = new Map<string, SidebarProject[]>();
-    for (const project of projects) {
-      const group = groupedProjects.get(project.ownerName) ?? [];
-      group.push(project);
-      groupedProjects.set(project.ownerName, group);
-    }
-
-    return (
-      <ul className={`tab-pane user-ul ${active ? "active" : ""}`} id={id}>
-        {[...groupedProjects.entries()].map(([ownerName, ownerProjects]) => (
-          <li className="org-li" key={`${id}:org:${ownerName}`}>
-            <div className="org-list project-flex-container all-orgs">
-              <div className="project-item project-item-container">
-                <div className="flex-item site-logo">
-                  <i className="yobicon-angle-right"></i>
-                </div>
-                <div className="projectName-owner all-org-names flex-item">
-                  <div className="project-name org-name flex-item">{ownerName}</div>
-                  <div className="project-owner flex-item sub-project-counter">
-                    {ownerProjects.length}
-                  </div>
-                </div>
-              </div>
-              <div
-                className="star-org flex-item"
-                data-organization-id={ownerProjects[0]?.ownerId ?? ownerName}
-              >
-                <i className="star starred material-icons">star</i>
-              </div>
-            </div>
-            <ul className="project-ul">
-              {ownerProjects.map((project) => (
-                <SidebarProjectItem
-                  key={`${id}:org:${ownerName}:${project.ownerName}/${project.projectName}`}
-                  onToggleFavorite={onToggleFavorite}
-                  project={project}
-                  runtimeConfig={runtimeConfig}
-                />
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ul>
     );
   }
 
@@ -1361,52 +1550,70 @@ function SidebarIssueList({
   issues,
   noResultsLabel,
   runtimeConfig,
+  searchPlaceholder,
 }: {
   active?: boolean;
   issues: NonNullable<WorkspaceOverviewViewModel["issueItems"]>;
   noResultsLabel: string;
   runtimeConfig: RuntimeConfig;
+  searchPlaceholder: string;
 }) {
-  if (issues.length === 0) {
-    return (
-      <div
-        className={`no-result tab-pane user-ul ${active ? "active" : ""}`}
-        id="myRecentIssueList"
-      >
+  const content =
+    issues.length === 0 ? (
+      <div className="no-result tab-pane user-ul active" id="recentlyVisitedIssues">
         {noResultsLabel}
       </div>
-    );
-  }
-
-  return (
-    <ul className={`tab-pane user-ul ${active ? "active" : ""}`} id="myRecentIssueList">
-      {issues.map((issue) => {
-        const href = prefixBasePath(
-          runtimeConfig.basePath,
-          `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`,
-        );
-        return (
-          <li className="user-li" data-location={href} key={href}>
-            <div
-              className="project-list project-flex-container"
-              data-content={`#${issue.issueNumber}`}
-              data-placement="right"
-              data-toggle="popover"
-              data-trigger="hover"
-            >
-              <div className="project-item project-item-container">
-                <div className="issue-item projectName-owner flex-item">
-                  <div className="issue-title-start">-</div>
-                  <div className="issue-title flex-item">
-                    <a href={href}>{issue.title}</a>
+    ) : (
+      <ul className="tab-pane user-ul active" id="recentlyVisitedIssues">
+        {issues.map((issue) => {
+          const href = prefixBasePath(
+            runtimeConfig.basePath,
+            `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`,
+          );
+          return (
+            <li className="user-li" data-location={href} key={href}>
+              <div
+                className="project-list project-flex-container"
+                data-content={`#${issue.issueNumber}`}
+                data-placement="right"
+                data-toggle="popover"
+                data-trigger="hover"
+              >
+                <div className="project-item project-item-container">
+                  <div className="issue-item projectName-owner flex-item">
+                    <div className="issue-title-start">-</div>
+                    <div className="issue-title flex-item">
+                      <a href={href}>{issue.title}</a>
+                    </div>
                   </div>
                 </div>
               </div>
+            </li>
+          );
+        })}
+      </ul>
+    );
+
+  return (
+    <div className={`tab-pane user-project-list ${active ? "active" : ""}`} id="myRecentIssueList">
+      <div>
+        <div className="search-result">
+          <div className="tab-pane myproject-list-wrap">
+            <div className="group">
+              <input
+                autoComplete="off"
+                className="search-input project-search"
+                id="query"
+                placeholder={searchPlaceholder}
+                type="text"
+              />
+              <span className="bar"></span>
             </div>
-          </li>
-        );
-      })}
-    </ul>
+            <div className="tab-content">{content}</div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
