@@ -311,16 +311,16 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `index/allProjectList.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 | `index/allProjectList_partial.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 | `index/displayProjects.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
-| `index/index.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/index.scala.html` | P1/P6 home workspace | metric guard passed: `root-shell-parity.e2e.ts` asserts legacy `Application.index()` behavior for logged-in users by redirecting `/` to a non-root default landing path and rendering the delegated notification shell at `/` when the default landing path is `/`, while anonymous `/` keeps the public intro |
 | `index/myOrganizationList.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 | `index/myOrganizationList_partial.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 | `index/myProjectList.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 | `index/myProjectList_partial.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 | `index/myRecentIssueList.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
 | `index/myRecentIssueList_partial.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
-| `index/notifications.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/notifications.scala.html` | P1/P6 home workspace | metric guard passed: `root-shell-parity.e2e.ts` asserts the delegated authenticated `/` notification shell keeps `.notification-page`, `.page-wrap-outer`, `.page-wrap`, `.site-guide-outer`, `#toggleIntro`, `.activity-streams.notification-wrap.unstyled`, and visible `li.notification-stream` content while suppressing the anonymous `.siteintro-bg.row` |
 | `index/partial_intro.scala.html` | P1/P6 home workspace | metric guard passed: `root-shell-parity.e2e.ts`, `route-parity.spec.tsx`, and `auth-workspace-shell.spec.tsx` assert legacy anonymous home intro structure/copy, full-width home shell, legacy photo background, 750px centered intro cover, centered heading/tagline/signup action, six feature cells, 330px feature item width, row wrapping, icon/info/title x-alignment, and footer ordering |
-| `index/partial_notifications.scala.html` | P1/P6 home workspace | reopen: inspect Scala anchors before JSX reuse |
+| `index/partial_notifications.scala.html` | P1/P6 home workspace | metric guard passed: `root-shell-parity.e2e.ts` asserts the authenticated `/` notification caller renders `li.notification-stream` rows with legacy `data-toggle=learnmore`, `data-target=message-*`, generated `#message-*` `.message-wrap`, visible target title copy, and stream type/description ordering metrics |
 | `index/sidebar.scala.html` | P1/P6 home workspace | intentional deviation recorded: thin wrapper around `siteLayout_framed`; active React keeps sidebar as SPA root layout surface and does not restore iframe/framed shell |
 
 ### `issue/`

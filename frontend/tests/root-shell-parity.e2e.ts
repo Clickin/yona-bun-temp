@@ -8,6 +8,7 @@ const restJsonHeaders = {
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 
 type SessionState = {
+  defaultLandingPath?: string;
   isAnonymous?: boolean;
   isSiteAdmin?: boolean;
   loginId?: string;
@@ -82,6 +83,7 @@ async function installCommonApiMocks(
   const isAnonymous = session.isAnonymous ?? false;
   const loginId = session.loginId ?? (isAnonymous ? "" : "admin");
   const userLabel = session.userLabel ?? (isAnonymous ? "" : "Administrator");
+  const defaultLandingPath = session.defaultLandingPath ?? (isAnonymous ? "/" : "/me");
 
   await page.route("**/api/auth/session", async (route) => {
     await route.fulfill({
@@ -101,7 +103,7 @@ async function installCommonApiMocks(
     await route.fulfill({
       body: JSON.stringify({
         actorId: isAnonymous ? "" : "1",
-        defaultLandingPath: isAnonymous ? "/" : "/me",
+        defaultLandingPath,
         emailAddress: isAnonymous ? "" : `${loginId}@example.com`,
         isAnonymous,
         isConfirmed: !isAnonymous,
@@ -133,7 +135,7 @@ async function installCommonApiMocks(
       body: JSON.stringify({
         apiToken: "api-token",
         daysAgo: 14,
-        defaultLandingPath: "/me",
+        defaultLandingPath,
         emails: [],
         favoriteProjects: workspace.favoriteProjects ?? [
           { ownerName: "admin", projectName: "sample" },
@@ -177,6 +179,33 @@ async function installCommonApiMocks(
         pullRequestItems: [],
         recentProjects: workspace.recentProjects ?? [{ ownerName: "admin", projectName: "sample" }],
         watchedProjects: [],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.route(apiV1Route("/notifications?*"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        hasMore: false,
+        items: [
+          {
+            actor: {
+              avatarUrl: "",
+              displayName: userLabel || loginId,
+              loginId,
+            },
+            createdAt: "2026-06-29T00:00:00Z",
+            createdLabel: "just now",
+            eventType: "ISSUE_COMMENT",
+            id: "root-default-notification",
+            message: "Root default landing notification body",
+            targetHref: "/yona/admin/sample/issue/1",
+            targetTitle: "Root default landing issue",
+            typeIcon: "comment",
+          },
+        ],
       }),
       headers: restJsonHeaders,
       status: 200,
@@ -366,6 +395,81 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
   await expectNoVisibleRawLegacyKeys(page);
   await page.locator("#loginDialog button.close").click();
   await expect(page.locator("#loginDialog.modal.hide.loginDialog")).toHaveCount(1);
+});
+
+test("authenticated index route follows legacy default landing or notification body", async ({
+  page,
+}) => {
+  await installRuntimeConfig(page, { feedbackUrl: "https://feedback.example.test" });
+  await installCommonApiMocks(page, {
+    session: { defaultLandingPath: "/me", isAnonymous: false, loginId: "admin" },
+  });
+
+  await page.goto("/yona/");
+  await expect(page).toHaveURL(/\/yona\/me$/u);
+  await expect(page.locator(".siteintro-bg.row")).toHaveCount(0);
+  await expect(page.locator("#mySidenav")).toHaveCount(1);
+
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+  await installRuntimeConfig(page, { feedbackUrl: "https://feedback.example.test" });
+  await installCommonApiMocks(page, {
+    session: { defaultLandingPath: "/", isAnonymous: false, loginId: "admin" },
+  });
+
+  await page.goto("/yona/");
+  await expect(page).toHaveURL(/\/yona\/?$/u);
+  await expect(page.locator(".siteintro-bg.row")).toHaveCount(0);
+  await expect(page.locator(".notification-page .page-wrap-outer .page-wrap")).toBeVisible();
+  await expect(page.locator(".site-guide-outer")).toBeVisible();
+  await expect(page.locator("#toggleIntro")).toBeVisible();
+  await expect(page.locator(".activity-streams.notification-wrap.unstyled")).toBeVisible();
+  await expect(page.locator("li.notification-stream")).toHaveCount(1);
+  await expect(page.locator("li.notification-stream .stream-desc")).toHaveAttribute(
+    "data-toggle",
+    "learnmore",
+  );
+  await expect(page.locator("li.notification-stream .stream-desc")).toHaveAttribute(
+    "data-target",
+    "message-root-default-notification",
+  );
+  await expect(page.locator("#message-root-default-notification.message-wrap")).toBeVisible();
+  await expect(page.locator("li.notification-stream .title")).toContainText(
+    "Root default landing issue",
+  );
+
+  const notificationPage = await layoutBox(page, ".notification-page");
+  const pageWrapOuter = await layoutBox(page, ".notification-page .page-wrap-outer");
+  const pageWrap = await layoutBox(page, ".notification-page .page-wrap");
+  const guide = await layoutBox(page, ".notification-page .site-guide-outer");
+  const guideToggle = await layoutBox(page, ".notification-page .guide-toggle");
+  const pageFold = await layoutBox(page, ".notification-page .page.on-fold-intro");
+  const contentContainer = await layoutBox(page, ".notification-page .content-container");
+  const mainStream = await layoutBox(page, ".notification-page .main-stream");
+  const rightMenu = await layoutBox(page, ".notification-page .right-menu");
+  const tabs = await layoutBox(page, ".notification-page .main-stream .nav.nav-tabs");
+  const notificationList = await layoutBox(page, ".notification-page .notification-wrap");
+  const notificationRow = await layoutBox(page, ".notification-page li.notification-stream");
+  const streamType = await layoutBox(
+    page,
+    ".notification-page li.notification-stream .stream-type",
+  );
+  const streamDesc = await layoutBox(
+    page,
+    ".notification-page li.notification-stream .stream-desc",
+  );
+
+  expect(pageWrapOuter.y).toBeGreaterThanOrEqual(notificationPage.y);
+  expect(pageWrap.x).toBeGreaterThanOrEqual(pageWrapOuter.x);
+  expect(pageWrap.width).toBeLessThanOrEqual(pageWrapOuter.width);
+  expect(guide.y).toBeGreaterThanOrEqual(pageWrap.y);
+  expect(guideToggle.y).toBeGreaterThan(guide.y);
+  expect(pageFold.y).toBeGreaterThan(guideToggle.y);
+  expect(contentContainer.y).toBeGreaterThanOrEqual(pageFold.y);
+  expect(mainStream.x).toBeLessThan(rightMenu.x);
+  expect(tabs.y).toBeLessThan(notificationList.y);
+  expect(notificationRow.y).toBeGreaterThanOrEqual(notificationList.y);
+  expect(streamType.x).toBeLessThan(streamDesc.x);
+  expect(streamDesc.width).toBeGreaterThan(streamType.width);
 });
 
 test("anonymous root shell keeps the legacy login dialog usable on a mobile viewport", async ({
