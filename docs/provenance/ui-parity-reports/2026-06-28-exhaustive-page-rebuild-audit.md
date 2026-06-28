@@ -167,7 +167,9 @@ It maps all 242 source-pass rows to concrete route/evidence buckets and compares
 them with `output/playwright/visual-sweep/latest.json` from
 2026-06-28T07:48:07.381Z. The latest sweep can support route-open evidence for
 240 rows; the 2 remaining rows are the intentionally retired framed layout
-templates and require targeted guards that prove the iframe shell stays absent.
+templates and now have a focused absence guard in
+`frontend/src/auth-workspace-shell.spec.tsx` proving the iframe shell stays
+absent from active React/CSS.
 Selector, copy, form, and `data-*` assertions are still needed before closure.
 
 ### `board/`

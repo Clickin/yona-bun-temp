@@ -66,7 +66,9 @@ Rules:
   requirements, but rendered evidence is still required for closure.
 - The 2026-06-28 rendered evidence execution manifest maps all 242 source-pass
   rows to route/evidence buckets and records which rows are supported by the
-  latest visual sweep route-open evidence.
+  latest visual sweep route-open evidence. The framed-layout rows are covered
+  by the focused SPA-sidebar absence guard in
+  `frontend/src/auth-workspace-shell.spec.tsx`.
 - Explorer reports must not propose new UX or new product structure. Findings
   must be framed as `covered`, `gap`, `deviation`, `deferred`,
   `not-applicable`, or `needs-parent-decision`.

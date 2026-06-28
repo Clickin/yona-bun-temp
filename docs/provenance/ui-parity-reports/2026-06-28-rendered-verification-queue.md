@@ -31,8 +31,8 @@ the queue remains open until rendered evidence or explicit
 Rendered evidence execution manifest:
 `docs/provenance/ui-parity-reports/2026-06-28-rendered-evidence-execution-manifest.md`.
 It maps all 242 queue rows to route/evidence buckets. The latest visual sweep
-can support route-open evidence for 240 rows; the 2 framed-layout rows require
-targeted absence guards.
+can support route-open evidence for 240 rows; the 2 framed-layout rows are
+covered by the focused absence guard in `frontend/src/auth-workspace-shell.spec.tsx`.
 
 ## Lane Summary
 

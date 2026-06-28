@@ -438,16 +438,38 @@ describe("auth and workspace views", () => {
       path.resolve(__dirname, "routes/sidebar/route.tsx"),
       "utf8",
     );
+    const appCss = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+    const legacyFramedLayout = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/app/views/layout_framed.scala.html"),
+      "utf8",
+    );
+    const legacySiteFramedLayout = fs.readFileSync(
+      path.resolve(__dirname, "../../yona-original/app/views/siteLayout_framed.scala.html"),
+      "utf8",
+    );
 
+    expect(legacyFramedLayout).toContain('body class="@theme framed-body" id="html-body"');
+    expect(legacyFramedLayout).toContain('id="sidebar-bottom"');
+    expect(legacyFramedLayout).toContain('id="mainFrame"');
+    expect(legacyFramedLayout).toContain('name="mainFrame"');
+    expect(legacyFramedLayout).toContain('id="mainFrameId"');
+    expect(legacySiteFramedLayout).toContain("@layout_framed");
     expect(rootSource).toContain("<RootSidebar open={sidebarOpen} />");
     expect(rootSource).toContain('id="sidebar-open-btn"');
     expect(rootSource).toContain('href="#mySidenav"');
     expect(rootSource).toContain("onToggleSidebar();");
     expect(rootSource).not.toContain("<iframe");
+    expect(rootSource).not.toContain("framed-body");
+    expect(rootSource).not.toContain('id="sidebar-bottom"');
+    expect(rootSource).not.toContain('id="mainFrame"');
+    expect(rootSource).not.toContain('name="mainFrame"');
+    expect(rootSource).not.toContain('id="mainFrameId"');
     expect(rootSource).not.toContain("framedIframeSrcFromSearch");
     expect(rootSource).not.toContain("RootFramedShell");
     expect(sidebarRouteSource).not.toContain("<iframe");
     expect(sidebarRouteSource).not.toContain("mainFrame");
+    expect(appCss).not.toContain(".framed-body");
+    expect(appCss).not.toContain("#mainFrame");
   });
 
   it("renders the canonical login shell with legacy field names and recovery link", () => {
