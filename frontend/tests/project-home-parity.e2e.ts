@@ -254,6 +254,71 @@ test("project home proves README fallback, history and dashboard tabs in the bro
 
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
+  const projectMenuLabels = page.locator(".project-menu-gruop .menu-name");
+  await expect(projectMenuLabels).toHaveText([
+    "Project home",
+    "Code",
+    "Issue",
+    "Pull request",
+    "Review",
+    "Milestone",
+    "Board",
+  ]);
+  await expect(page.locator(".project-menu-gruop > li.active .menu-name")).toHaveText(
+    "Project home",
+  );
+  await expect(page.locator(".project-menu-gruop > li.code-menu .short-menu")).toHaveText("C");
+  await expect(page.locator(".project-menu-gruop a[href='/yona/owner/projectYobi']")).toBeVisible();
+  await expect(
+    page.locator(".project-menu-gruop a[href='/yona/owner/projectYobi/code']"),
+  ).toBeVisible();
+  await expect(
+    page.locator(
+      ".project-menu-gruop a[href='/yona/owner/projectYobi/issues'] .project-menu-count",
+    ),
+  ).toHaveText("4");
+  await expect(
+    page.locator(
+      ".project-menu-gruop a[href='/yona/owner/projectYobi/pullRequests'] .project-menu-count",
+    ),
+  ).toHaveText("2");
+  await expect(
+    page.locator(
+      ".project-menu-gruop a[href='/yona/owner/projectYobi/reviews'] .project-menu-count",
+    ),
+  ).toHaveText("1");
+  await expect(
+    page.locator(".project-menu-gruop a[href='/yona/owner/projectYobi/posts'] .project-menu-count"),
+  ).toHaveText("2");
+  await expect(page.locator(".project-setting .yobicon-cog")).toHaveCount(1);
+  await expect(page.locator(".project-setting a")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/settingform",
+  );
+
+  const projectMenu = await layoutBox(page, ".project-menu-outer");
+  const projectMenuInner = await layoutBox(page, ".project-menu-inner");
+  const projectMenuGroup = await layoutBox(page, ".project-menu-gruop");
+  const projectMenuHome = await layoutBox(page, ".project-menu-gruop > li:first-child");
+  const projectMenuHomeLink = await layoutBox(page, ".project-menu-gruop > li:first-child > a");
+  const projectMenuIssueBadge = await layoutBox(
+    page,
+    ".project-menu-gruop a[href='/yona/owner/projectYobi/issues'] .project-menu-count",
+  );
+  const projectSetting = await layoutBox(page, ".project-setting");
+
+  expect(Math.round(projectMenu.height)).toBe(40);
+  expect(Math.round(projectMenuInner.height)).toBe(39);
+  expect(projectMenuGroup.x).toBeCloseTo(projectMenu.x + 110, 0);
+  expect(projectMenuGroup.y).toBeCloseTo(projectMenu.y, 0);
+  expect(projectMenuHome.y).toBeCloseTo(projectMenu.y, 0);
+  expect(projectMenuHomeLink.y).toBeCloseTo(projectMenu.y, 0);
+  expect(Math.round(projectMenuHomeLink.height)).toBe(39);
+  expect(projectMenuIssueBadge.y).toBeGreaterThanOrEqual(projectMenuHomeLink.y);
+  expect(projectMenuIssueBadge.height).toBeLessThan(projectMenuHomeLink.height);
+  expect(projectSetting.x).toBeGreaterThan(projectMenuGroup.x + projectMenuGroup.width);
+  expect(projectSetting.y).toBeCloseTo(projectMenu.y, 0);
+
   await expect(page.locator("#project-description")).toContainText("Project home parity");
   await expect(page.locator("#cloneURL")).toHaveValue("https://example.com/owner/projectYobi.git");
   const projectHomeTabs = page.locator(".span-left-pane > .nav.nav-tabs");
