@@ -178,11 +178,21 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test("issue list shared partials preserve legacy vote count and show-subtasks metrics", async ({
+test("issue list shared partials preserve legacy vote count and checkbox metrics", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 900, width: 1280 });
   await page.goto("/yona/admin/projectYobi/issues?pageNum=1");
+
+  const twoColumn = page.locator(".issue-list-page .two-column-icon.mr10.hide-in-mobile");
+  await expect(twoColumn).toHaveAttribute("id", "two-column-mode-checkbox");
+  await expect(twoColumn).toHaveAttribute("title", "Two Column Mode");
+  await expect(twoColumn).toHaveAttribute(
+    "data-content",
+    "Splits list and body into columns respectively",
+  );
+  await expect(page.locator("#two-column-mode")).toHaveAttribute("type", "checkbox");
+  await expect(page.locator(".issue-list-page .two-column-mode-text")).toHaveText("Column View");
 
   const showSubtasks = page.locator(".issue-list-page .show-subtasks.mr10");
   await expect(showSubtasks).toHaveAttribute("id", "two-column-mode-checkbox");
@@ -196,8 +206,12 @@ test("issue list shared partials preserve legacy vote count and show-subtasks me
 
   const issueTabsSelector = ".issue-list-page ul.nav.nav-tabs.nm:has(#toggle-show-subtasks)";
   const tabs = await layoutBox(page, issueTabsSelector);
+  const closedTab = await layoutBox(page, `${issueTabsSelector} > li:nth-child(2)`);
   const twoColumnLi = await layoutBox(page, `${issueTabsSelector} > li:nth-child(3)`);
   const twoColumnBox = await layoutBox(page, ".issue-list-page .two-column-icon");
+  const twoColumnBorder = await layoutBox(page, ".issue-list-page .two-column-icon-border");
+  const twoColumnCheckbox = await layoutBox(page, "#two-column-mode");
+  const twoColumnText = await layoutBox(page, ".issue-list-page .two-column-mode-text");
   const showSubtasksLi = await layoutBox(page, `${issueTabsSelector} > li.show-subtasks-li`);
   const showSubtasksBox = await layoutBox(page, ".issue-list-page .show-subtasks.mr10");
   const buttonBorder = await layoutBox(page, ".issue-list-page .show-subtasks-button-border");
@@ -237,6 +251,69 @@ test("issue list shared partials preserve legacy vote count and show-subtasks me
         wrapperMarginLeft: wrapperStyle.marginLeft,
       };
     });
+  const twoColumnStyles = await page
+    .locator(".issue-list-page .two-column-icon")
+    .evaluate((element) => {
+      const label = element.querySelector("label") as HTMLElement;
+      const border = element.querySelector(".two-column-icon-border") as HTMLElement;
+      const checkboxElement = element.querySelector("#two-column-mode") as HTMLElement;
+      const text = element.querySelector(".two-column-mode-text") as HTMLElement;
+      const wrapperStyle = window.getComputedStyle(element);
+      const labelStyle = window.getComputedStyle(label);
+      const borderStyle = window.getComputedStyle(border);
+      const checkboxStyle = window.getComputedStyle(checkboxElement);
+      const textStyle = window.getComputedStyle(text);
+      return {
+        borderBorderRadius: borderStyle.borderRadius,
+        borderColor: borderStyle.borderTopColor,
+        borderPadding: `${borderStyle.paddingTop} ${borderStyle.paddingRight} ${borderStyle.paddingBottom} ${borderStyle.paddingLeft}`,
+        borderTextColor: borderStyle.color,
+        checkboxMargin: `${checkboxStyle.marginTop} ${checkboxStyle.marginRight} ${checkboxStyle.marginBottom} ${checkboxStyle.marginLeft}`,
+        checkboxMinHeight: checkboxStyle.minHeight,
+        checkboxPadding: checkboxStyle.padding,
+        checkboxVerticalAlign: checkboxStyle.verticalAlign,
+        labelPaddingLeft: labelStyle.paddingLeft,
+        labelPaddingTop: labelStyle.paddingTop,
+        textLineHeight: textStyle.lineHeight,
+        textPaddingRight: textStyle.paddingRight,
+        textVerticalAlign: textStyle.verticalAlign,
+        wrapperDisplay: wrapperStyle.display,
+        wrapperLineHeight: wrapperStyle.lineHeight,
+        wrapperMarginLeft: wrapperStyle.marginLeft,
+        wrapperMarginRight: wrapperStyle.marginRight,
+      };
+    });
+
+  expect(twoColumnLi.x).toBeGreaterThanOrEqual(closedTab.x + closedTab.width);
+  expect(twoColumnBox.x).toBeGreaterThanOrEqual(twoColumnLi.x + 9);
+  expect(twoColumnBox.y).toBeGreaterThanOrEqual(tabs.y - 1);
+  expect(twoColumnBorder.x).toBeGreaterThanOrEqual(twoColumnBox.x);
+  expect(twoColumnCheckbox.x).toBeGreaterThanOrEqual(twoColumnBorder.x + 2);
+  expect(twoColumnText.x).toBeGreaterThan(twoColumnCheckbox.x + twoColumnCheckbox.width);
+  expect(twoColumnText.y).toBeLessThanOrEqual(twoColumnCheckbox.y + twoColumnCheckbox.height + 2);
+  expect(twoColumnCheckbox.y).toBeLessThanOrEqual(twoColumnText.y + twoColumnText.height);
+  expect(twoColumnText.x + twoColumnText.width).toBeLessThanOrEqual(
+    twoColumnBorder.x + twoColumnBorder.width + 1,
+  );
+  expect(twoColumnStyles).toEqual({
+    borderBorderRadius: "3px",
+    borderColor: "rgb(3, 175, 255)",
+    borderPadding: "3px 3px 0px 3px",
+    borderTextColor: "rgb(3, 169, 244)",
+    checkboxMargin: "4px 4px 0px 2px",
+    checkboxMinHeight: "0px",
+    checkboxPadding: "0px",
+    checkboxVerticalAlign: "top",
+    labelPaddingLeft: "0px",
+    labelPaddingTop: "4px",
+    textLineHeight: "20px",
+    textPaddingRight: "4px",
+    textVerticalAlign: "text-bottom",
+    wrapperDisplay: "inline-block",
+    wrapperLineHeight: "37px",
+    wrapperMarginLeft: "10px",
+    wrapperMarginRight: "10px",
+  });
 
   expect(showSubtasksLi.x).toBeGreaterThan(twoColumnLi.x);
   expect(showSubtasksLi.x).toBeLessThanOrEqual(twoColumnLi.x + twoColumnLi.width + 1);
