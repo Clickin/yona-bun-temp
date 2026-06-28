@@ -1295,6 +1295,52 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
     "name",
     "temporaryUploadFiles",
   );
+  await expect(page.locator("#comment-form #upload.upload-wrap.content-footer")).toHaveAttribute(
+    "data-resource-type",
+    "ISSUE_COMMENT",
+  );
+  await expect(page.locator("#comment-form #upload .help.help-droppable")).toContainText(
+    "Drag & Drop files to attach here or",
+  );
+  await expect(
+    page.locator("#comment-form #upload .nbtn.medium.white.fake-file-wrap"),
+  ).toContainText("File upload");
+  await expect(page.locator("#comment-form #upload .yobicon-upload")).toHaveCount(1);
+  await expect(page.locator("#comment-form #upload input.file[name=filePath]")).toHaveAttribute(
+    "multiple",
+    "",
+  );
+  await expect(page.locator("#comment-form #upload .plain")).toContainText("Click upload button");
+  await expect(page.locator("#comment-form #upload .help.help-pastable")).toContainText(
+    "Paste the clipboard image",
+  );
+  await expect(page.locator("#comment-form #upload .attached-files.unstyled")).toHaveCount(1);
+  await expect(page.locator("#comment-form #upload .right-txt.help")).toContainText(
+    "Selected file will be attached when your comment is saved.",
+  );
+  await expect(page.locator("script#tplAttachedFile")).toHaveAttribute(
+    "type",
+    "text/x-jquery-tmpl",
+  );
+  const attachedFileTemplate = await page
+    .locator("script#tplAttachedFile")
+    .evaluate((element) => element.textContent ?? "");
+  expect(attachedFileTemplate).toContain('class="attached-file"');
+  expect(attachedFileTemplate).toContain('data-id="${fileId}"');
+  expect(attachedFileTemplate).toContain('class="progress upload-progress"');
+  expect(attachedFileTemplate).toContain('class="bar orange"');
+  expect(attachedFileTemplate).toContain('class="btn-transparent btn-delete pull-right"');
+  expect(attachedFileTemplate).toContain('class="pull-right nbtn small white btn-insert"');
+  expect(attachedFileTemplate).toContain("Click to post");
+  await expect(page.locator("script#tplDropFilesHere")).toHaveAttribute(
+    "type",
+    "text/x-jquery-tmpl",
+  );
+  const dropFilesTemplate = await page
+    .locator("script#tplDropFilesHere")
+    .evaluate((element) => element.textContent ?? "");
+  expect(dropFilesTemplate).toContain('class="upload-drop-here"');
+  expect(dropFilesTemplate).toContain("Drag & Drop files here to upload.");
   await expect(page.locator("#comment-form #dynamic-comment-btn.ybtn.hidden")).toHaveAttribute(
     "type",
     "button",
@@ -1311,6 +1357,10 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
   const textareaBox = await layoutBox(page, "#comment-form .textarea-box");
   const commentEditor = await layoutBox(page, "#editor-contents-comment-body");
   const uploadWrap = await layoutBox(page, "#comment-form .upload-wrap");
+  const uploadAttachWrap = await layoutBox(page, "#comment-form .upload-wrap .attach-wrap");
+  const uploadButtonWrap = await layoutBox(page, "#comment-form .upload-wrap .btn-wrap");
+  const uploadFakeButton = await layoutBox(page, "#comment-form .fake-file-wrap");
+  const uploadPlainText = await layoutBox(page, "#comment-form .upload-wrap .plain");
   const writeCommentWrap = await layoutBox(page, "#comment-form .write-comment-wrap");
   const submitButton = await layoutBox(page, "#comment-form .ybtn.ybtn-success[type=submit]");
   const commentFormStyles = await page.locator("#comment-form").evaluate((element) => {
@@ -1328,6 +1378,18 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
     const previewTabStyle = window.getComputedStyle(previewTab);
     const upload = element.querySelector(".upload-wrap") as HTMLElement;
     const uploadStyle = window.getComputedStyle(upload);
+    const helpDroppable = element.querySelector(".help-droppable") as HTMLElement;
+    const helpDroppableStyle = window.getComputedStyle(helpDroppable);
+    const helpPastable = element.querySelector(".help-pastable") as HTMLElement;
+    const helpPastableStyle = window.getComputedStyle(helpPastable);
+    const attachWrap = element.querySelector(".attach-wrap") as HTMLElement;
+    const attachWrapStyle = window.getComputedStyle(attachWrap);
+    const buttonWrap = element.querySelector(".btn-wrap") as HTMLElement;
+    const buttonWrapStyle = window.getComputedStyle(buttonWrap);
+    const plain = element.querySelector(".upload-wrap .plain") as HTMLElement;
+    const plainStyle = window.getComputedStyle(plain);
+    const attachedFiles = element.querySelector(".attached-files") as HTMLElement;
+    const attachedFilesStyle = window.getComputedStyle(attachedFiles);
     const dynamicButton = element.querySelector("#dynamic-comment-btn") as HTMLElement;
     const dynamicButtonStyle = window.getComputedStyle(dynamicButton);
     const notification = element.querySelector(".notification-receiver") as HTMLElement;
@@ -1353,11 +1415,51 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
       textareaResize: textareaStyle.resize,
       uploadBackgroundColor: uploadStyle.backgroundColor,
       uploadBorderBottomLeftRadius: uploadStyle.borderBottomLeftRadius,
+      uploadHelpDroppableDisplay: helpDroppableStyle.display,
+      uploadHelpPastableDisplay: helpPastableStyle.display,
       uploadMarginBottom: uploadStyle.marginBottom,
       uploadPaddingTop: uploadStyle.paddingTop,
+      uploadAttachedFilesBorderTopWidth: attachedFilesStyle.borderTopWidth,
+      uploadAttachedFilesDisplay: attachedFilesStyle.display,
+      uploadAttachTextAlign: attachWrapStyle.textAlign,
+      uploadButtonWrapDisplay: buttonWrapStyle.display,
+      uploadButtonWrapMarginLeft: buttonWrapStyle.marginLeft,
+      uploadPlainDisplay: plainStyle.display,
+      uploadPlainLineHeight: plainStyle.lineHeight,
       writeBoxPaddingBottom: writeBoxStyle.paddingBottom,
       writeBoxPaddingLeft: writeBoxStyle.paddingLeft,
     };
+  });
+  const uploaderTemplateStyles = await page.evaluate(() => {
+    const host = document.createElement("div");
+    host.className = "dragover";
+    host.style.position = "relative";
+    host.style.width = "320px";
+    host.style.height = "120px";
+    host.innerHTML =
+      '<div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drop files here to attach them</div></div></div>';
+    document.body.append(host);
+    const overlay = host.querySelector(".upload-drop-here") as HTMLElement;
+    const overlayStyle = window.getComputedStyle(overlay);
+    const message = host.querySelector(".msg") as HTMLElement;
+    const messageStyle = window.getComputedStyle(message);
+    const result = {
+      borderTopStyle: overlayStyle.borderTopStyle,
+      borderTopWidth: overlayStyle.borderTopWidth,
+      bottom: overlayStyle.bottom,
+      display: overlayStyle.display,
+      left: overlayStyle.left,
+      messageColor: messageStyle.color,
+      messageFontSize: messageStyle.fontSize,
+      messageMarginTop: messageStyle.marginTop,
+      pointerEvents: overlayStyle.pointerEvents,
+      position: overlayStyle.position,
+      right: overlayStyle.right,
+      top: overlayStyle.top,
+      zIndex: overlayStyle.zIndex,
+    };
+    host.remove();
+    return result;
   });
 
   expect(writeCommentBox.x).toBeCloseTo(commentForm.x, 0);
@@ -1369,6 +1471,10 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
   expect(commentEditor.x).toBeGreaterThanOrEqual(textareaBox.x);
   expect(commentEditor.y).toBeGreaterThan(editorTabs.y + editorTabs.height - 1);
   expect(uploadWrap.y).toBeGreaterThan(commentEditor.y + commentEditor.height - 1);
+  expect(uploadAttachWrap.x).toBeGreaterThanOrEqual(uploadWrap.x);
+  expect(uploadButtonWrap.x).toBeGreaterThan(uploadAttachWrap.x);
+  expect(uploadFakeButton.x).toBeCloseTo(uploadButtonWrap.x, 0);
+  expect(uploadPlainText.x).toBeGreaterThan(uploadFakeButton.x + uploadFakeButton.width - 1);
   expect(writeCommentWrap.y).toBeGreaterThan(uploadWrap.y + uploadWrap.height - 1);
   expect(submitButton.x).toBeGreaterThan(writeCommentWrap.x);
   expect(submitButton.y).toBeGreaterThanOrEqual(writeCommentWrap.y);
@@ -1391,10 +1497,34 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
     textareaResize: "vertical",
     uploadBackgroundColor: "rgb(239, 239, 239)",
     uploadBorderBottomLeftRadius: "5px",
+    uploadHelpDroppableDisplay: "inline",
+    uploadHelpPastableDisplay: "none",
     uploadMarginBottom: "10px",
     uploadPaddingTop: "10px",
+    uploadAttachedFilesBorderTopWidth: "1px",
+    uploadAttachedFilesDisplay: "none",
+    uploadAttachTextAlign: "center",
+    uploadButtonWrapDisplay: "inline-block",
+    uploadButtonWrapMarginLeft: "5px",
+    uploadPlainDisplay: "inline-block",
+    uploadPlainLineHeight: "30px",
     writeBoxPaddingBottom: "15px",
     writeBoxPaddingLeft: "54px",
+  });
+  expect(uploaderTemplateStyles).toEqual({
+    borderTopStyle: "dashed",
+    borderTopWidth: "3px",
+    bottom: "2px",
+    display: "block",
+    left: "2px",
+    messageColor: "rgb(153, 153, 153)",
+    messageFontSize: "26px",
+    messageMarginTop: "-13px",
+    pointerEvents: "none",
+    position: "absolute",
+    right: "2px",
+    top: "2px",
+    zIndex: "9999",
   });
 
   await expect(page.locator(".markdown-help")).toBeVisible();

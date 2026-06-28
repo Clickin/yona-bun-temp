@@ -2997,6 +2997,36 @@ div.markdown-preview {
   display: inline-block;
 }
 
+.upload-drop-here {
+  position: absolute;
+  inset: 2px;
+  z-index: 9999;
+  display: none;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.8);
+  border: 3px dashed #ffb23d;
+}
+
+.upload-drop-here .msg-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.upload-drop-here .msg {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  margin-top: -13px;
+  color: #999;
+  font-size: 26px;
+  text-align: center;
+}
+
+.dragover .upload-drop-here {
+  display: block;
+}
+
 .write-comment-box .actrow {
   margin-top: 10px;
 }
