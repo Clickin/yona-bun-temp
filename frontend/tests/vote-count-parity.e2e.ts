@@ -121,6 +121,32 @@ test.beforeEach(async ({ page }) => {
   await page.route(/\/api\/v1\/projects\/admin\/projectYobi\/issues(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       body: JSON.stringify({
+        draftItems: [
+          {
+            assigneeAvatarUrl: "",
+            assigneeLabel: "",
+            authorLabel: "Nori",
+            authorLoginId: "nori",
+            childClosedCount: 0,
+            childIssues: [],
+            childOpenCount: 0,
+            commentCount: 0,
+            dueDateLabel: "",
+            dueDateOverdue: false,
+            id: "102",
+            issueNumber: "2",
+            labels: [],
+            milestoneTitle: "",
+            ownerName: "admin",
+            projectName: "projectYobi",
+            state: "draft",
+            title: "Draft issue",
+            updatedLabel: "2026-04-16",
+            voterCount: 0,
+            watcherCount: 0,
+            weight: 0,
+          },
+        ],
         items: [
           {
             assigneeAvatarUrl: "/avatars/door.png",
@@ -439,8 +465,64 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     "href",
     "/yona/admin/projectYobi/issue/77",
   );
+  await expect(page.locator('.post-list-wrap.row-fluid[data-list="draft-issues"]')).toHaveCount(1);
+  await expect(page.locator('#issue-item-102[data-item="issue-item"]')).toHaveCount(1);
+  await expect(page.locator("#issue-item-102")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/issue/2",
+  );
+  await expect(page.locator("#issue-item-102")).toHaveAttribute("data-value", "nori 2 Draft issue");
+  await expect(page.locator("#issue-item-102 .draft-number")).toHaveText("#Draft");
+  await expect(page.locator("#issue-item-102 .title-wrap a.title").nth(1)).toHaveText(
+    "Draft issue",
+  );
+  await expect(page.locator("#issue-item-102 .infos .infos-link-item")).toHaveText("Nori");
+  await expect(page.locator("#issue-item-102 .span3 .empty-avatar-wrap")).toHaveCount(1);
+  await expect(page.locator("#issue-item-102 .item-count-groups")).toHaveCount(0);
 
   const list = await layoutBox(page, ".issue-list-page .post-list-wrap.row-fluid");
+  const draftList = await layoutBox(page, '.post-list-wrap.row-fluid[data-list="draft-issues"]');
+  const normalList = await layoutBox(
+    page,
+    ".issue-list-page .post-list-wrap.row-fluid:not([data-list])",
+  );
+  const draftRow = await layoutBox(page, "#issue-item-102");
+  const draftLeftColumn = await layoutBox(page, "#issue-item-102 .span9.span-hard-wrap");
+  const draftRightColumn = await layoutBox(page, "#issue-item-102 .span3.hide-in-mobile");
+  const draftMassCheck = await layoutBox(page, "#issue-item-102 .mass-update-check.hide-in-mobile");
+  const draftCheckboxInput = await layoutBox(page, "#issue-102");
+  const draftTitleWrap = await layoutBox(page, "#issue-item-102 .title-wrap");
+  const draftNumber = await layoutBox(page, "#issue-item-102 .draft-number");
+  const draftTitle = await layoutBox(page, "#issue-item-102 .title-wrap a.title:nth-of-type(2)");
+  const draftInfos = await layoutBox(page, "#issue-item-102 .infos");
+  const draftAuthorInfo = await layoutBox(page, "#issue-item-102 .infos .infos-link-item");
+  const draftUpdatedInfo = await layoutBox(
+    page,
+    "#issue-item-102 .infos > .infos-item:nth-child(2)",
+  );
+  const draftEmptyAvatar = await layoutBox(page, "#issue-item-102 .span3 .empty-avatar-wrap");
+  const draftRowStyles = await page.locator("#issue-item-102").evaluate((element) => {
+    const rowStyle = window.getComputedStyle(element);
+    const titleElement = element.querySelector(".title-wrap") as HTMLElement;
+    const infosElement = element.querySelector(".infos") as HTMLElement;
+    const draftNumber = element.querySelector(".draft-number") as HTMLElement;
+    const emptyAvatar = element.querySelector(".empty-avatar-wrap") as HTMLElement;
+    const titleStyle = window.getComputedStyle(titleElement);
+    const infosStyle = window.getComputedStyle(infosElement);
+    const draftNumberStyle = window.getComputedStyle(draftNumber);
+    const emptyAvatarStyle = window.getComputedStyle(emptyAvatar);
+    return {
+      draftNumberColor: draftNumberStyle.color,
+      draftNumberDisplay: draftNumberStyle.display,
+      emptyAvatarHeight: emptyAvatarStyle.height,
+      emptyAvatarWidth: emptyAvatarStyle.width,
+      infosFontSize: infosStyle.fontSize,
+      rowDisplay: rowStyle.display,
+      rowPadding: `${rowStyle.paddingTop} ${rowStyle.paddingRight} ${rowStyle.paddingBottom} ${rowStyle.paddingLeft}`,
+      titleLineHeight: titleStyle.lineHeight,
+      titleWhiteSpace: titleStyle.whiteSpace,
+    };
+  });
   const row = await layoutBox(page, "#issue-item-101");
   const leftColumn = await layoutBox(page, "#issue-item-101 .span9.span-hard-wrap");
   const rightColumn = await layoutBox(page, "#issue-item-101 .span3.hide-in-mobile");
@@ -524,7 +606,38 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
     };
   });
 
-  expect(row.y).toBeGreaterThanOrEqual(list.y);
+  expect(draftList.y).toBeGreaterThanOrEqual(list.y);
+  expect(normalList.y).toBeGreaterThan(draftList.y + draftList.height - 1);
+  expect(draftRow.y).toBeGreaterThanOrEqual(draftList.y);
+  expect(draftRow.width).toBeGreaterThanOrEqual(draftList.width - 2);
+  expect(draftLeftColumn.x).toBeGreaterThanOrEqual(draftRow.x);
+  expect(draftRightColumn.x).toBeGreaterThan(draftLeftColumn.x + draftLeftColumn.width - 1);
+  expect(draftRightColumn.y).toBeCloseTo(draftLeftColumn.y, 0);
+  expect(draftMassCheck.x).toBeGreaterThanOrEqual(draftLeftColumn.x);
+  expect(draftCheckboxInput.x).toBeGreaterThanOrEqual(draftMassCheck.x);
+  expect(draftTitleWrap.y).toBeGreaterThanOrEqual(draftRow.y);
+  expect(draftNumber.x).toBeGreaterThanOrEqual(draftTitleWrap.x);
+  expect(draftTitle.x).toBeGreaterThan(draftNumber.x + draftNumber.width - 1);
+  expect(draftInfos.y).toBeGreaterThan(draftTitleWrap.y);
+  expect(draftAuthorInfo.x).toBeGreaterThanOrEqual(draftInfos.x);
+  expect(draftUpdatedInfo.x).toBeGreaterThan(draftAuthorInfo.x + draftAuthorInfo.width - 1);
+  expect(draftEmptyAvatar.x).toBeGreaterThanOrEqual(draftRightColumn.x);
+  expect(draftEmptyAvatar.x + draftEmptyAvatar.width).toBeLessThanOrEqual(
+    draftRightColumn.x + draftRightColumn.width + 1,
+  );
+  expect(draftRowStyles).toEqual({
+    draftNumberColor: "rgb(153, 153, 153)",
+    draftNumberDisplay: "inline",
+    emptyAvatarHeight: "32px",
+    emptyAvatarWidth: "32px",
+    infosFontSize: "12px",
+    rowDisplay: "block",
+    rowPadding: "10px 10px 10px 10px",
+    titleLineHeight: "20px",
+    titleWhiteSpace: "nowrap",
+  });
+
+  expect(row.y).toBeGreaterThanOrEqual(normalList.y);
   expect(row.width).toBeGreaterThanOrEqual(list.width - 2);
   expect(leftColumn.x).toBeGreaterThanOrEqual(row.x);
   expect(rightColumn.x).toBeGreaterThan(leftColumn.x + leftColumn.width - 1);
