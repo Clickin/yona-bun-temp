@@ -308,6 +308,7 @@ test("template-first UI parity directive close condition stays satisfied", () =>
     const reportSource = readText(reportPath);
     const counts = parseResetQueueCounts(section(reportSource, "Open Reset Queue Summary"));
     assert.equal(counts.get("covered") > 0, true, `${packet} needs covered evidence`);
+    assert.deepEqual(blockerRows(reportSource), [], `${packet} has row-level blockers`);
 
     for (const status of blockingStatuses) {
       assert.equal(counts.get(status) ?? 0, 0, `${packet} has nonzero ${status} rows`);
