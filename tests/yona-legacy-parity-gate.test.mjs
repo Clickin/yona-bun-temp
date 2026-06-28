@@ -524,7 +524,7 @@ test("accepts template-first P2 project shell evidence for project view changes"
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
     result.capabilities.map((entry) => [entry.id, entry.status]),
-    [["project-core-cru-and-enrollment", "partial"]],
+    [["project-core-cru-and-enrollment", "parity"]],
   );
 });
 

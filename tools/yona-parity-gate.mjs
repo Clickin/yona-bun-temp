@@ -421,7 +421,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "project-core-cru-and-enrollment",
     label: "Project core CRU and enrollment",
-    status: "partial",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/src\/routes\/-directory-views\.tsx$/i,
       /^frontend\/src\/routes\/\[_\]import\/route\.tsx$/i,
