@@ -11,6 +11,12 @@ proves UI parity. Browser reachability, direct API JSON conversion, and absence
 of raw i18n keys are necessary but insufficient. Pixel-visible replacement
 quality must now be judged through the template-first UI parity reset.
 
+2026-06-28 checkpoint: the template-first report set remains the active UI
+closure evidence, and `tests/yona-legacy-parity-gate.test.mjs` now guards the
+active P0-P7 app-runtime UI surfaces against regressing to `gap`, `partial`, or
+`deferred` gate status. Remaining non-parity gate buckets are infrastructure or
+deferred-scope tracking, not current UI blockers.
+
 ## Scope
 
 This audit checks the active goal boundary:
