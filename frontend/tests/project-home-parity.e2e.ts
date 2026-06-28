@@ -6,6 +6,8 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+const projectContainerRoute = apiV1Route("/owners/owner/projects/projectYobi/container");
+const projectPostsRoute = /\/api\/v1\/projects\/owner\/projectYobi\/posts(?:\?.*)?$/;
 
 type LayoutBox = {
   height: number;
@@ -218,23 +220,31 @@ const postsPayload = () => ({
   totalCount: 0,
 });
 
+async function routeProjectContainer(page: Page, body: unknown): Promise<void> {
+  await page.route(projectContainerRoute, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(body),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+}
+
+async function routeProjectPosts(page: Page, body: unknown): Promise<void> {
+  await page.route(projectPostsRoute, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(body),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await installRuntime(page);
 
-  await page.route(apiV1Route("/owners/owner/projects/projectYobi/container"), async (route) => {
-    await route.fulfill({
-      body: JSON.stringify(projectContainerPayload()),
-      headers: restJsonHeaders,
-      status: 200,
-    });
-  });
-  await page.route(/\/api\/v1\/projects\/owner\/projectYobi\/posts(?:\?.*)?$/, async (route) => {
-    await route.fulfill({
-      body: JSON.stringify(postsPayload()),
-      headers: restJsonHeaders,
-      status: 200,
-    });
-  });
+  await routeProjectContainer(page, projectContainerPayload());
+  await routeProjectPosts(page, postsPayload());
 });
 
 test("project home proves README fallback, history and dashboard tabs in the browser", async ({
@@ -515,6 +525,149 @@ test("project home proves README fallback, history and dashboard tabs in the bro
   expect(labelChip.y).toBeGreaterThanOrEqual(labelNameColumn.y);
   expect(labelCount.x).toBeGreaterThanOrEqual(labelCountColumn.x);
   expect(labelCount.y).toBeGreaterThanOrEqual(labelCountColumn.y);
+});
+
+test("project README file renders inside the legacy readme bubble", async ({ page }) => {
+  await page.unroute(projectContainerRoute);
+  await routeProjectContainer(page, {
+    ...projectContainerPayload(),
+    readmeFile: {
+      bodyMarkdown: "README file body with @owner",
+      mentionReferences: [
+        {
+          kind: "user",
+          label: "owner",
+          loginId: "owner",
+          ownerName: "",
+          projectName: "",
+        },
+      ],
+      name: "README.md",
+    },
+    viewerCanUpdate: true,
+  });
+
+  await page.goto("/yona/owner/projectYobi");
+
+  const leftPane = await layoutBox(page, ".span-left-pane");
+  const readmeBubble = await layoutBox(page, ".bubble-wrap.gray.readme");
+  const readmeWrap = await layoutBox(
+    page,
+    ".bubble-wrap.gray.readme > .readme-wrap.project-git-readme",
+  );
+  const readmeHeader = await layoutBox(page, ".readme-wrap.project-git-readme > header");
+  const readmeBody = await layoutBox(
+    page,
+    ".readme-wrap.project-git-readme > .readme-body.markdown-wrap",
+  );
+
+  await expect(page.locator(".readme-wrap.project-git-readme .yobicon-book-open")).toHaveCount(1);
+  await expect(page.locator(".readme-wrap.project-git-readme header strong")).toContainText(
+    "README.md",
+  );
+  await expect(page.locator(".readme-wrap.project-git-readme header .ybtn")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/postform?readme=true",
+  );
+  await expect(page.locator(".readme-wrap.project-git-readme .readme-body")).toContainText(
+    "README file body",
+  );
+  await expect(page.locator(".readme-wrap.project-git-readme .readme-body a")).toHaveAttribute(
+    "href",
+    "/yona/owner",
+  );
+  expect(readmeBubble.x).toBeGreaterThanOrEqual(leftPane.x);
+  expect(readmeBubble.width).toBeLessThanOrEqual(leftPane.width + 1);
+  expect(readmeWrap.x).toBeGreaterThanOrEqual(readmeBubble.x);
+  expect(readmeWrap.width).toBeLessThanOrEqual(readmeBubble.width + 1);
+  expect(readmeHeader.y).toBeCloseTo(readmeWrap.y, 0);
+  expect(readmeBody.y).toBeGreaterThan(readmeHeader.y + readmeHeader.height - 1);
+});
+
+test("project DB README post uses the legacy readme wrapper when code is disabled", async ({
+  page,
+}) => {
+  await page.unroute(projectContainerRoute);
+  await routeProjectContainer(page, {
+    ...projectContainerPayload(),
+    cloneUrl: "",
+    readmeFile: {
+      bodyMarkdown: "",
+      mentionReferences: [],
+      name: "README.md",
+    },
+    showCode: false,
+    viewerCanUpdate: true,
+  });
+  await page.unroute(projectPostsRoute);
+  await routeProjectPosts(page, {
+    ...postsPayload(),
+    readme: {
+      attachments: [],
+      authorId: "2",
+      authorLabel: "Member",
+      authorLoginId: "member",
+      bodyHtml: "",
+      bodyMarkdown: "DB README post body",
+      commentCount: 0,
+      comments: [],
+      createdLabel: "2026-06-26",
+      historyHtml: "",
+      historyMarkdown: "",
+      id: "99",
+      issueReferences: [],
+      isWatching: false,
+      labels: [],
+      mentionReferences: [],
+      notice: false,
+      ownerName: "owner",
+      permissions: {
+        canComment: false,
+        canCreate: false,
+        canDelete: false,
+        canRead: true,
+        canSetNotice: false,
+        canUpdate: true,
+        canWatch: false,
+      },
+      postNumber: "99",
+      projectName: "projectYobi",
+      readme: true,
+      title: "README",
+      updatedLabel: "2026-06-26",
+      watcherCount: 0,
+    },
+  });
+
+  await page.goto("/yona/owner/projectYobi");
+
+  const readmeBubble = await layoutBox(page, ".bubble-wrap.gray.readme");
+  const readmeWrap = await layoutBox(
+    page,
+    ".bubble-wrap.gray.readme > .readme-wrap.project-readme-post",
+  );
+  const readmeHeader = await layoutBox(page, ".readme-wrap.project-readme-post > header");
+  const readmeBody = await layoutBox(
+    page,
+    ".readme-wrap.project-readme-post > .readme-body.markdown-wrap",
+  );
+
+  await expect(page.locator(".project-clone-wrap")).toHaveCount(0);
+  await expect(page.locator(".readme-wrap.project-readme-post .yobicon-book-open")).toHaveCount(1);
+  await expect(page.locator(".readme-wrap.project-readme-post header strong")).toContainText(
+    "README",
+  );
+  await expect(page.locator(".readme-wrap.project-readme-post header .ybtn")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/postform?readme=true",
+  );
+  await expect(page.locator(".readme-wrap.project-readme-post .readme-body")).toContainText(
+    "DB README post body",
+  );
+  expect(readmeWrap.x).toBeGreaterThanOrEqual(readmeBubble.x);
+  expect(readmeWrap.width).toBeLessThanOrEqual(readmeBubble.width + 1);
+  expect(readmeHeader.y).toBeCloseTo(readmeWrap.y, 0);
+  expect(readmeBody.y).toBeGreaterThan(readmeHeader.y + readmeHeader.height - 1);
 });
 
 test("project home leave modal opens, cancels, and confirms through REST", async ({ page }) => {

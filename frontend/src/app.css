@@ -2940,6 +2940,24 @@ h1 {
   overflow-wrap: anywhere;
 }
 
+.readme .readme-wrap {
+  overflow: hidden;
+  background-color: #fff;
+  border-radius: 10px;
+}
+
+.readme .readme-wrap header {
+  padding: 10px 25px;
+  font-size: 18px;
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #d4d4d4;
+}
+
+.readme .readme-wrap .readme-body {
+  padding: 25px;
+  font-size: 1.2em;
+}
+
 .issue-detail-page .board-header {
   display: block;
   clear: both;

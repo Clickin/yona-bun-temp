@@ -2224,6 +2224,7 @@ export function ProjectDetailPage(props: {
     `member/${detail.viewerUserId ?? 0}/delete`,
   );
   const isGitProject = !detail.vcs || detail.vcs.toLowerCase() === "git";
+  const readmePost = detail.showCode ? null : props.readmePost;
 
   const content = (
     <div className="project-page-wrap">
@@ -2354,35 +2355,58 @@ export function ProjectDetailPage(props: {
           <div className="tab-content">
             <div className="tab-pane active">
               {activeTab === "readme" ? (
-                props.readmePost ? (
-                  <article className="board-view project-readme-post">
-                    <h3>{props.readmePost.title || "README"}</h3>
-                    <MarkdownRenderer
-                      className="readme-body markdown-wrap"
-                      basePath={props.runtimeConfig?.basePath}
-                      issueReferences={props.readmePost.issueReferences}
-                      markdown={props.readmePost.bodyMarkdown}
-                      mentionReferences={props.readmePost.mentionReferences}
-                      ownerName={props.readmePost.ownerName}
-                      projectName={props.readmePost.projectName}
-                    />
-                  </article>
-                ) : detail.readmeFile ? (
-                  <article className="readme-wrap project-git-readme">
-                    <header>
-                      <strong>{detail.readmeFile.name || "README.md"}</strong>
-                    </header>
-                    <MarkdownRenderer
-                      className="readme-body markdown-wrap"
-                      basePath={props.runtimeConfig?.basePath}
-                      markdown={detail.readmeFile.bodyMarkdown}
-                      mentionReferences={detail.readmeFile.mentionReferences}
-                      ownerName={detail.ownerName}
-                      projectName={detail.projectName}
-                    />
-                  </article>
-                ) : (
-                  <div className="bubble-wrap gray readme">
+                <div className="bubble-wrap gray readme">
+                  {readmePost ? (
+                    <div className="readme-wrap project-readme-post">
+                      <header>
+                        <i className="yobicon-book-open vmiddle" />
+                        <strong className="vmiddle"> {readmePost.title || "README"}</strong>
+                        {isGitProject && detail.viewerCanUpdate ? (
+                          <a
+                            className="ybtn vmiddle ml5"
+                            href={`${projectHref}/postform?readme=true`}
+                          >
+                            {legacyMessage(messages, "button.edit")}
+                          </a>
+                        ) : null}
+                      </header>
+                      <MarkdownRenderer
+                        className="readme-body markdown-wrap"
+                        basePath={props.runtimeConfig?.basePath}
+                        issueReferences={readmePost.issueReferences}
+                        markdown={readmePost.bodyMarkdown}
+                        mentionReferences={readmePost.mentionReferences}
+                        ownerName={readmePost.ownerName}
+                        projectName={readmePost.projectName}
+                      />
+                    </div>
+                  ) : detail.readmeFile ? (
+                    <div className="readme-wrap project-git-readme">
+                      <header>
+                        <i className="yobicon-book-open vmiddle" />
+                        <strong className="vmiddle">
+                          {" "}
+                          {detail.readmeFile.name || "README.md"}
+                        </strong>
+                        {isGitProject && detail.viewerCanUpdate ? (
+                          <a
+                            className="ybtn vmiddle ml5"
+                            href={`${projectHref}/postform?readme=true`}
+                          >
+                            {legacyMessage(messages, "button.edit")}
+                          </a>
+                        ) : null}
+                      </header>
+                      <MarkdownRenderer
+                        className="readme-body markdown-wrap"
+                        basePath={props.runtimeConfig?.basePath}
+                        markdown={detail.readmeFile.bodyMarkdown}
+                        mentionReferences={detail.readmeFile.mentionReferences}
+                        ownerName={detail.ownerName}
+                        projectName={detail.projectName}
+                      />
+                    </div>
+                  ) : (
                     <p className="default">
                       {isGitProject ? (
                         <>
@@ -2399,8 +2423,8 @@ export function ProjectDetailPage(props: {
                         <span>{legacyMessage(messages, "project.svn.readme")}</span>
                       )}
                     </p>
-                  </div>
-                )
+                  )}
+                </div>
               ) : null}
               {activeTab === "history" ? (
                 <ProjectHomeHistoryPane detail={detail} messages={props.messages} />

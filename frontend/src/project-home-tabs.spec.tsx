@@ -346,6 +346,7 @@ describe("project home tab parity", () => {
         detail={{
           ...projectHomeDetail,
           defaultTab: "readme",
+          showCode: false,
         }}
         readmePost={{
           authorLabel: "Owner",
@@ -402,7 +403,10 @@ describe("project home tab parity", () => {
       />,
     );
 
-    expect(html).toContain('class="board-view project-readme-post"');
+    expect(html).toContain('class="bubble-wrap gray readme"');
+    expect(html).toContain('class="readme-wrap project-readme-post"');
+    expect(html).toContain('class="yobicon-book-open vmiddle"');
+    expect(html).toContain('class="readme-body markdown-wrap"');
     expect(html).toContain('href="/yona/owner"');
     expect(html).toContain('href="/yona/yona/projectYobi"');
     expect(html).toContain("@ghost");
@@ -435,7 +439,10 @@ describe("project home tab parity", () => {
       },
     });
 
+    expect(html).toContain('class="bubble-wrap gray readme"');
     expect(html).toContain('class="readme-wrap project-git-readme"');
+    expect(html).toContain('class="yobicon-book-open vmiddle"');
+    expect(html).toContain('class="readme-body markdown-wrap"');
     expect(html).toContain('href="/yona/owner"');
     expect(html).toContain('href="/yona/yona/projectYobi"');
     expect(html).toContain("@ghost");

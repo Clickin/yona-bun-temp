@@ -440,7 +440,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `project/partial_issuelabels_editcategory.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/partial_issuelabels_editlabel.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/partial_issuelabels_list.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
-| `project/partial_readme.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_readme.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy `.bubble-wrap.gray.readme` wrapper for empty Git/SVN fallback, Git README file, and DB-backed README post; verifies `.readme-wrap > header + .readme-body.markdown-wrap`, book icon class, edit/create links, mention links, and wrapper/header/body placement |
 | `project/partial_settingmenu.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts the settings submenu appears before `#saveSetting` inside `.project-page-wrap` |
 | `project/partial_webhooks_list.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/setting.scala.html` | P2 project | metric guard passed: `project-settings-parity.e2e.ts` asserts settings form top box, left/right column x/y alignment, 260x188 logo area, description width, and mutation-capable form shell; hidden `watchingCount` selector remains covered by `project-settings-parity.spec.tsx` |
