@@ -233,14 +233,14 @@ test("maps frontend REST API wrapper changes to the API query boundary slice", (
     "frontend/src/api/session.ts",
     "frontend/src/api/translation.ts",
     "frontend/src/api-query.spec.ts",
-    "docs/provenance/core-parity-audit.md",
+    "docs/provenance/ui-parity-reports/ui-parity-issues.md",
   ]);
 
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["frontend-api-query-boundary"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["frontend-api-query-boundary", "parity"]],
   );
 });
 
@@ -349,14 +349,14 @@ test("maps shared frontend query keys to the API query boundary", () => {
   const result = runGate([
     "frontend/src/api/query-keys.ts",
     "frontend/src/api-query.spec.ts",
-    "docs/provenance/core-parity-audit.md",
+    "docs/provenance/ui-parity-reports/ui-parity-search-notification.md",
   ]);
 
   assert.equal(result.verdict, "pass");
   assert.equal(shouldBlockForStrictGate(result), false);
   assert.deepEqual(
-    result.capabilities.map((entry) => entry.id),
-    ["frontend-api-query-boundary"],
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["frontend-api-query-boundary", "parity"]],
   );
 });
 
@@ -368,7 +368,7 @@ test("maps public user profile files to the user workspace provenance slice", ()
     "frontend/src/routes/$user/route.tsx",
     "frontend/src/routes/-workspace-views.tsx",
     "frontend/tests/user-profile-parity.e2e.ts",
-    "docs/provenance/phase-0b/user-workspace.md",
+    "docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md",
   ]);
 
   assert.equal(result.verdict, "pass");
@@ -380,7 +380,7 @@ test("maps public user profile files to the user workspace provenance slice", ()
   assert.deepEqual(
     result.capabilities.map((entry) => [entry.id, entry.status]),
     [
-      ["frontend-api-query-boundary", "partial"],
+      ["frontend-api-query-boundary", "parity"],
       ["public-user-profile", "parity"],
     ],
   );
@@ -391,7 +391,7 @@ test("maps user statistics API client changes to user workspace provenance", () 
     "frontend/src/api/query-keys.ts",
     "frontend/src/api/users.ts",
     "frontend/src/api-query.spec.ts",
-    "docs/provenance/phase-0b/user-workspace.md",
+    "docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md",
   ]);
 
   assert.equal(result.verdict, "pass");

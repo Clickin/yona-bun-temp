@@ -222,7 +222,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "frontend-api-query-boundary",
     label: "Frontend API query boundary",
-    status: "partial",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/(?:milestones|session|translation|types)\.ts$/i,
       /^frontend\/src\/api\/query-keys\.ts$/i,
@@ -250,6 +250,11 @@ const DOMAIN_BUCKETS = [
       "docs/provenance/ui-parity-reports/ui-parity-board-milestone.md",
       "docs/provenance/ui-parity-reports/ui-parity-issues.md",
       "docs/provenance/ui-parity-reports/ui-parity-project-home-admin.md",
+      "docs/provenance/ui-parity-reports/ui-parity-auth-public-entry.md",
+      "docs/provenance/ui-parity-reports/ui-parity-directory-organization.md",
+      "docs/provenance/ui-parity-reports/ui-parity-search-notification.md",
+      "docs/provenance/ui-parity-reports/ui-parity-user-account-settings.md",
+      "docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md",
       "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
     ],
   },
