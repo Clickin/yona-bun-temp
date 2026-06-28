@@ -335,7 +335,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `issue/my_partial_list_quicksearch.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/my_partial_search.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/partial_assignee.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
-| `issue/partial_comment.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
+| `issue/partial_comment.scala.html` | P3 issue | metric guard passed: `issue-detail-parity.e2e.ts` asserts the issue detail top-level comment row with generated comment id/class, avatar/author/ago/share/new-issue/vote/translate/edit/delete hooks, markdown body update metadata, legacy attachment data/marker rendering, row/avatar/media/meta/action/body/attachment display metrics, and comment edit/delete/vote mutation coverage |
 | `issue/partial_comments.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/partial_event_timeline.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |
 | `issue/partial_index_comment.scala.html` | P3 issue | reopen: inspect Scala anchors before JSX reuse |

@@ -71,6 +71,16 @@ function legacyAttachmentSize(attachment: YonaAttachment) {
   return String(attachment.sizeLabel ?? attachment.size ?? "");
 }
 
+function legacyAttachmentMetadata(runtimeConfig: RuntimeConfig, attachments: YonaAttachment[]) {
+  return attachments.map((attachment) => ({
+    fileHref: legacyAttachmentHref(runtimeConfig, attachment),
+    fileId: attachment.id,
+    fileName: attachment.name,
+    fileSize: legacyAttachmentSize(attachment),
+    mimeType: attachment.mimeType ?? "",
+  }));
+}
+
 function LegacyAttachedFileMarker(props: {
   attachment: YonaAttachment;
   runtimeConfig: RuntimeConfig;
@@ -2804,6 +2814,12 @@ export function ProjectIssueDetailPage(props: {
                     )
                       ? "comment mentioned"
                       : "comment";
+                    const commentAttachments =
+                      comment.attachments && comment.attachments.length > 0
+                        ? comment.attachments
+                        : ((issue?.comments ?? []).find(
+                            (issueComment) => Number(issueComment.id) === Number(comment.id),
+                          )?.attachments ?? []);
 
                     return (
                       <li
@@ -2955,7 +2971,7 @@ export function ProjectIssueDetailPage(props: {
                             <div hidden={!commentIsEditing}>
                               <IssueCommentEditForm
                                 action={commentEditAction}
-                                attachments={comment.attachments ?? []}
+                                attachments={commentAttachments}
                                 commentId={comment.id}
                                 csrfToken={props.csrfToken}
                                 getIssueReferencesQueryOptions={
@@ -3008,6 +3024,20 @@ export function ProjectIssueDetailPage(props: {
                               showTasklistBar
                               tasklistSourceMarkdown={comment.contentsMarkdown}
                             />
+                            <div
+                              className="attachments pull-left"
+                              data-attachments={JSON.stringify(
+                                legacyAttachmentMetadata(props.runtimeConfig, commentAttachments),
+                              )}
+                            >
+                              {commentAttachments.map((attachment) => (
+                                <LegacyAttachedFileMarker
+                                  attachment={attachment}
+                                  key={String(attachment.id)}
+                                  runtimeConfig={props.runtimeConfig}
+                                />
+                              ))}
+                            </div>
                           </div>
                         </div>
                         <div className="add-a-comment pull-right">

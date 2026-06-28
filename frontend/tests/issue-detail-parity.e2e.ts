@@ -20,6 +20,173 @@ async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
   return box as LayoutBox;
 }
 
+async function assertLegacyIssueCommentRowMetrics(page: Page) {
+  const commentRow =
+    "section#comments #timeline .timeline-list > ul.comments > li#comment-10.comment:not(.index-comment)";
+  const row = await layoutBox(page, commentRow);
+  const avatar = await layoutBox(page, `${commentRow} > .comment-avatar`);
+  const avatarWrap = await layoutBox(page, `${commentRow} > .comment-avatar .avatar-wrap`);
+  const mediaBody = await layoutBox(page, `${commentRow} > .media-body`);
+  const metaInfo = await layoutBox(page, `${commentRow} .media-body > .meta-info`);
+  const author = await layoutBox(page, `${commentRow} .meta-info > .comment_author`);
+  const responsiveAvatar = await layoutBox(page, `${commentRow} .resp-comment-avatar`);
+  const agoDate = await layoutBox(page, `${commentRow} .meta-info > .ago-date`);
+  const actionRow = await layoutBox(page, `${commentRow} .meta-info > .act-row.pull-right`);
+  const newIssueBy = await layoutBox(page, `${commentRow} .act-row .new-issue-by`);
+  const voteButton = await layoutBox(page, `${commentRow} .act-row .comment-vote`);
+  const translateButton = await layoutBox(page, `${commentRow} .act-row .comment-translate`);
+  const editButton = await layoutBox(page, `${commentRow} [data-toggle="comment-edit"]`);
+  const bodyWrap = await layoutBox(page, `${commentRow} #comment-body-10`);
+  const body = await layoutBox(page, `${commentRow} #comment-body-10 .comment-body.markdown-wrap`);
+  const attachments = await layoutBox(
+    page,
+    `${commentRow} #comment-body-10 .attachments.pull-left`,
+  );
+  const attachedFile = await layoutBox(
+    page,
+    `${commentRow} #comment-body-10 .attached-file-marker`,
+  );
+  const styles = await page.locator(commentRow).evaluate((element) => {
+    const rowStyle = window.getComputedStyle(element);
+    const avatarStyle = window.getComputedStyle(
+      element.querySelector(":scope > .comment-avatar") as HTMLElement,
+    );
+    const mediaBodyStyle = window.getComputedStyle(
+      element.querySelector(":scope > .media-body") as HTMLElement,
+    );
+    const metaInfoStyle = window.getComputedStyle(
+      element.querySelector(".media-body > .meta-info") as HTMLElement,
+    );
+    const actionRowStyle = window.getComputedStyle(
+      element.querySelector(".act-row.pull-right") as HTMLElement,
+    );
+    const bodyStyle = window.getComputedStyle(
+      element.querySelector(".comment-body.markdown-wrap") as HTMLElement,
+    );
+    const attachmentsStyle = window.getComputedStyle(
+      element.querySelector(".attachments.pull-left") as HTMLElement,
+    );
+    const attachedFileStyle = window.getComputedStyle(
+      element.querySelector("#comment-body-10 .attached-file-marker") as HTMLElement,
+    );
+    return {
+      actionRowFloat: actionRowStyle.float,
+      attachedFileDisplay: attachedFileStyle.display,
+      attachmentsDisplay: attachmentsStyle.display,
+      avatarDisplay: avatarStyle.display,
+      bodyDisplay: bodyStyle.display,
+      mediaBodyDisplay: mediaBodyStyle.display,
+      metaInfoDisplay: metaInfoStyle.display,
+      rowDisplay: rowStyle.display,
+    };
+  });
+
+  await expect(page.locator(commentRow)).toHaveCount(1);
+  await expect(page.locator(`${commentRow} > .comment-avatar .avatar-wrap`)).toHaveAttribute(
+    "href",
+    "/yona/admin",
+  );
+  await expect(page.locator(`${commentRow} > .comment-avatar .avatar-wrap`)).toHaveAttribute(
+    "data-toggle",
+    "tooltip",
+  );
+  await expect(page.locator(`${commentRow} .comment_author .resp-comment-avatar`)).toHaveCount(1);
+  await expect(page.locator(`${commentRow} .comment_author > a`)).toHaveAttribute(
+    "href",
+    "/yona/admin",
+  );
+  await expect(page.locator(`${commentRow} .comment_author > a strong`)).toContainText("Admin");
+  await expect(page.locator(`${commentRow} .ago-date a.ago[href="#comment-10"]`)).toContainText(
+    "just now",
+  );
+  await expect(page.locator(`${commentRow} .ago-date a.share-link[href="#comment-10"]`)).toHaveCSS(
+    "display",
+    "none",
+  );
+  await expect(page.locator(`${commentRow} .new-issue-by a`)).toHaveAttribute(
+    "href",
+    "/yona/user/issues/new?commentId=10",
+  );
+  await expect(page.locator(`${commentRow} .comment-vote`)).toHaveAttribute(
+    "data-request-type",
+    "comment-vote",
+  );
+  await expect(page.locator(`${commentRow} .comment-vote`)).toHaveAttribute(
+    "data-request-uri",
+    "/yona/admin/projectYobi/issue/1/comment/10/vote",
+  );
+  await expect(page.locator(`${commentRow} .comment-vote .vote-heart-off`)).toHaveCount(1);
+  await expect(page.locator(`${commentRow} .comment-translate`)).toHaveAttribute(
+    "data-comment-id",
+    "10",
+  );
+  await expect(page.locator(`${commentRow} [data-toggle="comment-edit"]`)).toHaveAttribute(
+    "data-comment-id",
+    "10",
+  );
+  await expect(page.locator(`${commentRow} [data-toggle="comment-delete"]`)).toHaveCount(0);
+  await expect(page.locator(`${commentRow} #comment-body-10 .comment-body`)).toHaveAttribute(
+    "data-allowed-update",
+    "true",
+  );
+  await expect(page.locator(`${commentRow} #comment-body-10 .comment-body`)).toContainText(
+    "Editable comment",
+  );
+  await expect(
+    page.locator(`${commentRow} #comment-body-10 .attachments.pull-left`),
+  ).toHaveAttribute(
+    "data-attachments",
+    JSON.stringify([
+      {
+        fileHref: "/yona/files/710",
+        fileId: 710,
+        fileName: "legacy-comment.txt",
+        fileSize: "2 KB",
+        mimeType: "text/plain",
+      },
+    ]),
+  );
+  await expect(
+    page.locator(`${commentRow} #comment-body-10 .attached-file-marker`),
+  ).toHaveAttribute("data-name", "legacy-comment.txt");
+  await expect(
+    page.locator(`${commentRow} #comment-body-10 .attached-file-marker`),
+  ).toHaveAttribute("data-href", "/yona/files/710");
+  await expect(
+    page.locator(`${commentRow} #comment-body-10 .attached-file-marker .name`),
+  ).toContainText("legacy-comment.txt");
+  await expect(
+    page.locator(`${commentRow} #comment-body-10 .attached-file-marker .size`),
+  ).toContainText("2 KB");
+
+  expect(avatar.x).toBeGreaterThanOrEqual(row.x);
+  expect(avatarWrap.x).toBeGreaterThanOrEqual(avatar.x);
+  expect(mediaBody.x).toBeGreaterThan(avatar.x + avatar.width - 1);
+  expect(metaInfo.y).toBeGreaterThanOrEqual(mediaBody.y);
+  expect(author.x).toBeGreaterThanOrEqual(metaInfo.x);
+  expect(responsiveAvatar.x).toBeGreaterThanOrEqual(author.x);
+  expect(agoDate.x).toBeGreaterThan(author.x + author.width - 1);
+  expect(actionRow.x).toBeGreaterThan(agoDate.x + agoDate.width - 1);
+  expect(newIssueBy.x).toBeGreaterThanOrEqual(actionRow.x);
+  expect(voteButton.x).toBeGreaterThan(newIssueBy.x + newIssueBy.width - 1);
+  expect(translateButton.x).toBeGreaterThan(voteButton.x + voteButton.width - 1);
+  expect(editButton.x).toBeGreaterThan(translateButton.x + translateButton.width - 1);
+  expect(bodyWrap.y).toBeGreaterThan(metaInfo.y + metaInfo.height - 1);
+  expect(body.y).toBeGreaterThanOrEqual(bodyWrap.y);
+  expect(attachments.y).toBeGreaterThan(body.y + body.height - 1);
+  expect(attachedFile.x).toBeGreaterThanOrEqual(attachments.x);
+  expect(styles).toEqual({
+    actionRowFloat: "right",
+    attachedFileDisplay: "inline-block",
+    attachmentsDisplay: "block",
+    avatarDisplay: "block",
+    bodyDisplay: "block",
+    mediaBodyDisplay: "block",
+    metaInfoDisplay: "block",
+    rowDisplay: "list-item",
+  });
+}
+
 const projectContainer = {
   cloneUrl: "https://example.com/admin/projectYobi.git",
   dashboard: {
@@ -275,6 +442,29 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     commentParentLinks: [{ id: 31, parentCommentId: 30 }],
     viewerUserId: 1,
     comments: [
+      {
+        attachments: [
+          {
+            id: 710,
+            mimeType: "text/plain",
+            name: "legacy-comment.txt",
+            size: "2 KB",
+            url: "/files/710",
+          },
+        ],
+        authorAvatarUrl: "",
+        authorId: 1,
+        authorLabel: "Admin",
+        authorLoginId: "admin",
+        contentsMarkdown: "Editable **comment**",
+        createdLabel: "just now",
+        id: 10,
+        viewerCanDelete: false,
+        viewerCanUpdate: true,
+        viewerHasVoted: false,
+        voterCount: 0,
+        voters: [],
+      },
       {
         authorAvatarUrl: "",
         authorLabel: "Admin",
@@ -887,6 +1077,7 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await expect(fullTimeline).not.toContainText("issue.event.");
 
   await expect(fullTimeline.locator("#comment-10")).toContainText("Editable comment");
+  await assertLegacyIssueCommentRowMetrics(page);
   await fullTimeline.locator("#comment-10").hover();
   await fullTimeline.locator("#comment-10 button:has(.yobicon-edit-2)").click();
   const commentUpdateForm = fullTimeline.locator("#comment-editform-10.comment-update-form");
