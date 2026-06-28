@@ -228,6 +228,38 @@ test("public user profile route preserves the legacy user view shell", async ({ 
   await expect(page.getByText("Default landing")).toHaveCount(0);
   await expect(page.getByText("Sign out")).toHaveCount(0);
   await expect(page.getByText("Edit Profile")).toHaveCount(0);
+
+  const breadcrumb = await layoutBox(page, ".site-breadcrumb-outer");
+  const pageWrapOuter = await layoutBox(page, ".page-wrap-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap");
+  const userBox = await layoutBox(page, ".user-box");
+  const infoBox = await layoutBox(page, ".user-info-box");
+  const avatarBox = await layoutBox(page, ".whoami-wrap");
+  const whoami = await layoutBox(page, ".whoami.usf-group");
+  const streamBox = await layoutBox(page, ".user-stream-box");
+  const daysAgoControl = await layoutBox(page, "#daysAgoBtn");
+  const mainTabs = await layoutBox(page, ".user-stream-box > .nav.nav-tabs");
+  const activeProjectsTab = await layoutBox(page, ".user-stream-box > .nav.nav-tabs > li.active");
+  const tabContent = await layoutBox(page, ".user-stream-box > .tab-content");
+  const projectsPane = await layoutBox(page, "#projects");
+  const projectsList = await layoutBox(page, "#projects .user-streams.all-projects");
+  const projectRow = await layoutBox(page, "#projects .user-streams.all-projects .project");
+
+  expect(pageWrapOuter.y).toBeGreaterThan(breadcrumb.y + breadcrumb.height - 1);
+  expect(pageWrap.x).toBeGreaterThanOrEqual(pageWrapOuter.x);
+  expect(userBox.y).toBeGreaterThanOrEqual(pageWrap.y);
+  expect(infoBox.x).toBeCloseTo(userBox.x, 0);
+  expect(streamBox.x).toBeGreaterThanOrEqual(userBox.x);
+  expect(streamBox.y).toBeGreaterThan(infoBox.y);
+  expect(avatarBox.y).toBeGreaterThanOrEqual(infoBox.y);
+  expect(whoami.y).toBeGreaterThan(avatarBox.y + avatarBox.height - 1);
+  expect(daysAgoControl.y).toBeGreaterThanOrEqual(streamBox.y);
+  expect(mainTabs.y).toBeGreaterThanOrEqual(streamBox.y);
+  expect(activeProjectsTab.y).toBeGreaterThanOrEqual(mainTabs.y);
+  expect(tabContent.y).toBeGreaterThan(mainTabs.y + mainTabs.height - 1);
+  expect(projectsPane.y).toBeGreaterThanOrEqual(tabContent.y);
+  expect(projectsList.y).toBeGreaterThanOrEqual(projectsPane.y);
+  expect(projectRow.y).toBeGreaterThanOrEqual(projectsList.y);
 });
 
 test("public user profile issue and project partials preserve legacy row anchors and metrics", async ({
@@ -468,6 +500,38 @@ test("public user profile tabs preserve the legacy selected query state on click
   await page.locator(".nav.nav-tabs > li a[href='#pullRequests']").click();
   await expect(page.locator(".nav.nav-tabs > li.active a[href='#pullRequests']")).toBeVisible();
   await expect(page.locator("#pullRequests")).toHaveClass(/active/);
+  await expect(page.locator("#pullRequests .post-list-wrap > .post-item")).toHaveCount(1);
+  await expect(page.locator("#pullRequests .title.project")).toHaveAttribute(
+    "href",
+    "/yona/owner/publicYobi",
+  );
+  await expect(page.locator("#pullRequests .title-wrap > a.title").nth(1)).toHaveAttribute(
+    "href",
+    "/yona/owner/publicYobi/pullRequest/3",
+  );
+  await expect(page.locator("#pullRequests .infos-icon-link")).toHaveCount(0);
+
+  const pullRequestPane = await layoutBox(page, "#pullRequests");
+  const pullRequestList = await layoutBox(page, "#pullRequests .post-list-wrap.row-fluid");
+  const pullRequestRow = await layoutBox(page, "#pullRequests .post-item");
+  const pullRequestLeft = await layoutBox(page, "#pullRequests .post-item > .span10");
+  const pullRequestAvatar = await layoutBox(page, "#pullRequests .avatar-wrap.mlarge");
+  const pullRequestTitleWrap = await layoutBox(page, "#pullRequests .title-wrap");
+  const pullRequestInfos = await layoutBox(page, "#pullRequests .infos");
+  const pullRequestRight = await layoutBox(page, "#pullRequests .post-item > .span2");
+  const pullRequestAssignee = await layoutBox(page, "#pullRequests .avatar-wrap.assinee");
+  const pullRequestState = await layoutBox(page, "#pullRequests .state.pull-right");
+
+  expect(pullRequestList.y).toBeGreaterThanOrEqual(pullRequestPane.y);
+  expect(pullRequestRow.y).toBeGreaterThanOrEqual(pullRequestList.y);
+  expect(pullRequestLeft.x).toBeGreaterThanOrEqual(pullRequestRow.x);
+  expect(pullRequestRight.x).toBeGreaterThan(pullRequestLeft.x + pullRequestLeft.width - 1);
+  expect(pullRequestAvatar.x).toBeGreaterThanOrEqual(pullRequestLeft.x);
+  expect(pullRequestTitleWrap.x).toBeGreaterThan(pullRequestAvatar.x + pullRequestAvatar.width - 1);
+  expect(pullRequestInfos.y).toBeGreaterThan(pullRequestTitleWrap.y);
+  expect(pullRequestAssignee.x).toBeGreaterThanOrEqual(pullRequestRight.x);
+  expect(pullRequestState.x).toBeGreaterThanOrEqual(pullRequestRight.x);
+  expect(pullRequestState.y).toBeGreaterThanOrEqual(pullRequestRight.y);
   await expect(page.locator("#daysAgoBtn")).toHaveValue("7");
   await expect(page).toHaveURL(/\/yona\/door\?daysAgo=7&selected=projects$/);
 
@@ -652,6 +716,38 @@ test("profile, user issues, and user files preserve legacy mobile shells", async
     "owner / publicYobi #11",
   );
   await expect(page.locator("body")).not.toContainText("user.files");
+
+  const filesPageWrapOuter = await layoutBox(page, ".user-files-page > .page-wrap-outer");
+  const filesPageWrap = await layoutBox(page, ".user-files-page .page-wrap");
+  const filesTabs = await layoutBox(page, ".user-files-page .page-wrap > .nav.nav-tabs");
+  const filesSearch = await layoutBox(page, ".user-file-search.search.search-bar");
+  const filesSearchInput = await layoutBox(page, ".user-file-search input[name='filter']");
+  const filesSearchButton = await layoutBox(page, ".user-file-search .search-btn");
+  const filesTable = await layoutBox(page, ".attachment-files");
+  const filesHeader = await layoutBox(page, ".attachment-files-header.row");
+  const fileRow = await layoutBox(page, ".attachment-file-detail.row");
+  const filePreview = await layoutBox(page, ".attachment-file-detail .file-preview");
+  const fileName = await layoutBox(page, ".attachment-file-detail .file-name");
+  const fileSize = await layoutBox(page, ".attachment-file-detail .file-size");
+  const fileDownload = await layoutBox(page, ".attachment-file-detail .file-download");
+  const fileDate = await layoutBox(page, ".attachment-file-detail .file-date");
+  const fileLocation = await layoutBox(page, ".attachment-file-detail .file-location");
+  const filesPagination = await layoutBox(page, ".user-files-page #pagination");
+
+  expect(filesPageWrap.y).toBeGreaterThanOrEqual(filesPageWrapOuter.y);
+  expect(filesTabs.y).toBeGreaterThanOrEqual(filesPageWrap.y);
+  expect(filesSearch.y).toBeGreaterThan(filesTabs.y + filesTabs.height - 1);
+  expect(filesSearchButton.x).toBeGreaterThan(filesSearchInput.x + filesSearchInput.width - 1);
+  expect(filesTable.y).toBeGreaterThan(filesSearch.y + filesSearch.height - 1);
+  expect(filesHeader.y).toBeGreaterThanOrEqual(filesTable.y);
+  expect(fileRow.y).toBeGreaterThan(filesHeader.y + filesHeader.height - 1);
+  expect(filePreview.x).toBeGreaterThanOrEqual(fileRow.x);
+  expect(fileName.y).toBeGreaterThanOrEqual(filePreview.y);
+  expect(fileSize.y).toBeGreaterThanOrEqual(fileName.y);
+  expect(fileDownload.y).toBeGreaterThanOrEqual(fileSize.y);
+  expect(fileDate.y).toBeGreaterThanOrEqual(fileDownload.y);
+  expect(fileLocation.y).toBeGreaterThanOrEqual(fileDate.y);
+  expect(filesPagination.y).toBeGreaterThan(filesTable.y + filesTable.height - 1);
   await expect
     .poll(() => apiRequests.some((request) => request.includes("/api/v1/workspace/files")))
     .toBe(true);
