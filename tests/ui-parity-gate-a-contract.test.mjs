@@ -126,6 +126,40 @@ function parseResetQueueCounts(summarySection) {
   return counts;
 }
 
+function parseMarkdownRow(line) {
+  return line
+    .split("|")
+    .slice(1, -1)
+    .map((column) => column.trim().replaceAll("`", ""));
+}
+
+function templateFirstFindingRows(reportSource) {
+  const rows = [];
+  let headers = null;
+
+  for (const line of reportSource.split("\n")) {
+    if (line.startsWith("| legacy template")) {
+      headers = parseMarkdownRow(line).map((column) => column.toLowerCase());
+      continue;
+    }
+    if (headers === null) {
+      continue;
+    }
+    if (!line.startsWith("|")) {
+      headers = null;
+      continue;
+    }
+    if (line.includes("---")) {
+      continue;
+    }
+
+    const row = parseMarkdownRow(line);
+    rows.push(Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""])));
+  }
+
+  return rows;
+}
+
 function parseInventoryCounts(resultInventorySection) {
   const counts = Object.fromEntries(inventoryStatuses.map((status) => [status, 0]));
 
@@ -307,11 +341,32 @@ test("template-first UI parity directive close condition stays satisfied", () =>
 
     const reportSource = readText(reportPath);
     const counts = parseResetQueueCounts(section(reportSource, "Open Reset Queue Summary"));
+    const findingRows = templateFirstFindingRows(reportSource);
     assert.equal(counts.get("covered") > 0, true, `${packet} needs covered evidence`);
     assert.deepEqual(blockerRows(reportSource), [], `${packet} has row-level blockers`);
+    assert.equal(findingRows.length > 0, true, `${packet} needs reset finding rows`);
 
     for (const status of blockingStatuses) {
       assert.equal(counts.get(status) ?? 0, 0, `${packet} has nonzero ${status} rows`);
+    }
+
+    for (const [index, row] of findingRows.entries()) {
+      for (const column of [
+        "legacy route/state",
+        "current file",
+        "defect class",
+        "status",
+        "owner packet",
+        "verification evidence",
+      ]) {
+        assert.notEqual(row[column], "", `${packet} row ${index + 1} is missing ${column}`);
+      }
+      const normalizedStatus = row.status.startsWith("covered") ? "covered" : row.status;
+      assert.equal(
+        ["covered", "deferred", "not-applicable"].includes(normalizedStatus),
+        true,
+        `${packet} row ${index + 1} has non-closed status ${row.status}`,
+      );
     }
   }
 });
