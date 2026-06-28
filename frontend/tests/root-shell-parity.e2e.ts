@@ -43,6 +43,11 @@ async function expectNoVisibleRawLegacyKeys(page: Page): Promise<void> {
   expect(rawKeys, `visible raw legacy message keys in:\n${bodyText}`).toEqual([]);
 }
 
+async function expectNoDormantDebugFragment(page: Page): Promise<void> {
+  await expect(page.locator("body")).not.toContainText(/^lang =/m);
+  await expect(page.locator("body > .container", { hasText: /^lang =/ })).toHaveCount(0);
+}
+
 async function installRuntimeConfig(
   page: Page,
   overrides: Record<string, unknown> = {},
@@ -188,6 +193,7 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
 
   await page.goto("/yona/");
   await expectNoVisibleRawLegacyKeys(page);
+  await expectNoDormantDebugFragment(page);
 
   await expect(page.locator(".gnb-outer .gnb-inner")).toBeVisible();
   await expect(page.locator('a.logo.logo-letter[href="/yona"]')).toBeVisible();
@@ -384,6 +390,7 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
 
   await page.goto("/yona/me");
   await expectNoVisibleRawLegacyKeys(page);
+  await expectNoDormantDebugFragment(page);
 
   await expect(page.locator(".admin-logged-in-affix")).toBeVisible();
   await expect(page.locator(".gnb-usermenu a[href='/yona/user/issues']")).toBeVisible();
@@ -403,7 +410,9 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   const sidebarTabs = await layoutBox(page, "#mySidenav .nav.nav-tabs");
   const sidebarTabContent = await layoutBox(page, "#usermenu-tab-content-list");
   const orgPane = await layoutBox(page, "#myOrganizationList");
+  await page.locator('#mySidenav .nav.nav-tabs a[href="#myProjectList"]').click();
   const projectPane = await layoutBox(page, "#myProjectList");
+  await page.locator('#mySidenav .nav.nav-tabs a[href="#myRecentIssueList"]').click();
   const recentPane = await layoutBox(page, "#myRecentIssueList");
 
   expect(Math.round(sidebar.width)).toBeGreaterThanOrEqual(360);
@@ -461,6 +470,7 @@ test("standalone legacy pages suppress root chrome", async ({ page }) => {
 
   await page.goto("/yona/secret");
   await expectNoVisibleRawLegacyKeys(page);
+  await expectNoDormantDebugFragment(page);
 
   await expect(page).toHaveTitle("Tada! Welcome to Yona!");
   await expect(page.locator(".gnb-outer")).toHaveCount(0);
@@ -471,6 +481,7 @@ test("standalone legacy pages suppress root chrome", async ({ page }) => {
 
   await page.goto("/yona/restart");
   await expectNoVisibleRawLegacyKeys(page);
+  await expectNoDormantDebugFragment(page);
   await expect(page.locator(".gnb-outer")).toHaveCount(0);
   await expect(page.locator("#mySidenav")).toHaveCount(0);
   await expect(page.locator(".secret-page .secret-wrap.restart")).toBeVisible();
@@ -480,6 +491,7 @@ test("standalone legacy pages suppress root chrome", async ({ page }) => {
 
   await page.goto("/yona/_UIKit");
   await expectNoVisibleRawLegacyKeys(page);
+  await expectNoDormantDebugFragment(page);
   await expect(page.locator("#mySidenav")).toHaveCount(0);
   await expect(page.locator("header.gnb-outer")).toHaveCount(1);
   await expect(page.locator("header.gnb-outer .subtitle")).toHaveText("Yobi UI");
