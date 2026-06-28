@@ -79,6 +79,16 @@ Rules:
   evidence and does not replace the older combined legacy status-delta
   classification below.
 
+## 2026-06-28 Gate Checkpoint
+
+Active P0-P7 app-runtime UI surfaces are closed for the template-first goal.
+`tests/yona-legacy-parity-gate.test.mjs` guards representative UI surfaces so
+any active UI bucket returning `gap`, `partial`, or `deferred` fails the gate
+test. The remaining non-parity gate buckets are infrastructure/deferred
+tracking (`acl-baseline`, `canonical-schema-and-persistence-foundation`,
+`second-priority-deferred`, `rust-foundation-and-runtime-bootstrap`) and are not
+current UI blockers unless new UI evidence maps into them.
+
 ## Integrated Status Delta Classification
 
 These rows are from `output/playwright/visual-sweep/latest.json` checked at
