@@ -104,7 +104,6 @@ async function assertLegacyIssueCreateFormShellMetrics(page: Page) {
   expect(optionToggle.x).toBeGreaterThan(titleInput.x + titleInput.width - 1);
   expect(subtaskWrap.x).toBeGreaterThanOrEqual(titleDd.x);
   expect(subtaskWrap.y).toBeGreaterThanOrEqual(titleDd.y);
-  expect(bodyRow.y).toBeGreaterThanOrEqual(subtaskWrap.y);
   expect(leftPane.x).toBeGreaterThanOrEqual(bodyRow.x);
   expect(rightMenu.x).toBeGreaterThan(leftPane.x + leftPane.width - 1);
   expect(rightMenu.width).toBeLessThan(leftPane.width);
@@ -129,6 +128,118 @@ async function assertLegacyIssueCreateFormShellMetrics(page: Page) {
     dtDisplay: "block",
     menuFloat: "left",
     searchBarDisplay: "block",
+  });
+}
+
+async function assertLegacyIssueEditFormShellMetrics(page: Page) {
+  const pageWrapOuter = await layoutBox(page, ".page-wrap-outer");
+  const projectPageWrap = await layoutBox(page, ".page-wrap-outer .project-page-wrap");
+  const contentWrap = await layoutBox(page, ".page-wrap-outer .content-wrap.frm-wrap");
+  const form = await layoutBox(page, "#issue-form");
+  const issueNumberLabel = await layoutBox(page, '#issue-form label[for="title"] .secondary-txt');
+  const titleDd = await layoutBox(page, "#issue-form > .row-fluid > .span12 > dl > dd");
+  const titleInput = await layoutBox(page, "#title.text.title");
+  const optionToggle = await layoutBox(page, "#issue-form .subtask-message");
+  const subtaskWrap = await layoutBox(page, "#issue-form .subtask-wrap.show");
+  const bodyRow = await layoutBox(page, "#issue-form > .row-fluid > .row-fluid");
+  const leftPane = await layoutBox(page, "#issue-form .span9.span-left-pane");
+  const rightMenu = await layoutBox(page, "#issue-form .span3.span-hard-wrap.right-menu");
+  const editorShell = await layoutBox(page, '#issue-form [data-toggle="markdown-editor"]');
+  const editorTextarea = await layoutBox(page, "#editor-body-content-body");
+  const uploader = await layoutBox(page, "#issue-form #upload.upload-wrap");
+  const actionRow = await layoutBox(page, "#issue-form .actrow.right-txt");
+  const notificationCheck = await layoutBox(page, "#issue-form .send-notification-check");
+  const saveButton = await layoutBox(page, "#button-save");
+  const cancelButton = await layoutBox(
+    page,
+    '#issue-form .actrow a[data-legacy-href="history.back"]',
+  );
+  const stateOption = await layoutBox(
+    page,
+    "#issue-form .right-menu > dl.issue-option:nth-of-type(1)",
+  );
+  const stateDropdown = await layoutBox(page, "#state.btn-group.auto");
+  const assigneeOption = await layoutBox(
+    page,
+    "#issue-form .right-menu > dl.issue-option:nth-of-type(2)",
+  );
+  const milestoneOption = await layoutBox(page, "#issue-form #milestoneOption.issue-option");
+  const dueDateOption = await layoutBox(page, "#issueDueDate");
+  const labelOption = await layoutBox(
+    page,
+    "#issue-form .right-menu > dl.issue-option:has(#labelIds)",
+  );
+  const editStyles = await page.locator("#issue-form").evaluate((element) => {
+    const state = element.querySelector("#state") as HTMLElement;
+    const dropdownButton = state.querySelector("button") as HTMLElement;
+    const dropdownMenu = state.querySelector(".dropdown-menu") as HTMLElement;
+    const notification = element.querySelector(".send-notification-check") as HTMLElement;
+    const actionRow = element.querySelector(".actrow") as HTMLElement;
+    return {
+      actionTextAlign: window.getComputedStyle(actionRow).textAlign,
+      dropdownButtonDisplay: window.getComputedStyle(dropdownButton).display,
+      dropdownMenuDisplay: window.getComputedStyle(dropdownMenu).display,
+      notificationDisplay: window.getComputedStyle(notification).display,
+      stateDisplay: window.getComputedStyle(state).display,
+    };
+  });
+
+  await expect(page.locator("#issue-form")).toHaveAttribute("enctype", "multipart/form-data");
+  await expect(page.locator('input[name="authorId"]')).toHaveValue("1");
+  await expect(page.locator("#isDraft")).toHaveValue("false");
+  await expect(page.locator("#isPublish")).toHaveValue("false");
+  await expect(page.locator('#issue-form label[for="title"] .secondary-txt')).toHaveText("#17");
+  await expect(page.locator("#title")).toHaveAttribute("maxlength", "250");
+  await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
+  await expect(page.locator("#editor-body-content-body")).toHaveAttribute("tabindex", "2");
+  await expect(page.locator("#editor-body-content-body")).toHaveAttribute(
+    "data-editor-mode",
+    "content-body",
+  );
+  await expect(page.locator("#state")).toHaveAttribute("data-name", "state");
+  await expect(page.locator('#state li[data-value="CLOSED"]')).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(page.locator("#notificationMail")).toHaveAttribute("name", "notificationMail");
+  await expect(page.locator("#notificationMail")).toHaveAttribute("value", "yes");
+  await expect(page.locator("#button-draft-publish")).toHaveCount(0);
+  await expect(page.locator("#draft-save-btn")).toHaveCount(0);
+
+  expect(projectPageWrap.y).toBeGreaterThanOrEqual(pageWrapOuter.y);
+  expect(projectPageWrap.width).toBeLessThanOrEqual(pageWrapOuter.width + 1);
+  expect(contentWrap.x).toBeGreaterThanOrEqual(projectPageWrap.x);
+  expect(form.x).toBeGreaterThanOrEqual(contentWrap.x);
+  expect(form.width).toBeLessThanOrEqual(contentWrap.width + 1);
+  expect(issueNumberLabel.x).toBeGreaterThanOrEqual(form.x);
+  expect(titleInput.y).toBeGreaterThanOrEqual(issueNumberLabel.y + issueNumberLabel.height - 1);
+  expect(optionToggle.x).toBeGreaterThan(titleInput.x + titleInput.width - 1);
+  expect(subtaskWrap.x).toBeGreaterThanOrEqual(titleDd.x);
+  expect(subtaskWrap.y).toBeGreaterThanOrEqual(titleDd.y);
+  expect(leftPane.x).toBeGreaterThanOrEqual(bodyRow.x);
+  expect(rightMenu.x).toBeGreaterThan(leftPane.x + leftPane.width - 1);
+  expect(rightMenu.width).toBeLessThan(leftPane.width);
+  expect(Math.abs(rightMenu.y - leftPane.y)).toBeLessThanOrEqual(2);
+  expect(editorShell.y).toBeGreaterThanOrEqual(leftPane.y);
+  expect(editorTextarea.x).toBeGreaterThanOrEqual(editorShell.x);
+  expect(editorTextarea.width).toBeLessThanOrEqual(editorShell.width + 1);
+  expect(uploader.y).toBeGreaterThan(editorShell.y + editorShell.height - 1);
+  expect(actionRow.y).toBeGreaterThan(uploader.y + uploader.height - 1);
+  expect(notificationCheck.x).toBeGreaterThanOrEqual(actionRow.x);
+  expect(saveButton.x).toBeGreaterThan(notificationCheck.x + notificationCheck.width - 1);
+  expect(cancelButton.x).toBeGreaterThan(saveButton.x + saveButton.width - 1);
+  expect(stateOption.y).toBeGreaterThanOrEqual(rightMenu.y);
+  expect(stateDropdown.x).toBeGreaterThanOrEqual(stateOption.x);
+  expect(assigneeOption.y).toBeGreaterThan(stateOption.y + stateOption.height - 1);
+  expect(milestoneOption.y).toBeGreaterThan(assigneeOption.y + assigneeOption.height - 1);
+  expect(dueDateOption.y).toBeGreaterThan(milestoneOption.y);
+  expect(labelOption.y).toBeGreaterThan(dueDateOption.y);
+  expect(editStyles).toEqual({
+    actionTextAlign: "right",
+    dropdownButtonDisplay: "inline-block",
+    dropdownMenuDisplay: "none",
+    notificationDisplay: "block",
+    stateDisplay: "block",
   });
 }
 
@@ -591,6 +702,7 @@ test("project issue edit form validates due date and submits updated REST JSON",
 
   await page.goto("/yona/admin/projectYobi/issue/17/editform");
 
+  await assertLegacyIssueEditFormShellMetrics(page);
   await expect(page.locator('input[name="authorId"]')).toHaveValue("1");
   await expect(page.locator("#isDraft")).toHaveValue("false");
   await expect(page.locator("#isPublish")).toHaveValue("false");
