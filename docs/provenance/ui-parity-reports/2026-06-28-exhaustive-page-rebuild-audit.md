@@ -181,12 +181,12 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `board/create.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
-| `board/edit.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
-| `board/list.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
-| `board/partial_comments.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
-| `board/partial_list.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
-| `board/view.scala.html` | P4 board | reopen: inspect Scala anchors before JSX reuse |
+| `board/create.scala.html` | P4 board | metric guard passed: `board-posting-parity.e2e.ts` asserts legacy project shell, title/editor/uploader/options/actions vertical order, 97% title width, full textarea width, hidden fields, upload, and TanStack mutation boundary |
+| `board/edit.scala.html` | P4 board | metric guard passed: `board-posting-parity.e2e.ts` asserts edit label/title/editor/uploader/options/actions order, notification checkbox, readme/notice controls, and TanStack mutation boundary |
+| `board/list.scala.html` | P4 board | metric guard passed: `board-posting-parity.e2e.ts` asserts project shell stack, toolbar/search/write button alignment, sort/filter/notice/list/pagination order, and board row avatar/title/meta alignment |
+| `board/partial_comments.scala.html` | P4 board | metric guard passed: `board-posting-parity.e2e.ts` asserts comment header, comment avatar/media-body alignment, attachment metadata, edit/delete hooks, comment form order, uploads, and mutation boundaries |
+| `board/partial_list.scala.html` | P4 board | metric guard passed: `board-posting-parity.e2e.ts` asserts notice and normal post rows, avatar, title, README badge, comment count, label anchors, author links, and pagination alignment |
+| `board/view.scala.html` | P4 board | metric guard passed: `board-posting-parity.e2e.ts` asserts board header/title, left/right pane alignment, author/body/attachments/actions/comment ordering, watch/label/delete/comment mutations, and modal hooks |
 
 ### `code/`
 

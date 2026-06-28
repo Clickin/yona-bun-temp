@@ -2166,6 +2166,46 @@ h1 {
   margin-top: 18px;
 }
 
+.post-list-wrap {
+  padding-left: 0;
+  list-style: none;
+}
+
+.post-list-wrap .post-item {
+  display: block;
+  clear: both;
+  padding: 10px;
+  overflow: auto;
+  border-bottom: 1px solid #ddd;
+}
+
+.post-list-wrap .post-item .avatar-wrap {
+  float: left;
+  margin-right: 10px;
+}
+
+.post-list-wrap .post-item .title-wrap {
+  position: relative;
+  display: block;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-list-wrap .post-item .post-id {
+  margin-right: 5px;
+  color: #999;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.post-list-wrap .post-item .title {
+  color: #333;
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .notice-wrap {
   padding: 10px 0;
   border-bottom: 1px solid #e4e4e4;
@@ -3124,6 +3164,51 @@ div.markdown-preview {
   gap: 8px;
   align-items: center;
   margin-top: 14px;
+}
+
+.content-wrap .text {
+  width: 97%;
+}
+
+.content-wrap textarea.content {
+  height: 300px;
+}
+
+.content-wrap textarea.text {
+  resize: vertical;
+}
+
+.content-wrap .title {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  font-size: 18px;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  border-radius: 0 !important;
+}
+
+.content-wrap .content {
+  height: 190px;
+}
+
+.content-wrap .actions {
+  position: relative;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.textarea-box {
+  position: relative;
+  display: block;
+  padding: 0 14px 0 0;
+  margin: 0;
+}
+
+.textarea-box textarea {
+  width: 100%;
+  resize: vertical !important;
+  border-radius: 0 0 3px 3px;
+  font-size: 1em;
 }
 
 .pull-request-actions,

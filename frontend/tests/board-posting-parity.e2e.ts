@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +6,19 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
 
 const boardLabel = {
   categoryId: "1",
@@ -517,6 +530,73 @@ test("project board list honors filter label sort notice and route parity", asyn
   await expect(page.locator(".post-list-wrap").last()).toBeVisible();
 });
 
+test("project board list keeps legacy layout size and alignment metrics", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto(
+    "/yona/admin/projectYobi/posts?filter=guide&labelIds[]=5&orderBy=createdDate&orderDir=asc&pageNum=1",
+  );
+
+  await expect(page.locator(".post-list.project-page-wrap")).toBeVisible();
+  await expect(page.locator(".post-list-wrap.notice-wrap .post-item.title")).toHaveCount(1);
+  await expect(page.locator(".post-list-wrap").last().locator(".post-item.title")).toHaveCount(2);
+
+  const navbar = await layoutBox(page, ".gnb-outer.project-header");
+  const header = await layoutBox(page, ".project-header-outer");
+  const projectMenu = await layoutBox(page, ".project-menu-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".post-list.project-page-wrap");
+  const toolbar = await layoutBox(page, ".search-wrap.underline.board-toolbar");
+  const optionForm = await layoutBox(page, "#option_form");
+  const searchBar = await layoutBox(page, "#option_form .search-bar");
+  const labelSelect = await layoutBox(page, "#option_form .board-labels select");
+  const writeButton = await layoutBox(page, ".board-toolbar .pull-right .ybtn-success");
+  const filterWrap = await layoutBox(page, ".filter-wrap.board");
+  const noticeList = await layoutBox(page, ".post-list-wrap.notice-wrap");
+  const noticeItem = await layoutBox(page, ".post-list-wrap.notice-wrap .post-item.title");
+  const postList = await layoutBox(page, ".post-list-wrap:not(.notice-wrap)");
+  const firstItem = await layoutBox(page, ".post-list-wrap:not(.notice-wrap) .post-item.title");
+  const avatar = await layoutBox(
+    page,
+    ".post-list-wrap:not(.notice-wrap) .post-item.title .avatar-wrap.mlarge",
+  );
+  const titleLink = await layoutBox(
+    page,
+    ".post-list-wrap:not(.notice-wrap) .post-item.title .post-title",
+  );
+  const infos = await layoutBox(page, ".post-list-wrap:not(.notice-wrap) .post-item.title .infos");
+  const pagination = await layoutBox(page, "#pagination.page-navigation-wrap");
+
+  expect(Math.round(header.height)).toBe(120);
+  expect(navbar.y).toBeGreaterThanOrEqual(header.y);
+  expect(navbar.y + navbar.height).toBeLessThanOrEqual(header.y + header.height + 1);
+  expect(projectMenu.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+  expect(Math.round(projectMenu.height)).toBe(40);
+  expect(pageWrap.y).toBeGreaterThanOrEqual(projectMenu.y + projectMenu.height - 1);
+  expect(projectPage.width).toBeGreaterThanOrEqual(1100);
+  expect(Math.abs(projectPage.x + projectPage.width / 2 - 640)).toBeLessThanOrEqual(2);
+
+  expect(toolbar.y).toBeGreaterThanOrEqual(projectPage.y);
+  expect(toolbar.y - projectPage.y).toBeLessThanOrEqual(20);
+  expect(toolbar.width).toBeCloseTo(projectPage.width, 0);
+  expect(optionForm.x).toBeCloseTo(toolbar.x, 0);
+  expect(writeButton.x).toBeGreaterThan(optionForm.x + optionForm.width - 1);
+  expect(searchBar.y).toBeGreaterThanOrEqual(optionForm.y);
+  expect(labelSelect.x).toBeGreaterThanOrEqual(optionForm.x);
+  expect(labelSelect.y).toBeGreaterThanOrEqual(optionForm.y);
+  expect(labelSelect.y).toBeLessThanOrEqual(optionForm.y + optionForm.height);
+
+  expect(filterWrap.y).toBeGreaterThan(toolbar.y + toolbar.height - 1);
+  expect(noticeList.y).toBeGreaterThan(filterWrap.y + filterWrap.height - 1);
+  expect(noticeItem.y).toBeGreaterThanOrEqual(noticeList.y);
+  expect(postList.y).toBeGreaterThan(noticeList.y + noticeList.height - 1);
+  expect(firstItem.y).toBeGreaterThanOrEqual(postList.y);
+  expect(Math.abs(firstItem.width - postList.width)).toBeLessThanOrEqual(4);
+  expect(avatar.x).toBeCloseTo(firstItem.x + 10, 0);
+  expect(titleLink.x).toBeGreaterThan(avatar.x + avatar.width - 1);
+  expect(infos.y).toBeGreaterThan(titleLink.y);
+  expect(pagination.y).toBeGreaterThan(firstItem.y + firstItem.height - 1);
+});
+
 test("project board detail supports watch and comment create update delete", async ({ page }) => {
   await page.goto("/yona/admin/projectYobi/post/1");
   await expect(page.locator(".board-view")).toBeVisible();
@@ -613,6 +693,65 @@ test("project board detail supports watch and comment create update delete", asy
   await expect(page.locator("#comment-77")).toHaveCount(0);
 });
 
+test("project board detail keeps legacy pane and comment alignment metrics", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/yona/admin/projectYobi/post/1");
+
+  await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
+  await expect(page.locator(".board-comment-wrap .comments .board-comment")).toHaveCount(1);
+
+  const navbar = await layoutBox(page, ".gnb-outer.project-header");
+  const header = await layoutBox(page, ".project-header-outer");
+  const projectMenu = await layoutBox(page, ".project-menu-outer");
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const boardView = await layoutBox(page, ".project-page-wrap.board-view");
+  const boardHeader = await layoutBox(page, ".board-header.issue");
+  const boardTitle = await layoutBox(page, ".board-header.issue .title");
+  const boardBody = await layoutBox(page, ".board-body.row-fluid");
+  const leftPane = await layoutBox(page, ".board-body .span-left-pane");
+  const rightPane = await layoutBox(page, ".board-body .span-right-pane");
+  const author = await layoutBox(page, ".board-body .author-info");
+  const content = await layoutBox(page, "#post-body-1 .content.markdown-wrap");
+  const attachments = await layoutBox(page, "#attachments");
+  const actions = await layoutBox(page, ".board-actrow.board-actions");
+  const labels = await layoutBox(page, ".span-right-pane .issue-info.board-labels");
+  const commentWrap = await layoutBox(page, ".board-comment-wrap");
+  const commentHeader = await layoutBox(page, ".board-comment-wrap .comment-header");
+  const firstComment = await layoutBox(page, ".board-comment-wrap .comments .board-comment");
+  const commentAvatar = await layoutBox(page, "#comment-77 .comment-avatar");
+  const commentBody = await layoutBox(page, "#comment-77 .media-body");
+  const commentForm = await layoutBox(page, "#comment-form.board-comment-form");
+
+  expect(Math.round(header.height)).toBe(120);
+  expect(navbar.y).toBeGreaterThanOrEqual(header.y);
+  expect(navbar.y + navbar.height).toBeLessThanOrEqual(header.y + header.height + 1);
+  expect(projectMenu.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+  expect(Math.round(projectMenu.height)).toBe(40);
+  expect(pageWrap.y).toBeGreaterThanOrEqual(projectMenu.y + projectMenu.height - 1);
+  expect(boardView.width).toBeGreaterThanOrEqual(1100);
+
+  expect(boardHeader.y).toBeCloseTo(boardView.y, 0);
+  expect(boardTitle.width).toBeCloseTo(boardHeader.width, 0);
+  expect(boardBody.y).toBeGreaterThan(boardHeader.y + boardHeader.height - 1);
+  expect(leftPane.x).toBeCloseTo(boardBody.x, 0);
+  expect(rightPane.x).toBeGreaterThan(leftPane.x + leftPane.width - 1);
+  expect(leftPane.width).toBeGreaterThan(rightPane.width);
+  expect(Math.abs(leftPane.y - rightPane.y)).toBeLessThanOrEqual(12);
+
+  expect(author.y).toBeGreaterThanOrEqual(leftPane.y);
+  expect(content.y).toBeGreaterThan(author.y + author.height - 1);
+  expect(attachments.y).toBeGreaterThan(content.y);
+  expect(actions.y).toBeGreaterThan(attachments.y);
+  expect(labels.y).toBeCloseTo(rightPane.y, 0);
+
+  expect(commentWrap.y).toBeGreaterThan(actions.y + actions.height - 1);
+  expect(commentHeader.y).toBeGreaterThanOrEqual(commentWrap.y);
+  expect(firstComment.y).toBeGreaterThan(commentHeader.y + commentHeader.height - 1);
+  expect(commentAvatar.x).toBeCloseTo(firstComment.x, 0);
+  expect(commentBody.x).toBeGreaterThan(commentAvatar.x + commentAvatar.width - 1);
+  expect(commentForm.y).toBeGreaterThan(firstComment.y + firstComment.height - 1);
+});
+
 test("project board post editor inserts pasted and dropped image uploads", async ({ page }) => {
   const uploadedHeaders: string[] = [];
   const uploadedNames: string[] = [];
@@ -680,6 +819,61 @@ test("project board post editor inserts pasted and dropped image uploads", async
     attachmentIds: [801, 802],
     bodyMarkdown: "![post-paste.png](/yona/files/801) ![post-drop.png](/yona/files/802) ",
   });
+});
+
+test("project board create and edit forms keep legacy editor alignment metrics", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/yona/admin/projectYobi/postform");
+
+  await expect(page.locator(".board-form .content-wrap.frm-wrap")).toBeVisible();
+
+  const createPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const createForm = await layoutBox(page, "form.board-form");
+  const createContent = await layoutBox(page, ".board-form .content-wrap.frm-wrap");
+  const createTitle = await layoutBox(page, ".board-form #title");
+  const createEditor = await layoutBox(page, "#editor-body-content-body");
+  const createUploader = await layoutBox(page, '.upload-wrap[data-resource-type="BOARD_POST"]');
+  const createOptions = await layoutBox(page, ".board-form .right-txt.mt10.mb10");
+  const createActions = await layoutBox(page, ".board-form .actions.board-actions");
+
+  expect(createPage.width).toBeGreaterThanOrEqual(1100);
+  expect(createForm.x).toBeCloseTo(createPage.x, 0);
+  expect(createForm.width).toBeCloseTo(createPage.width, 0);
+  expect(createContent.x).toBeCloseTo(createForm.x, 0);
+  expect(createContent.width).toBeCloseTo(createForm.width, 0);
+  expect(createTitle.y).toBeGreaterThanOrEqual(createContent.y);
+  expect(createTitle.width).toBeGreaterThanOrEqual(createContent.width * 0.95);
+  expect(createTitle.width).toBeLessThanOrEqual(createContent.width * 0.99);
+  expect(createEditor.y).toBeGreaterThan(createTitle.y + createTitle.height - 1);
+  expect(createEditor.width).toBeGreaterThanOrEqual(createContent.width * 0.95);
+  expect(createUploader.y).toBeGreaterThan(createEditor.y + createEditor.height - 1);
+  expect(createOptions.y).toBeGreaterThan(createUploader.y + createUploader.height - 1);
+  expect(createActions.y).toBeGreaterThan(createOptions.y + createOptions.height - 1);
+
+  await page.goto("/yona/admin/projectYobi/post/1/editform");
+
+  await expect(page.locator(".board-form .content-wrap.frm-wrap")).toBeVisible();
+
+  const editContent = await layoutBox(page, ".board-form .content-wrap.frm-wrap");
+  const editLabel = await layoutBox(page, '.board-form label[for="title"]');
+  const editTitle = await layoutBox(page, ".board-form #title");
+  const editEditor = await layoutBox(page, "#editor-body-content-body");
+  const editUploader = await layoutBox(page, '.upload-wrap[data-resource-type="BOARD_POST"]');
+  const editOptions = await layoutBox(page, ".board-form .right-txt.mt10.mb10");
+  const editActions = await layoutBox(page, ".board-form .actions.board-actions");
+
+  expect(editLabel.y).toBeGreaterThanOrEqual(editContent.y);
+  expect(editTitle.y).toBeGreaterThan(editLabel.y + editLabel.height - 1);
+  expect(editTitle.width).toBeGreaterThanOrEqual(editContent.width * 0.95);
+  expect(editTitle.width).toBeLessThanOrEqual(editContent.width * 0.99);
+  expect(editEditor.y).toBeGreaterThan(editTitle.y + editTitle.height - 1);
+  expect(editEditor.width).toBeGreaterThanOrEqual(editContent.width * 0.95);
+  expect(editUploader.y).toBeGreaterThan(editEditor.y + editEditor.height - 1);
+  expect(editOptions.y).toBeGreaterThan(editUploader.y + editUploader.height - 1);
+  expect(editActions.y).toBeGreaterThan(editOptions.y + editOptions.height - 1);
+  expect(editActions.x).toBeCloseTo(editContent.x, 0);
 });
 
 test("project board comment editor inserts pasted image uploads", async ({ page }) => {
