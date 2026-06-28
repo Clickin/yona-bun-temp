@@ -258,6 +258,20 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
 }) => {
   let currentIssue = issueDetail({
     bodyMarkdown: "- [ ] issue open\n- [x] issue done",
+    childIssues: [
+      {
+        assigneeLabel: "Door",
+        commentCount: 2,
+        createdLabel: "2026-06-28",
+        isDraft: false,
+        issueNumber: 2,
+        labels: [{ color: "#2196f3", id: "6", name: "feature" }],
+        state: "open",
+        title: "Child pair display issue",
+        voterCount: 1,
+      },
+    ],
+    childOpenCount: 1,
     timeline: [
       {
         createdLabel: "1 minute ago",
@@ -480,6 +494,154 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     paddingTop: "10px",
     progressBackgroundColor: "rgb(212, 212, 212)",
     titleFontWeight: "500",
+  });
+
+  await expect(page.locator(".subtasks .parent-issue")).toContainText("#1 Pilot issue - Nori");
+  await expect(
+    page.locator(".subtasks .child-issue .twoColumeModeTarget:has(.item-name)"),
+  ).toHaveAttribute("href", "/yona/admin/projectYobi/issue/2");
+  await expect(page.locator(".subtasks .child-issue .item-name")).toContainText(
+    "#2 Child pair display issue - Door",
+  );
+  await expect(page.locator(".subtasks .child-issue .font12.no-border-at-child")).toHaveCount(1);
+  await expect(
+    page.locator(".subtasks .child-issue .comments-count.comments-count-color"),
+  ).toHaveAttribute("href", "/yona/admin/projectYobi/issue/2#comments");
+  await expect(
+    page.locator(".subtasks .child-issue .comments-count .yobicon-comment2"),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(".subtasks .child-issue .comments-count .count-groups.item-count"),
+  ).toHaveText("2");
+  await expect(page.locator(".subtasks .child-issue .vote-count.vote-color")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/issue/2#vote",
+  );
+  await expect(page.locator(".subtasks .child-issue .vote-count .yobicon-hearts")).toHaveCount(1);
+  await expect(
+    page.locator(".subtasks .child-issue .vote-count .count-groups.item-count.strong"),
+  ).toHaveText("1");
+
+  const subtasks = await layoutBox(page, ".subtasks");
+  const content = await layoutBox(page, ".issue-detail-page .board-body .content");
+  const parentIssue = await layoutBox(page, ".subtasks .parent-issue");
+  const delimiter = await layoutBox(page, ".subtasks .parent-issue-delimeter");
+  const childIssue = await layoutBox(page, ".subtasks .child-issue");
+  const childPairWrap = await layoutBox(page, ".subtasks .child-issue .font12.no-border-at-child");
+  const childGroup = await layoutBox(page, ".subtasks .child-issue .item-count-groups");
+  const childComment = await layoutBox(page, ".subtasks .child-issue .comments-count");
+  const childCommentIcon = await layoutBox(
+    page,
+    ".subtasks .child-issue .comments-count .count-groups.item-icon",
+  );
+  const childCommentCount = await layoutBox(
+    page,
+    ".subtasks .child-issue .comments-count .count-groups.item-count",
+  );
+  const childVote = await layoutBox(page, ".subtasks .child-issue .vote-count");
+  const childVoteIcon = await layoutBox(
+    page,
+    ".subtasks .child-issue .vote-count .count-groups.item-icon",
+  );
+  const childVoteCount = await layoutBox(
+    page,
+    ".subtasks .child-issue .vote-count .count-groups.item-count",
+  );
+  const childPairStyles = await page
+    .locator(".subtasks .child-issue .font12.no-border-at-child")
+    .evaluate((element) => {
+      const group = element.querySelector(".item-count-groups") as HTMLElement;
+      const comment = group.querySelector(".comments-count") as HTMLElement;
+      const commentIcon = comment.querySelector(".item-icon") as HTMLElement;
+      const commentCount = comment.querySelector(".item-count") as HTMLElement;
+      const vote = group.querySelector(".vote-count") as HTMLElement;
+      const voteIcon = vote.querySelector(".item-icon") as HTMLElement;
+      const voteCount = vote.querySelector(".item-count") as HTMLElement;
+      const subtasksElement = element.closest(".subtasks") as HTMLElement;
+      const parent = subtasksElement.querySelector(".parent-issue") as HTMLElement;
+      const delimiterElement = subtasksElement.querySelector(
+        ".parent-issue-delimeter",
+      ) as HTMLElement;
+      const child = element.closest(".child-issue") as HTMLElement;
+      const wrapperStyle = window.getComputedStyle(element);
+      const groupStyle = window.getComputedStyle(group);
+      const commentStyle = window.getComputedStyle(comment);
+      const commentIconStyle = window.getComputedStyle(commentIcon);
+      const commentCountStyle = window.getComputedStyle(commentCount);
+      const voteStyle = window.getComputedStyle(vote);
+      const voteIconStyle = window.getComputedStyle(voteIcon);
+      const voteCountStyle = window.getComputedStyle(voteCount);
+      const subtasksStyle = window.getComputedStyle(subtasksElement);
+      const parentStyle = window.getComputedStyle(parent);
+      const delimiterStyle = window.getComputedStyle(delimiterElement);
+      const childStyle = window.getComputedStyle(child);
+      return {
+        childPaddingLeft: childStyle.paddingLeft,
+        childPaddingRight: childStyle.paddingRight,
+        commentColor: commentStyle.color,
+        commentCountFontWeight: commentCountStyle.fontWeight,
+        commentCountPaddingRight: commentCountStyle.paddingRight,
+        commentIconBorderLeftWidth: commentIconStyle.borderLeftWidth,
+        commentIconFontSize: commentIconStyle.fontSize,
+        commentIconLineHeight: commentIconStyle.lineHeight,
+        commentIconPaddingTop: commentIconStyle.paddingTop,
+        delimiterBorderTopStyle: delimiterStyle.borderTopStyle,
+        delimiterBorderTopWidth: delimiterStyle.borderTopWidth,
+        delimiterMarginTop: delimiterStyle.marginTop,
+        groupBorderTopWidth: groupStyle.borderTopWidth,
+        groupLineHeight: groupStyle.lineHeight,
+        parentFontSize: parentStyle.fontSize,
+        subtasksMarginBottom: subtasksStyle.marginBottom,
+        subtasksMarginTop: subtasksStyle.marginTop,
+        voteColor: voteStyle.color,
+        voteCountPaddingRight: voteCountStyle.paddingRight,
+        voteIconFontSize: voteIconStyle.fontSize,
+        voteIconLineHeight: voteIconStyle.lineHeight,
+        voteIconPaddingTop: voteIconStyle.paddingTop,
+        voteMarginLeft: voteStyle.marginLeft,
+        wrapperFontSize: wrapperStyle.fontSize,
+      };
+    });
+
+  expect(subtasks.y).toBeGreaterThanOrEqual(content.y + content.height + 38);
+  expect(parentIssue.x).toBeGreaterThanOrEqual(subtasks.x);
+  expect(delimiter.y).toBeGreaterThan(parentIssue.y + parentIssue.height - 1);
+  expect(childIssue.y).toBeGreaterThan(delimiter.y);
+  expect(childPairWrap.x).toBeGreaterThan(childIssue.x);
+  expect(childGroup.x).toBeGreaterThanOrEqual(childPairWrap.x);
+  expect(childComment.x).toBeGreaterThanOrEqual(childGroup.x);
+  expect(childCommentIcon.x).toBeGreaterThanOrEqual(childComment.x);
+  expect(childCommentCount.x).toBeGreaterThan(childCommentIcon.x);
+  expect(childVote.x).toBeGreaterThan(childComment.x);
+  expect(childVoteIcon.x).toBeGreaterThanOrEqual(childVote.x);
+  expect(childVoteCount.x).toBeGreaterThan(childVoteIcon.x);
+  expect(childCommentIcon.y).toBeLessThanOrEqual(childCommentCount.y + childCommentCount.height);
+  expect(childVoteIcon.y).toBeLessThanOrEqual(childVoteCount.y + childVoteCount.height);
+  expect(childPairStyles).toEqual({
+    childPaddingLeft: "3px",
+    childPaddingRight: "3px",
+    commentColor: "rgb(139, 0, 139)",
+    commentCountFontWeight: "400",
+    commentCountPaddingRight: "5px",
+    commentIconBorderLeftWidth: "0px",
+    commentIconFontSize: "9px",
+    commentIconLineHeight: "12px",
+    commentIconPaddingTop: "2px",
+    delimiterBorderTopStyle: "dashed",
+    delimiterBorderTopWidth: "1px",
+    delimiterMarginTop: "5px",
+    groupBorderTopWidth: "0px",
+    groupLineHeight: "14px",
+    parentFontSize: "16px",
+    subtasksMarginBottom: "15px",
+    subtasksMarginTop: "40px",
+    voteColor: "rgb(243, 108, 34)",
+    voteCountPaddingRight: "5px",
+    voteIconFontSize: "9px",
+    voteIconLineHeight: "12px",
+    voteIconPaddingTop: "2px",
+    voteMarginLeft: "-5px",
+    wrapperFontSize: "12px",
   });
 
   const keymapTrigger = await layoutBox(page, 'a[href="#helpKeys"][data-toggle="modal"]');

@@ -3002,6 +3002,114 @@ div.markdown-preview {
   margin-bottom: 20px;
 }
 
+.issue-detail-page .subtasks {
+  margin-top: 40px;
+  margin-bottom: 15px;
+}
+
+.issue-detail-page .subtasks .issue-item {
+  padding: 0 3px;
+}
+
+.issue-detail-page .subtasks .parent-issue {
+  font-size: 16px;
+}
+
+.issue-detail-page .subtasks .parent-issue-delimeter {
+  margin: 5px 0 0;
+  border-top: 1px dashed #ddd;
+}
+
+.issue-detail-page .parent-issue .upload-progress {
+  display: inline-block;
+  width: 30px;
+  margin-top: 3px;
+  overflow: hidden;
+  vertical-align: middle;
+  box-shadow: none;
+}
+
+.issue-detail-page .parent-issue .parent-issue-state {
+  padding: 2px;
+  color: #fff;
+  font-size: 12px;
+  line-height: 17px;
+  vertical-align: text-bottom;
+  border-radius: 0;
+}
+
+.issue-detail-page .parent-issue .parent-issue-state.open {
+  background-color: #8bc34a;
+}
+
+.issue-detail-page .parent-issue .parent-issue-state.closed {
+  background-color: #f68c52;
+}
+
+.issue-detail-page .child-issues .selected-child {
+  font-weight: bold;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.issue-detail-page .font12 {
+  font-size: 12px;
+}
+
+.issue-detail-page .item-count-groups {
+  margin-top: 2px;
+  line-height: 14px;
+  border: 1px solid #eee;
+  border-radius: 3px;
+}
+
+.issue-detail-page .no-border-at-child .item-count-groups {
+  border: none !important;
+}
+
+.issue-detail-page .item-count-groups .comments-count:hover {
+  color: #be00be;
+}
+
+.issue-detail-page .item-count-groups .vote-count:hover {
+  color: #f58c52;
+}
+
+.issue-detail-page .item-count-groups .vote-color {
+  color: #f36c22;
+}
+
+.issue-detail-page .item-count-groups .comments-count-color {
+  color: #8b008b;
+}
+
+.issue-detail-page .item-count-groups a:nth-child(2) {
+  margin-left: -5px;
+}
+
+.issue-detail-page .item-count-groups .count-groups {
+  display: inline-block;
+  padding: 0 5px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.issue-detail-page .item-count-groups .count-groups.item-icon {
+  padding-top: 2px;
+  font-size: 9px;
+  line-height: 12px;
+  border-left: 1px solid #eee;
+}
+
+.issue-detail-page .item-count-groups .count-groups.item-icon:first-child {
+  border-left: none;
+}
+
+.issue-detail-page .item-count-groups .count-groups.item-count {
+  padding: 0 5px 0 0;
+}
+
 .issue-detail-page .board-body textarea.content {
   padding: 6px;
 }
