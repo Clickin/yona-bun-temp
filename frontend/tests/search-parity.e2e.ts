@@ -182,6 +182,48 @@ async function assertLegacySearchConversationRow(
   expect(pagination.y).toBeGreaterThan(item.y + item.height - 1);
 }
 
+async function assertLegacySearchMilestoneRow(page: Page): Promise<void> {
+  await expect(page.locator(".search-list-wrap")).toHaveCount(1);
+  await expect(page.locator(".search-list-item")).toHaveCount(1);
+  await expect(page.locator(".title-wrap .title")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/milestone/9",
+  );
+  await expect(page.locator(".title-wrap .title")).toHaveText("Needle milestone");
+  await expect(page.locator(".search-content .search-content-body")).toContainText(
+    "Needle milestone contents",
+  );
+  await expect(page.locator(".search-meta-info .project-link.meta-item")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi",
+  );
+  await expect(page.locator(".search-meta-info .project-link.meta-item")).toHaveText(
+    "owner/projectYobi",
+  );
+  await expect(page.locator(".search-meta-info .due-date.meta-item")).toContainText(
+    "Due Date 2026-06-30 (1 day left)",
+  );
+  await expect(page.locator(".search-meta-info .due-date.meta-item strong")).toHaveText(
+    "2026-06-30",
+  );
+
+  const list = await layoutBox(page, ".search-list-wrap");
+  const item = await layoutBox(page, ".search-list-item");
+  const titleWrap = await layoutBox(page, ".search-list-item .title-wrap");
+  const content = await layoutBox(page, ".search-list-item .search-content");
+  const meta = await layoutBox(page, ".search-list-item .search-meta-info");
+  const dueDate = await layoutBox(page, ".search-list-item .due-date.meta-item");
+  const pagination = await layoutBox(page, "#pagination");
+
+  expect(item.x).toBeCloseTo(list.x, 0);
+  expect(item.width).toBeCloseTo(list.width, 0);
+  expect(titleWrap.y).toBeGreaterThanOrEqual(item.y);
+  expect(content.y).toBeGreaterThan(titleWrap.y + titleWrap.height - 1);
+  expect(meta.y).toBeGreaterThan(content.y + content.height - 1);
+  expect(dueDate.y).toBeGreaterThanOrEqual(meta.y);
+  expect(pagination.y).toBeGreaterThan(item.y + item.height - 1);
+}
+
 function searchResponse(overrides: Record<string, unknown> = {}) {
   return {
     context: {
@@ -362,6 +404,51 @@ test("renders global results, category counts, highlight snippets, and type swit
         ],
         requestedSearchType: "project",
         searchType: "project",
+      });
+    } else if (searchType === "post") {
+      body = searchResponse({
+        items: [
+          {
+            authorLabel: "Writer",
+            authorLoginId: "writer",
+            createdLabel: "2026-05-06",
+            href: "/owner/projectYobi/post/11",
+            id: "post-11",
+            number: "11",
+            ownerName: "owner",
+            projectName: "projectYobi",
+            snippets: [{ highlights: [{ end: 6, start: 0 }], text: "Needle post body" }],
+            state: "",
+            title: "Needle post title",
+            type: "post",
+            updatedLabel: "",
+          },
+        ],
+        requestedSearchType: "post",
+        searchType: "post",
+      });
+    } else if (searchType === "milestone") {
+      body = searchResponse({
+        items: [
+          {
+            authorLabel: "",
+            authorLoginId: "",
+            createdLabel: "",
+            dueDateUntilLabel: "1 day left",
+            href: "/owner/projectYobi/milestone/9",
+            id: "milestone-9",
+            number: "",
+            ownerName: "owner",
+            projectName: "projectYobi",
+            snippets: [{ highlights: [{ end: 6, start: 0 }], text: "Needle milestone contents" }],
+            state: "open",
+            title: "Needle milestone",
+            type: "milestone",
+            updatedLabel: "2026-06-30",
+          },
+        ],
+        requestedSearchType: "milestone",
+        searchType: "milestone",
       });
     } else if (searchType === "issue_comment") {
       body = searchResponse({
@@ -613,6 +700,20 @@ test("renders global results, category counts, highlight snippets, and type swit
   expect(projectForkMeta.y).toBeGreaterThan(projectTitleWrap.y + projectTitleWrap.height - 1);
   expect(projectContent.y).toBeGreaterThan(projectForkMeta.y + projectForkMeta.height - 1);
   expect(projectMeta.y).toBeGreaterThan(projectContent.y + projectContent.height - 1);
+
+  await page.locator('.search-category-wrap a[data-type="post"]').click();
+  await assertLegacySearchConversationRow(page, {
+    author: "writer",
+    authorHref: "/yona/writer",
+    createdLabel: "2026-05-06",
+    href: "/yona/owner/projectYobi/post/11",
+    number: "11",
+    snippet: "Needle post body",
+    title: "Needle post title",
+  });
+
+  await page.locator('.search-category-wrap a[data-type="milestone"]').click();
+  await assertLegacySearchMilestoneRow(page);
 
   await page.locator('.search-category-wrap a[data-type="issue_comment"]').click();
   await assertLegacySearchConversationRow(page, {
