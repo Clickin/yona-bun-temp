@@ -1,5 +1,7 @@
 import * as React from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
+import { apiQueryKeys } from "../../../../../api/query-keys";
 import {
   closeProjectMilestone,
   deleteProjectMilestone,
@@ -32,6 +34,7 @@ function ProjectMilestoneDetailRouteComponent() {
   const { owner, projectName, milestoneId } = Route.useParams();
   const { bootstrapping, csrfToken, messages, runtimeConfig } = useAppRuntime();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const routePathname = useRouterState({ select: (state) => state.location.pathname });
   const routeHref = `/${owner}/${projectName}/milestone/${milestoneId}`;
@@ -80,6 +83,66 @@ function ProjectMilestoneDetailRouteComponent() {
 
   React.useEffect(() => reload(), [reload]);
 
+  const closeMutation = useMutation({
+    mutationFn: () =>
+      closeProjectMilestone(runtimeConfig, csrfToken, {
+        milestoneId: BigInt(Number(milestoneId)),
+        ownerName: owner,
+        projectName,
+      }),
+    onSuccess: (response) => {
+      setMilestone(toProjectMilestoneDetailView(response));
+      void queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.base(owner, projectName),
+      });
+    },
+  });
+  const openMutation = useMutation({
+    mutationFn: () =>
+      openProjectMilestone(runtimeConfig, csrfToken, {
+        milestoneId: BigInt(Number(milestoneId)),
+        ownerName: owner,
+        projectName,
+      }),
+    onSuccess: (response) => {
+      setMilestone(toProjectMilestoneDetailView(response));
+      void queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.base(owner, projectName),
+      });
+    },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: () =>
+      deleteProjectMilestone(runtimeConfig, csrfToken, {
+        milestoneId: BigInt(Number(milestoneId)),
+        ownerName: owner,
+        projectName,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.base(owner, projectName),
+      });
+      void navigate({
+        href: prefixBasePath(runtimeConfig.basePath, `/${owner}/${projectName}/milestones`),
+      });
+    },
+  });
+  const massUpdateMutation = useMutation({
+    mutationFn: (input: MilestoneIssueMassUpdateInput & { issueNumbers: number[] }) =>
+      massUpdateIssues(runtimeConfig, csrfToken, {
+        ...input,
+        issueNumbers: input.issueNumbers.map((issueNumber) => BigInt(issueNumber)),
+        ownerName: owner,
+        projectName,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.base(owner, projectName),
+      });
+      reload();
+    },
+  });
+
   if (bootstrapping) {
     return (
       <main className="app-shell">
@@ -107,39 +170,16 @@ function ProjectMilestoneDetailRouteComponent() {
       messages={messages}
       milestone={milestone}
       onClose={async () => {
-        const response = await closeProjectMilestone(runtimeConfig, csrfToken, {
-          milestoneId: BigInt(Number(milestoneId)),
-          ownerName: owner,
-          projectName,
-        });
-        setMilestone(toProjectMilestoneDetailView(response));
+        await closeMutation.mutateAsync();
       }}
       onDelete={async () => {
-        await deleteProjectMilestone(runtimeConfig, csrfToken, {
-          milestoneId: BigInt(Number(milestoneId)),
-          ownerName: owner,
-          projectName,
-        });
-        void navigate({
-          href: prefixBasePath(runtimeConfig.basePath, `/${owner}/${projectName}/milestones`),
-        });
+        await deleteMutation.mutateAsync();
       }}
       onMassUpdate={async (input: MilestoneIssueMassUpdateInput & { issueNumbers: number[] }) => {
-        await massUpdateIssues(runtimeConfig, csrfToken, {
-          ...input,
-          issueNumbers: input.issueNumbers.map((issueNumber) => BigInt(issueNumber)),
-          ownerName: owner,
-          projectName,
-        });
-        reload();
+        await massUpdateMutation.mutateAsync(input);
       }}
       onOpen={async () => {
-        const response = await openProjectMilestone(runtimeConfig, csrfToken, {
-          milestoneId: BigInt(Number(milestoneId)),
-          ownerName: owner,
-          projectName,
-        });
-        setMilestone(toProjectMilestoneDetailView(response));
+        await openMutation.mutateAsync();
       }}
       owner={owner}
       projectName={projectName}

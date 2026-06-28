@@ -394,7 +394,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `milestone/edit.scala.html` | P4 milestone | metric guard passed: `milestone-delete-modal-parity.e2e.ts` asserts legacy edit form fields/attrs, left/right pane positioning, editor/uploader/action ordering, due-date picker placement, and TanStack Query PATCH submit boundary |
 | `milestone/list.scala.html` | P4 milestone | metric guard passed: `milestone-delete-modal-parity.e2e.ts` asserts project shell stack, milestone tabs/new button/filter/search/list ordering, list item width, progress placement, and issue link anchors |
 | `milestone/partial_status.scala.html` | P4 milestone | metric guard passed: `milestone-delete-modal-parity.e2e.ts` asserts milestone progress percent/bar width, closed/open issue count copy, due date/status copy, and list/detail route state toggles |
-| `milestone/view.scala.html` | P4 milestone | reopen: inspect Scala anchors before JSX reuse |
+| `milestone/view.scala.html` | P4 milestone | metric guard passed: `milestone-delete-modal-parity.e2e.ts` asserts legacy detail shell title/due-date/status/progress/attachments, action request hooks, issue tabs/filter/mass-update/list ordering, mass-update/delete TanStack mutation boundaries, and list redirect |
 
 ### `organization/`
 

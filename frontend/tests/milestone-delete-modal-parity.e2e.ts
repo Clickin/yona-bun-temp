@@ -37,6 +37,7 @@ function milestonePayload(state: "closed" | "open" = "open") {
               {
                 assigneeLabel: "Nori",
                 commentCount: 1,
+                id: "102",
                 issueNumber: "1",
                 labels: [],
                 state: "closed",
@@ -59,6 +60,7 @@ function milestonePayload(state: "closed" | "open" = "open") {
               {
                 assigneeLabel: "Nori",
                 commentCount: 1,
+                id: "101",
                 issueNumber: "1",
                 labels: [],
                 state: "open",
@@ -69,6 +71,7 @@ function milestonePayload(state: "closed" | "open" = "open") {
           : [],
       state,
       title: "v1.0",
+      untilLabel: state === "open" ? "D-12" : "",
       viewerCanDelete: true,
       viewerCanUpdate: true,
     },
@@ -311,6 +314,155 @@ test("milestone detail delete opens and closes the legacy confirmation modal", a
   await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete milestone");
   await page.locator("#deleteConfirm").getByRole("button", { name: "No" }).click();
   await expect(page.locator("#deleteConfirm")).toBeHidden();
+});
+
+test("milestone detail keeps legacy layout metrics and interaction mutation boundaries", async ({
+  page,
+}) => {
+  const massUpdateRequests: unknown[] = [];
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.route(
+    /\/api\/v1\/projects\/admin\/projectYobi\/issues\/mass-update$/,
+    async (route) => {
+      massUpdateRequests.push(route.request().postDataJSON());
+      await route.fulfill({
+        body: JSON.stringify({ items: [] }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+  await page.route(
+    /\/api\/v1\/owners\/admin\/projects\/projectYobi\/milestones\/7$/,
+    async (route) => {
+      if (route.request().method() === "DELETE") {
+        await route.fulfill({
+          body: JSON.stringify({}),
+          headers: restJsonHeaders,
+          status: 200,
+        });
+        return;
+      }
+      await route.fallback();
+    },
+  );
+
+  await page.goto("/yona/admin/projectYobi/milestone/7?state=all");
+
+  await expect(page.locator(".page-wrap-outer > .project-page-wrap")).toBeVisible();
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/milestone/7",
+  );
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
+  await expect(page.locator(".milesion-wrap h4 .due-date strong")).toHaveText("2026-05-09");
+  await expect(page.locator(".milesion-wrap h4 .date")).toHaveText("(D-12)");
+  await expect(page.locator(".badge.badge-issue-open.margin-left-5")).toHaveText("Open");
+  await expect(page.locator(".milesion-wrap > .progress.progress-success .bar")).toHaveAttribute(
+    "style",
+    "width: 0%;",
+  );
+  await expect(page.locator(".milestone-desc .markdown-wrap")).toContainText(
+    "Ship milestone delete modal parity",
+  );
+  await expect(page.locator(".milestone-desc .attachments")).toHaveAttribute(
+    "data-attachments",
+    JSON.stringify([
+      {
+        fileHref: "/yona/files/701",
+        fileId: 701,
+        fileName: "milestone-plan.txt",
+      },
+    ]),
+  );
+  await expect(page.locator(".actrow .ybtn.pull-left")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/milestones",
+  );
+  await expect(page.locator('.actrow a[href="#deleteConfirm"]')).toHaveAttribute(
+    "data-toggle",
+    "modal",
+  );
+  await expect(
+    page.locator('.actrow a[href="/yona/admin/projectYobi/milestone/7/editform"]'),
+  ).toHaveText("Edit");
+  await expect(page.locator(".actrow .ybtn", { hasText: "Close milestone" })).toHaveAttribute(
+    "data-request-uri",
+    "/yona/admin/projectYobi/milestone/7/close",
+  );
+  await expect(page.locator("#issues > .nav.nav-tabs > li")).toHaveCount(3);
+  await expect(page.locator("#issues > .nav.nav-tabs > li.active a")).toContainText("All");
+  await expect(page.locator("#issues > .nav.nav-tabs > li:nth-child(1) .num-badge")).toHaveText(
+    "1",
+  );
+  await expect(page.locator("#issues > .nav.nav-tabs > li:nth-child(2) .num-badge")).toHaveText(
+    "0",
+  );
+  await expect(page.locator("#issues > .nav.nav-tabs > li:nth-child(3) .num-badge")).toHaveText(
+    "1",
+  );
+  await expect(page.locator("#mass-update-form.mass-update-form.pull-left")).toBeVisible();
+  await expect(
+    page.locator('#mass-update-form #check-all[data-target="checked-issue"]'),
+  ).toBeVisible();
+  await expect(page.locator('.filter-wrap .search-bar input[name="filter"]')).toHaveAttribute(
+    "data-items",
+    "issue-item",
+  );
+  await expect(page.locator(".post-list-wrap.row-fluid > .post-item.title")).toHaveCount(1);
+
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const wrap = await layoutBox(page, ".milesion-wrap");
+  const heading = await layoutBox(page, ".milesion-wrap h4");
+  const progress = await layoutBox(page, ".milesion-wrap > .progress.progress-success");
+  const desc = await layoutBox(page, ".milestone-desc");
+  const actions = await layoutBox(page, ".milesion-wrap > .actrow.right-txt.row-fluid");
+  const issueTabs = await layoutBox(page, "#issues > .nav.nav-tabs");
+  const filterWrap = await layoutBox(page, "#issues .issues > .filter-wrap");
+  const massUpdate = await layoutBox(page, "#mass-update-form");
+  const search = await layoutBox(page, "#issues .filter-wrap .search-bar");
+  const issueList = await layoutBox(page, "#issues .post-list-wrap.row-fluid");
+  const issueRow = await layoutBox(page, "#issues .post-list-wrap > .post-item.title");
+
+  expect(projectPage.x).toBeCloseTo(pageWrap.x, 0);
+  expect(wrap.x).toBeGreaterThanOrEqual(projectPage.x);
+  expect(heading.y).toBeGreaterThanOrEqual(wrap.y);
+  expect(progress.y).toBeGreaterThan(heading.y + heading.height - 1);
+  expect(desc.y).toBeGreaterThan(progress.y + progress.height - 1);
+  expect(actions.y).toBeGreaterThan(desc.y + desc.height - 1);
+  expect(issueTabs.y).toBeGreaterThan(actions.y + actions.height - 1);
+  expect(filterWrap.y).toBeGreaterThan(issueTabs.y + issueTabs.height - 1);
+  expect(massUpdate.x).toBeGreaterThanOrEqual(filterWrap.x);
+  expect(search.x).toBeGreaterThan(massUpdate.x + massUpdate.width - 1);
+  expect(issueList.y).toBeGreaterThan(filterWrap.y + filterWrap.height - 1);
+  expect(issueRow.x).toBeCloseTo(issueList.x, 0);
+  expect(issueRow.width).toBeCloseTo(issueList.width, 0);
+
+  await page.locator("#issue-101").check();
+  await page.locator("#state button.dropdown-toggle").click();
+  await page.locator('#state li[data-value="CLOSED"] button').dispatchEvent("click");
+  await expect.poll(() => massUpdateRequests.length).toBe(1);
+  expect(massUpdateRequests[0]).toMatchObject({
+    issueNumbers: ["1"],
+    state: "closed",
+  });
+
+  const deleteRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith("/owners/admin/projects/projectYobi/milestones/7") &&
+      request.method() === "DELETE",
+  );
+  await page.locator('.actrow a[href="#deleteConfirm"]').click();
+  await expect(page.locator("#deleteConfirm")).toBeVisible();
+  await expect(page.locator("#deleteConfirm .modal-footer .ybtn-danger")).toHaveAttribute(
+    "data-request-uri",
+    "/yona/admin/projectYobi/milestone/7/delete",
+  );
+  await page.locator("#deleteConfirm").getByRole("button", { name: "Yes" }).click();
+  const deleteMutation = await deleteRequest;
+  expect(deleteMutation.headers()["x-csrf-token"]).toBe("csrf-123");
+  await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/milestones$/);
 });
 
 test("milestone detail preserves the project issue shell on a mobile viewport", async ({
