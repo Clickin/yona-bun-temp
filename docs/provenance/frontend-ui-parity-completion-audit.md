@@ -60,6 +60,14 @@ Actionable UI parity coverage is 100.0% because every actionable row is
 Raw coverage is 79.9% because the remaining 28 rows are `not-applicable`
 transport/template mechanics, not missing user-visible UI functions.
 
+The 2026-06-28 integrated desktop sweep rerun did not close the whole-UI sweep
+requirement because the node-proxied legacy target timed out on
+`/users/loginform` while waiting for `networkidle`. The same run recorded local
+Yoram `174/174`, local direct API surfaces `13/13`, and imported legacy-audit
+page coverage `67/67` with zero missing pages. Treat the failed comparison as
+an external legacy-reference availability blocker; no current Yoram route
+failure was recorded.
+
 ## Superseded Route/API Not-Applicable Rows
 
 The older route/API audit retained these 9 not-applicable rows. Current
@@ -117,7 +125,7 @@ The following commands are the focused completion evidence for this audit:
 
 ## Conclusion
 
-Frontend UI parity is closed for the current app-runtime scope:
+The template-first report gate is closed for the current app-runtime scope:
 
 - There are no remaining `gap`, `deviation`, `deferred`, `weak evidence`, or
   `needs-parent-decision` rows in the UI parity report set.
@@ -125,6 +133,8 @@ Frontend UI parity is closed for the current app-runtime scope:
   app-runtime UI functions.
 - Markdown rendering is centralized in the React compatibility renderer and is
   covered by boundary, renderer, browser, and server-preview tests.
+- Whole-UI closure still requires a successful integrated browser comparison
+  against an available legacy reference target.
 
 Future work can reopen a row only with new legacy evidence or a browser-visible
 parity defect. Product improvements must start after this parity baseline rather

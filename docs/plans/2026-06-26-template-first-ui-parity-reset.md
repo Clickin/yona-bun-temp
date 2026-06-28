@@ -263,6 +263,15 @@ Update 2026-06-27:
   matching the packet summaries. Future work reopens this plan only when new
   legacy evidence or a browser-visible parity defect creates a concrete packet
   row.
+- 2026-06-28 integrated sweep rerun: the parent reran
+  `YONA_LEGACY_BASE_URL=http://127.0.0.1:19100 YORAM_BASE_URL=http://127.0.0.1:3101/yona YORAM_SWEEP_TARGET=both node scripts/visual-parity-sweep.mjs`
+  against the node-proxied legacy target and mounted Yoram. Local Yoram passed
+  `174/174`, direct API surfaces passed `13/13`, and imported legacy-audit
+  pages covered `67/67` with zero missing pages. The whole-UI integrated
+  comparison remains unclosed because the legacy proxy target was unreachable:
+  Playwright timed out on `/users/loginform` waiting for `networkidle`, leaving
+  `legacyMissing 174`. This is an external legacy-reference availability
+  blocker; no current Yoram route failure was recorded.
 
 ## Closure Rule
 

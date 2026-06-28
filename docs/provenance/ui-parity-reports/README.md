@@ -78,6 +78,17 @@ Rules:
   mounted SPA after the latest route/CSS follow-ups; it is local regression
   evidence and does not replace the older combined legacy status-delta
   classification below.
+- Latest integrated desktop sweep attempt:
+  `output/playwright/visual-sweep/latest.json` at
+  `2026-06-28T07:39:02.548Z` was run against node-proxied legacy Yona at
+  `http://127.0.0.1:19100` and mounted Yoram at
+  `http://127.0.0.1:3101/yona`. The local target passed `174/174`, local direct
+  API surfaces passed `13/13`, and imported legacy-audit page coverage was
+  `67/67` with zero missing pages. The integrated comparison did not close
+  because the legacy proxy target was unreachable: Playwright timed out on
+  `/users/loginform` while waiting for `networkidle`, leaving legacy `0/0` and
+  `legacyMissing 174`. Treat this as an external legacy-reference availability
+  blocker, not a current Yoram UI regression.
 
 ## 2026-06-28 Gate Checkpoint
 
