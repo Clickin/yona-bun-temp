@@ -364,7 +364,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `partial_update_notification.scala.html` | P0 global shell | reopen: inspect Scala anchors before JSX reuse |
 | `projectLayout.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `projectMenu.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
-| `restricted.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `restricted.scala.html` | P7 error/security | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts root navbar/footer, direct `siteLayout` content stack, 560x315 iframe, user label/email, verification marker, provider/user ID, and session expiry copy |
 | `sidebar.scala.html` | P0/P6 sidebar | reopen under SPA root-layout sidebar decision |
 | `siteLayout.scala.html` | P0/P7 layout | reopen: inspect Scala anchors before JSX reuse |
 | `siteLayout_framed.scala.html` | P0/P7 layout | reference-only unless a concrete app-runtime route still needs framed semantics |

@@ -368,6 +368,61 @@ test("auth aliases redirect to the legacy public entry routes", async ({ page })
   await expect(page.locator("form[name='passwordReset']")).toBeVisible();
 });
 
+test("restricted page preserves the legacy authenticated sample layout", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+  await page.route(apiV1Route("/session"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(signedInSession()),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/restricted");
+  await expectNoVisibleRawLegacyKeys(page);
+
+  await expect(page).toHaveTitle("Yona");
+  await expect(page.locator(".gnb-outer")).toBeVisible();
+  await expect(page.locator("#main > main")).toBeVisible();
+  await expect(page.locator("#main > main > h1")).toHaveText("Sshhh...don't tell anyone!");
+  await expect(page.locator("#main > main iframe")).toHaveAttribute(
+    "src",
+    "https://www.youtube.com/embed/9bZkp7q19f0",
+  );
+  await expect(page.locator("#main > main iframe")).toHaveAttribute("width", "560");
+  await expect(page.locator("#main > main iframe")).toHaveAttribute("height", "315");
+  await expect(page.locator("#main > main p").nth(1)).toContainText(
+    "Your name is Administrator and your email address is admin@example.com (verified)!",
+  );
+  await expect(page.locator("#main > main p").nth(1)).toContainText(
+    "Logged in with provider 'local' and the user ID 'admin'",
+  );
+  await expect(page.locator("#main > main p").nth(1)).toContainText("Your session expires never");
+
+  const nav = await layoutBox(page, ".gnb-outer");
+  const main = await layoutBox(page, "#main > main");
+  const heading = await layoutBox(page, "#main > main > h1");
+  const videoParagraph = await layoutBox(page, "#main > main p:nth-of-type(1)");
+  const iframe = await layoutBox(page, "#main > main iframe");
+  const identityParagraph = await layoutBox(page, "#main > main p:nth-of-type(2)");
+  const verificationMarker = await layoutBox(page, "#main > main p:nth-of-type(2) i");
+  const footer = await layoutBox(page, ".page-footer-outer");
+
+  expect(main.y).toBeGreaterThanOrEqual(nav.y + nav.height);
+  expect(heading.x).toBeCloseTo(main.x, 0);
+  expect(heading.y).toBeGreaterThanOrEqual(main.y);
+  expect(videoParagraph.y).toBeGreaterThan(heading.y + heading.height - 1);
+  expect(iframe.x).toBeCloseTo(videoParagraph.x, 0);
+  expect(Math.round(iframe.width)).toBe(560);
+  expect(Math.round(iframe.height)).toBe(315);
+  expect(identityParagraph.y).toBeGreaterThan(videoParagraph.y + videoParagraph.height - 1);
+  expect(identityParagraph.x).toBeCloseTo(main.x, 0);
+  expect(verificationMarker.x).toBeGreaterThan(identityParagraph.x);
+  expect(footer.y).toBeGreaterThan(identityParagraph.y + identityParagraph.height - 1);
+});
+
 test("anonymous help page keeps the legacy FAQ shell and item-wide toggle", async ({ page }) => {
   await page.setViewportSize({ height: 900, width: 1280 });
   await installRuntimeConfig(page);
