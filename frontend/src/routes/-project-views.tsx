@@ -868,6 +868,35 @@ export function ProjectMenu(props: {
   );
 }
 
+export function ProjectErrorPage(props: {
+  detail: ProjectDetailViewModel;
+  messageKey: string;
+  renderShell?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { t: messages } = useLegacyMessages();
+  const content = (
+    <div className="project-page-wrap project-error-page">
+      <div className="error-wrap">
+        <i className="ico ico-err2" />
+        <p>{messages(props.messageKey, { fallback: props.messageKey })}</p>
+      </div>
+    </div>
+  );
+
+  if (props.renderShell === false) {
+    return content;
+  }
+
+  return (
+    <main className="app-shell project-error-page">
+      <ProjectHeader detail={props.detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="home" detail={props.detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">{content}</div>
+    </main>
+  );
+}
+
 function ProjectKeymapHelp(props: {
   detail: ProjectDetailViewModel;
   mode?: "detail" | "list";

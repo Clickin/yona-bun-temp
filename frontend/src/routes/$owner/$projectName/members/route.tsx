@@ -12,7 +12,7 @@ import { apiQueryKeys } from "../../../../api/query-keys";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
 import { prefixBasePath } from "../../../../runtime-config";
-import { ProjectMembersPage } from "../../../-project-views";
+import { ProjectErrorPage, ProjectMembersPage } from "../../../-project-views";
 import {
   BadRequestPage,
   classifyConnectFailure,
@@ -146,6 +146,16 @@ function ProjectMembersRouteComponent() {
     );
   }
   if (failureKind === "forbidden") {
+    if (containerQuery.data) {
+      return (
+        <ProjectErrorPage
+          detail={toProjectContainerView(containerQuery.data)}
+          messageKey="error.forbidden"
+          renderShell={false}
+          runtimeConfig={runtimeConfig}
+        />
+      );
+    }
     return <ForbiddenPage href={routeHref} />;
   }
   if (failureKind === "not-found") {
