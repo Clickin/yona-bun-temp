@@ -12,6 +12,10 @@ const runtimeConfig: RuntimeConfig = {
 
 describe("project members parity", () => {
   it("renders the legacy project member management anchors", () => {
+    const legacyMembersTemplate = readFileSync(
+      resolve(process.cwd(), "../yona-original/app/views/project/members.scala.html"),
+      "utf8",
+    );
     const html = renderToString(
       <ProjectMembersPage
         detail={{
@@ -96,6 +100,7 @@ describe("project members parity", () => {
     expect(html).toContain('class="members project row-fluid"');
     expect(html).toContain('class="member span6 span-hard-wrap"');
     expect(html).toContain('class="label owner"');
+    expect(legacyMembersTemplate).toContain('data-name="roleof-@member.user.loginId"');
     expect(html).toContain('data-name="roleof-member"');
     expect(html).toContain('data-action="apply"');
     expect(html).toContain('data-href="/owner/projectYobi/member/2/edit"');
