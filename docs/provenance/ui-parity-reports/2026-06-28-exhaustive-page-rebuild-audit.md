@@ -207,8 +207,8 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `code/compare_svn.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
 | `code/diff.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
 | `code/history.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts commit history branch/tabs/table column alignment plus path breadcrumb/table/browse/older ordering |
-| `code/nohead.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
-| `code/nohead_svn.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/nohead.scala.html` | P5 code | metric guard passed: `project-code-comment-upload-parity.e2e.ts` asserts the legacy Git no-head guidance shell, resolved no-head copy, four Git command heading/pre/code blocks, no raw message keys, page/code wrapper alignment, alert/heading/pre vertical order, and Bootstrap heading/pre display/font/white-space metrics |
+| `code/nohead_svn.scala.html` | P5 code | metric guard passed: `project-code-comment-upload-parity.e2e.ts` asserts the legacy SVN no-head guidance shell, resolved no-head copy, one SVN command heading/pre/code block, absence of Git clone guidance, no raw message keys, page/code wrapper alignment, alert/heading/pre vertical order, and Bootstrap heading/pre display/font/white-space metrics |
 | `code/partial_branchrow.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts branch row name/commit/PR/actions column alignment and mutation data hooks |
 | `code/partial_nonrange_codecomment_thread.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
 | `code/partial_view_file.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts file header raw/open buttons, `#showCode`, code-line, and line-number alignment |

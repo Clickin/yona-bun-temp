@@ -8,6 +8,19 @@ const restJsonHeaders = {
 const commitId = "abcdef1234567890abcdef1234567890abcdef12";
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
+
 function commitDetailPayload(threads: unknown[] = [], isWatching = false) {
   return {
     branches: [{ name: "main" }],
@@ -129,6 +142,55 @@ async function routeRuntimeShell(page: Page) {
   });
 }
 
+async function assertLegacyNoHeadMetrics(page: Page, expectedCommandBlocks: number) {
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const browseWrap = await layoutBox(page, ".code-browse-wrap");
+  const noHead = await layoutBox(page, ".code-nohead-wrap");
+  const span = await layoutBox(page, ".code-nohead-wrap > .span12");
+  const alert = await layoutBox(page, ".code-nohead-wrap .alert.alert-block");
+  const firstHeading = await layoutBox(page, ".code-nohead-wrap h5:first-of-type");
+  const firstPre = await layoutBox(page, ".code-nohead-wrap pre:first-of-type");
+  const styles = await page.locator(".code-nohead-wrap").evaluate((element) => {
+    const alertStyle = window.getComputedStyle(
+      element.querySelector(".alert.alert-block") as HTMLElement,
+    );
+    const headingStyle = window.getComputedStyle(element.querySelector("h5") as HTMLElement);
+    const preStyle = window.getComputedStyle(element.querySelector("pre") as HTMLElement);
+    return {
+      alertDisplay: alertStyle.display,
+      headingDisplay: headingStyle.display,
+      headingFontSize: headingStyle.fontSize,
+      preDisplay: preStyle.display,
+      preWhiteSpace: preStyle.whiteSpace,
+    };
+  });
+
+  await expect(page.locator(".code-nohead-wrap h5")).toHaveCount(expectedCommandBlocks);
+  await expect(page.locator(".code-nohead-wrap pre")).toHaveCount(expectedCommandBlocks);
+  await expect(page.locator(".code-nohead-wrap pre code")).toHaveCount(expectedCommandBlocks);
+
+  expect(projectPage.x).toBeCloseTo(pageWrap.x, 0);
+  expect(projectPage.width).toBeCloseTo(pageWrap.width, 0);
+  expect(browseWrap.x).toBeCloseTo(projectPage.x, 0);
+  expect(browseWrap.width).toBeCloseTo(projectPage.width, 0);
+  expect(noHead.x).toBeCloseTo(browseWrap.x, 0);
+  expect(noHead.width).toBeCloseTo(browseWrap.width, 0);
+  expect(span.x).toBeCloseTo(noHead.x, 0);
+  expect(span.width).toBeCloseTo(noHead.width, 0);
+  expect(alert.y).toBeGreaterThanOrEqual(noHead.y);
+  expect(firstHeading.y).toBeGreaterThan(alert.y + alert.height - 1);
+  expect(firstPre.y).toBeGreaterThan(firstHeading.y + firstHeading.height - 1);
+  expect(firstPre.x).toBeCloseTo(firstHeading.x, 0);
+  expect(styles).toEqual({
+    alertDisplay: "block",
+    headingDisplay: "block",
+    headingFontSize: "10.79px",
+    preDisplay: "block",
+    preWhiteSpace: "pre",
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await routeRuntimeShell(page);
 });
@@ -207,6 +269,7 @@ test("code browser renders the legacy Git and SVN no-head guidance without raw k
     "If you have already created a local git repository",
   );
   await expect(page.locator(".code-browse-wrap")).not.toContainText("code.nohead");
+  await assertLegacyNoHeadMetrics(page, 4);
 
   projectContainer = {
     ...projectContainer,
@@ -225,6 +288,8 @@ test("code browser renders the legacy Git and SVN no-head guidance without raw k
   );
   await expect(page.locator(".code-browse-wrap")).toContainText('svn commit -m "first commit"');
   await expect(page.locator(".code-browse-wrap")).not.toContainText("code.nohead");
+  await expect(page.locator(".code-browse-wrap")).not.toContainText("git clone");
+  await assertLegacyNoHeadMetrics(page, 1);
 });
 
 test("commit detail watch button toggles through REST with CSRF and preserves query", async ({
