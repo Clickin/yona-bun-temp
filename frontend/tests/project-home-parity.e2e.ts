@@ -7,6 +7,19 @@ const restJsonHeaders = {
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
+
 async function installRuntime(page: Page): Promise<void> {
   await page.addInitScript(() => {
     window.__YONA_RUNTIME_CONFIG__ = {
@@ -261,6 +274,48 @@ test("project home proves README fallback, history and dashboard tabs in the bro
   await expect(page.locator(".overview-milestone")).toContainText("Phase dashboard");
   await expect(page.locator(".overview-label")).toContainText("High");
   await expect(page.locator(".overview-pullrequest")).toContainText("Dashboard PR");
+
+  const labelSection = page.locator(".overview-label").first();
+  await expect(labelSection).toHaveClass(/dl-horizontal/);
+  await expect(labelSection.locator("> dt")).toHaveText("Priority");
+  await expect(labelSection.locator("> dd > .row-fluid")).toHaveCount(1);
+  await expect(labelSection.locator(".span10 a")).toHaveAttribute(
+    "href",
+    "/yona/owner/projectYobi/issues?state=open&labelIds=5",
+  );
+  await expect(labelSection.locator(".issue-label.list-label.active")).toHaveAttribute(
+    "data-label-id",
+    "5",
+  );
+  await expect(labelSection.locator(".issue-label.list-label.active")).toHaveText("High");
+  await expect(labelSection.locator(".span2.num strong")).toHaveText("4");
+
+  const dashboardRow = await layoutBox(page, ".project-overview-home.row-fluid");
+  const labelColumn = await layoutBox(
+    page,
+    ".project-overview-home.row-fluid > .span6:nth-child(2)",
+  );
+  const overviewLabel = await layoutBox(page, ".overview-label");
+  const labelDt = await layoutBox(page, ".overview-label > dt");
+  const labelDd = await layoutBox(page, ".overview-label > dd");
+  const labelRow = await layoutBox(page, ".overview-label .row-fluid");
+  const labelNameColumn = await layoutBox(page, ".overview-label .row-fluid > .span10");
+  const labelCountColumn = await layoutBox(page, ".overview-label .row-fluid > .span2.num");
+  const labelChip = await layoutBox(page, ".overview-label .issue-label[data-label-id='5']");
+  const labelCount = await layoutBox(page, ".overview-label .span2.num strong");
+
+  expect(labelColumn.x).toBeGreaterThanOrEqual(dashboardRow.x + dashboardRow.width / 2 - 2);
+  expect(overviewLabel.x).toBeGreaterThanOrEqual(labelColumn.x);
+  expect(overviewLabel.width).toBeLessThanOrEqual(labelColumn.width);
+  expect(labelDd.x).toBeGreaterThan(labelDt.x + labelDt.width - 1);
+  expect(labelRow.y).toBeGreaterThanOrEqual(labelDd.y);
+  expect(labelNameColumn.x).toBeCloseTo(labelRow.x, 0);
+  expect(labelNameColumn.width).toBeGreaterThan(labelCountColumn.width * 4);
+  expect(labelCountColumn.x).toBeGreaterThan(labelNameColumn.x + labelNameColumn.width - 1);
+  expect(labelChip.x).toBeGreaterThanOrEqual(labelNameColumn.x);
+  expect(labelChip.y).toBeGreaterThanOrEqual(labelNameColumn.y);
+  expect(labelCount.x).toBeGreaterThanOrEqual(labelCountColumn.x);
+  expect(labelCount.y).toBeGreaterThanOrEqual(labelCountColumn.y);
 });
 
 test("project home leave modal opens, cancels, and confirms through REST", async ({ page }) => {
@@ -293,5 +348,5 @@ test("project home leave modal opens, cancels, and confirms through REST", async
   await page.locator("#projectLeaveBtn").click();
   await page.locator("#leaveBtn").click();
   await expect.poll(() => deleted).toBe(true);
-  await expect(page).toHaveURL(/\/yona\/?$/);
+  await expect(page).toHaveURL(/\/yona\/me$/);
 });

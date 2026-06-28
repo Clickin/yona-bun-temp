@@ -433,7 +433,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `project/members.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/partial_dashboard.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/partial_dashboard_issuesbyassignee.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
-| `project/partial_dashboard_issuesbylabel.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
+| `project/partial_dashboard_issuesbylabel.scala.html` | P2 project | metric guard passed: `project-home-parity.e2e.ts` asserts legacy `.dl-horizontal.overview-label`, category/label/count anchors, row-fluid span10/span2 alignment, and right dashboard column placement |
 | `project/partial_dashboard_issuesbymilestone.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/partial_dashboard_pullrequests.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
 | `project/partial_history.scala.html` | P2 project | reopen: inspect Scala anchors before JSX reuse |
