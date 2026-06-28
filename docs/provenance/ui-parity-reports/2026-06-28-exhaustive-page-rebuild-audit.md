@@ -170,7 +170,12 @@ them with `output/playwright/visual-sweep/latest.json` from
 templates and now have a focused absence guard in
 `frontend/src/auth-workspace-shell.spec.tsx` proving the iframe shell stays
 absent from active React/CSS.
-Selector, copy, form, and `data-*` assertions are still needed before closure.
+Selector, copy, form, and `data-*` assertions are still needed before closure,
+and selector-only evidence is not final UI parity. Rendered evidence must also
+cover size, position, and alignment or screenshot-diff parity. The first metric
+guards now cover representative project settings and organization settings
+shells; the rest of the route/template rows remain open until equivalent visual
+layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 ### `board/`
 

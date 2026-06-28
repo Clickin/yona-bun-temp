@@ -1342,47 +1342,59 @@ export function OrganizationSettingsPage(props: {
                 style={logoPreviewUrl ? { backgroundImage: `url('${logoPreviewUrl}')` } : undefined}
               />
               <div className="logo-desc">
-                <strong>{legacyMessage(props.messages, "organization.logo")}</strong>
                 <ul className="unstyled descs">
-                  <li>{legacyMessage(props.messages, "organization.logo.type")}</li>
-                  <li>{legacyMessage(props.messages, "organization.logo.maxFileSize")}</li>
+                  <li>
+                    <strong>{legacyMessage(props.messages, "organization.logo")}</strong>
+                  </li>
+                  <li>
+                    {legacyMessage(props.messages, "organization.logo.type")}{" "}
+                    <span className="point">bmp, jpg, gif, png</span>
+                  </li>
+                  <li>
+                    {legacyMessage(props.messages, "organization.logo.maxFileSize")}{" "}
+                    <span className="point">5MB</span>
+                  </li>
+                  <li>
+                    <div className="btn-wrap">
+                      <div className="nbtn medium white fake-file-wrap">
+                        <i className="yobicon-upload" />{" "}
+                        {legacyMessage(props.messages, "button.upload")}
+                        <input
+                          accept="image/*"
+                          className="file"
+                          id="logoPath"
+                          name="logoPath"
+                          type="file"
+                          onChange={(event) => {
+                            const file = event.currentTarget.files?.[0];
+                            if (file && !isOrganizationLogoImageFile(file)) {
+                              setValidationMessage("project.logo.alert");
+                              event.currentTarget.value = "";
+                              return;
+                            }
+                            setValidationMessage(null);
+                            if (!file || !props.csrfToken) {
+                              return;
+                            }
+                            void uploadTemporaryAttachment(
+                              props.runtimeConfig,
+                              props.csrfToken,
+                              file,
+                            ).then((attachment) => {
+                              const nextFormState = {
+                                ...formState,
+                                logoAttachmentId: attachment.id,
+                              };
+                              setFormState(nextFormState);
+                              setLogoPreviewUrl(attachment.url);
+                              props.onUpdateOrganization?.(nextFormState);
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </li>
                 </ul>
-                <div className="nbtn medium white fake-file-wrap">
-                  <i className="yobicon-upload" />
-                  {` ${legacyMessage(props.messages, "button.upload")}`}
-                  <input
-                    accept="image/*"
-                    className="file"
-                    id="logoPath"
-                    name="logoPath"
-                    type="file"
-                    onChange={(event) => {
-                      const file = event.currentTarget.files?.[0];
-                      if (file && !isOrganizationLogoImageFile(file)) {
-                        setValidationMessage("project.logo.alert");
-                        event.currentTarget.value = "";
-                        return;
-                      }
-                      setValidationMessage(null);
-                      if (!file || !props.csrfToken) {
-                        return;
-                      }
-                      void uploadTemporaryAttachment(
-                        props.runtimeConfig,
-                        props.csrfToken,
-                        file,
-                      ).then((attachment) => {
-                        const nextFormState = {
-                          ...formState,
-                          logoAttachmentId: attachment.id,
-                        };
-                        setFormState(nextFormState);
-                        setLogoPreviewUrl(attachment.url);
-                        props.onUpdateOrganization?.(nextFormState);
-                      });
-                    }}
-                  />
-                </div>
               </div>
             </div>
             <dl className="setting-box right">
@@ -1493,6 +1505,7 @@ export function OrganizationMembersPage(props: {
   };
   const [loginId, setLoginId] = React.useState("");
   const [deleteTarget, setDeleteTarget] = React.useState<null | string>(null);
+  const [openRoleMemberId, setOpenRoleMemberId] = React.useState<null | string>(null);
   const [typeaheadItems, setTypeaheadItems] = React.useState<LegacyMemberUserSearchItem[]>([]);
   const [typeaheadOpen, setTypeaheadOpen] = React.useState(false);
   const typeaheadCacheRef = React.useRef({
@@ -1631,7 +1644,17 @@ export function OrganizationMembersPage(props: {
             <div className="member-id">{`@${member.loginId}`}</div>
             <div className="member-setting">
               <div className="btn-group" data-name={`roleof-${member.loginId}`}>
-                <button className="btn dropdown-toggle large" data-toggle="dropdown" type="button">
+                <button
+                  aria-expanded={openRoleMemberId === String(member.userId)}
+                  className="btn dropdown-toggle large"
+                  data-toggle="dropdown"
+                  onClick={() =>
+                    setOpenRoleMemberId((current) =>
+                      current === String(member.userId) ? null : String(member.userId),
+                    )
+                  }
+                  type="button"
+                >
                   <span className="d-label">
                     {legacyMessage(props.messages, `user.role.${member.role}`)}
                   </span>
@@ -1639,7 +1662,12 @@ export function OrganizationMembersPage(props: {
                     <span className="caret" />
                   </span>
                 </button>
-                <ul className="dropdown-menu">
+                <ul
+                  className="dropdown-menu"
+                  style={
+                    openRoleMemberId === String(member.userId) ? { display: "block" } : undefined
+                  }
+                >
                   {detail.roleOptions.map((roleOption) => (
                     <li
                       className={roleOption.role === member.role ? "active" : undefined}
@@ -1661,6 +1689,7 @@ export function OrganizationMembersPage(props: {
                         )}
                         onClick={(event) => {
                           event.preventDefault();
+                          setOpenRoleMemberId(null);
                           props.onUpdateMemberRole?.(
                             detail.organizationName,
                             member.userId,
