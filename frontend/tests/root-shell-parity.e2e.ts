@@ -300,6 +300,21 @@ test("anonymous root shell keeps legacy nav, feedback, login dialog, and login e
         .evaluate((node) => node.innerHTML),
     )
     .toContain('class="toast"');
+  const select2Templates = [
+    ["tplSelect2FormatUser", 'class="usf-group"', 'class="avatar-wrap smaller"', "${loginId}"],
+    ["tplSelect2FormatMilestone", "${stateLabel}", "${name}"],
+    ["tplSelect2Projects", 'width="16"', "${owner}"],
+    ["tplSelect2ProjectsWithoutAvatar", "width25px", "${owner}"],
+    ["tplSelect2FormatIssues", "${name}"],
+  ];
+  for (const [id, ...expectedFragments] of select2Templates) {
+    const template = page.locator(`script#${id}[type="text/x-jquery-tmpl"]`);
+    await expect(template).toHaveCount(1);
+    const html = await template.evaluate((node) => node.innerHTML);
+    for (const fragment of expectedFragments) {
+      expect(html).toContain(fragment);
+    }
+  }
 
   await expect(page.locator(".gnb-outer .gnb-inner")).toBeVisible();
   await expect(page.locator('a.logo.logo-letter[href="/yona"]')).toBeVisible();

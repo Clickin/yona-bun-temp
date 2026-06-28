@@ -253,6 +253,27 @@ function LegacyGlobalContainers() {
           '<div class="toast" tabindex="-1"><div class="btn-dismiss"><button type="button" class="btn-transparent">&times;</button></div><div class="center-text"><span class="v"></span><div class="msg"></div></div></div>'
         }
       </script>
+      <script id="tplSelect2FormatUser" type="text/x-jquery-tmpl">
+        {
+          '<div class="usf-group" title="${name} ${loginId}"><span class="avatar-wrap smaller"><img src="${avatarURL}" width="20" height="20"></span><strong class="name">${name}</strong><span class="loginid">${loginId}</span></div>'
+        }
+      </script>
+      <script id="tplSelect2FormatMilestone" type="text/x-jquery-tmpl">
+        {'<div title="[${stateLabel}] ${name}">${name}</div>'}
+      </script>
+      <script id="tplSelect2Projects" type="text/x-jquery-tmpl">
+        {
+          '<div class="usf-group" title="${name}"><span class="avatar-wrap smaller"><img src="${avatarURL}" width="16" height="16"></span><span class="loginid">${owner}</span><span class="name">${name}</span></div>'
+        }
+      </script>
+      <script id="tplSelect2ProjectsWithoutAvatar" type="text/x-jquery-tmpl">
+        {
+          '<div class="usf-group" title="${name}"><span class="width25px"></span><span class="loginid">${owner}</span><span class="name">${name}</span></div>'
+        }
+      </script>
+      <script id="tplSelect2FormatIssues" type="text/x-jquery-tmpl">
+        {'<div title="${name}">${name}</div>'}
+      </script>
     </>
   );
 }
