@@ -20,6 +20,132 @@ async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
   return box as LayoutBox;
 }
 
+async function assertLegacyIssueViewShellMetrics(page: Page) {
+  const pageWrap = await layoutBox(page, ".project-page-wrap.board-view");
+  const header = await layoutBox(page, ".project-page-wrap.board-view > .board-header.issue");
+  const headerMeta = await layoutBox(page, ".board-header.issue > .pull-right.mr10.mt10");
+  const headerTitle = await layoutBox(page, ".board-header.issue > .title");
+  const boardId = await layoutBox(page, ".board-header.issue .board-id");
+  const favorite = await layoutBox(page, ".board-header.issue .favorite-issue");
+  const body = await layoutBox(page, ".project-page-wrap.board-view > .board-body.row-fluid");
+  const leftPane = await layoutBox(page, ".board-body.row-fluid > .span9.span-left-pane");
+  const rightPane = await layoutBox(page, ".board-body.row-fluid > aside.span3.span-right-pane");
+  const authorInfo = await layoutBox(page, ".span-left-pane > .author-info");
+  const issueBody = await layoutBox(page, ".span-left-pane > #issue-body-1");
+  const content = await layoutBox(page, "#issue-body-1 .content.markdown-wrap");
+  const attachments = await layoutBox(page, ".span-left-pane > #attachments.attachments");
+  const actionRow = await layoutBox(page, ".span-left-pane > .board-actrow.right-txt");
+  const watchButton = await layoutBox(page, ".board-actrow #watch-button");
+  const vote = await layoutBox(page, ".board-actrow #vote.vote-wrap");
+  const actRow = await layoutBox(page, ".board-actrow > .act-row");
+  const sharerList = await layoutBox(page, ".span-left-pane > .sharer-list");
+  const watcherList = await layoutBox(page, ".span-left-pane > .watcher-list");
+  const subtasks = await layoutBox(page, ".span-left-pane > .subtasks");
+  const comments = await layoutBox(page, ".span-left-pane > section#comments.board-comment-wrap");
+  const issueInfo = await layoutBox(page, "aside.span-right-pane > .issue-info");
+  const updateForm = await layoutBox(page, "#issueUpdateForm");
+  const compactComments = await layoutBox(
+    page,
+    "aside.span-right-pane #comments.board-comment-wrap",
+  );
+  const styles = await page.locator(".project-page-wrap.board-view").evaluate((element) => {
+    const headerStyle = window.getComputedStyle(
+      element.querySelector(".board-header.issue") as HTMLElement,
+    );
+    const bodyStyle = window.getComputedStyle(element.querySelector(".board-body") as HTMLElement);
+    const leftStyle = window.getComputedStyle(
+      element.querySelector(".span-left-pane") as HTMLElement,
+    );
+    const rightStyle = window.getComputedStyle(
+      element.querySelector(".span-right-pane") as HTMLElement,
+    );
+    const actionStyle = window.getComputedStyle(
+      element.querySelector(".board-actrow") as HTMLElement,
+    );
+    return {
+      actionDisplay: actionStyle.display,
+      bodyDisplay: bodyStyle.display,
+      headerDisplay: headerStyle.display,
+      leftFloat: leftStyle.float,
+      rightFloat: rightStyle.float,
+      shellDisplay: window.getComputedStyle(element).display,
+    };
+  });
+
+  await expect(page.locator(".project-page-wrap.board-view")).toHaveCount(1);
+  await expect(page.locator(".board-header.issue .board-id")).toHaveText("#1");
+  await expect(page.locator(".board-header.issue h1")).toContainText("Pilot issue");
+  await expect(page.locator(".board-header.issue > .pull-right .date")).toHaveAttribute(
+    "title",
+    "just now",
+  );
+  await expect(page.locator(".board-header.issue > .pull-right .badge-issue-open")).toContainText(
+    "open",
+  );
+  await expect(page.locator(".board-header.issue .favorite-issue")).toHaveAttribute(
+    "type",
+    "button",
+  );
+  await expect(page.locator("#issue-1.hide form")).toHaveCount(1);
+  await expect(page.locator("#issue-1.hide form textarea")).toHaveValue(
+    "- [ ] issue open\n- [x] issue done",
+  );
+  await expect(page.locator("#issue-body-1 .content.markdown-wrap")).toHaveAttribute(
+    "data-allowed-update",
+    "true",
+  );
+  await expect(page.locator("#attachments.attachments")).toHaveCount(1);
+  await expect(page.locator(".board-actrow #watch-button")).toHaveAttribute(
+    "data-watching",
+    "false",
+  );
+  await expect(page.locator(".board-actrow #vote.vote-wrap")).toHaveCount(1);
+  await expect(page.locator("#issueUpdateForm")).toHaveAttribute(
+    "action",
+    "/yona/admin/projectYobi/issues",
+  );
+
+  expect(header.y).toBeGreaterThanOrEqual(pageWrap.y);
+  expect(header.width).toBeLessThanOrEqual(pageWrap.width + 1);
+  expect(headerMeta.x + headerMeta.width).toBeLessThanOrEqual(header.x + header.width + 1);
+  expect(headerMeta.x).toBeGreaterThan(header.x + header.width * 0.75);
+  expect(headerMeta.y).toBeGreaterThanOrEqual(header.y);
+  expect(headerTitle.y).toBeGreaterThanOrEqual(header.y);
+  expect(boardId.x).toBeGreaterThanOrEqual(headerTitle.x);
+  expect(favorite.x).toBeGreaterThan(boardId.x + boardId.width - 1);
+  expect(body.y).toBeGreaterThan(header.y + header.height - 1);
+  expect(body.width).toBeLessThanOrEqual(pageWrap.width + 1);
+  expect(leftPane.x).toBeGreaterThanOrEqual(body.x);
+  expect(rightPane.x).toBeGreaterThan(leftPane.x + leftPane.width - 1);
+  expect(rightPane.width).toBeLessThan(leftPane.width);
+  expect(Math.abs(rightPane.y - leftPane.y)).toBeLessThanOrEqual(2);
+  expect(authorInfo.y).toBeGreaterThanOrEqual(leftPane.y);
+  expect(issueBody.y).toBeGreaterThanOrEqual(authorInfo.y + authorInfo.height - 1);
+  expect(content.x).toBeGreaterThanOrEqual(issueBody.x);
+  expect(content.width).toBeLessThanOrEqual(issueBody.width + 1);
+  expect(attachments.y).toBeGreaterThan(content.y + content.height - 1);
+  expect(actionRow.y).toBeGreaterThanOrEqual(attachments.y + attachments.height - 1);
+  expect(watchButton.x).toBeGreaterThanOrEqual(actionRow.x);
+  expect(vote.x).toBeGreaterThan(watchButton.x + watchButton.width - 1);
+  expect(actRow.x).toBeGreaterThan(vote.x + vote.width - 1);
+  expect(sharerList.y).toBeGreaterThanOrEqual(actionRow.y + actionRow.height - 1);
+  expect(watcherList.y).toBeGreaterThanOrEqual(sharerList.y + sharerList.height - 1);
+  expect(subtasks.y).toBeGreaterThanOrEqual(watcherList.y + watcherList.height - 1);
+  expect(comments.y).toBeGreaterThan(subtasks.y + subtasks.height - 1);
+  expect(issueInfo.x).toBeGreaterThanOrEqual(rightPane.x);
+  expect(issueInfo.width).toBeLessThanOrEqual(rightPane.width + 1);
+  expect(updateForm.y).toBeGreaterThanOrEqual(issueInfo.y);
+  expect(compactComments.y).toBeGreaterThan(updateForm.y + updateForm.height - 1);
+  expect(styles).toEqual({
+    actionDisplay: "flex",
+    bodyDisplay: "block",
+    headerDisplay: "block",
+    leftFloat: "left",
+    rightFloat: "left",
+    shellDisplay: "block",
+  });
+}
+
 async function assertLegacyIssueCommentsShellMetrics(page: Page) {
   const section = await layoutBox(page, "section#comments.board-comment-wrap");
   const timeline = await layoutBox(page, "section#comments #timeline");
@@ -1258,6 +1384,7 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   );
 
   await page.goto("/yona/admin/projectYobi/issue/1");
+  await assertLegacyIssueViewShellMetrics(page);
   await expect(page.locator("#helpKeys.modal.hide.fade.keymap-help")).toHaveCount(1);
   await expect(page.locator("#comment-delete-modal.modal.hide.fade")).toHaveCount(1);
   await expect(
