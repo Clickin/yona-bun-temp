@@ -82,8 +82,14 @@ async function routeRuntimeShell(page: Page) {
   await page.route(apiV1Route("/session"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
+        actorId: "11",
         defaultLandingPath: "/me",
+        emailAddress: "nori@example.com",
         isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "nori",
+        userLabel: "Nori",
       }),
       headers: restJsonHeaders,
       status: 200,
@@ -595,6 +601,104 @@ async function assertLegacyThreadReplyFormMetrics(page: Page) {
     formDisplay: "block",
     textareaDisplay: "inline-block",
     textareaHeight: "100px",
+  });
+}
+
+async function assertLegacyReviewFormMetrics(page: Page) {
+  const row = await layoutBox(page, ".inline-comment-form-row.comments.board-comment-wrap");
+  const cell = await layoutBox(page, ".inline-comment-form-row > td");
+  const form = await layoutBox(page, "#review-form.review-form.code-review-form");
+  const avatarWrap = await layoutBox(page, "#review-form .author-info-wrap.pull-left");
+  const avatar = await layoutBox(page, "#review-form .avatar-wrap.medium");
+  const writeBox = await layoutBox(page, "#review-form .write-comment-box");
+  const writeWrap = await layoutBox(page, "#review-form .write-comment-wrap");
+  const closeButton = await layoutBox(page, '#review-form button[data-toggle="close"]');
+  const editor = await layoutBox(page, '#review-form [data-toggle="markdown-editor"]');
+  const textarea = await layoutBox(page, "#review-form textarea#editor-contents");
+  const upload = await layoutBox(page, "#review-form #upload.upload-wrap.content-footer");
+  const submitWrap = await layoutBox(page, "#review-form .write-comment-wrap > .right-txt");
+  const submit = await layoutBox(page, "#review-form button[type=submit].ybtn-success");
+  const styles = await page.locator("#review-form").evaluate((element) => {
+    const formStyle = window.getComputedStyle(element);
+    const avatarWrapStyle = window.getComputedStyle(
+      element.querySelector(".author-info-wrap") as HTMLElement,
+    );
+    const writeBoxStyle = window.getComputedStyle(
+      element.querySelector(".write-comment-box") as HTMLElement,
+    );
+    const uploadStyle = window.getComputedStyle(element.querySelector("#upload") as HTMLElement);
+    const submitWrapStyle = window.getComputedStyle(
+      element.querySelector(".write-comment-wrap > .right-txt") as HTMLElement,
+    );
+    return {
+      avatarFloat: avatarWrapStyle.float,
+      formDisplay: formStyle.display,
+      submitTextAlign: submitWrapStyle.textAlign,
+      uploadDisplay: uploadStyle.display,
+      writeBoxDisplay: writeBoxStyle.display,
+    };
+  });
+
+  await expect(page.locator("#review-form")).toHaveAttribute(
+    "action",
+    `/yona/admin/projectYobi/commit/${commitId}/comments`,
+  );
+  await expect(page.locator("#review-form")).toHaveAttribute("method", "post");
+  await expect(page.locator("#review-form")).toHaveAttribute("enctype", "multipart/form-data");
+  await expect(page.locator("#review-form .avatar-wrap.medium")).toHaveAttribute(
+    "href",
+    "/yona/nori",
+  );
+  await expect(page.locator("#review-form .avatar-wrap.medium")).toHaveAttribute(
+    "data-toggle",
+    "tooltip",
+  );
+  await expect(page.locator("#review-form .avatar-wrap.medium")).toHaveAttribute(
+    "data-placement",
+    "top",
+  );
+  await expect(page.locator("#review-form .avatar-wrap.medium")).toHaveAttribute(
+    "data-original-title",
+    "Nori",
+  );
+  await expect(page.locator("#review-form textarea#editor-contents")).toHaveAttribute(
+    "name",
+    "contentsMarkdown",
+  );
+  await expect(page.locator("#review-form textarea#editor-contents")).toHaveAttribute(
+    "data-editor-mode",
+    "code-review-body",
+  );
+  await expect(page.locator("#review-form #upload")).toHaveAttribute(
+    "data-resource-type",
+    "COMMIT_COMMENT",
+  );
+  await expect(page.locator("#review-form #upload input.file[name=filePath]")).toHaveAttribute(
+    "multiple",
+    "",
+  );
+  await expect(page.locator('#review-form button[data-toggle="close"]')).toHaveText("×");
+  await expect(page.locator("#review-form button[type=submit]")).toContainText("Add a comment");
+
+  expect(cell.x).toBeCloseTo(row.x, 0);
+  expect(form.x).toBeGreaterThanOrEqual(cell.x);
+  expect(form.width).toBeLessThanOrEqual(cell.width + 1);
+  expect(avatarWrap.x).toBeCloseTo(form.x, 0);
+  expect(avatar.x).toBeGreaterThanOrEqual(avatarWrap.x);
+  expect(writeBox.x).toBeGreaterThan(avatarWrap.x + avatarWrap.width - 1);
+  expect(writeWrap.y).toBeGreaterThanOrEqual(writeBox.y);
+  expect(closeButton.x).toBeGreaterThan(writeWrap.x + writeWrap.width / 2);
+  expect(editor.y).toBeGreaterThanOrEqual(writeWrap.y);
+  expect(textarea.y).toBeGreaterThanOrEqual(editor.y);
+  expect(upload.y).toBeGreaterThan(textarea.y);
+  expect(submitWrap.y).toBeGreaterThan(upload.y + upload.height - 1);
+  expect(submit.x).toBeGreaterThanOrEqual(submitWrap.x);
+  expect(styles).toEqual({
+    avatarFloat: "left",
+    formDisplay: "block",
+    submitTextAlign: "right",
+    uploadDisplay: "block",
+    writeBoxDisplay: "block",
   });
 }
 
@@ -1126,6 +1230,7 @@ test("commit diff line comment creates a ranged review thread", async ({ page })
   await page.getByRole("button", { name: "Comment on src/main.rs:2" }).click();
   const inlineForm = page.locator(".code-review-form");
   await expect(inlineForm).toBeVisible();
+  await assertLegacyReviewFormMetrics(page);
   await inlineForm.locator("textarea").fill("Inline line note");
 
   const lineCommentRequest = page.waitForRequest(

@@ -55,7 +55,8 @@ function toCodeCommitDetailView(response: CodeCommitDetailResponse): CodeCommitD
 
 function CodeCommitDetailRouteComponent() {
   const { commitId, owner, projectName } = Route.useParams();
-  const { bootstrapping, csrfToken, messages, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, currentSession, messages, runtimeConfig, setErrorMessage } =
+    useAppRuntime();
   const queryClient = useQueryClient();
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const searchParams = new URL(locationHref, "http://localhost").searchParams;
@@ -198,6 +199,8 @@ function CodeCommitDetailRouteComponent() {
       messages={messages}
       renderShell={false}
       runtimeConfig={runtimeConfig}
+      viewerLabel={currentSession?.userLabel}
+      viewerLoginId={currentSession?.loginId}
       onCloseThread={async (threadId) => {
         await closeThreadMutation.mutateAsync(threadId);
       }}

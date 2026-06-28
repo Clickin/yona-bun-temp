@@ -914,6 +914,8 @@ export function CodeCommitDetailPage(props: {
   ) => Promise<void> | void;
   renderShell?: boolean;
   runtimeConfig: RuntimeConfig;
+  viewerLabel?: string;
+  viewerLoginId?: string;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const commitDetail = props.commitDetail;
@@ -981,13 +983,15 @@ export function CodeCommitDetailPage(props: {
           <CodeCommitDiffView
             commitDetail={commitDetail}
             csrfToken={props.csrfToken}
+            messages={props.messages}
             runtimeConfig={props.runtimeConfig}
+            viewerLabel={props.viewerLabel}
+            viewerLoginId={props.viewerLoginId}
             onCloseThread={props.onCloseThread}
             onCreateComment={props.onCreateComment}
             onDeleteComment={props.onDeleteComment}
             onOpenThread={props.onOpenThread}
             onUpdateComment={props.onUpdateComment}
-            messages={props.messages}
           />
         )}
       </div>
@@ -1454,6 +1458,8 @@ function CodeCommitDiffView(props: {
     attachmentIds?: number[],
   ) => Promise<void> | void;
   runtimeConfig: RuntimeConfig;
+  viewerLabel?: string;
+  viewerLoginId?: string;
 }) {
   const commitDetail = props.commitDetail;
   const commit = commitDetail?.commit;
@@ -1638,6 +1644,9 @@ function CodeCommitDiffView(props: {
                                     "/comments",
                                   )}
                                   className="review-form code-review-form"
+                                  encType="multipart/form-data"
+                                  id="review-form"
+                                  method="post"
                                   onSubmit={(event) => {
                                     void submitInlineComment(event);
                                   }}
@@ -1653,37 +1662,116 @@ function CodeCommitDiffView(props: {
                                     type="hidden"
                                     value={inlineComment.endLine}
                                   />
-                                  <LegacyMarkdownEditorShell
-                                    editId={`edit-code-review-${line.key}`}
-                                    editorMode="code-review-body"
-                                    previewId={`preview-code-review-${line.key}`}
-                                  >
-                                    <MarkdownAttachmentTextarea
-                                      ariaLabel={`Code review comment on ${file.path}:${inlineComment.startLine}-${inlineComment.endLine}`}
-                                      className="editorSeries content comment nm"
-                                      csrfToken={props.csrfToken}
-                                      disabled={!canComment}
-                                      editorMode="code-review-body"
-                                      id="editor-contents"
-                                      name="contentsMarkdown"
-                                      onAttachmentUpload={(attachment) =>
-                                        setInlineAttachmentIds((current) => [
-                                          ...current,
-                                          attachment.id,
-                                        ])
-                                      }
-                                      onChange={setInlineCommentText}
-                                      runtimeConfig={props.runtimeConfig}
-                                      value={inlineCommentText}
-                                    />
-                                  </LegacyMarkdownEditorShell>
-                                  <button
-                                    className="ybtn ybtn-success ybtn-small"
-                                    disabled={!canComment}
-                                    type="submit"
-                                  >
-                                    {legacyMessage(props.messages, "button.comment.new")}
-                                  </button>
+                                  <div className="author-info-wrap pull-left hide-in-mobile">
+                                    <div className="author-info">
+                                      <a
+                                        className="avatar-wrap medium"
+                                        data-original-title={props.viewerLabel ?? ""}
+                                        data-placement="top"
+                                        data-toggle="tooltip"
+                                        href={codeAuthorHref(
+                                          props.runtimeConfig,
+                                          props.viewerLoginId,
+                                        )}
+                                        title=""
+                                      >
+                                        {props.viewerLoginId ?? props.viewerLabel ?? ""}
+                                      </a>
+                                    </div>
+                                  </div>
+                                  <div className="write-comment-box">
+                                    <div className="write-comment-wrap">
+                                      <div className="pull-right">
+                                        <button
+                                          className="ybtn ybtn-default ybtn-small"
+                                          data-toggle="close"
+                                          onClick={() => setInlineComment(null)}
+                                          type="button"
+                                        >
+                                          ×
+                                        </button>
+                                      </div>
+                                      <LegacyMarkdownEditorShell
+                                        editId={`edit-code-review-${line.key}`}
+                                        editorMode="code-review-body"
+                                        previewId={`preview-code-review-${line.key}`}
+                                      >
+                                        <MarkdownAttachmentTextarea
+                                          ariaLabel={`Code review comment on ${file.path}:${inlineComment.startLine}-${inlineComment.endLine}`}
+                                          className="editorSeries content comment nm"
+                                          csrfToken={props.csrfToken}
+                                          disabled={!canComment}
+                                          editorMode="code-review-body"
+                                          id="editor-contents"
+                                          name="contentsMarkdown"
+                                          onAttachmentUpload={(attachment) =>
+                                            setInlineAttachmentIds((current) => [
+                                              ...current,
+                                              attachment.id,
+                                            ])
+                                          }
+                                          onChange={setInlineCommentText}
+                                          runtimeConfig={props.runtimeConfig}
+                                          value={inlineCommentText}
+                                        />
+                                      </LegacyMarkdownEditorShell>
+                                      <div
+                                        className="upload-wrap content-footer"
+                                        data-resource-type="COMMIT_COMMENT"
+                                        id="upload"
+                                      >
+                                        <div className="attach-wrap">
+                                          <span className="help help-droppable">
+                                            {legacyMessage(
+                                              props.messages,
+                                              "common.attach.drophere",
+                                            )}
+                                          </span>
+                                          <div className="btn-wrap">
+                                            <div className="nbtn medium white fake-file-wrap">
+                                              <i className="yobicon-upload"></i>{" "}
+                                              {legacyMessage(props.messages, "button.upload")}
+                                              <input
+                                                className="file"
+                                                multiple
+                                                name="filePath"
+                                                type="file"
+                                              />
+                                            </div>
+                                          </div>
+                                          <span className="plain">
+                                            {legacyMessage(
+                                              props.messages,
+                                              "common.attach.clickbutton",
+                                            )}
+                                          </span>
+                                          <span className="help help-pastable">
+                                            {legacyMessage(
+                                              props.messages,
+                                              "common.attach.pastehere",
+                                            )}
+                                          </span>
+                                        </div>
+                                        <ul className="attached-files unstyled" />
+                                        <p className="right-txt help">
+                                          <i className="yobicon-supportrequest"></i>{" "}
+                                          {legacyMessage(
+                                            props.messages,
+                                            "common.attach.attachIfYouSave",
+                                          )}
+                                        </p>
+                                      </div>
+                                      <div className="right-txt">
+                                        <button
+                                          className="ybtn ybtn-success ybtn-small"
+                                          disabled={!canComment}
+                                          type="submit"
+                                        >
+                                          {legacyMessage(props.messages, "button.comment.new")}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </form>
                               </td>
                             </tr>

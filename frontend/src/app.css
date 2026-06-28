@@ -4967,12 +4967,19 @@ div.markdown-preview {
 }
 
 .code-review-form {
-  display: grid;
-  gap: 10px;
+  display: block;
 }
 
 .code-review-form textarea {
   min-height: 110px;
+}
+
+.code-review-form .author-info-wrap {
+  width: 42px;
+}
+
+.code-review-form .write-comment-box {
+  margin-left: 52px;
 }
 
 .review-wrap {
