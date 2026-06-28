@@ -24,6 +24,7 @@ Current template-first reset reports:
 - `2026-06-28-static-react-owner-coverage.md`
 - `2026-06-28-rendered-verification-queue.md`
 - `2026-06-28-p0-rendered-audit-pass.md`
+- `2026-06-28-p1-source-audit-pass.md`
 - `template-first-p0-global-shell.md`
 - `template-first-p1-auth-public-home.md`
 - `template-first-p2-project-shell.md`
@@ -55,6 +56,9 @@ Rules:
 - The 2026-06-28 P0 rendered audit pass opens the 12 highest-priority rows and
   records source-level findings. It does not close those rows without rendered
   route evidence.
+- The 2026-06-28 P1 source audit pass expands the 89 P1 rows into risk buckets
+  for rendered interaction, caller-route, dynamic selector, and selector/copy
+  checks. It does not close those rows.
 - Explorer reports must not propose new UX or new product structure. Findings
   must be framed as `covered`, `gap`, `deviation`, `deferred`,
   `not-applicable`, or `needs-parent-decision`.

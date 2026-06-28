@@ -146,6 +146,13 @@ intentional framed-layout deviations, gap candidates, or thin-wrapper caller
 checks. This is not P0 closure; each row still needs rendered route evidence or
 an explicit `gap`, `deviation`, or `deferred` record.
 
+The first P1 source pass is:
+`docs/provenance/ui-parity-reports/2026-06-28-p1-source-audit-pass.md`.
+It expands all 89 P1 rows into source-level risk buckets: 57 rendered
+interaction checks, 18 caller-route checks, 11 dynamic selector checks, and 3
+rendered selector checks. This is not P1 closure; it identifies the rendered
+evidence each row still needs.
+
 ### `board/`
 
 | legacy template | packet | audit disposition |

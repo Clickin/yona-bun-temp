@@ -15,6 +15,12 @@ P0 source pass:
 It opens the 12 highest-priority rows but does not close them without rendered
 route evidence.
 
+P1 source pass:
+`docs/provenance/ui-parity-reports/2026-06-28-p1-source-audit-pass.md`.
+It expands the 89 P1 rows into rendered interaction, caller-route, dynamic
+selector, and selector/copy checks. It does not close them without rendered
+route evidence.
+
 ## Lane Summary
 
 | lane | count | required next evidence |
