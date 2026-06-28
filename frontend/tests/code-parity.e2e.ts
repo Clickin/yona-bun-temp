@@ -281,6 +281,50 @@ test.beforeEach(async ({ page }) => {
   });
 
   await page.route(
+    /\/api\/v1\/projects\/admin\/projectYobi\/compare\/[^/?]+(?:\?.*)?$/,
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          commitA: {
+            authorDate: "2026-04-20",
+            authorEmail: "seed@example.com",
+            authorName: "Seed",
+            commentCount: 0,
+            commitId: "1234567890abcdef1234567890abcdef12345678",
+            commitShortId: "1234567",
+            message: "Initial commit",
+            shortMessage: "Initial commit",
+          },
+          commitB: {
+            authorDate: "2026-04-21",
+            authorEmail: "author@example.com",
+            authorName: "Author",
+            commentCount: 0,
+            commitId: "abcdef1234567890abcdef1234567890abcdef12",
+            commitShortId: "abcdef1",
+            message: "Update main function",
+            shortMessage: "Update main function",
+          },
+          files: [
+            {
+              patch:
+                'diff --git a/src/main.rs b/src/main.rs\n--- a/src/main.rs\n+++ b/src/main.rs\n@@ -1 +1,3 @@\n fn main() {\n+    println!("compare");\n }\n',
+              path: "src/main.rs",
+            },
+          ],
+          noHead: false,
+          ownerName: "admin",
+          projectName: "projectYobi",
+          revA: "1234567890abcdef1234567890abcdef12345678",
+          revB: "abcdef1234567890abcdef1234567890abcdef12",
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
+  await page.route(
     /\/api\/v1\/projects\/admin\/projectYobi\/branches(?:\/default)?$/,
     async (route) => {
       const method = route.request().method();
@@ -468,4 +512,58 @@ test("branches table keeps legacy layout and mutation metrics", async ({ page })
     .click();
   expect((await deleteRequest).headers()["x-csrf-token"]).toBe("csrf-123");
   await expect(page.locator(".branchName", { hasText: "topic/delete-me" })).toHaveCount(0);
+});
+
+test("compare route keeps legacy code compare shell metrics", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/yona/admin/projectYobi/compare/1234567..abcdef1");
+
+  await expect(page.locator(".project-page-wrap .code-browse-wrap")).toBeVisible();
+  await expect(page.locator(".commitInfo .commitId")).toContainText(
+    "@1234567890abcdef1234567890abcdef12345678..abcdef1234567890abcdef1234567890abcdef12",
+  );
+  await expect(page.locator(".diff-body.discommentable")).toContainText('println!("compare")');
+  await expect(page.locator(".diff-body.discommentable .alert")).toHaveCount(0);
+  await expect(page.locator(".code-browse-wrap > h1")).toHaveCount(0);
+
+  const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
+  const browseWrap = await layoutBox(page, ".code-browse-wrap");
+  const commitInfo = await layoutBox(page, ".commitInfo");
+  const commitId = await layoutBox(page, ".commitInfo .commitId");
+  const diffBody = await layoutBox(page, ".diff-body.discommentable");
+  const diffFile = await layoutBox(page, ".diff-body.discommentable .diff-file");
+  const fileName = await layoutBox(page, ".diff-body.discommentable .diff-file h2");
+  const diffCode = await layoutBox(page, ".diff-body.discommentable .diff-code");
+  const styles = await page.locator(".commitInfo").evaluate((element) => {
+    const commitInfoStyle = window.getComputedStyle(element);
+    const diffBodyStyle = window.getComputedStyle(
+      document.querySelector(".diff-body.discommentable") as HTMLElement,
+    );
+    return {
+      background: commitInfoStyle.backgroundColor,
+      borderBottomWidth: commitInfoStyle.borderBottomWidth,
+      marginBottom: commitInfoStyle.marginBottom,
+      paddingTop: commitInfoStyle.paddingTop,
+      whiteSpace: diffBodyStyle.whiteSpace,
+    };
+  });
+
+  expect(browseWrap.x).toBeCloseTo(projectPage.x, 0);
+  expect(browseWrap.width).toBeCloseTo(projectPage.width, 0);
+  expect(commitInfo.x).toBeCloseTo(browseWrap.x, 0);
+  expect(commitInfo.width).toBeCloseTo(browseWrap.width, 0);
+  expect(commitId.x).toBeGreaterThanOrEqual(commitInfo.x);
+  expect(commitId.y).toBeGreaterThanOrEqual(commitInfo.y);
+  expect(diffBody.y).toBeGreaterThan(commitInfo.y + commitInfo.height - 1);
+  expect(diffFile.x).toBeCloseTo(diffBody.x, 0);
+  expect(diffFile.width).toBeCloseTo(diffBody.width, 0);
+  expect(fileName.y).toBeGreaterThanOrEqual(diffFile.y);
+  expect(diffCode.y).toBeGreaterThan(fileName.y + fileName.height - 1);
+  expect(styles).toEqual({
+    background: "rgb(255, 255, 255)",
+    borderBottomWidth: "1px",
+    marginBottom: "12px",
+    paddingTop: "12px",
+    whiteSpace: "normal",
+  });
 });

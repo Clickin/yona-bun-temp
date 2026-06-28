@@ -203,7 +203,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
 | `code/branches.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts branch tabs/table header/body column alignment, default branch marker, set-default/delete controls, data-request hooks, and mutation boundaries |
-| `code/compare.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
+| `code/compare.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts the legacy compare shell project/code wrappers, commitInfo/commitId copy, diff-body.discommentable ordering, absence of non-legacy compare headings/placeholders, diff file/code placement, and commitInfo/background/border/padding metrics |
 | `code/compare_svn.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
 | `code/diff.scala.html` | P5 code | reopen: inspect Scala anchors before JSX reuse |
 | `code/history.scala.html` | P5 code | metric guard passed: `code-parity.e2e.ts` asserts commit history branch/tabs/table column alignment plus path breadcrumb/table/browse/older ordering |
