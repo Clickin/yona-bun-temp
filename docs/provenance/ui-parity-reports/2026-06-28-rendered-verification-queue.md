@@ -28,6 +28,12 @@ P1 passes, all 242 queue rows now have source-pass follow-up requirements, but
 the queue remains open until rendered evidence or explicit
 `gap`/`deviation`/`deferred` records exist.
 
+Rendered evidence execution manifest:
+`docs/provenance/ui-parity-reports/2026-06-28-rendered-evidence-execution-manifest.md`.
+It maps all 242 queue rows to route/evidence buckets. The latest visual sweep
+can support route-open evidence for 240 rows; the 2 framed-layout rows require
+targeted absence guards.
+
 ## Lane Summary
 
 | lane | count | required next evidence |

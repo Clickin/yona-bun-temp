@@ -161,6 +161,15 @@ This still is not exhaustive audit completion: rendered route evidence, or a
 precise `gap`, `deviation`, or `deferred` record, is required before any row
 leaves the queue.
 
+The rendered evidence execution manifest is:
+`docs/provenance/ui-parity-reports/2026-06-28-rendered-evidence-execution-manifest.md`.
+It maps all 242 source-pass rows to concrete route/evidence buckets and compares
+them with `output/playwright/visual-sweep/latest.json` from
+2026-06-28T07:48:07.381Z. The latest sweep can support route-open evidence for
+240 rows; the 2 remaining rows are the intentionally retired framed layout
+templates and require targeted guards that prove the iframe shell stays absent.
+Selector, copy, form, and `data-*` assertions are still needed before closure.
+
 ### `board/`
 
 | legacy template | packet | audit disposition |

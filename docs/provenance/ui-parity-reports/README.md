@@ -26,6 +26,7 @@ Current template-first reset reports:
 - `2026-06-28-p0-rendered-audit-pass.md`
 - `2026-06-28-p1-source-audit-pass.md`
 - `2026-06-28-p2-p3-source-audit-pass.md`
+- `2026-06-28-rendered-evidence-execution-manifest.md`
 - `template-first-p0-global-shell.md`
 - `template-first-p1-auth-public-home.md`
 - `template-first-p2-project-shell.md`
@@ -63,6 +64,9 @@ Rules:
 - The 2026-06-28 P2/P3 source audit pass expands the remaining 7 P2 rows and
   134 P3 rows. At that point all 242 queue rows have source-pass follow-up
   requirements, but rendered evidence is still required for closure.
+- The 2026-06-28 rendered evidence execution manifest maps all 242 source-pass
+  rows to route/evidence buckets and records which rows are supported by the
+  latest visual sweep route-open evidence.
 - Explorer reports must not propose new UX or new product structure. Findings
   must be framed as `covered`, `gap`, `deviation`, `deferred`,
   `not-applicable`, or `needs-parent-decision`.
