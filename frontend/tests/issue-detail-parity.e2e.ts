@@ -1248,10 +1248,48 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
   await expect(page.locator("#comment-form")).toHaveAttribute("method", "post");
   await expect(page.locator("#comment-form")).toHaveAttribute("enctype", "multipart/form-data");
   await expect(page.locator("#comment-form .write-comment-box")).toHaveCount(1);
+  await expect(page.locator('#comment-form [data-toggle="markdown-editor"].mt10')).toHaveCount(1);
+  await expect(page.locator('#comment-form a[href="#edit-comment-body"]')).toHaveAttribute(
+    "data-toggle",
+    "tab",
+  );
+  await expect(page.locator('#comment-form a[href="#edit-comment-body"]')).toHaveAttribute(
+    "data-mode",
+    "edit",
+  );
+  await expect(page.locator('#comment-form a[href="#preview-comment-body"]')).toHaveAttribute(
+    "data-toggle",
+    "tab",
+  );
+  await expect(page.locator('#comment-form a[href="#preview-comment-body"]')).toHaveAttribute(
+    "data-mode",
+    "preview",
+  );
+  await expect(page.locator("#comment-form .add-task-list-button")).toHaveAttribute(
+    "type",
+    "button",
+  );
+  await expect(page.locator("#comment-form .add-task-list-button .task-list-icon")).toHaveCount(1);
+  await expect(page.locator("#comment-form #button-clear-temporary.ybtn-warning")).toHaveAttribute(
+    "type",
+    "button",
+  );
+  await expect(page.locator("#comment-form .editor-notice-label")).toHaveCount(1);
   await expect(page.locator("#comment-form .textarea-box")).toHaveCount(1);
+  await expect(page.locator("#comment-form #edit-comment-body.tab-pane.active")).toHaveCount(1);
+  await expect(page.locator("#comment-form #preview-comment-body.tab-pane")).toHaveCount(1);
   await expect(page.locator("#editor-contents-comment-body")).toHaveAttribute("name", "contents");
   await expect(page.locator("#editor-contents-comment-body")).toHaveClass(
     /editorSeries content comment nm/,
+  );
+  await expect(page.locator("#editor-contents-comment-body")).toHaveAttribute(
+    "data-editor-mode",
+    "comment-body",
+  );
+  await expect(page.locator("#editor-contents-comment-body")).toHaveAttribute("markdown", "true");
+  await expect(page.locator("#preview-comment-body .markdown-preview")).toHaveAttribute(
+    "class",
+    /markdown-preview markdown-wrap comment-body/,
   );
   await expect(page.locator("#comment-form .temporaryUploadFiles")).toHaveAttribute(
     "name",
@@ -1268,6 +1306,8 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
   const commentForm = await layoutBox(page, "#comment-form");
   const writeCommentBox = await layoutBox(page, "#comment-form .write-comment-box");
   const editorTabs = await layoutBox(page, "#comment-form .nav.nav-tabs.nm.small");
+  const editorTabContent = await layoutBox(page, "#comment-form .tab-content");
+  const editTab = await layoutBox(page, "#comment-form #edit-comment-body");
   const textareaBox = await layoutBox(page, "#comment-form .textarea-box");
   const commentEditor = await layoutBox(page, "#editor-contents-comment-body");
   const uploadWrap = await layoutBox(page, "#comment-form .upload-wrap");
@@ -1280,6 +1320,12 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
     const textareaBoxStyle = window.getComputedStyle(textareaBoxElement);
     const textarea = element.querySelector("textarea.comment") as HTMLElement;
     const textareaStyle = window.getComputedStyle(textarea);
+    const tabContent = element.querySelector(".tab-content") as HTMLElement;
+    const tabContentStyle = window.getComputedStyle(tabContent);
+    const editTab = element.querySelector("#edit-comment-body") as HTMLElement;
+    const editTabStyle = window.getComputedStyle(editTab);
+    const previewTab = element.querySelector("#preview-comment-body") as HTMLElement;
+    const previewTabStyle = window.getComputedStyle(previewTab);
     const upload = element.querySelector(".upload-wrap") as HTMLElement;
     const uploadStyle = window.getComputedStyle(upload);
     const dynamicButton = element.querySelector("#dynamic-comment-btn") as HTMLElement;
@@ -1294,6 +1340,10 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
       notificationDisplay: notificationStyle.display,
       notificationPaddingLeft: notificationStyle.paddingLeft,
       notificationTitleColor: notificationTitleStyle.color,
+      editTabDisplay: editTabStyle.display,
+      previewTabDisplay: previewTabStyle.display,
+      tabContentOverflow: tabContentStyle.overflow,
+      tabContentPosition: tabContentStyle.position,
       textareaBorderBottomLeftRadius: textareaStyle.borderBottomLeftRadius,
       textareaBorderBottomRightRadius: textareaStyle.borderBottomRightRadius,
       textareaBoxPaddingRight: textareaBoxStyle.paddingRight,
@@ -1313,6 +1363,8 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
   expect(writeCommentBox.x).toBeCloseTo(commentForm.x, 0);
   expect(writeCommentBox.y).toBeGreaterThanOrEqual(commentForm.y);
   expect(editorTabs.x).toBeGreaterThanOrEqual(writeCommentBox.x);
+  expect(editorTabContent.y).toBeGreaterThan(editorTabs.y + editorTabs.height - 1);
+  expect(editTab.y).toBeGreaterThanOrEqual(editorTabContent.y);
   expect(textareaBox.x).toBeCloseTo(editorTabs.x, 0);
   expect(commentEditor.x).toBeGreaterThanOrEqual(textareaBox.x);
   expect(commentEditor.y).toBeGreaterThan(editorTabs.y + editorTabs.height - 1);
@@ -1326,6 +1378,10 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
     notificationDisplay: "none",
     notificationPaddingLeft: "10px",
     notificationTitleColor: "rgb(153, 153, 153)",
+    editTabDisplay: "block",
+    previewTabDisplay: "none",
+    tabContentOverflow: "visible",
+    tabContentPosition: "relative",
     textareaBorderBottomLeftRadius: "3px",
     textareaBorderBottomRightRadius: "3px",
     textareaBoxPaddingRight: "14px",

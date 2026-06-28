@@ -5178,6 +5178,9 @@ function IssueMentionTextarea(props: {
         ref={textareaRef}
         tabIndex={props.tabIndex}
         value={props.value}
+        {...({
+          markdown: "true",
+        } as unknown as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
       />
       <IssueMentionUserSuggestions onSelect={selectMention} state={mentionSearchState} />
       <IssueReferenceSuggestions

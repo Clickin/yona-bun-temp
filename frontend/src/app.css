@@ -1417,6 +1417,20 @@ h1 {
   padding: 4px 15px;
 }
 
+.tab-content {
+  overflow: hidden;
+}
+
+.tab-content > .tab-pane,
+.pill-content > .pill-pane {
+  display: none;
+}
+
+.tab-content > .active,
+.pill-content > .active {
+  display: block;
+}
+
 .show-subtasks-li {
   margin-left: -18px;
 }
