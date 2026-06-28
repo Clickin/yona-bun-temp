@@ -20,6 +20,89 @@ async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
   return box as LayoutBox;
 }
 
+async function assertLegacyIssueCommentsShellMetrics(page: Page) {
+  const section = await layoutBox(page, "section#comments.board-comment-wrap");
+  const timeline = await layoutBox(page, "section#comments #timeline");
+  const timelineList = await layoutBox(page, "section#comments #timeline > .timeline-list");
+  const header = await layoutBox(page, "section#comments .timeline-list > .comment-header");
+  const headerIcon = await layoutBox(page, "section#comments .comment-header > i");
+  const headerLabel = await layoutBox(
+    page,
+    "section#comments .comment-header > strong:first-of-type",
+  );
+  const headerCount = await layoutBox(page, "section#comments .comment-header > strong.num");
+  const divider = await layoutBox(page, "section#comments .timeline-list > hr.nm");
+  const list = await layoutBox(page, "section#comments .timeline-list > ul.comments");
+  const firstComment = await layoutBox(
+    page,
+    "section#comments .timeline-list > ul.comments > li#comment-10",
+  );
+  const secondComment = await layoutBox(
+    page,
+    "section#comments .timeline-list > ul.comments > li#comment-30",
+  );
+  const event = await layoutBox(
+    page,
+    "section#comments .timeline-list > ul.comments > li#event-17",
+  );
+  const styles = await page.locator("section#comments").evaluate((element) => {
+    const headerStyle = window.getComputedStyle(
+      element.querySelector(".comment-header") as HTMLElement,
+    );
+    const iconStyle = window.getComputedStyle(
+      element.querySelector(".comment-header > i") as HTMLElement,
+    );
+    const dividerStyle = window.getComputedStyle(element.querySelector("hr.nm") as HTMLElement);
+    const listStyle = window.getComputedStyle(element.querySelector("ul.comments") as HTMLElement);
+    const sectionStyle = window.getComputedStyle(element);
+    return {
+      dividerDisplay: dividerStyle.display,
+      headerDisplay: headerStyle.display,
+      iconDisplay: iconStyle.display,
+      listDisplay: listStyle.display,
+      listStyleType: listStyle.listStyleType,
+      sectionDisplay: sectionStyle.display,
+    };
+  });
+
+  await expect(page.locator("section#comments.board-comment-wrap")).toHaveCount(1);
+  await expect(
+    page.locator("section#comments .comment-header > strong:first-of-type"),
+  ).toContainText("Comment");
+  await expect(page.locator("section#comments .comment-header > strong.num")).toContainText("2");
+  await expect(page.locator("section#comments .timeline-list > ul.comments")).toHaveCount(1);
+  await expect(
+    page.locator("section#comments .timeline-list > ul.comments > li#comment-10"),
+  ).toHaveCount(1);
+  await expect(
+    page.locator("section#comments .timeline-list > ul.comments > li#comment-30"),
+  ).toHaveCount(1);
+  await expect(
+    page.locator("section#comments .timeline-list > ul.comments > li#event-17"),
+  ).toHaveCount(1);
+
+  expect(timeline.x).toBeGreaterThanOrEqual(section.x);
+  expect(timeline.width).toBeLessThanOrEqual(section.width + 1);
+  expect(timelineList.x).toBeGreaterThanOrEqual(timeline.x);
+  expect(header.y).toBeGreaterThanOrEqual(timelineList.y);
+  expect(headerIcon.x).toBeGreaterThanOrEqual(header.x);
+  expect(headerLabel.x).toBeGreaterThan(headerIcon.x + headerIcon.width - 1);
+  expect(headerCount.x).toBeGreaterThan(headerLabel.x + headerLabel.width - 1);
+  expect(divider.y).toBeGreaterThan(header.y + header.height - 1);
+  expect(list.y).toBeGreaterThan(divider.y);
+  expect(firstComment.y).toBeGreaterThanOrEqual(list.y);
+  expect(secondComment.y).toBeGreaterThan(firstComment.y + firstComment.height - 1);
+  expect(event.y).toBeGreaterThan(secondComment.y + secondComment.height - 1);
+  expect(styles).toEqual({
+    dividerDisplay: "block",
+    headerDisplay: "block",
+    iconDisplay: "inline",
+    listDisplay: "block",
+    listStyleType: "none",
+    sectionDisplay: "block",
+  });
+}
+
 async function assertLegacyIssueCommentRowMetrics(page: Page) {
   const commentRow =
     "section#comments #timeline .timeline-list > ul.comments > li#comment-10.comment:not(.index-comment)";
@@ -1076,6 +1159,7 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await expect(fullTimeline.locator("#event-19")).toHaveCount(0);
   await expect(fullTimeline).not.toContainText("issue.event.");
 
+  await assertLegacyIssueCommentsShellMetrics(page);
   await expect(fullTimeline.locator("#comment-10")).toContainText("Editable comment");
   await assertLegacyIssueCommentRowMetrics(page);
   await fullTimeline.locator("#comment-10").hover();

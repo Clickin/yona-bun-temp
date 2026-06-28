@@ -2758,7 +2758,9 @@ export function ProjectIssueDetailPage(props: {
                 <div className="comment-header">
                   <i></i>
                   <strong>{legacyMessage(messages, "common.comment")}</strong>{" "}
-                  <strong className="num">{issue?.commentCount ?? 0}</strong>
+                  <strong className="num">
+                    {issue?.comments.length ?? issue?.commentCount ?? 0}
+                  </strong>
                 </div>
                 <hr className="nm" />
                 <ul className="comments">
