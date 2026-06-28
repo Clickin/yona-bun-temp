@@ -2046,6 +2046,28 @@ h1 {
   border: none;
 }
 
+.keymap-help {
+  left: 50vw;
+  width: 640px;
+  padding: 20px;
+  margin-left: -320px;
+  font-size: 12px;
+  line-height: 30px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.keymap-help .ybtn {
+  min-width: 20px;
+  margin-right: 3px;
+}
+
+.keymap-help .actrow {
+  display: block;
+  margin-top: 30px;
+  text-align: center;
+}
+
 .milesion-wrap #issues .filter-wrap {
   height: auto;
   min-height: 30px;
@@ -2961,6 +2983,17 @@ div.markdown-preview {
   border-radius: 4px;
   box-shadow: 0 3px 12px rgb(0 0 0 / 24%);
   transform: translateX(-50%);
+}
+
+.issue-detail-page .keymap-help {
+  top: 10%;
+  left: 50vw;
+  width: 640px;
+  padding: 20px;
+  margin-left: -320px;
+  line-height: 30px;
+  border-radius: 6px;
+  transform: none;
 }
 
 .issue-detail-page .modal-header,

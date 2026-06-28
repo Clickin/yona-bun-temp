@@ -875,6 +875,7 @@ function ProjectKeymapHelp(props: {
 }) {
   const { detail, mode, section } = props;
   const messages = useLegacyMessages();
+  const [modalOpen, setModalOpen] = React.useState(false);
   const canUseAdmin = detail.showAdmin || detail.viewerCanUpdate;
   const isMac = projectKeymapIsMacintosh();
   const ctrlKey = isMac ? "\u2318" : "CTRL";
@@ -883,11 +884,24 @@ function ProjectKeymapHelp(props: {
 
   return (
     <div className="pull-left" style={{ marginLeft: 55, padding: "10px 0" }}>
-      <a className="ybtn ybtn-inverse ybtn-mini" data-toggle="modal" href="#helpKeys">
+      <a
+        className="ybtn ybtn-inverse ybtn-mini"
+        data-toggle="modal"
+        href="#helpKeys"
+        onClick={(event) => {
+          event.preventDefault();
+          setModalOpen(true);
+        }}
+      >
         {messages.t("title.keymap", { fallback: "title.keymap" })}
       </a>
 
-      <div className="modal hide fade keymap-help" id="helpKeys" role="dialog" tabIndex={-1}>
+      <div
+        className={modalOpen ? "modal fade keymap-help in" : "modal hide fade keymap-help"}
+        id="helpKeys"
+        role="dialog"
+        tabIndex={-1}
+      >
         <div className="row-fluid">
           <div className="span3">
             <h5>{messages.t("project.projects", { fallback: "project.projects" })}</h5>
@@ -989,7 +1003,12 @@ function ProjectKeymapHelp(props: {
         </div>
 
         <p className="actrow">
-          <button className="ybtn ybtn-info" data-dismiss="modal" type="button">
+          <button
+            className="ybtn ybtn-info"
+            data-dismiss="modal"
+            onClick={() => setModalOpen(false)}
+            type="button"
+          >
             {messages.t("button.confirm", { fallback: "button.confirm" })}
           </button>
         </p>

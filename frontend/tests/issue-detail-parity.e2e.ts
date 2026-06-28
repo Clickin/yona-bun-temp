@@ -425,6 +425,44 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   });
 
   await page.goto("/yona/admin/projectYobi/issue/1");
+  await expect(page.locator("#helpKeys.modal.hide.fade.keymap-help")).toHaveCount(1);
+
+  const keymapTrigger = await layoutBox(page, 'a[href="#helpKeys"][data-toggle="modal"]');
+  await page.locator('a[href="#helpKeys"][data-toggle="modal"]').click();
+  await expect(page.locator("#helpKeys.modal.fade.keymap-help.in")).toBeVisible();
+
+  const keymapModal = await layoutBox(page, "#helpKeys.keymap-help");
+  const keymapRow = await layoutBox(page, "#helpKeys > .row-fluid");
+  const projectColumn = await layoutBox(page, "#helpKeys > .row-fluid > .span3");
+  const rightColumn = await layoutBox(page, "#helpKeys > .row-fluid > .span9");
+  const sectionColumn = await layoutBox(page, "#helpKeys .span9 > .row-fluid > .span5");
+  const siteColumn = await layoutBox(page, "#helpKeys .span9 > .row-fluid > .span7");
+  const commentShortcut = await layoutBox(page, "#helpKeys .span9 > .row-fluid.mt20 .span12");
+  const firstKey = await layoutBox(page, "#helpKeys .span3 .ybtn.ybtn-small");
+  const firstLabel = await layoutBox(page, "#helpKeys .span3 .help-inline");
+  const actionRow = await layoutBox(page, "#helpKeys .actrow");
+  const confirm = await layoutBox(page, "#helpKeys .actrow .ybtn-info");
+  const viewportCenter = await page.evaluate(() => document.documentElement.clientWidth / 2);
+
+  expect(keymapTrigger.x).toBeGreaterThanOrEqual(55);
+  expect(keymapModal.width).toBeGreaterThanOrEqual(680);
+  expect(keymapModal.width).toBeLessThanOrEqual(690);
+  expect(Math.abs(keymapModal.x + keymapModal.width / 2 - viewportCenter)).toBeLessThanOrEqual(24);
+  expect(keymapRow.x).toBeGreaterThanOrEqual(keymapModal.x + 20);
+  expect(projectColumn.x).toBeCloseTo(keymapRow.x, 0);
+  expect(rightColumn.x).toBeGreaterThan(projectColumn.x + projectColumn.width - 1);
+  expect(sectionColumn.x).toBeCloseTo(rightColumn.x, 0);
+  expect(siteColumn.x).toBeGreaterThan(sectionColumn.x + sectionColumn.width - 1);
+  expect(commentShortcut.y).toBeGreaterThan(sectionColumn.y + sectionColumn.height - 1);
+  expect(firstLabel.x).toBeGreaterThan(firstKey.x + firstKey.width - 1);
+  expect(firstKey.width).toBeGreaterThanOrEqual(20);
+  expect(actionRow.y).toBeGreaterThan(keymapRow.y + keymapRow.height - 1);
+  expect(
+    Math.abs(confirm.x + confirm.width / 2 - (keymapModal.x + keymapModal.width / 2)),
+  ).toBeLessThanOrEqual(2);
+
+  await page.locator("#helpKeys .actrow .ybtn-info").click();
+  await expect(page.locator("#helpKeys.modal.hide.fade.keymap-help")).toHaveCount(1);
 
   const fullTimeline = page.locator("section#comments #timeline");
   await expect(fullTimeline.locator("#event-17")).toContainText("Closed");
