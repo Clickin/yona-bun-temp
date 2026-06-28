@@ -19,6 +19,7 @@ rows with verifier evidence against legacy templates/rendered output.
 
 Current template-first reset reports:
 
+- `2026-06-28-exhaustive-page-rebuild-audit.md`
 - `template-first-p0-global-shell.md`
 - `template-first-p1-auth-public-home.md`
 - `template-first-p2-project-shell.md`
@@ -34,6 +35,9 @@ Rules:
   `docs/provenance/ui-parity-reports/<packet>.md`.
 - Reports are evidence, not canonical implementation status. The parent updates
   the phase plan, root canonical docs, and provenance after reviewing them.
+- The 2026-06-28 exhaustive rebuild audit reopens prior `covered` UI labels for
+  Scala-template verification. Existing React tests are not contracts when they
+  conflict with `yona-original/app/views/**` or the current parent directive.
 - Explorer reports must not propose new UX or new product structure. Findings
   must be framed as `covered`, `gap`, `deviation`, `deferred`,
   `not-applicable`, or `needs-parent-decision`.
