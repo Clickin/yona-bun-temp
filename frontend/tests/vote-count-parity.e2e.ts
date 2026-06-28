@@ -123,15 +123,16 @@ test.beforeEach(async ({ page }) => {
       body: JSON.stringify({
         items: [
           {
-            assigneeAvatarUrl: "",
-            assigneeLabel: "",
+            assigneeAvatarUrl: "/avatars/door.png",
+            assigneeLabel: "Door",
+            assigneeLoginId: "door",
             authorLabel: "Nori",
             authorLoginId: "nori",
             childClosedCount: 0,
             childIssues: [],
             childOpenCount: 0,
             commentCount: 3,
-            dueDateLabel: "",
+            dueDateLabel: "2026-05-01",
             dueDateOverdue: false,
             id: "101",
             issueNumber: "1",
@@ -399,6 +400,132 @@ test("issue list shared partials preserve legacy vote count and checkbox metrics
       .locator("#issue-item-101 .sharer-color")
       .evaluate((element) => element.hasAttribute("href")),
   ).resolves.toBe(false);
+  await expect(page.locator("#issue-item-101 .span9.span-hard-wrap")).toHaveCount(1);
+  await expect(page.locator("#issue-item-101 .span3.hide-in-mobile")).toHaveCount(1);
+  await expect(page.locator("#issue-item-101 .mass-update-check.hide-in-mobile")).toHaveCount(1);
+  await expect(page.locator("#issue-item-101 .issue-item-row")).toHaveCount(1);
+  await expect(page.locator("#issue-item-101 .title-wrap .post-id")).toHaveText("#1");
+  await expect(page.locator("#issue-item-101 .infos .infos-link-item")).toHaveText("Nori");
+  await expect(page.locator("#issue-item-101 .avatar-wrap.assinee")).toHaveAttribute(
+    "title",
+    "Assignee: Door",
+  );
+  await expect(page.locator("#issue-item-101 .avatar-wrap.assinee img")).toHaveAttribute(
+    "src",
+    "/avatars/door.png",
+  );
+  await expect(page.locator("#issue-item-101 .span3 .mr20.mt10.pull-right")).toContainText(
+    "2026-05-01",
+  );
+
+  const list = await layoutBox(page, ".issue-list-page .post-list-wrap.row-fluid");
+  const row = await layoutBox(page, "#issue-item-101");
+  const leftColumn = await layoutBox(page, "#issue-item-101 .span9.span-hard-wrap");
+  const rightColumn = await layoutBox(page, "#issue-item-101 .span3.hide-in-mobile");
+  const massCheck = await layoutBox(page, "#issue-item-101 .mass-update-check.hide-in-mobile");
+  const checkboxInput = await layoutBox(page, "#issue-101");
+  const issueItemRow = await layoutBox(page, "#issue-item-101 .issue-item-row");
+  const titleWrap = await layoutBox(page, "#issue-item-101 .title-wrap");
+  const postId = await layoutBox(page, "#issue-item-101 .title-wrap .post-id");
+  const issueTitle = await layoutBox(page, "#issue-item-101 .title-wrap a.title:nth-of-type(2)");
+  const infos = await layoutBox(page, "#issue-item-101 .infos");
+  const authorInfo = await layoutBox(page, "#issue-item-101 .infos .infos-link-item");
+  const updatedInfo = await layoutBox(page, "#issue-item-101 .infos > .infos-item:nth-child(2)");
+  const assigneeWrap = await layoutBox(page, "#issue-item-101 .avatar-wrap.assinee");
+  const assigneeImage = await layoutBox(page, "#issue-item-101 .avatar-wrap.assinee img");
+  const dueDate = await layoutBox(page, "#issue-item-101 .span3 .mr20.mt10.pull-right");
+  const issueRowStyles = await page.locator("#issue-item-101").evaluate((element) => {
+    const rowStyle = window.getComputedStyle(element);
+    const left = element.querySelector(".span9.span-hard-wrap") as HTMLElement;
+    const right = element.querySelector(".span3.hide-in-mobile") as HTMLElement;
+    const titleElement = element.querySelector(".title-wrap") as HTMLElement;
+    const infosElement = element.querySelector(".infos") as HTMLElement;
+    const checkboxLabel = element.querySelector(".mass-update-check") as HTMLElement;
+    const rightRail = element.querySelector(".span3.hide-in-mobile") as HTMLElement;
+    const avatar = element.querySelector(".avatar-wrap.assinee") as HTMLElement;
+    const due = element.querySelector(".span3 .mr20.mt10.pull-right") as HTMLElement;
+    const leftStyle = window.getComputedStyle(left);
+    const rightStyle = window.getComputedStyle(right);
+    const titleStyle = window.getComputedStyle(titleElement);
+    const infosStyle = window.getComputedStyle(infosElement);
+    const checkboxLabelStyle = window.getComputedStyle(checkboxLabel);
+    const rightRailStyle = window.getComputedStyle(rightRail);
+    const avatarStyle = window.getComputedStyle(avatar);
+    const dueStyle = window.getComputedStyle(due);
+    return {
+      avatarDisplay: avatarStyle.display,
+      avatarHeight: avatarStyle.height,
+      avatarWidth: avatarStyle.width,
+      checkboxLabelDisplay: checkboxLabelStyle.display,
+      dueDisplay: dueStyle.display,
+      dueMarginRight: dueStyle.marginRight,
+      dueMarginTop: dueStyle.marginTop,
+      infosDisplay: infosStyle.display,
+      infosFontSize: infosStyle.fontSize,
+      infosLineHeight: infosStyle.lineHeight,
+      leftDisplay: leftStyle.display,
+      rightDisplay: rightStyle.display,
+      rightRailTextAlign: rightRailStyle.textAlign,
+      rowDisplay: rowStyle.display,
+      rowPadding: `${rowStyle.paddingTop} ${rowStyle.paddingRight} ${rowStyle.paddingBottom} ${rowStyle.paddingLeft}`,
+      titleDisplay: titleStyle.display,
+      titleLineHeight: titleStyle.lineHeight,
+      titleWhiteSpace: titleStyle.whiteSpace,
+    };
+  });
+
+  expect(row.y).toBeGreaterThanOrEqual(list.y);
+  expect(row.width).toBeGreaterThanOrEqual(list.width - 2);
+  expect(leftColumn.x).toBeGreaterThanOrEqual(row.x);
+  expect(rightColumn.x).toBeGreaterThan(leftColumn.x + leftColumn.width - 1);
+  expect(rightColumn.x + rightColumn.width).toBeLessThanOrEqual(row.x + row.width + 1);
+  expect(leftColumn.width).toBeGreaterThan(rightColumn.width * 2.5);
+  expect(rightColumn.y).toBeCloseTo(leftColumn.y, 0);
+  expect(massCheck.x).toBeGreaterThanOrEqual(leftColumn.x);
+  expect(checkboxInput.x).toBeGreaterThanOrEqual(massCheck.x);
+  expect(issueItemRow.x).toBeGreaterThanOrEqual(leftColumn.x);
+  expect(issueItemRow.x).toBeLessThan(checkboxInput.x + checkboxInput.width + 1);
+  expect(issueItemRow.x + issueItemRow.width).toBeLessThanOrEqual(
+    leftColumn.x + leftColumn.width + 1,
+  );
+  expect(titleWrap.y).toBeGreaterThanOrEqual(row.y);
+  expect(postId.x).toBeGreaterThanOrEqual(titleWrap.x);
+  expect(issueTitle.x).toBeGreaterThan(postId.x + postId.width - 1);
+  expect(infos.y).toBeGreaterThan(titleWrap.y);
+  expect(authorInfo.x).toBeGreaterThanOrEqual(infos.x);
+  expect(updatedInfo.x).toBeGreaterThan(authorInfo.x + authorInfo.width - 1);
+  expect(assigneeWrap.x).toBeGreaterThanOrEqual(rightColumn.x);
+  expect(assigneeWrap.x + assigneeWrap.width).toBeLessThanOrEqual(
+    rightColumn.x + rightColumn.width + 1,
+  );
+  expect(assigneeImage.width).toBeGreaterThanOrEqual(32);
+  expect(assigneeImage.width).toBeLessThanOrEqual(34);
+  expect(assigneeImage.height).toBeGreaterThanOrEqual(32);
+  expect(assigneeImage.height).toBeLessThanOrEqual(34);
+  expect(dueDate.x).toBeGreaterThanOrEqual(rightColumn.x);
+  expect(dueDate.x + dueDate.width).toBeLessThanOrEqual(assigneeWrap.x + 1);
+  expect(dueDate.y).toBeGreaterThanOrEqual(row.y);
+  expect(dueDate.y).toBeLessThanOrEqual(assigneeWrap.y + assigneeWrap.height + 2);
+  expect(issueRowStyles).toEqual({
+    avatarDisplay: "block",
+    avatarHeight: "32px",
+    avatarWidth: "32px",
+    checkboxLabelDisplay: "block",
+    dueDisplay: "block",
+    dueMarginRight: "20px",
+    dueMarginTop: "10px",
+    infosDisplay: "block",
+    infosFontSize: "12px",
+    infosLineHeight: "20px",
+    leftDisplay: "block",
+    rightDisplay: "block",
+    rightRailTextAlign: "start",
+    rowDisplay: "block",
+    rowPadding: "10px 10px 10px 10px",
+    titleDisplay: "block",
+    titleLineHeight: "20px",
+    titleWhiteSpace: "nowrap",
+  });
 
   const group = await layoutBox(page, "#issue-item-101 .item-count-groups");
   const issueLabel = await layoutBox(page, '#issue-item-101 .issue-label[data-label-id="7"]');
