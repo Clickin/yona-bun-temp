@@ -1157,6 +1157,63 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await page.goto("/yona/admin/projectYobi/issue/1");
   await expect(page.locator("#helpKeys.modal.hide.fade.keymap-help")).toHaveCount(1);
   await expect(page.locator("#comment-delete-modal.modal.hide.fade")).toHaveCount(1);
+  await expect(
+    page.locator('#issueUpdateForm input#assignee.bigdrop[name="assigneeLoginId"]'),
+  ).toHaveValue("nori");
+  await expect(page.locator("#issueUpdateForm input#assignee")).toHaveAttribute(
+    "placeholder",
+    "No assignee",
+  );
+  await expect(page.locator("#issueUpdateForm input#assignee")).toHaveAttribute("title", "");
+  await expect(page.locator("#issueUpdateForm input#assignee")).toHaveAttribute(
+    "style",
+    "width: 100%;",
+  );
+  const issueInfo = await layoutBox(page, ".issue-detail-page .issue-info");
+  const assigneeDl = await layoutBox(page, "#issueUpdateForm > dl:nth-of-type(1)");
+  const assigneeDt = await layoutBox(page, "#issueUpdateForm > dl:nth-of-type(1) > dt");
+  const assigneeDd = await layoutBox(page, "#issueUpdateForm > dl:nth-of-type(1) > dd");
+  const assigneeInfo = await layoutBox(page, "#issueUpdateForm .assignee-info");
+  const assigneeInput = await layoutBox(page, "#issueUpdateForm input#assignee");
+  const assigneeFieldStyles = await page
+    .locator("#issueUpdateForm input#assignee")
+    .evaluate((element) => {
+      const inputStyle = window.getComputedStyle(element);
+      const dl = element.closest("dl") as HTMLElement;
+      const dd = element.closest("dd") as HTMLElement;
+      const issueInfo = element.closest(".issue-info") as HTMLElement;
+      const dlStyle = window.getComputedStyle(dl);
+      const ddStyle = window.getComputedStyle(dd);
+      const issueInfoStyle = window.getComputedStyle(issueInfo);
+      return {
+        ddPaddingTop: ddStyle.paddingTop,
+        dlMarginBottom: dlStyle.marginBottom,
+        inputDisplay: inputStyle.display,
+        inputHeight: inputStyle.height,
+        inputPaddingLeft: inputStyle.paddingLeft,
+        inputWidth: inputStyle.width,
+        issueInfoPaddingLeft: issueInfoStyle.paddingLeft,
+        issueInfoPaddingTop: issueInfoStyle.paddingTop,
+      };
+    });
+
+  expect(assigneeDl.x).toBeGreaterThanOrEqual(issueInfo.x);
+  expect(assigneeDt.x).toBeGreaterThanOrEqual(assigneeDl.x);
+  expect(assigneeDd.y).toBeGreaterThan(assigneeDt.y + assigneeDt.height - 1);
+  expect(assigneeInfo.x).toBeGreaterThanOrEqual(assigneeDd.x);
+  expect(assigneeInput.x).toBeGreaterThanOrEqual(assigneeDd.x);
+  expect(assigneeInput.y).toBeGreaterThan(assigneeInfo.y + assigneeInfo.height - 1);
+  expect(assigneeInput.width).toBeGreaterThanOrEqual(assigneeDd.width - 2);
+  expect(assigneeFieldStyles).toEqual({
+    ddPaddingTop: "5px",
+    dlMarginBottom: "20px",
+    inputDisplay: "inline-block",
+    inputHeight: "30px",
+    inputPaddingLeft: "6px",
+    inputWidth: "207.562px",
+    issueInfoPaddingLeft: "52px",
+    issueInfoPaddingTop: "15px",
+  });
   await expect(page.locator(".voter-list-wrap .voter-list > li")).toHaveCount(4);
   await expect(page.locator(".voter-list-wrap .avatar-wrap.smaller")).toHaveCount(3);
   await expect(page.locator('.voter-list-wrap a[href="#voters"][data-toggle="modal"]')).toHaveText(
