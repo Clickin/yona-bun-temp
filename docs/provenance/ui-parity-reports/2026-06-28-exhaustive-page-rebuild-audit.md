@@ -263,7 +263,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `error/badrequest.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
 | `error/badrequest_default.scala.html` | P7 error/security | metric guard passed: `search-parity.e2e.ts` asserts the default bad-request shell, `.page-wrap-outer`/`.project-page-wrap`/`.error-wrap` placement, centered `.ico-404`, resolved bad-request copy, 100px vertical padding, 30px message margins, 16px bold gray message, centered `.ybtn.ybtn-info` home action, and search form/error banner absence |
 | `error/forbidden.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
-| `error/forbidden_default.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
+| `error/forbidden_default.scala.html` | P7 error/security | metric guard passed: `search-parity.e2e.ts` asserts the legacy default forbidden shell on a 403 REST search response with `.page-wrap-outer`/`.project-page-wrap`/`.error-wrap`, centered `.ico.ico-err2`, resolved forbidden copy, primary home action, no search form/error banner, 100px vertical padding, 30px message margins, 16px bold gray message, centered icon/message/button placement, and primary button display/height/line-height metrics |
 | `error/forbidden_organization.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
 | `error/internalServerError_default.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |
 | `error/notfound.scala.html` | P7 error/security | reopen: inspect Scala anchors before JSX reuse |

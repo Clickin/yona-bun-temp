@@ -63,6 +63,56 @@ async function assertLegacyErrorPageMetrics(page: Page) {
   });
 }
 
+async function assertLegacyForbiddenDefaultMetrics(page: Page) {
+  const pageWrap = await layoutBox(page, ".page-wrap-outer");
+  const projectPage = await layoutBox(page, ".project-page-wrap");
+  const errorWrap = await layoutBox(page, ".error-wrap");
+  const icon = await layoutBox(page, ".error-wrap .ico.ico-err2");
+  const message = await layoutBox(page, ".error-wrap > p");
+  const button = await layoutBox(page, ".error-wrap .ybtn.ybtn-primary");
+  const styles = await page.locator(".error-wrap").evaluate((element) => {
+    const wrap = window.getComputedStyle(element);
+    const paragraph = window.getComputedStyle(element.querySelector("p") as HTMLElement);
+    const buttonStyle = window.getComputedStyle(element.querySelector(".ybtn") as HTMLElement);
+    return {
+      buttonDisplay: buttonStyle.display,
+      buttonHeight: buttonStyle.height,
+      buttonLineHeight: buttonStyle.lineHeight,
+      color: paragraph.color,
+      fontSize: paragraph.fontSize,
+      fontWeight: paragraph.fontWeight,
+      marginBottom: paragraph.marginBottom,
+      marginTop: paragraph.marginTop,
+      paddingBottom: wrap.paddingBottom,
+      paddingTop: wrap.paddingTop,
+      textAlign: wrap.textAlign,
+    };
+  });
+
+  expect(projectPage.x).toBeCloseTo(pageWrap.x, 0);
+  expect(projectPage.width).toBeCloseTo(pageWrap.width, 0);
+  expect(errorWrap.x).toBeCloseTo(projectPage.x, 0);
+  expect(errorWrap.width).toBeCloseTo(projectPage.width, 0);
+  expect(icon.x + icon.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(message.x + message.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(button.x + button.width / 2).toBeCloseTo(errorWrap.x + errorWrap.width / 2, 0);
+  expect(message.y).toBeGreaterThan(icon.y + icon.height);
+  expect(button.y).toBeGreaterThan(message.y + message.height);
+  expect(styles).toEqual({
+    buttonDisplay: "inline-block",
+    buttonHeight: "20px",
+    buttonLineHeight: "20px",
+    color: "rgb(137, 137, 137)",
+    fontSize: "16px",
+    fontWeight: "700",
+    marginBottom: "30px",
+    marginTop: "30px",
+    paddingBottom: "100px",
+    paddingTop: "100px",
+    textAlign: "center",
+  });
+}
+
 function searchResponse(overrides: Record<string, unknown> = {}) {
   return {
     context: {
@@ -702,6 +752,32 @@ test("keeps failed REST search on the legacy bad-request shell", async ({ page }
   await expect(page.locator(".runtime-error-banner")).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText("Search failed.");
   await assertLegacyErrorPageMetrics(page);
+});
+
+test("renders the legacy default forbidden shell for forbidden REST search", async ({ page }) => {
+  await page.route(/\/api\/v1\/search(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        error: { code: "permission_denied", message: "forbidden", status: 403 },
+      }),
+      headers: restJsonHeaders,
+      status: 403,
+    });
+  });
+
+  await page.goto("/yona/search?keyword=Needle&searchType=issue&pageNum=1");
+
+  await expect(page.locator(".page-wrap-outer .project-page-wrap .error-wrap")).toContainText(
+    "You are not authorized",
+  );
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(0);
+  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute("href", "/yona");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toContainText("Home");
+  await expect(page.locator("#searchInnerForm")).toHaveCount(0);
+  await expect(page.locator(".runtime-error-banner")).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText("Search failed.");
+  await assertLegacyForbiddenDefaultMetrics(page);
 });
 
 test("renders hostile search result text as inert text", async ({ page }) => {

@@ -741,7 +741,15 @@ export function SearchRoutePage({
     );
   }
   if (failureKind === "forbidden") {
-    return <ForbiddenPage href={basePathForScope(scope)} />;
+    return (
+      <ForbiddenPage
+        href={
+          scope.type === "global"
+            ? prefixBasePath(runtimeConfig.basePath, "/")
+            : basePathForScope(scope)
+        }
+      />
+    );
   }
   if (failureKind === "not-found") {
     return <NotFoundPage href={basePathForScope(scope)} />;
