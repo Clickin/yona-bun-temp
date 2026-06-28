@@ -2139,7 +2139,8 @@ describe("file-route parity harness", () => {
     expect(html).not.toContain("(7)");
     expect(html).toContain('id="search"');
     expect(html).toContain("myissues-search-input");
-    expect(html).toContain('name="query"');
+    expect(html).toContain('name="filter"');
+    expect(html).not.toContain('name="filter" type="hidden"');
     expect(html).toContain('placeholder="Search Issues"');
     expect(html).toContain('class="nav nav-tabs nm"');
     expect(html).toContain('state="open"');
@@ -2158,8 +2159,8 @@ describe("file-route parity harness", () => {
     expect(html).toContain('id="toggle-show-subtasks"');
     expect(html).toContain("filter-wrap small-heights");
     expect(html).toContain('data-order-by="updatedDate"');
-    expect(html).toContain('orderBy="updatedDate"');
-    expect(html).toContain('orderDir="asc"');
+    expect(html).toContain('orderby="updatedDate"');
+    expect(html).toContain('orderdir="asc"');
     expect(html).toContain("Updated");
     expect(html).toContain('class="post-list-wrap my-issues"');
     expect(html).toContain("project-name-in-my-issues");

@@ -7,6 +7,19 @@ const restJsonHeaders = {
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
+
 function profilePayload(input: {
   issueItems?: unknown[];
   loginId?: string;
@@ -479,4 +492,219 @@ test("profile, user issues, and user files preserve legacy mobile shells", async
   await expect
     .poll(() => apiRequests.some((request) => request.includes("/api/v1/workspace/files")))
     .toBe(true);
+});
+
+test("user issue list preserves legacy my issue template metrics", async ({ page }) => {
+  await authenticateAsDoor(page);
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.route(apiV1Route("/user/issues**"), async (route) => {
+    const url = new URL(route.request().url());
+    await route.fulfill({
+      body: JSON.stringify({
+        closedIssueCount: 1,
+        filter: url.searchParams.get("filter") ?? "assigned",
+        items: [
+          {
+            assigneeAvatarUrl: "/yona/assets/images/default-avatar-32.png",
+            assigneeLabel: "Admin",
+            assigneeLoginId: "admin",
+            authorLabel: "Door",
+            authorLoginId: "door",
+            commentCount: 2,
+            dueDateLabel: "Jun 30, 2026",
+            dueDateOverdue: false,
+            id: 101,
+            issueNumber: 11,
+            labels: [{ color: "#f2c94c", id: 7, name: "bug" }],
+            milestoneTitle: "RC",
+            ownerName: "owner",
+            projectName: "publicYobi",
+            state: "open",
+            title: "Visible issue",
+            updatedLabel: "Jun 26, 2026",
+            voterCount: 1,
+            watcherCount: 1,
+            weight: 2,
+          },
+          {
+            assigneeAvatarUrl: "",
+            assigneeLabel: "",
+            assigneeLoginId: "",
+            authorLabel: "Admin",
+            authorLoginId: "admin",
+            commentCount: 0,
+            dueDateLabel: "",
+            dueDateOverdue: false,
+            id: 102,
+            issueNumber: 12,
+            labels: [],
+            milestoneTitle: "",
+            ownerName: "admin",
+            projectName: "projectYobi",
+            state: "open",
+            title: "Second issue",
+            updatedLabel: "Jun 27, 2026",
+            voterCount: 0,
+            watcherCount: 0,
+            weight: 0,
+          },
+        ],
+        openIssueCount: 2,
+        pageNum: 1,
+        pageSize: 15,
+        query: url.searchParams.get("query") ?? "",
+        sideFilterCounts: {
+          favorite: 5,
+          mentioned: 4,
+          shared: 3,
+        },
+        totalCount: 2,
+        viewerUserId: 1,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto(
+    "/yona/user/issues?filter=commented&state=open&orderBy=updatedDate&orderDir=desc",
+  );
+  await expect(page.locator("main.app-shell.user-issue-list-page")).toBeVisible();
+  await expect(page.locator(".post-list-wrap.my-issues .post-item")).toHaveCount(2);
+
+  const appShell = await layoutBox(page, "main.app-shell.user-issue-list-page");
+  const pageWrapOuter = await layoutBox(page, ".user-issue-list-page > .page-wrap-outer");
+  const pageWrap = await layoutBox(page, ".user-issue-list-page .page-wrap");
+  const mySeriesTabs = await layoutBox(
+    page,
+    ".user-issue-list-page > .page-wrap-outer .nav.nav-tabs",
+  );
+  const issueWrap = await layoutBox(page, ".user-issue-list-page .row-fluid.issue-list-wrap");
+  const leftMenu = await layoutBox(page, ".user-issue-list-page .left-menu.span2.span-hard-wrap");
+  const quickSearch = await layoutBox(page, ".user-issue-list-page .lst-stacked.unstyled");
+  const searchForm = await layoutBox(page, ".user-issue-list-page form#search[name='search']");
+  const searchBox = await layoutBox(
+    page,
+    ".user-issue-list-page .myissues-search-input .search-bar",
+  );
+  const contentPane = await layoutBox(page, ".user-issue-list-page #span10.span10.span-hard-wrap");
+  const stateTabs = await layoutBox(page, ".user-issue-list-page #span10 > .nav.nav-tabs.nm");
+  const filterWrap = await layoutBox(page, ".user-issue-list-page .filter-wrap.small-heights");
+  const postList = await layoutBox(page, ".user-issue-list-page .post-list-wrap.my-issues");
+  const firstItem = await layoutBox(page, ".user-issue-list-page .post-list-wrap.my-issues > li");
+  const projectCell = await layoutBox(
+    page,
+    ".user-issue-list-page #issue-item-101 .project-name-in-my-issues",
+  );
+  const titleWrap = await layoutBox(
+    page,
+    ".user-issue-list-page #issue-item-101 .title-wrap.span6",
+  );
+  const authorCell = await layoutBox(
+    page,
+    ".user-issue-list-page #issue-item-101 .author.project-name-in-my-issues",
+  );
+  const metaCell = await layoutBox(page, ".user-issue-list-page #issue-item-101 .infos.meta");
+  const assigneeRail = await layoutBox(
+    page,
+    ".user-issue-list-page #issue-item-101 .avatar-wrap.assinee",
+  );
+  const pagination = await layoutBox(page, ".user-issue-list-page #pagination");
+  const styles = await page.locator(".user-issue-list-page").evaluate((element) => {
+    const wrap = element.querySelector(".issue-list-wrap") as HTMLElement;
+    const left = element.querySelector(".left-menu") as HTMLElement;
+    const content = element.querySelector("#span10") as HTMLElement;
+    const list = element.querySelector(".post-list-wrap.my-issues") as HTMLElement;
+    const firstRow = element.querySelector(".post-list-wrap.my-issues > li") as HTMLElement;
+    return {
+      contentFloat: window.getComputedStyle(content).float,
+      firstRowDisplay: window.getComputedStyle(firstRow).display,
+      leftFloat: window.getComputedStyle(left).float,
+      listDisplay: window.getComputedStyle(list).display,
+      wrapDisplay: window.getComputedStyle(wrap).display,
+    };
+  });
+
+  await expect(page.locator(".user-issue-list-page .row-fluid.issue-list-wrap")).toHaveAttribute(
+    "pjax-container",
+    "",
+  );
+  await expect(
+    page.locator(
+      ".user-issue-list-page > .page-wrap-outer .page-wrap > .nav.nav-tabs > li.active a",
+    ),
+  ).toHaveAttribute("href", "/yona/user/issues");
+  await expect(page.locator("#setDefaultLoginPage")).toHaveAttribute("data-url", "user/issues");
+  await expect(page.locator(".user-issue-list-page .lst-stacked.unstyled > li")).toHaveCount(6);
+  await expect(
+    page.locator(".user-issue-list-page .lst-stacked.unstyled > li.active .commented-by-me"),
+  ).toBeVisible();
+  await expect(page.locator(".user-issue-list-page .mentioned-of-me + span")).toHaveText(" (4)");
+  await expect(page.locator(".user-issue-list-page .shared-with-me + span")).toHaveText(" (3)");
+  await expect(page.locator(".user-issue-list-page .favorite-issue + span")).toHaveText(" (5)");
+  await expect(page.locator(".user-issue-list-page form#search")).toHaveAttribute(
+    "action",
+    "/yona/user/issues",
+  );
+  await expect(page.locator(".user-issue-list-page form#search")).toHaveAttribute("method", "get");
+  await expect(page.locator(".user-issue-list-page form#search input[type='hidden']")).toHaveCount(
+    9,
+  );
+  await expect(
+    page.locator(".user-issue-list-page form#search input[name='filter'][type='hidden']"),
+  ).toHaveCount(0);
+  await expect(
+    page.locator(".user-issue-list-page .myissues-search-input input.textbox.full"),
+  ).toHaveAttribute("name", "filter");
+  await expect(page.locator(".user-issue-list-page #span10 > .nav.nav-tabs.nm > li")).toHaveCount(
+    4,
+  );
+  await expect(
+    page.locator(".user-issue-list-page #span10 > .nav.nav-tabs.nm > li.active a"),
+  ).toHaveAttribute("state", "open");
+  await expect(page.locator(".user-issue-list-page .filter-wrap .filter")).toHaveCount(4);
+  await expect(page.locator(".user-issue-list-page #issue-item-101")).toHaveAttribute(
+    "href",
+    "/yona/owner/publicYobi/issue/11",
+  );
+  await expect(
+    page.locator(".user-issue-list-page #issue-item-101 .title.project"),
+  ).toHaveAttribute("href", "/yona/owner/publicYobi");
+  await expect(
+    page.locator(".user-issue-list-page #issue-item-101 .title-cell > a.title"),
+  ).toHaveAttribute("href", "/yona/owner/publicYobi/issue/11");
+  await expect(page.locator(".user-issue-list-page #pagination")).toHaveAttribute(
+    "data-total",
+    "1",
+  );
+
+  expect(pageWrapOuter.y).toBeGreaterThanOrEqual(appShell.y);
+  expect(pageWrap.x).toBeGreaterThanOrEqual(pageWrapOuter.x);
+  expect(pageWrap.width).toBeLessThanOrEqual(pageWrapOuter.width + 1);
+  expect(mySeriesTabs.y).toBeGreaterThanOrEqual(pageWrap.y);
+  expect(issueWrap.y).toBeGreaterThan(mySeriesTabs.y + mySeriesTabs.height - 1);
+  expect(leftMenu.x).toBeGreaterThanOrEqual(issueWrap.x);
+  expect(contentPane.x).toBeGreaterThan(leftMenu.x + leftMenu.width - 1);
+  expect(contentPane.width).toBeGreaterThan(leftMenu.width);
+  expect(Math.abs(contentPane.y - leftMenu.y)).toBeLessThanOrEqual(2);
+  expect(quickSearch.x).toBeGreaterThanOrEqual(leftMenu.x);
+  expect(searchForm.y).toBeGreaterThan(quickSearch.y + quickSearch.height - 1);
+  expect(searchBox.width).toBeLessThanOrEqual(leftMenu.width + 1);
+  expect(stateTabs.y).toBeGreaterThanOrEqual(contentPane.y);
+  expect(filterWrap.y).toBeGreaterThan(stateTabs.y + stateTabs.height - 1);
+  expect(postList.y).toBeGreaterThan(filterWrap.y + filterWrap.height - 1);
+  expect(firstItem.y).toBeGreaterThanOrEqual(postList.y);
+  expect(projectCell.x).toBeGreaterThanOrEqual(firstItem.x);
+  expect(titleWrap.x).toBeGreaterThan(projectCell.x + projectCell.width - 1);
+  expect(authorCell.x).toBeGreaterThan(titleWrap.x + titleWrap.width - 1);
+  expect(metaCell.x).toBeGreaterThan(authorCell.x + authorCell.width - 1);
+  expect(assigneeRail.x).toBeGreaterThan(metaCell.x + metaCell.width - 1);
+  expect(pagination.y).toBeGreaterThan(postList.y + postList.height - 1);
+  expect(styles).toEqual({
+    contentFloat: "left",
+    firstRowDisplay: "block",
+    leftFloat: "left",
+    listDisplay: "block",
+    wrapDisplay: "block",
+  });
 });

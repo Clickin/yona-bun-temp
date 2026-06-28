@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { setDefaultLandingPathRest } from "../../../api/workspace";
 import { listUserIssues } from "../../../auth-workspace-client";
@@ -33,53 +34,46 @@ function UserIssuesLeafRouteComponent() {
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const navigate = useNavigate();
   const canRender = useRequireAuthenticatedRoute("/user/issues");
-  const [issueList, setIssueList] = React.useState<ReturnType<typeof toUserIssueListView> | null>(
-    null,
-  );
-  const [readFailed, setReadFailed] = React.useState(false);
-  const [query, setQuery] = React.useState<UserIssueListQuery>({
-    filter: "assigned",
-    orderBy: "updatedDate",
-    orderDir: "desc",
-    pageNum: 1,
-    query: "",
-    state: "open",
+  const queryClient = useQueryClient();
+  const query = React.useMemo<UserIssueListQuery>(() => {
+    const searchParams = new URL(locationHref, "http://localhost").searchParams;
+    return {
+      filter: searchParams.get("filter") || "assigned",
+      orderBy: searchParams.get("orderBy") || "updatedDate",
+      orderDir: searchParams.get("orderDir") || "desc",
+      pageNum: Number(searchParams.get("pageNum") || "1"),
+      query: searchParams.get("query") ?? "",
+      state: searchParams.get("state") || "open",
+    };
+  }, [locationHref]);
+  const issueListQuery = useQuery({
+    enabled: canRender,
+    queryFn: async () => toUserIssueListView(await listUserIssues(runtimeConfig, query)),
+    queryKey: [
+      "user-issues",
+      runtimeConfig.apiBaseUrl,
+      runtimeConfig.basePath,
+      query.filter,
+      query.orderBy,
+      query.orderDir,
+      query.pageNum,
+      query.query,
+      query.state,
+    ],
+  });
+  const routePath: string = "/user/issues";
+  const setDefaultLoginPageMutation = useMutation({
+    mutationFn: () => setDefaultLandingPathRest(runtimeConfig, csrfToken, routePath),
+    onError: (error) => {
+      setErrorMessage(error instanceof Error ? error.message : "set Default page failed: ");
+    },
+    onSuccess: async (overview) => {
+      await syncWorkspaceFromOverview(overview);
+      void queryClient.invalidateQueries();
+    },
   });
 
   useDocumentTitle("issue.myIssue");
-
-  React.useEffect(() => {
-    if (!canRender) {
-      return;
-    }
-    let cancelled = false;
-    setReadFailed(false);
-    void (async () => {
-      try {
-        const searchParams = new URL(locationHref, "http://localhost").searchParams;
-        const nextQuery = {
-          filter: searchParams.get("filter") || "assigned",
-          orderBy: searchParams.get("orderBy") || "updatedDate",
-          orderDir: searchParams.get("orderDir") || "desc",
-          pageNum: Number(searchParams.get("pageNum") || "1"),
-          query: searchParams.get("query") ?? "",
-          state: searchParams.get("state") || "open",
-        };
-        const nextIssueList = await listUserIssues(runtimeConfig, nextQuery);
-        if (!cancelled) {
-          setIssueList(toUserIssueListView(nextIssueList));
-          setQuery(nextQuery);
-        }
-      } catch {
-        if (!cancelled) {
-          setReadFailed(true);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [canRender, locationHref, runtimeConfig, setErrorMessage]);
 
   if (bootstrapping || !canRender) {
     return (
@@ -88,34 +82,25 @@ function UserIssuesLeafRouteComponent() {
       </main>
     );
   }
-  if (readFailed) {
+  if (issueListQuery.isError) {
     return <BadRequestPage href="/user/issues" />;
   }
 
-  const routePath: string = "/user/issues";
   const normalizedDefaultLandingPath = currentSession?.defaultLandingPath?.startsWith("/")
     ? currentSession.defaultLandingPath
     : currentSession?.defaultLandingPath
       ? `/${currentSession.defaultLandingPath}`
       : "";
   const canSetDefaultLoginPage = routePath !== "/" && normalizedDefaultLandingPath !== routePath;
-  const setDefaultLoginPage = async () => {
-    try {
-      const overview = await setDefaultLandingPathRest(runtimeConfig, csrfToken, routePath);
-      await syncWorkspaceFromOverview(overview);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "set Default page failed: ");
-    }
-  };
 
   return (
     <UserIssueListPage
       canSetDefaultLoginPage={canSetDefaultLoginPage}
-      issueList={issueList}
+      issueList={issueListQuery.data ?? null}
       onNavigate={(href) => {
         void navigate({ href });
       }}
-      onSetDefaultLoginPage={setDefaultLoginPage}
+      onSetDefaultLoginPage={() => setDefaultLoginPageMutation.mutate()}
       query={query}
       runtimeConfig={runtimeConfig}
     />

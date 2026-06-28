@@ -4002,17 +4002,16 @@ export function UserIssueListPage(props: {
                     const formData = new FormData(event.currentTarget);
                     props.onNavigate(
                       userIssuePath({
-                        filter: String(formData.get("filter") || "assigned"),
+                        filter: query.filter || "assigned",
                         orderBy: String(formData.get("orderBy") || "updatedDate"),
                         orderDir: String(formData.get("orderDir") || "desc"),
                         pageNum: 1,
-                        query: String(formData.get("query") ?? ""),
+                        query: String(formData.get("filter") ?? ""),
                         state: String(formData.get("state") || "open"),
                       }),
                     );
                   }}
                 >
-                  <input name="filter" type="hidden" value={query.filter} />
                   <input name="orderBy" type="hidden" value={query.orderBy} />
                   <input name="orderDir" type="hidden" value={query.orderDir} />
                   <input name="state" type="hidden" value={state} />
@@ -4057,7 +4056,7 @@ export function UserIssueListPage(props: {
                       <input
                         className="textbox full"
                         defaultValue={query.query}
-                        name="query"
+                        name="filter"
                         placeholder={legacyMessage(messages, "issue.search")}
                         type="text"
                       />
@@ -4137,7 +4136,7 @@ export function UserIssueListPage(props: {
                                 event,
                               )
                             }
-                            {...{ orderBy, orderDir: orderDirFor(orderBy) }}
+                            {...{ orderby: orderBy, orderdir: orderDirFor(orderBy) }}
                           >
                             <i
                               className={`ico btn-gray-arrow ${
