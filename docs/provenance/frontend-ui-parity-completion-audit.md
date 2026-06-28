@@ -33,34 +33,38 @@ behavior, broad external `/-_-api/v1/**` migrator compatibility, and other
 operator/tool surfaces remain governed by their provenance decisions and are not
 frontend UI parity blockers.
 
-## Superseded Gate Result
+## Template-First Gate Result
 
 Authoritative report set:
 
-- `docs/provenance/ui-parity-reports/*.md`
+- `docs/provenance/ui-parity-reports/template-first-p*.md`
 - `docs/plans/2026-06-26-full-ui-parity-subagent-phase.md`
 - `docs/provenance/ui-parity-reports/README.md`
 
-Current report-summary totals:
+Current template-first report-summary totals:
 
 | status | count |
 | --- | ---: |
-| covered | 209 |
+| covered | 111 |
 | gap | 0 |
 | deviation | 0 |
 | deferred | 0 |
-| not-applicable | 9 |
+| not-applicable | 28 |
 | weak evidence | 0 |
 | needs-parent-decision | 0 |
-| total | 218 |
+| total | 139 |
 
 Actionable UI parity coverage is 100.0% because every actionable row is
 `covered` and every blocker bucket is zero.
 
-Raw coverage is 95.9% because the remaining 9 rows are `not-applicable`
+Raw coverage is 79.9% because the remaining 28 rows are `not-applicable`
 transport/template mechanics, not missing user-visible UI functions.
 
-## Remaining Not-Applicable Rows
+## Superseded Route/API Not-Applicable Rows
+
+The older route/API audit retained these 9 not-applicable rows. Current
+template-first not-applicable rows are recorded in the P0-P7 packet reports and
+guarded by `tests/ui-parity-gate-a-contract.test.mjs`.
 
 | report | row | reason it is not a UI parity blocker |
 | --- | --- | --- |
@@ -107,6 +111,7 @@ Primary tests:
 The following commands are the focused completion evidence for this audit:
 
 - `node --test tests/ui-parity-gate-a-contract.test.mjs tests/rc-ux-checklist-contract.test.mjs`
+- `node --test tests/ui-parity-gate-a-contract.test.mjs tests/yona-legacy-parity-gate.test.mjs`
 - `pnpm --dir frontend test -- markdown-renderer.spec.tsx markdown-render-boundary.spec.tsx`
 - `pnpm agent:cargo-test -- --outside-sandbox -p yoram-server legacy_markdown`
 
@@ -116,7 +121,8 @@ Frontend UI parity is closed for the current app-runtime scope:
 
 - There are no remaining `gap`, `deviation`, `deferred`, `weak evidence`, or
   `needs-parent-decision` rows in the UI parity report set.
-- The remaining 9 non-covered rows are explicitly not app-runtime UI functions.
+- The remaining 28 non-covered template-first rows are explicitly not
+  app-runtime UI functions.
 - Markdown rendering is centralized in the React compatibility renderer and is
   covered by boundary, renderer, browser, and server-preview tests.
 

@@ -16,6 +16,12 @@ const goalDirectivePath = path.join(
   "plans",
   "2026-06-28-template-first-ui-parity-goal-directive.md",
 );
+const completionAuditPath = path.join(
+  repoRoot,
+  "docs",
+  "provenance",
+  "frontend-ui-parity-completion-audit.md",
+);
 const reportsDir = path.join(repoRoot, "docs", "provenance", "ui-parity-reports");
 const inventoryStatuses = [
   "covered",
@@ -354,6 +360,7 @@ test("template-first UI parity directive close condition stays satisfied", () =>
   const directive = readText(goalDirectivePath);
   assert.match(directive, /Close only when all active P0-P7 report rows are covered/);
   assert.match(directive, /no gap\/deviation\/weak-evidence row remains/);
+  const aggregateCounts = new Map(resetStatuses.map((status) => [status, 0]));
 
   for (const packet of templateFirstPackets) {
     const reportPath = path.join(reportsDir, `${packet}.md`);
@@ -373,6 +380,7 @@ test("template-first UI parity directive close condition stays satisfied", () =>
         findingCounts.get(status) ?? 0,
         `${packet} ${status} summary must match finding rows`,
       );
+      aggregateCounts.set(status, (aggregateCounts.get(status) ?? 0) + (counts.get(status) ?? 0));
     }
 
     for (const [index, row] of findingRows.entries()) {
@@ -394,6 +402,22 @@ test("template-first UI parity directive close condition stays satisfied", () =>
       );
     }
   }
+
+  const auditCounts = parseResetQueueCounts(
+    section(readText(completionAuditPath), "Template-First Gate Result"),
+  );
+  for (const status of resetStatuses) {
+    assert.equal(
+      auditCounts.get(status) ?? 0,
+      aggregateCounts.get(status) ?? 0,
+      `completion audit ${status} total must match template-first reports`,
+    );
+  }
+  assert.equal(
+    auditCounts.get("total"),
+    [...aggregateCounts.values()].reduce((total, count) => total + count, 0),
+    "completion audit total must match template-first reports",
+  );
 });
 
 test("full UI parity Playwright scenario matrices keep nonblocking concrete rows", () => {
