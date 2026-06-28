@@ -3239,6 +3239,12 @@ div.markdown-preview {
   width: 100%;
 }
 
+.site-admin-page .row-fluid::before,
+.site-admin-page .row-fluid::after {
+  display: none;
+  content: none;
+}
+
 .site-admin-page .span2 {
   flex: 0 0 180px;
 }
@@ -3352,7 +3358,7 @@ div.markdown-preview {
 .site-admin-page .project-list-wrap .listitem,
 .site-admin-page .user-list-wrap .listitem {
   align-items: center;
-  gap: 0;
+  gap: 16px;
   padding: 10px;
   border-bottom: 1px solid #eee;
 }

@@ -93,8 +93,8 @@ test("site admin mail send preserves legacy form shell and sends test mail", asy
   await page.goto("/yona/sites/mail");
 
   await expect(page).toHaveTitle("Site Admin");
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Mail Send");
-  await expect(page.locator(".title_area h2.pull-left")).toHaveText("Send Mail");
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send email");
+  await expect(page.locator(".title_area h2.pull-left")).toHaveText("Send email");
   await expect(page.locator("#mailForm.form-horizontal")).toBeVisible();
   await expect(page.locator("input[name='from']")).toHaveValue("site-admin@yona.local");
   await expect(page.locator(".alert.alert-error li")).toHaveText([
@@ -109,7 +109,7 @@ test("site admin mail send preserves legacy form shell and sends test mail", asy
   await page.locator("textarea[name='body']").fill("Legacy test body");
   await page.getByRole("button", { name: "Send" }).click();
 
-  await expect(page.locator(".alert.alert-success")).toContainText("Mail was sent");
+  await expect(page.locator(".alert.alert-success")).toContainText("Mail has been sent.");
   await expect
     .poll(() => requests)
     .toEqual([
@@ -139,8 +139,8 @@ test("site admin mass mail resolves all and selected project recipients", async 
   await page.goto("/yona/sites/massmail");
 
   await expect(page).toHaveTitle("Site Admin");
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Mass Mail");
-  await expect(page.locator(".title_area h2.pull-left")).toHaveText("Mass Mail");
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send mass emails");
+  await expect(page.locator(".title_area h2.pull-left")).toHaveText("Send mass mails");
   await expect(page.locator(".mess-mail-wrap")).toBeVisible();
   await expect(page.locator("#mailtoAll")).toBeChecked();
   await expect(page.locator("#mailtoPrj")).not.toBeChecked();

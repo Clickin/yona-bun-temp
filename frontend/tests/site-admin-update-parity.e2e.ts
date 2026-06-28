@@ -103,7 +103,7 @@ test("site admin update renders the legacy download branch when a version is ava
 
   await page.goto("/yona/sites/update");
 
-  await expect(page.getByText("Yona 1.1.0 is available")).toBeVisible();
+  await expect(page.locator("strong", { hasText: "Yona 1.1.0 is available" })).toBeVisible();
   await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
   await expect(page.getByText("You are using the latest version")).toHaveCount(0);
   await expect(
