@@ -252,7 +252,7 @@ test.beforeEach(async ({ page }) => {
             commentCount: 1,
             commitId: "abcdef1234567890abcdef1234567890abcdef12",
             commitShortId: "abcdef1",
-            message: "Update main function",
+            message: "Update main function\n\nDetailed body line",
             shortMessage: "Update main function",
           },
           {
@@ -425,6 +425,14 @@ test("commit history keeps legacy table and path layout metrics", async ({ page 
     page,
     "#history .code-table.commits tbody tr:first-child .messages",
   );
+  const commitMsgShort = await layoutBox(
+    page,
+    "#history .code-table.commits tbody tr:first-child .commitMsg.short",
+  );
+  const commitMsgMore = await layoutBox(
+    page,
+    "#history .code-table.commits tbody tr:first-child .commitMsg.moreBtn",
+  );
   const firstDate = await layoutBox(
     page,
     "#history .code-table.commits tbody tr:first-child .date",
@@ -446,6 +454,48 @@ test("commit history keeps legacy table and path layout metrics", async ({ page 
   expect(firstCommitId.x).toBeLessThan(firstMessage.x);
   expect(firstMessage.x).toBeLessThan(firstDate.x);
   expect(firstDate.x).toBeLessThan(firstAuthor.x);
+  expect(commitMsgShort.x).toBeGreaterThanOrEqual(firstMessage.x);
+  expect(commitMsgMore.x).toBeGreaterThan(commitMsgShort.x + commitMsgShort.width - 1);
+  expect(commitMsgMore.y).toBeGreaterThanOrEqual(firstMessage.y);
+  expect(commitMsgMore.y + commitMsgMore.height).toBeLessThanOrEqual(
+    firstMessage.y + firstMessage.height + 1,
+  );
+  await expect(
+    page.locator("#history .code-table.commits tbody tr:first-child .commitMsg.short"),
+  ).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12?branch=main",
+  );
+  await expect(
+    page.locator("#history .code-table.commits tbody tr:first-child .commitMsg.moreBtn span"),
+  ).toHaveText("…");
+  await expect(
+    page.locator("#history .code-table.commits tbody tr:first-child .commitMsg.desc.hidden"),
+  ).toHaveText("\nDetailed body line");
+  const commitMsgStyles = await page
+    .locator("#history .code-table.commits tbody tr:first-child .messages")
+    .evaluate((element) => {
+      const short = element.querySelector(".commitMsg.short") as HTMLElement;
+      const more = element.querySelector(".commitMsg.moreBtn") as HTMLElement;
+      const desc = element.querySelector(".commitMsg.desc") as HTMLElement;
+      const shortStyle = window.getComputedStyle(short);
+      const moreStyle = window.getComputedStyle(more);
+      const descStyle = window.getComputedStyle(desc);
+      return {
+        descDisplay: descStyle.display,
+        descWhiteSpace: descStyle.whiteSpace,
+        moreDisplay: moreStyle.display,
+        moreType: more.getAttribute("type"),
+        shortDisplay: shortStyle.display,
+      };
+    });
+  expect(commitMsgStyles).toEqual({
+    descDisplay: "none",
+    descWhiteSpace: "pre-wrap",
+    moreDisplay: "inline-block",
+    moreType: "button",
+    shortDisplay: "inline",
+  });
 
   await page.goto("/yona/admin/projectYobi/commits/main/src/main.rs");
 
