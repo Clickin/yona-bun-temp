@@ -698,6 +698,16 @@ test("authenticated site admin shell renders user menu, sidebar tabs, create men
   expect(recentPane.x).toBeCloseTo(sidebarTabContent.x, 0);
   expect(orgSearch.y).toBeGreaterThanOrEqual(orgPane.y);
   expect(organizationsList.y).toBeGreaterThan(orgSearch.y + orgSearch.height - 1);
+  await expect(page.locator("#myOrganizationList > .search-result")).toHaveCount(1);
+  await expect(page.locator("#myOrganizationList .search-result > .group")).toHaveCount(1);
+  await expect(page.locator("#myOrganizationList .search-result > #organizations")).toHaveCount(1);
+  await expect(page.locator("#myOrganizationList #organizations")).toHaveClass(/tab-pane/);
+  await expect(page.locator("#myOrganizationList #organizations")).toHaveClass(/user-ul/);
+  await expect(page.locator("#myOrganizationList #organizations.no-result")).toHaveCount(0);
+  await expect(page.locator("#myOrganizationList .search-input.org-search")).toHaveAttribute(
+    "type",
+    "text",
+  );
   await expect(page.locator("#myOrganizationList .search-result .group .bar")).toHaveCount(1);
   await expect(page.locator("#myOrganizationList .search-input.org-search")).toHaveAttribute(
     "autocomplete",
