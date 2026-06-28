@@ -117,13 +117,20 @@ export function classifyConnectFailure(error: unknown): null | RouteFailureKind 
   return null;
 }
 
+export function isInternalServerFailure(error: unknown): boolean {
+  const status = readHttpStatus(error);
+  return status !== null && status >= 500;
+}
+
 function RouteStatusPage({
   buttonClassName = "ybtn ybtn-info",
   href,
+  iconClassName = "ico ico-err2",
   title,
 }: {
   buttonClassName?: string;
   href: string;
+  iconClassName?: string;
   title: string;
 }) {
   const messages = useLegacyMessages();
@@ -136,7 +143,7 @@ function RouteStatusPage({
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="error-wrap">
-            <i className="ico ico-err2"></i>
+            <i className={iconClassName}></i>
             <p>{translatedTitle}</p>
             <a className={buttonClassName} href={href}>
               {homeLabel}
@@ -149,26 +156,7 @@ function RouteStatusPage({
 }
 
 export function BadRequestPage({ href = "/" }: { href?: string }) {
-  const messages = useLegacyMessages();
-  const title = messages.t("error.badrequest", { fallback: "error.badrequest" });
-  const homeLabel = messages.t("menu.home", { fallback: "menu.home" });
-  useDocumentTitle(title);
-
-  return (
-    <main className="app-shell">
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="error-wrap">
-            <i className="ico-404"></i>
-            <p>{title}</p>
-            <a className="ybtn ybtn-info" href={href}>
-              {homeLabel}
-            </a>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
+  return <RouteStatusPage href={href} iconClassName="ico-404" title="error.badrequest" />;
 }
 
 export function ForbiddenPage({ href }: { href: string }) {
@@ -179,6 +167,10 @@ export function ForbiddenPage({ href }: { href: string }) {
 
 export function NotFoundPage({ href }: { href: string }) {
   return <RouteStatusPage href={href} title="error.notfound" />;
+}
+
+export function InternalServerErrorPage({ href = "/" }: { href?: string }) {
+  return <RouteStatusPage href={href} iconClassName="ico-404" title="error.internalServerError" />;
 }
 
 export function RedirectPage({

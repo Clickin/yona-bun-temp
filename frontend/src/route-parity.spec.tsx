@@ -56,7 +56,12 @@ import {
   ProjectWebhooksPage,
 } from "./routes/-project-views";
 import { SearchPagination, SearchResults } from "./routes/-search-views";
-import { BadRequestPage, ForbiddenPage, NotFoundPage } from "./routes/-shared";
+import {
+  BadRequestPage,
+  ForbiddenPage,
+  InternalServerErrorPage,
+  NotFoundPage,
+} from "./routes/-shared";
 import { NotificationWelcomeGuide } from "./routes/notification/route";
 
 function collectFiles(rootPath: string): string[] {
@@ -6748,6 +6753,7 @@ describe("file-route parity harness", () => {
     );
     const badRequestHtml = renderToStaticMarkup(<BadRequestPage href="/yona/" />);
     const forbiddenHtml = renderToStaticMarkup(<ForbiddenPage href="/yona/" />);
+    const internalServerErrorHtml = renderToStaticMarkup(<InternalServerErrorPage href="/yona/" />);
     const notFoundHtml = renderToStaticMarkup(<NotFoundPage href="/yona/missing" />);
 
     expect(sharedSource).not.toContain("export function PlaceholderPage");
@@ -6763,6 +6769,15 @@ describe("file-route parity harness", () => {
     expect(badRequestHtml).toContain(">Home</a>");
     expect(badRequestHtml).not.toContain(">error.badrequest</p>");
     expect(badRequestHtml).not.toContain(">menu.home</a>");
+
+    expect(internalServerErrorHtml).toContain('class="error-wrap"');
+    expect(internalServerErrorHtml).toContain('class="ico-404"');
+    expect(internalServerErrorHtml).toContain(
+      ">Server error occurred; service is not available</p>",
+    );
+    expect(internalServerErrorHtml).toContain('class="ybtn ybtn-info" href="/yona/"');
+    expect(internalServerErrorHtml).toContain(">Home</a>");
+    expect(internalServerErrorHtml).not.toContain(">error.internalServerError</p>");
 
     expect(forbiddenHtml).toContain('class="ico ico-err2"');
     expect(forbiddenHtml).toContain(">You are not authorized</p>");

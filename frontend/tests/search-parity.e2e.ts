@@ -754,6 +754,35 @@ test("keeps failed REST search on the legacy bad-request shell", async ({ page }
   await assertLegacyErrorPageMetrics(page);
 });
 
+test("renders the legacy default internal-server-error shell for failed REST search", async ({
+  page,
+}) => {
+  await page.route(/\/api\/v1\/search(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        error: { code: "internal", message: "search backend unavailable", status: 500 },
+      }),
+      headers: restJsonHeaders,
+      status: 500,
+    });
+  });
+
+  await page.goto("/yona/search?keyword=Needle&searchType=issue&pageNum=1");
+
+  await expect(page.locator(".page-wrap-outer .project-page-wrap .error-wrap")).toContainText(
+    "Server error occurred; service is not available",
+  );
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(0);
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", "/yona");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toContainText("Home");
+  await expect(page.locator("#searchInnerForm")).toHaveCount(0);
+  await expect(page.locator(".runtime-error-banner")).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText("Search failed.");
+  await expect(page.locator("body")).not.toContainText("error.internalServerError");
+  await assertLegacyErrorPageMetrics(page);
+});
+
 test("renders the legacy default forbidden shell for forbidden REST search", async ({ page }) => {
   await page.route(/\/api\/v1\/search(?:\?.*)?$/, async (route) => {
     await route.fulfill({
