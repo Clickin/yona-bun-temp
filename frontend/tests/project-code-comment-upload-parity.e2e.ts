@@ -298,6 +298,69 @@ async function assertLegacyCommitDiffMetrics(page: Page) {
   });
 }
 
+async function assertLegacyInlineDiffCommentRowMetrics(page: Page) {
+  const addRow = await layoutBox(page, ".diff-body .diff-table tr.add");
+  const commentRow = await layoutBox(page, ".diff-body .diff-table tr.comments.board-comment-wrap");
+  const commentCell = await layoutBox(
+    page,
+    ".diff-body .diff-table tr.comments.board-comment-wrap > td",
+  );
+  const thread = await layoutBox(page, "#thread-31.comment-thread-wrap");
+  const threadButton = await layoutBox(page, "#thread-31 .btn-thread-here.btn-thread-minimize");
+  const threadList = await layoutBox(page, "#thread-31 > ul.comments");
+  const comment = await layoutBox(page, "#thread-31 #comment-32.comment");
+  const replyForm = await layoutBox(page, "#thread-31 .thread-comment-form");
+  const styles = await page
+    .locator(".diff-body .diff-table tr.comments.board-comment-wrap")
+    .evaluate((element) => {
+      const rowStyle = window.getComputedStyle(element);
+      const cellStyle = window.getComputedStyle(element.querySelector("td") as HTMLElement);
+      const threadStyle = window.getComputedStyle(
+        element.querySelector(".comment-thread-wrap") as HTMLElement,
+      );
+      return {
+        cellDisplay: cellStyle.display,
+        cellPaddingLeft: cellStyle.paddingLeft,
+        rowDisplay: rowStyle.display,
+        threadDisplay: threadStyle.display,
+      };
+    });
+
+  await expect(page.locator(".diff-body .diff-table tr.comments.board-comment-wrap")).toHaveCount(
+    1,
+  );
+  await expect(
+    page.locator(".diff-body .diff-table tr.comments.board-comment-wrap"),
+  ).toHaveAttribute("data-commit-id", commitId);
+  await expect(
+    page.locator(".diff-body .diff-table tr.comments.board-comment-wrap > td"),
+  ).toHaveAttribute("colspan", "3");
+  await expect(page.locator("#thread-31")).toHaveAttribute("data-toggle", "CodeCommentThread");
+  await expect(page.locator("#thread-31")).toHaveAttribute("data-range-path", "src/main.rs");
+  await expect(page.locator("#thread-31")).toHaveAttribute("data-range-startline", "2");
+  await expect(page.locator("#thread-31")).toHaveAttribute("data-range-endline", "2");
+  await expect(page.locator("#thread-31")).toHaveAttribute("data-range-startside", "B");
+  await expect(page.locator("#thread-31")).toHaveAttribute("data-range-endside", "B");
+
+  expect(commentRow.y).toBeGreaterThan(addRow.y + addRow.height - 1);
+  expect(commentRow.x).toBeCloseTo(addRow.x, 0);
+  expect(commentRow.width).toBeCloseTo(addRow.width, 0);
+  expect(commentCell.x).toBeCloseTo(commentRow.x, 0);
+  expect(commentCell.width).toBeCloseTo(commentRow.width, 0);
+  expect(thread.x).toBeGreaterThanOrEqual(commentCell.x);
+  expect(thread.width).toBeLessThanOrEqual(commentCell.width + 1);
+  expect(threadButton.y).toBeGreaterThanOrEqual(thread.y);
+  expect(threadList.y).toBeGreaterThanOrEqual(thread.y);
+  expect(comment.y).toBeGreaterThanOrEqual(threadList.y);
+  expect(replyForm.y).toBeGreaterThan(comment.y + comment.height - 1);
+  expect(styles).toEqual({
+    cellDisplay: "table-cell",
+    cellPaddingLeft: "1px",
+    rowDisplay: "table-row",
+    threadDisplay: "block",
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await routeRuntimeShell(page);
 });
@@ -734,6 +797,7 @@ test("inline ranged commit thread reply editor submits pasted image uploads", as
   const inlineThread = page.locator("#thread-31");
   await expect(inlineThread).toHaveAttribute("data-range-path", "src/main.rs");
   await expect(inlineThread).toHaveAttribute("data-range-startline", "2");
+  await assertLegacyInlineDiffCommentRowMetrics(page);
   const replyEditor = inlineThread.locator(".thread-comment-form textarea");
 
   await replyEditor.evaluate((element) => {
