@@ -2020,6 +2020,7 @@ function CommitDiscussionThread(props: {
             }
             onChange={setReplyText}
             runtimeConfig={props.runtimeConfig}
+            style={{ height: 100 }}
             value={replyText}
           />
         </LegacyMarkdownEditorShell>

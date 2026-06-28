@@ -361,6 +361,78 @@ async function assertLegacyInlineDiffCommentRowMetrics(page: Page) {
   });
 }
 
+async function assertLegacyThreadReplyFormMetrics(page: Page) {
+  const thread = await layoutBox(page, "#thread-31.comment-thread-wrap");
+  const commentList = await layoutBox(page, "#thread-31 > ul.comments");
+  const form = await layoutBox(page, "#thread-31 .thread-comment-form.review-form");
+  const editor = await layoutBox(
+    page,
+    '#thread-31 .thread-comment-form [data-toggle="markdown-editor"]',
+  );
+  const textarea = await layoutBox(
+    page,
+    "#thread-31 .thread-comment-form textarea#editor-contents",
+  );
+  const submit = await layoutBox(page, "#thread-31 .thread-comment-form button[type=submit]");
+  const styles = await page.locator("#thread-31 .thread-comment-form").evaluate((element) => {
+    const formStyle = window.getComputedStyle(element);
+    const editorStyle = window.getComputedStyle(
+      element.querySelector('[data-toggle="markdown-editor"]') as HTMLElement,
+    );
+    const textareaStyle = window.getComputedStyle(element.querySelector("textarea") as HTMLElement);
+    const buttonStyle = window.getComputedStyle(
+      element.querySelector("button[type=submit]") as HTMLElement,
+    );
+    return {
+      buttonDisplay: buttonStyle.display,
+      editorDisplay: editorStyle.display,
+      formDisplay: formStyle.display,
+      textareaDisplay: textareaStyle.display,
+      textareaHeight: textareaStyle.height,
+    };
+  });
+
+  await expect(page.locator("#thread-31 .thread-comment-form")).toHaveAttribute(
+    "action",
+    "/yona/admin/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12/comments",
+  );
+  await expect(page.locator("#thread-31 .thread-comment-form input[name=threadId]")).toHaveValue(
+    "31",
+  );
+  await expect(
+    page.locator("#thread-31 .thread-comment-form textarea#editor-contents"),
+  ).toHaveAttribute("name", "contentsMarkdown");
+  await expect(
+    page.locator("#thread-31 .thread-comment-form textarea#editor-contents"),
+  ).toHaveClass(/editorSeries/);
+  await expect(
+    page.locator("#thread-31 .thread-comment-form textarea#editor-contents"),
+  ).toHaveAttribute("data-editor-mode", "code-review-body");
+  await expect(page.locator("#thread-31 .thread-comment-form #edit-thread-comment-31")).toHaveCount(
+    1,
+  );
+  await expect(
+    page.locator("#thread-31 .thread-comment-form #preview-thread-comment-31"),
+  ).toHaveCount(1);
+  await expect(page.locator("#thread-31 .thread-comment-form button[type=submit]")).toContainText(
+    "Add a comment",
+  );
+
+  expect(form.y).toBeGreaterThan(commentList.y + commentList.height - 1);
+  expect(form.x).toBeGreaterThanOrEqual(thread.x);
+  expect(form.width).toBeLessThanOrEqual(thread.width + 1);
+  expect(editor.y).toBeGreaterThanOrEqual(form.y);
+  expect(textarea.y).toBeGreaterThanOrEqual(editor.y);
+  expect(submit.y).toBeGreaterThan(textarea.y);
+  expect(styles).toEqual({
+    buttonDisplay: "inline-block",
+    editorDisplay: "block",
+    formDisplay: "block",
+    textareaDisplay: "inline-block",
+    textareaHeight: "100px",
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await routeRuntimeShell(page);
 });
@@ -798,6 +870,7 @@ test("inline ranged commit thread reply editor submits pasted image uploads", as
   await expect(inlineThread).toHaveAttribute("data-range-path", "src/main.rs");
   await expect(inlineThread).toHaveAttribute("data-range-startline", "2");
   await assertLegacyInlineDiffCommentRowMetrics(page);
+  await assertLegacyThreadReplyFormMetrics(page);
   const replyEditor = inlineThread.locator(".thread-comment-form textarea");
 
   await replyEditor.evaluate((element) => {

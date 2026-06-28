@@ -48,6 +48,7 @@ export function MarkdownAttachmentTextarea(props: {
   placeholder?: string;
   required?: boolean;
   runtimeConfig: RuntimeConfig;
+  style?: React.CSSProperties;
   value: string;
 }) {
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
@@ -112,6 +113,7 @@ export function MarkdownAttachmentTextarea(props: {
       placeholder={props.placeholder}
       ref={textareaRef}
       required={props.required}
+      style={props.style}
       value={props.value}
     />
   );
