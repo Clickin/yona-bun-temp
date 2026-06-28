@@ -808,6 +808,40 @@ button[type="submit"]:focus {
   width: auto;
 }
 
+.frm-wrap .subtask-message {
+  max-width: 80px;
+  padding: 7px 0 5px;
+  margin-top: 14px;
+  overflow: hidden;
+  color: #9e9e9e;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid #ddd;
+}
+
+.frm-wrap .subtask-message,
+.frm-wrap .subtask-message:hover,
+.frm-wrap .subtask-message.option-on {
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.frm-wrap .subtask-message:hover,
+.frm-wrap .subtask-message.option-on {
+  color: #f36c22;
+  border-color: #f36c22;
+}
+
+.frm-wrap .subtask-wrap {
+  display: none;
+}
+
+.frm-wrap .subtask-wrap.show {
+  display: block;
+}
+
 .loginDialog .fullsize {
   width: 100%;
 }

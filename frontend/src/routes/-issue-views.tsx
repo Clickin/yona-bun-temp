@@ -5846,7 +5846,12 @@ export function ProjectIssueFormPage(props: {
                           id="targetProjectId"
                           name="targetProjectId"
                         >
-                          <option value="">{detail.projectName}</option>
+                          <option
+                            data-avatar-url={detail.logoUrl ?? ""}
+                            value={detail.projectId ?? ""}
+                          >
+                            {detail.projectName}
+                          </option>
                         </select>
                       </div>
                       <div className="span6">

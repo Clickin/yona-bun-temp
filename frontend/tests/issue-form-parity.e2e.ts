@@ -7,6 +7,19 @@ const restJsonHeaders = {
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
+
 const projectContainer = {
   cloneUrl: "https://example.com/admin/projectYobi.git",
   dashboard: {
@@ -33,6 +46,7 @@ const projectContainer = {
   organizationName: "",
   overview: "Issue form parity",
   ownerName: "admin",
+  projectId: 101,
   projectName: "projectYobi",
   projectScope: "public",
   reviewCount: 0,
@@ -293,11 +307,99 @@ test("project issue create form validates, submits REST JSON, and redirects to d
   await expect(page.locator(".content-wrap.frm-wrap")).toBeVisible();
   await expect(page.locator("#issue-form")).toBeVisible();
   await expect(page.locator("#targetProjectId")).toBeVisible();
+  await expect(page.locator("#targetProjectId")).toHaveAttribute("name", "targetProjectId");
+  await expect(page.locator("#targetProjectId")).toHaveAttribute("data-format", "projects");
+  await expect(page.locator("#targetProjectId")).toHaveAttribute(
+    "data-placeholder",
+    "Choose projects",
+  );
+  await expect(page.locator("#targetProjectId")).toHaveAttribute("data-toggle", "select2");
+  await expect(page.locator("#targetProjectId")).toHaveAttribute(
+    "data-container-css-class",
+    "fullsize",
+  );
+  await expect(page.locator('#targetProjectId option[value="101"]')).toHaveText("projectYobi");
+  await expect(page.locator('#targetProjectId option[value="101"]')).toHaveAttribute(
+    "data-avatar-url",
+    "",
+  );
   await expect(page.locator("#parentId")).toHaveValue("31");
+  await expect(page.locator("#parentId")).toHaveAttribute("name", "parentIssueId");
+  await expect(page.locator("#parentId")).toHaveAttribute("data-format", "issues");
+  await expect(page.locator("#parentId")).toHaveAttribute("data-placeholder", "Choose projects");
+  await expect(page.locator("#parentId")).toHaveAttribute("data-toggle", "select2");
+  await expect(page.locator("#parentId")).toHaveAttribute("data-container-css-class", "fullsize");
+  await expect(page.locator('#parentId option[value=""]')).toHaveText(
+    "??? Select parent issue ???",
+  );
+  await expect(page.locator('#parentId option[value="31"]')).toHaveText("#31. Parent issue");
   await expect(page.locator('input[name="referCommentId"]')).toHaveValue("55");
   await expect(page.locator('#milestoneId option[value="7"]')).toHaveText("Next");
   await expect(page.locator('#milestoneId option[value="8"]')).toHaveCount(0);
   await expect(page.locator('#labelIds option[value="5"]')).toHaveText("bug");
+  const titleInput = await layoutBox(page, "#title");
+  const subtaskMessage = await layoutBox(page, ".frm-wrap .subtask-message");
+  const subtaskWrap = await layoutBox(page, ".frm-wrap .subtask-wrap.show");
+  const targetProjectColumn = await layoutBox(page, ".frm-wrap .subtask-wrap.show > .span3");
+  const parentIssueColumn = await layoutBox(page, ".frm-wrap .subtask-wrap.show > .span6");
+  const targetProjectSelect = await layoutBox(page, "#targetProjectId");
+  const parentIssueSelect = await layoutBox(page, "#parentId");
+  const subtaskStyles = await page.locator(".frm-wrap .subtask-wrap.show").evaluate((wrap) => {
+    const message = document.querySelector(".frm-wrap .subtask-message") as HTMLElement;
+    const targetProject = wrap.querySelector("#targetProjectId") as HTMLElement;
+    const parentIssue = wrap.querySelector("#parentId") as HTMLElement;
+    const wrapStyle = window.getComputedStyle(wrap);
+    const messageStyle = window.getComputedStyle(message);
+    const targetStyle = window.getComputedStyle(targetProject);
+    const parentStyle = window.getComputedStyle(parentIssue);
+    return {
+      messageBorderColor: messageStyle.borderColor,
+      messageColor: messageStyle.color,
+      messageFontSize: messageStyle.fontSize,
+      messageLineHeight: messageStyle.lineHeight,
+      messageMarginTop: messageStyle.marginTop,
+      messageMaxWidth: messageStyle.maxWidth,
+      messageOverflow: messageStyle.overflow,
+      messagePaddingBottom: messageStyle.paddingBottom,
+      messagePaddingTop: messageStyle.paddingTop,
+      messageTextAlign: messageStyle.textAlign,
+      messageTextOverflow: messageStyle.textOverflow,
+      messageWhiteSpace: messageStyle.whiteSpace,
+      parentDisplay: parentStyle.display,
+      targetDisplay: targetStyle.display,
+      wrapDisplay: wrapStyle.display,
+    };
+  });
+
+  expect(subtaskMessage.y).toBeGreaterThanOrEqual(titleInput.y - 1);
+  expect(subtaskMessage.x).toBeGreaterThan(titleInput.x + titleInput.width - 1);
+  expect(subtaskWrap.y).toBeLessThanOrEqual(titleInput.y + titleInput.height);
+  expect(targetProjectColumn.x).toBeGreaterThanOrEqual(subtaskWrap.x);
+  expect(parentIssueColumn.x).toBeGreaterThan(
+    targetProjectColumn.x + targetProjectColumn.width - 1,
+  );
+  expect(targetProjectSelect.x).toBeGreaterThanOrEqual(targetProjectColumn.x);
+  expect(targetProjectSelect.y).toBeGreaterThan(titleInput.y + titleInput.height - 1);
+  expect(parentIssueSelect.x).toBeGreaterThanOrEqual(parentIssueColumn.x);
+  expect(parentIssueSelect.y).toBeGreaterThan(titleInput.y + titleInput.height - 1);
+  expect(parentIssueSelect.width).toBeGreaterThan(targetProjectSelect.width);
+  expect(subtaskStyles).toEqual({
+    messageBorderColor: "rgb(221, 221, 221)",
+    messageColor: "rgb(158, 158, 158)",
+    messageFontSize: "12px",
+    messageLineHeight: "15px",
+    messageMarginTop: "14px",
+    messageMaxWidth: "80px",
+    messageOverflow: "hidden",
+    messagePaddingBottom: "5px",
+    messagePaddingTop: "7px",
+    messageTextAlign: "center",
+    messageTextOverflow: "ellipsis",
+    messageWhiteSpace: "nowrap",
+    parentDisplay: "inline-block",
+    targetDisplay: "inline-block",
+    wrapDisplay: "block",
+  });
 
   await page.locator("#button-save").click();
   await expect(page.getByRole("alert")).toHaveText("Issue title is a required field.");
