@@ -272,6 +272,23 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
       },
     ],
     childOpenCount: 1,
+    commentParentLinks: [{ id: 31, parentCommentId: 30 }],
+    comments: [
+      {
+        authorAvatarUrl: "",
+        authorLabel: "Admin",
+        authorLoginId: "admin",
+        contentsMarkdown: "Child anchor target",
+        createdLabel: "just now",
+        id: 31,
+        parentCommentId: 30,
+        viewerCanDelete: true,
+        viewerCanUpdate: false,
+        viewerHasVoted: false,
+        voterCount: 0,
+        voters: [],
+      },
+    ],
     timeline: [
       {
         comment: {
@@ -767,6 +784,38 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   await expect(fullTimeline).not.toContainText("issue.event.");
 
   await expect(fullTimeline.locator("#comment-30")).toContainText("Delete target comment");
+  await expect(fullTimeline.locator("#comment-30 .child-comments > #comment-31")).toHaveCount(1);
+  await expect(fullTimeline.locator("#comment-30 .child-comments .one-line-comment")).toContainText(
+    "Child anchor target",
+  );
+  await expect(
+    fullTimeline.locator('#comment-30 .child-comments a.ago[href="#comment-31"]'),
+  ).toHaveAttribute("title", "just now");
+  await expect(
+    fullTimeline.locator(
+      '#comment-30 .child-comments .deleteButtonX[data-toggle="comment-delete"]',
+    ),
+  ).toHaveAttribute("data-request-uri", "/yona/admin/projectYobi/issue/1/comment/31/delete");
+
+  const childComments = await layoutBox(page, "#comment-30 .child-comments");
+  const childAnchor = await layoutBox(page, "#comment-30 .child-comments > #comment-31");
+  const childOneLine = await layoutBox(page, "#comment-30 .child-comments .one-line-comment");
+  const childContents = await layoutBox(
+    page,
+    "#comment-30 .child-comments .one-line-comment .contents",
+  );
+  const childAnchorDisplay = await page
+    .locator("#comment-30 .child-comments > #comment-31")
+    .evaluate((element) => window.getComputedStyle(element).display);
+  expect(childAnchorDisplay).toBe("block");
+  expect(childAnchor.x).toBeCloseTo(childComments.x, 0);
+  expect(childAnchor.width).toBeCloseTo(childComments.width, 0);
+  expect(childAnchor.height).toBe(0);
+  expect(childAnchor.y).toBeLessThanOrEqual(childOneLine.y);
+  expect(childOneLine.y).toBeGreaterThanOrEqual(childAnchor.y);
+  expect(childContents.x).toBeGreaterThanOrEqual(childOneLine.x);
+  expect(childContents.y).toBeGreaterThanOrEqual(childOneLine.y);
+
   const commentDeleteTrigger = fullTimeline.locator(
     '#comment-30 [data-toggle="comment-delete"][data-request-uri="/yona/admin/projectYobi/issue/1/comment/30/delete"]',
   );

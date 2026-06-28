@@ -2976,69 +2976,72 @@ export function ProjectIssueDetailPage(props: {
                               const childAuthorLoginId =
                                 childComment.authorLoginId || childComment.authorLabel;
                               return (
-                                <div className="one-line-comment" key={childComment.id}>
-                                  <div className="contents">
-                                    <MarkdownRenderer
-                                      basePath={props.runtimeConfig.basePath}
-                                      containerElement="fragment"
-                                      currentUserLabel={props.viewerLabel}
-                                      currentUserLoginId={props.viewerLoginId}
-                                      markdown={childComment.contentsMarkdown}
-                                      ownerName={detail.ownerName}
-                                      projectName={detail.projectName}
-                                    />
-                                    <span className="subcomment-author hide">
-                                      {" - "}
-                                      <a
-                                        className="usf-group"
-                                        data-placement="top"
-                                        data-toggle="tooltip"
-                                        href={
-                                          childAuthorLoginId
-                                            ? prefixBasePath(
-                                                props.runtimeConfig.basePath,
-                                                `/${childAuthorLoginId}`,
-                                              )
-                                            : "#"
-                                        }
-                                        title={
-                                          childComment.authorLoginId || childComment.authorLabel
-                                        }
-                                      >
-                                        <strong>
-                                          {childComment.authorLabel || childComment.authorLoginId}
-                                        </strong>
-                                      </a>{" "}
-                                      <a
-                                        className="ago"
-                                        href={`#comment-${childComment.id}`}
-                                        title={childComment.createdLabel}
-                                      >
-                                        {childComment.createdLabel}
-                                      </a>
-                                      {childComment.viewerCanDelete && props.onCommentDelete ? (
-                                        <button
-                                          className="btn-transparent deleteButtonX"
-                                          data-request-uri={buildProjectHref(
-                                            props.runtimeConfig,
-                                            detail.ownerName,
-                                            detail.projectName,
-                                            `issue/${issueNumber}/comment/${childComment.id}/delete`,
-                                          )}
-                                          data-toggle="comment-delete"
-                                          onClick={(event) => {
-                                            event.preventDefault();
-                                            setCommentDeleteTargetId(childComment.id);
-                                          }}
-                                          title={legacyMessage(messages, "common.comment.delete")}
-                                          type="button"
+                                <React.Fragment key={childComment.id}>
+                                  <div id={`comment-${childComment.id}`}></div>
+                                  <div className="one-line-comment">
+                                    <div className="contents">
+                                      <MarkdownRenderer
+                                        basePath={props.runtimeConfig.basePath}
+                                        containerElement="fragment"
+                                        currentUserLabel={props.viewerLabel}
+                                        currentUserLoginId={props.viewerLoginId}
+                                        markdown={childComment.contentsMarkdown}
+                                        ownerName={detail.ownerName}
+                                        projectName={detail.projectName}
+                                      />
+                                      <span className="subcomment-author hide">
+                                        {" - "}
+                                        <a
+                                          className="usf-group"
+                                          data-placement="top"
+                                          data-toggle="tooltip"
+                                          href={
+                                            childAuthorLoginId
+                                              ? prefixBasePath(
+                                                  props.runtimeConfig.basePath,
+                                                  `/${childAuthorLoginId}`,
+                                                )
+                                              : "#"
+                                          }
+                                          title={
+                                            childComment.authorLoginId || childComment.authorLabel
+                                          }
                                         >
-                                          x
-                                        </button>
-                                      ) : null}
-                                    </span>
+                                          <strong>
+                                            {childComment.authorLabel || childComment.authorLoginId}
+                                          </strong>
+                                        </a>{" "}
+                                        <a
+                                          className="ago"
+                                          href={`#comment-${childComment.id}`}
+                                          title={childComment.createdLabel}
+                                        >
+                                          {childComment.createdLabel}
+                                        </a>
+                                        {childComment.viewerCanDelete && props.onCommentDelete ? (
+                                          <button
+                                            className="btn-transparent deleteButtonX"
+                                            data-request-uri={buildProjectHref(
+                                              props.runtimeConfig,
+                                              detail.ownerName,
+                                              detail.projectName,
+                                              `issue/${issueNumber}/comment/${childComment.id}/delete`,
+                                            )}
+                                            data-toggle="comment-delete"
+                                            onClick={(event) => {
+                                              event.preventDefault();
+                                              setCommentDeleteTargetId(childComment.id);
+                                            }}
+                                            title={legacyMessage(messages, "common.comment.delete")}
+                                            type="button"
+                                          >
+                                            x
+                                          </button>
+                                        ) : null}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
+                                </React.Fragment>
                               );
                             })}
                           </div>
