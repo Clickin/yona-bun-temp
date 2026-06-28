@@ -116,6 +116,13 @@ Every legacy Scala template is assigned to a rebuild packet below. `reopen`
 means the template must still be inspected before its active React owner can be
 treated as parity evidence.
 
+The generated anchor inventory for the same 242 templates is:
+`docs/provenance/ui-parity-reports/2026-06-28-legacy-template-anchor-inventory.md`.
+It extracts IDs, classes, form names/actions, `data-*` attributes, message keys,
+and included template/helper calls from each Scala file. Use it as the first
+checklist when rewriting tests and JSX, then verify the rendered route against
+the owning template and partials.
+
 ### `board/`
 
 | legacy template | packet | audit disposition |
