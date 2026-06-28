@@ -7,6 +7,19 @@ const restJsonHeaders = {
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 
+type LayoutBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, `${selector} should have a measurable rendered box`).not.toBeNull();
+  return box as LayoutBox;
+}
+
 const projectContainer = {
   cloneUrl: "https://example.com/admin/projectYobi.git",
   dashboard: {
@@ -581,6 +594,70 @@ test("issue comment editor inserts pasted and dropped image uploads before REST 
   });
 
   await page.goto("/yona/admin/projectYobi/issue/1");
+  await expect(page.locator(".markdown-help")).toBeVisible();
+  await expect(page.locator(".markdown-help-nav .help-nav")).toHaveCount(10);
+  await expect(page.locator(".markdown-help-wrap .markdown-help-item")).toHaveCount(10);
+
+  const markdownHelp = await layoutBox(page, ".markdown-help");
+  const markdownNav = await layoutBox(page, ".markdown-help .markdown-help-nav");
+  const markdownWrap = await layoutBox(page, ".markdown-help .markdown-help-wrap");
+  const headerNav = await layoutBox(
+    page,
+    '.markdown-help .markdown-help-nav [data-target="markdownHeaders"]',
+  );
+
+  expect(markdownNav.y).toBeGreaterThanOrEqual(markdownHelp.y);
+  expect(markdownNav.width).toBeCloseTo(markdownHelp.width, 0);
+  expect(headerNav.x).toBeGreaterThan(markdownNav.x);
+  expect(markdownWrap.y).toBeGreaterThan(markdownNav.y + markdownNav.height - 1);
+  await expect(page.locator(".markdown-help-item.markdownHeaders")).not.toHaveClass(/active/);
+
+  await page.locator('.markdown-help .help-nav[data-target="markdownHeaders"] button').click();
+  await expect(page.locator(".markdown-help-item.markdownHeaders")).toHaveClass(/active/);
+  const activeMarkdownNav = await layoutBox(page, ".markdown-help .markdown-help-nav");
+  const activeMarkdownWrap = await layoutBox(page, ".markdown-help .markdown-help-wrap");
+  const activeNav = await layoutBox(
+    page,
+    '.markdown-help .help-nav[data-target="markdownHeaders"]',
+  );
+  const activeItem = await layoutBox(page, ".markdown-help-item.markdownHeaders.active");
+  const inputHeader = await layoutBox(page, ".markdown-help-item.markdownHeaders .thead .span6");
+  const outputHeader = await layoutBox(
+    page,
+    ".markdown-help-item.markdownHeaders .thead .span6:nth-child(2)",
+  );
+  const inputColumn = await layoutBox(
+    page,
+    ".markdown-help-item.markdownHeaders .markdwon-syntax-wrap .span6.markdwon-syntax",
+  );
+  const outputColumn = await layoutBox(
+    page,
+    ".markdown-help-item.markdownHeaders .markdwon-syntax-wrap > .span6:nth-child(2)",
+  );
+  const syntaxPre = await layoutBox(page, ".markdown-help-item.markdownHeaders pre");
+
+  expect(activeMarkdownNav.width).toBeCloseTo(markdownNav.width, 0);
+  expect(activeMarkdownWrap.width).toBeCloseTo(markdownWrap.width, 0);
+  expect(activeNav.x).toBeGreaterThanOrEqual(activeMarkdownNav.x);
+  expect(activeNav.x + activeNav.width).toBeLessThanOrEqual(
+    activeMarkdownNav.x + activeMarkdownNav.width + 1,
+  );
+  expect(activeNav.y).toBeGreaterThanOrEqual(activeMarkdownNav.y);
+  expect(activeNav.y + activeNav.height).toBeLessThanOrEqual(
+    activeMarkdownNav.y + activeMarkdownNav.height + 1,
+  );
+  expect(activeItem.y).toBeGreaterThanOrEqual(activeMarkdownWrap.y);
+  expect(inputHeader.x).toBeCloseTo(inputColumn.x, 0);
+  expect(outputHeader.x).toBeCloseTo(outputColumn.x, 0);
+  expect(outputHeader.x).toBeGreaterThan(inputHeader.x + inputHeader.width - 1);
+  expect(outputColumn.x).toBeGreaterThan(inputColumn.x + inputColumn.width - 1);
+  expect(inputColumn.width).toBeCloseTo(outputColumn.width, -1);
+  expect(syntaxPre.x).toBeGreaterThanOrEqual(inputColumn.x);
+  expect(syntaxPre.width).toBeLessThanOrEqual(inputColumn.width);
+
+  await page.locator('.markdown-help .help-nav[data-target="markdownHeaders"] button').click();
+  await expect(page.locator(".markdown-help-item.markdownHeaders")).not.toHaveClass(/active/);
+
   const editor = page.locator("#editor-contents-comment-body");
 
   await editor.evaluate((element) => {

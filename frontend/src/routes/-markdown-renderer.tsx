@@ -7176,6 +7176,7 @@ export function MarkdownRenderer(props: {
 export function LegacyMarkdownHelp(props: { messages?: LegacyMessageLookup } = {}) {
   const { t: runtimeMessages } = useLegacyMessages();
   const messages = props.messages ?? runtimeMessages;
+  const [activeTarget, setActiveTarget] = React.useState<string | null>(null);
   const sections = [
     {
       input: "# This is an H1\n## This is an H2\n### This is an H3",
@@ -7256,18 +7257,33 @@ export function LegacyMarkdownHelp(props: { messages?: LegacyMessageLookup } = {
         </li>
         {[...sections, { label: "Short Link", target: "markdownShortLinks" }].map((section) => (
           <li
-            className="help-nav"
+            className={`help-nav${activeTarget === section.target ? " active" : ""}`}
             data-target={section.target}
             data-toggle="markdown-help"
             key={section.target}
           >
-            {section.label}
+            <button
+              className="markdown-help-nav-button"
+              data-target={section.target}
+              data-toggle="markdown-help"
+              onClick={() =>
+                setActiveTarget((current) => (current === section.target ? null : section.target))
+              }
+              type="button"
+            >
+              {section.label}
+            </button>
           </li>
         ))}
       </ul>
       <ul className="markdown-help-wrap">
         {sections.map((section) => (
-          <li className={`markdown-help-item ${section.target}`} key={section.target}>
+          <li
+            className={`markdown-help-item ${section.target}${
+              activeTarget === section.target ? " active" : ""
+            }`}
+            key={section.target}
+          >
             <div className="row-fluid thead">
               <div className="span6">Markdown Input</div>
               <div className="span6">Markdown Output</div>
@@ -7287,7 +7303,11 @@ export function LegacyMarkdownHelp(props: { messages?: LegacyMessageLookup } = {
             </div>
           </li>
         ))}
-        <li className="markdown-help-item markdownShortLinks">
+        <li
+          className={`markdown-help-item markdownShortLinks${
+            activeTarget === "markdownShortLinks" ? " active" : ""
+          }`}
+        >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
             <div className="span6">Markdown Output</div>

@@ -180,6 +180,8 @@ const DOMAIN_BUCKETS = [
       "docs/provenance/ui-parity-reports/ui-parity-fragment-security-db.md",
       "docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md",
       "docs/provenance/ui-parity-reports/template-first-p4-board-milestone-post.md",
+      "docs/provenance/ui-parity-reports/2026-06-28-exhaustive-page-rebuild-audit.md",
+      "docs/provenance/ui-parity-reports/2026-06-28-rendered-evidence-execution-manifest.md",
       "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
     ],
   },
