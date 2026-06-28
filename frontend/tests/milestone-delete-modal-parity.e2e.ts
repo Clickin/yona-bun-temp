@@ -249,7 +249,6 @@ test("milestone list keeps legacy tabs, filters, progress, and issue alignment",
   const projectPage = await layoutBox(page, ".page-wrap-outer > .project-page-wrap");
   const tabWrap = await layoutBox(page, ".tab-wrap");
   const createButton = await layoutBox(page, ".tab-wrap .btns .ybtn-success");
-  const tabs = await layoutBox(page, ".tab-wrap .nav-tabs");
   const filterWrap = await layoutBox(page, ".filter-wrap.milestone");
   const filters = await layoutBox(page, ".filter-wrap.milestone .filters");
   const search = await layoutBox(page, ".filter-wrap.milestone .search-bar");
