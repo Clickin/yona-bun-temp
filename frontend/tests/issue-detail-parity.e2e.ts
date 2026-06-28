@@ -2265,8 +2265,133 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
     )
     .toBe(true);
   await expect(page.locator("#labelIds")).toBeAttached();
+  await expect(page.locator('#issueUpdateForm a.label-edit[target="_blank"]')).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/issue/labelsform",
+  );
+  await expect(page.locator('#issueUpdateForm a.label-edit[target="_blank"]')).toHaveText("[Edit]");
+  await expect(page.locator("#labelIds")).toHaveAttribute("name", "labelIds");
+  await expect(page.locator("#labelIds")).toHaveAttribute("multiple", "");
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-search", "labelIds");
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-toggle", "select2");
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-format", "issuelabel");
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-allow-clear", "true");
+  await expect(page.locator("#labelIds")).toHaveAttribute(
+    "data-dropdown-css-class",
+    "issue-labels",
+  );
+  await expect(page.locator("#labelIds")).toHaveAttribute(
+    "data-container-css-class",
+    "issue-labels bordered fullsize",
+  );
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-placeholder", "Select label");
   await expect(page.locator('#labelIds option[value="5"]')).toHaveJSProperty("selected", true);
+  await expect(page.locator('#labelIds option[value="5"]')).toHaveAttribute(
+    "data-category-id",
+    "4",
+  );
+  await expect(page.locator('#labelIds option[value="5"]')).toHaveAttribute(
+    "data-category-is-exclusive",
+    "false",
+  );
   await expect(page.locator('#labelIds option[value="6"]')).toHaveText("feature");
+  await expect(
+    page.locator("#issueUpdateForm .issue-labels-fallback label.checkbox.inline"),
+  ).toHaveCount(2);
+  await expect(
+    page.locator('#issueUpdateForm .issue-labels-fallback input[name="labelIds"][value="5"]'),
+  ).toBeChecked();
+  await expect(
+    page.locator('#issueUpdateForm .issue-labels-fallback input[name="labelIds"][value="6"]'),
+  ).not.toBeChecked();
+
+  const labelDl = await layoutBox(page, "#issueUpdateForm > dl:has(#labelIds)");
+  const labelDt = await layoutBox(page, "#issueUpdateForm > dl:has(#labelIds) > dt");
+  const labelEdit = await layoutBox(page, "#issueUpdateForm > dl:has(#labelIds) .label-edit");
+  const labelDd = await layoutBox(page, "#issueUpdateForm > dl:has(#labelIds) > dd");
+  const labelFallback = await layoutBox(
+    page,
+    "#issueUpdateForm > dl:has(#labelIds) .issue-labels-fallback",
+  );
+  const firstFallbackLabel = await layoutBox(
+    page,
+    "#issueUpdateForm > dl:has(#labelIds) .issue-labels-fallback label:nth-child(1)",
+  );
+  const secondFallbackLabel = await layoutBox(
+    page,
+    "#issueUpdateForm > dl:has(#labelIds) .issue-labels-fallback label:nth-child(2)",
+  );
+  const firstFallbackSwatch = await layoutBox(
+    page,
+    "#issueUpdateForm > dl:has(#labelIds) .issue-labels-fallback label:nth-child(1) .issue-label",
+  );
+  const labelSelectStyles = await page
+    .locator("#issueUpdateForm > dl:has(#labelIds)")
+    .evaluate((element) => {
+      const dt = element.querySelector("dt") as HTMLElement;
+      const dd = element.querySelector("dd") as HTMLElement;
+      const edit = element.querySelector(".label-edit") as HTMLElement;
+      const select = element.querySelector("#labelIds") as HTMLElement;
+      const fallback = element.querySelector(".issue-labels-fallback") as HTMLElement;
+      const label = fallback.querySelector("label") as HTMLElement;
+      const input = fallback.querySelector("input") as HTMLElement;
+      const swatch = fallback.querySelector(".issue-label") as HTMLElement;
+      const dlStyle = window.getComputedStyle(element);
+      const dtStyle = window.getComputedStyle(dt);
+      const ddStyle = window.getComputedStyle(dd);
+      const editStyle = window.getComputedStyle(edit);
+      const selectStyle = window.getComputedStyle(select);
+      const fallbackStyle = window.getComputedStyle(fallback);
+      const labelStyle = window.getComputedStyle(label);
+      const inputStyle = window.getComputedStyle(input);
+      const swatchStyle = window.getComputedStyle(swatch);
+      return {
+        ddDisplay: ddStyle.display,
+        ddPaddingTop: ddStyle.paddingTop,
+        dlDisplay: dlStyle.display,
+        dlMarginBottom: dlStyle.marginBottom,
+        dtDisplay: dtStyle.display,
+        editDisplay: editStyle.display,
+        editFontSize: editStyle.fontSize,
+        fallbackDisplay: fallbackStyle.display,
+        inputMarginTop: inputStyle.marginTop,
+        labelDisplay: labelStyle.display,
+        labelMarginRight: labelStyle.marginRight,
+        selectDisplay: selectStyle.display,
+        swatchBackgroundColor: swatchStyle.backgroundColor,
+        swatchBoxShadow: swatchStyle.boxShadow,
+        swatchColor: swatchStyle.color,
+      };
+    });
+
+  expect(labelDl.x).toBeGreaterThanOrEqual(issueInfo.x);
+  expect(labelDt.x).toBeGreaterThanOrEqual(labelDl.x);
+  expect(labelEdit.x).toBeGreaterThan(labelDt.x);
+  expect(labelDd.y).toBeGreaterThan(labelDt.y + labelDt.height - 1);
+  expect(labelFallback.x).toBeGreaterThanOrEqual(labelDd.x);
+  expect(firstFallbackLabel.x).toBeGreaterThanOrEqual(labelFallback.x);
+  expect(secondFallbackLabel.x).toBeGreaterThan(firstFallbackLabel.x);
+  expect(firstFallbackSwatch.x).toBeGreaterThan(firstFallbackLabel.x);
+  expect(firstFallbackSwatch.x + firstFallbackSwatch.width).toBeLessThanOrEqual(
+    firstFallbackLabel.x + firstFallbackLabel.width + 1,
+  );
+  expect(labelSelectStyles).toEqual({
+    ddDisplay: "block",
+    ddPaddingTop: "5px",
+    dlDisplay: "block",
+    dlMarginBottom: "20px",
+    dtDisplay: "block",
+    editDisplay: "inline",
+    editFontSize: "13px",
+    fallbackDisplay: "block",
+    inputMarginTop: "3px",
+    labelDisplay: "inline-block",
+    labelMarginRight: "2px",
+    selectDisplay: "none",
+    swatchBackgroundColor: "rgb(244, 67, 54)",
+    swatchBoxShadow: "rgb(244, 67, 54) 2px 0px 0px 0px inset",
+    swatchColor: "rgb(255, 255, 255)",
+  });
 
   await page.locator('a[href="#deleteConfirm"]').click();
   await expect(page.locator("#deleteConfirm")).toBeVisible();
