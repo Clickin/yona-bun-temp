@@ -257,6 +257,7 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
   page,
 }) => {
   let currentIssue = issueDetail({
+    bodyMarkdown: "- [ ] issue open\n- [x] issue done",
     timeline: [
       {
         createdLabel: "1 minute ago",
@@ -426,6 +427,60 @@ test("issue detail actions, metadata sidebar, and delete modal mutate through RE
 
   await page.goto("/yona/admin/projectYobi/issue/1");
   await expect(page.locator("#helpKeys.modal.hide.fade.keymap-help")).toHaveCount(1);
+  await expect(page.locator("#issue-body-1 .tasklist.task-show")).toBeVisible();
+  await expect(page.locator("#issue-body-1 .task-title")).toContainText("Tasks(1/2)");
+  await expect(page.locator("#issue-body-1 .task-progress .bar.red")).toHaveAttribute(
+    "title",
+    "Tasklist",
+  );
+  await expect(page.locator("#issue-body-1 .task-progress .bar.red")).toHaveAttribute(
+    "style",
+    "width: 50%;",
+  );
+  const tasklist = await layoutBox(page, "#issue-body-1 .tasklist.task-show");
+  const taskTitle = await layoutBox(page, "#issue-body-1 .task-title");
+  const doneCounter = await layoutBox(page, "#issue-body-1 .done-counter");
+  const taskProgress = await layoutBox(page, "#issue-body-1 .task-progress");
+  const taskProgressBar = await layoutBox(page, "#issue-body-1 .task-progress .bar");
+  const taskStyles = await page.locator("#issue-body-1 .tasklist.task-show").evaluate((element) => {
+    const tasklistStyle = window.getComputedStyle(element);
+    const title = window.getComputedStyle(element.querySelector(".task-title") as HTMLElement);
+    const counter = window.getComputedStyle(element.querySelector(".done-counter") as HTMLElement);
+    const progress = window.getComputedStyle(
+      element.querySelector(".task-progress") as HTMLElement,
+    );
+    const bar = window.getComputedStyle(
+      element.querySelector(".task-progress .bar") as HTMLElement,
+    );
+    return {
+      barBackgroundColor: bar.backgroundColor,
+      barHeight: bar.height,
+      counterMarginLeft: counter.marginLeft,
+      display: tasklistStyle.display,
+      paddingLeft: tasklistStyle.paddingLeft,
+      paddingRight: tasklistStyle.paddingRight,
+      paddingTop: tasklistStyle.paddingTop,
+      progressBackgroundColor: progress.backgroundColor,
+      titleFontWeight: title.fontWeight,
+    };
+  });
+  expect(taskTitle.x).toBeCloseTo(tasklist.x + 20, 0);
+  expect(taskProgress.x).toBeCloseTo(taskTitle.x, 0);
+  expect(taskProgress.y).toBeGreaterThan(taskTitle.y + taskTitle.height - 1);
+  expect(doneCounter.x).toBeGreaterThan(taskTitle.x);
+  expect(taskProgressBar.x).toBeCloseTo(taskProgress.x, 0);
+  expect(taskProgressBar.width).toBeCloseTo(taskProgress.width * 0.5, 0);
+  expect(taskStyles).toEqual({
+    barBackgroundColor: "rgb(255, 0, 0)",
+    barHeight: "2px",
+    counterMarginLeft: "5px",
+    display: "block",
+    paddingLeft: "20px",
+    paddingRight: "20px",
+    paddingTop: "10px",
+    progressBackgroundColor: "rgb(212, 212, 212)",
+    titleFontWeight: "500",
+  });
 
   const keymapTrigger = await layoutBox(page, 'a[href="#helpKeys"][data-toggle="modal"]');
   await page.locator('a[href="#helpKeys"][data-toggle="modal"]').click();

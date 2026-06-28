@@ -238,7 +238,7 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | `common/select2.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/sharerCount.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/showSubtasksCheckbox.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
-| `common/tasklistBar.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
+| `common/tasklistBar.scala.html` | shared partials | metric guard passed: `issue-detail-parity.e2e.ts` asserts the legacy issue-body tasklist bar, `.tasklist.task-show`, `.task-title`, `.done-counter`, `.task-progress`, `.task-progress .bar`, `Tasklist` title, `Tasks(1/2)` copy, 50% bar width, title/progress vertical ordering, 20px horizontal padding, 10px top padding, 5px counter margin, 2px bar height, red incomplete bar, gray progress background, and title font weight |
 | `common/twoColumnModeCheckboxArea.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/uploadForm.scala.html` | shared partials | reopen: inspect Scala anchors before JSX reuse |
 | `common/usermenu.scala.html` | P0 global shell | metric guard passed: `root-shell-parity.e2e.ts` asserts anonymous login/signup links, authenticated issue/admin/sidebar/create menu alignment, right-side 360px sidebar open/close, profile/account/logout rows, and guest variant |
