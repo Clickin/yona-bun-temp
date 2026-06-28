@@ -399,7 +399,7 @@ const DOMAIN_BUCKETS = [
   {
     id: "organization-core-cru",
     label: "Organization core CRU",
-    status: "partial",
+    status: "parity",
     implementationPatterns: [
       /^frontend\/src\/routes\/-directory-views\.tsx$/i,
       /^frontend\/.*organization/i,
@@ -409,6 +409,9 @@ const DOMAIN_BUCKETS = [
     provenanceDocs: [
       "docs/provenance/phase-0b/organization.md",
       "docs/provenance/core-parity-audit.md",
+      "docs/provenance/ui-parity-reports/ui-parity-directory-organization.md",
+      "docs/provenance/ui-parity-reports/template-first-p6-organization-directory-workspace.md",
+      "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
     ],
   },
   {

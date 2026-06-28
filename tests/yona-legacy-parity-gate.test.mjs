@@ -483,6 +483,21 @@ test("maps organization pull request routes before generic organization routes",
   );
 });
 
+test("treats organization directory and shell routes as a closed parity slice", () => {
+  const result = runGate([
+    "frontend/src/routes/-organization-views.tsx",
+    "frontend/src/organization-shell-i18n.spec.tsx",
+    "docs/provenance/ui-parity-reports/ui-parity-directory-organization.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["organization-core-cru", "parity"]],
+  );
+});
+
 test("treats canonical migration crate as active canonical work, not deferred scope", () => {
   const result = runGate([
     "crates/migration/src/m20260407_000003_create_org_project_baseline_tables.rs",
