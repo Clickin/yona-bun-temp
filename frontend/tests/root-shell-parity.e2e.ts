@@ -294,7 +294,7 @@ test("guest root shell hides project listing and organization creation like lega
   await expect(page.locator(".gnb-usermenu a[href='/yona/user/issues']")).toBeVisible();
 });
 
-test("standalone legacy pages suppress the root footer", async ({ page }) => {
+test("standalone legacy pages suppress root chrome", async ({ page }) => {
   await installRuntimeConfig(page);
   await installCommonApiMocks(page, { session: { isAnonymous: true } });
 
@@ -302,13 +302,16 @@ test("standalone legacy pages suppress the root footer", async ({ page }) => {
   await expectNoVisibleRawLegacyKeys(page);
 
   await expect(page).toHaveTitle("Tada! Welcome to Yona!");
-  await expect(page.locator(".gnb-outer .gnb-inner")).toBeVisible();
+  await expect(page.locator(".gnb-outer")).toHaveCount(0);
+  await expect(page.locator("#mySidenav")).toHaveCount(0);
   await expect(page.locator(".page-footer-outer")).toHaveCount(1);
   await expect(page.locator(".secret-page .page-footer-outer")).toContainText("Powered by");
   await expect(page.locator(".page-footer-outer")).not.toContainText("Copyright");
 
   await page.goto("/yona/restart");
   await expectNoVisibleRawLegacyKeys(page);
+  await expect(page.locator(".gnb-outer")).toHaveCount(0);
+  await expect(page.locator("#mySidenav")).toHaveCount(0);
   await expect(page.locator(".secret-page .secret-wrap.restart")).toBeVisible();
   await expect(page.locator(".page-footer-outer")).toHaveCount(1);
   await expect(page.locator(".secret-page .page-footer-outer")).toContainText("Powered by");

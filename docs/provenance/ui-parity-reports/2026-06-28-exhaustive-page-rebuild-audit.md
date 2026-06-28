@@ -506,8 +506,8 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `welcome/restart.scala.html` | P1/P7 setup | reopen: inspect Scala anchors before JSX reuse |
-| `welcome/secret.scala.html` | P1/P7 setup | reopen: inspect Scala anchors before JSX reuse |
+| `welcome/restart.scala.html` | P1/P7 setup | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts standalone no-root-chrome layout, restart wrap padding, 123x55 logo, 50% notice width, centered stack, and internal footer order |
+| `welcome/secret.scala.html` | P1/P7 setup | metric guard passed: `auth-public-entry-parity.e2e.ts` asserts standalone no-root-chrome layout, 123x55 logo, 50% warning box, form input alignment, submit/footer order, and REST mutation boundary |
 
 ## Rebuild Execution Queue
 

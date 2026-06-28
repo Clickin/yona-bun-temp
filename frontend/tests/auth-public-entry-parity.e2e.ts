@@ -145,6 +145,7 @@ function signedInSession() {
 test("first-run secret admin setup keeps the legacy form shell and REST submit boundary", async ({
   page,
 }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
   await installRuntimeConfig(page);
   await installAuthEntryMocks(page, { secretSetupRequired: true });
   let submittedBody: Record<string, unknown> | null = null;
@@ -162,6 +163,8 @@ test("first-run secret admin setup keeps the legacy form shell and REST submit b
   await expectNoVisibleRawLegacyKeys(page);
 
   await expect(page).toHaveTitle("Tada! Welcome to Yona!");
+  await expect(page.locator(".gnb-outer")).toHaveCount(0);
+  await expect(page.locator("#mySidenav")).toHaveCount(0);
   await expect(page.locator(".secret-page .secret-wrap .logo")).toContainText("Yona");
   await expect(page.locator(".secret-page .secret-wrap .logo")).toHaveAttribute(
     "href",
@@ -189,6 +192,48 @@ test("first-run secret admin setup keeps the legacy form shell and REST submit b
   await expect(page.locator(".secret-page form")).not.toHaveAttribute("method", /post/i);
   await expect(page.locator(".secret-page form")).not.toHaveAttribute("action", /\/secret/);
 
+  const pageWrap = await layoutBox(page, ".secret-page .container.page-wrap");
+  const pageBody = await layoutBox(page, ".secret-page .page");
+  const secretWrap = await layoutBox(page, ".secret-page .secret-wrap");
+  const logo = await layoutBox(page, ".secret-page .secret-wrap .logo");
+  const heading = await layoutBox(page, ".secret-page .secret-wrap h3");
+  const secretBox = await layoutBox(page, ".secret-page .alert.alert-block.secret-box");
+  const formWrap = await layoutBox(page, ".secret-page .signup-form-wrap.frm-wrap");
+  const loginId = await layoutBox(page, "#loginId");
+  const userName = await layoutBox(page, "#uname");
+  const email = await layoutBox(page, "#email");
+  const password = await layoutBox(page, "#password");
+  const retypedPassword = await layoutBox(page, "#retypedPassword");
+  const submitButton = await layoutBox(page, ".secret-page button[type='submit']");
+  const footer = await layoutBox(page, ".secret-page .page-footer-outer");
+
+  expect(pageWrap.width).toBeGreaterThanOrEqual(900);
+  expect(pageBody.x).toBeCloseTo(pageWrap.x, 0);
+  expect(pageBody.width).toBeCloseTo(pageWrap.width, 0);
+  expect(secretWrap.y).toBeGreaterThanOrEqual(pageBody.y);
+  expect(Math.round(logo.width)).toBe(123);
+  expect(Math.round(logo.height)).toBe(55);
+  expect(Math.abs(logo.x + logo.width / 2 - (pageBody.x + pageBody.width / 2))).toBeLessThanOrEqual(
+    2,
+  );
+  expect(heading.y).toBeGreaterThan(logo.y + logo.height - 1);
+  expect(secretBox.y).toBeGreaterThan(heading.y + heading.height - 1);
+  expect(secretBox.width).toBeCloseTo(pageBody.width * 0.5, 0);
+  expect(
+    Math.abs(secretBox.x + secretBox.width / 2 - (pageBody.x + pageBody.width / 2)),
+  ).toBeLessThanOrEqual(2);
+  expect(formWrap.y).toBeGreaterThan(secretBox.y + secretBox.height - 1);
+  for (const input of [userName, email, password, retypedPassword]) {
+    expect(input.x).toBeCloseTo(loginId.x, 0);
+    expect(input.width).toBeCloseTo(loginId.width, 0);
+  }
+  expect(userName.y).toBeGreaterThan(loginId.y);
+  expect(email.y).toBeGreaterThan(userName.y);
+  expect(password.y).toBeGreaterThan(email.y);
+  expect(retypedPassword.y).toBeGreaterThan(password.y);
+  expect(submitButton.y).toBeGreaterThan(retypedPassword.y + retypedPassword.height - 1);
+  expect(footer.y).toBeGreaterThan(pageBody.y + pageBody.height - 1);
+
   await page.locator("#uname").fill("Administrator");
   await page.locator("#email").fill("admin@example.com");
   await page.locator("#password").fill("admin-secret");
@@ -196,6 +241,27 @@ test("first-run secret admin setup keeps the legacy form shell and REST submit b
   await page.locator(".secret-page button[type='submit']").click();
 
   await expect(page).toHaveURL(/\/yona\/restart$/);
+  await expect(page.locator(".gnb-outer")).toHaveCount(0);
+  const restartPageBody = await layoutBox(page, ".secret-page .page");
+  const restartWrap = await layoutBox(page, ".secret-page .secret-wrap.restart");
+  const restartLogo = await layoutBox(page, ".secret-page .secret-wrap.restart .logo");
+  const restartHeading = await layoutBox(page, ".secret-page .secret-wrap.restart h3");
+  const restartNotice = await layoutBox(page, ".secret-page .secret-wrap.restart .secret-box");
+  const restartFooter = await layoutBox(page, ".secret-page .page-footer-outer");
+
+  expect(restartWrap.y).toBeGreaterThanOrEqual(restartPageBody.y);
+  expect(restartLogo.y).toBeGreaterThanOrEqual(restartWrap.y + 50);
+  expect(Math.round(restartLogo.width)).toBe(123);
+  expect(Math.round(restartLogo.height)).toBe(55);
+  expect(
+    Math.abs(
+      restartLogo.x + restartLogo.width / 2 - (restartPageBody.x + restartPageBody.width / 2),
+    ),
+  ).toBeLessThanOrEqual(2);
+  expect(restartHeading.y).toBeGreaterThan(restartLogo.y + restartLogo.height - 1);
+  expect(restartNotice.y).toBeGreaterThan(restartHeading.y + restartHeading.height - 1);
+  expect(restartNotice.width).toBeCloseTo(restartPageBody.width * 0.5, 0);
+  expect(restartFooter.y).toBeGreaterThan(restartWrap.y + restartWrap.height - 1);
   expect(submittedBody).toMatchObject({
     emailAddress: "admin@example.com",
     name: "Administrator",

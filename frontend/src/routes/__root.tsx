@@ -27,6 +27,9 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
 
 function RootRouteComponent() {
   const { runtimeConfig } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const appPathname = stripRuntimeBasePath(pathname, runtimeConfig.basePath);
+  const standaloneChrome = STANDALONE_CHROME_PATHS.has(appPathname);
   const [loginDialogOpen, setLoginDialogOpen] = React.useState(false);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const toggleSidebar = React.useCallback(() => setSidebarOpen((current) => !current), []);
@@ -55,6 +58,10 @@ function RootRouteComponent() {
   }, []);
 
   React.useEffect(() => {
+    if (standaloneChrome) {
+      setSidebarOpen(false);
+      return undefined;
+    }
     if (!sidebarOpen || typeof document === "undefined") {
       return undefined;
     }
@@ -70,7 +77,7 @@ function RootRouteComponent() {
     };
     document.addEventListener("click", onDocumentClick);
     return () => document.removeEventListener("click", onDocumentClick);
-  }, [sidebarOpen]);
+  }, [sidebarOpen, standaloneChrome]);
 
   return (
     <YonaQueryProvider>
@@ -79,11 +86,15 @@ function RootRouteComponent() {
           <RuntimeErrorBanner />
           <SiteAdminLoggedInAffix />
           <RootUpdateNotification />
-          <RootHeader
-            onOpenLoginDialog={() => setLoginDialogOpen(true)}
-            onToggleSidebar={toggleSidebar}
-          />
-          <RootSidebar open={sidebarOpen} />
+          {standaloneChrome ? null : (
+            <>
+              <RootHeader
+                onOpenLoginDialog={() => setLoginDialogOpen(true)}
+                onToggleSidebar={toggleSidebar}
+              />
+              <RootSidebar open={sidebarOpen} />
+            </>
+          )}
           <Outlet />
           <RootFooter />
           <LegacyGlobalContainers />
@@ -95,7 +106,8 @@ function RootRouteComponent() {
   );
 }
 
-const STANDALONE_FOOTER_PATHS = new Set(["/_UIKit", "/restart", "/secret"]);
+const STANDALONE_CHROME_PATHS = new Set(["/restart", "/secret"]);
+const STANDALONE_FOOTER_PATHS = new Set(["/_UIKit", ...STANDALONE_CHROME_PATHS]);
 const NON_PROJECT_TOP_LEVEL_PATHS = new Set([
   "_UIKit",
   "_import",
