@@ -275,22 +275,22 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
 | `git/clone.scala.html` | P5 git/pr | metric guard passed: `project-fork-parity.e2e.ts` stalls the TanStack fork mutation and asserts the legacy fork-clone pending shell with `.project-page-wrap`, `.content-wrap.frm-wrap`, `legend` `fork.forking` source/target copy, both `fork.forking.message.*` paragraphs, form absence during pending clone, and redirect-bound mutation still using the existing REST/TanStack boundary |
-| `git/create.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/edit.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/fork.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/list.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/partial_branch.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/create.scala.html` | P5 git/pr | metric guard passed: `pull-request-interaction-parity.e2e.ts` asserts the legacy new PR form shell, branch selector ordering, status/title/editor/commit-area/merge-result/actions vertical order, merge-result commit table sizing, validation behavior, and REST/TanStack mutation boundary |
+| `git/edit.scala.html` | P5 git/pr | metric guard passed: `pull-request-interaction-parity.e2e.ts` asserts the legacy edit PR form shell, disabled from/to project and branch controls, branch selector ordering, status/title/commit-area/actions ordering, validation behavior, and REST/TanStack PATCH boundary |
+| `git/fork.scala.html` | P5 git/pr | metric guard passed: `project-fork-parity.e2e.ts` asserts the legacy fork route owned by the React project fork page, `.form-horizontal.nm`, `#helpMessage.well`, image/help copy branch, owner/name/share control groups, label/control x alignment, actions order, existing-fork notice branch, and REST/TanStack fork mutation boundary |
+| `git/list.scala.html` | P5 git/pr | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts the legacy project PR list route with `.project-page-wrap`, tab/search/advanced/list/pagination order, row avatar/title/infos/state alignment, category routes, no raw message keys, and REST query fixture rendering |
+| `git/partial_branch.scala.html` | P5 git/pr | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts the PR detail/changes branch partial through `.pullRequest-branchInfo`, from/to code ordering, owner/project/branch anchors, and placement inside the legacy board-body author row |
 | `git/partial_forklist.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/partial_info.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/partial_list.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/partial_merge_result.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/partial_pull_request_event.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/partial_recently_pushed_branches.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/partial_reviewlist.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/partial_search.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/partial_state.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/view.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
-| `git/viewChanges.scala.html` | P5 git/pr | reopen: inspect Scala anchors before JSX reuse |
+| `git/partial_info.scala.html` | P5 git/pr | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts the PR header partial through `.board-header.issue`, date/state badge/title tabs ordering, overview/changes tab anchors, reviewer/merge controls placement, and detail/changes route shell ownership |
+| `git/partial_list.scala.html` | P5 git/pr | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts visible PR list rows with `.post-list-wrap`, `.post-item.title`, avatar/title/infos/state column alignment, review-count link, receiver/state rail, pagination, and closed/sent category variants |
+| `git/partial_merge_result.scala.html` | P5 git/pr | metric guard passed: `pull-request-interaction-parity.e2e.ts` asserts `#mergeResult.code-browser-wrap`, `data-conflict`, `#numOfCommits`, `.code-table.commits` sizing, commit message visibility, and placement below the legacy commit tab in the create/edit PR form flow |
+| `git/partial_pull_request_event.scala.html` | P5 git/pr | metric guard passed: `pull-request-review-read-parity.e2e.ts` and `pull-request-interaction-parity.e2e.ts` assert `ul#comments .event`, state/date ordering, open/close/reopen/merge event copy, merged commit link/copy, and action-triggered event updates |
+| `git/partial_recently_pushed_branches.scala.html` | P5 git/pr | metric guard passed: `pull-request-interaction-parity.e2e.ts` asserts the recently pushed branch title/alert order, split icon before PR link, alert width, generated new-PR link query, delete hook attributes, and REST/TanStack delete mutation |
+| `git/partial_reviewlist.scala.html` | P5 git/pr | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts PR changes review-card rendering inside `.review-wrap .review-container`, review column placement beside the diff body, card/info vertical order, open/closed/outdated anchors, and mobile review-thread anchors |
+| `git/partial_search.scala.html` | P5 git/pr | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts `.row-fluid.cb` PR search surface through tab/search/advanced/list/pagination ordering, `#search`, `#advanced-search-form #contributors`, category tabs, PR new action presence, and REST query updates |
+| `git/partial_state.scala.html` | P5 git/pr | metric guard passed: `pull-request-review-read-parity.e2e.ts` and `pull-request-interaction-parity.e2e.ts` assert `#state.pullRequest-stateInfo`, safe/conflict/merged state notices, reviewer/merge button state, delete/restore source-branch controls, conflict guide, and alert placement between body and footer |
+| `git/view.scala.html` | P5 git/pr | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts the legacy PR overview page stack: header, overview tabs, author/branch/body/attachments, state notice, action footer, event timeline, help link/modal anchors, and no placeholder/raw key leakage |
+| `git/viewChanges.scala.html` | P5 git/pr | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts the legacy PR changes page stack: overview tabs, author/branch row, commit selector, selected commit/diff body, inline review trigger, board comment form, review-card side column, outdated commit route, and mobile anchor behavior |
 
 ### `help/`
 
@@ -453,8 +453,8 @@ layout evidence or an explicit `gap`, `deviation`, or `deferred` record exists.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `reviewthread/list.scala.html` | P5 review | reopen: inspect Scala anchors before JSX reuse |
-| `reviewthread/partial_list.scala.html` | P5 review | reopen: inspect Scala anchors before JSX reuse |
+| `reviewthread/list.scala.html` | P5 review | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts the legacy `/reviews` shell with left search/filter column, right result column, state tabs, sort/export/search controls, query-preserving interactions, column x alignment, list/export vertical ordering, and REST query boundary |
+| `reviewthread/partial_list.scala.html` | P5 review | metric guard passed: `pull-request-review-read-parity.e2e.ts` asserts review rows through `.review-list-wrap .post-list-wrap`, row avatar/title/infos ordering, ellipsis title CSS, PR/commit thread hrefs, comment body copy, and export/pagination placement |
 
 ### `search/`
 

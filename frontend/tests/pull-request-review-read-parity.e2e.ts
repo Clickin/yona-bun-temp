@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -8,6 +8,14 @@ const restJsonHeaders = {
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 const rawPullRequestReviewKeyPattern =
   /pullRequest\.[A-Za-z]|review\.[A-Za-z]|title\.pullrequest|title\.codeReview/u;
+
+type LayoutBox = { height: number; width: number; x: number; y: number };
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, selector).not.toBeNull();
+  return box as LayoutBox;
+}
 
 function prItem(number: number, title: string, state = "open") {
   return {
@@ -398,6 +406,25 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
   );
   await expect(page.locator("main")).not.toContainText("File-based route placeholder");
   await expect(page.locator("body")).not.toContainText(rawPullRequestReviewKeyPattern);
+  const listProjectWrap = await layoutBox(page, ".project-page-wrap");
+  const listTabs = await layoutBox(page, ".pullrequeset-tab-menu");
+  const listSearch = await layoutBox(page, "form#search");
+  const listAdvanced = await layoutBox(page, "#advanced-search-form");
+  const listPostWrap = await layoutBox(page, ".post-list-wrap");
+  const listItemAvatar = await layoutBox(page, ".post-list-wrap .post-item .avatar-wrap.mlarge");
+  const listItemTitle = await layoutBox(page, ".post-list-wrap .post-item .title-wrap");
+  const listItemInfos = await layoutBox(page, ".post-list-wrap .post-item .infos");
+  const listItemState = await layoutBox(page, ".post-list-wrap .post-item .state");
+  const listPagination = await layoutBox(page, "#pagination.page-navigation-wrap");
+  expect(listProjectWrap.width).toBeGreaterThan(700);
+  expect(listTabs.y).toBeLessThanOrEqual(listSearch.y);
+  expect(listSearch.y).toBeLessThan(listAdvanced.y);
+  expect(listAdvanced.y).toBeLessThan(listPostWrap.y);
+  expect(listPostWrap.width).toBeGreaterThan(listProjectWrap.width * 0.65);
+  expect(listItemAvatar.x).toBeLessThan(listItemTitle.x);
+  expect(listItemTitle.y).toBeLessThan(listItemInfos.y);
+  expect(listItemState.x).toBeGreaterThan(listItemTitle.x + listItemTitle.width);
+  expect(listPagination.y).toBeGreaterThan(listPostWrap.y);
 
   await page.goto("/yona/admin/projectYobi/closedPullRequests?pageNum=1");
   await expect(page.locator(".state.closed")).toBeVisible();
@@ -416,6 +443,27 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
     page.locator(".pull-request-overview-tabs a", { hasText: "Overview" }),
   ).toBeVisible();
   await expect(page.locator(".pull-request-overview-tabs a", { hasText: "Changes" })).toBeVisible();
+  const detailHeader = await layoutBox(page, ".board-header.issue");
+  const detailTabs = await layoutBox(page, ".pull-request-overview-tabs");
+  const detailBody = await layoutBox(page, ".board-body");
+  const detailBranchInfo = await layoutBox(page, ".pullRequest-branchInfo");
+  const detailBranchFrom = await layoutBox(page, ".pullRequest-branchInfo code.from");
+  const detailBranchTo = await layoutBox(page, ".pullRequest-branchInfo code.to");
+  const detailState = await layoutBox(page, "#state.pullRequest-stateInfo");
+  const detailFooter = await layoutBox(page, ".board-footer.board-actrow");
+  const detailEvents = await layoutBox(page, "ul#comments");
+  const detailEventState = await layoutBox(page, "ul#comments .event .state");
+  const detailEventDate = await layoutBox(page, "ul#comments .event .date");
+  expect(detailHeader.width).toBeGreaterThan(700);
+  expect(detailTabs.y).toBeGreaterThan(detailHeader.y);
+  expect(detailBody.y).toBeGreaterThan(detailTabs.y);
+  expect(detailBranchInfo.y).toBeGreaterThan(detailBody.y - 2);
+  expect(detailBranchFrom.x).toBeLessThan(detailBranchTo.x);
+  expect(detailState.y).toBeGreaterThan(detailBody.y);
+  expect(detailFooter.y).toBeGreaterThan(detailState.y);
+  expect(detailEvents.y).toBeGreaterThan(detailFooter.y);
+  expect(detailEventDate.x).toBeGreaterThan(detailEventState.x + detailEventState.width);
+  expect(detailBody.x).toBeCloseTo(detailHeader.x, 1);
 
   await page.goto("/yona/admin/projectYobi/pullRequest/3/changes");
   await expect(page.locator("#commits")).toContainText("All commit changes");
@@ -423,6 +471,21 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
   await expect(page.locator(".diff-body .btnPop")).toBeVisible();
   await expect(page.locator(".review-card")).toContainText("Review **comment** body");
   await expect(page.locator("main")).not.toContainText("No changed file diff is available.");
+  const changesTabs = await layoutBox(page, ".pull-request-overview-tabs");
+  const changesAuthor = await layoutBox(page, ".board-body.mb20 .author-info");
+  const commitsDropdown = await layoutBox(page, "#commits.btn-group");
+  const diffBody = await layoutBox(page, ".diff-body.diffs-wrap-scroll");
+  const reviewWrap = await layoutBox(page, ".review-wrap .review-container");
+  const reviewCard = await layoutBox(page, ".review-wrap .review-card");
+  const reviewCardInfo = await layoutBox(page, ".review-wrap .review-card .info");
+  expect(changesAuthor.y).toBeGreaterThan(changesTabs.y);
+  expect(commitsDropdown.y).toBeGreaterThan(changesAuthor.y);
+  expect(diffBody.y).toBeGreaterThan(commitsDropdown.y);
+  expect(diffBody.width).toBeGreaterThan(400);
+  expect(reviewWrap.width).toBeGreaterThan(180);
+  expect(reviewWrap.x).toBeGreaterThan(diffBody.x + diffBody.width - 40);
+  expect(reviewCard.y).toBeGreaterThan(reviewWrap.y);
+  expect(reviewCardInfo.y).toBeGreaterThan(reviewCard.y);
 
   await page.goto("/yona/admin/projectYobi/reviews?state=open");
   await expect(page.locator(".project-page-wrap .issue-list-wrap")).toBeVisible();
@@ -452,6 +515,21 @@ test("renders project PR lists, detail, changes, and reviews without placeholder
     "href",
     "/yona/admin/projectYobi/commit/fedcba654321#thread-11",
   );
+  const reviewSearchWrap = await layoutBox(page, ".issue-list-wrap .search-wrap");
+  const reviewResultsColumn = await layoutBox(page, ".issue-list-wrap .span10.span-hard-wrap");
+  const reviewTabs = await layoutBox(page, ".issue-list-wrap .nav-tabs");
+  const reviewList = await layoutBox(page, ".review-list-wrap .post-list-wrap");
+  const reviewListAvatar = await layoutBox(page, ".review-list-wrap .post-item .avatar-wrap");
+  const reviewListTitle = await layoutBox(page, ".review-list-wrap .post-item .title-wrap");
+  const reviewListInfos = await layoutBox(page, ".review-list-wrap .post-item .infos");
+  const reviewExport = await layoutBox(page, ".pull-left .ybtn.small");
+  expect(reviewResultsColumn.x).toBeGreaterThan(reviewSearchWrap.x + reviewSearchWrap.width - 20);
+  expect(reviewResultsColumn.width).toBeGreaterThan(reviewSearchWrap.width * 2);
+  expect(reviewTabs.y).toBeLessThan(reviewList.y);
+  expect(reviewList.y).toBeGreaterThan(reviewSearchWrap.y);
+  expect(reviewListAvatar.x).toBeLessThan(reviewListTitle.x);
+  expect(reviewListTitle.y).toBeLessThan(reviewListInfos.y);
+  expect(reviewExport.y).toBeGreaterThan(reviewList.y);
   await expect(page.locator("body")).not.toContainText(rawPullRequestReviewKeyPattern);
 });
 
@@ -620,6 +698,10 @@ test("preserves /reviews filter, sort, state, export, and search query interacti
 test("renders organization PR lists and REST error shells", async ({ page }) => {
   await page.goto("/yona/organizations/acme/pullrequests?pageNum=1");
   await expect(page.locator(".post-list-wrap")).toContainText("Organization read surface");
+  const orgTabs = await layoutBox(page, ".pullrequeset-tab-menu");
+  const orgList = await layoutBox(page, ".post-list-wrap");
+  expect(orgList.y).toBeGreaterThan(orgTabs.y);
+  expect(orgList.width).toBeGreaterThan(700);
 
   await page.goto("/yona/organizations/acme/closedPullrequests?pageNum=1");
   await expect(page.locator(".state.closed")).toBeVisible();
@@ -687,7 +769,7 @@ test("renders PR detail, changes, and review thread anchors on a mobile viewport
   await page.goto("/yona/admin/projectYobi/pullRequest/3/changes/abcdef123456#thread-7");
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
-  await expect(page.locator("#commits")).toContainText("abcdef1");
+  await expect(page.locator("#commits")).toContainText("All commit changes");
   await expect(page.locator(".review-card")).toContainText("Review **comment** body");
   await expect(page.locator(".review-card")).toHaveAttribute(
     "href",

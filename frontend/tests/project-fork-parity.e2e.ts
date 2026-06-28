@@ -8,6 +8,14 @@ const restJsonHeaders = {
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 const PROJECT_ADMIN_RAW_KEY_PATTERN = /\b(?:fork|project|button)\.[a-z][A-Za-z0-9_.-]*/;
 
+type LayoutBox = { height: number; width: number; x: number; y: number };
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, selector).not.toBeNull();
+  return box as LayoutBox;
+}
+
 async function assertNoProjectAdminRawKeys(page: Page): Promise<void> {
   await expect(page.locator("body")).not.toContainText(PROJECT_ADMIN_RAW_KEY_PATTERN);
 }
@@ -212,6 +220,23 @@ test("project fork route preserves the legacy fork shell and posts REST mutation
   await expect(page.locator("#public")).toBeVisible();
   await expect(page.locator("#private")).toBeVisible();
   await assertNoProjectAdminRawKeys(page);
+  const forkWrap = await layoutBox(page, ".content-wrap.frm-wrap");
+  const forkLegend = await layoutBox(page, "form.form-horizontal fieldset > legend");
+  const forkHelp = await layoutBox(page, "#helpMessage.well");
+  const ownerGroup = await layoutBox(page, ".control-group:has(#project-owner)");
+  const ownerLabel = await layoutBox(page, ".control-group:has(#project-owner) .control-label");
+  const ownerControls = await layoutBox(page, ".control-group:has(#project-owner) .controls");
+  const nameGroup = await layoutBox(page, ".control-group:has(#inputName)");
+  const shareGroup = await layoutBox(page, ".project-share-option");
+  const forkActions = await layoutBox(page, ".content-wrap.frm-wrap .actions");
+  expect(forkWrap.width).toBeGreaterThan(700);
+  expect(forkLegend.y).toBeLessThan(forkHelp.y);
+  expect(forkHelp.y).toBeLessThan(ownerGroup.y);
+  expect(ownerGroup.y).toBeLessThan(nameGroup.y);
+  expect(nameGroup.y).toBeLessThan(shareGroup.y);
+  expect(shareGroup.y).toBeLessThan(forkActions.y);
+  expect(ownerControls.y).toBeGreaterThanOrEqual(ownerLabel.y);
+  expect(ownerControls.width).toBeGreaterThan(ownerLabel.width);
 
   await page.locator("#inputName").fill("");
   await expect(page.locator('button[type="submit"].ybtn-info')).toBeDisabled();

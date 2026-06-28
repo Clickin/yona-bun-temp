@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useLocation } from "@tanstack/react-router";
 import {
   closePullRequestThreadRest,
   createPullRequestCommentRest,
@@ -31,11 +31,16 @@ export const Route = createFileRoute("/$owner/$projectName/pullRequest/$pullRequ
 
 function PullRequestChangesRouteComponent() {
   const { owner, projectName, pullRequestNumber } = Route.useParams();
+  const location = useLocation();
+  const specificCommitMatch = location.pathname.match(/\/changes\/([^/?#]+)$/u);
   return (
     <PullRequestChangesRouteContent
       owner={owner}
       projectName={projectName}
       pullRequestNumber={pullRequestNumber}
+      selectedCommitId={
+        specificCommitMatch ? decodeURIComponent(specificCommitMatch[1] ?? "") : undefined
+      }
     />
   );
 }

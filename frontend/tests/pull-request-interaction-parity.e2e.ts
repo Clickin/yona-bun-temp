@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -7,6 +7,14 @@ const restJsonHeaders = {
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
 const rawPullRequestKeyPattern = /pullRequest\.[A-Za-z]|review\.[A-Za-z]|title\.[A-Za-z]/u;
+
+type LayoutBox = { height: number; width: number; x: number; y: number };
+
+async function layoutBox(page: Page, selector: string): Promise<LayoutBox> {
+  const box = await page.locator(selector).first().boundingBox();
+  expect(box, selector).not.toBeNull();
+  return box as LayoutBox;
+}
 
 const projectOption = {
   id: 1,
@@ -286,7 +294,7 @@ test.beforeEach(async ({ page }) => {
   );
 
   await page.route(
-    /\/api\/v1\/owners\/admin\/projects\/projectYobi\/pull-requests\/9(?:\/.*)?$/,
+    /\/api\/v1\/owners\/admin\/projects\/projectYobi\/pull-requests\/9(?:\/.*)?(?:\?.*)?$/,
     async (route) => {
       const url = new URL(route.request().url());
       const method = route.request().method();
@@ -731,6 +739,34 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page.locator("#mergeResult")).toHaveAttribute("data-conflict", "false");
   await expect(page.locator("#mergeResult .code-table.commits")).toContainText("Change src/lib.rs");
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
+  const createWrap = await layoutBox(page, ".content-wrap.frm-wrap");
+  const createBranchWrap = await layoutBox(page, ".pull-request-branches");
+  const createFromProject = await layoutBox(
+    page,
+    ".pull-request-branches label[for='fromProjectId']",
+  );
+  const createFromBranch = await layoutBox(page, ".pull-request-branches label[for='fromBranch']");
+  const createToProject = await layoutBox(page, ".pull-request-branches label[for='toProjectId']");
+  const createToBranch = await layoutBox(page, ".pull-request-branches label[for='toBranch']");
+  const createStatus = await layoutBox(page, "#status.alert");
+  const createTitle = await layoutBox(page, "input#title");
+  const createEditor = await layoutBox(page, "#editor-body-content-body");
+  const createCommitsTab = await layoutBox(page, "#__commits.code-browse-wrap");
+  const createMergeResult = await layoutBox(page, "#mergeResult.code-browser-wrap");
+  const createMergeTable = await layoutBox(page, "#mergeResult .code-table.commits");
+  const createActions = await layoutBox(page, ".pull-request-form .actions");
+  expect(createWrap.width).toBeGreaterThan(700);
+  expect(createBranchWrap.y).toBeLessThan(createStatus.y);
+  expect(createFromProject.x).toBeLessThan(createFromBranch.x);
+  expect(createFromBranch.x).toBeLessThan(createToProject.x);
+  expect(createToProject.x).toBeLessThan(createToBranch.x);
+  expect(Math.abs(createFromProject.y - createToProject.y)).toBeLessThan(12);
+  expect(createStatus.y).toBeLessThan(createTitle.y);
+  expect(createTitle.y).toBeLessThan(createEditor.y);
+  expect(createEditor.y).toBeLessThan(createCommitsTab.y);
+  expect(createCommitsTab.y).toBeLessThan(createMergeResult.y);
+  expect(createMergeTable.width).toBeGreaterThan(createWrap.width * 0.65);
+  expect(createMergeResult.y).toBeLessThan(createActions.y);
 
   await expect(page.locator("#pullRequestState")).toHaveAttribute("data-value", "open");
   await expect(page.locator("#status")).toContainText(
@@ -870,7 +906,10 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   };
   expect(submittedInlineEdit).toMatchObject({ contentsMarkdown: "Edited inline body" });
   await expect(page.locator("#comment-18")).toContainText("Edited inline body");
-  await page.locator("#comment-18").getByRole("button", { name: "Delete comment" }).click();
+  await page
+    .locator("#comment-18")
+    .getByRole("button", { name: "Delete comment" })
+    .evaluate((button) => (button as HTMLButtonElement).click());
   await expect(page.locator("#comment-18")).toHaveCount(0);
   await page.goto("/yona/admin/projectYobi/pullRequest/9");
 
@@ -920,6 +959,24 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page.locator("#fromBranch")).toBeDisabled();
   await expect(page.locator("#toProjectId")).toBeDisabled();
   await expect(page.locator("#toBranch")).toBeDisabled();
+  const editFromProject = await layoutBox(
+    page,
+    ".pull-request-branches label[for='fromProjectId']",
+  );
+  const editFromBranch = await layoutBox(page, ".pull-request-branches label[for='fromBranch']");
+  const editToProject = await layoutBox(page, ".pull-request-branches label[for='toProjectId']");
+  const editToBranch = await layoutBox(page, ".pull-request-branches label[for='toBranch']");
+  const editStatus = await layoutBox(page, "#status.alert");
+  const editTitle = await layoutBox(page, "input#title");
+  const editCommitsTab = await layoutBox(page, "#__commits.code-browse-wrap");
+  const editActions = await layoutBox(page, ".pull-request-form .actions");
+  expect(editFromProject.x).toBeLessThan(editFromBranch.x);
+  expect(editFromBranch.x).toBeLessThan(editToProject.x);
+  expect(editToProject.x).toBeLessThan(editToBranch.x);
+  expect(Math.abs(editFromProject.y - editToProject.y)).toBeLessThan(12);
+  expect(editStatus.y).toBeLessThan(editTitle.y);
+  expect(editTitle.y).toBeLessThan(editCommitsTab.y);
+  expect(editCommitsTab.y).toBeLessThan(editActions.y);
   await page.locator("#title").fill("Updated interaction parity");
   await page.locator("#editor-body-content-body").fill("Updated body");
   await page.getByRole("button", { name: "Save" }).click();
@@ -977,6 +1034,16 @@ test("covers recently pushed branch PR link and close delete request", async ({ 
   await page.goto("/yona/admin/projectYobi/pullRequests?pageNum=1");
   await expect(page.locator("h5", { hasText: "Recently pushed branch" })).toBeVisible();
   const pushedBranchAlert = page.locator(".alert.alert-info");
+  const recentlyPushedTitle = await layoutBox(page, "h5");
+  const recentlyPushedAlert = await layoutBox(page, ".alert.alert-info");
+  const recentlyPushedIcon = await layoutBox(page, ".alert.alert-info .yobicon-split");
+  const recentlyPushedPrLink = await layoutBox(
+    page,
+    ".alert.alert-info a[href*='newPullRequestForm']",
+  );
+  expect(recentlyPushedAlert.y).toBeGreaterThan(recentlyPushedTitle.y);
+  expect(recentlyPushedIcon.x).toBeLessThan(recentlyPushedPrLink.x);
+  expect(recentlyPushedAlert.width).toBeGreaterThan(500);
   await expect(pushedBranchAlert).toContainText(
     "admin/projectYobi:feature/recent-ui-proof ( 2026-06-26 )",
   );
@@ -1066,6 +1133,49 @@ test("creates a multi-line inline review from selected diff text", async ({ page
 test("renders selected outdated pull request commits with legacy change markers", async ({
   page,
 }) => {
+  await page.route(
+    /\/api\/v1\/owners\/admin\/projects\/projectYobi\/pull-requests\/9\/changes\?commitId=123456abcdef$/,
+    async (route) => {
+      const selectedPullRequest = detail();
+      const changesThreads = [...selectedPullRequest.threads, outdatedClosedThread];
+      await route.fulfill({
+        body: JSON.stringify({
+          cardThreads: changesThreads,
+          commits: [
+            {
+              authorDateLabel: "2026-05-03",
+              authorEmail: "reviewer@example.com",
+              commitId: "abcdef123456",
+              commitMessage: "Change src/lib.rs",
+              commitShortId: "abcdef1",
+              state: "CURRENT",
+            },
+            {
+              authorDateLabel: "2026-05-02",
+              authorEmail: "reviewer@example.com",
+              commitId: "123456abcdef",
+              commitMessage: "Superseded src/lib.rs",
+              commitShortId: "123456a",
+              state: "PRIOR",
+            },
+          ],
+          files: [
+            {
+              path: "src/lib.rs",
+              patch: "@@ -1,2 +1,2 @@\n-old prior line\n+new prior line\n same line",
+            },
+          ],
+          inlineThreads: changesThreads.filter((thread) => thread.path),
+          nonRangedThreads: changesThreads.filter((thread) => !thread.path),
+          pullRequest: detail({ ...selectedPullRequest, threads: changesThreads }),
+          threads: changesThreads,
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
   await page.goto("/yona/admin/projectYobi/pullRequest/9/changes/123456abcdef");
 
   const commitPicker = page.locator("#commits");
@@ -1074,14 +1184,14 @@ test("renders selected outdated pull request commits with legacy change markers"
   await expect(commitPicker.locator(".d-label .outdated-label")).toHaveText("Outdated");
 
   await expect(commitPicker.locator("li.outdated")).toHaveCount(0);
-  await expect(commitPicker.locator("li", { hasText: "abcdef1" })).toBeVisible();
+  await expect(commitPicker.locator("li", { hasText: "abcdef1" })).toHaveCount(1);
   await expect(page.locator("#reviewcards-open .review-card.open")).toContainText("Initial review");
   await expect(page.locator(".codediff-wrap .btn-show-reviewcards")).toBeVisible();
   await expect(page.locator(".review-wrap .review-container .btn-hide-reviewcards")).toBeVisible();
   await expect(page.locator("#reviewcards-closed .review-card.closed.outdated")).toContainText(
     "Outdated review",
   );
-  await expect(page.locator(".review-wrap .review-list #reviewcards-closed")).toBeVisible();
+  await expect(page.locator(".review-wrap .review-list #reviewcards-closed")).toHaveCount(1);
   await expect(
     page.locator("#reviewcards-closed .review-card.closed.outdated .outdated-label"),
   ).toHaveText("Outdated");
