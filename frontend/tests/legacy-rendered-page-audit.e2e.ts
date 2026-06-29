@@ -39,6 +39,7 @@ function projectContainer() {
     overview: "Sample project",
     overviewEditable: true,
     ownerName: "admin",
+    projectId: 1,
     projectName: "sample",
     projectScope: "public",
     reviewCount: 0,
@@ -53,6 +54,29 @@ function projectContainer() {
     viewerCanUpdate: true,
     viewerCanWatch: true,
     watchCount: 1,
+  };
+}
+
+function livePublicSampleProjectContainer() {
+  return {
+    ...projectContainer(),
+    backgroundUrl: "/assets/images/project_default.jpg",
+    boardCount: 0,
+    cloneUrl: `${process.env.LEGACY_YONA_ORIGIN ?? "http://192.168.45.10:9000"}/admin/sample`,
+    logoUrl: "/assets/images/project_default_logo.png",
+    members: [
+      {
+        avatarUrl: "/assets/images/default-avatar-128.png",
+        loginId: "admin",
+        role: "manager",
+        userLabel: "admin",
+      },
+    ],
+    overview: "sample project",
+    overviewEditable: false,
+    showAdmin: false,
+    viewerCanUpdate: false,
+    viewerCanWatch: false,
   };
 }
 
@@ -127,6 +151,7 @@ function sampleUser() {
 type RouteAuditOptions = {
   issueBodyMarkdown?: string;
   issueTitle?: string;
+  projectContainer?: ReturnType<typeof projectContainer>;
 };
 
 async function routeAuditApis(page: Page, options: RouteAuditOptions = {}) {
@@ -201,9 +226,9 @@ async function routeAuditApis(page: Page, options: RouteAuditOptions = {}) {
       path.endsWith("/admin/projects/sample/container") ||
       path.endsWith("/admin/projects/sample")
     ) {
-      body = projectContainer();
+      body = options.projectContainer ?? projectContainer();
     } else if (path.endsWith("/admin/projects/sample/settings")) {
-      body = projectContainer();
+      body = options.projectContainer ?? projectContainer();
     } else if (path.endsWith("/admin/projects/sample/milestones")) {
       body = { milestones: [] };
     } else if (path.endsWith("/admin/projects/sample/labels")) {
@@ -470,6 +495,31 @@ async function expectLegacySignals(page: Page, anchors: string[], structuralToke
   }
 }
 
+async function expectLivePublicSampleProjectShell(page: Page, appPath: string) {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
+  await page.unroute("**/api/v1/**");
+  await routeAuditApis(page, { projectContainer: livePublicSampleProjectContainer() });
+  await page.goto(`/yona${appPath}`);
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".project-breadcrumb-wrap",
+    legacyPath: appPath,
+    legacySelector: ".project-breadcrumb-wrap",
+  });
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".project-util-wrap",
+    legacyPath: appPath,
+    legacySelector: ".project-util-wrap",
+  });
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".project-menu-outer",
+    legacyPath: appPath,
+    legacySelector: ".project-menu-outer",
+  });
+}
+
 test("renders legacy audited anchors for logged-in /", async ({ page }) => {
   await page.goto("/yona/");
   await expectLegacySignals(page, ["gnb-outer", "admin-logged-in-affix"]);
@@ -655,9 +705,8 @@ test("admin public profile matches live legacy rendered HTML structure", async (
   });
 });
 
-test("renders legacy audited anchors for project home", async ({ page }) => {
-  await page.goto("/yona/admin/sample");
-  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+test("project home shell matches live legacy rendered HTML structure", async ({ page }) => {
+  await expectLivePublicSampleProjectShell(page, "/admin/sample");
 });
 
 test("renders legacy audited anchors for project issue form", async ({ page }) => {
@@ -665,14 +714,12 @@ test("renders legacy audited anchors for project issue form", async ({ page }) =
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
-test("renders legacy audited anchors for project issues", async ({ page }) => {
-  await page.goto("/yona/admin/sample/issues");
-  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+test("project issues shell matches live legacy rendered HTML structure", async ({ page }) => {
+  await expectLivePublicSampleProjectShell(page, "/admin/sample/issues");
 });
 
-test("renders legacy audited anchors for project issue detail", async ({ page }) => {
-  await page.goto("/yona/admin/sample/issue/1");
-  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+test("project issue detail shell matches live legacy rendered HTML structure", async ({ page }) => {
+  await expectLivePublicSampleProjectShell(page, "/admin/sample/issue/1");
 });
 
 test("renders project home, settings, and issue shells on a mobile viewport", async ({ page }) => {
@@ -764,9 +811,8 @@ test("renders legacy audited anchors for project issue labels", async ({ page })
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
-test("renders legacy audited anchors for project boards", async ({ page }) => {
-  await page.goto("/yona/admin/sample/posts");
-  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+test("project board shell matches live legacy rendered HTML structure", async ({ page }) => {
+  await expectLivePublicSampleProjectShell(page, "/admin/sample/posts");
 });
 
 test("renders legacy audited anchors for project board form", async ({ page }) => {
@@ -774,9 +820,8 @@ test("renders legacy audited anchors for project board form", async ({ page }) =
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
-test("renders legacy audited anchors for project milestones", async ({ page }) => {
-  await page.goto("/yona/admin/sample/milestones");
-  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+test("project milestones shell matches live legacy rendered HTML structure", async ({ page }) => {
+  await expectLivePublicSampleProjectShell(page, "/admin/sample/milestones");
 });
 
 test("renders legacy audited anchors for project milestone form", async ({ page }) => {
@@ -784,9 +829,10 @@ test("renders legacy audited anchors for project milestone form", async ({ page 
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
-test("renders legacy audited anchors for project pull requests", async ({ page }) => {
-  await page.goto("/yona/admin/sample/pullRequests");
-  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+test("project pull requests shell matches live legacy rendered HTML structure", async ({
+  page,
+}) => {
+  await expectLivePublicSampleProjectShell(page, "/admin/sample/pullRequests");
 });
 
 test("renders legacy audited anchors for project reviews", async ({ page }) => {
@@ -794,9 +840,8 @@ test("renders legacy audited anchors for project reviews", async ({ page }) => {
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
-test("renders legacy audited anchors for project code", async ({ page }) => {
-  await page.goto("/yona/admin/sample/code");
-  await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
+test("project code shell matches live legacy rendered HTML structure", async ({ page }) => {
+  await expectLivePublicSampleProjectShell(page, "/admin/sample/code");
 });
 
 test("renders code, pull request, and review anchors on a mobile viewport", async ({ page }) => {

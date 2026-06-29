@@ -805,57 +805,59 @@ export function ProjectMenu(props: {
   ];
 
   return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          {menuItems.flatMap((item) => {
-            if (!item.show) {
-              return [];
-            }
-            const classNames = [item.className, props.activeMenu === item.key ? "active" : ""]
-              .filter(Boolean)
-              .join(" ");
-            return [
-              <li className={classNames || undefined} key={item.key}>
-                <a href={item.href}>
-                  <span className="menu-name">
-                    {messages.t(item.menuName, { fallback: item.menuName })}
-                  </span>
-                  <span className="short-menu">{item.shortMenu}</span>{" "}
-                  {(item.count ?? 0) > 0 ? (
-                    <span className="project-menu-count">{item.count}</span>
-                  ) : null}
-                </a>
-              </li>,
-            ];
-          })}
-        </ul>
-        {detail.showAdmin || detail.viewerCanUpdate ? (
-          <div className="project-setting">
-            <ul className="project-menu-nav">
-              <li className={props.activeMenu === "settings" ? "active" : undefined}>
-                <a
-                  href={buildProjectHref(
-                    runtimeConfig,
-                    detail.ownerName,
-                    detail.projectName,
-                    "settingform",
-                  )}
-                >
-                  <i className="yobicon-cog" />
-                  <span className="blind">
+    <>
+      <div className="project-menu-outer">
+        <div className="project-menu-inner">
+          <ul className="project-menu-nav project-menu-gruop">
+            {menuItems.flatMap((item) => {
+              if (!item.show) {
+                return [];
+              }
+              const classNames = [item.className, props.activeMenu === item.key ? "active" : ""]
+                .filter(Boolean)
+                .join(" ");
+              return [
+                <li className={classNames} key={item.key}>
+                  <a href={item.href}>
                     <span className="menu-name">
-                      {messages.t("menu.admin", { fallback: "menu.admin" })}
+                      {messages.t(item.menuName, { fallback: item.menuName })}
                     </span>
-                  </span>
-                  {(detail.enrollmentRequestCount ?? 0) > 0 ? (
-                    <span className="project-menu-count">{detail.enrollmentRequestCount}</span>
-                  ) : null}
-                </a>
-              </li>
-            </ul>
-          </div>
-        ) : null}
+                    <span className="short-menu">{item.shortMenu}</span>{" "}
+                    {(item.count ?? 0) > 0 ? (
+                      <span className="project-menu-count">{item.count}</span>
+                    ) : null}
+                  </a>
+                </li>,
+              ];
+            })}
+          </ul>
+          {detail.showAdmin || detail.viewerCanUpdate ? (
+            <div className="project-setting">
+              <ul className="project-menu-nav">
+                <li className={props.activeMenu === "settings" ? "active" : undefined}>
+                  <a
+                    href={buildProjectHref(
+                      runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      "settingform",
+                    )}
+                  >
+                    <i className="yobicon-cog" />
+                    <span className="blind">
+                      <span className="menu-name">
+                        {messages.t("menu.admin", { fallback: "menu.admin" })}
+                      </span>
+                    </span>
+                    {(detail.enrollmentRequestCount ?? 0) > 0 ? (
+                      <span className="project-menu-count">{detail.enrollmentRequestCount}</span>
+                    ) : null}
+                  </a>
+                </li>
+              </ul>
+            </div>
+          ) : null}
+        </div>
       </div>
       {props.keymapMode ? (
         <ProjectKeymapHelp
@@ -864,7 +866,7 @@ export function ProjectMenu(props: {
           section={props.activeMenu ?? "home"}
         />
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -1192,22 +1194,13 @@ export function ProjectHeader(props: {
               <span className="project-name">
                 <a href={projectHref}>{detail.projectName}</a>
               </span>
+              {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- legacy project/header.scala.html renders this favorite toggle as a plain clickable span. */}
               <span
                 className="user-project-list"
                 data-project-id={detail.projectId ?? 0}
                 onClick={() =>
                   props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName)
                 }
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") {
-                    return;
-                  }
-                  event.preventDefault();
-                  props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName);
-                }}
-                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- legacy header star is a span; button picks up global button chrome.
-                role="button"
-                tabIndex={0}
               >
                 <i className={favoriteClass}>star</i>
               </span>
