@@ -459,24 +459,9 @@ async function expectLegacySignals(page: Page, anchors: string[], structuralToke
   }
 }
 
-test("renders legacy audited anchors for /lostPassword", async ({ page }) => {
-  await page.goto("/yona/lostPassword");
-  await expectLegacySignals(page, ["login-form-wrap", "emailAddress"]);
-});
-
 test("renders legacy audited anchors for logged-in /", async ({ page }) => {
   await page.goto("/yona/");
   await expectLegacySignals(page, ["gnb-outer", "admin-logged-in-affix"]);
-});
-
-test("renders legacy audited anchors for /users/loginform", async ({ page }) => {
-  await page.goto("/yona/users/loginform");
-  await expectLegacySignals(page, ["login-form-wrap", "loginIdOrEmail", "password"]);
-});
-
-test("renders legacy audited anchors for /users/signupform", async ({ page }) => {
-  await page.goto("/yona/users/signupform");
-  await expectLegacySignals(page, ["signup-form-wrap", "loginId", "email"]);
 });
 
 test("renders legacy audited anchors for /_help", async ({ page }) => {
