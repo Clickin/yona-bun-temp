@@ -371,7 +371,7 @@ describe("board/milestone UI parity closure", () => {
     expect(html).toContain('<span class="date">(5 days left)</span>');
   });
 
-  it("lets the project layout route own the milestone list shell", () => {
+  it("lets the milestone list route own its legacy page wrapper", () => {
     const html = renderToStaticMarkup(
       <ProjectMilestoneListPage
         detail={detail}
@@ -397,13 +397,14 @@ describe("board/milestone UI parity closure", () => {
     );
 
     expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/milestones`");
-    expect(layoutSource).toContain('return { activeMenu: "milestone" };');
+    expect(layoutSource).toContain('return { activeMenu: "milestone", wrapPageOuter: false };');
     expect(routeSource).toContain("renderShell={false}");
     expect(routeSource).not.toContain("window.location.search");
-    expect(html).not.toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="page-wrap-outer"');
     expect(html).not.toContain('class="project-header-outer"');
     expect(html).not.toContain('class="project-menu-outer"');
     expect(html).toContain('rel="stylesheet" type="text/css"');
+    expect(html).toContain('<div class="page-wrap-outer"><div class="project-page-wrap">');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="milestones"');
   });

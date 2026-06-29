@@ -948,12 +948,13 @@ export function ProjectMilestoneListPage(props: {
       )}
     </div>
   );
+  const page = <div className="page-wrap-outer">{content}</div>;
 
   if (props.renderShell === false) {
     return (
       <>
         {labelStylesheet}
-        {content}
+        {page}
       </>
     );
   }
@@ -963,7 +964,7 @@ export function ProjectMilestoneListPage(props: {
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
       <ProjectMenu activeMenu="milestone" detail={detail} runtimeConfig={props.runtimeConfig} />
       {labelStylesheet}
-      <div className="page-wrap-outer">{content}</div>
+      {page}
     </main>
   );
 }

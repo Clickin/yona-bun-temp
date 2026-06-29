@@ -166,7 +166,7 @@ function projectLayoutShell(
     return { activeMenu: "board", keymapMode: "detail", shellClassName: "board-page" };
   }
   if (appPath === `/${owner}/${projectName}/milestones`) {
-    return { activeMenu: "milestone" };
+    return { activeMenu: "milestone", wrapPageOuter: false };
   }
   if (
     appPath === `/${owner}/${projectName}/newMilestoneForm` ||

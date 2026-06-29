@@ -524,6 +524,7 @@ async function expectLivePublicSampleProjectShell(
     projectContainer: livePublicSampleProjectContainer(),
   });
   await page.goto(`/yona${appPath}`);
+  await expect(page.locator(".project-breadcrumb-wrap")).toHaveCount(1);
   await expectLegacyLiveHtmlParity(page, {
     currentSelector: ".project-breadcrumb-wrap",
     legacyPath: appPath,
@@ -867,8 +868,13 @@ test("renders legacy audited anchors for project board form", async ({ page }) =
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
-test("project milestones shell matches live legacy rendered HTML structure", async ({ page }) => {
+test("project milestones page matches live legacy rendered HTML structure", async ({ page }) => {
   await expectLivePublicSampleProjectShell(page, "/admin/sample/milestones");
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page-wrap-outer",
+    legacyPath: "/admin/sample/milestones",
+    legacySelector: ".page-wrap-outer",
+  });
 });
 
 test("renders legacy audited anchors for project milestone form", async ({ page }) => {
