@@ -100,6 +100,13 @@ export async function expectLegacyLiveHtmlParity(
         if (tag === "script" || tag === "style") {
           return null;
         }
+        if (
+          tag === "link" &&
+          element.getAttribute("rel") === "stylesheet" &&
+          element.getAttribute("href")?.includes("/assets/javascripts/lib/highlight/styles/")
+        ) {
+          return null;
+        }
         if (tag === "input" && element.getAttribute("name") === "csrfToken") {
           return null;
         }
@@ -111,6 +118,7 @@ export async function expectLegacyLiveHtmlParity(
           const isVolatileRelativeDateTitle =
             tag === "strong" && attribute.name === "title" && element.closest(".name-tag");
           const isSpaRestFormActionBoundary = tag === "form" && attribute.name === "action";
+          const isLegacyInlineSubmitBoundary = tag === "form" && attribute.name === "onsubmit";
           const isBrowserDefaultSelectedOption =
             tag === "option" &&
             attribute.name === "selected" &&
@@ -119,11 +127,14 @@ export async function expectLegacyLiveHtmlParity(
             tag === "ul" &&
             attribute.name === "data-list" &&
             element.classList.contains("post-list-wrap");
+          const isEmptyLegacyClass = attribute.name === "class" && attribute.value === "";
           if (
             spaRestBoundaryAttributeNames.has(attribute.name) ||
             isSpaRestFormActionBoundary ||
+            isLegacyInlineSubmitBoundary ||
             isBrowserDefaultSelectedOption ||
             isNonLayoutIssueListMarker ||
+            isEmptyLegacyClass ||
             isVolatileRelativeDateTitle
           ) {
             continue;

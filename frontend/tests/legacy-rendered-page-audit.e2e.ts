@@ -846,8 +846,13 @@ test("admin public profile matches live legacy rendered HTML structure", async (
   });
 });
 
-test("project home shell matches live legacy rendered HTML structure", async ({ page }) => {
+test("project home page matches live legacy rendered HTML structure", async ({ page }) => {
   await expectLivePublicSampleProjectShell(page, "/admin/sample");
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page-wrap-outer",
+    legacyPath: "/admin/sample",
+    legacySelector: ".page-wrap-outer",
+  });
 });
 
 test("renders legacy audited anchors for project issue form", async ({ page }) => {

@@ -169,7 +169,12 @@ describe("project home tab parity", () => {
     expect(html).toContain('<span class="markdown-wrap" id="project-description">');
     expect(html).toContain("<strong>home</strong>");
     expect(html).toContain("<del>parity</del>");
-    expect(html).not.toContain("Project **home** ~~parity~~");
+    const renderedDescription = html.slice(
+      html.indexOf('id="project-description"'),
+      html.indexOf('class="project-description-edit'),
+    );
+    expect(renderedDescription).not.toContain("Project **home** ~~parity~~");
+    expect(html).toContain('value="Project **home** ~~parity~~"');
   });
 
   it("renders project enrollment as the legacy direct enroll anchor", () => {

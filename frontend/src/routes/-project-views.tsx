@@ -2270,12 +2270,36 @@ export function ProjectDetailPage(props: {
               ) : null}
             </h3>
           </div>
-          {editingOverview ? (
-            <div className="project-description-edit" data-toggle="project-description-tab">
-              <form
-                action={projectHref}
-                onSubmit={(event) => {
-                  event.preventDefault();
+          <div
+            className={
+              editingOverview ? "project-description-edit" : "project-description-edit hidden"
+            }
+            data-toggle="project-description-tab"
+          >
+            <form
+              action={projectHref}
+              onSubmit={(event) => {
+                event.preventDefault();
+                props.onUpdateProjectOverview?.(
+                  detail.ownerName,
+                  detail.projectName,
+                  overviewDraft,
+                );
+                setEditingOverview(false);
+              }}
+            >
+              <input
+                className="span6"
+                id="project-description-input"
+                placeholder={legacyMessage(messages, "project.description.placeholder")}
+                type="text"
+                value={overviewDraft}
+                onChange={(event) => setOverviewDraft(event.target.value)}
+              />
+              <button
+                className="ybtn ybtn-success"
+                id="descriptionSaveBtn"
+                onClick={() => {
                   props.onUpdateProjectOverview?.(
                     detail.ownerName,
                     detail.projectName,
@@ -2283,39 +2307,27 @@ export function ProjectDetailPage(props: {
                   );
                   setEditingOverview(false);
                 }}
+                type="button"
               >
-                <input
-                  className="span6"
-                  id="project-description-input"
-                  name="overview"
-                  placeholder={legacyMessage(messages, "project.description.placeholder")}
-                  type="text"
-                  value={overviewDraft}
-                  onChange={(event) => setOverviewDraft(event.target.value)}
-                />
-                <button className="ybtn ybtn-success" id="descriptionSaveBtn" type="submit">
-                  {legacyMessage(messages, "button.save")}
-                </button>{" "}
-                <button
-                  className="ybtn"
-                  data-toggle="description-cancel"
-                  type="button"
-                  onClick={() => setEditingOverview(false)}
-                >
-                  {legacyMessage(messages, "button.cancel")}
-                </button>
-              </form>
-            </div>
-          ) : null}
+                {legacyMessage(messages, "button.save")}
+              </button>{" "}
+              <button
+                className="ybtn"
+                data-toggle="description-cancel"
+                type="button"
+                onClick={() => setEditingOverview(false)}
+              >
+                {legacyMessage(messages, "button.cancel")}
+              </button>
+            </form>
+          </div>
         </div>
         {detail.showCode ? (
           <div className="project-clone-wrap span3 hide-in-mobile">
             <input
-              aria-label={legacyMessage(messages, "code.copyUrl")}
               className="project-clone-url"
               id="cloneURL"
               readOnly
-              title={legacyMessage(messages, "code.copyUrl")}
               type="text"
               value={detail.cloneUrl ?? ""}
             />
@@ -2323,7 +2335,6 @@ export function ProjectDetailPage(props: {
               className="ybtn project-clone-button"
               data-clipboard-target="cloneURL"
               id="cloneURLBtn"
-              type="button"
             >
               {legacyMessage(messages, "code.copyUrl")}
             </button>
@@ -2439,7 +2450,7 @@ export function ProjectDetailPage(props: {
             <div className="project-btn-wrap">
               {detail.showIssue ? (
                 <span className="project-btn-item">
-                  <a className="ybtn ybtn-success" href={`${projectHref}/issues/new`}>
+                  <a className="ybtn ybtn-success" href={`${projectHref}/issueform`}>
                     {legacyMessage(messages, "button.newIssue")}
                   </a>
                 </span>
@@ -2491,7 +2502,7 @@ export function ProjectDetailPage(props: {
                 </div>
               </div>
             ) : null}
-            <section className="inner member-info">
+            <div className="inner member-info">
               <header>
                 <h3>{legacyMessage(messages, "project.members")}</h3>
                 {detail.viewerCanUpdate ? (
@@ -2543,20 +2554,19 @@ export function ProjectDetailPage(props: {
                   {legacyMessage(messages, "project.member.leave")}
                 </button>
               ) : null}
-            </section>
+            </div>
           </div>
         </div>
       </div>
       <div className={`modal${leaveModalOpen ? "" : " hide"}`} id="alertLeave">
         <div className="modal-header">
           <button
-            aria-label={legacyMessage(messages, "button.close")}
             className="close"
             data-dismiss="modal"
             onClick={() => setLeaveModalOpen(false)}
             type="button"
           >
-            <span aria-hidden="true">&times;</span>
+            &times;
           </button>
           <h3>{legacyMessage(messages, "project.member.leave")}</h3>
         </div>
