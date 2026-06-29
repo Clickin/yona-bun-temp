@@ -867,7 +867,42 @@ test("project issues page matches live legacy rendered HTML structure", async ({
 });
 
 test("project issue detail shell matches live legacy rendered HTML structure", async ({ page }) => {
-  await expectLivePublicSampleProjectShell(page, "/admin/sample/issue/1");
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
+  await page.unroute("**/api/v1/**");
+  await routeAuditApis(page, {
+    anonymousSession: true,
+    issueBodyMarkdown: "sample issue",
+    issueTitle: "sample issue",
+    projectContainer: livePublicSampleProjectContainer(),
+  });
+  await page.goto("/yona/admin/sample");
+  await page.locator('.project-menu-outer a[href$="/admin/sample/issues"]').click();
+  await expect(page).toHaveURL(/\/yona\/admin\/sample\/issues$/);
+  await page
+    .locator('.post-list-wrap a.title[href$="/admin/sample/issue/1"]', {
+      hasText: "sample issue",
+    })
+    .click();
+  await expect(page).toHaveURL(/\/yona\/admin\/sample\/issue\/1$/);
+  await expect(page.locator(".project-breadcrumb-wrap")).toHaveCount(1);
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".project-breadcrumb-wrap",
+    legacyPath: "/admin/sample/issue/1",
+    legacySelector: ".project-breadcrumb-wrap",
+  });
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".project-util-wrap",
+    legacyPath: "/admin/sample/issue/1",
+    legacySelector: ".project-util-wrap",
+  });
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".project-menu-outer",
+    legacyPath: "/admin/sample/issue/1",
+    legacySelector: ".project-menu-outer",
+  });
 });
 
 test("renders project home, settings, and issue shells on a mobile viewport", async ({ page }) => {
