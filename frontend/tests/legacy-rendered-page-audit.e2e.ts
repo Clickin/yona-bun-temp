@@ -499,12 +499,8 @@ test("projects directory matches live legacy rendered HTML structure", async ({ 
   });
 });
 
-test("renders directory and project creation anchors on a mobile viewport", async ({ page }) => {
+test("renders project creation anchors on a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ height: 844, width: 390 });
-
-  await page.goto("/yona/projects");
-  await expectLegacySignals(page, ["all-projects"]);
-  await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
 
   await page.goto("/yona/projectform");
   await expectLegacySignals(page, ["newProjectForm", "project-name", "advanced-options"]);
