@@ -3807,7 +3807,6 @@ export function ProjectStatisticsPage(props: {
   return (
     <main className="app-shell">
       <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
-      <ProjectMenu activeMenu="issue" detail={detail} runtimeConfig={props.runtimeConfig} />
       <div className="page-wrap-outer">{projectStatisticsBody}</div>
     </main>
   );

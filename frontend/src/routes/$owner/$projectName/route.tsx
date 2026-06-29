@@ -73,6 +73,7 @@ function ProjectLayoutRouteComponent() {
       owner={owner}
       projectName={projectName}
       runtimeConfig={runtimeConfig}
+      showMenu={layoutShell.showMenu}
       shellClassName={layoutShell.shellClassName}
       wrapPageOuter={layoutShell.wrapPageOuter}
     />
@@ -109,6 +110,7 @@ function projectLayoutShell(
     | "review"
     | "settings";
   keymapMode?: "detail" | "list";
+  showMenu?: boolean;
   shellClassName?: string;
   wrapPageOuter?: boolean;
 } | null {
@@ -186,7 +188,7 @@ function projectLayoutShell(
     return { activeMenu: "issue", keymapMode: "list", shellClassName: "issue-list-page" };
   }
   if (appPath === `/${owner}/${projectName}/statistics`) {
-    return { activeMenu: "issue" };
+    return { showMenu: false };
   }
   if (
     appPath === `/${owner}/${projectName}/pullRequests` ||
@@ -342,6 +344,7 @@ function ProjectRouteShellLayout({
   owner,
   projectName,
   runtimeConfig,
+  showMenu = true,
   shellClassName,
   wrapPageOuter = true,
 }: {
@@ -360,6 +363,7 @@ function ProjectRouteShellLayout({
   owner: string;
   projectName: string;
   runtimeConfig: ReturnType<typeof useAppRuntime>["runtimeConfig"];
+  showMenu?: boolean;
   shellClassName?: string;
   wrapPageOuter?: boolean;
 }) {
@@ -395,12 +399,14 @@ function ProjectRouteShellLayout({
   return (
     <main className={shellClassName ? `app-shell ${shellClassName}` : "app-shell"}>
       <ProjectHeader detail={detail} runtimeConfig={runtimeConfig} />
-      <ProjectMenu
-        activeMenu={activeMenu}
-        detail={detail}
-        keymapMode={keymapMode}
-        runtimeConfig={runtimeConfig}
-      />
+      {showMenu ? (
+        <ProjectMenu
+          activeMenu={activeMenu}
+          detail={detail}
+          keymapMode={keymapMode}
+          runtimeConfig={runtimeConfig}
+        />
+      ) : null}
       {wrapPageOuter ? (
         <div className="page-wrap-outer">
           <Outlet />

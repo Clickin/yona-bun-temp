@@ -6085,7 +6085,7 @@ describe("file-route parity harness", () => {
       "utf8",
     );
     expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/statistics`");
-    expect(layoutSource).toContain('return { activeMenu: "issue" };');
+    expect(layoutSource).toContain("return { showMenu: false };");
 
     const viewSource = fs.readFileSync(
       path.resolve(__dirname, "routes/-project-views.tsx"),
@@ -6123,9 +6123,7 @@ describe("file-route parity harness", () => {
     expect(html).toContain('<img alt="" src="/logos/projectYobi.png"/>');
     expect(html).toContain('<a href="/yona/weblabs">weblabs</a>');
     expect(html).toContain('<a href="/yona/weblabs/projectYobi">projectYobi</a>');
-    expect(html).toContain(
-      '<li class="active"><a href="/yona/weblabs/projectYobi/issues"><span class="menu-name">Issue</span>',
-    );
+    expect(html).not.toContain('class="project-menu-outer"');
     expect(html).not.toContain("project-title-text");
     expect(html).toContain('<span class="project-protected" title="Group Project">G</span>');
     expect(html).toContain("<h1>Under Construction</h1>");
