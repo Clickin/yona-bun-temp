@@ -39,8 +39,8 @@ export async function expectLegacyLiveHtmlParity(
       // Form actions are replaced by React submit handlers and REST mutations, CSRF
       // is transported through runtime/bootstrap headers, autofocus is browser
       // behavior rather than layout, inline style text is compared after browser
-      // serialization whitespace is normalized, and relative date text in directory
-      // name tags is volatile. Stable form state attributes like value, checked,
+      // serialization whitespace and zero-unit normalization, and relative date text
+      // in directory name tags is volatile. Stable form state attributes like value, checked,
       // and selected remain compared unless a route adds an explicit local boundary.
       const spaRestBoundaryAttributeNames = new Set(["autofocus", "data-reactroot"]);
       const booleanAttributeNames = new Set(["disabled", "readonly", "required"]);
@@ -54,6 +54,7 @@ export async function expectLegacyLiveHtmlParity(
             .trim()
             .replace(/url\((["'])(.*?)\1\)/g, "url($2)")
             .replace(/\s*([:;])\s*/g, "$1")
+            .replace(/:0px(?=;|$)/g, ":0")
             .replace(/;$/, "");
         }
         if (name !== "href" && name !== "src") {

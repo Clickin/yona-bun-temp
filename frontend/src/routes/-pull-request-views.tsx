@@ -32,6 +32,22 @@ import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-vie
 
 type LegacyMessageLookup = LegacyI18nContextValue["t"];
 
+function stripBasePath(href: string, basePath: string): string {
+  const normalizedBasePath = basePath === "/" ? "" : basePath.replace(/\/+$/, "");
+  if (normalizedBasePath === "") {
+    return href;
+  }
+
+  const url = new URL(href, "http://yona.local");
+  if (url.pathname === normalizedBasePath) {
+    return `/${url.search}`;
+  }
+  if (url.pathname.startsWith(`${normalizedBasePath}/`)) {
+    return `${url.pathname.slice(normalizedBasePath.length)}${url.search}`;
+  }
+  return href;
+}
+
 function legacyMessage(
   messages: LegacyMessageLookup | undefined,
   key: string,
@@ -78,10 +94,8 @@ function LegacyTwoColumnModeCheckboxArea(props: { messages?: LegacyMessageLookup
       id="two-column-mode-checkbox"
       title={legacyMessage(props.messages, "common.two.column.mode")}
     >
-      <label
-        className="checkbox"
-        aria-label={legacyMessage(props.messages, "common.two.column.view")}
-      >
+      {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy common/twoColumnMode.scala.html keeps this label wrapper without htmlFor/aria attributes. */}
+      <label className="checkbox">
         <div className="two-column-icon-border">
           <input id="two-column-mode" type="checkbox" />
           <span className="two-column-mode-text">
@@ -518,6 +532,7 @@ function PullRequestTabs(props: {
   detail: ProjectDetailViewModel;
   list: PullRequestListResponse | undefined;
   messages?: LegacyMessageLookup;
+  onNavigate?: (href: string) => void;
   query: PullRequestListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -542,28 +557,31 @@ function PullRequestTabs(props: {
   }
   return (
     <ul className="nav nav-tabs nm pullrequeset-tab-menu">
-      {tabs.map((tab) => (
-        <li className={props.active === tab.category ? "active" : undefined} key={tab.category}>
-          <a
-            data-type="state"
-            data-url={[
-              projectCategoryHref(props.runtimeConfig, props.detail, tab.category),
-              pullRequestQueryString(props.query, tab.category),
-            ]
-              .filter(Boolean)
-              .join("?")}
-            href={[
-              projectCategoryHref(props.runtimeConfig, props.detail, tab.category),
-              pullRequestQueryString(props.query, tab.category),
-            ]
-              .filter(Boolean)
-              .join("?")}
-          >
-            {legacyMessage(props.messages, tab.label)}
-            <span className="num-badge">{tab.badge}</span>
-          </a>
-        </li>
-      ))}
+      {tabs.map((tab) => {
+        const categoryHref = [
+          projectCategoryHref(props.runtimeConfig, props.detail, tab.category),
+          pullRequestQueryString(props.query, tab.category),
+        ]
+          .filter(Boolean)
+          .join("?");
+        return (
+          <li className={props.active === tab.category ? "active" : undefined} key={tab.category}>
+            {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy pullRequest/list.scala.html uses href="#" tabs; React intercepts clicks for SPA navigation. */}
+            <a
+              data-type="state"
+              data-url={stripBasePath(categoryHref, props.runtimeConfig.basePath)}
+              href="#"
+              onClick={(event) => {
+                event.preventDefault();
+                props.onNavigate?.(categoryHref);
+              }}
+            >
+              {legacyMessage(props.messages, tab.label)}
+              <span className="num-badge">{tab.badge}</span>
+            </a>
+          </li>
+        );
+      })}
       <li>
         <LegacyTwoColumnModeCheckboxArea messages={props.messages} />
       </li>
@@ -907,6 +925,10 @@ function PullRequestListPagination(props: {
   messages?: LegacyMessageLookup;
   onNavigate?: (href: string) => void;
 }) {
+  if ((props.list?.totalCount ?? 0) <= 0) {
+    return null;
+  }
+
   const pageSize = Math.max(1, props.list?.pageSize || 15);
   const pageCount = Math.max(1, Math.ceil(Math.max(0, props.list?.totalCount ?? 0) / pageSize));
   const currentPage = Math.min(Math.max(1, props.list?.pageNum || 1), pageCount);
@@ -1129,6 +1151,7 @@ export function ProjectPullRequestListPage(props: {
             detail={detail}
             list={list}
             messages={props.messages}
+            onNavigate={props.onNavigate}
             query={props.query}
             runtimeConfig={props.runtimeConfig}
           />
