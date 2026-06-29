@@ -846,7 +846,9 @@ test("admin public profile matches live legacy rendered HTML structure", async (
     });
   });
 
-  await page.goto("/yona/admin");
+  await page.goto("/yona/projects");
+  await page.locator('.all-projects a.owner-name-small[href$="/admin"]').click();
+  await expect(page).toHaveURL(/\/yona\/admin$/);
   await expectLegacyLiveHtmlParity(page, {
     currentSelector: ".site-breadcrumb-outer",
     legacyPath: "/admin",
