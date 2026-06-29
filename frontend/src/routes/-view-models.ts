@@ -640,6 +640,7 @@ export interface ProjectDirectoryViewModel {
     lastPushedLabel: string;
     logoUrl: string;
     memberCount: number;
+    members?: Array<{ avatarUrl: string; loginId: string; userLabel: string }>;
     ownerName: string;
     overview: string;
     projectName: string;

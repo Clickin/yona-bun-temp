@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectLegacyLiveHtmlParity } from "./live-legacy-html-parity";
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -91,14 +92,24 @@ function workspaceOverview() {
 
 function sampleProjectItem() {
   return {
-    createdDate: "2026-06-23",
+    createdLabel: "6 days ago",
     isPublic: true,
+    lastPushedLabel: "",
+    logoUrl: "",
     memberCount: 1,
+    members: [
+      {
+        avatarUrl: "/assets/images/default-avatar-128.png",
+        loginId: "admin",
+        userLabel: "admin",
+      },
+    ],
+    overview: "sample project",
     ownerName: "admin",
     projectName: "sample",
     projectScope: "public",
     role: "manager",
-    updatedDate: "2026-06-23",
+    watchCount: 1,
   };
 }
 
@@ -464,9 +475,28 @@ test("renders legacy audited anchors for logged-in /", async ({ page }) => {
   await expectLegacySignals(page, ["gnb-outer", "admin-logged-in-affix"]);
 });
 
-test("renders legacy audited anchors for /projects", async ({ page }) => {
+test("projects directory matches live legacy rendered HTML structure", async ({ page }) => {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
   await page.goto("/yona/projects");
-  await expectLegacySignals(page, ["all-projects"]);
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".site-breadcrumb-outer",
+    legacyPath: "/projects",
+    legacySelector: ".site-breadcrumb-outer",
+  });
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".search-wrap",
+    legacyPath: "/projects",
+    legacySelector: ".search-wrap",
+  });
+  await expect(page.locator(".all-projects .project .desc")).toHaveText("sample project");
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".all-projects",
+    legacyPath: "/projects",
+    legacySelector: ".all-projects",
+  });
 });
 
 test("renders directory and project creation anchors on a mobile viewport", async ({ page }) => {

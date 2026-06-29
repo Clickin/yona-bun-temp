@@ -45,6 +45,7 @@ type ProjectDirectoryRestItem = Awaited<ReturnType<typeof listProjects>>["items"
   createdLabel?: string;
   lastPushedLabel?: string;
   memberCount?: number;
+  members?: Array<{ avatarUrl?: string; loginId?: string; userLabel?: string }>;
   watchCount?: number;
 };
 
@@ -1063,6 +1064,11 @@ export function toProjectDirectoryView(
         lastPushedLabel: item.lastPushedLabel ?? "",
         logoUrl: item.logoUrl,
         memberCount: item.memberCount ?? 0,
+        members: (item.members ?? []).map((member) => ({
+          avatarUrl: member.avatarUrl ?? "",
+          loginId: member.loginId ?? "",
+          userLabel: member.userLabel ?? member.loginId ?? "",
+        })),
         overview: item.overview,
         ownerName: item.ownerName,
         projectName: item.projectName,

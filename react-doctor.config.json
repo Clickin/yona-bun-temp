@@ -13,7 +13,8 @@
       "react/no-danger"
     ],
     "files": [
-      "src/gen/**"
+      "src/gen/**",
+      "tests/live-legacy-html-parity.ts"
     ],
     "overrides": [
       {

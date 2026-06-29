@@ -242,7 +242,7 @@ export function ProjectDirectoryPage({
                           ) : null}
                         </a>
                       </div>
-                      <div className="project-main-copy">
+                      <div style={{ float: "left" }}>
                         <div className="header">
                           <a
                             className="black"
@@ -279,14 +279,29 @@ export function ProjectDirectoryPage({
                               , {legacyMessage(messages, "project.codeUpdate")}{" "}
                               <strong>{project.lastPushedLabel}</strong>
                             </span>
-                          ) : null}
+                          ) : (
+                            <span className="small-font"></span>
+                          )}
                         </p>
                       </div>
                     </div>
                     {project.projectScope === "public" ? (
                       <div className="stats-wrap pull-right">
                         <div className="members">
-                          <ul className="unstyled" />
+                          <ul className="unstyled">
+                            {(project.members ?? []).map((member) => (
+                              <li key={member.loginId}>
+                                <a
+                                  className="avatar-wrap"
+                                  href={appHref(runtimeConfig, `/${member.loginId}`)}
+                                >
+                                  {member.avatarUrl ? (
+                                    <img alt={member.userLabel} src={member.avatarUrl} />
+                                  ) : null}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
                           <p>
                             <i className="yobicon-friends yobicon-middle" />
                             <strong>{project.memberCount}</strong>{" "}
@@ -425,7 +440,7 @@ export function OrganizationDirectoryPage({
                           ) : null}
                         </a>
                       </div>
-                      <div className="project-main-copy">
+                      <div style={{ float: "left" }}>
                         <div className="header">
                           <a
                             className="black"
