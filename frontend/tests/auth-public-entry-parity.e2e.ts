@@ -53,8 +53,12 @@ async function expectLegacyLiveHtmlParity(
         "selected",
         "value",
       ]);
+      const booleanAttributeNames = new Set(["disabled", "readonly", "required"]);
 
       function normalizeAttributeValue(name: string, value: string) {
+        if (booleanAttributeNames.has(name)) {
+          return "";
+        }
         if (name !== "href" && name !== "src") {
           return value.trim().replace(/\s+/g, " ");
         }
@@ -891,6 +895,22 @@ test("reset password page matches live legacy rendered HTML structure", async ({
   await expectLegacyLiveHtmlParity(page, {
     currentSelector: ".page.full",
     legacyPath: "/resetPassword?s=hash-123",
+    legacySelector: ".page.full",
+  });
+});
+
+test("lost password page matches live legacy rendered HTML structure", async ({ page }) => {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+
+  await page.goto("/yona/lostPassword");
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page.full",
+    legacyPath: "/lostPassword",
     legacySelector: ".page.full",
   });
 });

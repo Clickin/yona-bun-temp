@@ -762,6 +762,7 @@ export function LostPasswordPage({
           ) : null}
 
           <form
+            method="post"
             onSubmit={(event) => {
               event.preventDefault();
               onRequestReset?.(formState);
