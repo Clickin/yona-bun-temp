@@ -684,7 +684,9 @@ test("projects directory matches live legacy rendered HTML structure", async ({ 
     !process.env.LEGACY_YONA_ORIGIN,
     "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
   );
-  await page.goto("/yona/projects");
+  await page.goto("/yona/");
+  await page.locator('.gnb-nav a[href$="/projects"]').click();
+  await expect(page).toHaveURL(/\/yona\/projects$/);
   await expectLegacyLiveHtmlParity(page, {
     currentSelector: ".site-breadcrumb-outer",
     legacyPath: "/projects",
