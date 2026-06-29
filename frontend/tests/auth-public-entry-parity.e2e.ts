@@ -915,6 +915,38 @@ test("lost password page matches live legacy rendered HTML structure", async ({ 
   });
 });
 
+test("login page matches live legacy rendered HTML structure", async ({ page }) => {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page, { enabledSocialProviders: ["github", "google"] });
+
+  await page.goto("/yona/users/loginform");
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page.full",
+    legacyPath: "/users/loginform",
+    legacySelector: ".page.full",
+  });
+});
+
+test("signup page matches live legacy rendered HTML structure", async ({ page }) => {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+
+  await page.goto("/yona/users/signupform");
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page.full",
+    legacyPath: "/users/signupform",
+    legacySelector: ".page.full",
+  });
+});
+
 test("lost password shell keeps legacy full-page size and alignment metrics", async ({ page }) => {
   await installRuntimeConfig(page);
   await installAuthEntryMocks(page);

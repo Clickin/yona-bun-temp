@@ -264,6 +264,7 @@ export function LoginPage({
             </div>
           ) : null}
           <form
+            method="POST"
             onSubmit={(event) => {
               event.preventDefault();
               onSignIn?.(formState);
@@ -554,6 +555,7 @@ export function RegisterPage({
 
         <div className="signup-form-wrap frm-wrap">
           <form
+            method="post"
             name="signup"
             onSubmit={(event) => {
               event.preventDefault();
