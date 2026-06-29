@@ -42,7 +42,11 @@ async function expectLegacyLiveHtmlParity(
         text?: string;
       };
 
-      const ignoredAttributeNames = new Set([
+      // These are deliberate SPA/REST modernization boundaries, not UI parity drift.
+      // Form actions are replaced by React submit handlers and REST mutations, CSRF
+      // is transported through runtime/bootstrap headers, and value-like state is
+      // owned by React at runtime. Layout-relevant markup remains compared.
+      const spaRestBoundaryAttributeNames = new Set([
         "action",
         "checked",
         "data-reactroot",
@@ -84,7 +88,7 @@ async function expectLegacyLiveHtmlParity(
         for (const attribute of Array.from(element.attributes).sort((left, right) =>
           left.name.localeCompare(right.name),
         )) {
-          if (ignoredAttributeNames.has(attribute.name)) {
+          if (spaRestBoundaryAttributeNames.has(attribute.name)) {
             continue;
           }
           attrs[attribute.name] = normalizeAttributeValue(attribute.name, attribute.value);
