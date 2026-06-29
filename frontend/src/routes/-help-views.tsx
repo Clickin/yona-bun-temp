@@ -130,7 +130,7 @@ const helpQuestions: Array<{
   {
     answer: (siteName) => (
       <>
-        {siteName}를 설치하고자 하면{" "}
+        {`${siteName}를 설치하고자 하면 `}
         <a href="https://github.com/doortts/yona#korean">https://github.com/doortts/yona#korean</a>
         를 참고해 주세요.
       </>
@@ -198,7 +198,7 @@ const helpQuestions: Array<{
   {
     answer: (siteName) => (
       <>
-        {siteName}는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면{" "}
+        {`${siteName}는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면 `}
         <a href="https://github.com/nforge/yobi/issues">{siteName} 이슈트래커에 등록</a>해 주시거나
         패치를 만들어 보내주시면 됩니다.
       </>

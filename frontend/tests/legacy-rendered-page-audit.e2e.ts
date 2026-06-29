@@ -464,11 +464,6 @@ test("renders legacy audited anchors for logged-in /", async ({ page }) => {
   await expectLegacySignals(page, ["gnb-outer", "admin-logged-in-affix"]);
 });
 
-test("renders legacy audited anchors for /_help", async ({ page }) => {
-  await page.goto("/yona/_help");
-  await expectLegacySignals(page, ["site-breadcrumb-outer", "qas", "answer-wrap"]);
-});
-
 test("renders legacy audited anchors for /projects", async ({ page }) => {
   await page.goto("/yona/projects");
   await expectLegacySignals(page, ["all-projects"]);

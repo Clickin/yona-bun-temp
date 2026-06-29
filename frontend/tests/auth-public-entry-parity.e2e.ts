@@ -44,8 +44,9 @@ async function expectLegacyLiveHtmlParity(
 
       // These are deliberate SPA/REST modernization boundaries, not UI parity drift.
       // Form actions are replaced by React submit handlers and REST mutations, CSRF
-      // is transported through runtime/bootstrap headers, and value-like state is
-      // owned by React at runtime. Layout-relevant markup remains compared.
+      // is transported through runtime/bootstrap headers, value-like state is owned
+      // by React at runtime, and inline style text is compared after browser
+      // serialization whitespace is normalized. Layout-relevant markup remains compared.
       const spaRestBoundaryAttributeNames = new Set([
         "action",
         "checked",
@@ -58,6 +59,12 @@ async function expectLegacyLiveHtmlParity(
       function normalizeAttributeValue(name: string, value: string) {
         if (booleanAttributeNames.has(name)) {
           return "";
+        }
+        if (name === "style") {
+          return value
+            .trim()
+            .replace(/\s*([:;])\s*/g, "$1")
+            .replace(/;$/, "");
         }
         if (name !== "href" && name !== "src") {
           return value.trim().replace(/\s+/g, " ");
@@ -717,6 +724,27 @@ test("anonymous help page keeps the legacy FAQ shell and item-wide toggle", asyn
   await expect(firstQuestion).toHaveClass(/open/);
   await firstQuestion.locator(".question-wrap").click();
   await expect(firstQuestion).not.toHaveClass(/open/);
+});
+
+test("anonymous help page matches live legacy rendered HTML structure", async ({ page }) => {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+
+  await page.goto("/yona/_help");
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".site-breadcrumb-outer",
+    legacyPath: "/_help",
+    legacySelector: ".site-breadcrumb-outer",
+  });
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page-wrap-outer",
+    legacyPath: "/_help",
+    legacySelector: ".page-wrap-outer",
+  });
 });
 
 test("signup confirmation redirects to the legacy home flash target", async ({ page }) => {
