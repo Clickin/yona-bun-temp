@@ -148,10 +148,19 @@ function sampleUser() {
   };
 }
 
+function livePublicSampleWatcher() {
+  return {
+    ...sampleUser(),
+    avatarUrl: "/assets/images/default-avatar-128.png",
+    userLabel: "admin",
+  };
+}
+
 type RouteAuditOptions = {
   issueBodyMarkdown?: string;
   issueTitle?: string;
   projectContainer?: ReturnType<typeof projectContainer>;
+  projectWatchers?: ReturnType<typeof sampleUser>[];
 };
 
 async function routeAuditApis(page: Page, options: RouteAuditOptions = {}) {
@@ -420,7 +429,12 @@ async function routeAuditApis(page: Page, options: RouteAuditOptions = {}) {
         viewerCanUpdate: true,
       };
     } else if (path.endsWith("/admin/projects/sample/watchers")) {
-      body = { ownerName: "admin", projectName: "sample", totalCount: 1, watchers: [sampleUser()] };
+      body = {
+        ownerName: "admin",
+        projectName: "sample",
+        totalCount: 1,
+        watchers: options.projectWatchers ?? [sampleUser()],
+      };
     } else if (path.endsWith("/admin/projects/sample/webhooks")) {
       body = {
         deliveries: [],
@@ -495,13 +509,20 @@ async function expectLegacySignals(page: Page, anchors: string[], structuralToke
   }
 }
 
-async function expectLivePublicSampleProjectShell(page: Page, appPath: string) {
+async function expectLivePublicSampleProjectShell(
+  page: Page,
+  appPath: string,
+  options: RouteAuditOptions = {},
+) {
   test.skip(
     !process.env.LEGACY_YONA_ORIGIN,
     "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
   );
   await page.unroute("**/api/v1/**");
-  await routeAuditApis(page, { projectContainer: livePublicSampleProjectContainer() });
+  await routeAuditApis(page, {
+    ...options,
+    projectContainer: livePublicSampleProjectContainer(),
+  });
   await page.goto(`/yona${appPath}`);
   await expectLegacyLiveHtmlParity(page, {
     currentSelector: ".project-breadcrumb-wrap",
@@ -920,8 +941,15 @@ test("renders legacy audited anchors for project members", async ({ page }) => {
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
-test("project watchers shell matches live legacy rendered HTML structure", async ({ page }) => {
-  await expectLivePublicSampleProjectShell(page, "/admin/sample/watchers");
+test("project watchers page matches live legacy rendered HTML structure", async ({ page }) => {
+  await expectLivePublicSampleProjectShell(page, "/admin/sample/watchers", {
+    projectWatchers: [livePublicSampleWatcher()],
+  });
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page-wrap-outer",
+    legacyPath: "/admin/sample/watchers",
+    legacySelector: ".page-wrap-outer",
+  });
 });
 
 test("renders legacy audited anchors for project settings", async ({ page }) => {

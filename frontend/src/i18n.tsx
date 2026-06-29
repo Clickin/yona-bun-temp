@@ -150,7 +150,7 @@ export function formatLegacyMessage(
   template: string,
   args: readonly (number | string)[] | undefined,
 ): string {
-  const message = template.replace(/''/g, "'");
+  const message = normalizeLegacyMessageApostrophes(template);
   if (!args || args.length === 0) {
     return message;
   }
@@ -159,6 +159,22 @@ export function formatLegacyMessage(
     const value = args[Number(index)];
     return value === undefined ? placeholder : String(value);
   });
+}
+
+function normalizeLegacyMessageApostrophes(template: string): string {
+  let message = "";
+  for (let index = 0; index < template.length; index += 1) {
+    const char = template[index];
+    if (char !== "'") {
+      message += char;
+      continue;
+    }
+    if (template[index + 1] === "'") {
+      message += "'";
+      index += 1;
+    }
+  }
+  return message;
 }
 
 const fallbackI18n: LegacyI18nContextValue = {

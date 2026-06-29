@@ -58,7 +58,7 @@ describe("project watchers parity", () => {
       />,
     );
 
-    expect(html).toContain("This project&#x27;s watcher list.");
+    expect(html).toContain("This projects watcher list.");
     expect(html).toContain("* This list contains only those who can access this project.");
     expect(html).not.toContain("project.watcher.title");
     expect(html).not.toContain("project.watcher.description");
@@ -77,7 +77,7 @@ describe("project watchers parity", () => {
     expect(html).toContain('class="members project row-fluid"');
     expect(html).toContain('class="member span6 span-hard-wrap"');
     expect(html).toContain('href="/yona/admin"');
-    expect(html).toContain('<img alt="Admin" height="64" src="/avatars/admin.png" width="64"/>');
+    expect(html).toContain('<img height="64" src="/avatars/admin.png" width="64"/>');
     expect(html).toContain("@member");
     expect(html).not.toContain("avatar&quot;");
   });

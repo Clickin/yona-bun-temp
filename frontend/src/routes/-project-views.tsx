@@ -2642,12 +2642,8 @@ export function ProjectWatchersPage(props: {
               href={prefixBasePath(props.runtimeConfig.basePath, `/${watcher.loginId}`)}
             >
               {watcher.avatarUrl ? (
-                <img
-                  alt={watcher.userLabel || watcher.loginId}
-                  height={64}
-                  src={watcher.avatarUrl}
-                  width={64}
-                />
+                // oxlint-disable-next-line jsx-a11y/alt-text -- legacy project/watchers.scala.html renders watcher avatars without alt.
+                <img height={64} src={watcher.avatarUrl} width={64} />
               ) : null}
             </a>
             <div className="member-name">{watcher.userLabel || watcher.loginId}</div>

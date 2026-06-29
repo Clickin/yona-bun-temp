@@ -421,6 +421,9 @@ describe("legacy i18n runtime", () => {
 
   it("uses legacy MessageFormat apostrophe escaping", () => {
     expect(lookupLegacyMessage("en-US", "common.comment.delete.confirm")).toContain("won't");
+    expect(lookupLegacyMessage("en-US", "project.watcher.title")).toBe(
+      "This projects watcher list.",
+    );
     expect(lookupLegacyMessage("ko-KR", "project.webhook.help")).toContain(
       "'Authorizatoin: token 입력한 값'",
     );
