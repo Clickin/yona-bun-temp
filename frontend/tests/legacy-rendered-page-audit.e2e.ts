@@ -750,7 +750,9 @@ test("user files page matches live legacy rendered HTML structure", async ({ pag
     !process.env.LEGACY_YONA_ORIGIN,
     "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
   );
-  await page.goto("/yona/user/files");
+  await page.goto("/yona/user/issues");
+  await page.locator('.nav-tabs a[href$="/user/files"]').click();
+  await expect(page).toHaveURL(/\/yona\/user\/files$/);
   await expectLegacyLiveHtmlParity(page, {
     currentSelector: ".page-wrap-outer",
     legacyPath: "/user/files",
