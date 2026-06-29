@@ -857,6 +857,7 @@ export function ResetPasswordPage({
 
         <div className="login-form-wrap frm-wrap">
           <form
+            method="post"
             name="passwordReset"
             onSubmit={(event) => {
               event.preventDefault();

@@ -1,4 +1,8 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { expect, test, type Page } from "@playwright/test";
+
+const execFileAsync = promisify(execFile);
 
 const restJsonHeaders = {
   "access-control-allow-origin": "*",
@@ -6,6 +10,121 @@ const restJsonHeaders = {
 };
 
 const apiV1Route = (path: string) => `**/api/v1${path}`;
+
+async function expectLegacyLiveHtmlParity(
+  page: Page,
+  options: {
+    currentSelector?: string;
+    legacyPath: string;
+    legacySelector?: string;
+  },
+) {
+  const legacyOrigin = process.env.LEGACY_YONA_ORIGIN;
+  expect(
+    legacyOrigin,
+    "set LEGACY_YONA_ORIGIN to compare against live legacy Yona HTML",
+  ).toBeTruthy();
+
+  const legacyUrl = new URL(options.legacyPath, legacyOrigin).toString();
+  const { stdout: legacyHtml } = await execFileAsync("curl", ["-sS", legacyUrl], {
+    maxBuffer: 8 * 1024 * 1024,
+  });
+  const selector = options.currentSelector ?? options.legacySelector ?? "body";
+  const legacySelector = options.legacySelector ?? selector;
+  const currentSelector = options.currentSelector ?? selector;
+
+  const signatures = await page.evaluate(
+    ({ currentSelector, legacyHtml, legacySelector }) => {
+      type Signature = {
+        attrs: Record<string, string>;
+        children: Signature[];
+        tag: string;
+        text?: string;
+      };
+
+      const ignoredAttributeNames = new Set([
+        "action",
+        "checked",
+        "data-reactroot",
+        "selected",
+        "value",
+      ]);
+
+      function normalizeAttributeValue(name: string, value: string) {
+        if (name !== "href" && name !== "src") {
+          return value.trim().replace(/\s+/g, " ");
+        }
+        try {
+          const url = new URL(value, window.location.origin);
+          return `${url.pathname.replace(/^\/yona(?=\/|$)/, "")}${url.search}${url.hash}`;
+        } catch {
+          return value.replace(/^\/yona(?=\/|$)/, "");
+        }
+      }
+
+      function directText(element: Element) {
+        return Array.from(element.childNodes)
+          .filter((node) => node.nodeType === Node.TEXT_NODE)
+          .map((node) => node.textContent ?? "")
+          .join(" ")
+          .trim()
+          .replace(/\s+/g, " ");
+      }
+
+      function signature(element: Element): Signature | null {
+        const tag = element.tagName.toLowerCase();
+        if (tag === "script" || tag === "style") {
+          return null;
+        }
+        if (tag === "input" && element.getAttribute("name") === "csrfToken") {
+          return null;
+        }
+
+        const attrs: Record<string, string> = {};
+        for (const attribute of Array.from(element.attributes).sort((left, right) =>
+          left.name.localeCompare(right.name),
+        )) {
+          if (ignoredAttributeNames.has(attribute.name)) {
+            continue;
+          }
+          attrs[attribute.name] = normalizeAttributeValue(attribute.name, attribute.value);
+        }
+
+        const text = directText(element);
+        const children = Array.from(element.children)
+          .map((child) => signature(child))
+          .filter((child): child is Signature => child !== null);
+
+        return {
+          attrs,
+          children,
+          tag,
+          ...(text ? { text } : {}),
+        };
+      }
+
+      const parser = new DOMParser();
+      const legacyDocument = parser.parseFromString(legacyHtml, "text/html");
+      const legacyRoot = legacyDocument.querySelector(legacySelector);
+      const currentRoot = document.querySelector(currentSelector);
+
+      if (!legacyRoot || !currentRoot) {
+        return {
+          current: currentRoot ? signature(currentRoot) : null,
+          legacy: legacyRoot ? signature(legacyRoot) : null,
+        };
+      }
+
+      return {
+        current: signature(currentRoot),
+        legacy: signature(legacyRoot),
+      };
+    },
+    { currentSelector, legacyHtml, legacySelector },
+  );
+
+  expect(signatures.current).toEqual(signatures.legacy);
+}
 
 type AuthCapabilities = {
   defaultAdminContact?: string;
@@ -739,6 +858,37 @@ test("lost and reset password browser states preserve legacy copy and redirects"
   await expectNoVisibleRawLegacyKeys(page);
   await expect(page.locator(".error-wrap")).toContainText("Wrong url to reset password.");
   await expect(page.locator("form[name='passwordReset']")).toHaveCount(0);
+});
+
+test("auth internal links use SPA routing instead of direct page injection", async ({ page }) => {
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+
+  await page.goto("/yona/users/loginform");
+  await page.locator(".links-wrap a[href$='/lostPassword']").click();
+  await expect(page).toHaveURL(/\/yona\/lostPassword$/);
+  await expect(page.locator(".center-wrap.tag-line-wrap.reset-password")).toBeVisible();
+
+  await page.goto("/yona/users/signupform");
+  await page.locator("a.go-login").click();
+  await expect(page).toHaveURL(/\/yona\/users\/loginform$/);
+  await expect(page.locator(".login-form-wrap.frm-wrap form").first()).toBeVisible();
+});
+
+test("reset password page matches live legacy rendered HTML structure", async ({ page }) => {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
+  await installRuntimeConfig(page);
+  await installAuthEntryMocks(page);
+
+  await page.goto("/yona/resetPassword?s=hash-123");
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page.full",
+    legacyPath: "/resetPassword?s=hash-123",
+    legacySelector: ".page.full",
+  });
 });
 
 test("lost password shell keeps legacy full-page size and alignment metrics", async ({ page }) => {

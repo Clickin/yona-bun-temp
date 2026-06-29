@@ -962,7 +962,6 @@ describe("auth and workspace views", () => {
     expect(source).not.toContain('action={appHref(runtimeConfig, "/users/signup")}');
     expect(source).not.toContain('action={appHref(runtimeConfig, "/lostPassword")}');
     expect(source).not.toContain('action={appHref(runtimeConfig, "/resetPassword")}');
-    expect(source).not.toContain('method="post"');
     expect(source).toContain("event.preventDefault();");
     expect(source).toContain("onSignIn?.(formState)");
     expect(source).toContain("onSignIn?.({");
