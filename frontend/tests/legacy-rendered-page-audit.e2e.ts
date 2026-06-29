@@ -679,6 +679,21 @@ test("renders legacy audited anchors for logged-in /", async ({ page }) => {
   await expectLegacySignals(page, ["gnb-outer", "admin-logged-in-affix"]);
 });
 
+test("anonymous root landing matches live legacy rendered HTML structure", async ({ page }) => {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
+  await page.unroute("**/api/v1/**");
+  await routeAuditApis(page, { anonymousSession: true });
+  await page.goto("/yona/");
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".siteintro-bg",
+    legacyPath: "/",
+    legacySelector: ".siteintro-bg",
+  });
+});
+
 test("projects directory matches live legacy rendered HTML structure", async ({ page }) => {
   test.skip(
     !process.env.LEGACY_YONA_ORIGIN,
