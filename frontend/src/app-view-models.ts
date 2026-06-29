@@ -637,9 +637,11 @@ export function toProjectIssueListView(
 ): ProjectIssueListViewModel {
   const toIssueListItem = (item: (typeof response.items)[number]) => ({
     assigneeAvatarUrl: item.assigneeAvatarUrl ?? "",
+    assigneeId: item.assigneeId ? Number(item.assigneeId) : undefined,
     assigneeLabel: item.assigneeLabel,
     assigneeLoginId: item.assigneeLoginId ?? "",
     authorAvatarUrl: item.authorAvatarUrl ?? "",
+    authorId: item.authorId ? Number(item.authorId) : undefined,
     authorLabel: item.authorLabel,
     authorLoginId: item.authorLoginId ?? "",
     childClosedCount: item.childClosedCount ?? 0,
@@ -666,6 +668,7 @@ export function toProjectIssueListView(
     state: item.state,
     title: item.title,
     updatedLabel: item.updatedLabel,
+    updatedTitle: item.updatedTitle ?? item.updatedLabel,
     voterCount: item.voterCount,
     watcherCount: item.watcherCount,
     weight: item.weight ?? 0,

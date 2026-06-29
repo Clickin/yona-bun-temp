@@ -185,7 +185,7 @@ function projectLayoutShell(
     return { activeMenu: "issue", keymapMode: "detail", shellClassName: "issue-detail-page" };
   }
   if (appPath === `/${owner}/${projectName}/issues`) {
-    return { activeMenu: "issue", keymapMode: "list", shellClassName: "issue-list-page" };
+    return { activeMenu: "issue", shellClassName: "issue-list-page" };
   }
   if (appPath === `/${owner}/${projectName}/statistics`) {
     return { showMenu: false };

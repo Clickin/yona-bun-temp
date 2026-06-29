@@ -365,9 +365,11 @@ export interface CodeBrowserViewModel {
 }
 
 export interface ProjectIssueListItemViewModel {
+  assigneeId?: number;
   assigneeAvatarUrl?: string;
   assigneeLabel: string;
   assigneeLoginId?: string;
+  authorId?: number;
   authorAvatarUrl?: string;
   authorLabel: string;
   authorLoginId?: string;
@@ -398,6 +400,7 @@ export interface ProjectIssueListItemViewModel {
   state: string;
   title: string;
   updatedLabel: string;
+  updatedTitle?: string;
   voterCount: number;
   watcherCount: number;
   weight?: number;

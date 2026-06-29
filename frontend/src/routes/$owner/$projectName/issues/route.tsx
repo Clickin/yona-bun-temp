@@ -163,10 +163,10 @@ function defaultIssueListQuery(): ProjectIssueListQuery {
     filter: "",
     labelIds: [],
     milestoneId: 0,
-    orderBy: "updatedDate",
+    orderBy: "createdDate",
     orderDir: "desc",
     pageNum: 1,
-    state: "",
+    state: "open",
   };
 }
 
@@ -189,10 +189,10 @@ function issueListQueryFromSearchParams(searchParams: URLSearchParams): ProjectI
     filter: searchParams.get("filter") ?? "",
     labelIds,
     milestoneId: positiveNumber(searchParams.get("milestoneId")),
-    orderBy: searchParams.get("orderBy") ?? "updatedDate",
+    orderBy: searchParams.get("orderBy") ?? "createdDate",
     orderDir: searchParams.get("orderDir") ?? "desc",
     pageNum: positiveNumber(searchParams.get("pageNum")) || 1,
-    state: searchParams.get("state") ?? "",
+    state: searchParams.get("state") ?? "open",
   };
 }
 
@@ -202,7 +202,7 @@ function positiveNumber(value: string | null): number {
 }
 
 function optionalNumber(value: string | null): number | undefined {
-  if (value === null) {
+  if (value === null || value.trim() === "") {
     return undefined;
   }
   const parsed = Number(value);

@@ -36,6 +36,7 @@ describe("project issue list filters", () => {
           draftItems: [
             {
               assigneeLabel: "",
+              authorId: 1,
               authorLabel: "Admin User",
               authorLoginId: "admin",
               commentCount: 0,
@@ -55,6 +56,8 @@ describe("project issue list filters", () => {
           items: [
             {
               assigneeLabel: "Door",
+              assigneeId: 2,
+              authorId: 1,
               authorLabel: "Admin User",
               authorLoginId: "admin",
               commentCount: 2,
@@ -103,7 +106,9 @@ describe("project issue list filters", () => {
         ]}
         query={{
           assigneeLoginId: "door",
+          assigneeId: 2,
           authorLoginId: "nori",
+          authorId: 1,
           dueDate: "",
           labelIds: [5],
           milestoneId: 7,
@@ -143,10 +148,10 @@ describe("project issue list filters", () => {
     expect(html).toContain('id="search"');
     expect(html).toContain('name="state"');
     expect(html).toContain('value="open"');
-    expect(html).toContain('name="authorLoginId"');
-    expect(html).toContain('value="nori"');
-    expect(html).toContain('name="assigneeLoginId"');
-    expect(html).toContain('value="door"');
+    expect(html).toContain('name="authorId"');
+    expect(html).toContain('value="1"');
+    expect(html).toContain('name="assigneeId"');
+    expect(html).toContain('value="2"');
     expect(html).toContain('name="milestoneId"');
     expect(html).toContain('id="advanced-search-form"');
     expect(html).toContain('id="authorId"');
@@ -251,13 +256,13 @@ describe("project issue list filters", () => {
     expect(html).toContain('name="pageNum"');
     expect(html).toContain('value="2"');
     expect(html).toContain(
-      'href="/yona/admin/projectYobi/issues?state=open&amp;authorLoginId=nori&amp;assigneeLoginId=door&amp;milestoneId=7&amp;orderBy=updatedDate&amp;orderDir=desc&amp;labelIds=5"',
+      'href="/yona/admin/projectYobi/issues?authorLoginId=nori&amp;authorId=1&amp;assigneeLoginId=door&amp;assigneeId=2&amp;milestoneId=7&amp;orderBy=updatedDate&amp;labelIds=5"',
     );
     expect(html).toContain(
-      'href="/yona/admin/projectYobi/issues?state=open&amp;authorLoginId=nori&amp;assigneeLoginId=door&amp;milestoneId=7&amp;orderBy=updatedDate&amp;orderDir=desc&amp;labelIds=5&amp;pageNum=3"',
+      'href="/yona/admin/projectYobi/issues?authorLoginId=nori&amp;authorId=1&amp;assigneeLoginId=door&amp;assigneeId=2&amp;milestoneId=7&amp;orderBy=updatedDate&amp;labelIds=5&amp;pageNum=3"',
     );
     expect(html).toContain(
-      'href="/yona/admin/projectYobi/issues?state=open&amp;authorLoginId=nori&amp;assigneeLoginId=door&amp;milestoneId=7&amp;orderBy=updatedDate&amp;orderDir=desc&amp;labelIds=5&amp;format=xls"',
+      'href="/yona/admin/projectYobi/issues?authorLoginId=nori&amp;authorId=1&amp;assigneeLoginId=door&amp;assigneeId=2&amp;milestoneId=7&amp;orderBy=updatedDate&amp;labelIds=5&amp;format=xls"',
     );
     expect(html).not.toContain("Yona Rust Project");
     expect(html).not.toContain("Author:");
@@ -312,8 +317,9 @@ describe("project issue list filters", () => {
     );
 
     expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/issues`");
-    expect(layoutSource).toContain('activeMenu: "issue"');
-    expect(layoutSource).toContain('keymapMode: "list"');
+    expect(layoutSource).toContain(
+      'return { activeMenu: "issue", shellClassName: "issue-list-page" };',
+    );
     expect(layoutSource).toContain('shellClassName: "issue-list-page"');
     expect(routeSource).toContain("renderShell={false}");
     expect(html).not.toContain('class="app-shell issue-list-page"');
@@ -323,5 +329,7 @@ describe("project issue list filters", () => {
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="row-fluid issue-list-wrap"');
     expect(html).toContain('id="advanced-search-form"');
+    expect(html).toContain('href="#helpKeys"');
+    expect(html).toContain('class="modal hide fade keymap-help"');
   });
 });

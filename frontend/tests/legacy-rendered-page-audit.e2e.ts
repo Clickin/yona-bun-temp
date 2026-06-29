@@ -157,6 +157,7 @@ function livePublicSampleWatcher() {
 }
 
 type RouteAuditOptions = {
+  anonymousSession?: boolean;
   issueBodyMarkdown?: string;
   issueTitle?: string;
   projectContainer?: ReturnType<typeof projectContainer>;
@@ -172,11 +173,16 @@ async function routeAuditApis(page: Page, options: RouteAuditOptions = {}) {
   });
 
   await page.route("**/api/auth/session", async (route) => {
+    const anonymousSession = options.anonymousSession ?? false;
     await route.fulfill({
-      body: JSON.stringify({
-        session: { loginId: "admin" },
-        user: { isSiteAdmin: true, loginId: "admin" },
-      }),
+      body: JSON.stringify(
+        anonymousSession
+          ? { session: null, user: null }
+          : {
+              session: { loginId: "admin" },
+              user: { isSiteAdmin: true, loginId: "admin" },
+            },
+      ),
       headers: {
         ...restJsonHeaders,
         "x-csrf-token": "csrf-123",
@@ -191,16 +197,27 @@ async function routeAuditApis(page: Page, options: RouteAuditOptions = {}) {
     let body: unknown = {};
 
     if (path === "/session") {
-      body = {
-        actorId: "1",
-        defaultLandingPath: "/me",
-        emailAddress: "admin@example.com",
-        isAnonymous: false,
-        isConfirmed: true,
-        isSiteAdmin: true,
-        loginId: "admin",
-        userLabel: "Admin",
-      };
+      body = options.anonymousSession
+        ? {
+            actorId: "0",
+            defaultLandingPath: "/",
+            emailAddress: "",
+            isAnonymous: true,
+            isConfirmed: false,
+            isSiteAdmin: false,
+            loginId: "",
+            userLabel: "",
+          }
+        : {
+            actorId: "1",
+            defaultLandingPath: "/me",
+            emailAddress: "admin@example.com",
+            isAnonymous: false,
+            isConfirmed: true,
+            isSiteAdmin: true,
+            loginId: "admin",
+            userLabel: "Admin",
+          };
     } else if (path === "/auth/capabilities") {
       body = {
         emailVerificationEnabled: false,
@@ -266,14 +283,45 @@ async function routeAuditApis(page: Page, options: RouteAuditOptions = {}) {
     ) {
       body = {
         closedIssueCount: 0,
-        items: [],
-        openIssueCount: 0,
+        items: [
+          {
+            assigneeAvatarUrl: "",
+            assigneeLabel: "",
+            assigneeLoginId: "",
+            authorAvatarUrl: "/assets/images/default-avatar-128.png",
+            authorId: 1,
+            authorLabel: "admin",
+            authorLoginId: "admin",
+            childClosedCount: 0,
+            childIssues: [],
+            childOpenCount: 0,
+            commentCount: 0,
+            dueDateLabel: "",
+            dueDateOverdue: false,
+            id: 1,
+            issueNumber: 1,
+            labels: [],
+            milestoneTitle: "",
+            ownerName: "admin",
+            parentIssueNumber: 0,
+            parentIssueTitle: "",
+            projectName: "sample",
+            state: "open",
+            title: "sample issue",
+            updatedLabel: "6 days ago",
+            updatedTitle: "2026-06-23 7:11:00 PM",
+            voterCount: 0,
+            watcherCount: 0,
+            weight: 0,
+          },
+        ],
+        openIssueCount: 1,
         ownerName: "admin",
         pageNum: 1,
         pageSize: 15,
         projectName: "sample",
         state: "open",
-        totalCount: 0,
+        totalCount: 1,
       };
     } else if (
       path.endsWith("/admin/projects/sample/issues/parent-options") ||
@@ -763,8 +811,40 @@ test("renders legacy audited anchors for project issue form", async ({ page }) =
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
-test("project issues shell matches live legacy rendered HTML structure", async ({ page }) => {
-  await expectLivePublicSampleProjectShell(page, "/admin/sample/issues");
+test("project issues page matches live legacy rendered HTML structure", async ({ page }) => {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
+  await page.unroute("**/api/v1/**");
+  await routeAuditApis(page, {
+    anonymousSession: true,
+    projectContainer: livePublicSampleProjectContainer(),
+  });
+  await page.goto("/yona/admin/sample");
+  await page.locator('.project-menu-outer a[href$="/admin/sample/issues"]').click();
+  await expect(page).toHaveURL(/\/yona\/admin\/sample\/issues$/);
+  await expect(page.locator(".project-breadcrumb-wrap")).toHaveCount(1);
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".project-breadcrumb-wrap",
+    legacyPath: "/admin/sample/issues",
+    legacySelector: ".project-breadcrumb-wrap",
+  });
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".project-util-wrap",
+    legacyPath: "/admin/sample/issues",
+    legacySelector: ".project-util-wrap",
+  });
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".project-menu-outer",
+    legacyPath: "/admin/sample/issues",
+    legacySelector: ".project-menu-outer",
+  });
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page-wrap-outer",
+    legacyPath: "/admin/sample/issues",
+    legacySelector: ".page-wrap-outer",
+  });
 });
 
 test("project issue detail shell matches live legacy rendered HTML structure", async ({ page }) => {

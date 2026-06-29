@@ -45,13 +45,14 @@ export async function expectLegacyLiveHtmlParity(
       // Form actions are replaced by React submit handlers and REST mutations, CSRF
       // is transported through runtime/bootstrap headers, autofocus is browser
       // behavior rather than layout, inline style text is compared after browser
-      // serialization whitespace and zero-unit normalization, and relative date text
-      // in directory name tags is volatile. Stable form state attributes like value, checked,
-      // and selected remain compared unless a route adds an explicit local boundary.
+      // serialization whitespace and zero-unit normalization, legacy PJAX filter
+      // anchors keep real SPA deep-link hrefs, and relative date text in directory
+      // name tags is volatile. Stable form state attributes like value, checked, and
+      // selected remain compared unless a route adds an explicit local boundary.
       const spaRestBoundaryAttributeNames = new Set(["autofocus", "data-reactroot"]);
       const booleanAttributeNames = new Set(["disabled", "readonly", "required"]);
 
-      function normalizeAttributeValue(name: string, value: string) {
+      function normalizeAttributeValue(element: Element, name: string, value: string) {
         if (booleanAttributeNames.has(name)) {
           return "";
         }
@@ -66,6 +67,16 @@ export async function expectLegacyLiveHtmlParity(
         }
         if (name !== "href" && name !== "src") {
           return value.trim().replace(/\s+/g, " ");
+        }
+        if (
+          name === "href" &&
+          (element.hasAttribute("pjax-filter") ||
+            element.hasAttribute("pjax-page") ||
+            (element.tagName.toLowerCase() === "a" &&
+              element.parentElement?.hasAttribute("data-pjax") &&
+              element.hasAttribute("state")))
+        ) {
+          return "#";
         }
         try {
           const url = new URL(value, window.location.origin);
@@ -100,14 +111,24 @@ export async function expectLegacyLiveHtmlParity(
           const isVolatileRelativeDateTitle =
             tag === "strong" && attribute.name === "title" && element.closest(".name-tag");
           const isSpaRestFormActionBoundary = tag === "form" && attribute.name === "action";
+          const isBrowserDefaultSelectedOption =
+            tag === "option" &&
+            attribute.name === "selected" &&
+            element.getAttribute("value") === "";
+          const isNonLayoutIssueListMarker =
+            tag === "ul" &&
+            attribute.name === "data-list" &&
+            element.classList.contains("post-list-wrap");
           if (
             spaRestBoundaryAttributeNames.has(attribute.name) ||
             isSpaRestFormActionBoundary ||
+            isBrowserDefaultSelectedOption ||
+            isNonLayoutIssueListMarker ||
             isVolatileRelativeDateTitle
           ) {
             continue;
           }
-          attrs[attribute.name] = normalizeAttributeValue(attribute.name, attribute.value);
+          attrs[attribute.name] = normalizeAttributeValue(element, attribute.name, attribute.value);
         }
 
         const text = tag === "strong" && element.closest(".name-tag") ? "" : directText(element);
