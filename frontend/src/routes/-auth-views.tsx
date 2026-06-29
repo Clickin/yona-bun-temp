@@ -295,7 +295,6 @@ export function LoginPage({
                       }
                       placeholder={loginIdPlaceholder}
                       type="text"
-                      value={formState.identifier}
                     />
                   </dd>
                   <dd>
@@ -312,7 +311,6 @@ export function LoginPage({
                       }
                       placeholder={passwordPlaceholder}
                       type="password"
-                      value={formState.password}
                     />
                   </dd>
                 </dl>
@@ -591,7 +589,6 @@ export function RegisterPage({
                       }
                       placeholder=""
                       type="text"
-                      value={formState.loginId}
                     />
                   </dd>
 
@@ -611,7 +608,6 @@ export function RegisterPage({
                       }
                       placeholder=""
                       type="text"
-                      value={formState.name}
                     />
                   </dd>
 
@@ -634,7 +630,6 @@ export function RegisterPage({
                       }
                       placeholder=""
                       type="text"
-                      value={formState.emailAddress}
                     />
                   </dd>
 
@@ -657,7 +652,6 @@ export function RegisterPage({
                       }
                       placeholder=""
                       type="password"
-                      value={formState.password}
                     />
                   </dd>
 
@@ -682,7 +676,6 @@ export function RegisterPage({
                       }
                       placeholder=""
                       type="password"
-                      value={formState.retypedPassword}
                     />
                   </dd>
                 </dl>
@@ -783,7 +776,6 @@ export function LostPasswordPage({
                   placeholder={messages.t("user.loginId", { fallback: "user.loginId" })}
                   required
                   type="text"
-                  value={formState.loginId}
                 />
               </dd>
               <dd>
@@ -800,7 +792,6 @@ export function LostPasswordPage({
                   placeholder={messages.t("user.email", { fallback: "user.email" })}
                   required
                   type="text"
-                  value={formState.emailAddress}
                 />
               </dd>
             </dl>
@@ -885,7 +876,6 @@ export function ResetPasswordPage({
                   }
                   placeholder={messages.t("user.password", { fallback: "user.password" })}
                   type="password"
-                  value={formState.password}
                 />
               </dd>
               <dd>
@@ -904,7 +894,6 @@ export function ResetPasswordPage({
                     fallback: "validation.retypePassword",
                   })}
                   type="password"
-                  value={formState.retypedPassword}
                 />
               </dd>
             </dl>

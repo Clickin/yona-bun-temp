@@ -37,19 +37,12 @@ export async function expectLegacyLiveHtmlParity(
 
       // These are deliberate SPA/REST modernization boundaries, not UI parity drift.
       // Form actions are replaced by React submit handlers and REST mutations, CSRF
-      // is transported through runtime/bootstrap headers, value-like state is owned
-      // by React at runtime, autofocus is browser behavior rather than layout,
-      // inline style text is compared after browser serialization whitespace is
-      // normalized, and relative date text in directory name tags is volatile.
-      // Layout-relevant markup remains compared.
-      const spaRestBoundaryAttributeNames = new Set([
-        "action",
-        "autofocus",
-        "checked",
-        "data-reactroot",
-        "selected",
-        "value",
-      ]);
+      // is transported through runtime/bootstrap headers, autofocus is browser
+      // behavior rather than layout, inline style text is compared after browser
+      // serialization whitespace is normalized, and relative date text in directory
+      // name tags is volatile. Stable form state attributes like value, checked,
+      // and selected remain compared unless a route adds an explicit local boundary.
+      const spaRestBoundaryAttributeNames = new Set(["autofocus", "data-reactroot"]);
       const booleanAttributeNames = new Set(["disabled", "readonly", "required"]);
 
       function normalizeAttributeValue(name: string, value: string) {
@@ -98,7 +91,12 @@ export async function expectLegacyLiveHtmlParity(
         )) {
           const isVolatileRelativeDateTitle =
             tag === "strong" && attribute.name === "title" && element.closest(".name-tag");
-          if (spaRestBoundaryAttributeNames.has(attribute.name) || isVolatileRelativeDateTitle) {
+          const isSpaRestFormActionBoundary = tag === "form" && attribute.name === "action";
+          if (
+            spaRestBoundaryAttributeNames.has(attribute.name) ||
+            isSpaRestFormActionBoundary ||
+            isVolatileRelativeDateTitle
+          ) {
             continue;
           }
           attrs[attribute.name] = normalizeAttributeValue(attribute.name, attribute.value);
