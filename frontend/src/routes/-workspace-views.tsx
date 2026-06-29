@@ -191,7 +191,7 @@ export function PublicUserProfilePage(props: {
                 ) : null}
               </div>
               <div className="whoami usf-group">
-                <span className="name">{headlineName}</span>
+                <span className="name">{profile.englishName}</span>
                 <span className="loginid">{profile.loginId ? `@${profile.loginId}` : ""}</span>
                 {showUserEmail && profile.primaryEmailAddress ? (
                   <span className="email">{profile.primaryEmailAddress}</span>
@@ -212,6 +212,8 @@ export function PublicUserProfilePage(props: {
                 {profile.isSiteAdmin ? (
                   <span className="badge label-success">SITE ADMIN</span>
                 ) : null}
+              </div>
+              <div className="user-status">
                 {profile.isBlocked ? <span className="badge label-important">BLOCKED</span> : null}
               </div>
               {profile.sinceLabel ? (

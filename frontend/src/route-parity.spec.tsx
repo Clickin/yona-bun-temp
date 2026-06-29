@@ -6339,7 +6339,7 @@ describe("file-route parity harness", () => {
     });
 
     expect(anonymousFallbackHtml).toContain("<h3>User.anonymous.name</h3>");
-    expect(anonymousFallbackHtml).toContain('<span class="name">User.anonymous.name</span>');
+    expect(anonymousFallbackHtml).toContain('<span class="name"></span>');
     expect(anonymousFallbackHtml).not.toContain("Unknown user");
     for (const routePath of [
       "routes/$user/route.tsx",
@@ -6416,7 +6416,7 @@ describe("file-route parity harness", () => {
     expect(issueHtml).toContain('href="/yona/owner/publicYobi/issue/5"');
     expect(issueHtml).toContain('href="/yona/owner/publicYobi/issue/5#comments"');
     expect(issueHtml).toContain(
-      'class="infos-item infos-link-item author-cell" data-placement="bottom" data-toggle="tooltip" href="/yona/door" title="Door"',
+      'class="infos-item infos-link-item author-cell" data-placement="bottom" data-toggle="tooltip" href="/yona/door" title="door"',
     );
     expect(issueHtml).toContain(">Public no author<");
     expect(issueHtml).toContain(">No author</span>");

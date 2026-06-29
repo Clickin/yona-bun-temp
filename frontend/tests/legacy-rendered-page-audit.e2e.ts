@@ -602,9 +602,49 @@ test("renders legacy audited anchors for /sites/massmail", async ({ page }) => {
   await expectLegacySignals(page, ["site-breadcrumb-outer", "mail"], ["site-breadcrumb-outer"]);
 });
 
-test("renders legacy audited anchors for /admin profile", async ({ page }) => {
+test("admin public profile matches live legacy rendered HTML structure", async ({ page }) => {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
+  await page.route("**/api/v1/users/admin/profile*", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        daysAgo: 14,
+        issueItems: [],
+        memberProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-128.png",
+          connectedSocialProviders: [],
+          displayName: "admin",
+          englishName: "",
+          isBlocked: false,
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+          primaryEmailAddress: "admin@admin.me",
+          sinceLabel: "Nov 01, 2012",
+        },
+        pullRequestItems: [],
+        selected: "issues",
+        viewerCanEditProfile: false,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
   await page.goto("/yona/admin");
-  await expectLegacySignals(page, ["user-info-box", "page-wrap-outer"]);
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".site-breadcrumb-outer",
+    legacyPath: "/admin",
+    legacySelector: ".site-breadcrumb-outer",
+  });
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".user-info-box",
+    legacyPath: "/admin",
+    legacySelector: ".user-info-box",
+  });
 });
 
 test("renders legacy audited anchors for project home", async ({ page }) => {

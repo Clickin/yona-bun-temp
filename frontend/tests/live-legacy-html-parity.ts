@@ -59,6 +59,7 @@ export async function expectLegacyLiveHtmlParity(
         if (name === "style") {
           return value
             .trim()
+            .replace(/url\((["'])(.*?)\1\)/g, "url($2)")
             .replace(/\s*([:;])\s*/g, "$1")
             .replace(/;$/, "");
         }
