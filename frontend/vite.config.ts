@@ -1,4 +1,4 @@
-import { tanstackRouterGenerator } from "@tanstack/router-plugin/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import type { IncomingMessage } from "node:http";
 import { fileURLToPath, URL } from "node:url";
 import react from "@vitejs/plugin-react";
@@ -78,7 +78,7 @@ export default defineConfig(({ mode }) => {
   return {
     base: basePath === "/" ? "/" : `${basePath}/`,
     plugins: [
-      tanstackRouterGenerator({
+      tanstackRouter({
         generatedRouteTree: "src/routeTree.gen.ts",
         routesDirectory: "src/routes",
         target: "react",
