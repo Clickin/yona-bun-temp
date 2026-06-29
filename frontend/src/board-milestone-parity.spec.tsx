@@ -260,8 +260,7 @@ describe("board/milestone UI parity closure", () => {
     );
 
     expect(layoutSource).toContain("appPath === `/${owner}/${projectName}/posts`");
-    expect(layoutSource).toContain('activeMenu: "board"');
-    expect(layoutSource).toContain('keymapMode: "list"');
+    expect(layoutSource).toContain('return { activeMenu: "board", shellClassName: "board-page" };');
     expect(layoutSource).toContain('shellClassName: "board-page"');
     expect(routeSource).toContain("renderShell={false}");
     expect(routeSource).not.toContain("window.location.search");
@@ -272,6 +271,8 @@ describe("board/milestone UI parity closure", () => {
     expect(html).toContain('class="post-list project-page-wrap"');
     expect(html).toContain('id="option_form"');
     expect(html).toContain('class="board-labels"');
+    expect(html).toContain('href="#helpKeys"');
+    expect(html).toContain('class="modal hide fade keymap-help"');
   });
 
   it("lets the project layout route own board form shells", () => {

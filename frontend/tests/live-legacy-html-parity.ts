@@ -19,12 +19,18 @@ export async function expectLegacyLiveHtmlParity(
   ).toBeTruthy();
 
   const legacyUrl = new URL(options.legacyPath, legacyOrigin).toString();
-  const { stdout: legacyHtml } = await execFileAsync("curl", ["-sS", legacyUrl], {
-    maxBuffer: 8 * 1024 * 1024,
-  });
   const selector = options.currentSelector ?? options.legacySelector ?? "body";
   const legacySelector = options.legacySelector ?? selector;
   const currentSelector = options.currentSelector ?? selector;
+  await page.waitForSelector(currentSelector, { state: "attached" });
+  const currentUserAgent = await page.evaluate(() => navigator.userAgent);
+  const { stdout: legacyHtml } = await execFileAsync(
+    "curl",
+    ["-sS", "-A", currentUserAgent, legacyUrl],
+    {
+      maxBuffer: 8 * 1024 * 1024,
+    },
+  );
 
   const signatures = await page.evaluate(
     ({ currentSelector, legacyHtml, legacySelector }) => {
@@ -55,6 +61,7 @@ export async function expectLegacyLiveHtmlParity(
             .replace(/url\((["'])(.*?)\1\)/g, "url($2)")
             .replace(/\s*([:;])\s*/g, "$1")
             .replace(/:0px(?=;|$)/g, ":0")
+            .replace(/(^|[:\s])0px(?=;|\s|$)/g, (_match, prefix) => `${prefix}0`)
             .replace(/;$/, "");
         }
         if (name !== "href" && name !== "src") {

@@ -36,8 +36,8 @@ function ProjectBoardsRouteComponent() {
   const searchParams = readSearchParams(locationHref);
   const filter = searchParams.get("filter") ?? "";
   const labelIds = searchParams.getAll("labelIds").concat(searchParams.getAll("labelIds[]"));
-  const orderBy = searchParams.get("orderBy") ?? "";
-  const orderDir = searchParams.get("orderDir") ?? "";
+  const orderBy = searchParams.get("orderBy") ?? "createdDate";
+  const orderDir = searchParams.get("orderDir") ?? "desc";
   const detailQuery = useQuery({
     ...readProjectContainerQueryOptions(runtimeConfig, {
       ownerName: owner,

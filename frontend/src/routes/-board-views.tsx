@@ -23,7 +23,7 @@ import {
   type MarkdownTasklistToggleInput,
 } from "./-markdown-renderer";
 import { OrganizationHeader, OrganizationMenu } from "./-organization-views";
-import { buildProjectHref, ProjectHeader, ProjectMenu } from "./-project-views";
+import { buildProjectHref, ProjectHeader, ProjectKeymapHelp, ProjectMenu } from "./-project-views";
 import { legacyIssueLabelClassName } from "./-shared";
 import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-view-models";
 
@@ -62,10 +62,8 @@ function LegacyTwoColumnModeCheckboxArea(props: { messages?: LegacyMessageLookup
       id="two-column-mode-checkbox"
       title={legacyMessage(props.messages, "common.two.column.mode")}
     >
-      <label
-        className="checkbox"
-        aria-label={legacyMessage(props.messages, "common.two.column.view")}
-      >
+      {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy common/twoColumnMode.scala.html keeps this label wrapper without htmlFor/aria attributes. */}
+      <label className="checkbox">
         <div className="two-column-icon-border">
           <input id="two-column-mode" type="checkbox" />
           <span className="two-column-mode-text">
@@ -252,7 +250,7 @@ function BoardPagination(props: {
   const currentPage = Math.min(Math.max(1, props.pageNum || 1), pageCount);
 
   if (pageCount <= 1) {
-    return <div className="page-navigation-wrap" id="pagination" />;
+    return <div id="pagination" />;
   }
 
   const pageHref = (pageNum: number) =>
@@ -824,10 +822,12 @@ export function ProjectBoardListPage(props: {
       : null);
 
   const totalRows = (props.posts?.items.length ?? 0) + (props.posts?.notices.length ?? 0);
+  const orderBy = props.orderBy || "createdDate";
+  const orderDir = props.orderDir || "desc";
 
   const pageBody = (
     <div className="post-list project-page-wrap">
-      <div className="search-wrap underline board-toolbar">
+      <div className="search-wrap underline">
         <form
           action={prefixBasePath(
             props.runtimeConfig.basePath,
@@ -846,14 +846,14 @@ export function ProjectBoardListPage(props: {
               boardListHref(props.runtimeConfig, `/${ownerName}/${projectName}/posts`, {
                 filter: String(formData.get("filter") ?? ""),
                 "labelIds[]": formData.getAll("labelIds[]").map(String),
-                orderBy: String(formData.get("orderBy") ?? ""),
-                orderDir: String(formData.get("orderDir") ?? ""),
+                orderBy: String(formData.get("orderBy") ?? orderBy),
+                orderDir: String(formData.get("orderDir") ?? orderDir),
               }),
             );
           }}
         >
-          <input defaultValue={props.orderBy} name="orderBy" type="hidden" />
-          <input defaultValue={props.orderDir} name="orderDir" type="hidden" />
+          <input defaultValue={orderBy} name="orderBy" type="hidden" />
+          <input defaultValue={orderDir} name="orderDir" type="hidden" />
           <div className="search-bar">
             <input
               className="textbox"
@@ -912,8 +912,8 @@ export function ProjectBoardListPage(props: {
               filter={props.filter}
               labelIds={props.labelIds}
               messages={props.messages}
-              orderBy={props.orderBy}
-              orderDir={props.orderDir}
+              orderBy={orderBy}
+              orderDir={orderDir}
               runtimeConfig={props.runtimeConfig}
             />
           ) : null}
@@ -939,16 +939,17 @@ export function ProjectBoardListPage(props: {
           filter={props.filter}
           labelIds={props.labelIds}
           messages={props.messages}
-          orderBy={props.orderBy}
-          orderDir={props.orderDir}
+          orderBy={orderBy}
+          orderDir={orderDir}
           pageNum={props.posts.pageNum}
           pageSize={props.posts.pageSize}
           runtimeConfig={props.runtimeConfig}
           totalCount={props.posts.totalCount}
         />
       ) : (
-        <div className="page-navigation-wrap" id="pagination" />
+        <div id="pagination" />
       )}
+      {shellDetail ? <ProjectKeymapHelp detail={shellDetail} mode="list" section="board" /> : null}
     </div>
   );
 
@@ -962,12 +963,7 @@ export function ProjectBoardListPage(props: {
         <ProjectHeader detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       ) : null}
       {shellDetail ? (
-        <ProjectMenu
-          activeMenu="board"
-          detail={shellDetail}
-          keymapMode="list"
-          runtimeConfig={props.runtimeConfig}
-        />
+        <ProjectMenu activeMenu="board" detail={shellDetail} runtimeConfig={props.runtimeConfig} />
       ) : null}
       <div className="page-wrap-outer">{pageBody}</div>
     </main>

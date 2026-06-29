@@ -945,7 +945,7 @@ export function ProjectNotFoundPage(props: {
   );
 }
 
-function ProjectKeymapHelp(props: {
+export function ProjectKeymapHelp(props: {
   detail: ProjectDetailViewModel;
   mode?: "detail" | "list";
   section: ProjectMenuActive;
@@ -960,7 +960,7 @@ function ProjectKeymapHelp(props: {
   const sectionTitleKey = projectKeymapSectionTitle(section, mode);
 
   return (
-    <div className="pull-left" style={{ marginLeft: 55, padding: "10px 0" }}>
+    <div className="pull-left" style={{ padding: "10px 0", marginLeft: 55 }}>
       <a
         className="ybtn ybtn-inverse ybtn-mini"
         data-toggle="modal"
@@ -1060,22 +1060,24 @@ function ProjectKeymapHelp(props: {
                 />
               </div>
             </div>
-            {section === "issue" && mode === "detail" ? (
-              <div className="row-fluid mt20">
-                <div className="span12">
-                  <h5>
-                    {messages.t("search.menu.issue.comments", {
-                      fallback: "search.menu.issue.comments",
-                    })}
-                  </h5>
-                  <ProjectKeymapRow
-                    keys={["SHIFT", ctrlKey, "ENTER"]}
-                    label="button.commentAndNextState.closed"
-                    messages={messages.t}
-                  />
-                </div>
+            <div className="row-fluid mt20">
+              <div className="span12">
+                {section === "issue" && mode === "detail" ? (
+                  <>
+                    <h5>
+                      {messages.t("search.menu.issue.comments", {
+                        fallback: "search.menu.issue.comments",
+                      })}
+                    </h5>
+                    <ProjectKeymapRow
+                      keys={["SHIFT", ctrlKey, "ENTER"]}
+                      label="button.commentAndNextState.closed"
+                      messages={messages.t}
+                    />
+                  </>
+                ) : null}
               </div>
-            ) : null}
+            </div>
           </div>
         </div>
 

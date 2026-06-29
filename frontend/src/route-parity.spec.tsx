@@ -2573,7 +2573,8 @@ describe("file-route parity harness", () => {
     expect(listHtml).toContain('<span class="help-inline">Next page</span>');
     expect(listHtml).toContain('class="page-wrap-outer"');
     expect(listHtml).toContain('<div class="post-list project-page-wrap">');
-    expect(listHtml).toContain('<div class="search-wrap underline board-toolbar">');
+    expect(listHtml).toContain('<div class="search-wrap underline">');
+    expect(listHtml).not.toContain("board-toolbar");
     expect(listHtml).toContain('id="option_form"');
     expect(listHtml).toContain('method="get"');
     expect(listHtml).toContain('class="pull-left"');

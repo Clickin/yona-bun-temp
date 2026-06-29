@@ -154,7 +154,7 @@ function projectLayoutShell(
     return { activeMenu: "code" };
   }
   if (appPath === `/${owner}/${projectName}/posts`) {
-    return { activeMenu: "board", keymapMode: "list", shellClassName: "board-page" };
+    return { activeMenu: "board", shellClassName: "board-page" };
   }
   if (
     appPath === `/${owner}/${projectName}/postform` ||
