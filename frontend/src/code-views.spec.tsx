@@ -1495,6 +1495,11 @@ describe("CodeCommitDetailPage", () => {
     );
 
     expect(html).toContain("The repository is empty!");
+    expect(html).toContain(
+      '<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid">',
+    );
+    expect(html).not.toContain('class="code-browse-wrap"');
+    expect(html).not.toContain("code-nohead-wrap");
     expect(html).toContain("Create a new local repository by cloning");
     expect(html).toContain("git clone http://example.test/owner/projectYobi.git projectYobi");
     expect(html).toContain("git commit -m &quot;Hello Legacy Yona&quot;");
@@ -1523,6 +1528,8 @@ describe("CodeCommitDetailPage", () => {
     );
 
     expect(html).toContain("The repository is empty!");
+    expect(html).not.toContain('class="code-browse-wrap"');
+    expect(html).not.toContain("code-nohead-wrap");
     expect(html).toContain("You can commit your code to this repository.");
     expect(html).toContain("svn co http://example.test/svn/owner/projectYobi");
     expect(html).toContain("echo &quot;# projectYobi&quot; &gt; README.md");

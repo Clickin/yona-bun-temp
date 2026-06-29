@@ -300,13 +300,14 @@ async function routeAuditApis(page: Page, options: RouteAuditOptions = {}) {
       };
     } else if (path === "/projects/admin/sample/code") {
       body = {
-        branch: "main",
-        branches: [{ defaultBranch: true, name: "main" }],
+        branches: [],
         breadcrumbs: [],
         entries: [],
+        noHead: true,
         ownerName: "admin",
         path: "",
         projectName: "sample",
+        selectedBranch: "",
       };
     } else if (path === "/projects/admin/sample/commits") {
       body = {
@@ -893,8 +894,13 @@ test("renders legacy audited anchors for project reviews", async ({ page }) => {
   await expectLegacySignals(page, ["project-header-outer", "project-menu-outer"]);
 });
 
-test("project code shell matches live legacy rendered HTML structure", async ({ page }) => {
+test("project code page matches live legacy rendered HTML structure", async ({ page }) => {
   await expectLivePublicSampleProjectShell(page, "/admin/sample/code");
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page-wrap-outer",
+    legacyPath: "/admin/sample/code",
+    legacySelector: ".page-wrap-outer",
+  });
 });
 
 test("renders code, pull request, and review anchors on a mobile viewport", async ({ page }) => {
