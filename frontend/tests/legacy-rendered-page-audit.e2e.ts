@@ -158,6 +158,7 @@ function livePublicSampleWatcher() {
 
 type RouteAuditOptions = {
   anonymousSession?: boolean;
+  enabledSocialProviders?: string[];
   issueBodyMarkdown?: string;
   issueTitle?: string;
   projectContainer?: ReturnType<typeof projectContainer>;
@@ -221,7 +222,7 @@ async function routeAuditApis(page: Page, options: RouteAuditOptions = {}) {
     } else if (path === "/auth/capabilities") {
       body = {
         emailVerificationEnabled: false,
-        enabledSocialProviders: [],
+        enabledSocialProviders: options.enabledSocialProviders ?? [],
         signupRequireConfirm: false,
         socialLoginOnly: false,
       };
@@ -717,6 +718,28 @@ test("projects directory matches live legacy rendered HTML structure", async ({ 
     currentSelector: ".all-projects",
     legacyPath: "/projects",
     legacySelector: ".all-projects",
+  });
+});
+
+test("login form matches live legacy rendered HTML structure", async ({ page }) => {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
+  await page.unroute("**/api/v1/**");
+  await routeAuditApis(page, {
+    anonymousSession: true,
+    enabledSocialProviders: ["github", "google"],
+  });
+  await page.goto("/yona/");
+  await page.locator('.gnb-usermenu a[href$="/users/signupform"]').click();
+  await expect(page).toHaveURL(/\/yona\/users\/signupform$/);
+  await page.locator(".signup-form-wrap a.go-login").click();
+  await expect(page).toHaveURL(/\/yona\/users\/loginform$/);
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page.full",
+    legacyPath: "/users/loginform",
+    legacySelector: ".page.full",
   });
 });
 
