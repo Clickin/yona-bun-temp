@@ -541,9 +541,17 @@ test("renders legacy audited anchors for /user/issues", async ({ page }) => {
   await expectLegacySignals(page, ["page-wrap-outer"]);
 });
 
-test("renders legacy audited anchors for /user/files", async ({ page }) => {
+test("user files page matches live legacy rendered HTML structure", async ({ page }) => {
+  test.skip(
+    !process.env.LEGACY_YONA_ORIGIN,
+    "Set LEGACY_YONA_ORIGIN=http://192.168.45.10:9000 to compare live legacy HTML.",
+  );
   await page.goto("/yona/user/files");
-  await expectLegacySignals(page, ["attachment-files"]);
+  await expectLegacyLiveHtmlParity(page, {
+    currentSelector: ".page-wrap-outer",
+    legacyPath: "/user/files",
+    legacySelector: ".page-wrap-outer",
+  });
 });
 
 test("renders legacy audited anchors for /user/editform", async ({ page }) => {

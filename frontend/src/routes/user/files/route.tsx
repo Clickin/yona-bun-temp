@@ -294,6 +294,7 @@ function MySeriesMenuTabs({
       <li className="active">
         <a href={appHref(basePath, "/user/files")}>{legacyMessage(messages, "user.files")}</a>
       </li>
+      <li></li>
     </ul>
   );
 }
