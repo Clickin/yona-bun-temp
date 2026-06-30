@@ -68,6 +68,15 @@ test("verification success matches legacy user/verified.scala.html screen DOM", 
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopVerifiedMetrics(page)).toEqual({
+    tagLineColor: "rgb(124, 124, 124)",
+    tagLineFontSize: "15.6px",
+    tagLineMarginBottom: "15.6px",
+    tagLineMarginTop: "10px",
+    tagLinePaddingTop: "80px",
+    tagLineWrapMarginBottom: "26px",
+    titleLineHeight: "42px",
+  });
 });
 
 test("invalid verification renders legacy plain not-found body", async ({ page }) => {
@@ -98,6 +107,30 @@ test("invalid verification renders legacy plain not-found body", async ({ page }
     ),
   ).toHaveCount(0);
 });
+
+async function readDesktopVerifiedMetrics(page: Page) {
+  return page.evaluate(() => {
+    const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.reset-password");
+    const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
+    const tagLine = document.querySelector<HTMLElement>(".tag-line-wrap .tag-line");
+    if (!tagLineWrap || !title || !tagLine) {
+      throw new Error("Expected verified metric targets are missing.");
+    }
+
+    const tagLineWrapStyle = getComputedStyle(tagLineWrap);
+    const tagLineStyle = getComputedStyle(tagLine);
+
+    return {
+      tagLineColor: tagLineStyle.color,
+      tagLineFontSize: tagLineStyle.fontSize,
+      tagLineMarginBottom: tagLineStyle.marginBottom,
+      tagLineMarginTop: tagLineStyle.marginTop,
+      tagLinePaddingTop: tagLineWrapStyle.paddingTop,
+      tagLineWrapMarginBottom: tagLineWrapStyle.marginBottom,
+      titleLineHeight: getComputedStyle(title).lineHeight,
+    };
+  });
+}
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
