@@ -205,6 +205,13 @@ function ProjectIssuesBody({
             ) : (
               <>
                 <div className="filter-wrap board">
+                  <MassUpdateToolbar
+                    basePath={runtimeConfig.basePath}
+                    currentUserId={currentUserId}
+                    issues={issues.items}
+                    ownerName={ownerName}
+                    projectName={projectName}
+                  />
                   {issues.items.length > 1 ? (
                     <IssueFilters orderBy={search.orderBy} orderDir={search.orderDir} />
                   ) : null}
@@ -253,8 +260,8 @@ function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string
       {filters.map((filter) => {
         const active = orderBy === filter.field;
         const legacySort = {
-          orderBy: filter.field,
-          orderDir: active && orderDir === "desc" ? "asc" : "desc",
+          orderby: filter.field,
+          orderdir: active && orderDir === "desc" ? "asc" : "desc",
         } as unknown as HTMLAttributes<HTMLAnchorElement>;
         return (
           /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy sort filters use href="#" plus order attrs. */
@@ -270,6 +277,219 @@ function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string
         );
       })}
     </div>
+  );
+}
+
+function MassUpdateToolbar({
+  basePath,
+  currentUserId,
+  issues,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  currentUserId: string;
+  issues: RestIssueListItem[];
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+  const milestones = uniqueMilestones(issues);
+  const labels = uniqueLabels(issues);
+  const users = uniqueUsers(issues, currentUserId);
+
+  return (
+    <div className="mass-update-wrap hide-in-mobile">
+      <form
+        id="mass-update-form"
+        className="mass-update-form pull-left"
+        action={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
+        method="post"
+      >
+        <div className="btn-group check-all">
+          {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update wraps this checkbox in a label. */}
+          <label htmlFor="check-all">
+            <input type="checkbox" id="check-all" data-target="checked-issue" />
+          </label>
+        </div>
+        <MassUpdateDropdown
+          id="state"
+          label={t("issue.update.state")}
+          name="state"
+          options={[
+            { label: t("issue.state.open"), value: "OPEN" },
+            { label: t("issue.state.closed"), value: "CLOSED" },
+          ]}
+        />
+        <div id="assignee" className="btn-group" data-name="assignee.id">
+          <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled>
+            <span className="d-label">{t("issue.update.assignee.id")}</span>
+            <span className="d-caret">
+              <span className="caret"></span>
+            </span>
+          </button>
+          <ul className="dropdown-menu mass-update-list">
+            <li data-value="0">
+              {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
+              <a>{t("issue.noAssignee")}</a>
+            </li>
+            <li data-value={currentUserId}>
+              {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
+              <a>{t("issue.assignToMe")}</a>
+            </li>
+            {users.length ? <li className="divider"></li> : null}
+            {users.map((user) => (
+              <li data-value={user.id} key={user.id}>
+                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
+                <a className="usf-group">
+                  <span className="avatar-wrap smaller">
+                    <img src={user.avatarUrl} width="20" height="20" alt="" />
+                  </span>
+                  <strong className="name">{user.label}</strong>
+                  <span className="loginid">
+                    {" "}
+                    <strong>@</strong>
+                    {user.loginId}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {milestones.length ? (
+          <MassUpdateDropdown
+            id="milestone"
+            label={t("issue.update.milestone.id")}
+            name="milestone.id"
+            options={[
+              { label: t("issue.noMilestone"), value: "-1" },
+              { divider: true, value: "__divider" },
+              ...milestones.map((milestone) => ({
+                label: milestone.title,
+                value: milestone.id,
+              })),
+            ]}
+          />
+        ) : null}
+        {labels.length ? (
+          <>
+            <LabelMassUpdateDropdown
+              id="attaching-label"
+              label={t("issue.update.attachLabel")}
+              listId="attach-label-list"
+              name="attachingLabelIds"
+              options={labels}
+            />
+            <LabelMassUpdateDropdown
+              id="detaching-label"
+              label={t("issue.update.detachLabel")}
+              listId="delete-label-list"
+              name="detachingLabelIds"
+              options={labels}
+            />
+          </>
+        ) : null}
+      </form>
+    </div>
+  );
+}
+
+function MassUpdateDropdown({
+  id,
+  label,
+  name,
+  options,
+}: {
+  id: string;
+  label: string;
+  name: string;
+  options: Array<{ divider?: boolean; label?: string; value: string }>;
+}) {
+  return (
+    <div id={id} className="btn-group" data-name={name}>
+      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled>
+        <span className="d-label">{label}</span>
+        <span className="d-caret">
+          <span className="caret"></span>
+        </span>
+      </button>
+      <ul className="dropdown-menu mass-update-list">
+        {options.map((option) =>
+          option.divider ? (
+            <li className="divider" key={option.value}></li>
+          ) : (
+            <li data-value={option.value} key={option.value}>
+              {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
+              <a>{option.label}</a>
+            </li>
+          ),
+        )}
+      </ul>
+    </div>
+  );
+}
+
+function LabelMassUpdateDropdown({
+  id,
+  label,
+  listId,
+  name,
+  options,
+}: {
+  id: string;
+  label: string;
+  listId: string;
+  name: string;
+  options: Array<{
+    categoryId: string;
+    categoryName: string;
+    id: string;
+    name: string;
+  }>;
+}) {
+  return (
+    <div id={id} className="btn-group" data-name={name}>
+      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled>
+        <span className="d-label">{label}</span>
+        <span className="d-caret">
+          <span className="caret"></span>
+        </span>
+      </button>
+      <ul id={listId} className="dropdown-menu mass-update-list">
+        {groupLabels(options).map((group) => (
+          <LabelMassUpdateGroup group={group} key={group.categoryId} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function LabelMassUpdateGroup({
+  group,
+}: {
+  group: {
+    categoryId: string;
+    categoryName: string;
+    labels: Array<{ id: string; name: string }>;
+  };
+}) {
+  return (
+    <>
+      <li className="disabled" data-category={group.categoryId}>
+        <span>{group.categoryName}</span>
+      </li>
+      {group.labels.map((label) => (
+        <li data-value={label.id} data-category={group.categoryId} key={label.id}>
+          {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
+          <a>
+            <span className="issue-label active list-label" data-label-id={label.id}>
+              {label.name}
+            </span>
+          </a>
+        </li>
+      ))}
+      <li className="divider" data-category={group.categoryId}></li>
+    </>
   );
 }
 
@@ -755,6 +975,98 @@ function issueLabelData(issue: RestIssueListItem) {
     )
     .join("|")
     .concat(issue.labels.length ? "|" : "");
+}
+
+function uniqueMilestones(issues: RestIssueListItem[]) {
+  const milestones = new Map<string, { id: string; title: string }>();
+  for (const issue of issues) {
+    const id = stringField(issue.milestoneId, "");
+    const title = stringField(issue.milestoneTitle, "");
+    if (id && id !== "0" && title && !milestones.has(id)) {
+      milestones.set(id, { id, title });
+    }
+  }
+  return Array.from(milestones.values());
+}
+
+function uniqueLabels(issues: RestIssueListItem[]) {
+  const labels = new Map<
+    string,
+    { categoryId: string; categoryName: string; id: string; name: string }
+  >();
+  for (const issue of issues) {
+    for (const label of issue.labels) {
+      const id = stringField(label.id, "");
+      if (id && !labels.has(id)) {
+        labels.set(id, {
+          categoryId: stringField(label.categoryId, ""),
+          categoryName: stringField(label.categoryName, ""),
+          id,
+          name: label.name,
+        });
+      }
+    }
+  }
+  return Array.from(labels.values());
+}
+
+function groupLabels(
+  labels: Array<{ categoryId: string; categoryName: string; id: string; name: string }>,
+) {
+  const groups = new Map<
+    string,
+    { categoryId: string; categoryName: string; labels: Array<{ id: string; name: string }> }
+  >();
+  for (const label of labels) {
+    const group = groups.get(label.categoryId) ?? {
+      categoryId: label.categoryId,
+      categoryName: label.categoryName,
+      labels: [],
+    };
+    group.labels.push({ id: label.id, name: label.name });
+    groups.set(label.categoryId, group);
+  }
+  return Array.from(groups.values());
+}
+
+function uniqueUsers(issues: RestIssueListItem[], currentUserId: string) {
+  const users = new Map<
+    string,
+    { avatarUrl: string; id: string; label: string; loginId: string }
+  >();
+  for (const issue of issues) {
+    addUser(users, {
+      avatarUrl: stringField(issue.assigneeAvatarUrl, "/assets/images/default-avatar-32.png"),
+      id: stringField((issue as Record<string, unknown>).assigneeUserId, ""),
+      label: stringField(issue.assigneeLabel, ""),
+      loginId: stringField(issue.assigneeLoginId, ""),
+    });
+    addUser(users, {
+      avatarUrl: stringField(issue.authorAvatarUrl, "/assets/images/default-avatar-32.png"),
+      id: stringField((issue as Record<string, unknown>).authorUserId, ""),
+      label: stringField(issue.authorLabel, ""),
+      loginId: stringField(issue.authorLoginId, ""),
+    });
+  }
+  const current = users.get(currentUserId);
+  return [
+    ...(current ? [current] : []),
+    ...Array.from(users.values()).filter((user) => user.id !== currentUserId),
+  ];
+}
+
+function addUser(
+  users: Map<string, { avatarUrl: string; id: string; label: string; loginId: string }>,
+  user: { avatarUrl: string; id: string; label: string; loginId: string },
+) {
+  if (user.id && user.loginId && !users.has(user.id)) {
+    users.set(user.id, {
+      avatarUrl: user.avatarUrl || "/assets/images/default-avatar-32.png",
+      id: user.id,
+      label: user.label || user.loginId,
+      loginId: user.loginId,
+    });
+  }
 }
 
 function countField(issues: ProjectIssueListRestResponse, key: string) {

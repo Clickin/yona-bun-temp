@@ -44,8 +44,14 @@ Mode: read-only audit, no files edited by the explorer
 ## 2026-07-01 Project Issue Populated Row Follow-Up
 
 - Extended the same flat project issue list route to render the populated `issue/partial_list.scala.html` one-row branch with `.post-list-wrap.row-fluid`, legacy row id/href/data hooks, mass-update checkbox metadata, title/author/date/milestone/count/label stack, assignee avatar rail, overdue due-date rail, Excel action, keymap trigger, and pagination.
-- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now maps existing REST issue item fields directly into the legacy row DOM. The sort filter container remains legacy-conditional and is empty for a single visible issue, matching `partial_list_wrap.scala.html`; mass-update dropdown behavior remains a separate interaction slice.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now maps existing REST issue item fields directly into the legacy row DOM. The sort filter container remains legacy-conditional and is empty for a single visible issue, matching `partial_list_wrap.scala.html`.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` now includes the RED-to-GREEN populated `/admin/sample/issues?filter=bug` whole-screen DOM comparison alongside the empty-state proof.
+
+## 2026-07-01 Project Issue Mass Update Toolbar Follow-Up
+
+- Restored the visible `issue/partial_massupdate.scala.html` toolbar in the flat project issue list for non-empty member-visible issue lists, including `#mass-update-form`, `#check-all`, state/assignee/milestone/attach-label/detach-label dropdown shells, disabled buttons, label category/divider rows, and the multi-row sort filter branch from `partial_list_wrap.scala.html`.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` derives the toolbar's visible options from the loaded issue list REST items for this screen; mutation behavior remains on the existing REST/TanStack mass-update boundary and is not re-proved by this DOM slice.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` now includes the RED-to-GREEN `/admin/sample/issues?filter=bulk` whole-screen DOM comparison for the multi-row toolbar/filter state.
 
 ## 2026-06-27 Issue Detail Layout Follow-Up
 

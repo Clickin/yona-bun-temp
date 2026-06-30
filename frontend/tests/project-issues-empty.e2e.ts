@@ -11,6 +11,12 @@ const EXPECTED_PROJECT_ISSUES_EMPTY = `
 
 const POPULATED_SPAN10 = `<div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active" data-pjax=""><a href="#" state="open">Open<span class="num-badge">1</span></a></li><li data-pjax=""><a href="#" state="closed">Closed<span class="num-badge">2</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="filter-wrap board"></div><ul class="post-list-wrap row-fluid"><li class="post-item title" id="issue-item-42" data-item="issue-item" data-value="dev 11 Fix flaky issue" href="__BASE_PATH__/admin/sample/issue/11"><div class="span9 span-hard-wrap"><label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-toggle="issue-checkbox" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label><div for="issue-42" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="dev">Dev Member</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 1, 2026">Jul 1, 2026</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote"><span class="count-groups item-icon strong"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><a href="#" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</a><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="mr20 mt10 pull-right overdue" data-toggle="tooltip" data-placement="top" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div></div></li></ul><div class="pull-left" style="padding:10px"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div class="pull-left" style="padding:10px 0px;margin-left:55px"><a href="#helpKeys" data-toggle="modal" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</a></div><div id="pagination" data-total="3"></div></div>`;
 
+const MASS_UPDATE_TOOLBAR = `<div class="mass-update-wrap hide-in-mobile"><form id="mass-update-form" class="mass-update-form pull-left" action="__BASE_PATH__/admin/sample/issues" method="post"><div class="btn-group check-all"><label for="check-all"><input type="checkbox" id="check-all" data-target="checked-issue"></label></div><div id="state" class="btn-group" data-name="state"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="OPEN"><a>Open</a></li><li data-value="CLOSED"><a>Closed</a></li></ul></div><div id="assignee" class="btn-group" data-name="assignee.id"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="0"><a>No assignee</a></li><li data-value="1"><a>Assign to me</a></li><li class="divider"></li><li data-value="1"><a class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></li><li data-value="2"><a class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></li></ul></div><div id="milestone" class="btn-group" data-name="milestone.id"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update milestone</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="-1"><a>No milestone</a></li><li class="divider"></li><li data-value="5"><a>v1.0</a></li></ul></div><div id="attaching-label" class="btn-group" data-name="attachingLabelIds"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="attach-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><a><span class="issue-label active list-label" data-label-id="8">bug</span></a></li><li class="divider" data-category="3"></li></ul></div><div id="detaching-label" class="btn-group" data-name="detachingLabelIds"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="delete-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><a><span class="issue-label active list-label" data-label-id="8">bug</span></a></li><li class="divider" data-category="3"></li></ul></div></form></div>`;
+const POPULATED_SPAN10_WITH_TOOLBAR = POPULATED_SPAN10.replace(
+  '<div class="filter-wrap board"></div>',
+  `<div class="filter-wrap board">${MASS_UPDATE_TOOLBAR}</div>`,
+);
+
 const EXPECTED_PROJECT_ISSUES_POPULATED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
   'value="bug"',
@@ -21,7 +27,34 @@ const EXPECTED_PROJECT_ISSUES_POPULATED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceA
   )
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${POPULATED_SPAN10}</div></div></div></div>\n<footer`,
+    `${POPULATED_SPAN10_WITH_TOOLBAR}</div></div></div></div>\n<footer`,
+  );
+
+const SORT_FILTERS = `<div class="filters pull-right"><a href="#" orderby="dueDate" orderdir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Due Date</a><a href="#" orderby="updatedDate" orderdir="asc" class="filter active"><i class="ico btn-gray-arrow down"></i>Updated</a><a href="#" orderby="createdDate" orderdir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Created</a><a href="#" orderby="numOfComments" orderdir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Comments</a></div>`;
+const SECOND_ISSUE_ROW = `<li class="post-item title" id="issue-item-43" data-item="issue-item" data-value="admin 12 Follow up issue" href="__BASE_PATH__/admin/sample/issue/12"><div class="span9 span-hard-wrap"><label for="issue-43" class="mass-update-check hide-in-mobile"><input id="issue-43" type="checkbox" name="checked-issue" data-toggle="issue-checkbox" data-issue-id="43" data-issue-labels=""></label><div for="issue-43" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/12" class="title"><span class="post-id">#12</span></a><a href="__BASE_PATH__/admin/sample/issue/12" class="title">Follow up issue</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="admin">Site Admin</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 2, 2026">Jul 2, 2026</span><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><div class="empty-avatar-wrap">&nbsp;</div></div></div></li>`;
+const BULK_SPAN10 = POPULATED_SPAN10.replace(
+  'Open<span class="num-badge">1</span>',
+  'Open<span class="num-badge">2</span>',
+)
+  .replace(
+    '<div class="filter-wrap board"></div>',
+    `<div class="filter-wrap board">${MASS_UPDATE_TOOLBAR}${SORT_FILTERS}</div>`,
+  )
+  .replace('</ul><div class="pull-left"', `${SECOND_ISSUE_ROW}</ul><div class="pull-left"`)
+  .replace("filter=bug&amp;format=xls", "filter=bulk&amp;format=xls")
+  .replace('data-total="3"', 'data-total="1"');
+
+const EXPECTED_PROJECT_ISSUES_BULK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
+  'value="empty"',
+  'value="bulk"',
+)
+  .replaceAll(
+    '>Open<span class="num-badge pull-right">0</span>',
+    '>Open<span class="num-badge pull-right">2</span>',
+  )
+  .replace(
+    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
+    `${BULK_SPAN10}</div></div></div></div>\n<footer`,
   );
 
 test("empty project issue list matches legacy issue/list.scala.html DOM", async ({ page }) => {
@@ -59,7 +92,25 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
   );
 });
 
-async function mockProjectIssues(page: Page, state: "empty" | "populated" = "empty") {
+test("project issue list mass update toolbar matches legacy partial_massupdate.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "bulk");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bulk`);
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(2);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_ISSUES_BULK.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+async function mockProjectIssues(page: Page, state: "bulk" | "empty" | "populated" = "empty") {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -108,66 +159,103 @@ async function mockProjectIssues(page: Page, state: "empty" | "populated" = "emp
       contentType: "application/json",
       body: JSON.stringify(
         state === "populated"
-          ? {
-              closedIssueCount: 2,
-              draftItems: [],
-              items: [
-                {
-                  assigneeAvatarUrl: "/assets/images/default-avatar-32.png",
-                  assigneeLabel: "Site Admin",
-                  assigneeLoginId: "admin",
-                  authorAvatarUrl: "/assets/images/default-avatar-32.png",
-                  authorLabel: "Dev Member",
-                  authorLoginId: "dev",
-                  commentCount: 3,
-                  createdLabel: "Jul 1, 2026",
-                  dueDateLabel: "Jun 30, 2026",
-                  dueDateOverdue: true,
-                  dueDateText: "Overdue",
-                  id: 42,
-                  issueNumber: 11,
-                  labels: [
-                    {
-                      categoryId: 3,
-                      categoryIsExclusive: false,
-                      categoryName: "bug",
-                      color: "#51aacc",
-                      id: 8,
-                      name: "bug",
-                    },
-                  ],
-                  milestoneId: 5,
-                  milestoneTitle: "v1.0",
-                  ownerName: "admin",
-                  projectName: "sample",
-                  state: "open",
-                  title: "Fix flaky issue",
-                  updatedLabel: "Jul 1, 2026",
-                  voterCount: 1,
-                },
-              ],
-              openIssueCount: 1,
-              ownerName: "admin",
-              pageNum: 1,
-              pageSize: 15,
-              projectName: "sample",
-              totalCount: 3,
-              totalPages: 3,
-            }
-          : {
-              closedIssueCount: 0,
-              draftItems: [],
-              items: [],
-              openIssueCount: 0,
-              ownerName: "admin",
-              pageNum: 1,
-              pageSize: 15,
-              projectName: "sample",
-              totalCount: 0,
-            },
+          ? populatedIssueResponse()
+          : state === "bulk"
+            ? {
+                closedIssueCount: 2,
+                draftItems: [],
+                items: [
+                  populatedIssueResponse().items[0],
+                  {
+                    authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                    authorLabel: "Site Admin",
+                    authorLoginId: "admin",
+                    commentCount: 0,
+                    createdLabel: "Jul 2, 2026",
+                    id: 43,
+                    issueNumber: 12,
+                    labels: [],
+                    ownerName: "admin",
+                    projectName: "sample",
+                    state: "open",
+                    title: "Follow up issue",
+                    updatedLabel: "Jul 2, 2026",
+                    voterCount: 0,
+                  },
+                ],
+                openIssueCount: 2,
+                ownerName: "admin",
+                pageNum: 1,
+                pageSize: 15,
+                projectName: "sample",
+                totalCount: 2,
+                totalPages: 1,
+              }
+            : {
+                closedIssueCount: 0,
+                draftItems: [],
+                items: [],
+                openIssueCount: 0,
+                ownerName: "admin",
+                pageNum: 1,
+                pageSize: 15,
+                projectName: "sample",
+                totalCount: 0,
+              },
       ),
     });
   });
+}
+
+function populatedIssueResponse() {
+  return {
+    closedIssueCount: 2,
+    draftItems: [],
+    items: [
+      {
+        assigneeAvatarUrl: "/assets/images/default-avatar-32.png",
+        assigneeLabel: "Site Admin",
+        assigneeLoginId: "admin",
+        assigneeUserId: 1,
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorLabel: "Dev Member",
+        authorLoginId: "dev",
+        authorUserId: 2,
+        commentCount: 3,
+        createdLabel: "Jul 1, 2026",
+        dueDateLabel: "Jun 30, 2026",
+        dueDateOverdue: true,
+        dueDateText: "Overdue",
+        id: 42,
+        issueNumber: 11,
+        labels: [
+          {
+            categoryId: 3,
+            categoryIsExclusive: false,
+            categoryName: "bug",
+            color: "#51aacc",
+            id: 8,
+            name: "bug",
+          },
+        ],
+        milestoneId: 5,
+        milestoneTitle: "v1.0",
+        ownerName: "admin",
+        projectName: "sample",
+        state: "open",
+        title: "Fix flaky issue",
+        updatedLabel: "Jul 1, 2026",
+        voterCount: 1,
+      },
+    ],
+    openIssueCount: 1,
+    ownerName: "admin",
+    pageNum: 1,
+    pageSize: 15,
+    projectName: "sample",
+    totalCount: 3,
+    totalPages: 3,
+  };
 }
 
 async function canonicalizeScreenRoots(page: Page) {
