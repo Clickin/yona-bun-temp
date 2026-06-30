@@ -14,10 +14,12 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
-type OrganizationPullRequestsSearch = {
+export type OrganizationPullRequestsSearch = {
   filter: string;
   pageNum: number;
 };
+
+export type OrganizationPullRequestsCategory = "closed" | "open";
 
 export const Route = createFileRoute("/organizations/$organizationName/pullrequests")({
   component: OrganizationPullRequestsRoute,
@@ -31,28 +33,43 @@ export const Route = createFileRoute("/organizations/$organizationName/pullreque
 
 function OrganizationPullRequestsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { organizationName } = Route.useParams();
+  const search = Route.useSearch();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <OrganizationPullRequestsScreen runtimeConfig={runtimeConfig} />
+          <OrganizationPullRequestsPage
+            category="open"
+            organizationName={organizationName}
+            runtimeConfig={runtimeConfig}
+            search={search}
+          />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function OrganizationPullRequestsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { organizationName } = Route.useParams();
-  const search = Route.useSearch();
+export function OrganizationPullRequestsPage({
+  category,
+  organizationName,
+  runtimeConfig,
+  search,
+}: {
+  category: OrganizationPullRequestsCategory;
+  organizationName: string;
+  runtimeConfig: RuntimeConfig;
+  search: OrganizationPullRequestsSearch;
+}) {
   const organizationQuery = useQuery({
     queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
   });
   const pullRequestsQuery = useQuery(
     organizationPullRequestListQueryOptions(runtimeConfig, {
-      category: "open",
+      category,
       organizationName,
       ...search,
     }),
@@ -68,6 +85,7 @@ function OrganizationPullRequestsScreen({ runtimeConfig }: { runtimeConfig: Runt
       pullRequests={pullRequestsQuery.data}
       runtimeConfig={runtimeConfig}
       search={search}
+      selectedCategory={category}
     />
   );
 }
@@ -77,17 +95,28 @@ function OrganizationPullRequestsBody({
   pullRequests,
   runtimeConfig,
   search,
+  selectedCategory,
 }: {
   organization: OrganizationContainer;
   pullRequests: PullRequestListResponse;
   runtimeConfig: RuntimeConfig;
   search: OrganizationPullRequestsSearch;
+  selectedCategory: OrganizationPullRequestsCategory;
 }) {
   const { t } = useLegacyMessages();
   const organizationName = stringField(organization.organizationName, "");
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
+  const openAction = prefixBasePath(
+    runtimeConfig.basePath,
+    `/organizations/${organizationName}/pullrequests`,
+  );
+  const closedAction = prefixBasePath(
+    runtimeConfig.basePath,
+    `/organizations/${organizationName}/closedPullrequests`,
+  );
+  const searchAction = selectedCategory === "closed" ? closedAction : openAction;
 
   return (
     <>
@@ -106,15 +135,7 @@ function OrganizationPullRequestsBody({
         <div className="project-page-wrap">
           <div {...pjaxContainer} className="row-fluid cb">
             <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
-              <form
-                id="search"
-                name="search"
-                action={prefixBasePath(
-                  runtimeConfig.basePath,
-                  `/organizations/${organizationName}/pullrequests`,
-                )}
-                method="get"
-              >
+              <form id="search" name="search" action={searchAction} method="get">
                 <div className="search">
                   <div className="search-bar">
                     <input
@@ -132,30 +153,16 @@ function OrganizationPullRequestsBody({
             </div>
             <div className="span10 span-hard-wrap" id="span10">
               <ul className="nav nav-tabs nm pullrequeset-tab-menu">
-                <li className="active">
+                <li className={selectedCategory === "open" ? "active" : ""}>
                   {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                  <a
-                    href="#"
-                    data-url={prefixBasePath(
-                      runtimeConfig.basePath,
-                      `/organizations/${organizationName}/pullrequests`,
-                    )}
-                    data-type="state"
-                  >
+                  <a href="#" data-url={openAction} data-type="state">
                     {t("pullRequest.state.open")}
                     <span className="num-badge">{pullRequests.openCount}</span>
                   </a>
                 </li>
-                <li className="">
+                <li className={selectedCategory === "closed" ? "active" : ""}>
                   {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                  <a
-                    href="#"
-                    data-url={prefixBasePath(
-                      runtimeConfig.basePath,
-                      `/organizations/${organizationName}/closedPullrequests`,
-                    )}
-                    data-type="state"
-                  >
+                  <a href="#" data-url={closedAction} data-type="state">
                     {t("pullRequest.state.closed")}
                     <span className="num-badge">{pullRequests.closedCount}</span>
                   </a>

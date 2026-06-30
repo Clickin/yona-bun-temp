@@ -9,6 +9,23 @@ const EXPECTED_ORGANIZATION_PULLREQUESTS = `
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
+const EXPECTED_ORGANIZATION_CLOSED_PULLREQUESTS = EXPECTED_ORGANIZATION_PULLREQUESTS.replace(
+  'action="__BASE_PATH__/organizations/weblabs/pullrequests"',
+  'action="__BASE_PATH__/organizations/weblabs/closedPullrequests"',
+)
+  .replace('value="fix"', 'value="done"')
+  .replace(
+    '<li class="active"><a href="#" data-url="__BASE_PATH__/organizations/weblabs/pullrequests" data-type="state">Open<span class="num-badge">1</span></a></li><li class=""><a href="#" data-url="__BASE_PATH__/organizations/weblabs/closedPullrequests" data-type="state">Closed<span class="num-badge">2</span></a></li>',
+    '<li class=""><a href="#" data-url="__BASE_PATH__/organizations/weblabs/pullrequests" data-type="state">Open<span class="num-badge">1</span></a></li><li class="active"><a href="#" data-url="__BASE_PATH__/organizations/weblabs/closedPullrequests" data-type="state">Closed<span class="num-badge">2</span></a></li>',
+  )
+  .replaceAll("/pullRequest/3", "/pullRequest/4")
+  .replaceAll(">3<", ">4<")
+  .replace("Fix login redirect", "Ship release")
+  .replaceAll("Jul 1, 2026", "Jul 2, 2026")
+  .replace('style="width:50%"', 'style="width:100%"')
+  .replace("<span>1</span>", "<span>2</span>")
+  .replace('state open pull-right">Open', 'state merged pull-right">Merged');
+
 test("organization pull request aggregate matches legacy group_pullrequest_list.scala.html DOM", async ({
   page,
 }) => {
@@ -24,6 +41,25 @@ test("organization pull request aggregate matches legacy group_pullrequest_list.
     await canonicalizeHtml(
       page,
       EXPECTED_ORGANIZATION_PULLREQUESTS.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("organization closed pull request aggregate matches legacy group_pullrequest_list.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationPullRequests(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/closedPullrequests?filter=done`);
+  await expect(page.locator("#search")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Pull request");
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_ORGANIZATION_CLOSED_PULLREQUESTS.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
@@ -60,33 +96,36 @@ async function mockOrganizationPullRequests(page: Page) {
     });
   });
   await page.route("**/api/v1/organizations/weblabs/pull-requests**", async (route) => {
+    const url = new URL(route.request().url());
+    const category = url.searchParams.get("category") === "closed" ? "closed" : "open";
+    const isClosed = category === "closed";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        category: "open",
+        category,
         closedCount: 2,
         items: [
           {
-            closedCommentThreadCount: 1,
+            closedCommentThreadCount: isClosed ? 2 : 1,
             commentThreadCount: 2,
             conflict: false,
             contributorLabel: "Dev Member",
             contributorLoginId: "dev",
-            createdLabel: "Jul 1, 2026",
+            createdLabel: isClosed ? "Jul 2, 2026" : "Jul 1, 2026",
             fromBranch: "feature/login",
             fromOwnerName: "weblabs",
             fromProjectName: "sample",
-            id: 3,
+            id: isClosed ? 4 : 3,
             ownerName: "weblabs",
             projectName: "sample",
-            pullRequestNumber: 3,
+            pullRequestNumber: isClosed ? 4 : 3,
             receiverLabel: "Site Admin",
             receiverLoginId: "admin",
             reviewerCount: 1,
-            state: "open",
-            title: "Fix login redirect",
+            state: isClosed ? "merged" : "open",
+            title: isClosed ? "Ship release" : "Fix login redirect",
             toBranch: "main",
-            updatedLabel: "Jul 1, 2026",
+            updatedLabel: isClosed ? "Jul 2, 2026" : "Jul 1, 2026",
           },
         ],
         openCount: 1,
