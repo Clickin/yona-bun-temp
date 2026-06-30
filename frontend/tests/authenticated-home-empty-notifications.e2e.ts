@@ -155,6 +155,78 @@ const EXPECTED_DIRECT_NOTIFICATIONS_WITH_NOTIFICATION = EXPECTED_DIRECT_NOTIFICA
   </li>`,
 );
 
+const EXPECTED_SIDEBAR_FAVORITE_TAB = `
+<div id="usermenu-tab-content-list" class="tab-content">
+  <div class="search-result">
+    <div class="group">
+      <input class="search-input org-search" type="text" autocomplete="off" placeholder="Type name">
+      <span class="bar"></span>
+    </div>
+    <ul class="tab-pane user-ul " id="organizations">
+      <li class="org-li">
+        <div class="org-list project-flex-container all-orgs">
+          <div class="project-item project-item-container">
+            <div class="flex-item site-logo"><i class="yobicon-angle-right"></i></div>
+            <div class="projectName-owner all-org-names flex-item">
+              <div class="project-name org-name flex-item">admin</div>
+              <div class="project-owner flex-item sub-project-counter"></div>
+            </div>
+          </div>
+          <div class="star-org flex-item"></div>
+        </div>
+        <ul class="project-ul">
+          <li class="user-li show-always" data-location="__BASE_PATH__/admin/sample">
+            <div class="project-list project-flex-container" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="Sample project">
+              <div class="project-item project-item-container">
+                <div class="flex-item site-logo all-project-names"><i class="project-avatar"><img class="logo" src="/assets/images/project_default_logo.png"></i></div>
+                <div class="projectName-owner flex-item"><div class="project-name flex-item">sample </div></div>
+              </div>
+              <div class="star-project flex-item" data-project-id="7"><i class="star starred material-icons">star</i></div>
+            </div>
+          </li>
+        </ul>
+      </li>
+      <li class="org-li favored">
+        <div class="org-list project-flex-container all-orgs">
+          <div class="project-item project-item-container">
+            <div class="flex-item site-logo"><i class="yobicon-angle-right"></i></div>
+            <div class="projectName-owner all-org-names flex-item">
+              <div class="project-name org-name flex-item">weblabs</div>
+              <div class="project-owner flex-item">1</div>
+            </div>
+          </div>
+          <div class="star-org flex-item" data-organization-id="11"><i class="star starred material-icons">star</i></div>
+        </div>
+        <ul class="project-ul">
+          <li class="user-li hide" data-location="__BASE_PATH__/weblabs/playground">
+            <div class="project-list project-flex-container" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="Internal playground">
+              <div class="project-item project-item-container">
+                <div class="flex-item site-logo all-project-names"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
+                <div class="projectName-owner flex-item"><div class="project-name flex-item">playground <i class="yobicon-lock yobicon-small"></i></div></div>
+              </div>
+              <div class="star-project flex-item" data-project-id="8"><i class="star material-icons">star</i></div>
+            </div>
+          </li>
+        </ul>
+      </li>
+      <ul class="etc-favorites"></ul>
+      <li class="user-li" data-location="__BASE_PATH__/admin/member">
+        <div class="project-list project-flex-container">
+          <div class="project-item project-item-container">
+            <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
+            <div class="projectName-owner flex-item">
+              <div class="project-name flex-item">member </div>
+              <div class="project-owner flex-item"><a href="__BASE_PATH__/admin">admin</a></div>
+            </div>
+          </div>
+          <div class="star-project flex-item" data-project-id="9"><i class="star material-icons">star</i></div>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+`;
+
 const EXPECTED_SIDEBAR_PROJECT_TAB = `
 <div id="usermenu-tab-content-list" class="tab-content">
   <div>
@@ -338,6 +410,27 @@ test("authenticated home empty notifications matches legacy index notifications 
   });
 });
 
+test("authenticated root sidebar favorite tab matches legacy index/myOrganizationList DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+  await mockWorkspaceSidebarProjects(page);
+
+  await page.goto(`${basePath}/`);
+  await page.locator("#sidebar-open-btn a").click();
+  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
+  await expect(page.locator("#usermenu-tab-content-list #organizations")).toBeVisible();
+  await expect(page.locator("#usermenu-tab-content-list .org-li")).toHaveCount(2);
+
+  expect(await canonicalizeSelector(page, "#usermenu-tab-content-list")).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_SIDEBAR_FAVORITE_TAB.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 test("authenticated root sidebar project tab matches legacy index/myProjectList DOM", async ({
   page,
 }) => {
@@ -346,7 +439,6 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
   await mockWorkspaceSidebarProjects(page);
 
   await page.goto(`${basePath}/`);
-  await expect(page.locator("#usermenu-tab-content-list")).toContainText("Loading...");
   await page.locator("#sidebar-open-btn a").click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   await page.locator(".myProjectList a").click();
@@ -948,7 +1040,33 @@ async function mockWorkspaceSidebarProjects(page: Page) {
       contentType: "application/json",
       body: JSON.stringify({
         emails: [],
-        favoriteProjects: [],
+        favoriteOrganizations: [
+          {
+            id: 11,
+            name: "weblabs",
+            projectCount: 1,
+            projects: [
+              {
+                favored: false,
+                id: 8,
+                isPrivate: true,
+                logoUrl: "",
+                overview: "Internal playground",
+                ownerName: "weblabs",
+                projectName: "playground",
+              },
+            ],
+          },
+        ],
+        favoriteProjects: [
+          {
+            id: 9,
+            isPrivate: false,
+            logoUrl: "",
+            ownerName: "admin",
+            projectName: "member",
+          },
+        ],
         issueItems: [
           {
             issueNumber: 42,
@@ -984,6 +1102,17 @@ async function mockWorkspaceSidebarProjects(page: Page) {
           sinceLabel: "",
         },
         pullRequestItems: [],
+        ownProjects: [
+          {
+            favored: true,
+            id: 7,
+            isPrivate: false,
+            logoUrl: "/assets/images/project_default_logo.png",
+            overview: "Sample project",
+            ownerName: "admin",
+            projectName: "sample",
+          },
+        ],
         recentProjects: [
           {
             id: 7,
@@ -1067,6 +1196,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "target",
         "title",
         "data-location",
+        "data-organization-id",
         "data-project-id",
         "data-toggle",
         "data-placement",
@@ -1125,6 +1255,7 @@ async function canonicalizeSelector(page: Page, selector: string) {
         "target",
         "title",
         "data-location",
+        "data-organization-id",
         "data-project-id",
         "data-toggle",
         "data-placement",
@@ -1184,6 +1315,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "target",
           "title",
           "data-location",
+          "data-organization-id",
           "data-project-id",
           "data-toggle",
           "data-placement",

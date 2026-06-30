@@ -621,6 +621,7 @@ function AuthenticatedSiteUserMenu({
                 <SidebarTabContent
                   activeTab={activeSidebarTab}
                   basePath={basePath}
+                  sessionLoginId={loginId}
                   workspace={workspaceQuery.data}
                 />
               ) : (
@@ -784,10 +785,12 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
 function SidebarTabContent({
   activeTab,
   basePath,
+  sessionLoginId,
   workspace,
 }: {
   activeTab: "favorite" | "project" | "recent";
   basePath: string;
+  sessionLoginId: string;
   workspace: YonaRecord;
 }) {
   if (activeTab === "project") {
@@ -796,7 +799,231 @@ function SidebarTabContent({
   if (activeTab === "recent") {
     return <SidebarRecentIssueList basePath={basePath} workspace={workspace} />;
   }
+  if (hasSidebarFavoriteData(workspace)) {
+    return (
+      <SidebarOrganizationList
+        basePath={basePath}
+        sessionLoginId={sessionLoginId}
+        workspace={workspace}
+      />
+    );
+  }
   return <>{"Loading..."}</>;
+}
+
+function SidebarOrganizationList({
+  basePath,
+  sessionLoginId,
+  workspace,
+}: {
+  basePath: string;
+  sessionLoginId: string;
+  workspace: YonaRecord;
+}) {
+  const { t } = useLegacyMessages();
+  const ownProjects = recordArray(workspace.ownProjects);
+  const favoriteOrganizations = recordArray(workspace.favoriteOrganizations);
+  const organizations = recordArray(workspace.organizations);
+  const favoriteProjects = recordArray(workspace.favoriteProjects);
+  const loginId = valueString(
+    workspace.loginId ?? (workspace.profile as YonaRecord | undefined)?.loginId,
+    sessionLoginId,
+  );
+  const favoriteOrganizationKeys = new Set(favoriteOrganizations.map(organizationKey));
+  const regularOrganizations: YonaRecord[] = [];
+  for (const organization of organizations) {
+    if (!favoriteOrganizationKeys.has(organizationKey(organization))) {
+      regularOrganizations.push(organization);
+    }
+  }
+
+  if (
+    ownProjects.length === 0 &&
+    favoriteOrganizations.length === 0 &&
+    organizations.length === 0 &&
+    favoriteProjects.length === 0
+  ) {
+    return (
+      <div className="search-result">
+        <div className="group">
+          <input
+            className="search-input org-search"
+            type="text"
+            autoComplete="off"
+            placeholder={t("title.type.name")}
+          />
+          <span className="bar"></span>
+        </div>
+        <div id="organizations" className="no-result tab-pane user-ul">
+          {t("title.no.results")}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="search-result">
+      <div className="group">
+        <input
+          className="search-input org-search"
+          type="text"
+          autoComplete="off"
+          placeholder={t("title.type.name")}
+        />
+        <span className="bar"></span>
+      </div>
+      <ul className="tab-pane user-ul " id="organizations">
+        {ownProjects.length > 0 ? (
+          <li className="org-li">
+            <div className="org-list project-flex-container all-orgs">
+              <div className="project-item project-item-container">
+                <div className="flex-item site-logo">
+                  <i className="yobicon-angle-right"></i>
+                </div>
+                <div className="projectName-owner all-org-names flex-item">
+                  <div className="project-name org-name flex-item">{loginId}</div>
+                  <div className="project-owner flex-item sub-project-counter"></div>
+                </div>
+              </div>
+              <div className="star-org flex-item"></div>
+            </div>
+            <ul className="project-ul">
+              {ownProjects.map((project) => (
+                <SidebarAllProjectItem
+                  basePath={basePath}
+                  favored={booleanValue(project.favored)}
+                  key={projectKey(project)}
+                  project={project}
+                />
+              ))}
+            </ul>
+          </li>
+        ) : null}
+        {favoriteOrganizations.map((organization, index) => (
+          <SidebarOrganizationItem
+            basePath={basePath}
+            favored
+            isLast={index === favoriteOrganizations.length - 1}
+            key={organizationKey(organization)}
+            organization={organization}
+          />
+        ))}
+        {regularOrganizations.map((organization) => (
+          <SidebarOrganizationItem
+            basePath={basePath}
+            favored={false}
+            key={organizationKey(organization)}
+            organization={organization}
+          />
+        ))}
+        <ul className="etc-favorites"></ul>
+        {favoriteProjects.map((project) => (
+          <SidebarProjectItem basePath={basePath} key={projectKey(project)} project={project} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SidebarOrganizationItem({
+  basePath,
+  favored,
+  isLast = false,
+  organization,
+}: {
+  basePath: string;
+  favored: boolean;
+  isLast?: boolean;
+  organization: YonaRecord;
+}) {
+  const organizationName = valueString(organization.organizationName ?? organization.name, "");
+  const organizationId = valueString(organization.id ?? organization.organizationId, "");
+  const projectCount = valueString(
+    organization.projectCount ??
+      organization.projectsCount ??
+      recordArray(organization.projects).length,
+    "",
+  );
+  const projects = recordArray(organization.projects);
+
+  return (
+    <li className={`org-li${isLast ? " favored" : ""}`}>
+      <div className="org-list project-flex-container all-orgs">
+        <div className="project-item project-item-container">
+          <div className="flex-item site-logo">
+            <i className="yobicon-angle-right"></i>
+          </div>
+          <div className="projectName-owner all-org-names flex-item">
+            <div className="project-name org-name flex-item">{organizationName}</div>
+            <div className="project-owner flex-item">{projectCount}</div>
+          </div>
+        </div>
+        <div className="star-org flex-item" data-organization-id={organizationId}>
+          <i className={favored ? "star starred material-icons" : "star material-icons"}>star</i>
+        </div>
+      </div>
+      <ul className="project-ul">
+        {projects.map((project) => (
+          <SidebarAllProjectItem
+            basePath={basePath}
+            favored={booleanValue(project.favored)}
+            key={projectKey(project)}
+            project={project}
+          />
+        ))}
+      </ul>
+    </li>
+  );
+}
+
+function SidebarAllProjectItem({
+  basePath,
+  favored,
+  project,
+}: {
+  basePath: string;
+  favored: boolean;
+  project: YonaRecord;
+}) {
+  const ownerName = valueString(project.ownerName ?? project.owner, "");
+  const projectName = valueString(project.projectName ?? project.name, "");
+  const projectId = valueString(project.id ?? project.projectId, "");
+  const overview = valueString(project.overview, "");
+  const logoUrl = valueString(project.logoUrl ?? project.projectLogoUrl, "");
+  const isPrivate = booleanValue(project.isPrivate);
+  const projectHref = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
+
+  return (
+    <li className={`user-li ${favored ? "show-always" : "hide"}`} data-location={projectHref}>
+      <div
+        className="project-list project-flex-container"
+        data-toggle="popover"
+        data-trigger="hover"
+        data-placement="right"
+        data-content={overview}
+      >
+        <div className="project-item project-item-container">
+          <div className="flex-item site-logo all-project-names">
+            <i className="project-avatar">
+              {logoUrl ? (
+                <img className="logo" src={logoUrl} alt="" />
+              ) : (
+                <span className="dummy-25px"> </span>
+              )}
+            </i>
+          </div>
+          <div className="projectName-owner flex-item">
+            <div className="project-name flex-item">
+              {projectName} {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
+            </div>
+          </div>
+        </div>
+        <div className="star-project flex-item" data-project-id={projectId}>
+          <i className={favored ? "star starred material-icons" : "star material-icons"}>star</i>
+        </div>
+      </div>
+    </li>
+  );
 }
 
 function SidebarProjectList({ basePath, workspace }: { basePath: string; workspace: YonaRecord }) {
@@ -1024,11 +1251,30 @@ function recordArray(value: unknown): YonaRecord[] {
     : [];
 }
 
+function hasSidebarFavoriteData(workspace: YonaRecord) {
+  return (
+    Array.isArray(workspace.ownProjects) ||
+    Array.isArray(workspace.favoriteOrganizations) ||
+    Array.isArray(workspace.organizations) ||
+    Array.isArray(workspace.favoriteProjects)
+  );
+}
+
 function projectKey(project: YonaRecord) {
   return valueString(
     project.id ??
       `${valueString(project.ownerName ?? project.owner, "")}/${valueString(project.projectName ?? project.name, "")}`,
     "project",
+  );
+}
+
+function organizationKey(organization: YonaRecord) {
+  return valueString(
+    organization.id ??
+      organization.organizationId ??
+      organization.organizationName ??
+      organization.name,
+    "organization",
   );
 }
 
