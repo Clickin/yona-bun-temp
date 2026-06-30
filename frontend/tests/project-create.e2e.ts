@@ -167,6 +167,22 @@ test("project create form matches legacy project/create.scala.html DOM", async (
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_CREATE.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await projectCreateMetrics(page)).toMatchObject({
+    actionTextAlign: "center",
+    advancedBackground: "rgb(250, 250, 250)",
+    advancedBorderRadius: "10px",
+    formAction: `${basePath}/projects`,
+    formMethod: "post",
+    formWidth: 700,
+    groupAvatarUrl: "/assets/images/organization_default_logo.png",
+    groupDataType: "group",
+    inputWidthRatio: 0.98,
+    ownerDataFormat: "user",
+    ownerDataToggle: "select2",
+    ownerStyle: "min-width: 220px;",
+    userAvatarUrl: "/assets/images/default-avatar-32.png",
+    userDataType: "user",
+  });
 });
 
 async function mockProjectCreate(page: Page) {
@@ -265,6 +281,47 @@ async function canonicalizeScreenRoots(page: Page) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+  });
+}
+
+async function projectCreateMetrics(page: Page) {
+  return page.evaluate(() => {
+    const formWrap = requireElement(".form-wrap.new-project");
+    const form = requireElement<HTMLFormElement>("#newProjectForm");
+    const owner = requireElement<HTMLSelectElement>("#project-owner");
+    const nameInput = requireElement<HTMLInputElement>("#project-name");
+    const advanced = requireElement(".advanced-options");
+    const actions = requireElement(".actions");
+    const userOption = owner.querySelector('option[value="admin"]');
+    const groupOption = owner.querySelector('option[value="weblabs"]');
+    const formWrapRect = formWrap.getBoundingClientRect();
+    const nameRect = nameInput.getBoundingClientRect();
+    const advancedStyle = getComputedStyle(advanced);
+
+    return {
+      actionTextAlign: getComputedStyle(actions).textAlign,
+      advancedBackground: advancedStyle.backgroundColor,
+      advancedBorderRadius: advancedStyle.borderTopLeftRadius,
+      formAction: form.getAttribute("action"),
+      formMethod: form.getAttribute("method"),
+      formWidth: Math.round(formWrapRect.width),
+      groupAvatarUrl: groupOption?.getAttribute("data-avatar-url"),
+      groupDataType: groupOption?.getAttribute("data-type"),
+      inputWidthRatio: Number((nameRect.width / formWrapRect.width).toFixed(2)),
+      ownerDataFormat: owner.getAttribute("data-format"),
+      ownerDataToggle: owner.getAttribute("data-toggle"),
+      ownerStyle: owner.getAttribute("style"),
+      userAvatarUrl: userOption?.getAttribute("data-avatar-url"),
+      userDataType: userOption?.getAttribute("data-type"),
+    };
+
+    function requireElement<T extends HTMLElement = HTMLElement>(selector: string) {
+      const element = document.querySelector<T>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
     }
   });
 }
