@@ -66,10 +66,18 @@ test("current-user notification settings page matches legacy user/edit_notificat
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(page, expectedScreen(basePath, "7"));
   expect(actual).toEqual(expected);
+  await expect(page.locator('#notification-projects a[href="#2"]')).toHaveText(
+    "admin / projectYobi",
+  );
+  await expect(page.locator('#notification-projects a[href="#7"]')).toHaveText(
+    "weblabs / projectAlpha",
+  );
+  await expect(page.locator('.tab-content > .tab-pane[id="2"]')).toHaveCount(1);
+  await expect(page.locator('.tab-content > .tab-pane[id="7"]')).toHaveClass(/active/);
 
   expect(await readNotificationSettingsMetrics(page)).toEqual({
     activePaneDisplay: "block",
-    breadcrumbHeight: "45px",
+    breadcrumbHeight: "46px",
     navMarginTop: "0px",
     pageWrapMarginTop: "10px",
     projectListDisplay: "block",
@@ -154,7 +162,7 @@ function expectedScreen(basePath: string, activeProjectId: string) {
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="${basePath}/admin">Profile</a></span><span class="user-menu"><a href="${basePath}/user/editform">Account</a></span><a href="${basePath}/users/logout"><span class="user-menu logout label">Log out</span></a></div>
         <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul>
-        <div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div>
+        <div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content"><div class="search-result"><div class="group"><input class="search-input org-search" type="text" placeholder="Type name" autocomplete="off"><span class="bar"></span></div><div id="organizations" class="no-result tab-pane user-ul">No results</div></div></div></div>
       </div>
     </div>
     <ul class="gnb-usermenu">
