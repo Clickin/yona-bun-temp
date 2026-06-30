@@ -164,6 +164,7 @@ function ProjectIssuesBody({
               <IssueSearchForm
                 basePath={runtimeConfig.basePath}
                 currentUserId={currentUserId}
+                issues={issues.items}
                 ownerName={ownerName}
                 projectName={projectName}
                 search={search}
@@ -995,6 +996,7 @@ function QuickSearch({
 function IssueSearchForm({
   basePath,
   currentUserId,
+  issues,
   ownerName,
   projectName,
   search,
@@ -1002,12 +1004,15 @@ function IssueSearchForm({
 }: {
   basePath: string;
   currentUserId: string;
+  issues: RestIssueListItem[];
   ownerName: string;
   projectName: string;
   search: ProjectIssuesSearch;
   showLabelManagement: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const authors = uniqueIssueUsers(issues, "author");
+  const assignees = uniqueIssueUsers(issues, "assignee");
 
   return (
     <form
@@ -1056,6 +1061,16 @@ function IssueSearchForm({
             >
               <option value="">{t("common.order.all")}</option>
               <option value={currentUserId}>{t("issue.list.authoredByMe")}</option>
+              {authors.map((author) => (
+                <option
+                  key={author.id}
+                  value={author.id}
+                  data-avatar-url={author.avatarUrl}
+                  data-login-id={author.loginId}
+                >
+                  {author.label}
+                </option>
+              ))}
             </select>
           </dd>
         </dl>
@@ -1074,6 +1089,16 @@ function IssueSearchForm({
               <option value="">{t("common.order.all")}</option>
               <option value="0">{t("issue.noAssignee")}</option>
               <option value={currentUserId}>{t("issue.list.assignedToMe")}</option>
+              {assignees.map((assignee) => (
+                <option
+                  key={assignee.id}
+                  value={assignee.id}
+                  data-avatar-url={assignee.avatarUrl}
+                  data-login-id={assignee.loginId}
+                >
+                  {assignee.label}
+                </option>
+              ))}
             </select>
           </dd>
         </dl>
@@ -1400,6 +1425,32 @@ function uniqueUsers(issues: RestIssueListItem[], currentUserId: string) {
     ...(current ? [current] : []),
     ...Array.from(users.values()).filter((user) => user.id !== currentUserId),
   ];
+}
+
+function uniqueIssueUsers(issues: RestIssueListItem[], role: "assignee" | "author") {
+  const users = new Map<
+    string,
+    { avatarUrl: string; id: string; label: string; loginId: string }
+  >();
+  for (const issue of issues) {
+    addUser(
+      users,
+      role === "assignee"
+        ? {
+            avatarUrl: stringField(issue.assigneeAvatarUrl, "/assets/images/default-avatar-32.png"),
+            id: stringField((issue as Record<string, unknown>).assigneeUserId, ""),
+            label: stringField(issue.assigneeLabel, ""),
+            loginId: stringField(issue.assigneeLoginId, ""),
+          }
+        : {
+            avatarUrl: stringField(issue.authorAvatarUrl, "/assets/images/default-avatar-32.png"),
+            id: stringField((issue as Record<string, unknown>).authorUserId, ""),
+            label: stringField(issue.authorLabel, ""),
+            loginId: stringField(issue.authorLoginId, ""),
+          },
+    );
+  }
+  return Array.from(users.values());
 }
 
 function addUser(

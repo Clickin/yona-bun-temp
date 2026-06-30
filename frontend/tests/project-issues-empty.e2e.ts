@@ -19,6 +19,10 @@ const BUG_LABEL_STYLE =
   "background-color:rgb(81, 170, 204);box-shadow:rgb(81, 170, 204) 2px 0px 0px 0px inset;color:white";
 const P1_LABEL_STYLE =
   "background-color:rgb(255, 102, 102);box-shadow:rgb(255, 102, 102) 2px 0px 0px 0px inset;color:dimgray";
+const EMPTY_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-search="authorId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option></select>`;
+const POPULATED_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-search="authorId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="2" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="dev">Dev Member</option></select>`;
+const EMPTY_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option></select>`;
+const POPULATED_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>`;
 
 const POPULATED_SPAN10 = `<div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active" data-pjax=""><a href="#" state="open">Open<span class="num-badge">1</span></a></li><li data-pjax=""><a href="#" state="closed">Closed<span class="num-badge">2</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="filter-wrap board"></div><ul class="post-list-wrap row-fluid"><li class="post-item title" id="issue-item-42" data-item="issue-item" data-value="dev 11 Fix flaky issue" href="__BASE_PATH__/admin/sample/issue/11"><div class="span9 span-hard-wrap"><label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-toggle="issue-checkbox" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label><div for="issue-42" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="dev">Dev Member</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 1, 2026">Jul 1, 2026</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote"><span class="count-groups item-icon strong"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><a href="#" class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</a><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="mr20 mt10 pull-right overdue" data-toggle="tooltip" data-placement="top" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div></div></li></ul><div class="pull-left" style="padding:10px"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div class="pull-left" style="padding:10px 0px;margin-left:55px"><a href="#helpKeys" data-toggle="modal" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</a>${ISSUE_LIST_KEYMAP}</div><div id="pagination" data-total="3"></div></div>`;
 
@@ -33,6 +37,8 @@ const EXPECTED_PROJECT_ISSUES_POPULATED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceA
   'value="empty"',
   'value="bug"',
 )
+  .replace(EMPTY_AUTHOR_SELECT, POPULATED_AUTHOR_SELECT)
+  .replace(EMPTY_ASSIGNEE_SELECT, POPULATED_ASSIGNEE_SELECT)
   .replaceAll(
     '>Open<span class="num-badge pull-right">0</span>',
     '>Open<span class="num-badge pull-right">1</span>',
@@ -297,6 +303,12 @@ const EXPECTED_PROJECT_ISSUES_CHILDREN = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAl
     `${CHILDREN_SPAN10}</div></div></div></div>\n<footer`,
   );
 
+function withPopulatedSearchUsers(html: string) {
+  return html
+    .replace(EMPTY_AUTHOR_SELECT, POPULATED_AUTHOR_SELECT)
+    .replace(EMPTY_ASSIGNEE_SELECT, POPULATED_ASSIGNEE_SELECT);
+}
+
 test("empty project issue list matches legacy issue/list.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page);
@@ -324,6 +336,14 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
   await expect(page.locator('.issue-label[data-label-id="8"]')).toHaveCount(3);
+  await expect(page.locator('#authorId option[data-login-id="dev"]')).toHaveAttribute(
+    "data-avatar-url",
+    "/assets/images/default-avatar-32.png",
+  );
+  await expect(page.locator('#assigneeId option[data-login-id="admin"]')).toHaveAttribute(
+    "data-avatar-url",
+    "/assets/images/default-avatar-32.png",
+  );
 
   expect(await issueLabelColorMetrics(page, ".post-list-wrap .issue-label")).toEqual({
     backgroundColor: "rgb(81, 170, 204)",
@@ -357,7 +377,10 @@ test("project issue list sorts labels like legacy partial_list.scala.html", asyn
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_ISSUES_LABEL_SORT.replaceAll("__BASE_PATH__", basePath),
+      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_LABEL_SORT).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
     ),
   );
 });
@@ -376,7 +399,10 @@ test("project issue list hides mass update controls for non-members", async ({ p
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_ISSUES_NON_MEMBER.replaceAll("__BASE_PATH__", basePath),
+      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_NON_MEMBER).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
     ),
   );
 });
@@ -398,7 +424,10 @@ test("project issue list hides row milestone when project milestone menu is disa
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_ISSUES_NO_MILESTONE_MENU.replaceAll("__BASE_PATH__", basePath),
+      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_NO_MILESTONE_MENU).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
     ),
   );
 });
@@ -415,7 +444,10 @@ test("project issue list bracketed title prefix matches legacy title helpers", a
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_ISSUES_PREFIX.replaceAll("__BASE_PATH__", basePath),
+      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_PREFIX).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
     ),
   );
 });
@@ -432,7 +464,10 @@ test("project issue list open due date shows legacy relative until text", async 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_ISSUES_UPCOMING_DUE_DATE.replaceAll("__BASE_PATH__", basePath),
+      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_UPCOMING_DUE_DATE).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
     ),
   );
 });
@@ -454,7 +489,10 @@ test("project issue list sharer count matches legacy common/sharerCount.scala.ht
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_ISSUES_SHARER.replaceAll("__BASE_PATH__", basePath),
+      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_SHARER).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
     ),
   );
 });
@@ -472,7 +510,7 @@ test("project issue draft row renders before normal list like legacy partial_lis
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_ISSUES_DRAFT.replaceAll("__BASE_PATH__", basePath),
+      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_DRAFT).replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
@@ -490,7 +528,7 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_ISSUES_BULK.replaceAll("__BASE_PATH__", basePath),
+      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_BULK).replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
@@ -509,7 +547,10 @@ test("project issue list subtask row matches legacy partial_list_subtask.scala.h
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_ISSUES_SUBTASK.replaceAll("__BASE_PATH__", basePath),
+      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_SUBTASK).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
     ),
   );
 });
@@ -528,7 +569,10 @@ test("closed project issue row preserves legacy weight arrow and due-date stylin
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_ISSUES_WEIGHTED_CLOSED.replaceAll("__BASE_PATH__", basePath),
+      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_WEIGHTED_CLOSED).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
     ),
   );
 });
@@ -551,7 +595,10 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_ISSUES_CHILDREN.replaceAll("__BASE_PATH__", basePath),
+      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_CHILDREN).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
     ),
   );
 });
