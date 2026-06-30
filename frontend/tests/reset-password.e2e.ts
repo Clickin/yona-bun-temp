@@ -119,6 +119,17 @@ test("reset password form matches legacy user/resetPassword.scala.html screen DO
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopResetPasswordMetrics(page)).toEqual({
+    buttonRowMarginBottom: "20px",
+    formMarginTop: "54px",
+    formWidth: "400px",
+    passwordMarginBottom: "15px",
+    tagLineMarginBottom: "26px",
+    tagLinePaddingTop: "80px",
+    textHeight: "30px",
+    textWidth: "386px",
+    titleLineHeight: "42px",
+  });
 });
 
 test("invalid reset password link matches legacy error/badrequest_default.scala.html shell DOM", async ({
@@ -188,6 +199,36 @@ async function canonicalizeScreenRoots(page: Page) {
       ),
     );
     return roots.map((root) => visit(root)).join("");
+  });
+}
+
+async function readDesktopResetPasswordMetrics(page: Page) {
+  return page.evaluate(() => {
+    const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.reset-password");
+    const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
+    const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
+    const passwordInput = document.querySelector<HTMLElement>("#password");
+    const buttonRow = document.querySelector<HTMLElement>(".login-form-wrap .btns-row");
+    if (!tagLineWrap || !title || !formWrap || !passwordInput || !buttonRow) {
+      throw new Error("Expected reset-password metric targets are missing.");
+    }
+
+    const tagLineWrapStyle = getComputedStyle(tagLineWrap);
+    const formWrapStyle = getComputedStyle(formWrap);
+    const passwordInputStyle = getComputedStyle(passwordInput);
+    const buttonRowStyle = getComputedStyle(buttonRow);
+
+    return {
+      buttonRowMarginBottom: buttonRowStyle.marginBottom,
+      formMarginTop: formWrapStyle.marginTop,
+      formWidth: formWrapStyle.width,
+      passwordMarginBottom: passwordInputStyle.marginBottom,
+      tagLineMarginBottom: tagLineWrapStyle.marginBottom,
+      tagLinePaddingTop: tagLineWrapStyle.paddingTop,
+      textHeight: passwordInputStyle.height,
+      textWidth: passwordInputStyle.width,
+      titleLineHeight: getComputedStyle(title).lineHeight,
+    };
   });
 }
 
