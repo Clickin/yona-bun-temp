@@ -21,7 +21,11 @@ function RootResetShell() {
       return;
     }
     scanNotifySources();
-    const timeoutId = window.setTimeout(scanNotifySources, 0);
+    scanOriginalMessageSources();
+    const timeoutId = window.setTimeout(() => {
+      scanNotifySources();
+      scanOriginalMessageSources();
+    }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [locationHref, rendersPlainResponseState]);
 
@@ -30,7 +34,11 @@ function RootResetShell() {
       return;
     }
     document.addEventListener("yobi:notify-scan", scanNotifySources);
-    return () => document.removeEventListener("yobi:notify-scan", scanNotifySources);
+    document.addEventListener("yobi:original-message-scan", scanOriginalMessageSources);
+    return () => {
+      document.removeEventListener("yobi:notify-scan", scanNotifySources);
+      document.removeEventListener("yobi:original-message-scan", scanOriginalMessageSources);
+    };
   }, [rendersPlainResponseState]);
 
   React.useEffect(() => {
@@ -135,6 +143,64 @@ function RootResetShell() {
       }
       container.append(toast);
       source.remove();
+    });
+  }
+
+  function scanOriginalMessageSources() {
+    document.querySelectorAll<HTMLElement>("[data-via-email]").forEach((target) => {
+      if (target.dataset.yobiOriginalMessageProcessed === "true") {
+        return;
+      }
+      target.dataset.yobiOriginalMessageProcessed = "true";
+
+      const delimiter = Array.from(target.querySelectorAll<HTMLElement>("*")).find((candidate) => {
+        const html = candidate.innerHTML;
+        return (
+          candidate !== target.firstElementChild &&
+          html.includes("---") &&
+          /(^|^<[^>]+>)---+[^-]*---+/.test(html)
+        );
+      });
+      if (!delimiter) {
+        return;
+      }
+
+      const originalMessage = new Set<HTMLElement>();
+      function addFollowingSiblings(element: Element) {
+        let sibling = element.nextElementSibling;
+        while (sibling) {
+          if (sibling instanceof HTMLElement) {
+            originalMessage.add(sibling);
+          }
+          sibling = sibling.nextElementSibling;
+        }
+      }
+
+      originalMessage.add(delimiter);
+      addFollowingSiblings(delimiter);
+      let parent = delimiter.parentElement;
+      while (parent && parent !== target) {
+        addFollowingSiblings(parent);
+        parent = parent.parentElement;
+      }
+
+      originalMessage.forEach((element) => {
+        element.style.display = "none";
+      });
+
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.textContent = "...";
+      toggle.style.cssText = "border: 0px; padding-left: 5px; padding-right: 5px;";
+      toggle.addEventListener("click", () => {
+        const shouldShow = Array.from(originalMessage).some(
+          (element) => element.style.display === "none",
+        );
+        originalMessage.forEach((element) => {
+          element.style.display = shouldShow ? "" : "none";
+        });
+      });
+      delimiter.before(toggle);
     });
   }
 

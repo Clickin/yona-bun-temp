@@ -98,6 +98,39 @@ test("standalone UI kit dropdown matches legacy yobi.ui.Dropdown interaction", a
   await expect(dropdown.locator('input[type="hidden"][name="assigneeId"]')).toHaveValue("0");
 });
 
+test("standalone UI kit root shell hides legacy data-via-email original message", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/_UIKit`);
+  await page.locator(".page-wrap-outer").evaluate((container) => {
+    container.insertAdjacentHTML(
+      "beforeend",
+      `<div id="via-email-fixture" class="markdown-wrap" data-via-email="true">
+        <p>Reply body</p>
+        <blockquote>
+          <p id="via-email-delimiter">--- Original Message ---</p>
+          <p id="via-email-hidden-line">Hidden original line</p>
+        </blockquote>
+        <p id="via-email-hidden-sibling">Hidden sibling after blockquote</p>
+      </div>`,
+    );
+    document.dispatchEvent(new Event("yobi:original-message-scan"));
+  });
+
+  const fixture = page.locator("#via-email-fixture");
+  await expect(fixture.locator('button[type="button"]')).toHaveText("...");
+  await expect(page.locator("#via-email-delimiter")).toBeHidden();
+  await expect(page.locator("#via-email-hidden-line")).toBeHidden();
+  await expect(page.locator("#via-email-hidden-sibling")).toBeHidden();
+
+  await fixture.locator('button[type="button"]').click();
+  await expect(page.locator("#via-email-delimiter")).toBeVisible();
+  await expect(page.locator("#via-email-hidden-line")).toBeVisible();
+  await expect(page.locator("#via-email-hidden-sibling")).toBeVisible();
+});
+
 async function readDesktopUIKitMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
