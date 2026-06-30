@@ -70,6 +70,35 @@ test("verification success matches legacy user/verified.scala.html screen DOM", 
   expect(actual).toEqual(expected);
 });
 
+test("invalid verification renders legacy plain not-found body", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/verify", async (route) => {
+    expect(route.request().postDataJSON()).toEqual({
+      loginId: "door",
+      verificationCode: "bad-code",
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      status: 404,
+      body: JSON.stringify({
+        error: {
+          code: "not_found",
+          message: "Invalid verification",
+          status: 404,
+        },
+      }),
+    });
+  });
+  await page.goto(`${basePath}/verify/door/bad-code`);
+
+  await expect(page.locator("body")).toHaveText("Invalid verification");
+  await expect(
+    page.locator(
+      ".unsupported, .gnb-outer, .page.full, .page-footer-outer, #yobiDialog, #yobiToasts",
+    ),
+  ).toHaveCount(0);
+});
+
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     function visit(current: Element): string {

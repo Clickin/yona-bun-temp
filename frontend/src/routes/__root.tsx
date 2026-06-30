@@ -13,17 +13,25 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
 
 function RootResetShell() {
   const locationHref = useRouterState({ select: (state) => state.location.href });
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const rendersPlainResponseState = pathname.startsWith("/verify/");
 
   React.useEffect(() => {
+    if (rendersPlainResponseState) {
+      return;
+    }
     scanNotifySources();
     const timeoutId = window.setTimeout(scanNotifySources, 0);
     return () => window.clearTimeout(timeoutId);
-  }, [locationHref]);
+  }, [locationHref, rendersPlainResponseState]);
 
   React.useEffect(() => {
+    if (rendersPlainResponseState) {
+      return;
+    }
     document.addEventListener("yobi:notify-scan", scanNotifySources);
     return () => document.removeEventListener("yobi:notify-scan", scanNotifySources);
-  });
+  }, [rendersPlainResponseState]);
 
   function scanNotifySources() {
     document.querySelectorAll<HTMLElement>('[data-toggle="yobi-notify"]').forEach((source) => {
@@ -53,36 +61,40 @@ function RootResetShell() {
   return (
     <>
       <Outlet />
-      <div
-        id="yobiDialog"
-        className="modal hide yobiDialog"
-        tabIndex={-1}
-        role="dialog"
-        aria-hidden
-      >
-        <div className="btn-dismiss">
-          <button type="button" className="btn-transparent" data-dismiss="modal">
-            &times;
-          </button>
-        </div>
-        <div className="message">
-          <div className="center-text">
-            <p className="msg" />
-            <p className="desc" />
+      {rendersPlainResponseState ? null : (
+        <>
+          <div
+            id="yobiDialog"
+            className="modal hide yobiDialog"
+            tabIndex={-1}
+            role="dialog"
+            aria-hidden
+          >
+            <div className="btn-dismiss">
+              <button type="button" className="btn-transparent" data-dismiss="modal">
+                &times;
+              </button>
+            </div>
+            <div className="message">
+              <div className="center-text">
+                <p className="msg" />
+                <p className="desc" />
+              </div>
+              <div className="center-txt buttons">
+                <button type="button" className="ybtn ybtn-info" data-dismiss="modal">
+                  Confirm
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="center-txt buttons">
-            <button type="button" className="ybtn ybtn-info" data-dismiss="modal">
-              Confirm
-            </button>
-          </div>
-        </div>
-      </div>
-      <div id="yobiToasts" className="yobiToasts" />
-      <script type="text/x-jquery-tmpl" id="tplYobiToast">
-        {
-          '<div class="toast" tabindex="-1"><div class="btn-dismiss"><button type="button" class="btn-transparent">&times;</button></div><div class="center-text"><span class="v"></span><div class="msg"></div></div></div>'
-        }
-      </script>
+          <div id="yobiToasts" className="yobiToasts" />
+          <script type="text/x-jquery-tmpl" id="tplYobiToast">
+            {
+              '<div class="toast" tabindex="-1"><div class="btn-dismiss"><button type="button" class="btn-transparent">&times;</button></div><div class="center-text"><span class="v"></span><div class="msg"></div></div></div>'
+            }
+          </script>
+        </>
+      )}
     </>
   );
 }
