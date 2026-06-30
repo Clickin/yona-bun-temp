@@ -761,6 +761,11 @@ button[type="submit"]:focus {
   height: 20px;
 }
 
+.avatar-wrap.mlarge {
+  width: 40px;
+  height: 40px;
+}
+
 .avatar-wrap.xlarge {
   width: 128px;
   height: 128px;
@@ -1136,6 +1141,58 @@ button[type="submit"]:focus {
 .frm-wrap dt label {
   margin-right: 5px;
   font-weight: bold;
+}
+
+.inner-bubble {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.inner-bubble .text.uname {
+  width: 384px;
+  margin: 0;
+  border-radius: 2px;
+}
+
+.members.project {
+  margin: 0;
+  list-style: none;
+}
+
+.members.project .member {
+  position: relative;
+  display: block;
+  padding: 10px 5px;
+  margin-left: 5px;
+  border-bottom: 1px solid #ddd;
+}
+
+.members.project .member .member-name {
+  margin-top: 2px;
+  font-weight: bold;
+  line-height: 20px;
+}
+
+.members.project .member .member-id {
+  line-height: 20px;
+  color: #ccc;
+}
+
+.members.project .member .member-setting {
+  position: absolute;
+  top: 15px;
+  right: 0;
+}
+
+.members.project .member .member-setting .owner {
+  padding: 5px;
+  margin-top: 5px;
+}
+
+.members.project .guest {
+  padding: 0 4px;
+  color: #fff;
+  background-color: rgb(255 165 0 / 80%);
 }
 
 .form-wrap.new-project {

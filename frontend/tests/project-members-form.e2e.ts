@@ -36,6 +36,20 @@ test("project members matches legacy project/members.scala.html DOM", async ({ p
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_MEMBERS.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await memberPageMetrics(page)).toEqual({
+    addInputWidth: 384,
+    avatarHeight: 40,
+    avatarWidth: 40,
+    firstMemberBorderBottom: "rgb(221, 221, 221)",
+    firstMemberPaddingBlock: 20,
+    memberListMarginLeft: 0,
+    memberListStyle: "none",
+    memberNameFontWeight: "700",
+    memberRoleDataName: "roleof-alice",
+    memberRowWidthRatio: 0.47,
+    memberSettingOffsetTop: 15,
+    ownerPadding: 5,
+  });
 });
 
 test("project members enrollment Add posts selected login like legacy member module", async ({
@@ -188,6 +202,53 @@ async function canonicalizeScreenRoots(page: Page) {
         return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
       }
       return attr.value.replace(/\s+/g, " ").trim();
+    }
+  });
+}
+
+async function memberPageMetrics(page: Page) {
+  return page.evaluate(() => {
+    const addInput = requireElement("#loginId");
+    const memberList = requireElement(".members.project");
+    const firstMember = requireElement(".members.project .member");
+    const memberName = requireElement(".members.project .member .member-name");
+    const ownerLabel = requireElement(".members.project .member .owner");
+    const avatar = requireElement(".members.project .member .avatar-wrap.mlarge");
+    const memberSetting = requireElement(".members.project .member .member-setting");
+    const roleControl = requireElement('.members.project .btn-group[data-name="roleof-alice"]');
+    const addInputStyle = getComputedStyle(addInput);
+    const memberListStyle = getComputedStyle(memberList);
+    const firstMemberStyle = getComputedStyle(firstMember);
+    const memberNameStyle = getComputedStyle(memberName);
+    const ownerLabelStyle = getComputedStyle(ownerLabel);
+    const avatarRect = avatar.getBoundingClientRect();
+    const firstMemberRect = firstMember.getBoundingClientRect();
+    const memberListRect = memberList.getBoundingClientRect();
+    const memberSettingRect = memberSetting.getBoundingClientRect();
+
+    return {
+      addInputWidth: Math.round(parseFloat(addInputStyle.width)),
+      avatarHeight: Math.round(avatarRect.height),
+      avatarWidth: Math.round(avatarRect.width),
+      firstMemberBorderBottom: firstMemberStyle.borderBottomColor,
+      firstMemberPaddingBlock:
+        Math.round(parseFloat(firstMemberStyle.paddingTop)) +
+        Math.round(parseFloat(firstMemberStyle.paddingBottom)),
+      memberListMarginLeft: Math.round(parseFloat(memberListStyle.marginLeft)),
+      memberListStyle: memberListStyle.listStyleType,
+      memberNameFontWeight: memberNameStyle.fontWeight,
+      memberRoleDataName: roleControl.getAttribute("data-name"),
+      memberRowWidthRatio: Number((firstMemberRect.width / memberListRect.width).toFixed(2)),
+      memberSettingOffsetTop: Math.round(memberSettingRect.top - firstMemberRect.top),
+      ownerPadding: Math.round(parseFloat(ownerLabelStyle.paddingTop)),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
     }
   });
 }
