@@ -34,6 +34,10 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
   );
 
   expect(actual).toEqual(expected);
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
+    "content",
+    "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
+  );
   expect(await readDesktopRestartMetrics(page)).toEqual({
     pageFooterLineHeight: "34px",
     pageFooterOuterPadding: "10px 0px",

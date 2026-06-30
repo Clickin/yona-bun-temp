@@ -121,6 +121,10 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
   );
 
   expect(actual).toEqual(expected);
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
+    "content",
+    "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
+  );
   expect(await readDesktopSecretMetrics(page)).toEqual({
     buttonRowMarginBottom: "20px",
     formMarginTop: "14px",
