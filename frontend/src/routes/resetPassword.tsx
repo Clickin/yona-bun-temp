@@ -6,6 +6,7 @@ import { completePasswordReset, readSessionBootstrap } from "../auth-workspace-c
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { SiteLayoutShell } from "./-home-route-screen";
 
 type ResetPasswordSearch = {
   error: string;
@@ -66,6 +67,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   if (error) {
     return (
       <BadRequestPage
+        runtimeConfig={runtimeConfig}
         basePath={runtimeConfig.basePath}
         message={t("site.resetPasswordEmail.wrongUrl")}
       />
@@ -137,20 +139,30 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   }
 }
 
-function BadRequestPage({ basePath, message }: { basePath: string; message: string }) {
+function BadRequestPage({
+  basePath,
+  message,
+  runtimeConfig,
+}: {
+  basePath: string;
+  message: string;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico-404" />
-          <p>{message}</p>
-          <a href={prefixBasePath(basePath, "/")} className="ybtn ybtn-info">
-            {t("menu.home")}
-          </a>
+    <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="error-wrap">
+            <i className="ico-404" />
+            <p>{message}</p>
+            <a href={prefixBasePath(basePath, "/")} className="ybtn ybtn-info">
+              {t("menu.home")}
+            </a>
+          </div>
         </div>
       </div>
-    </div>
+    </SiteLayoutShell>
   );
 }
 
