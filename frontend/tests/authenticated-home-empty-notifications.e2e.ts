@@ -24,6 +24,52 @@ const EXPECTED_AUTHENTICATED_HOME = `
         </form>
       </li>
     </ul>
+    <div id="mySidenav" class="sidenav">
+      <div class="span5 right-menu span-hard-wrap">
+        <div class="row-fluid user-menu-wrap">
+          <span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span>
+          <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
+          <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
+        </div>
+        <ul class="nav nav-tabs nm">
+          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
+          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
+          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+        </ul>
+        <div class="tab-content tab-box">
+          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
+        </div>
+      </div>
+    </div>
+    <ul class="gnb-usermenu">
+      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
+        <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
+      </li>
+      <li class="divider"></li>
+      <li class="gnb-usermenu-item">
+        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
+          <i class="yobicon-wrench"></i>
+        </a>
+      </li>
+      <li class="divider"></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
+        <a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
+          <span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
+        </a>
+      </li>
+      <li class="gnb-usermenu-dropdown">
+        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
+          <i class="yobicon-plus"></i><span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu flat right">
+          <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
+          <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
+          <li><hr class="no-margin"></li>
+          <li><a href="__BASE_PATH__/projectform">Create new project</a></li>
+          <li><a href="__BASE_PATH__/organizations/new">New Group</a></li>
+        </ul>
+      </li>
+    </ul>
   </div>
 </header>
 <div class="page-wrap-outer">
@@ -155,9 +201,9 @@ test("authenticated home empty notifications matches legacy index notifications 
   await expect(page.locator(".warning-none")).toContainText("No notification");
   await expect(
     page.locator(
-      "#myOrganizationList, #myProjectList, #myRecentIssueList, #usermenu-tab-content-list",
+      ".myOrganizationList, .myProjectList, .myRecentIssueList, #usermenu-tab-content-list",
     ),
-  ).toHaveCount(0);
+  ).toHaveCount(4);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -199,9 +245,9 @@ test("direct notifications route matches legacy Application.notifications empty 
   await expect(page.locator(".warning-none")).toContainText("No notification");
   await expect(
     page.locator(
-      "#myOrganizationList, #myProjectList, #myRecentIssueList, #usermenu-tab-content-list",
+      ".myOrganizationList, .myProjectList, .myRecentIssueList, #usermenu-tab-content-list",
     ),
-  ).toHaveCount(0);
+  ).toHaveCount(4);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(

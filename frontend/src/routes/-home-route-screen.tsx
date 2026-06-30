@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
 import { currentSessionQueryOptions } from "../api/session";
+import type { YonaRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -431,6 +432,7 @@ export function SiteLayoutShell({
   runtimeConfig: RuntimeConfig;
 }) {
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
+  const session = sessionQuery.data;
   const shouldRenderAnonymousUserMenu = sessionQuery.data?.isAnonymous !== false;
 
   return (
@@ -470,7 +472,9 @@ export function SiteLayoutShell({
           </ul>
           {shouldRenderAnonymousUserMenu ? (
             <AnonymousSiteUserMenu basePath={runtimeConfig.basePath} />
-          ) : null}
+          ) : (
+            <AuthenticatedSiteUserMenu basePath={runtimeConfig.basePath} session={session ?? {}} />
+          )}
         </div>
       </header>
       {children}
@@ -504,6 +508,145 @@ export function SiteLayoutShell({
           </span>
         </div>
       </footer>
+    </>
+  );
+}
+
+function AuthenticatedSiteUserMenu({
+  basePath,
+  session,
+}: {
+  basePath: string;
+  session: YonaRecord;
+}) {
+  const { t } = useLegacyMessages();
+  const loginId = stringField(session, "loginId", "anonymous");
+  const avatarUrl = stringField(session, "avatarUrl", "/assets/images/default-avatar-32.png");
+  const isSiteAdmin = booleanField(session, "isSiteAdmin", false);
+  const isGuest = booleanField(session, "isGuest", false);
+  const legacyVoidHrefRef = React.useCallback((node: HTMLAnchorElement | null) => {
+    node?.setAttribute("href", "javascript:void(0);");
+  }, []);
+
+  return (
+    <>
+      <div id="mySidenav" className="sidenav">
+        <div className="span5 right-menu span-hard-wrap">
+          <div className="row-fluid user-menu-wrap">
+            <span className="user-menu">
+              <a href={prefixBasePath(basePath, `/${loginId}`)}>{t("userinfo.profile")}</a>
+            </span>
+            <span className="user-menu">
+              <a href={prefixBasePath(basePath, "/user/editform")}>
+                {t("userinfo.accountSetting")}
+              </a>
+            </span>
+            <a href={prefixBasePath(basePath, "/users/logout")}>
+              <span className="user-menu logout label">{t("title.logout")}</span>
+            </a>
+          </div>
+          <ul className="nav nav-tabs nm">
+            <li className="myOrganizationList active">
+              <a href="#myOrganizationList" data-toggle="tab">
+                {t("title.favorite")}
+              </a>
+            </li>
+            <li className="myProjectList">
+              <a href="#myProjectList" data-toggle="tab">
+                {t("title.project")}
+              </a>
+            </li>
+            <li className="myRecentIssueList">
+              <a href="#myRecentIssueList" data-toggle="tab">
+                {t("title.recently.visited.issue")}
+              </a>
+            </li>
+          </ul>
+          <div className="tab-content tab-box">
+            <div id="usermenu-tab-content-list" className="tab-content">
+              {"Loading..."}
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul className="gnb-usermenu">
+        <li
+          className="gnb-usermenu-item"
+          data-toggle="tooltip"
+          data-placement="bottom"
+          title={`${t("title.shortcut")} (A)`}
+        >
+          <a href={prefixBasePath(basePath, "/user/issues")} className="user-item-btn loggged-in">
+            {t("issue.myIssue")}
+          </a>
+        </li>
+        <li className="divider"></li>
+        {isSiteAdmin ? (
+          <>
+            <li className="gnb-usermenu-item">
+              <a
+                href={prefixBasePath(basePath, "/sites/userList")}
+                data-toggle="tooltip"
+                title={t("menu.siteAdmin")}
+                data-placement="bottom"
+                className="usermenu-icon-button show-progress-bar"
+              >
+                <i className="yobicon-wrench" />
+              </a>
+            </li>
+            <li className="divider"></li>
+          </>
+        ) : null}
+        <li className="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
+          <a
+            ref={legacyVoidHrefRef}
+            href={prefixBasePath(basePath, "/")}
+            className="gnb-dropdown-toggle"
+            data-toggle="tooltip"
+            data-placement="bottom"
+            title={`${t("user.menu")}, ${t("title.shortcut")} (F)`}
+          >
+            <span className="avatar-wrap smaller">
+              <img src={avatarUrl} alt="" />
+            </span>
+            <span className="caret"></span>
+          </a>
+        </li>
+        <li className="gnb-usermenu-dropdown">
+          <a
+            ref={legacyVoidHrefRef}
+            href={prefixBasePath(basePath, "/")}
+            className="gnb-dropdown-toggle dropdwon-box-btn"
+            data-toggle="dropdown"
+          >
+            <i className="yobicon-plus"></i>
+            <span className="caret"></span>
+          </a>
+          <ul className="dropdown-menu flat right">
+            <li>
+              <a href={prefixBasePath(basePath, "/user/issues/new")}>{t("issue.menu.new")}</a>
+            </li>
+            <li>
+              <a href={prefixBasePath(basePath, "/user/issues/new/mine")}>
+                {t("issue.menu.new.mine")}
+              </a>
+            </li>
+            <li>
+              <hr className="no-margin" />
+            </li>
+            <li>
+              <a href={prefixBasePath(basePath, "/projectform")}>{t("button.newProject")}</a>
+            </li>
+            {!isGuest ? (
+              <li>
+                <a href={prefixBasePath(basePath, "/organizations/new")}>
+                  {t("title.newOrganization")}
+                </a>
+              </li>
+            ) : null}
+          </ul>
+        </li>
+      </ul>
     </>
   );
 }
@@ -571,4 +714,14 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
       </ul>
     </>
   );
+}
+
+function stringField(record: YonaRecord, key: string, fallback: string): string {
+  const value = record[key];
+  return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+function booleanField(record: YonaRecord, key: string, fallback: boolean): boolean {
+  const value = record[key];
+  return typeof value === "boolean" ? value : fallback;
 }
