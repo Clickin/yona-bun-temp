@@ -6,6 +6,7 @@ import { readSessionBootstrap, requestPasswordReset } from "../auth-workspace-cl
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import type { RuntimeConfig } from "../runtime-config";
+import { SiteLayoutShell } from "./-home-route-screen";
 
 type LostPasswordSearch = {
   error: string;
@@ -67,71 +68,73 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   });
 
   return (
-    <div className="page full">
-      <div className="center-wrap tag-line-wrap reset-password">
-        <h1 className="title">
-          <HighlightedLegacyMessage message={title} />
-        </h1>
-        <p className="tag-line">{t("app.description")}</p>
+    <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <div className="page full">
+        <div className="center-wrap tag-line-wrap reset-password">
+          <h1 className="title">
+            <HighlightedLegacyMessage message={title} />
+          </h1>
+          <p className="tag-line">{t("app.description")}</p>
+        </div>
+
+        <div className="login-form-wrap frm-wrap">
+          {isSent ? (
+            <div className="alert alert-success">
+              <button type="button" className="close" data-dismiss="alert">
+                &times;
+              </button>
+              <h4>{t("site.mail.sended")}</h4>
+            </div>
+          ) : null}
+
+          {errorMessage ? (
+            <div className="alert alert-error">
+              <button type="button" className="close" data-dismiss="alert">
+                &times;
+              </button>
+              <h4>{t("site.mail.fail")}</h4>
+              {errorMessage}
+            </div>
+          ) : null}
+
+          <form method="post" action="/lostPassword" onSubmit={(event) => void handleSubmit(event)}>
+            <dl>
+              <dd>
+                <input
+                  type="text"
+                  id="loginId"
+                  name="loginId"
+                  required
+                  ref={setRequiredAttributeValue}
+                  placeholder={t("user.loginId")}
+                  className="text"
+                />
+              </dd>
+              <dd>
+                <input
+                  type="text"
+                  id="emailAddress"
+                  name="emailAddress"
+                  required
+                  placeholder={t("user.email")}
+                  className="text"
+                />
+              </dd>
+            </dl>
+
+            <div className="btns-row">
+              <button
+                type="submit"
+                className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
+                disabled={requestMutation.isPending}
+              >
+                {t("button.confirm")}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-
-      <div className="login-form-wrap frm-wrap">
-        {isSent ? (
-          <div className="alert alert-success">
-            <button type="button" className="close" data-dismiss="alert">
-              &times;
-            </button>
-            <h4>{t("site.mail.sended")}</h4>
-          </div>
-        ) : null}
-
-        {errorMessage ? (
-          <div className="alert alert-error">
-            <button type="button" className="close" data-dismiss="alert">
-              &times;
-            </button>
-            <h4>{t("site.mail.fail")}</h4>
-            {errorMessage}
-          </div>
-        ) : null}
-
-        <form method="post" action="/lostPassword" onSubmit={(event) => void handleSubmit(event)}>
-          <dl>
-            <dd>
-              <input
-                type="text"
-                id="loginId"
-                name="loginId"
-                required
-                ref={setRequiredAttributeValue}
-                placeholder={t("user.loginId")}
-                className="text"
-              />
-            </dd>
-            <dd>
-              <input
-                type="text"
-                id="emailAddress"
-                name="emailAddress"
-                required
-                placeholder={t("user.email")}
-                className="text"
-              />
-            </dd>
-          </dl>
-
-          <div className="btns-row">
-            <button
-              type="submit"
-              className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
-              disabled={requestMutation.isPending}
-            >
-              {t("button.confirm")}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    </SiteLayoutShell>
   );
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
