@@ -28,7 +28,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
 </header>
 <div class="page-wrap-outer">
   <div class="page-wrap">
-    <div class="site-guide-outer hide">
+    <div class="site-guide-outer">
       <h3>
         <span>Tada! Welcome to Yona! - Web-based platform for collaborative software development</span>
       </h3>
@@ -164,6 +164,15 @@ test("authenticated home empty notifications matches legacy index notifications 
   expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual(
     EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS,
   );
+  await expect(page.locator(".site-guide-outer")).not.toHaveClass(/hide/);
+  await page.locator("#toggleIntro").click();
+  await expect(page.locator(".site-guide-outer")).toHaveClass(/hide/);
+  expect(await readLocalStorageValue(page, "yobi-intro")).toBe("false");
+  await page.reload();
+  await expect(page.locator(".site-guide-outer")).toHaveClass(/hide/);
+  await page.locator("#toggleIntro").click();
+  await expect(page.locator(".site-guide-outer")).not.toHaveClass(/hide/);
+  expect(await readLocalStorageValue(page, "yobi-intro")).toBe("true");
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileAuthenticatedHomeMetrics(page)).toEqual({
     defaultLandingButtonDisplay: null,
@@ -280,6 +289,10 @@ test("direct notifications route matches legacy populated notification row DOM",
     titleFontSize: "14px",
   });
 });
+
+async function readLocalStorageValue(page: Page, key: string) {
+  return page.evaluate((storageKey) => localStorage.getItem(storageKey), key);
+}
 
 async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
   return page.evaluate(() => {

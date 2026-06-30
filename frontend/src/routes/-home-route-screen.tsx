@@ -64,6 +64,9 @@ function HomeScreen({
     routePath !== "/" &&
     routePathWithoutSlash !== "" &&
     routePathWithoutSlash !== defaultLandingWithoutSlash;
+  const [isIntroVisible, setIsIntroVisible] = React.useState(
+    () => typeof window === "undefined" || localStorage.getItem("yobi-intro") !== "false",
+  );
 
   React.useEffect(() => {
     if (!flashMessageKey) {
@@ -77,12 +80,20 @@ function HomeScreen({
     return () => window.clearTimeout(timeoutId);
   }, [flashMessageKey]);
 
+  function toggleIntro() {
+    setIsIntroVisible((current) => {
+      const next = !current;
+      localStorage.setItem("yobi-intro", String(next));
+      return next;
+    });
+  }
+
   if (isAuthenticated) {
     return (
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
         <div className="page-wrap-outer">
           <div className="page-wrap">
-            <div className="site-guide-outer hide">
+            <div className={isIntroVisible ? "site-guide-outer" : "site-guide-outer hide"}>
               <h3>
                 <span>{`${t("app.welcome", { args: [siteName] })} - ${t("app.description")}`}</span>
               </h3>
@@ -125,7 +136,12 @@ function HomeScreen({
               </table>
             </div>
             <div className="guide-toggle">
-              <button className="btn-transparent" id="toggleIntro" type="button">
+              <button
+                className="btn-transparent"
+                id="toggleIntro"
+                type="button"
+                onClick={toggleIntro}
+              >
                 <i className="yobicon-resizev" />
               </button>
             </div>
