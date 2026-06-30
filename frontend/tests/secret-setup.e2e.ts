@@ -121,6 +121,22 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopSecretMetrics(page)).toEqual({
+    buttonRowMarginBottom: "20px",
+    formMarginTop: "14px",
+    formWidth: "400px",
+    inputHeight: "30px",
+    inputMarginBottom: "15px",
+    inputWidth: "386px",
+    logoHeight: "55px",
+    logoLineHeight: "55px",
+    logoMarginBottom: "50px",
+    logoMarginTop: "50px",
+    logoWidth: "123px",
+    secretBoxMarginBottom: "20px",
+    secretBoxMarginTop: "20px",
+    secretBoxWidth: "640px",
+  });
 
   await page.fill("#uname", "Site Admin");
   await page.fill("#email", "admin@example.com");
@@ -152,6 +168,42 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
 
   expect(actual).toEqual(expected);
 });
+
+async function readDesktopSecretMetrics(page: Page) {
+  return page.evaluate(() => {
+    const logo = document.querySelector<HTMLElement>(".secret-wrap .logo");
+    const secretBox = document.querySelector<HTMLElement>(".secret-box");
+    const formWrap = document.querySelector<HTMLElement>(".signup-form-wrap");
+    const passwordInput = document.querySelector<HTMLElement>("#password");
+    const buttonRow = document.querySelector<HTMLElement>(".signup-form-wrap .btns-row");
+    if (!logo || !secretBox || !formWrap || !passwordInput || !buttonRow) {
+      throw new Error("Expected secret setup metric targets are missing.");
+    }
+
+    const logoStyle = getComputedStyle(logo);
+    const secretBoxStyle = getComputedStyle(secretBox);
+    const formWrapStyle = getComputedStyle(formWrap);
+    const passwordInputStyle = getComputedStyle(passwordInput);
+    const buttonRowStyle = getComputedStyle(buttonRow);
+
+    return {
+      buttonRowMarginBottom: buttonRowStyle.marginBottom,
+      formMarginTop: formWrapStyle.marginTop,
+      formWidth: formWrapStyle.width,
+      inputHeight: passwordInputStyle.height,
+      inputMarginBottom: passwordInputStyle.marginBottom,
+      inputWidth: passwordInputStyle.width,
+      logoHeight: logoStyle.height,
+      logoLineHeight: logoStyle.lineHeight,
+      logoMarginBottom: logoStyle.marginBottom,
+      logoMarginTop: logoStyle.marginTop,
+      logoWidth: logoStyle.width,
+      secretBoxMarginBottom: secretBoxStyle.marginBottom,
+      secretBoxMarginTop: secretBoxStyle.marginTop,
+      secretBoxWidth: secretBoxStyle.width,
+    };
+  });
+}
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
