@@ -155,6 +155,74 @@ const EXPECTED_DIRECT_NOTIFICATIONS_WITH_NOTIFICATION = EXPECTED_DIRECT_NOTIFICA
   </li>`,
 );
 
+const EXPECTED_SIDEBAR_PROJECT_TAB = `
+<div id="usermenu-tab-content-list" class="tab-content">
+  <div>
+    <div class="search-result">
+      <div class="tab-pane myproject-list-wrap">
+        <div class="group">
+          <input class="search-input project-search" type="text" id="query" autocomplete="off" placeholder="Type name">
+          <span class="bar"></span>
+        </div>
+        <div class="subtab-wrap subtab-group">
+          <ul class="nav-subtab unstyled">
+            <li class="active"><a href="#recentlyVisited" data-toggle="tab">Recently visited</a></li>
+            <li><a href="#createdByMe" data-toggle="tab">Create</a></li>
+            <li><a href="#watching" data-toggle="tab">Watching</a></li>
+            <li><a href="#joinmember" data-toggle="tab">Member</a></li>
+          </ul>
+        </div>
+        <div class="tab-content">
+          <ul class="tab-pane user-ul active" id="recentlyVisited">
+            <li class="user-li" data-location="__BASE_PATH__/admin/sample">
+              <div class="project-list project-flex-container">
+                <div class="project-item project-item-container">
+                  <div class="flex-item site-logo"><i class="project-avatar"><img class="logo" src="/assets/images/project_default_logo.png"></i></div>
+                  <div class="projectName-owner flex-item">
+                    <div class="project-name flex-item">sample </div>
+                    <div class="project-owner flex-item"><a href="__BASE_PATH__/admin">admin</a></div>
+                  </div>
+                </div>
+                <div class="star-project flex-item" data-project-id="7"><i class="star material-icons">star</i></div>
+              </div>
+            </li>
+          </ul>
+          <ul class="tab-pane user-ul " id="watching">
+            <li class="user-li" data-location="__BASE_PATH__/weblabs/playground">
+              <div class="project-list project-flex-container">
+                <div class="project-item project-item-container">
+                  <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
+                  <div class="projectName-owner flex-item">
+                    <div class="project-name flex-item">playground <i class="yobicon-lock yobicon-small"></i></div>
+                    <div class="project-owner flex-item"><a href="__BASE_PATH__/weblabs">weblabs</a></div>
+                  </div>
+                </div>
+                <div class="star-project flex-item" data-project-id="8"><i class="star material-icons">star</i></div>
+              </div>
+            </li>
+          </ul>
+          <div id="createdByMe" class="no-result tab-pane user-ul ">No results</div>
+          <ul class="tab-pane user-ul " id="joinmember">
+            <li class="user-li" data-location="__BASE_PATH__/admin/member">
+              <div class="project-list project-flex-container">
+                <div class="project-item project-item-container">
+                  <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
+                  <div class="projectName-owner flex-item">
+                    <div class="project-name flex-item">member </div>
+                    <div class="project-owner flex-item"><a href="__BASE_PATH__/admin">admin</a></div>
+                  </div>
+                </div>
+                <div class="star-project flex-item" data-project-id="9"><i class="star material-icons">star</i></div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
 const EXPECTED_AUTHENTICATED_NOTIFICATION_SHELL_METRICS = {
   activityStreamsMarginTop: "0px",
   gnbInnerHeight: "40px",
@@ -231,6 +299,29 @@ test("authenticated home empty notifications matches legacy index notifications 
     pageWrapOuterWidth: 390,
     siteGuideOuterMargin: "40px 0px 0px",
   });
+});
+
+test("authenticated root sidebar project tab matches legacy index/myProjectList DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+  await mockWorkspaceSidebarProjects(page);
+
+  await page.goto(`${basePath}/`);
+  await expect(page.locator("#usermenu-tab-content-list")).toContainText("Loading...");
+  await page.locator("#sidebar-open-btn a").click();
+  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
+  await page.locator(".myProjectList a").click();
+  await expect(page.locator("#usermenu-tab-content-list .project-search")).toBeVisible();
+  await expect(page.locator("#usermenu-tab-content-list .user-li")).toHaveCount(3);
+
+  expect(await canonicalizeSelector(page, "#usermenu-tab-content-list")).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_SIDEBAR_PROJECT_TAB.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
 });
 
 test("direct notifications route matches legacy Application.notifications empty state DOM", async ({
@@ -792,6 +883,58 @@ async function mockAuthenticatedEmptyNotifications(page: Page) {
   await mockAuthenticatedNotifications(page, []);
 }
 
+async function mockWorkspaceSidebarProjects(page: Page) {
+  await page.route("**/api/v1/workspace", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        emails: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [
+          {
+            id: 9,
+            isPrivate: false,
+            logoUrl: "",
+            ownerName: "admin",
+            projectName: "member",
+          },
+        ],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          connectedSocialProviders: [],
+          displayName: "Site Admin",
+          englishName: "",
+          isBlocked: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+          primaryEmailAddress: "admin@example.com",
+          sinceLabel: "",
+        },
+        pullRequestItems: [],
+        recentProjects: [
+          {
+            id: 7,
+            isPrivate: false,
+            logoUrl: "/assets/images/project_default_logo.png",
+            ownerName: "admin",
+            projectName: "sample",
+          },
+        ],
+        watchedProjects: [
+          {
+            id: 8,
+            isPrivate: true,
+            logoUrl: "",
+            ownerName: "weblabs",
+            projectName: "playground",
+          },
+        ],
+      }),
+    });
+  });
+}
+
 async function mockAuthenticatedNotifications(page: Page, items: unknown[]) {
   await mockAuthenticatedNotificationsByPage(page, () => ({
     hasMore: false,
@@ -846,9 +989,13 @@ async function canonicalizeScreenRoots(page: Page) {
         "value",
         "autocomplete",
         "accesskey",
+        "placeholder",
         "href",
+        "src",
         "target",
         "title",
+        "data-location",
+        "data-project-id",
         "data-toggle",
         "data-placement",
         "data-trigger",
@@ -881,6 +1028,64 @@ async function canonicalizeScreenRoots(page: Page) {
   });
 }
 
+async function canonicalizeSelector(page: Page, selector: string) {
+  return page.evaluate((targetSelector) => {
+    const root = document.querySelector(targetSelector);
+    if (!root) {
+      throw new Error(`Missing selector: ${targetSelector}`);
+    }
+    return visit(root);
+
+    function visit(current: Element): string {
+      const stableAttributes = [
+        "id",
+        "class",
+        "name",
+        "type",
+        "method",
+        "action",
+        "value",
+        "autocomplete",
+        "accesskey",
+        "placeholder",
+        "href",
+        "src",
+        "target",
+        "title",
+        "data-location",
+        "data-project-id",
+        "data-toggle",
+        "data-placement",
+        "data-trigger",
+        "data-content",
+        "data-target",
+        "data-url",
+      ];
+      const attrs = stableAttributes
+        .filter((name) => current.hasAttribute(name))
+        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .join(" ");
+      const open = attrs
+        ? `<${current.tagName.toLowerCase()} ${attrs}>`
+        : `<${current.tagName.toLowerCase()}>`;
+      const children = Array.from(current.childNodes)
+        .map((child) => {
+          if (child.nodeType === Node.TEXT_NODE) {
+            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
+          }
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            return visit(child as Element);
+          }
+          return "";
+        })
+        .filter(Boolean)
+        .join("");
+
+      return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+  }, selector);
+}
+
 async function canonicalizeHtml(page: Page, html: string) {
   return page.evaluate(
     ({ markup }) => {
@@ -901,9 +1106,13 @@ async function canonicalizeHtml(page: Page, html: string) {
           "value",
           "autocomplete",
           "accesskey",
+          "placeholder",
           "href",
+          "src",
           "target",
           "title",
+          "data-location",
+          "data-project-id",
           "data-toggle",
           "data-placement",
           "data-trigger",
