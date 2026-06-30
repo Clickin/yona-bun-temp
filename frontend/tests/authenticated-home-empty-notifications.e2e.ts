@@ -187,6 +187,13 @@ test("direct notifications route matches legacy Application.notifications empty 
   expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual(
     EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS,
   );
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await readMobileDirectNotificationsMetrics(page)).toEqual({
+    defaultLandingButtonDisplay: "none",
+    mainStreamWidth: 390,
+    pageWrapOuterWidth: 390,
+    siteGuideOuterMargin: "40px 0px 0px",
+  });
 });
 
 test("direct notifications route matches legacy populated notification row DOM", async ({
@@ -317,6 +324,25 @@ async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
       providerColor: providerStyle.color,
       providerFontSize: providerStyle.fontSize,
       providerMarginLeft: providerStyle.marginLeft,
+    };
+  });
+}
+
+async function readMobileDirectNotificationsMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const siteGuideOuter = document.querySelector<HTMLElement>(".site-guide-outer");
+    const mainStream = document.querySelector<HTMLElement>(".main-stream");
+    const defaultLandingButton = document.querySelector<HTMLElement>("#setDefaultLoginPage");
+    if (!pageWrapOuter || !siteGuideOuter || !mainStream || !defaultLandingButton) {
+      throw new Error("Expected mobile direct notifications metric targets are missing.");
+    }
+
+    return {
+      defaultLandingButtonDisplay: getComputedStyle(defaultLandingButton).display,
+      mainStreamWidth: Math.round(mainStream.getBoundingClientRect().width),
+      pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
+      siteGuideOuterMargin: getComputedStyle(siteGuideOuter).margin,
     };
   });
 }

@@ -1001,6 +1001,19 @@ button[type="submit"]:focus {
     text-align: right;
   }
 
+  .main-stream,
+  .content-container .main-stream {
+    width: 100% !important;
+  }
+
+  .site-guide-outer {
+    margin: 40px 0 0 !important;
+  }
+
+  .hide-in-mobile {
+    display: none !important;
+  }
+
   .dl-horizontal dt {
     float: none;
     width: auto;
