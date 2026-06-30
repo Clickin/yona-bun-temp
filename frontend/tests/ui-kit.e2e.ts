@@ -30,10 +30,16 @@ test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({
     ddMarginLeft: "0px",
     dlDisplay: "inline-block",
     dlMarginTop: "18px",
+    gnbOuterHeight: "40px",
     gnbTextAlign: "center",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
     pageWrapOuterMinWidth: "1100px",
+    providerColor: "rgb(51, 51, 51)",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
     subtitleFontSize: "24px",
     subtitleFontWeight: "700",
     subtitleHeight: "55px",
@@ -47,10 +53,23 @@ async function readDesktopUIKitMetrics(page: Page) {
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
     const subtitle = document.querySelector<HTMLElement>(".subtitle");
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
     const dl = document.querySelector<HTMLElement>("dl");
     const dd = document.querySelector<HTMLElement>("dd");
     const cssBadge = document.querySelector<HTMLElement>(".css");
-    if (!gnbOuter || !subtitle || !pageWrapOuter || !dl || !dd || !cssBadge) {
+    if (
+      !gnbOuter ||
+      !subtitle ||
+      !pageWrapOuter ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider ||
+      !dl ||
+      !dd ||
+      !cssBadge
+    ) {
       throw new Error("Expected UI kit metric targets are missing.");
     }
 
@@ -58,6 +77,8 @@ async function readDesktopUIKitMetrics(page: Page) {
     const gnbOuterStyle = getComputedStyle(gnbOuter);
     const subtitleStyle = getComputedStyle(subtitle);
     const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
     const dlStyle = getComputedStyle(dl);
     const ddStyle = getComputedStyle(dd);
     const cssBadgeStyle = getComputedStyle(cssBadge);
@@ -71,10 +92,16 @@ async function readDesktopUIKitMetrics(page: Page) {
       ddMarginLeft: ddStyle.marginLeft,
       dlDisplay: dlStyle.display,
       dlMarginTop: dlStyle.marginTop,
+      gnbOuterHeight: gnbOuterStyle.height,
       gnbTextAlign: gnbOuterStyle.textAlign,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
       pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
       pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
       pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
       subtitleFontSize: subtitleStyle.fontSize,
       subtitleFontWeight: subtitleStyle.fontWeight,
       subtitleHeight: subtitleStyle.height,
