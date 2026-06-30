@@ -80,7 +80,14 @@ const EXPECTED_AUTHENTICATED_HOME = `
 </footer>
 `;
 
-const EXPECTED_AUTHENTICATED_HOME_WITH_NOTIFICATION = EXPECTED_AUTHENTICATED_HOME.replace(
+const EXPECTED_DIRECT_NOTIFICATIONS = EXPECTED_AUTHENTICATED_HOME.replace(
+  `<li></li>
+          </ul>`,
+  `<li><button id="setDefaultLoginPage" class="ybtn hide-in-mobile" type="button" data-url="notifications" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
+          </ul>`,
+);
+
+const EXPECTED_DIRECT_NOTIFICATIONS_WITH_NOTIFICATION = EXPECTED_DIRECT_NOTIFICATIONS.replace(
   `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
   `<li class="notification-stream">
     <div class="stream-type comment2"><i class="yobicon-comment2"></i></div>
@@ -136,7 +143,7 @@ test("direct notifications route matches legacy Application.notifications empty 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_AUTHENTICATED_HOME.replaceAll("__BASE_PATH__", basePath),
+    EXPECTED_DIRECT_NOTIFICATIONS.replaceAll("__BASE_PATH__", basePath),
   );
 
   expect(actual).toEqual(expected);
@@ -171,7 +178,7 @@ test("direct notifications route matches legacy populated notification row DOM",
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_AUTHENTICATED_HOME_WITH_NOTIFICATION.replaceAll("__BASE_PATH__", basePath),
+    EXPECTED_DIRECT_NOTIFICATIONS_WITH_NOTIFICATION.replaceAll("__BASE_PATH__", basePath),
   );
 
   expect(actual).toEqual(expected);
@@ -227,7 +234,10 @@ async function canonicalizeScreenRoots(page: Page) {
         "title",
         "data-toggle",
         "data-placement",
+        "data-trigger",
+        "data-content",
         "data-target",
+        "data-url",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
@@ -278,7 +288,10 @@ async function canonicalizeHtml(page: Page, html: string) {
           "title",
           "data-toggle",
           "data-placement",
+          "data-trigger",
+          "data-content",
           "data-target",
+          "data-url",
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))

@@ -6,17 +6,29 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
-export function HomeRouteScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+export function HomeRouteScreen({
+  runtimeConfig,
+  routePath = "/",
+}: {
+  runtimeConfig: RuntimeConfig;
+  routePath?: string;
+}) {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <HomeScreen runtimeConfig={runtimeConfig} />
+        <HomeScreen routePath={routePath} runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function HomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function HomeScreen({
+  routePath,
+  runtimeConfig,
+}: {
+  routePath: string;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const notificationsQuery = useQuery({
@@ -33,6 +45,16 @@ function HomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     ["yobicon-friends", t("title.workTeam"), t("site.features.workTeam")],
   ];
   const isAuthenticated = sessionQuery.data?.isAnonymous === false;
+  const defaultLandingPath =
+    typeof sessionQuery.data?.defaultLandingPath === "string"
+      ? sessionQuery.data.defaultLandingPath
+      : "";
+  const routePathWithoutSlash = routePath.replace(/^\/+/u, "");
+  const defaultLandingWithoutSlash = defaultLandingPath.replace(/^\/+/u, "");
+  const shouldShowDefaultLandingButton =
+    routePath !== "/" &&
+    routePathWithoutSlash !== "" &&
+    routePathWithoutSlash !== defaultLandingWithoutSlash;
 
   if (isAuthenticated) {
     return (
@@ -105,7 +127,23 @@ function HomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         {t("user.files")}
                       </a>
                     </li>
-                    <li />
+                    <li>
+                      {shouldShowDefaultLandingButton ? (
+                        <button
+                          id="setDefaultLoginPage"
+                          type="button"
+                          className="ybtn hide-in-mobile"
+                          data-url={routePathWithoutSlash}
+                          title={t("button.setDefaultLoginPage")}
+                          data-trigger="hover"
+                          data-placement="bottom"
+                          data-toggle="popover"
+                          data-content={t("button.setDefaultLoginPage.desc")}
+                        >
+                          {t("button.setDefaultLoginPage")}
+                        </button>
+                      ) : null}
+                    </li>
                   </ul>
                   <ul className="activity-streams notification-wrap unstyled">
                     {(notificationsQuery.data?.items.length ?? 0) === 0 ? (
