@@ -88,7 +88,51 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopRestrictedMetrics(page)).toEqual({
+    footerLineHeight: "34px",
+    footerPaddingBottom: "10px",
+    footerPaddingTop: "10px",
+    iframeHeight: "315px",
+    iframeWidth: "560px",
+    pageWrapOuterMarginTop: "10px",
+    pageWrapOuterMinHeight: "450px",
+    pageWrapOuterMinWidth: "1100px",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
+  });
 });
+
+async function readDesktopRestrictedMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const iframe = document.querySelector<HTMLElement>("iframe");
+    const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const footer = document.querySelector<HTMLElement>(".page-footer");
+    const provider = document.querySelector<HTMLElement>(".page-footer .provider");
+    if (!pageWrapOuter || !iframe || !footerOuter || !footer || !provider) {
+      throw new Error("Expected restricted metric targets are missing.");
+    }
+
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const iframeStyle = getComputedStyle(iframe);
+    const footerOuterStyle = getComputedStyle(footerOuter);
+    const footerStyle = getComputedStyle(footer);
+    const providerStyle = getComputedStyle(provider);
+
+    return {
+      footerLineHeight: footerStyle.lineHeight,
+      footerPaddingBottom: footerOuterStyle.paddingBottom,
+      footerPaddingTop: footerOuterStyle.paddingTop,
+      iframeHeight: iframeStyle.height,
+      iframeWidth: iframeStyle.width,
+      pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
+      pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
+      pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
+    };
+  });
+}
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
