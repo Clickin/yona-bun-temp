@@ -161,7 +161,7 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
   await page.fill("#email", "admin@example.com");
   await page.fill("#password", "secret-pass");
   await page.fill("#retypedPassword", "secret-pass");
-  await page.locator('button[type="submit"]').click();
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
   await expect(page).toHaveURL(`${basePath}/restart`);
 });
 
