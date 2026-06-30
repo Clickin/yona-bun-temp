@@ -342,6 +342,37 @@ test("signup requiring admin confirmation redirects to legacy flash landing stat
   );
 
   expect(actual).toEqual(expected);
+  expect(await readToastMetrics(page)).toEqual({
+    buttonColor: "rgb(0, 0, 0)",
+    buttonDismissLeft: "420px",
+    buttonDismissTop: "5px",
+    buttonFontSize: "25px",
+    buttonFontWeight: "700",
+    containerBottom: "25px",
+    containerMargin: "10px",
+    containerOverflow: "hidden",
+    containerPosition: "fixed",
+    containerRight: "20px",
+    containerZIndex: "9999",
+    messageDisplay: "inline-block",
+    messageFontSize: "15px",
+    messageMargin: "0px",
+    messageVerticalAlign: "middle",
+    messageWidth: "369px",
+    toastBackgroundColor: "rgb(205, 220, 57)",
+    toastBorderRadius: "2px",
+    toastBoxShadow: "rgb(0, 0, 0) 1px 1px 3px 0px",
+    toastBoxSizing: "border-box",
+    toastColor: "rgb(0, 0, 0)",
+    toastFontWeight: "700",
+    toastMargin: "10px",
+    toastOpacity: "0.9",
+    toastPadding: "10px 20px",
+    toastWidth: "450px",
+    verticalSpacerDisplay: "inline-block",
+    verticalSpacerHeight: "50px",
+    verticalSpacerWidth: "0px",
+  });
 });
 
 test("signup requiring email verification redirects to legacy flash landing state", async ({
@@ -640,6 +671,59 @@ async function readMobileSignupMetrics(page: Page) {
       loginInputWidth: getComputedStyle(loginInput).width,
       passwordInputWidth: getComputedStyle(passwordInput).width,
       signupDefinitionListTextAlign: getComputedStyle(definitionList).textAlign,
+    };
+  });
+}
+
+async function readToastMetrics(page: Page) {
+  return page.evaluate(() => {
+    const container = document.querySelector<HTMLElement>("#yobiToasts");
+    const toast = document.querySelector<HTMLElement>("#yobiToasts .toast");
+    const dismiss = document.querySelector<HTMLElement>("#yobiToasts .btn-dismiss");
+    const button = document.querySelector<HTMLElement>("#yobiToasts .btn-dismiss button");
+    const verticalSpacer = document.querySelector<HTMLElement>("#yobiToasts .v");
+    const message = document.querySelector<HTMLElement>("#yobiToasts .msg");
+    if (!container || !toast || !dismiss || !button || !verticalSpacer || !message) {
+      throw new Error("Expected signup toast metric targets are missing.");
+    }
+
+    const containerStyle = getComputedStyle(container);
+    const toastStyle = getComputedStyle(toast);
+    const dismissStyle = getComputedStyle(dismiss);
+    const buttonStyle = getComputedStyle(button);
+    const verticalSpacerStyle = getComputedStyle(verticalSpacer);
+    const messageStyle = getComputedStyle(message);
+
+    return {
+      buttonColor: buttonStyle.color,
+      buttonDismissLeft: dismissStyle.left,
+      buttonDismissTop: dismissStyle.top,
+      buttonFontSize: buttonStyle.fontSize,
+      buttonFontWeight: buttonStyle.fontWeight,
+      containerBottom: containerStyle.bottom,
+      containerMargin: containerStyle.margin,
+      containerOverflow: containerStyle.overflow,
+      containerPosition: containerStyle.position,
+      containerRight: containerStyle.right,
+      containerZIndex: containerStyle.zIndex,
+      messageDisplay: messageStyle.display,
+      messageFontSize: messageStyle.fontSize,
+      messageMargin: messageStyle.margin,
+      messageVerticalAlign: messageStyle.verticalAlign,
+      messageWidth: messageStyle.width,
+      toastBackgroundColor: toastStyle.backgroundColor,
+      toastBorderRadius: toastStyle.borderTopLeftRadius,
+      toastBoxShadow: toastStyle.boxShadow,
+      toastBoxSizing: toastStyle.boxSizing,
+      toastColor: toastStyle.color,
+      toastFontWeight: toastStyle.fontWeight,
+      toastMargin: toastStyle.margin,
+      toastOpacity: toastStyle.opacity,
+      toastPadding: toastStyle.padding,
+      toastWidth: toastStyle.width,
+      verticalSpacerDisplay: verticalSpacerStyle.display,
+      verticalSpacerHeight: verticalSpacerStyle.height,
+      verticalSpacerWidth: verticalSpacerStyle.width,
     };
   });
 }
