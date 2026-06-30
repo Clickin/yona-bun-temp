@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, LiHTMLAttributes } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
@@ -9,6 +9,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   listProjectIssues,
   type ProjectIssueListRestResponse,
+  type RestIssueListItem,
 } from "../../../auth-workspace-client";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
@@ -203,6 +204,31 @@ function ProjectIssuesBody({
               </>
             ) : (
               <>
+                <div className="filter-wrap board">
+                  {issues.items.length > 1 ? (
+                    <IssueFilters orderBy={search.orderBy} orderDir={search.orderDir} />
+                  ) : null}
+                </div>
+                <ul className="post-list-wrap row-fluid">
+                  {issues.items.map((issue) => (
+                    <ProjectIssueItem
+                      basePath={runtimeConfig.basePath}
+                      issue={issue}
+                      key={issue.id || issue.issueNumber}
+                      ownerName={ownerName}
+                      projectName={projectName}
+                    />
+                  ))}
+                </ul>
+                <div className="pull-left" style={{ padding: "10px" }}>
+                  <a
+                    href={excelHref(runtimeConfig.basePath, ownerName, projectName, search)}
+                    className="ybtn small"
+                  >
+                    <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}
+                  </a>
+                </div>
+                <IssueListKeymap />
                 <div id="pagination" data-total={totalPages(issues)}></div>
               </>
             )}
@@ -210,6 +236,207 @@ function ProjectIssuesBody({
         </div>
       </div>
     </div>
+  );
+}
+
+function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string }) {
+  const { t } = useLegacyMessages();
+  const filters = [
+    { field: "dueDate", label: t("common.order.dueDate") },
+    { field: "updatedDate", label: t("common.order.updatedDate") },
+    { field: "createdDate", label: t("common.order.date") },
+    { field: "numOfComments", label: t("common.order.comments") },
+  ];
+
+  return (
+    <div className="filters pull-right">
+      {filters.map((filter) => {
+        const active = orderBy === filter.field;
+        const legacySort = {
+          orderBy: filter.field,
+          orderDir: active && orderDir === "desc" ? "asc" : "desc",
+        } as unknown as HTMLAttributes<HTMLAnchorElement>;
+        return (
+          /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy sort filters use href="#" plus order attrs. */
+          <a
+            href="#"
+            {...legacySort}
+            className={active ? "filter active" : "filter"}
+            key={filter.field}
+          >
+            <i className={`ico btn-gray-arrow${!active || orderDir === "desc" ? " down" : ""}`}></i>
+            {filter.label}
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProjectIssueItem({
+  basePath,
+  issue,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  issue: RestIssueListItem;
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+  const issueId = stringField(issue.id, String(issue.issueNumber));
+  const issueNumber = stringField(issue.issueNumber, issueId);
+  const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
+  const authorLoginId = stringField(issue.authorLoginId, "");
+  const authorHref = prefixBasePath(basePath, `/${authorLoginId}`);
+  const assigneeLoginId = stringField(issue.assigneeLoginId, "");
+  const createdLabel = stringField(issue.createdLabel, stringField(issue.updatedLabel, ""));
+  const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
+  const legacyFor = {
+    htmlFor: `issue-${issueId}`,
+  } as unknown as HTMLAttributes<HTMLDivElement>;
+
+  return (
+    <li
+      className="post-item title"
+      id={`issue-item-${issueId}`}
+      data-item="issue-item"
+      data-value={`${authorLoginId} ${issueNumber} ${issue.title}`}
+      {...legacyHref}
+    >
+      <div className="span9 span-hard-wrap">
+        {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update checkbox label targets the row checkbox by id. */}
+        <label htmlFor={`issue-${issueId}`} className="mass-update-check hide-in-mobile">
+          <input
+            id={`issue-${issueId}`}
+            type="checkbox"
+            name="checked-issue"
+            data-toggle="issue-checkbox"
+            data-issue-id={issueId}
+            data-issue-labels={issueLabelData(issue)}
+          />
+        </label>
+        <div {...legacyFor} className="issue-item-row">
+          <div className="title-wrap">
+            <a href={issueHref} className="title">
+              <span className="post-id">#{issueNumber}</span>
+            </a>
+            <a href={issueHref} className="title">
+              {issue.title}
+            </a>
+          </div>
+          <div className="infos">
+            {issue.authorLabel ? (
+              <a
+                href={authorHref}
+                className="infos-item infos-link-item"
+                data-toggle="tooltip"
+                data-placement="bottom"
+                title={authorLoginId}
+              >
+                {issue.authorLabel}
+              </a>
+            ) : (
+              <span className="infos-item">{t("issue.noAuthor")}</span>
+            )}
+            <span
+              className="infos-item"
+              data-toggle="tooltip"
+              data-placement="bottom"
+              title={createdLabel}
+            >
+              {createdLabel}
+            </span>
+            {issue.milestoneId ? (
+              <span className="mileston-tag">
+                <a
+                  href={prefixBasePath(
+                    basePath,
+                    `/${ownerName}/${projectName}/milestone/${issue.milestoneId}`,
+                  )}
+                  data-toggle="tooltip"
+                  data-placement="bottom"
+                  title={t("milestone")}
+                >
+                  {issue.milestoneTitle}
+                </a>
+              </span>
+            ) : null}
+            {issue.commentCount > 0 || issue.voterCount > 0 ? (
+              <span className="infos-item item-count-groups">
+                {issue.commentCount > 0 ? (
+                  <a href={`${issueHref}#comments`}>
+                    <span className="count-groups item-icon ">
+                      <i className="yobicon-comments"></i>
+                    </span>
+                    <span className="count-groups item-count ">{issue.commentCount}</span>
+                  </a>
+                ) : null}
+                {issue.voterCount > 0 ? (
+                  <a href={`${issueHref}#vote`}>
+                    <span className="count-groups item-icon strong">
+                      <i className="yobicon-hearts"></i>
+                    </span>
+                    <span className="count-groups item-count strong">{issue.voterCount}</span>
+                  </a>
+                ) : null}
+              </span>
+            ) : null}
+            {issue.labels.map((label) => (
+              /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy issue labels use href="#" and JS filter behavior. */
+              <a
+                href="#"
+                className="label issue-label list-label active"
+                data-category-id={label.categoryId ?? ""}
+                data-label-id={label.id}
+                key={String(label.id)}
+              >
+                {label.name}
+              </a>
+            ))}
+            <div className="child-issue-list hide"></div>
+          </div>
+        </div>
+      </div>
+      <div className="span3 hide-in-mobile">
+        <div className="mt5 pull-right">
+          {assigneeLoginId ? (
+            <a
+              href={prefixBasePath(basePath, `/${assigneeLoginId}`)}
+              className="avatar-wrap assinee"
+              data-toggle="tooltip"
+              data-placement="top"
+              title={`${t("issue.assignee")}: ${issue.assigneeLabel}`}
+            >
+              <img
+                src={issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png"}
+                width="32"
+                height="32"
+                alt=""
+              />
+            </a>
+          ) : (
+            <div className="empty-avatar-wrap">&nbsp;</div>
+          )}
+        </div>
+        {issue.dueDateLabel ? (
+          <div
+            className={`mr20 mt10 pull-right${issue.dueDateOverdue ? " overdue" : ""}`}
+            data-toggle="tooltip"
+            data-placement="top"
+            title={issue.dueDateLabel}
+          >
+            <i className="yobicon-clock2 mr3 vmiddle"></i>
+            <span className="vmiddle">
+              {issue.state === "open" && issue.dueDateOverdue
+                ? t("issue.dueDate.overdue")
+                : issue.dueDateLabel}
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </li>
   );
 }
 
@@ -492,9 +719,42 @@ function IssueListKeymap() {
 }
 
 function totalPages(issues: ProjectIssueListRestResponse) {
+  const providedTotalPages = Number((issues as Record<string, unknown>).totalPages);
+  if (Number.isFinite(providedTotalPages) && providedTotalPages > 0) {
+    return providedTotalPages;
+  }
   const totalCount = Number(issues.totalCount) || 0;
   const pageSize = Number(issues.pageSize) || 15;
   return Math.max(1, Math.ceil(totalCount / pageSize));
+}
+
+function excelHref(
+  basePath: string,
+  ownerName: string,
+  projectName: string,
+  search: ProjectIssuesSearch,
+) {
+  const params = new URLSearchParams();
+  if (search.filter) {
+    params.set("filter", search.filter);
+  }
+  params.set("format", "xls");
+  return `${prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}?${params.toString()}`;
+}
+
+function issueLabelData(issue: RestIssueListItem) {
+  return issue.labels
+    .map((label) =>
+      [
+        label.categoryName ?? "",
+        label.id,
+        label.name,
+        label.categoryId ?? "",
+        String(Boolean(label.categoryIsExclusive)),
+      ].join(","),
+    )
+    .join("|")
+    .concat(issue.labels.length ? "|" : "");
 }
 
 function countField(issues: ProjectIssueListRestResponse, key: string) {

@@ -9,6 +9,21 @@ const EXPECTED_PROJECT_ISSUES_EMPTY = `
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
+const POPULATED_SPAN10 = `<div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active" data-pjax=""><a href="#" state="open">Open<span class="num-badge">1</span></a></li><li data-pjax=""><a href="#" state="closed">Closed<span class="num-badge">2</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="filter-wrap board"></div><ul class="post-list-wrap row-fluid"><li class="post-item title" id="issue-item-42" data-item="issue-item" data-value="dev 11 Fix flaky issue" href="__BASE_PATH__/admin/sample/issue/11"><div class="span9 span-hard-wrap"><label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-toggle="issue-checkbox" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label><div for="issue-42" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="dev">Dev Member</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 1, 2026">Jul 1, 2026</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote"><span class="count-groups item-icon strong"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><a href="#" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</a><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="mr20 mt10 pull-right overdue" data-toggle="tooltip" data-placement="top" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div></div></li></ul><div class="pull-left" style="padding:10px"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div class="pull-left" style="padding:10px 0px;margin-left:55px"><a href="#helpKeys" data-toggle="modal" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</a></div><div id="pagination" data-total="3"></div></div>`;
+
+const EXPECTED_PROJECT_ISSUES_POPULATED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
+  'value="empty"',
+  'value="bug"',
+)
+  .replaceAll(
+    '>Open<span class="num-badge pull-right">0</span>',
+    '>Open<span class="num-badge pull-right">1</span>',
+  )
+  .replace(
+    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
+    `${POPULATED_SPAN10}</div></div></div></div>\n<footer`,
+  );
+
 test("empty project issue list matches legacy issue/list.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page);
@@ -26,7 +41,25 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   );
 });
 
-async function mockProjectIssues(page: Page) {
+test("populated project issue list matches legacy partial_list.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_ISSUES_POPULATED.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+async function mockProjectIssues(page: Page, state: "empty" | "populated" = "empty") {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -73,17 +106,66 @@ async function mockProjectIssues(page: Page) {
   await page.route("**/api/v1/projects/admin/sample/issues**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        closedIssueCount: 0,
-        draftItems: [],
-        items: [],
-        openIssueCount: 0,
-        ownerName: "admin",
-        pageNum: 1,
-        pageSize: 15,
-        projectName: "sample",
-        totalCount: 0,
-      }),
+      body: JSON.stringify(
+        state === "populated"
+          ? {
+              closedIssueCount: 2,
+              draftItems: [],
+              items: [
+                {
+                  assigneeAvatarUrl: "/assets/images/default-avatar-32.png",
+                  assigneeLabel: "Site Admin",
+                  assigneeLoginId: "admin",
+                  authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                  authorLabel: "Dev Member",
+                  authorLoginId: "dev",
+                  commentCount: 3,
+                  createdLabel: "Jul 1, 2026",
+                  dueDateLabel: "Jun 30, 2026",
+                  dueDateOverdue: true,
+                  dueDateText: "Overdue",
+                  id: 42,
+                  issueNumber: 11,
+                  labels: [
+                    {
+                      categoryId: 3,
+                      categoryIsExclusive: false,
+                      categoryName: "bug",
+                      color: "#51aacc",
+                      id: 8,
+                      name: "bug",
+                    },
+                  ],
+                  milestoneId: 5,
+                  milestoneTitle: "v1.0",
+                  ownerName: "admin",
+                  projectName: "sample",
+                  state: "open",
+                  title: "Fix flaky issue",
+                  updatedLabel: "Jul 1, 2026",
+                  voterCount: 1,
+                },
+              ],
+              openIssueCount: 1,
+              ownerName: "admin",
+              pageNum: 1,
+              pageSize: 15,
+              projectName: "sample",
+              totalCount: 3,
+              totalPages: 3,
+            }
+          : {
+              closedIssueCount: 0,
+              draftItems: [],
+              items: [],
+              openIssueCount: 0,
+              ownerName: "admin",
+              pageNum: 1,
+              pageSize: 15,
+              projectName: "sample",
+              totalCount: 0,
+            },
+      ),
     });
   });
 }

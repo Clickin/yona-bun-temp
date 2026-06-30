@@ -41,6 +41,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` renders the project header/menu with active Issue state, left quick-search/search controls, open/closed tabs, two-column/subtask toggles, empty `.error-wrap`, and REST-backed list loading for `/api/v1/projects/:owner/:project/issues`.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` compares the mocked `/admin/sample/issues?filter=empty` whole-screen DOM. This proof covers the empty list screen only; populated rows, mass update interaction, and the full keymap modal remain covered by existing issue-list guards or separate follow-up slices.
 
+## 2026-07-01 Project Issue Populated Row Follow-Up
+
+- Extended the same flat project issue list route to render the populated `issue/partial_list.scala.html` one-row branch with `.post-list-wrap.row-fluid`, legacy row id/href/data hooks, mass-update checkbox metadata, title/author/date/milestone/count/label stack, assignee avatar rail, overdue due-date rail, Excel action, keymap trigger, and pagination.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now maps existing REST issue item fields directly into the legacy row DOM. The sort filter container remains legacy-conditional and is empty for a single visible issue, matching `partial_list_wrap.scala.html`; mass-update dropdown behavior remains a separate interaction slice.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` now includes the RED-to-GREEN populated `/admin/sample/issues?filter=bug` whole-screen DOM comparison alongside the empty-state proof.
+
 ## 2026-06-27 Issue Detail Layout Follow-Up
 
 - Moved project issue detail shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/issue/:issueNumber`, keeping the issue menu active, detail keymap mode, and `issue-detail-page` shell CSS hook.
