@@ -191,9 +191,13 @@ function SearchResultList({
   if (
     result.searchType === "issue" ||
     result.searchType === "post" ||
-    result.searchType === "issue_comment"
+    result.searchType === "issue_comment" ||
+    result.searchType === "post_comment"
   ) {
-    const titleClassName = result.searchType === "issue_comment" ? undefined : "title";
+    const titleClassName =
+      result.searchType === "issue_comment" || result.searchType === "post_comment"
+        ? undefined
+        : "title";
     return (
       <>
         <ul className="search-list-wrap">
