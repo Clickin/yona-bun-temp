@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 test("auth aliases redirect to canonical legacy public routes", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -30,6 +30,11 @@ test("auth aliases redirect to canonical legacy public routes", async ({ page })
 test("legacy GET /users/login renders the index screen at the original URL", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
+  await page.goto(`${basePath}/`);
+  await expect(page.locator(".siteintro-bg")).toBeVisible();
+  const canonicalIndexRoots = await canonicalizeIndexRoots(page);
+  const canonicalIndexMetrics = await readDesktopIndexMetrics(page);
+
   await page.goto(`${basePath}/users/login?from=legacy`);
   expect(new URL(page.url()).pathname).toBe(`${basePath}/users/login`);
   expect(new URL(page.url()).searchParams.get("from")).toBe("legacy");
@@ -39,4 +44,99 @@ test("legacy GET /users/login renders the index screen at the original URL", asy
     "href",
     `${basePath}/users/signupform`,
   );
+  expect(await canonicalizeIndexRoots(page)).toEqual(canonicalIndexRoots);
+  expect(await readDesktopIndexMetrics(page)).toEqual(canonicalIndexMetrics);
 });
+
+async function canonicalizeIndexRoots(page: Page) {
+  return page.evaluate(() => {
+    const roots = Array.from(
+      document.querySelectorAll(".unsupported, .gnb-outer, .siteintro-bg, .page-footer-outer"),
+    );
+    return roots.map((root) => visit(root)).join("");
+
+    function visit(current: Element): string {
+      const stableAttributes = [
+        "id",
+        "class",
+        "name",
+        "type",
+        "method",
+        "action",
+        "value",
+        "autocomplete",
+        "href",
+        "target",
+        "title",
+        "data-toggle",
+        "data-placement",
+      ];
+      const attrs = stableAttributes
+        .filter((name) => current.hasAttribute(name))
+        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .join(" ");
+      const open = attrs
+        ? `<${current.tagName.toLowerCase()} ${attrs}>`
+        : `<${current.tagName.toLowerCase()}>`;
+      const children = Array.from(current.childNodes)
+        .map((child) => {
+          if (child.nodeType === Node.TEXT_NODE) {
+            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
+          }
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            return visit(child as Element);
+          }
+          return "";
+        })
+        .filter(Boolean)
+        .join("");
+
+      return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+  });
+}
+
+async function readDesktopIndexMetrics(page: Page) {
+  return page.evaluate(() => {
+    const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
+    const heading = document.querySelector<HTMLElement>(".site-heading");
+    const signup = document.querySelector<HTMLElement>(".signup-btn");
+    const feature = document.querySelector<HTMLElement>(".feature");
+    const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
+    const featureIcon = document.querySelector<HTMLElement>(".feature-image");
+    const featureInfo = document.querySelector<HTMLElement>(".feature-info");
+    if (
+      !siteIntroCover ||
+      !heading ||
+      !signup ||
+      !feature ||
+      !featureItem ||
+      !featureIcon ||
+      !featureInfo
+    ) {
+      throw new Error("Expected legacy index metric targets are missing.");
+    }
+
+    const siteIntroCoverStyle = getComputedStyle(siteIntroCover);
+    const featureStyle = getComputedStyle(feature);
+    const featureItemStyle = getComputedStyle(featureItem);
+    const featureIconStyle = getComputedStyle(featureIcon);
+    const featureInfoStyle = getComputedStyle(featureInfo);
+
+    return {
+      featureIconFontSize: featureIconStyle.fontSize,
+      featureIconLeft: featureIconStyle.left,
+      featureIconTop: featureIconStyle.top,
+      featureInfoHeight: featureInfoStyle.height,
+      featureInfoMarginLeft: featureInfoStyle.marginLeft,
+      featureItemMarginLeft: featureItemStyle.marginLeft,
+      featureItemWidth: featureItemStyle.width,
+      featureMaxWidth: featureStyle.maxWidth,
+      headingFontSize: getComputedStyle(heading).fontSize,
+      signupMarginTop: getComputedStyle(signup).marginTop,
+      siteIntroCoverPaddingBottom: siteIntroCoverStyle.paddingBottom,
+      siteIntroCoverPaddingTop: siteIntroCoverStyle.paddingTop,
+      siteIntroCoverWidth: Math.round(siteIntroCover.getBoundingClientRect().width),
+    };
+  });
+}
