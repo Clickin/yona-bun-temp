@@ -105,7 +105,19 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
     checkboxMarginTop: "4px",
     formMarginTop: "54px",
     formWidth: "400px",
+    gnbInnerHeight: "40px",
+    gnbInnerWidth: 1254,
+    gnbOuterBackground: "rgb(27, 27, 27)",
+    gnbOuterHeight: "40px",
+    logoBackground: "rgb(255, 87, 34)",
+    logoLineHeight: "40px",
+    logoPadding: "6px 10px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
     passwordMarginBottom: "15px",
+    providerColor: "rgb(51, 51, 51)",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
     tagLineMarginBottom: "26px",
     tagLinePaddingTop: "80px",
     textHeight: "30px",
@@ -362,6 +374,9 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
 
 async function readDesktopLoginMetrics(page: Page) {
   return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const logo = document.querySelector<HTMLElement>(".logo-letter");
     const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.login");
     const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
     const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
@@ -370,7 +385,13 @@ async function readDesktopLoginMetrics(page: Page) {
     const buttonRow = document.querySelector<HTMLElement>(".login-form-wrap .btns-row");
     const actRow = document.querySelector<HTMLElement>(".login-form-wrap .act-row");
     const checkbox = document.querySelector<HTMLElement>("#remember-me");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
     if (
+      !gnbOuter ||
+      !gnbInner ||
+      !logo ||
       !tagLineWrap ||
       !title ||
       !formWrap ||
@@ -378,17 +399,25 @@ async function readDesktopLoginMetrics(page: Page) {
       !passwordInput ||
       !buttonRow ||
       !actRow ||
-      !checkbox
+      !checkbox ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
     ) {
       throw new Error("Expected login metric targets are missing.");
     }
 
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const gnbInnerStyle = getComputedStyle(gnbInner);
+    const logoStyle = getComputedStyle(logo);
     const tagLineWrapStyle = getComputedStyle(tagLineWrap);
     const formWrapStyle = getComputedStyle(formWrap);
     const loginInputStyle = getComputedStyle(loginInput);
     const passwordInputStyle = getComputedStyle(passwordInput);
     const buttonRowStyle = getComputedStyle(buttonRow);
     const checkboxStyle = getComputedStyle(checkbox);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
 
     return {
       actRowLineHeight: getComputedStyle(actRow).lineHeight,
@@ -397,7 +426,19 @@ async function readDesktopLoginMetrics(page: Page) {
       checkboxMarginTop: checkboxStyle.marginTop,
       formMarginTop: formWrapStyle.marginTop,
       formWidth: formWrapStyle.width,
+      gnbInnerHeight: gnbInnerStyle.height,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterBackground: gnbOuterStyle.backgroundColor,
+      gnbOuterHeight: gnbOuterStyle.height,
+      logoBackground: logoStyle.backgroundColor,
+      logoLineHeight: logoStyle.lineHeight,
+      logoPadding: logoStyle.padding,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
       passwordMarginBottom: passwordInputStyle.marginBottom,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
       tagLineMarginBottom: tagLineWrapStyle.marginBottom,
       tagLinePaddingTop: tagLineWrapStyle.paddingTop,
       textHeight: loginInputStyle.height,
