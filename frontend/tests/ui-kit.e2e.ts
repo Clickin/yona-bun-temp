@@ -129,6 +129,42 @@ test("standalone UI kit root shell skips yobi dropdown mutation for data-activat
   await expect(dropdown.locator('input[type="hidden"][name="branch"]')).toHaveCount(0);
 });
 
+test("standalone UI kit root shell applies legacy navbar search scope selection", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/_UIKit`);
+  await page.locator(".page-wrap-outer").evaluate((container) => {
+    container.insertAdjacentHTML(
+      "afterbegin",
+      `<form action="/yona/search" class="input-prepend gnb-search-form" name="gnb-search-form" style="position: fixed; top: 0; left: 0; z-index: 10000; width: 320px;">
+        <input type="hidden" name="searchType" value="auto">
+        <div class="btn-group open">
+          <button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">
+            Project
+          </button>
+          <ul class="dropdown-menu flat right">
+            <li><a href="#" data-toggle="search-scope" data-action="/yona/search/project/yona">Project</a></li>
+            <li><a href="#" data-toggle="search-scope" data-action="/yona/search/group/yona">Group</a></li>
+            <li><a href="#" data-toggle="search-scope" data-action="/yona/search">All</a></li>
+          </ul>
+        </div>
+      </form>`,
+    );
+  });
+
+  await page
+    .locator('[data-toggle="search-scope"][data-action="/yona/search/group/yona"]')
+    .dispatchEvent("click");
+
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    "/yona/search/group/yona",
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("Group");
+});
+
 test("standalone UI kit root shell hides legacy data-via-email original message", async ({
   page,
 }) => {
