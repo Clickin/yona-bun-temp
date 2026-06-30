@@ -153,6 +153,11 @@ test("authenticated home empty notifications matches legacy index notifications 
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
   await expect(page.locator(".warning-none")).toContainText("No notification");
+  await expect(
+    page.locator(
+      "#myOrganizationList, #myProjectList, #myRecentIssueList, #usermenu-tab-content-list",
+    ),
+  ).toHaveCount(0);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -192,6 +197,11 @@ test("direct notifications route matches legacy Application.notifications empty 
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
   await expect(page.locator(".warning-none")).toContainText("No notification");
+  await expect(
+    page.locator(
+      "#myOrganizationList, #myProjectList, #myRecentIssueList, #usermenu-tab-content-list",
+    ),
+  ).toHaveCount(0);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
