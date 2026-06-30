@@ -178,9 +178,21 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
     breadcrumbHeadingPaddingTop: "10px",
     firstQaBorderBottomWidth: "1px",
     firstQaMarginBottom: "14px",
+    gnbInnerHeight: "40px",
+    gnbInnerWidth: 1254,
+    gnbOuterBackground: "rgb(27, 27, 27)",
+    gnbOuterHeight: "40px",
     iconMarginOpen: "17px",
+    logoBackground: "rgb(255, 87, 34)",
+    logoLineHeight: "40px",
+    logoPadding: "6px 10px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
+    providerColor: "rgb(51, 51, 51)",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
     qasMarginTop: "30px",
     questionFontSize: "14px",
     questionMarginBottomClosed: "14px",
@@ -196,6 +208,9 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
 
 async function readDesktopHelpMetrics(page: Page) {
   return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const logo = document.querySelector<HTMLElement>(".logo-letter");
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const breadcrumbHeading = document.querySelector<HTMLElement>(".site-breadcrumb-inner h3");
     const qas = document.querySelector<HTMLElement>(".qas");
@@ -205,7 +220,13 @@ async function readDesktopHelpMetrics(page: Page) {
     const answerWrap = document.querySelector<HTMLElement>(".qas > .qa .answer-wrap");
     const answer = document.querySelector<HTMLElement>(".qas > .qa .answer");
     const icon = document.querySelector<HTMLElement>(".qas > .qa .question-wrap .icor");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
     if (
+      !gnbOuter ||
+      !gnbInner ||
+      !logo ||
       !pageWrapOuter ||
       !breadcrumbHeading ||
       !qas ||
@@ -214,11 +235,17 @@ async function readDesktopHelpMetrics(page: Page) {
       !question ||
       !answerWrap ||
       !answer ||
-      !icon
+      !icon ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
     ) {
       throw new Error("Expected help metric targets are missing.");
     }
 
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const gnbInnerStyle = getComputedStyle(gnbInner);
+    const logoStyle = getComputedStyle(logo);
     const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
     const breadcrumbHeadingStyle = getComputedStyle(breadcrumbHeading);
     const qasStyle = getComputedStyle(qas);
@@ -228,6 +255,8 @@ async function readDesktopHelpMetrics(page: Page) {
     const answerWrapClosedStyle = getComputedStyle(answerWrap);
     const closedAnswerDisplay = answerWrapClosedStyle.display;
     const closedQuestionMarginBottom = questionWrapStyle.marginBottom;
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
 
     firstQa.classList.add("open");
     const questionWrapOpenStyle = getComputedStyle(questionWrap);
@@ -244,9 +273,21 @@ async function readDesktopHelpMetrics(page: Page) {
       breadcrumbHeadingPaddingTop: breadcrumbHeadingStyle.paddingTop,
       firstQaBorderBottomWidth: firstQaStyle.borderBottomWidth,
       firstQaMarginBottom: firstQaStyle.marginBottom,
+      gnbInnerHeight: gnbInnerStyle.height,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterBackground: gnbOuterStyle.backgroundColor,
+      gnbOuterHeight: gnbOuterStyle.height,
       iconMarginOpen: iconOpenStyle.marginTop,
+      logoBackground: logoStyle.backgroundColor,
+      logoLineHeight: logoStyle.lineHeight,
+      logoPadding: logoStyle.padding,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
       pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
       pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
       qasMarginTop: qasStyle.marginTop,
       questionFontSize: questionStyle.fontSize,
       questionMarginBottomClosed: closedQuestionMarginBottom,
