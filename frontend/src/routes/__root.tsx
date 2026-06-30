@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
-import type { RuntimeConfig } from "../runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
 export interface AppRouterContext {
   runtimeConfig: RuntimeConfig;
@@ -8,6 +8,7 @@ export interface AppRouterContext {
 
 export const Route = createRootRouteWithContext<AppRouterContext>()({
   component: RootResetShell,
+  notFoundComponent: RootAliasNotFound,
 });
 
 function RootResetShell() {
@@ -71,4 +72,20 @@ function RootResetShell() {
       </script>
     </>
   );
+}
+
+function RootAliasNotFound() {
+  const { runtimeConfig } = Route.useRouteContext();
+
+  React.useEffect(() => {
+    const basePath = runtimeConfig.basePath === "/" ? "" : runtimeConfig.basePath;
+    const pathname = window.location.pathname.slice(basePath.length) || "/";
+    if (pathname === "/reset-password") {
+      window.location.replace(
+        `${prefixBasePath(runtimeConfig.basePath, "/resetPassword")}${window.location.search}`,
+      );
+    }
+  }, [runtimeConfig.basePath]);
+
+  return null;
 }
