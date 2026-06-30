@@ -252,7 +252,8 @@ test("anonymous signup form matches legacy user/signup.scala.html screen DOM", a
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileSignupMetrics(page)).toEqual({
     formWidth: "370.5px",
-    gnbInnerWidth: 382,
+    gnbInnerWidth: 363,
+    gnbOuterPadding: "0px 10px",
     loginInputWidth: "148.188px",
     passwordInputWidth: "148.188px",
     signupDefinitionListTextAlign: "right",
@@ -623,17 +624,19 @@ async function readDesktopSignupMetrics(page: Page) {
 async function readMobileSignupMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
     const formWrap = document.querySelector<HTMLElement>(".signup-form-wrap");
     const definitionList = document.querySelector<HTMLElement>(".signup-form-wrap dl");
     const loginInput = document.querySelector<HTMLElement>("#loginId");
     const passwordInput = document.querySelector<HTMLElement>("#password");
-    if (!gnbInner || !formWrap || !definitionList || !loginInput || !passwordInput) {
+    if (!gnbInner || !gnbOuter || !formWrap || !definitionList || !loginInput || !passwordInput) {
       throw new Error("Expected mobile signup metric targets are missing.");
     }
 
     return {
       formWidth: getComputedStyle(formWrap).width,
       gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterPadding: getComputedStyle(gnbOuter).padding,
       loginInputWidth: getComputedStyle(loginInput).width,
       passwordInputWidth: getComputedStyle(passwordInput).width,
       signupDefinitionListTextAlign: getComputedStyle(definitionList).textAlign,
