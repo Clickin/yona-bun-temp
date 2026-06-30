@@ -19,7 +19,8 @@ Date: 2026-06-26
   `yona-original/app/views/error/badrequest_default.scala.html`,
   `yona-original/app/views/common/scripts.scala.html`
 - Current React/API: `frontend/src/routes/-auth-views.tsx`,
-  `frontend/src/routes/users/signupform/route.tsx`,
+  `frontend/src/routes/users/loginform.tsx`,
+  `frontend/src/routes/users/signupform.tsx`,
   `frontend/src/routes/lostPassword/route.tsx`,
   `frontend/src/routes/resetPassword/route.tsx`,
   `frontend/src/routes/(legacy-auth)/reset-password/route.tsx`,
@@ -34,7 +35,8 @@ Date: 2026-06-26
 - Focused specs: `frontend/src/auth-workspace-shell.spec.tsx`,
   `frontend/src/wave1-auth-workspace-parity.spec.tsx`,
   `frontend/src/help-route-parity.spec.tsx`,
-  `frontend/tests/auth-public-entry-parity.e2e.ts`
+  `frontend/tests/auth-public-entry-parity.e2e.ts`,
+  `frontend/tests/loginform.e2e.ts`, `frontend/tests/signupform.e2e.ts`
 
 ## Route Inventory Summary
 
@@ -71,7 +73,7 @@ Total rows: 10
 | --- | --- | --- | --- | --- | --- | --- |
 | `/secret` | first-run/no-admin setup | `#frmSignUp`, admin login/password/email fields, restart redirect after setup | same form shell and submit controls in `auth-public-entry-parity.e2e.ts` | fill admin fields, submit, assert restart redirect | React submits `/api/v1/auth/secret` REST JSON | covered |
 | `/users/loginform` | anonymous login | login form fields, `rememberMe`, `redirectUrl`, forgot-password link | active template-first reset route `frontend/src/routes/users/loginform.tsx` preserves the rendered `.page.full` DOM and legacy link shape; `frontend/tests/loginform.e2e.ts` whole-container browser proof added on 2026-06-30 | direct route render; focused submit wiring stays on existing React mutation boundary | React reads `/api/v1/auth/capabilities`, bootstraps CSRF through `/api/auth/session`, and submits `/api/v1/auth/sign-in` REST JSON | covered |
-| `/users/signupform` | signup confirmation | signup form redirects to index flash when confirmation/email verification is required | same redirect and notification shell | submit valid signup | React submits `/api/v1/auth/register` REST JSON | covered |
+| `/users/signupform` | anonymous signup | signup form fields, `form[name=signup]`, login link, confirmation/admin-contact states | active template-first reset route `frontend/src/routes/users/signupform.tsx` preserves the rendered `.page.full` DOM and legacy link shape; `frontend/tests/signupform.e2e.ts` whole-container browser proof added on 2026-06-30 | direct route render; focused submit wiring stays on existing React mutation boundary | React reads `/api/v1/auth/capabilities`, bootstraps CSRF through `/api/auth/session`, and submits `/api/v1/auth/register` REST JSON | covered |
 | `/lostPassword`, `/resetPassword` | valid/invalid reset | lost/reset form copy, invalid reset bad-request shell, valid reset login flash | same document titles, bad-request shell, and login flash | submit/reset route states | React password reset REST boundary | covered |
 | `/verify/:loginId/:verificationCode` | success/invalid verification | verified shell or plain `Invalid verification` | same visible success/invalid copy after REST resolution | direct deep link | REST verify owns status; React renders result | covered |
 | `/login`, `/register`, `/forgot-password`, `/reset-password` | auth aliases | canonical legacy public forms remain `/users/loginform`, `/users/signupform`, `/lostPassword`, `/resetPassword` | aliases redirect to canonical legacy route shells with base-path/query preservation | direct alias navigation | React `RedirectPage`; canonical screens keep REST JSON submit boundaries | covered |

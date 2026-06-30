@@ -738,6 +738,11 @@ button[type="submit"]:focus {
   margin-top: 0;
 }
 
+.page .tag-line-wrap.signup {
+  padding-top: 40px;
+  margin-top: 0;
+}
+
 .page .tag-line-wrap .title {
   display: inline-block;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -754,6 +759,11 @@ button[type="submit"]:focus {
   margin-top: 10px;
   color: #7c7c7c;
   font-size: 1.2em;
+}
+
+.page .tag-line-wrap.signup .tag-line {
+  color: #7c7c7c;
+  font-size: 14px;
 }
 
 .login-form-wrap,
@@ -838,6 +848,11 @@ button[type="submit"]:focus {
   text-align: right;
 }
 
+.signup-form-wrap .act-row .go-login {
+  color: #5c5c5c;
+  font-weight: bold;
+}
+
 .ybtn.ybtn-fullsize {
   box-sizing: border-box;
   display: block;
@@ -859,6 +874,15 @@ button[type="submit"]:focus {
 .frm-wrap dd {
   padding: 0;
   margin: 0;
+}
+
+.frm-wrap dt {
+  margin: 3px 0 1px;
+}
+
+.frm-wrap dt label {
+  margin-right: 5px;
+  font-weight: bold;
 }
 
 .loginDialog {
