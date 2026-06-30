@@ -61,6 +61,21 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
     wrapHeight: 120,
     wrapWidthRatio: 0.97,
   });
+  expect(await projectSettingMetrics(page)).toMatchObject({
+    bubbleBackground: "rgb(247, 247, 247)",
+    bubbleBorderRadius: "5px",
+    defaultBranchName: "defaultBranch",
+    formAction: `${basePath}/admin/sample/setting`,
+    formEnctype: "multipart/form-data",
+    formMethod: "post",
+    hiddenId: "7",
+    logoHeight: 188,
+    logoWidth: 260,
+    menuSettingName: "pullRequest",
+    saveTextAlign: "center",
+    textareaHeight: 80,
+    watchingCount: "5",
+  });
 });
 
 async function mockProjectSettings(page: Page) {
@@ -215,6 +230,43 @@ async function projectHeaderMetrics(page: Page) {
 
     function requireElement(selector: string) {
       const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function projectSettingMetrics(page: Page) {
+  return page.evaluate(() => {
+    const form = requireElement<HTMLFormElement>("#saveSetting");
+    const bubble = requireElement(".bubble-wrap.gray");
+    const logo = requireElement(".setting-box.left .logo-wrap");
+    const textarea = requireElement("#project-desc");
+    const saveWrap = requireElement(".box-wrap.bottom");
+    const bubbleStyle = getComputedStyle(bubble);
+    const textareaRect = textarea.getBoundingClientRect();
+    const logoRect = logo.getBoundingClientRect();
+
+    return {
+      bubbleBackground: bubbleStyle.backgroundColor,
+      bubbleBorderRadius: bubbleStyle.borderTopLeftRadius,
+      defaultBranchName: requireElement<HTMLSelectElement>("#project-default-branch").name,
+      formAction: form.getAttribute("action"),
+      formEnctype: form.getAttribute("enctype"),
+      formMethod: form.getAttribute("method"),
+      hiddenId: form.querySelector<HTMLInputElement>('input[name="id"]')?.value,
+      logoHeight: Math.round(logoRect.height),
+      logoWidth: Math.round(logoRect.width),
+      menuSettingName: requireElement<HTMLInputElement>("#menuSettingPullRequest").name,
+      saveTextAlign: getComputedStyle(saveWrap).textAlign,
+      textareaHeight: Math.round(textareaRect.height),
+      watchingCount: form.querySelector<HTMLInputElement>('input[name="watchingCount"]')?.value,
+    };
+
+    function requireElement<T extends HTMLElement = HTMLElement>(selector: string) {
+      const element = document.querySelector<T>(selector);
       if (!element) {
         throw new Error(`Missing ${selector}`);
       }

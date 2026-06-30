@@ -2390,6 +2390,51 @@ h1 {
   clear: both;
 }
 
+.bubble-wrap {
+  margin-bottom: 20px;
+  overflow: hidden;
+  border-radius: 5px;
+}
+
+.bubble-wrap.gray {
+  background-color: #f7f7f7;
+}
+
+.bubble-wrap.dark-gray {
+  background-color: #ececec;
+}
+
+.bubble-wrap.dark-gray hr {
+  border-top: 1px solid #d4d4d4;
+}
+
+.bubble-wrap.wp {
+  padding: 20px 20px 10px;
+}
+
+.box-wrap {
+  padding: 0 20px;
+  border-bottom: 1px solid #e9e9e9;
+}
+
+.box-wrap:last-of-type {
+  border-bottom: none;
+}
+
+.box-wrap.top {
+  padding-bottom: 20px;
+}
+
+.box-wrap.middle {
+  padding: 10px 20px;
+}
+
+.box-wrap.bottom {
+  padding: 20px 0 12px;
+  text-align: center;
+  border-bottom: 0 none;
+}
+
 .box-wrap .setting-box {
   float: left;
   width: 399px;
