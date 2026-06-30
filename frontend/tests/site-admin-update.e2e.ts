@@ -118,6 +118,13 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   await page.goto(`${basePath}/sites/update`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Software Update");
+  expect(await siteLayoutRootOrder(page)).toEqual([
+    "unsupported hidden",
+    "gnb-outer",
+    "site-breadcrumb-outer",
+    "page-wrap-outer",
+    "page-footer-outer",
+  ]);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -258,6 +265,17 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
   });
+}
+
+async function siteLayoutRootOrder(page: Page) {
+  return page.evaluate(() =>
+    Array.from(
+      document.querySelectorAll(
+        ".unsupported, .gnb-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+      ),
+      (element) => element.getAttribute("class"),
+    ),
+  );
 }
 
 async function canonicalizeHtml(page: Page, html: string) {

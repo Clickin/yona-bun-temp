@@ -157,6 +157,13 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     "data-href",
     `${basePath}/sites/project/delete/77`,
   );
+  expect(await siteLayoutRootOrder(page)).toEqual([
+    "unsupported hidden",
+    "gnb-outer",
+    "site-breadcrumb-outer",
+    "page-wrap-outer",
+    "page-footer-outer",
+  ]);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -166,21 +173,21 @@ test("site admin project list matches legacy site/projectList.scala.html populat
 
   expect(actual).toEqual(expected);
   expect(await projectListMetrics(page)).toEqual({
-    avatarHeight: 34,
-    avatarWidth: 54,
+    avatarHeight: 40,
+    avatarWidth: 45,
     contentWidthRatio: 0.83,
     deleteButtonHeight: 30,
-    filterInputWidth: 160,
+    filterInputWidth: 350,
     firstHeaderColumnRatio: 0.4,
     firstRowColumnRatio: 0.4,
-    listHeadHeight: 60,
+    listHeadHeight: 41,
     modalFooterButtonGap: 32,
     modalWidth: 562,
     paginationOffsetTop: 16,
-    projectNameOffsetTop: 6,
-    searchFormOffsetTop: -16,
+    projectNameOffsetTop: -2,
+    searchFormOffsetTop: 0,
     sidebarWidthRatio: 0.15,
-    titleAreaHeight: 0,
+    titleAreaHeight: 39,
   });
 });
 
@@ -323,6 +330,17 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
   });
+}
+
+async function siteLayoutRootOrder(page: Page) {
+  return page.evaluate(() =>
+    Array.from(
+      document.querySelectorAll(
+        ".unsupported, .gnb-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+      ),
+      (element) => element.getAttribute("class"),
+    ),
+  );
 }
 
 async function projectListMetrics(page: Page) {

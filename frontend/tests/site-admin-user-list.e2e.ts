@@ -170,6 +170,13 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(page.locator('.site-setting-nav a[href$="/sites/setting"]')).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).not.toContainText("TODO");
   await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
+  expect(await siteLayoutRootOrder(page)).toEqual([
+    "unsupported hidden",
+    "gnb-outer",
+    "site-breadcrumb-outer",
+    "page-wrap-outer",
+    "page-footer-outer",
+  ]);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -186,15 +193,15 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     contentWidthRatio: 0.83,
     firstHeaderColumnRatio: 0.23,
     firstRowColumnRatio: 0.23,
-    listHeadHeight: 30,
+    listHeadHeight: 41,
     modalWidth: 562,
-    nameIdGap: -16,
+    nameIdGap: 0,
     paginationOffsetTop: 16,
-    searchFormOffsetTop: -16,
+    searchFormOffsetTop: 0,
     sidebarWidthRatio: 0.15,
-    tabHeight: 51,
-    titleAreaHeight: 0,
-    userSearchInputWidth: 160,
+    tabHeight: 38,
+    titleAreaHeight: 39,
+    userSearchInputWidth: 350,
   });
 });
 
@@ -435,6 +442,17 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
   });
+}
+
+async function siteLayoutRootOrder(page: Page) {
+  return page.evaluate(() =>
+    Array.from(
+      document.querySelectorAll(
+        ".unsupported, .gnb-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+      ),
+      (element) => element.getAttribute("class"),
+    ),
+  );
 }
 
 async function userListMetrics(page: Page) {
