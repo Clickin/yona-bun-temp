@@ -59,6 +59,29 @@ function RootResetShell() {
 
     function handleDocumentClick(event: MouseEvent) {
       const target = event.target instanceof Element ? event.target : null;
+      const markdownHelp = target?.closest<HTMLElement>('[data-toggle="markdown-help"]');
+      if (markdownHelp) {
+        const markdownHelpRoot = markdownHelp.closest(".markdown-help");
+        const targetName = markdownHelp.dataset.target;
+        if (markdownHelpRoot && targetName) {
+          const wasActive = markdownHelp.classList.contains("active");
+          markdownHelp.parentElement
+            ?.querySelectorAll(".help-nav.active")
+            .forEach((item) => item.classList.remove("active"));
+          markdownHelpRoot
+            .querySelectorAll(".markdown-help-wrap > .active")
+            .forEach((item) => item.classList.remove("active"));
+          if (!wasActive) {
+            markdownHelp.classList.add("active");
+            markdownHelpRoot
+              .querySelector(`.markdown-help-wrap > .${CSS.escape(targetName)}`)
+              ?.classList.add("active");
+          }
+        }
+        event.preventDefault();
+        return;
+      }
+
       const searchScope = target?.closest<HTMLElement>('[data-toggle="search-scope"]');
       if (searchScope) {
         const action = searchScope.dataset.action;

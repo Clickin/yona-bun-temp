@@ -6,7 +6,14 @@ const LEGACY_UIKIT_TEMPLATE = readFileSync(
   fileURLToPath(new URL("../../yona-original/app/views/help/UIKit.scala.html", import.meta.url)),
   "utf8",
 );
+const LEGACY_MARKDOWN_HELP_TEMPLATE = readFileSync(
+  fileURLToPath(new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url)),
+  "utf8",
+);
 const EXPECTED_UIKIT_BODY = extractBetween(LEGACY_UIKIT_TEMPLATE, "<body>", "</body>");
+const LEGACY_MARKDOWN_HELP_BODY = LEGACY_MARKDOWN_HELP_TEMPLATE.split(
+  '<script type="text/javascript">',
+)[0].replace('@Messages("title.markdown.help")', "Markdown Help");
 
 test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -163,6 +170,62 @@ test("standalone UI kit root shell applies legacy navbar search scope selection"
     "/yona/search/group/yona",
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("Group");
+});
+
+test("standalone UI kit root shell applies legacy markdown help tab selection", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const expectedTargets = [
+    "markdownHeaders",
+    "markdownStyling",
+    "markdownLinks",
+    "markdownLists",
+    "markdownTaskList",
+    "markdownImages",
+    "markdownBlockquotes",
+    "markdownCodes",
+    "markdownTables",
+    "markdownShortLinks",
+  ];
+
+  await page.goto(`${basePath}/_UIKit`);
+  await page.locator(".page-wrap-outer").evaluate((container, markup) => {
+    container.insertAdjacentHTML("beforeend", markup);
+  }, LEGACY_MARKDOWN_HELP_BODY);
+
+  await expect(page.locator(".markdown-help-nav .help-nav")).toHaveCount(expectedTargets.length);
+  expect(
+    await page.locator(".markdown-help-nav .help-nav").evaluateAll((items) =>
+      items.map((item) => ({
+        target: item.getAttribute("data-target"),
+        toggle: item.getAttribute("data-toggle"),
+      })),
+    ),
+  ).toEqual(expectedTargets.map((target) => ({ target, toggle: "markdown-help" })));
+
+  await page.locator('[data-toggle="markdown-help"][data-target="markdownLinks"]').click();
+  await expect(page.locator('.markdown-help-nav [data-target="markdownLinks"]')).toHaveClass(
+    /active/,
+  );
+  await expect(page.locator(".markdown-help-wrap > .markdownLinks")).toHaveClass(/active/);
+  await expect(page.locator(".markdown-help-wrap > .markdownHeaders")).not.toHaveClass(/active/);
+
+  await page.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
+  await expect(page.locator('.markdown-help-nav [data-target="markdownLinks"]')).not.toHaveClass(
+    /active/,
+  );
+  await expect(page.locator(".markdown-help-wrap > .markdownLinks")).not.toHaveClass(/active/);
+  await expect(page.locator('.markdown-help-nav [data-target="markdownLists"]')).toHaveClass(
+    /active/,
+  );
+  await expect(page.locator(".markdown-help-wrap > .markdownLists")).toHaveClass(/active/);
+
+  await page.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
+  await expect(page.locator('.markdown-help-nav [data-target="markdownLists"]')).not.toHaveClass(
+    /active/,
+  );
+  await expect(page.locator(".markdown-help-wrap > .markdownLists")).not.toHaveClass(/active/);
 });
 
 test("standalone UI kit root shell mounts legacy anonymous login dialog", async ({ page }) => {
