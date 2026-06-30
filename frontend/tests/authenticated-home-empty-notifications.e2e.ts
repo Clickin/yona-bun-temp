@@ -109,6 +109,36 @@ const EXPECTED_DIRECT_NOTIFICATIONS_WITH_NOTIFICATION = EXPECTED_DIRECT_NOTIFICA
   </li>`,
 );
 
+const EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS = {
+  activityStreamsMarginTop: "0px",
+  gnbInnerHeight: "40px",
+  gnbInnerWidth: 1254,
+  gnbOuterBackground: "rgb(27, 27, 27)",
+  gnbOuterHeight: "40px",
+  guideToggleButtonBorderBottomLeftRadius: "6px",
+  guideToggleButtonBorderBottomRightRadius: "6px",
+  guideToggleButtonPaddingLeft: "25px",
+  logoBackground: "rgb(255, 87, 34)",
+  logoLineHeight: "40px",
+  logoPadding: "6px 10px",
+  mainStreamMarginBottom: "15px",
+  navLinkColor: "rgb(85, 85, 85)",
+  navLinkFontWeight: "700",
+  navLinkPaddingLeft: "30px",
+  pageFooterLineHeight: "34px",
+  pageFooterOuterPadding: "10px 0px",
+  pageWrapOuterMarginTop: "10px",
+  pageWrapOuterMinHeight: "450px",
+  providerColor: "rgb(51, 51, 51)",
+  providerFontSize: "9px",
+  providerMarginLeft: "4px",
+  warningBackground: "rgb(139, 139, 139)",
+  warningBorderRadius: "6px",
+  warningColor: "rgb(255, 255, 255)",
+  warningFontSize: "16px",
+  warningPaddingTop: "15px",
+};
+
 test("authenticated home empty notifications matches legacy index notifications screen DOM", async ({
   page,
 }) => {
@@ -127,35 +157,9 @@ test("authenticated home empty notifications matches legacy index notifications 
   );
 
   expect(actual).toEqual(expected);
-  expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual({
-    activityStreamsMarginTop: "0px",
-    gnbInnerHeight: "40px",
-    gnbInnerWidth: 1254,
-    gnbOuterBackground: "rgb(27, 27, 27)",
-    gnbOuterHeight: "40px",
-    guideToggleButtonBorderBottomLeftRadius: "6px",
-    guideToggleButtonBorderBottomRightRadius: "6px",
-    guideToggleButtonPaddingLeft: "25px",
-    logoBackground: "rgb(255, 87, 34)",
-    logoLineHeight: "40px",
-    logoPadding: "6px 10px",
-    mainStreamMarginBottom: "15px",
-    navLinkColor: "rgb(85, 85, 85)",
-    navLinkFontWeight: "700",
-    navLinkPaddingLeft: "30px",
-    pageFooterLineHeight: "34px",
-    pageFooterOuterPadding: "10px 0px",
-    pageWrapOuterMarginTop: "10px",
-    pageWrapOuterMinHeight: "450px",
-    providerColor: "rgb(51, 51, 51)",
-    providerFontSize: "9px",
-    providerMarginLeft: "4px",
-    warningBackground: "rgb(139, 139, 139)",
-    warningBorderRadius: "6px",
-    warningColor: "rgb(255, 255, 255)",
-    warningFontSize: "16px",
-    warningPaddingTop: "15px",
-  });
+  expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual(
+    EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS,
+  );
 });
 
 test("direct notifications route matches legacy Application.notifications empty state DOM", async ({
@@ -176,6 +180,9 @@ test("direct notifications route matches legacy Application.notifications empty 
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual(
+    EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS,
+  );
 });
 
 test("direct notifications route matches legacy populated notification row DOM", async ({
