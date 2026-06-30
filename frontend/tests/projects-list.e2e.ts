@@ -145,6 +145,36 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
   );
 
   expect(actual).toEqual(expected);
+
+  expect(await readProjectsListMetrics(page)).toEqual({
+    avatarBorderRadius: "3px",
+    avatarDisplay: "block",
+    avatarFloat: "left",
+    avatarHeight: "50px",
+    avatarImageHeight: "36px",
+    avatarImageVerticalAlign: "top",
+    avatarImageWidth: "50px",
+    avatarMarginRight: "10px",
+    avatarWidth: "50px",
+    descriptionColor: "rgb(186, 186, 186)",
+    descriptionMarginLeft: "10px",
+    headerFontSize: "20px",
+    headerFontWeight: "700",
+    headerMarginBottom: "5px",
+    headerMarginLeft: "10px",
+    listClear: "both",
+    listMargin: "0px 0px 20px",
+    listStyleType: "none",
+    nameTagColor: "rgb(153, 153, 153)",
+    nameTagFontSize: "11px",
+    nameTagMarginLeft: "10px",
+    rowBorderBottomColor: "rgb(220, 220, 220)",
+    rowBorderBottomStyle: "solid",
+    rowOverflow: "hidden",
+    rowPadding: "15px 0px 10px",
+    statsTextAlign: "right",
+    statsWidth: "76.1094px",
+  });
 });
 
 async function mockAuthenticatedProjects(page: Page) {
@@ -183,6 +213,73 @@ async function mockAuthenticatedProjects(page: Page) {
         ],
       }),
     });
+  });
+}
+
+async function readProjectsListMetrics(page: Page) {
+  return page.evaluate(() => {
+    const list = document.querySelector<HTMLElement>(".all-projects");
+    const row = document.querySelector<HTMLElement>(".all-projects > .project");
+    const avatar = document.querySelector<HTMLElement>(".all-projects .owner-avatar-wrap");
+    const avatarImage = document.querySelector<HTMLElement>(".all-projects .owner-avatar-wrap img");
+    const header = document.querySelector<HTMLElement>(".all-projects .header");
+    const description = document.querySelector<HTMLElement>(".all-projects .desc");
+    const nameTag = document.querySelector<HTMLElement>(".all-projects .name-tag");
+    const stats = document.querySelector<HTMLElement>(".all-projects .stats-wrap");
+    const members = document.querySelector<HTMLElement>(".all-projects .members");
+    if (
+      !list ||
+      !row ||
+      !avatar ||
+      !avatarImage ||
+      !header ||
+      !description ||
+      !nameTag ||
+      !stats ||
+      !members
+    ) {
+      throw new Error("Expected projects list metric targets are missing.");
+    }
+
+    const listStyle = getComputedStyle(list);
+    const rowStyle = getComputedStyle(row);
+    const avatarStyle = getComputedStyle(avatar);
+    const avatarImageStyle = getComputedStyle(avatarImage);
+    const headerStyle = getComputedStyle(header);
+    const descriptionStyle = getComputedStyle(description);
+    const nameTagStyle = getComputedStyle(nameTag);
+    const statsStyle = getComputedStyle(stats);
+    const membersStyle = getComputedStyle(members);
+
+    return {
+      avatarBorderRadius: avatarStyle.borderRadius,
+      avatarDisplay: avatarStyle.display,
+      avatarFloat: avatarStyle.cssFloat,
+      avatarHeight: avatarStyle.height,
+      avatarImageHeight: avatarImageStyle.height,
+      avatarImageVerticalAlign: avatarImageStyle.verticalAlign,
+      avatarImageWidth: avatarImageStyle.width,
+      avatarMarginRight: avatarStyle.marginRight,
+      avatarWidth: avatarStyle.width,
+      descriptionColor: descriptionStyle.color,
+      descriptionMarginLeft: descriptionStyle.marginLeft,
+      headerFontSize: headerStyle.fontSize,
+      headerFontWeight: headerStyle.fontWeight,
+      headerMarginBottom: headerStyle.marginBottom,
+      headerMarginLeft: headerStyle.marginLeft,
+      listClear: listStyle.clear,
+      listMargin: listStyle.margin,
+      listStyleType: listStyle.listStyleType,
+      nameTagColor: nameTagStyle.color,
+      nameTagFontSize: nameTagStyle.fontSize,
+      nameTagMarginLeft: nameTagStyle.marginLeft,
+      rowBorderBottomColor: rowStyle.borderBottomColor,
+      rowBorderBottomStyle: rowStyle.borderBottomStyle,
+      rowOverflow: rowStyle.overflow,
+      rowPadding: rowStyle.padding,
+      statsTextAlign: statsStyle.textAlign,
+      statsWidth: membersStyle.width,
+    };
   });
 }
 

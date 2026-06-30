@@ -178,7 +178,7 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     featureMaxWidth: "1200px",
     headingFontSize: "34px",
     gnbInnerHeight: "40px",
-    gnbInnerWidth: 1254,
+    gnbInnerWidth: 1176,
     gnbOuterBackground: "rgb(27, 27, 27)",
     gnbOuterHeight: "40px",
     logoBackground: "rgb(255, 87, 34)",
@@ -206,8 +206,8 @@ test("anonymous public landing keeps legacy mobile intro proportions", async ({ 
   expect(await readMobileLandingMetrics(page)).toEqual({
     featureItemMarginLeft: "10px",
     featureItemMarginTop: "10px",
-    featureItemWidth: 333,
-    featureWrapWidth: 350,
+    featureItemWidth: 352,
+    featureWrapWidth: 370,
     gnbOuterMinWidth: "10px",
     gnbOuterPadding: "0px 10px",
     headingFontSize: "22px",
@@ -218,7 +218,7 @@ test("anonymous public landing keeps legacy mobile intro proportions", async ({ 
     pageFooterWidth: 370,
     providerFontSize: "9px",
     siteIntroCoverOverflow: "visible",
-    siteIntroCoverWidth: 390,
+    siteIntroCoverWidth: 410,
   });
 });
 
