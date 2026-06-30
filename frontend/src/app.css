@@ -1195,6 +1195,98 @@ button[type="submit"]:focus {
   background-color: rgb(255 165 0 / 80%);
 }
 
+.project-overview-home h5 {
+  padding-left: 10px;
+  margin-bottom: 20px;
+  border-left: 3px solid #ff7332;
+}
+
+.project-overview-home small {
+  display: inline-block;
+  width: 35px;
+  margin-left: 3px;
+  color: #999;
+}
+
+.project-overview-home .progress {
+  width: 100px;
+  height: 7px;
+  margin-top: 7px;
+}
+
+.project-overview-home .num {
+  padding-right: 15px;
+  text-align: right;
+}
+
+.project-overview-home .empty {
+  text-align: center;
+}
+
+.project-overview-home .empty p {
+  margin-bottom: 15px;
+  font-size: 13px;
+  color: #999;
+}
+
+.project-overview-home .overview-label {
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.project-overview-home .overview-label dt {
+  width: 120px;
+  line-height: 30px;
+}
+
+.project-overview-home .overview-label dd {
+  margin-left: 140px;
+  line-height: 30px;
+}
+
+.project-overview-home .overview-label:first-of-type {
+  padding-top: 0;
+}
+
+.project-overview-home .overview-label:last-of-type {
+  border-bottom: none;
+}
+
+.project-overview-home .overview-assignee .usf-group {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.issue-label {
+  font-size: 11px;
+  line-height: 12px;
+  text-shadow: none;
+  background: #f9f9f9;
+}
+
+.issue-label:last-of-type {
+  margin: 0;
+}
+
+.issue-label.list-label {
+  padding: 2px 3px;
+  font-weight: normal;
+}
+
+.issue-label.active {
+  border-radius: 1px;
+}
+
+span.issue-label {
+  display: inline-block;
+  padding: 2px 6px;
+  margin-right: 5px;
+  overflow: hidden;
+  line-height: 20px;
+}
+
 .form-wrap.new-project {
   position: relative;
   width: 700px;

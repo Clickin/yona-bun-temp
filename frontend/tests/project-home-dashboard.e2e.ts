@@ -20,6 +20,25 @@ test("project home Dashboard tab matches legacy dashboard partials DOM", async (
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_DASHBOARD.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await dashboardLabelMetrics(page)).toEqual({
+    countColumnPaddingRight: 15,
+    countColumnTextAlign: "right",
+    countColumnWidthRatio: 0.15,
+    headingBorderLeftWidth: 3,
+    headingMarginBottom: 20,
+    headingPaddingLeft: 10,
+    labelChipDataLabelId: "9",
+    labelChipDisplay: "inline-block",
+    labelChipLineHeight: 20,
+    labelChipPaddingInline: 6,
+    labelDefinitionMarginLeft: 140,
+    labelDefinitionTermLineHeight: 30,
+    labelDefinitionTermWidth: 120,
+    labelRowWidthRatio: 0.83,
+    overviewLabelBorderBottomWidth: 0,
+    overviewLabelPaddingBottom: 5,
+    overviewLabelPaddingTop: 0,
+  });
 });
 
 async function mockProjectHome(page: Page) {
@@ -150,6 +169,58 @@ async function canonicalizeScreenRoots(page: Page) {
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+  });
+}
+
+async function dashboardLabelMetrics(page: Page) {
+  return page.evaluate(() => {
+    const heading = requireElement(".project-overview-home .span6:nth-child(2) > h5");
+    const overviewLabel = requireElement(".project-overview-home .overview-label");
+    const term = requireElement(".project-overview-home .overview-label dt");
+    const definition = requireElement(".project-overview-home .overview-label dd");
+    const labelRow = requireElement(".project-overview-home .overview-label .row-fluid");
+    const labelColumn = requireElement(".project-overview-home .overview-label .span10");
+    const labelChip = requireElement(".project-overview-home .issue-label[data-label-id='9']");
+    const countColumn = requireElement(".project-overview-home .overview-label .span2.num");
+    const headingStyle = getComputedStyle(heading);
+    const overviewStyle = getComputedStyle(overviewLabel);
+    const termStyle = getComputedStyle(term);
+    const definitionStyle = getComputedStyle(definition);
+    const chipStyle = getComputedStyle(labelChip);
+    const countStyle = getComputedStyle(countColumn);
+    const labelRowRect = labelRow.getBoundingClientRect();
+    const labelColumnRect = labelColumn.getBoundingClientRect();
+    const countColumnRect = countColumn.getBoundingClientRect();
+
+    return {
+      countColumnPaddingRight: Math.round(parseFloat(countStyle.paddingRight)),
+      countColumnTextAlign: countStyle.textAlign,
+      countColumnWidthRatio: Number((countColumnRect.width / labelRowRect.width).toFixed(2)),
+      headingBorderLeftWidth: Math.round(parseFloat(headingStyle.borderLeftWidth)),
+      headingMarginBottom: Math.round(parseFloat(headingStyle.marginBottom)),
+      headingPaddingLeft: Math.round(parseFloat(headingStyle.paddingLeft)),
+      labelChipDataLabelId: labelChip.getAttribute("data-label-id"),
+      labelChipDisplay: chipStyle.display,
+      labelChipLineHeight: Math.round(parseFloat(chipStyle.lineHeight)),
+      labelChipPaddingInline:
+        Math.round(parseFloat(chipStyle.paddingLeft)) +
+        Math.round(parseFloat(chipStyle.paddingRight)),
+      labelDefinitionMarginLeft: Math.round(parseFloat(definitionStyle.marginLeft)),
+      labelDefinitionTermLineHeight: Math.round(parseFloat(termStyle.lineHeight)),
+      labelDefinitionTermWidth: Math.round(parseFloat(termStyle.width)),
+      labelRowWidthRatio: Number((labelColumnRect.width / labelRowRect.width).toFixed(2)),
+      overviewLabelBorderBottomWidth: Math.round(parseFloat(overviewStyle.borderBottomWidth)),
+      overviewLabelPaddingBottom: Math.round(parseFloat(overviewStyle.paddingBottom)),
+      overviewLabelPaddingTop: Math.round(parseFloat(overviewStyle.paddingTop)),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
     }
   });
 }
