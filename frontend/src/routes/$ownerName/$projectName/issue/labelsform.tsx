@@ -243,14 +243,32 @@ function ProjectLabelsBody({
         ) : null}
 
         <div id="labelsList" className="issue-label-list-wrap">
-          <ProjectLabelsList labels={labels} />
+          <ProjectLabelsList
+            basePath={runtimeConfig.basePath}
+            labels={labels}
+            ownerName={ownerName}
+            project={project}
+            projectName={projectName}
+          />
         </div>
       </div>
     </div>
   );
 }
 
-function ProjectLabelsList({ labels }: { labels: YonaRecord[] }) {
+function ProjectLabelsList({
+  basePath,
+  labels,
+  ownerName,
+  project,
+  projectName,
+}: {
+  basePath: string;
+  labels: YonaRecord[];
+  ownerName: string;
+  project: ProjectContainer;
+  projectName: string;
+}) {
   const { t } = useLegacyMessages();
 
   if (labels.length === 0) {
@@ -262,6 +280,10 @@ function ProjectLabelsList({ labels }: { labels: YonaRecord[] }) {
     );
   }
 
+  const categories = groupedLabels(labels);
+  const canUpdate = booleanField(project.viewerCanUpdate);
+  const projectIdValue = projectId(project);
+
   return (
     <>
       <div className="row-fluid list-head">
@@ -272,33 +294,97 @@ function ProjectLabelsList({ labels }: { labels: YonaRecord[] }) {
           <strong>{t("label.name")}</strong>
         </div>
       </div>
-      {labels.map((label) => (
+      {categories.map((category) => (
         <div
           className="row-fluid list-item category-wrap"
-          data-category={stringField(label.categoryId, "")}
-          data-category-name={stringField(label.category, "")}
-          key={stringField(label.id, stringField(label.name, ""))}
+          data-category={category.id}
+          data-category-name={category.name}
+          key={category.id || category.name}
         >
           <div className="span3">
             <h5 className="right-txt mr20">
-              <span className="category-name">{stringField(label.category, "")}</span>
+              <span className="category-name">{category.name}</span>
+              <p className="mt5">
+                <i
+                  className={`category-exclusive ${category.isExclusive ? "yobicon-tag single" : "yobicon-tags multiple"}`}
+                  data-toggle="tooltip"
+                  data-html="true"
+                  title={`${t("label.category.option")}<br>${t(
+                    category.isExclusive
+                      ? "label.category.option.single"
+                      : "label.category.option.multiple",
+                  )}`}
+                ></i>
+                {canUpdate ? (
+                  <button
+                    type="button"
+                    className="ybtn ybtn-mini"
+                    data-project-id={projectIdValue}
+                    data-category-id={category.id}
+                    data-category-name={category.name}
+                    data-category-is-exclusive={String(category.isExclusive)}
+                    data-category-update-uri={prefixBasePath(
+                      basePath,
+                      `/${ownerName}/${projectName}/issue/label/category/${category.id}`,
+                    )}
+                  >
+                    {t("label.category.edit")}
+                  </button>
+                ) : null}
+              </p>
             </h5>
           </div>
           <div className="span9">
             <table className="table nm">
               <tbody>
-                <tr data-label-id={stringField(label.id, "")}>
-                  <td>
-                    <span
-                      className="issue-label active"
-                      data-label-id={stringField(label.id, "")}
-                      data-label-name={stringField(label.name, "")}
-                    >
-                      {stringField(label.name, "")}
-                    </span>
-                  </td>
-                  <td className="actions"></td>
-                </tr>
+                {category.labels.map((label) => {
+                  const labelId = stringField(label.id, "");
+                  const labelName = stringField(label.name, "");
+                  return (
+                    <tr data-label-id={labelId} key={labelId || labelName}>
+                      <td>
+                        <span
+                          className="issue-label active"
+                          data-label-id={labelId}
+                          data-label-name={labelName}
+                        >
+                          {labelName}
+                        </span>
+                      </td>
+                      <td className="actions">
+                        {canUpdate ? (
+                          <>
+                            <button
+                              type="button"
+                              className="ybtn ybtn-danger ybtn-small"
+                              data-category-name={category.name}
+                              data-label-id={labelId}
+                              data-delete-uri={prefixBasePath(
+                                basePath,
+                                `/${ownerName}/${projectName}/issue/label/${labelId}/delete`,
+                              )}
+                            >
+                              {t("button.delete")}
+                            </button>
+                            <button
+                              type="button"
+                              className="ybtn ybtn-small"
+                              data-category-id={category.id}
+                              data-label-name={labelName}
+                              data-label-color={stringField(label.color, "")}
+                              data-update-uri={prefixBasePath(
+                                basePath,
+                                `/${ownerName}/${projectName}/issue/label/${labelId}`,
+                              )}
+                            >
+                              {t("button.edit")}
+                            </button>
+                          </>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -306,6 +392,32 @@ function ProjectLabelsList({ labels }: { labels: YonaRecord[] }) {
       ))}
     </>
   );
+}
+
+function groupedLabels(labels: YonaRecord[]) {
+  const categories = new Map<
+    string,
+    { id: string; isExclusive: boolean; labels: YonaRecord[]; name: string }
+  >();
+
+  for (const label of labels) {
+    const id = stringField(label.categoryId, "");
+    const name = stringField(label.category, "");
+    const key = id || name;
+    const existing = categories.get(key);
+    if (existing) {
+      existing.labels.push(label);
+      continue;
+    }
+    categories.set(key, {
+      id,
+      isExclusive: booleanField(label.categoryIsExclusive),
+      labels: [label],
+      name,
+    });
+  }
+
+  return Array.from(categories.values());
 }
 
 function EditCategoryModal() {
