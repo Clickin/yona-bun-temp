@@ -146,6 +146,7 @@ function ProjectIssuesBody({
   const hasIssues = issues.items.length > 0;
   const draftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
   const showMilestone = projectMilestoneMenuEnabled(project);
+  const showMassUpdateControls = projectMemberControlsEnabled(project);
 
   return (
     <div className="page-wrap-outer">
@@ -211,13 +212,15 @@ function ProjectIssuesBody({
             ) : (
               <>
                 <div className="filter-wrap board">
-                  <MassUpdateToolbar
-                    basePath={runtimeConfig.basePath}
-                    currentUserId={currentUserId}
-                    issues={issues.items}
-                    ownerName={ownerName}
-                    projectName={projectName}
-                  />
+                  {showMassUpdateControls ? (
+                    <MassUpdateToolbar
+                      basePath={runtimeConfig.basePath}
+                      currentUserId={currentUserId}
+                      issues={issues.items}
+                      ownerName={ownerName}
+                      projectName={projectName}
+                    />
+                  ) : null}
                   {issues.items.length > 1 ? (
                     <IssueFilters orderBy={search.orderBy} orderDir={search.orderDir} />
                   ) : null}
@@ -230,6 +233,7 @@ function ProjectIssuesBody({
                       key={`draft-${issue.id || issue.issueNumber}`}
                       ownerName={ownerName}
                       projectName={projectName}
+                      showMassUpdateControls={showMassUpdateControls}
                       showMilestone={showMilestone}
                     />
                   ))}
@@ -240,6 +244,7 @@ function ProjectIssuesBody({
                       key={issue.id || issue.issueNumber}
                       ownerName={ownerName}
                       projectName={projectName}
+                      showMassUpdateControls={showMassUpdateControls}
                       showMilestone={showMilestone}
                     />
                   ))}
@@ -529,12 +534,14 @@ function ProjectIssueItem({
   issue,
   ownerName,
   projectName,
+  showMassUpdateControls,
   showMilestone,
 }: {
   basePath: string;
   issue: RestIssueListItem;
   ownerName: string;
   projectName: string;
+  showMassUpdateControls: boolean;
   showMilestone: boolean;
 }) {
   const { t } = useLegacyMessages();
@@ -569,17 +576,19 @@ function ProjectIssueItem({
       {...legacyHref}
     >
       <div className="span9 span-hard-wrap">
-        {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update checkbox label targets the row checkbox by id. */}
-        <label htmlFor={`issue-${issueId}`} className="mass-update-check hide-in-mobile">
-          <input
-            id={`issue-${issueId}`}
-            type="checkbox"
-            name="checked-issue"
-            data-toggle="issue-checkbox"
-            data-issue-id={issueId}
-            data-issue-labels={issueLabelData(issue)}
-          />
-        </label>
+        {showMassUpdateControls ? (
+          /* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update checkbox label targets the row checkbox by id. */
+          <label htmlFor={`issue-${issueId}`} className="mass-update-check hide-in-mobile">
+            <input
+              id={`issue-${issueId}`}
+              type="checkbox"
+              name="checked-issue"
+              data-toggle="issue-checkbox"
+              data-issue-id={issueId}
+              data-issue-labels={issueLabelData(issue)}
+            />
+          </label>
+        ) : null}
         <div {...legacyFor} className="issue-item-row">
           <div className="title-wrap">
             <a href={issueHref} className="title">
@@ -1346,6 +1355,10 @@ function projectMilestoneMenuEnabled(project: ProjectContainer) {
       ? (record.menuSetting as Record<string, unknown>)
       : {};
   return booleanField(menuSetting.milestone ?? record.showMilestone);
+}
+
+function projectMemberControlsEnabled(project: ProjectContainer) {
+  return booleanField((project as Record<string, unknown>).viewerCanUpdate);
 }
 
 function booleanField(value: unknown) {

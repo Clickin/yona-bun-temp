@@ -30,6 +30,28 @@ const EXPECTED_PROJECT_ISSUES_POPULATED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceA
     `${POPULATED_SPAN10_WITH_TOOLBAR}</div></div></div></div>\n<footer`,
   );
 
+const NON_MEMBER_SPAN10 = POPULATED_SPAN10.replace(
+  '<label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-toggle="issue-checkbox" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label>',
+  "",
+).replace("filter=bug&amp;format=xls", "filter=non-member&amp;format=xls");
+
+const EXPECTED_PROJECT_ISSUES_NON_MEMBER = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
+  'value="empty"',
+  'value="non-member"',
+)
+  .replaceAll(
+    '>Open<span class="num-badge pull-right">0</span>',
+    '>Open<span class="num-badge pull-right">1</span>',
+  )
+  .replace(
+    '<div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div>',
+    "",
+  )
+  .replace(
+    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
+    `${NON_MEMBER_SPAN10}</div></div></div></div>\n<footer`,
+  );
+
 const NO_MILESTONE_MENU_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span>',
   "",
@@ -263,6 +285,24 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
   );
 });
 
+test("project issue list hides mass update controls for non-members", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "non-member");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=non-member`);
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator(".project-setting")).toHaveCount(0);
+  await expect(page.locator(".mass-update-wrap")).toHaveCount(0);
+  await expect(page.locator(".mass-update-check")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_ISSUES_NON_MEMBER.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 test("project issue list hides row milestone when project milestone menu is disabled", async ({
   page,
 }) => {
@@ -445,6 +485,7 @@ async function mockProjectIssues(
     | "draft"
     | "empty"
     | "no-milestone-menu"
+    | "non-member"
     | "populated"
     | "prefix"
     | "sharer"
@@ -491,7 +532,7 @@ async function mockProjectIssues(
         ownerName: "admin",
         projectName: "sample",
         vcs: "GIT",
-        viewerCanUpdate: true,
+        viewerCanUpdate: state !== "non-member",
       }),
     });
   });
@@ -499,7 +540,7 @@ async function mockProjectIssues(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(
-        state === "populated" || state === "no-milestone-menu"
+        state === "populated" || state === "no-milestone-menu" || state === "non-member"
           ? populatedIssueResponse()
           : state === "prefix"
             ? {

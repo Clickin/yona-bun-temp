@@ -47,6 +47,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now maps existing REST issue item fields directly into the legacy row DOM. The sort filter container remains legacy-conditional and is empty for a single visible issue, matching `partial_list_wrap.scala.html`.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` now includes the RED-to-GREEN populated `/admin/sample/issues?filter=bug` whole-screen DOM comparison alongside the empty-state proof.
 
+## 2026-07-01 Project Issue Non-Member Controls Follow-Up
+
+- Restored the legacy `ProjectUser.isMember` gates from `issue/partial_list_wrap.scala.html` and `issue/partial_list.scala.html` for project issue lists.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now hides the mass-update toolbar and per-row mass-update checkbox when the loaded project container does not expose update/member controls.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=non-member` whole-screen DOM comparison proving no settings cog, no `.mass-update-wrap`, no `.mass-update-check`, and otherwise preserved populated row/Excel/keymap/pagination DOM.
+
 ## 2026-07-01 Project Issue Milestone Menu Gate Follow-Up
 
 - Restored the `issue/partial_list.scala.html` milestone tag gate so row milestones render only when the project milestone menu is enabled and the issue has a milestone.
