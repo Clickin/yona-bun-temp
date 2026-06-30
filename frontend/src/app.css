@@ -2538,6 +2538,7 @@ h1 {
 @media (max-width: 900px) {
   .gnb-outer,
   .page-wrap-outer,
+  .site-breadcrumb-outer,
   .project-header-outer,
   .project-menu-outer,
   .page-footer-outer {
@@ -2553,6 +2554,12 @@ h1 {
     box-sizing: border-box;
     width: 100%;
     padding: 0 !important;
+  }
+
+  .site-breadcrumb-outer {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0 10px;
   }
 
   .siteintro .siteintro-cover {

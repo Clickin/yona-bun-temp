@@ -206,6 +206,32 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   await expect(page.locator(".qas > .qa").first()).not.toHaveClass(/open/);
 });
 
+test("anonymous help FAQ keeps legacy mobile shell proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(`${basePath}/_help`);
+  await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
+
+  expect(await readMobileHelpMetrics(page)).toEqual({
+    answerDisplayClosed: "none",
+    answerDisplayOpen: "table",
+    answerPaddingTopOpen: "15px",
+    gnbOuterMinWidth: "10px",
+    gnbOuterPadding: "0px 10px",
+    pageFooterOuterMinWidth: "10px",
+    pageFooterOuterPadding: "10px",
+    pageFooterWidth: 370,
+    pageWrapOuterMinWidth: "10px",
+    pageWrapOuterPadding: "0px",
+    pageWrapOuterWidth: 390,
+    qasMarginTop: "30px",
+    questionFontSize: "14px",
+    siteBreadcrumbMinWidth: "10px",
+    siteBreadcrumbPadding: "0px 10px",
+    siteBreadcrumbWidth: 390,
+  });
+});
+
 async function readDesktopHelpMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
@@ -293,6 +319,62 @@ async function readDesktopHelpMetrics(page: Page) {
       questionMarginBottomClosed: closedQuestionMarginBottom,
       questionMarginBottomOpen: questionWrapOpenStyle.marginBottom,
       questionWidth: questionStyle.width,
+    };
+    firstQa.classList.remove("open");
+    return metrics;
+  });
+}
+
+async function readMobileHelpMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const siteBreadcrumb = document.querySelector<HTMLElement>(".site-breadcrumb-outer");
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const qas = document.querySelector<HTMLElement>(".qas");
+    const firstQa = document.querySelector<HTMLElement>(".qas > .qa");
+    const question = document.querySelector<HTMLElement>(".qas > .qa .question");
+    const answerWrap = document.querySelector<HTMLElement>(".qas > .qa .answer-wrap");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    if (
+      !gnbOuter ||
+      !siteBreadcrumb ||
+      !pageWrapOuter ||
+      !qas ||
+      !firstQa ||
+      !question ||
+      !answerWrap ||
+      !pageFooter ||
+      !pageFooterOuter
+    ) {
+      throw new Error("Expected help mobile metric targets are missing.");
+    }
+
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const siteBreadcrumbStyle = getComputedStyle(siteBreadcrumb);
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const qasStyle = getComputedStyle(qas);
+    const answerClosedStyle = getComputedStyle(answerWrap);
+    const closedAnswerDisplay = answerClosedStyle.display;
+    firstQa.classList.add("open");
+    const answerOpenStyle = getComputedStyle(answerWrap);
+    const metrics = {
+      answerDisplayClosed: closedAnswerDisplay,
+      answerDisplayOpen: answerOpenStyle.display,
+      answerPaddingTopOpen: answerOpenStyle.paddingTop,
+      gnbOuterMinWidth: gnbOuterStyle.minWidth,
+      gnbOuterPadding: gnbOuterStyle.padding,
+      pageFooterOuterMinWidth: getComputedStyle(pageFooterOuter).minWidth,
+      pageFooterOuterPadding: getComputedStyle(pageFooterOuter).padding,
+      pageFooterWidth: Math.round(pageFooter.getBoundingClientRect().width),
+      pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      pageWrapOuterPadding: pageWrapOuterStyle.padding,
+      pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
+      qasMarginTop: qasStyle.marginTop,
+      questionFontSize: getComputedStyle(question).fontSize,
+      siteBreadcrumbMinWidth: siteBreadcrumbStyle.minWidth,
+      siteBreadcrumbPadding: siteBreadcrumbStyle.padding,
+      siteBreadcrumbWidth: Math.round(siteBreadcrumb.getBoundingClientRect().width),
     };
     firstQa.classList.remove("open");
     return metrics;
