@@ -290,6 +290,96 @@ test("direct notifications route matches legacy populated notification row DOM",
   });
 });
 
+test("direct notifications route appends legacy notification-more rows", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const firstPageItems = Array.from({ length: 20 }, (_, index) =>
+    createMockNotification(String(index + 1), `Issue #${index + 1} updated`),
+  );
+  const nextPageItem = createMockNotification("21", "Issue #21 updated");
+  const requests: string[] = [];
+  await mockAuthenticatedNotificationsByPage(page, (url) => {
+    requests.push(`${url.pathname}${url.search}`);
+    return url.searchParams.get("from") === "20"
+      ? { hasMore: false, items: [nextPageItem], total: 21 }
+      : { hasMore: true, items: firstPageItems, total: 21 };
+  });
+
+  await page.goto(`${basePath}/notifications`);
+  await expect(page.locator(".notification-stream")).toHaveCount(20);
+  await expect(page.locator("#notification-more")).toBeVisible();
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_DIRECT_NOTIFICATIONS.replace(
+        `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
+        `${expectedNotificationRows(firstPageItems, basePath)}<li><a href="javascript:void(0);" id="notification-more" class="ybtn">More</a></li>`,
+      ).replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+
+  const beforeUrl = page.url();
+  await page.locator("#notification-more").click();
+  await expect(page.locator(".notification-stream")).toHaveCount(21);
+  await expect(page.locator("#notification-more")).toHaveCount(0);
+  expect(page.url()).toBe(beforeUrl);
+  expect(requests).toContain(`${basePath}/api/v1/notifications?from=20&size=20`);
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_DIRECT_NOTIFICATIONS.replace(
+        `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
+        expectedNotificationRows([...firstPageItems, nextPageItem], basePath),
+      ).replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+function createMockNotification(id: string, targetTitle: string) {
+  return {
+    actor: {
+      avatarUrl: "/assets/images/default-avatar-64.png",
+      displayName: "Site Admin",
+      loginId: "admin",
+    },
+    createdAt: "2026-06-30T12:00:00Z",
+    createdLabel: "just now",
+    eventType: "NEW_COMMENT",
+    id,
+    message: "A new comment was added.",
+    targetHref: "/admin/sample/issue/1",
+    targetTitle,
+    typeIcon: "comment2",
+  };
+}
+
+function expectedNotificationRows(
+  items: ReturnType<typeof createMockNotification>[],
+  basePath: string,
+) {
+  return items
+    .map(
+      (item) => `<li class="notification-stream">
+    <div class="stream-type comment2"><i class="yobicon-comment2"></i></div>
+    <div class="stream-desc" data-target="message-${item.id}" data-toggle="learnmore">
+      <div class="stream-info">
+        <div class="title"><a href="${basePath}/admin/sample/issue/1">${item.targetTitle}</a></div>
+        <div class="message-wrap nowrap" id="message-${item.id}">
+          <div class="message">A new comment was added.</div>
+        </div>
+        <div class="meta">
+          <a class="avatar-wrap smaller" href="${basePath}/admin">
+            <img src="/assets/images/default-avatar-64.png">
+          </a>
+          <a href="${basePath}/admin" class="author">Site Admin</a>@admin
+          <span class="ago pull-right" title="2026-06-30T12:00:00Z">just now</span>
+        </div>
+      </div>
+    </div>
+  </li>`,
+    )
+    .join("");
+}
+
 async function readLocalStorageValue(page: Page, key: string) {
   return page.evaluate((storageKey) => localStorage.getItem(storageKey), key);
 }
@@ -560,6 +650,17 @@ async function mockAuthenticatedEmptyNotifications(page: Page) {
 }
 
 async function mockAuthenticatedNotifications(page: Page, items: unknown[]) {
+  await mockAuthenticatedNotificationsByPage(page, () => ({
+    hasMore: false,
+    items,
+    total: items.length,
+  }));
+}
+
+async function mockAuthenticatedNotificationsByPage(
+  page: Page,
+  resolveResponse: (url: URL) => { hasMore: boolean; items: unknown[]; total: number },
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -576,9 +677,10 @@ async function mockAuthenticatedNotifications(page: Page, items: unknown[]) {
     });
   });
   await page.route("**/api/v1/notifications?*", async (route) => {
+    const url = new URL(route.request().url());
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({ hasMore: false, items, total: items.length }),
+      body: JSON.stringify(resolveResponse(url)),
     });
   });
 }

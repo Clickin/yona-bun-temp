@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
 import { currentSessionQueryOptions } from "../api/session";
@@ -39,6 +39,7 @@ function HomeScreen({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const notificationsQuery = useQuery({
     ...listNotificationsQueryOptions(runtimeConfig, { from: 0, size: 20 }),
@@ -67,6 +68,9 @@ function HomeScreen({
   const [isIntroVisible, setIsIntroVisible] = React.useState(
     () => typeof window === "undefined" || localStorage.getItem("yobi-intro") !== "false",
   );
+  const [notificationItems, setNotificationItems] = React.useState<NotificationItem[]>([]);
+  const [notificationHasMore, setNotificationHasMore] = React.useState(false);
+  const [isLoadingMoreNotifications, setIsLoadingMoreNotifications] = React.useState(false);
 
   React.useEffect(() => {
     if (!flashMessageKey) {
@@ -80,12 +84,47 @@ function HomeScreen({
     return () => window.clearTimeout(timeoutId);
   }, [flashMessageKey]);
 
+  React.useEffect(() => {
+    if (!notificationsQuery.data) {
+      return;
+    }
+    setNotificationItems(notificationsQuery.data.items);
+    setNotificationHasMore(notificationsQuery.data.hasMore);
+  }, [notificationsQuery.data]);
+
   function toggleIntro() {
     setIsIntroVisible((current) => {
       const next = !current;
       localStorage.setItem("yobi-intro", String(next));
       return next;
     });
+  }
+
+  async function loadMoreNotifications() {
+    if (isLoadingMoreNotifications) {
+      return;
+    }
+    setIsLoadingMoreNotifications(true);
+    try {
+      const nextPage = await queryClient.fetchQuery(
+        listNotificationsQueryOptions(runtimeConfig, {
+          from: notificationItems.length,
+          size: 20,
+        }),
+      );
+      setNotificationItems((current) => [...current, ...nextPage.items]);
+      setNotificationHasMore(nextPage.hasMore);
+    } finally {
+      setIsLoadingMoreNotifications(false);
+    }
+  }
+
+  function handleLoadMoreKeyDown(event: React.KeyboardEvent<HTMLElement>) {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    event.preventDefault();
+    void loadMoreNotifications();
   }
 
   if (isAuthenticated) {
@@ -183,13 +222,13 @@ function HomeScreen({
                     </li>
                   </ul>
                   <ul className="activity-streams notification-wrap unstyled">
-                    {(notificationsQuery.data?.items.length ?? 0) === 0 ? (
+                    {notificationItems.length === 0 ? (
                       <div className="warning-none">
                         <i className="yobicon-danger" />
                         {t("notification.none")}
                       </div>
                     ) : (
-                      notificationsQuery.data?.items.map((notification) => (
+                      notificationItems.map((notification) => (
                         <NotificationStreamItem
                           key={notification.id}
                           notification={notification}
@@ -197,6 +236,19 @@ function HomeScreen({
                         />
                       ))
                     )}
+                    {notificationHasMore ? (
+                      <li
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void loadMoreNotifications();
+                        }}
+                        onKeyDown={handleLoadMoreKeyDown}
+                        dangerouslySetInnerHTML={{
+                          __html:
+                            '<a href="javascript:void(0);" id="notification-more" class="ybtn">More</a>',
+                        }}
+                      />
+                    ) : null}
                   </ul>
                 </div>
                 <div className="span4 index-menu right-menu span-hard-wrap" />
