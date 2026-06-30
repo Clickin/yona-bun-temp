@@ -138,6 +138,18 @@ const PARITY_SLICES = [
     provenanceDocs: ["docs/agents/06-phase-plan.md", "docs/provenance/legacy-porting-progress.md"],
   },
   {
+    id: "workspace-user-files",
+    label: "Workspace user files",
+    status: "parity",
+    implementationPatterns: [/^frontend\/src\/routes\/user\/files\.tsx$/i],
+    testKeywords: ["user-files", "workspace/files", "attachment-files"],
+    provenanceDocs: [
+      "docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md",
+      "docs/provenance/ui-parity-reports/template-first-p6-organization-directory-workspace.md",
+      "docs/provenance/ui-parity-reports/2026-06-28-rendered-evidence-execution-manifest.md",
+    ],
+  },
+  {
     id: "issue-lifecycle",
     label: "Issue lifecycle",
     status: "parity",
