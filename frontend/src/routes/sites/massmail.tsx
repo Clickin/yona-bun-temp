@@ -1,8 +1,17 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useRef, useState } from "react";
+import { readSiteMailListRest } from "../../api/site-admin";
+import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+
+type SelectedProject = {
+  id: number;
+  name: string;
+};
 
 export const Route = createFileRoute("/sites/massmail")({
   component: SiteMassMailRoute,
@@ -44,7 +53,7 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   <LegacyMessage messageKey="title.massMail" />
                 </h2>
               </div>
-              <MassMailBody />
+              <MassMailBody runtimeConfig={runtimeConfig} />
             </div>
           </div>
         </div>
@@ -78,8 +87,44 @@ function SiteAdminSidebar({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   );
 }
 
-function MassMailBody() {
+function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
+  const [mailingType, setMailingType] = useState<"all" | "projects">("all");
+  const [selectedProjects, setSelectedProjects] = useState<SelectedProject[]>([]);
+  const projectInputRef = useRef<HTMLInputElement>(null);
+  const nextProjectId = useRef(1);
+  const queryClient = useQueryClient();
+  const mailListMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return readSiteMailListRest(runtimeConfig, csrfToken, {
+        all: mailingType === "all",
+        projects: mailingType === "all" ? [] : selectedProjects.map((project) => project.name),
+      });
+    },
+    onSuccess(data) {
+      queryClient.setQueryData(
+        ["api", "v1", "site", "mail-list", mailingType, selectedProjects],
+        data,
+      );
+      const form = document.createElement("form");
+      form.setAttribute("method", "POST");
+      form.setAttribute("action", `mailto:${data.recipients.join(",")},`);
+      form.setAttribute("enctype", "text/plain");
+      form.submit();
+    },
+  });
+
+  function addProject() {
+    const projectName = projectInputRef.current?.value ?? "";
+    setSelectedProjects((current) => [
+      ...current,
+      { id: nextProjectId.current++, name: projectName },
+    ]);
+    if (projectInputRef.current) {
+      projectInputRef.current.value = "";
+    }
+  }
 
   return (
     <div className="mess-mail-wrap">
@@ -89,9 +134,13 @@ function MassMailBody() {
           name="mailingType"
           id="mailtoAll"
           value="all"
-          defaultChecked
+          checked={mailingType === "all"}
           data-toggle="mail-type"
           data-action="hide"
+          onChange={() => {
+            setMailingType("all");
+            setSelectedProjects([]);
+          }}
         />
         {t("site.massMail.toAll")}
       </label>
@@ -103,10 +152,18 @@ function MassMailBody() {
           value="projects"
           data-toggle="mail-type"
           data-action="show"
+          checked={mailingType === "projects"}
+          onChange={() => {
+            setMailingType("projects");
+            setSelectedProjects([]);
+          }}
         />
         {t("site.massMail.toProjects")}
       </label>
-      <div className="control-group hide" id="project-list-wrap">
+      <div
+        className={mailingType === "projects" ? "control-group" : "control-group hide"}
+        id="project-list-wrap"
+      >
         <div className="controls">
           <input
             id="input-project"
@@ -115,19 +172,53 @@ function MassMailBody() {
             data-provider="typeahead"
             autoComplete="off"
             placeholder={t("project.name")}
+            ref={projectInputRef}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                addProject();
+              }
+            }}
           />
           <button
             id="select-project"
             type="submit"
             className="ybtn"
             data-loading-text={t("site.massMail.loading")}
+            onClick={(event) => {
+              event.preventDefault();
+              addProject();
+            }}
           >
             <strong>{t("button.add")}</strong>
           </button>
         </div>
-        <div id="selected-projects"></div>
+        <div id="selected-projects">
+          {selectedProjects.map((project) => (
+            <span className="label label-info" style={{ marginRight: "5px" }} key={project.id}>
+              {project.name}{" "}
+              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+              <a
+                href="#"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setSelectedProjects((current) =>
+                    current.filter((selectedProject) => selectedProject.id !== project.id),
+                  );
+                }}
+              >
+                x
+              </a>
+            </span>
+          ))}
+        </div>
       </div>
-      <button id="write-email" type="submit" className="ybtn ybtn-primary">
+      <button
+        id="write-email"
+        type="submit"
+        className="ybtn ybtn-primary"
+        onClick={() => mailListMutation.mutate()}
+      >
         <strong>{t("site.mail.write")}</strong>
       </button>
     </div>

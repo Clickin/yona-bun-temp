@@ -141,6 +141,51 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   expect(actual).toEqual(expected);
 });
 
+test("site admin mass mail project selection and mailto follow legacy JS flow", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  const requests = await mockMailList(page);
+  await captureSubmittedForms(page);
+
+  await page.goto(`${basePath}/sites/massmail`);
+
+  await page.locator("#mailtoPrj").click();
+  await expect(page.locator("#project-list-wrap")).not.toHaveClass(/hide/);
+  await page.locator("#input-project").fill("admin/projectYobi");
+  await page.locator("#select-project").click();
+  await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
+
+  await page.locator("#input-project").fill("yona/docs");
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#selected-projects .label")).toHaveText([
+    "admin/projectYobi x",
+    "yona/docs x",
+  ]);
+
+  await page.locator("#selected-projects .label a").first().click();
+  await expect(page.locator("#selected-projects .label")).toHaveText("yona/docs x");
+
+  await page.locator("#write-email").click();
+  await expect.poll(() => requests.payloads).toEqual([{ all: false, projects: ["yona/docs"] }]);
+  await expect
+    .poll(() => page.evaluate(() => window.__submittedForms ?? []))
+    .toEqual([{ action: "mailto:maintainer@example.com,writer@example.com,", method: "POST" }]);
+
+  await page.locator("#mailtoAll").click();
+  await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
+  await expect(page.locator("#selected-projects .label")).toHaveCount(0);
+
+  await page.locator("#write-email").click();
+  await expect
+    .poll(() => requests.payloads)
+    .toEqual([
+      { all: false, projects: ["yona/docs"] },
+      { all: true, projects: [] },
+    ]);
+});
+
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -159,6 +204,52 @@ async function mockSiteAdminSession(page: Page) {
       }),
     });
   });
+
+  await page.route("**/api/v1/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "test-csrf-token" },
+      body: JSON.stringify({ user: { loginId: "siteboss" } }),
+    });
+  });
+}
+
+async function mockMailList(page: Page) {
+  const requests = {
+    payloads: [] as Array<{ all: boolean; projects: string[] }>,
+  };
+
+  await page.route("**/api/v1/site/mail-list", async (route) => {
+    const body = JSON.parse(route.request().postData() ?? "{}") as {
+      all?: boolean;
+      projects?: string[];
+    };
+    requests.payloads.push({ all: body.all === true, projects: body.projects ?? [] });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ recipients: ["maintainer@example.com", "writer@example.com"] }),
+    });
+  });
+
+  return requests;
+}
+
+async function captureSubmittedForms(page: Page) {
+  await page.addInitScript(() => {
+    window.__submittedForms = [];
+    HTMLFormElement.prototype.submit = function submit() {
+      window.__submittedForms?.push({
+        action: this.getAttribute("action") ?? "",
+        method: this.getAttribute("method") ?? "",
+      });
+    };
+  });
+}
+
+declare global {
+  interface Window {
+    __submittedForms?: Array<{ action: string; method: string }>;
+  }
 }
 
 async function canonicalizeScreenRoots(page: Page) {
