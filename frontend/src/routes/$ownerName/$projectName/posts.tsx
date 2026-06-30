@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import type { LiHTMLAttributes } from "react";
+import { useEffect, useRef, type LiHTMLAttributes } from "react";
 import {
   listProjectPostsQueryOptions,
   readProjectPostFormOptionsQueryOptions,
@@ -331,6 +331,7 @@ function BoardFilters({
 
 function ProjectBoardPost({ basePath, post }: { basePath: string; post: BoardPostListItem }) {
   const { t } = useLegacyMessages();
+  const titleParts = splitHeaderWordsInBrackets(post.title);
   const postHref = `${projectPostsHref(basePath, post.ownerName, post.projectName).replace(
     /\/posts$/u,
     "",
@@ -362,8 +363,11 @@ function ProjectBoardPost({ basePath, post }: { basePath: string; post: BoardPos
         ) : null}
         {!post.readme ? <span className="post-id">{post.postNumber}</span> : null}
         {post.readme ? <span className="label label-important">README</span> : null}
+        {titleParts.prefixes.map((prefix) => (
+          <LegacyTitlePrefixAnchor key={prefix}>{prefix}</LegacyTitlePrefixAnchor>
+        ))}
         <a href={postHref} className="title">
-          {post.title}
+          {titleParts.title}
         </a>
       </div>
       <div className="infos">
@@ -411,6 +415,37 @@ function ProjectBoardPost({ basePath, post }: { basePath: string; post: BoardPos
       </div>
     </li>
   );
+}
+
+function LegacyTitlePrefixAnchor({ children }: { children: string }) {
+  const anchorRef = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    anchorRef.current?.setAttribute("href", "javascript:void(0)");
+  }, []);
+  return (
+    <a ref={anchorRef} href="/" className="title-prefix">
+      {children}
+    </a>
+  );
+}
+
+function splitHeaderWordsInBrackets(title: string) {
+  const prefixes: string[] = [];
+  const pattern = /^\s*(\[[^\]]+\])/u;
+  let rest = title;
+  while (true) {
+    const match = pattern.exec(rest);
+    if (!match) {
+      break;
+    }
+    prefixes.push(match[1].trim());
+    rest = rest.slice(match[0].length);
+  }
+  const onlyPrefixes = rest.trim() === "";
+  return {
+    prefixes: onlyPrefixes ? [] : prefixes,
+    title: onlyPrefixes ? title : rest.trimStart(),
+  };
 }
 
 function TwoColumnModeCheckbox() {

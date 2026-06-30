@@ -119,6 +119,12 @@ Worker update, 2026-06-26:
   Select2 source attributes, empty option, category optgroup, and category
   metadata. Verification: `pnpm --dir frontend test:e2e --
   project-posts.e2e.ts`.
+- Worker update, 2026-07-01 board list title-prefix follow-up: project board
+  list rows now apply the legacy `TemplateHelper.showHeaderWordsInBracketsIfExist`
+  and `removeHeaderWords` behavior from `board/partial_list.scala.html`, rendering
+  bracketed leading title words as `.title-prefix[href="javascript:void(0)"]`
+  before the stripped title link. Verification: `pnpm --dir frontend test:e2e
+  -- project-posts.e2e.ts`.
 
 ## Evidence Checked
 
@@ -165,7 +171,7 @@ Total rows: 20
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
-| `/:owner/:project/posts` | Board list search form, shared `issue.partial_select_label` label selector, sort links, notice wrap, empty state, pagination shell. | `frontend/src/routes/$ownerName/$projectName/posts.tsx` renders project header/menu, legacy `post-list project-page-wrap`, `#option_form`, `.board-labels` with the shared label `dl/dt/dd` + Select2 source attributes/optgroups, notice rows, sort links, row anchors, comment counts, and pagination shell from REST board list/form-option data. | covered | `frontend/src/routes/$ownerName/$projectName/posts.tsx`, `frontend/tests/project-posts.e2e.ts` |
+| `/:owner/:project/posts` | Board list search form, shared `issue.partial_select_label` label selector, sort links, notice wrap, title-prefix branch, empty state, pagination shell. | `frontend/src/routes/$ownerName/$projectName/posts.tsx` renders project header/menu, legacy `post-list project-page-wrap`, `#option_form`, `.board-labels` with the shared label `dl/dt/dd` + Select2 source attributes/optgroups, notice rows, sort links, row anchors, comment counts, `TemplateHelper.showHeaderWordsInBracketsIfExist` / `removeHeaderWords` title-prefix output, and pagination shell from REST board list/form-option data. | covered | `frontend/src/routes/$ownerName/$projectName/posts.tsx`, `frontend/tests/project-posts.e2e.ts` |
 | `/organizations/:name/boards` | Organization board aggregate with project multiselect, keyword search, sort, pagination, cross-project rows. | `OrganizationBoardListPage` preserves organization header/menu and aggregate controls. | covered | none |
 | `/organizations/:name/boards` notice pinning | Legacy template has optional notice-wrap, but provenance records org aggregation as no separate notice pinning. | Contract pins no separate org notice pinning. | not-applicable | none |
 | board create/edit notice/readme/online commit controls | Legacy form renders notice/readme/issue-template/branch/path/line-ending/file uploader/notification controls. | `ProjectPostFormPage` renders those controls and hides notice/readme for online commit contexts. | covered | none |
