@@ -84,6 +84,43 @@ test("authenticated home empty notifications matches legacy index notifications 
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+
+  await page.goto(`${basePath}/`);
+  await expect(page.locator(".page-wrap-outer")).toBeVisible();
+  await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
+  await expect(page.locator(".warning-none")).toContainText("No notification");
+
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    EXPECTED_AUTHENTICATED_HOME.replaceAll("__BASE_PATH__", basePath),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
+test("direct notifications route matches legacy Application.notifications empty state DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+
+  await page.goto(`${basePath}/notifications`);
+  await expect(page.locator(".page-wrap-outer")).toBeVisible();
+  await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
+  await expect(page.locator(".warning-none")).toContainText("No notification");
+
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    EXPECTED_AUTHENTICATED_HOME.replaceAll("__BASE_PATH__", basePath),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
+async function mockAuthenticatedEmptyNotifications(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -105,20 +142,7 @@ test("authenticated home empty notifications matches legacy index notifications 
       body: JSON.stringify({ hasMore: false, items: [], total: 0 }),
     });
   });
-
-  await page.goto(`${basePath}/`);
-  await expect(page.locator(".page-wrap-outer")).toBeVisible();
-  await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
-  await expect(page.locator(".warning-none")).toContainText("No notification");
-
-  const actual = await canonicalizeScreenRoots(page);
-  const expected = await canonicalizeHtml(
-    page,
-    EXPECTED_AUTHENTICATED_HOME.replaceAll("__BASE_PATH__", basePath),
-  );
-
-  expect(actual).toEqual(expected);
-});
+}
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {

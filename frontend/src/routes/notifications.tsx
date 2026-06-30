@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { HomeRouteScreen } from "./-home-route-screen";
 
-export const Route = createFileRoute("/")({
-  component: IndexRoute,
+export const Route = createFileRoute("/notifications")({
+  component: NotificationsRoute,
 });
 
-function IndexRoute() {
+function NotificationsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return <HomeRouteScreen runtimeConfig={runtimeConfig} />;

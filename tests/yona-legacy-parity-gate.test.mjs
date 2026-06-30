@@ -463,8 +463,8 @@ test("maps notification inbox frontend files to the issue notification slice", (
 
 test("accepts notification route parity tests as notification frontend evidence", () => {
   const result = runGate([
-    "frontend/src/routes/notification/route.tsx",
-    "frontend/src/route-parity.spec.tsx",
+    "frontend/src/routes/notifications.tsx",
+    "frontend/tests/authenticated-home-empty-notifications.e2e.ts",
     "docs/provenance/ui-parity-reports/ui-parity-search-notification.md",
   ]);
 

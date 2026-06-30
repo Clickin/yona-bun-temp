@@ -78,6 +78,7 @@ const PARITY_SLICES = [
     label: "Public landing and global navigation",
     status: "parity",
     implementationPatterns: [
+      /^frontend\/src\/routes\/-home-route-screen\.tsx$/i,
       /^frontend\/src\/routes\/index\.tsx$/i,
       /^frontend\/src\/routes\/-home-view\.tsx$/i,
       /^frontend\/src\/routes\/__root\.tsx$/i,
@@ -507,6 +508,7 @@ const DOMAIN_BUCKETS = [
     status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/notifications\.ts$/i,
+      /^frontend\/src\/routes\/notifications?\.tsx$/i,
       /^frontend\/src\/routes\/notifications?\/route\.tsx$/i,
       /^crates\/(?:server|persistence|integrations)\/.*notification/i,
     ],
