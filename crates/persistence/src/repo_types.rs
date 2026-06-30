@@ -1368,6 +1368,7 @@ pub struct SearchContextRecord {
 pub struct SearchItemRecord {
     pub author_label: String,
     pub author_login_id: String,
+    pub avatar_url: String,
     pub created_label: String,
     pub due_date_until_label: String,
     pub href: String,

@@ -188,6 +188,37 @@ function SearchResultList({
     );
   }
 
+  if (result.searchType === "user") {
+    return (
+      <>
+        <ul className="search-list-wrap">
+          {result.items.map((item) => (
+            <li className="search-list-item project" key={item.id}>
+              <a
+                href={item.href}
+                className="avatar-wrap"
+                data-toggle="tooltip"
+                data-placement="top"
+                title={item.authorLoginId}
+              >
+                <img src={item.avatarUrl || ""} alt={item.authorLabel} width="32" height="32" />
+              </a>
+              <div className="title-wrap">
+                <a href={item.href} className="title user-link">
+                  {`${item.authorLabel} (@${item.authorLoginId})`}
+                </a>
+              </div>
+              <div className="infos nm">
+                <span className="infos-item">{`${t("userinfo.since")} ${item.createdLabel}`}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div id="pagination"></div>
+      </>
+    );
+  }
+
   if (
     result.searchType === "issue" ||
     result.searchType === "post" ||

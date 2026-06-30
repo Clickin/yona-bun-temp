@@ -10,8 +10,8 @@ use yoram_search::SearchType;
 
 use crate::{
     decode_query_component, internal_error, normalize_identifier, parse_rest_query_u32,
-    persistence, project_logo_url, require_project_read, PilotBackend, PilotRepository,
-    PilotServiceImpl, RestRouteError,
+    persistence, project_logo_url, require_project_read, workspace_avatar_url, PilotBackend,
+    PilotRepository, PilotServiceImpl, RestRouteError,
 };
 
 pub(crate) fn routes(service: PilotServiceImpl) -> Router {
@@ -249,6 +249,27 @@ async fn rest_search_with_input(
         item.project_logo_url = project_logo_url(repository, base_path, project_id)
             .await
             .map_err(RestRouteError::from_connect_error)?;
+    }
+
+    for item in result.items.iter_mut().filter(|item| item.r#type == "user") {
+        let Ok(user_id) = item.id.parse::<i64>() else {
+            continue;
+        };
+        if let Some(profile) = repository
+            .read_workspace_profile_for_user(user_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+        {
+            item.avatar_url = workspace_avatar_url(
+                repository,
+                user_id,
+                &profile.primary_email_address,
+                base_path,
+            )
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+        }
     }
 
     Ok(Json(result))

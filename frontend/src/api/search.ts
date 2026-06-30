@@ -37,6 +37,7 @@ export type SearchSnippet = {
 export type SearchItem = {
   authorLabel: string;
   authorLoginId: string;
+  avatarUrl?: string;
   createdLabel: string;
   dueDateUntilLabel?: string;
   href: string;

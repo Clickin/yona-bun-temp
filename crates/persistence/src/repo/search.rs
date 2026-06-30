@@ -191,6 +191,7 @@ impl AppRepositoryImpl<'_> {
                 SearchItemRecord {
                     author_label: row.author_name.unwrap_or_default(),
                     author_login_id: row.author_login_id.unwrap_or_default(),
+                    avatar_url: String::new(),
                     created_label: format_workspace_date_label(row.created_date),
                     due_date_until_label: String::new(),
                     href: format!(
@@ -275,9 +276,10 @@ impl AppRepositoryImpl<'_> {
                 SearchItemRecord {
                     author_label: display_name.clone(),
                     author_login_id: login_id.clone(),
+                    avatar_url: String::new(),
                     created_label: format_workspace_date_label(row.created_date),
                     due_date_until_label: String::new(),
-                    href: format!("/users/{login_id}"),
+                    href: format!("/{login_id}"),
                     id: row.id.to_string(),
                     number: String::new(),
                     origin_owner_name: String::new(),
@@ -339,6 +341,7 @@ impl AppRepositoryImpl<'_> {
                 SearchItemRecord {
                     author_label: project.owner_name.clone(),
                     author_login_id: project.owner_name.clone(),
+                    avatar_url: String::new(),
                     created_label: format_workspace_date_label(project.created_date),
                     due_date_until_label: String::new(),
                     href: format!("/{}/{}", project.owner_name, project.project_name),
@@ -408,6 +411,7 @@ impl AppRepositoryImpl<'_> {
                 SearchItemRecord {
                     author_label: row.author_name.unwrap_or_default(),
                     author_login_id: row.author_login_id.unwrap_or_default(),
+                    avatar_url: String::new(),
                     created_label: format_workspace_date_label(row.created_date),
                     due_date_until_label: String::new(),
                     href: format!(
@@ -480,6 +484,7 @@ impl AppRepositoryImpl<'_> {
                 SearchItemRecord {
                     author_label: String::new(),
                     author_login_id: String::new(),
+                    avatar_url: String::new(),
                     created_label: String::new(),
                     due_date_until_label: format_legacy_milestone_until_label(row.due_date),
                     href: format!(
@@ -553,6 +558,7 @@ impl AppRepositoryImpl<'_> {
                 SearchItemRecord {
                     author_label: row.author_name.unwrap_or_default(),
                     author_login_id: row.author_login_id.unwrap_or_default(),
+                    avatar_url: String::new(),
                     created_label: format_workspace_date_label(row.created_date),
                     due_date_until_label: String::new(),
                     href: format!(
@@ -632,6 +638,7 @@ impl AppRepositoryImpl<'_> {
                 SearchItemRecord {
                     author_label: row.author_name.unwrap_or_default(),
                     author_login_id: row.author_login_id.unwrap_or_default(),
+                    avatar_url: String::new(),
                     created_label: format_workspace_date_label(row.created_date),
                     due_date_until_label: String::new(),
                     href: format!(
@@ -722,6 +729,7 @@ impl AppRepositoryImpl<'_> {
                 SearchItemRecord {
                     author_label: row.author_name.unwrap_or_default(),
                     author_login_id: row.author_login_id.unwrap_or_default(),
+                    avatar_url: String::new(),
                     created_label: format_workspace_date_label(row.created_date),
                     due_date_until_label: String::new(),
                     href: format!(

@@ -663,7 +663,11 @@ async fn user_search_matches_legacy_login_id_and_name_lookup() {
     assert_eq!(by_login_id["counts"]["users"], 1);
     assert_eq!(by_login_id["items"][0]["type"], "user");
     assert_eq!(by_login_id["items"][0]["title"], "suwon");
-    assert_eq!(by_login_id["items"][0]["href"], "/users/doortts");
+    assert_eq!(by_login_id["items"][0]["href"], "/doortts");
+    assert!(by_login_id["items"][0]["avatarUrl"]
+        .as_str()
+        .unwrap_or_default()
+        .starts_with("https://www.gravatar.com/avatar/"));
 
     let by_name = response_json(
         rest_get(
@@ -677,7 +681,7 @@ async fn user_search_matches_legacy_login_id_and_name_lookup() {
     assert_eq!(by_name["counts"]["users"], 1);
     assert_eq!(by_name["items"][0]["type"], "user");
     assert_eq!(by_name["items"][0]["title"], "suwon");
-    assert_eq!(by_name["items"][0]["href"], "/users/doortts");
+    assert_eq!(by_name["items"][0]["href"], "/doortts");
 }
 
 #[tokio::test]
