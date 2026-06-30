@@ -118,7 +118,13 @@ function ProjectWebhooksBody({
           projectName={projectName}
         />
         {booleanField(webhooks.viewerCanUpdate) ? (
-          <form id="formNewWebhook" method="post" className="new-webhook-wrap" onSubmit={onSubmit}>
+          <form
+            id="formNewWebhook"
+            action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/webhooks`)}
+            method="post"
+            className="new-webhook-wrap"
+            onSubmit={onSubmit}
+          >
             <strong className="form-legend">{t("project.webhook.new")}</strong>
             <div className="form-wrap form-actions">
               <div>

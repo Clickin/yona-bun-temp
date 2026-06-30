@@ -1379,6 +1379,87 @@ span.issue-label {
   color: #f39c12;
 }
 
+.webhook-editor-wrap .new-webhook-wrap {
+  margin: 30px auto;
+}
+
+.webhook-editor-wrap .new-webhook-wrap .form-legend {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.webhook-editor-wrap .new-webhook-wrap .form-wrap {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+}
+
+.webhook-editor-wrap .new-webhook-wrap .input-webhook-payload {
+  width: 355px;
+}
+
+.webhook-editor-wrap .new-webhook-wrap .input-webhook-secret {
+  width: 214px;
+}
+
+.webhook-editor-wrap .new-webhook-wrap .btn-submit {
+  min-width: 100px;
+  vertical-align: top;
+}
+
+.webhook-editor-wrap .webhook-list-wrap {
+  margin: 0 auto;
+}
+
+.webhook-editor-wrap .webhook-list-wrap .list-head {
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-width: 0 0 2px;
+}
+
+.webhook-editor-wrap .webhook-list-wrap .list-head .payload-url,
+.webhook-editor-wrap .webhook-list-wrap .list-head .secret {
+  padding-left: 8px;
+  line-height: 30px;
+}
+
+.webhook-editor-wrap .webhook-list-wrap .list-item {
+  border-bottom: 1px solid #ddd;
+}
+
+.webhook-editor-wrap .webhook-list-wrap .list-item h6 {
+  padding-left: 8px;
+}
+
+.webhook-editor-wrap .webhook-list-wrap .list-item .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.webhook-editor-wrap .webhook-list-wrap .list-item .table {
+  table-layout: fixed;
+}
+
+.webhook-editor-wrap .webhook-list-wrap .list-item .table .webhook-secret {
+  display: block;
+  font-size: 12px;
+}
+
+.webhook-editor-wrap .webhook-list-wrap .list-item .table td {
+  border-top: none;
+}
+
+.webhook-editor-wrap .webhook-list-wrap .list-item .table td.info {
+  width: 150px;
+}
+
+.webhook-editor-wrap .webhook-list-wrap .list-item .table td.actions {
+  width: 80px;
+  padding-right: 1px;
+  text-align: right;
+}
+
 .form-wrap.new-project {
   position: relative;
   width: 700px;

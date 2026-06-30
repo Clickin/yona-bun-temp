@@ -1,5 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
 
+const EMPTY_WEBHOOKS_LIST =
+  '<div id="webhooksList" class="webhook-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No webhook exists.</p></div></div>';
+const POPULATED_WEBHOOKS_LIST = `
+<div id="webhooksList" class="webhook-list-wrap">
+  <div class="row-fluid list-head"><div class="span5 payload-url"><strong>Payload URL</strong></div><div class="span2 secret text-center"><strong>Authorization Token</strong></div><div class="span2 secret text-center"><strong>Type of message</strong></div><div class="span2 secret text-center"><strong>Include git push events</strong></div><div class="span1 secret text-center"></div></div>
+  <div class="row-fluid list-item vertical-align" data-webhook-id="11"><div class="span5"><h6 class="mr20 truncate">https://hooks.example.test/yona</h6></div><div class="span2 text-center"><h6>NONE</h6></div><div class="span2 text-center"><h6>SIMPLE</h6></div><div class="span2 text-center"><input type="checkbox" checked=""></div><div class="span1 text-center"><button type="button" class="ybtn ybtn-danger ybtn-small" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/webhooks/11">Delete</button></div></div>
+  <div class="row-fluid list-item vertical-align" data-webhook-id="12"><div class="span5"><h6 class="mr20 truncate">https://hooks.example.test/slack</h6></div><div class="span2 text-center"><h6>secret-token</h6></div><div class="span2 text-center"><h6>DETAIL_SLACK</h6></div><div class="span2 text-center"><input type="checkbox"></div><div class="span1 text-center"><button type="button" class="ybtn ybtn-danger ybtn-small" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/webhooks/12">Delete</button></div></div>
+</div>`;
+
 const EXPECTED_PROJECT_WEBHOOKS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
 <header class="gnb-outer">
@@ -20,7 +29,7 @@ const EXPECTED_PROJECT_WEBHOOKS = `
 </header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap webhook-editor-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/labels">Issue Label</a></li><li id="subMenuWebhook" class="active"><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="formNewWebhook" method="post" class="new-webhook-wrap"><strong class="form-legend">Create new webhook</strong><div class="form-wrap form-actions"><div><input type="text" name="payloadUrl" class="input-webhook-payload" maxlength="2000" autocomplete="off" placeholder="Payload URL"><input type="text" name="secret" class="input-webhook-secret" maxlength="250" autocomplete="off" placeholder="Authorization Token"><button type="submit" class="ybtn ybtn-primary btn-submit">Add webhook</button></div><div><label class="radio inline"><input type="radio" name="webhookType" value="SIMPLE" checked=""> Messenger (Only text)</label><label class="radio inline"><input type="radio" name="webhookType" value="DETAIL_SLACK"> Slack (Meta)</label><label class="radio inline"><input type="radio" name="webhookType" value="DETAIL_HANGOUT_CHAT"> Google Chat (Thread)</label><label class="radio inline"><input type="radio" name="webhookType" value="JSON"> Continuous Integration tool (Only push event)</label><span class="radio inline" aria-hidden="true">|</span><span class="radio inline" aria-hidden="true"></span><label class="checkbox inline" for="gitPush"><input type="checkbox" id="gitPush" name="gitPush" class="form-check-input"> Include git push events</label></div></div><div>* Every webhook is sent in POST and with Content-Type: application/json header.<br>* If you need to include additional fields and values, please use a query string. e.g. http://abc.com?customKey=value <br>* If you put a value in the Token field, 'Authorization: token input-value' header is added to HTTP header. <br></div></form><div id="webhooksList" class="webhook-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No webhook exists.</p></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap webhook-editor-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/labels">Issue Label</a></li><li id="subMenuWebhook" class="active"><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="formNewWebhook" action="__BASE_PATH__/admin/sample/webhooks" method="post" class="new-webhook-wrap"><strong class="form-legend">Create new webhook</strong><div class="form-wrap form-actions"><div><input type="text" name="payloadUrl" class="input-webhook-payload" maxlength="2000" autocomplete="off" placeholder="Payload URL"><input type="text" name="secret" class="input-webhook-secret" maxlength="250" autocomplete="off" placeholder="Authorization Token"><button type="submit" class="ybtn ybtn-primary btn-submit">Add webhook</button></div><div><label class="radio inline"><input type="radio" name="webhookType" value="SIMPLE" checked=""> Messenger (Only text)</label><label class="radio inline"><input type="radio" name="webhookType" value="DETAIL_SLACK"> Slack (Meta)</label><label class="radio inline"><input type="radio" name="webhookType" value="DETAIL_HANGOUT_CHAT"> Google Chat (Thread)</label><label class="radio inline"><input type="radio" name="webhookType" value="JSON"> Continuous Integration tool (Only push event)</label><span class="radio inline" aria-hidden="true">|</span><span class="radio inline" aria-hidden="true"></span><label class="checkbox inline" for="gitPush"><input type="checkbox" id="gitPush" name="gitPush" class="form-check-input"> Include git push events</label></div></div><div>* Every webhook is sent in POST and with Content-Type: application/json header.<br>* If you need to include additional fields and values, please use a query string. e.g. http://abc.com?customKey=value <br>* If you put a value in the Token field, 'Authorization: token input-value' header is added to HTTP header. <br></div></form><div id="webhooksList" class="webhook-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No webhook exists.</p></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -37,7 +46,52 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
   );
 });
 
-async function mockProjectAdmin(page: Page) {
+test("project webhooks renders legacy project/partial_webhooks_list.scala.html populated list", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, [
+    {
+      gitPush: true,
+      id: 11,
+      payloadUrl: "https://hooks.example.test/yona",
+      secret: "",
+      webhookType: "SIMPLE",
+    },
+    {
+      gitPush: false,
+      id: 12,
+      payloadUrl: "https://hooks.example.test/slack",
+      secret: "secret-token",
+      webhookType: "DETAIL_SLACK",
+    },
+  ]);
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  await expect(page.locator("#webhooksList .list-item")).toHaveCount(2);
+  await expect(page.locator('#webhooksList [data-webhook-id="12"]')).toContainText("secret-token");
+
+  const expected = EXPECTED_PROJECT_WEBHOOKS.replaceAll("__BASE_PATH__", basePath).replace(
+    EMPTY_WEBHOOKS_LIST,
+    POPULATED_WEBHOOKS_LIST.replaceAll("__BASE_PATH__", basePath),
+  );
+  expect(await canonicalizeScreenRoots(page)).toEqual(await canonicalizeHtml(page, expected));
+
+  await expect(webhookListMetrics(page)).resolves.toMatchObject({
+    deleteMethod: "delete",
+    deleteUri: `${basePath}/admin/sample/webhooks/11`,
+    gitPushChecked: true,
+    headBackground: "rgb(250, 250, 250)",
+    headBorderBottomWidth: "2px",
+    listItemBorderBottomWidth: "1px",
+    payloadText: "https://hooks.example.test/yona",
+    secretText: "NONE",
+    webhookId: "11",
+    webhookType: "SIMPLE",
+  });
+});
+
+async function mockProjectAdmin(page: Page, webhooks: unknown[] = []) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -90,9 +144,33 @@ async function mockProjectAdmin(page: Page) {
         projectName: "sample",
         viewerCanUpdate: true,
         webhookTypes: ["SIMPLE", "DETAIL_SLACK", "DETAIL_HANGOUT_CHAT", "JSON"],
-        webhooks: [],
+        webhooks,
       }),
     });
+  });
+}
+
+async function webhookListMetrics(page: Page) {
+  return page.evaluate(() => {
+    const head = document.querySelector("#webhooksList .list-head");
+    const firstItem = document.querySelector("#webhooksList .list-item");
+    const cells = firstItem ? Array.from(firstItem.children) : [];
+    const checkbox = firstItem?.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
+    const button = firstItem?.querySelector("button[data-request-uri]");
+    const headStyle = head ? getComputedStyle(head) : null;
+    const itemStyle = firstItem ? getComputedStyle(firstItem) : null;
+    return {
+      deleteMethod: button?.getAttribute("data-request-method"),
+      deleteUri: button?.getAttribute("data-request-uri"),
+      gitPushChecked: checkbox?.checked,
+      headBackground: headStyle?.backgroundColor,
+      headBorderBottomWidth: headStyle?.borderBottomWidth,
+      listItemBorderBottomWidth: itemStyle?.borderBottomWidth,
+      payloadText: cells[0]?.textContent?.trim(),
+      secretText: cells[1]?.textContent?.trim(),
+      webhookId: firstItem?.getAttribute("data-webhook-id"),
+      webhookType: cells[2]?.textContent?.trim(),
+    };
   });
 }
 
