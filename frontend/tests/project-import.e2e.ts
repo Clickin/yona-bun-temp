@@ -183,6 +183,19 @@ test("project import form matches legacy project/importing.scala.html DOM", asyn
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_IMPORT.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await importFormMetrics(page)).toEqual({
+    actionsTextAlign: "center",
+    advancedBackground: "rgb(250, 250, 250)",
+    advancedBorderRadius: 10,
+    advancedPaddingBlock: 20,
+    formMarginBlock: 60,
+    formPosition: "relative",
+    formWidth: 700,
+    repoAuthBackground: "rgb(250, 250, 250)",
+    repoAuthDisplay: "none",
+    repoAuthPaddingInline: 50,
+    textInputWidthRatio: 0.98,
+  });
 });
 
 async function mockProjectImport(page: Page) {
@@ -280,6 +293,49 @@ async function canonicalizeScreenRoots(page: Page) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+  });
+}
+
+async function importFormMetrics(page: Page) {
+  return page.evaluate(() => {
+    const formWrap = requireElement(".form-wrap.new-project");
+    const formStyle = getComputedStyle(formWrap);
+    const input = requireElement("#url");
+    const inputStyle = getComputedStyle(input);
+    const advanced = requireElement(".advanced-options");
+    const advancedStyle = getComputedStyle(advanced);
+    const repoAuth = requireElement("#repoAuth");
+    const repoAuthStyle = getComputedStyle(repoAuth);
+    const actions = requireElement(".actions.mt20");
+    const actionsStyle = getComputedStyle(actions);
+
+    return {
+      actionsTextAlign: actionsStyle.textAlign,
+      advancedBackground: advancedStyle.backgroundColor,
+      advancedBorderRadius: Math.round(parseFloat(advancedStyle.borderTopLeftRadius)),
+      advancedPaddingBlock:
+        Math.round(parseFloat(advancedStyle.paddingTop)) +
+        Math.round(parseFloat(advancedStyle.paddingBottom)),
+      formMarginBlock:
+        Math.round(parseFloat(formStyle.marginTop)) +
+        Math.round(parseFloat(formStyle.marginBottom)),
+      formPosition: formStyle.position,
+      formWidth: Math.round(formWrap.getBoundingClientRect().width),
+      repoAuthBackground: repoAuthStyle.backgroundColor,
+      repoAuthDisplay: repoAuthStyle.display,
+      repoAuthPaddingInline:
+        Math.round(parseFloat(repoAuthStyle.paddingLeft)) +
+        Math.round(parseFloat(repoAuthStyle.paddingRight)),
+      textInputWidthRatio: Number((parseFloat(inputStyle.width) / 700).toFixed(2)),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
     }
   });
 }

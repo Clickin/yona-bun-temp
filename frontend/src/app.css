@@ -1138,6 +1138,49 @@ button[type="submit"]:focus {
   font-weight: bold;
 }
 
+.form-wrap.new-project {
+  position: relative;
+  width: 700px;
+  margin: 30px auto;
+}
+
+.form-wrap.new-project .text {
+  width: 98%;
+}
+
+.form-wrap.new-project .text.textarea {
+  height: 78px;
+  resize: vertical;
+}
+
+.form-wrap.new-project .actions {
+  position: relative;
+  text-align: center;
+}
+
+.form-wrap.new-project .project-scopes .note {
+  margin-left: 22px;
+  font-size: 11px;
+  color: #777;
+}
+
+.form-wrap.new-project .project-scopes label {
+  display: block;
+}
+
+.form-wrap.new-project .advanced-options {
+  padding: 10px 0;
+  background: #fafafa;
+  border-radius: 10px;
+}
+
+.form-wrap.new-project .repo-auth-wrap {
+  display: none;
+  padding: 10px 30px 10px 20px;
+  background: #fafafa;
+  border-radius: 10px;
+}
+
 .loginDialog {
   width: 460px;
   margin-left: -230px;
