@@ -95,12 +95,13 @@ const PARITY_SLICES = [
     label: "Public project directory",
     status: "parity",
     implementationPatterns: [
+      /^frontend\/src\/routes\/\[_\]import\.tsx$/i,
       /^frontend\/src\/routes\/projectform\.tsx$/i,
       /^frontend\/src\/routes\/projects\.tsx$/i,
       /^frontend\/src\/routes\/projects\/route\.tsx$/i,
       /^frontend\/src\/app\.css$/i,
     ],
-    testKeywords: ["project-directory-route", "projects", "directory-parity"],
+    testKeywords: ["project-import", "project-directory-route", "projects", "directory-parity"],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
       "docs/provenance/ui-parity-reports/template-first-p2-project-shell.md",
