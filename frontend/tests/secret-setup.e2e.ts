@@ -133,6 +133,11 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
     logoMarginBottom: "50px",
     logoMarginTop: "50px",
     logoWidth: "123px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
+    providerColor: "rgb(51, 51, 51)",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
     secretBoxMarginBottom: "20px",
     secretBoxMarginTop: "20px",
     secretBoxWidth: "640px",
@@ -176,7 +181,19 @@ async function readDesktopSecretMetrics(page: Page) {
     const formWrap = document.querySelector<HTMLElement>(".signup-form-wrap");
     const passwordInput = document.querySelector<HTMLElement>("#password");
     const buttonRow = document.querySelector<HTMLElement>(".signup-form-wrap .btns-row");
-    if (!logo || !secretBox || !formWrap || !passwordInput || !buttonRow) {
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (
+      !logo ||
+      !secretBox ||
+      !formWrap ||
+      !passwordInput ||
+      !buttonRow ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
+    ) {
       throw new Error("Expected secret setup metric targets are missing.");
     }
 
@@ -185,6 +202,8 @@ async function readDesktopSecretMetrics(page: Page) {
     const formWrapStyle = getComputedStyle(formWrap);
     const passwordInputStyle = getComputedStyle(passwordInput);
     const buttonRowStyle = getComputedStyle(buttonRow);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
 
     return {
       buttonRowMarginBottom: buttonRowStyle.marginBottom,
@@ -198,6 +217,11 @@ async function readDesktopSecretMetrics(page: Page) {
       logoMarginBottom: logoStyle.marginBottom,
       logoMarginTop: logoStyle.marginTop,
       logoWidth: logoStyle.width,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
       secretBoxMarginBottom: secretBoxStyle.marginBottom,
       secretBoxMarginTop: secretBoxStyle.marginTop,
       secretBoxWidth: secretBoxStyle.width,
