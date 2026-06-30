@@ -165,6 +165,23 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   );
 
   expect(actual).toEqual(expected);
+  expect(await projectListMetrics(page)).toEqual({
+    avatarHeight: 34,
+    avatarWidth: 54,
+    contentWidthRatio: 0.83,
+    deleteButtonHeight: 30,
+    filterInputWidth: 160,
+    firstHeaderColumnRatio: 0.4,
+    firstRowColumnRatio: 0.4,
+    listHeadHeight: 60,
+    modalFooterButtonGap: 32,
+    modalWidth: 562,
+    paginationOffsetTop: 16,
+    projectNameOffsetTop: 6,
+    searchFormOffsetTop: -16,
+    sidebarWidthRatio: 0.15,
+    titleAreaHeight: 0,
+  });
 });
 
 test("site admin project delete waits for legacy confirmation modal", async ({ page }) => {
@@ -304,6 +321,73 @@ async function canonicalizeScreenRoots(page: Page) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+  });
+}
+
+async function projectListMetrics(page: Page) {
+  return page.evaluate(() => {
+    const titleArea = requireElement(".title_area");
+    const title = requireElement(".title_area h2");
+    const searchForm = requireElement(".title_area .form-search");
+    const filterInput = requireElement('.title_area input[name="filter"]');
+    const row = requireElement(".site-setting-wrap > .row-fluid");
+    const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
+    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const listHead = requireElement(".listhead");
+    const firstHeaderColumn = requireElement(".listhead .span5");
+    const firstRowColumn = requireElement(".project-list-wrap .listitem .span5");
+    const firstRow = requireElement(".project-list-wrap .listitem");
+    const avatar = requireElement(".project-list-wrap .list-avatar img");
+    const projectName = requireElement(".project-list-wrap .project-name");
+    const deleteButton = requireElement('[data-toggle="delete-project"]');
+    const pagination = requireElement("#pagination");
+    const modal = requireElement("#alertDeletionWrap");
+    const modalYes = requireElement("#projectDeleteBtn");
+    const modalNo = requireElement('#alertDeletionWrap [data-dismiss="modal"]');
+    const titleAreaRect = titleArea.getBoundingClientRect();
+    const titleRect = title.getBoundingClientRect();
+    const searchFormRect = searchForm.getBoundingClientRect();
+    const filterInputRect = filterInput.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const listHeadRect = listHead.getBoundingClientRect();
+    const firstHeaderColumnRect = firstHeaderColumn.getBoundingClientRect();
+    const firstRowColumnRect = firstRowColumn.getBoundingClientRect();
+    const firstRowRect = firstRow.getBoundingClientRect();
+    const avatarRect = avatar.getBoundingClientRect();
+    const projectNameRect = projectName.getBoundingClientRect();
+    const deleteButtonRect = deleteButton.getBoundingClientRect();
+    const paginationRect = pagination.getBoundingClientRect();
+    const modalRect = modal.getBoundingClientRect();
+    const modalYesRect = modalYes.getBoundingClientRect();
+    const modalNoRect = modalNo.getBoundingClientRect();
+
+    return {
+      avatarHeight: Math.round(avatarRect.height),
+      avatarWidth: Math.round(avatarRect.width),
+      contentWidthRatio: Number((contentRect.width / rowRect.width).toFixed(2)),
+      deleteButtonHeight: Math.round(deleteButtonRect.height),
+      filterInputWidth: Math.round(filterInputRect.width),
+      firstHeaderColumnRatio: Number((firstHeaderColumnRect.width / listHeadRect.width).toFixed(2)),
+      firstRowColumnRatio: Number((firstRowColumnRect.width / firstRowRect.width).toFixed(2)),
+      listHeadHeight: Math.round(listHeadRect.height),
+      modalFooterButtonGap: Math.round(modalNoRect.left - modalYesRect.right),
+      modalWidth: Math.round(modalRect.width),
+      paginationOffsetTop: Math.round(paginationRect.top - firstRowRect.bottom),
+      projectNameOffsetTop: Math.round(projectNameRect.top - avatarRect.top),
+      searchFormOffsetTop: Math.round(searchFormRect.top - titleRect.top),
+      sidebarWidthRatio: Number((sidebarRect.width / rowRect.width).toFixed(2)),
+      titleAreaHeight: Math.round(titleAreaRect.height),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
     }
   });
 }
