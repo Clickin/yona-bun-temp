@@ -573,11 +573,16 @@ const DOMAIN_BUCKETS = [
     status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/site-admin\.ts$/i,
+      /^frontend\/src\/routes\/migration\.tsx$/i,
       /^frontend\/src\/routes\/sites\/\$pageName\/route\.tsx$/i,
       /^crates\/(?:persistence|server)\/.*(?:site|admin|user)/i,
     ],
-    testKeywords: ["site-admin", "site_admin", "site/users", "user-list"],
-    provenanceDocs: ["docs/provenance/core-parity-audit.md"],
+    testKeywords: ["site-admin", "site_admin", "site/users", "user-list", "migration"],
+    provenanceDocs: [
+      "docs/provenance/core-parity-audit.md",
+      "docs/provenance/ui-parity-reports/ui-parity-site-admin-setup.md",
+      "docs/provenance/ui-parity-reports/template-first-p7-site-admin-error-security.md",
+    ],
   },
   {
     id: "repository-and-smart-http",
