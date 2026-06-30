@@ -1,0 +1,219 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { readSessionBootstrap } from "../../auth-workspace-client";
+import {
+  readWorkspaceOverviewRest,
+  resetVisitedProjectsRest,
+  updateProfileRest,
+} from "../../api/workspace";
+import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
+import { YonaQueryProvider } from "../../query-client";
+import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { SiteLayoutShell } from "../-home-route-screen";
+
+export const Route = createFileRoute("/user/editform")({
+  component: UserProfileSettingsRoute,
+});
+
+function UserProfileSettingsRoute() {
+  const { runtimeConfig } = Route.useRouteContext();
+
+  return (
+    <YonaQueryProvider>
+      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+          <UserProfileSettingsScreen runtimeConfig={runtimeConfig} />
+        </SiteLayoutShell>
+      </LegacyI18nProvider>
+    </YonaQueryProvider>
+  );
+}
+
+function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
+  const workspaceQuery = useQuery({
+    queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
+    queryKey: ["workspace", "overview"],
+  });
+  const profile = workspaceQuery.data?.profile;
+  const loginId = profile?.loginId ?? "";
+  const displayName = profile?.displayName ?? "";
+  const email = profile?.primaryEmailAddress ?? "";
+  const avatarUrl = profile?.avatarUrl ?? "";
+
+  const profileMutation = useMutation({
+    mutationFn: async (input: { avatarAttachmentId: string; email: string; name: string }) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updateProfileRest(runtimeConfig, csrfToken, input);
+    },
+    onSuccess: (workspace) => {
+      queryClient.setQueryData(["workspace", "overview"], workspace);
+    },
+  });
+  const resetVisitedMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return resetVisitedProjectsRest(runtimeConfig, csrfToken);
+    },
+    onSuccess: (workspace) => {
+      queryClient.setQueryData(["workspace", "overview"], workspace);
+    },
+  });
+
+  return (
+    <>
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>{t("userinfo.accountSetting")}</h3>
+        </div>
+      </div>
+      <div className="page-wrap-outer">
+        <div className="page-wrap">
+          <EditTabMenu active="profile" basePath={runtimeConfig.basePath} />
+
+          <form
+            id="frmBasic"
+            method="post"
+            action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
+            className="pull-left"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const form = event.currentTarget;
+              const formData = new FormData(form);
+              profileMutation.mutate({
+                avatarAttachmentId: "",
+                email: String(formData.get("email") ?? ""),
+                name: String(formData.get("name") ?? ""),
+              });
+            }}
+          >
+            <dl>
+              <dt>{t("user.loginId")}</dt>
+              <dd className="mt10">
+                <input type="text" className="text" value={loginId} readOnly />
+              </dd>
+              <dt>{t("user.name")}</dt>
+              <dd className="mt10">
+                <input
+                  key={`name-${displayName}`}
+                  type="text"
+                  name="name"
+                  className="text"
+                  defaultValue={displayName}
+                />
+              </dd>
+              <dt>{t("user.email")}</dt>
+              <dd className="mt10">
+                <input
+                  key={`email-${email}`}
+                  type="email"
+                  name="email"
+                  className="text"
+                  defaultValue={email}
+                />
+              </dd>
+              <dd>
+                <button type="submit" className="ybtn ybtn-success">
+                  {t("userinfo.editProfile")}
+                </button>
+              </dd>
+            </dl>
+          </form>
+
+          <form
+            id="frmAvatar"
+            method="post"
+            action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
+            className="pull-left"
+            style={{ borderLeft: "1px solid #ddd", marginLeft: "50px", paddingLeft: "50px" }}
+          >
+            <input type="hidden" name="name" value={displayName} />
+            <input type="hidden" name="email" value={email} />
+
+            <div className="avatar-frm">
+              <div className="avatar-wrap xlarge">
+                <img
+                  src={avatarUrl || undefined}
+                  style={{ maxWidth: "none", width: "128px" }}
+                  alt=""
+                />
+              </div>
+              <div className="upload-progress avatar" style={{ display: "none" }}>
+                <div className="bar orange"></div>
+              </div>
+              <div className="btn-wrap mt10 center-txt">
+                <div className="ybtn ybtn-small fake-file-wrap btnUploadAvatar">
+                  {t("userinfo.changeAvatar")}
+                  <input
+                    id="avatarFile"
+                    type="file"
+                    className="file"
+                    name="filePath"
+                    accept="image/*"
+                  />
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <div className="reset-user-visited-list">
+            <hr />
+            <form
+              method="post"
+              action={prefixBasePath(runtimeConfig.basePath, "/user/resetVisitedList")}
+              onSubmit={(event) => {
+                event.preventDefault();
+                resetVisitedMutation.mutate();
+              }}
+            >
+              <button type="submit" className="ybtn">
+                {t("userinfo.reset.visited.project.list")}
+              </button>
+            </form>
+          </div>
+          <div id="avatarCropWrap" className="modal hide" role="dialog" data-backdrop="static">
+            <div className="modal-header center-txt">
+              <div className="avatar-wrap xlarge">
+                <img style={{ maxWidth: "none", width: "128px" }} alt="" />
+              </div>
+            </div>
+            <div className="modal-body">
+              <img style={{ maxWidth: "500px" }} alt="" />
+              <canvas width="128" height="128" className="hide"></canvas>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="ybtn ybtn-default" data-dismiss="modal">
+                {t("button.cancel")}
+              </button>
+              <button type="button" className="ybtn ybtn-success btnSubmitCrop">
+                {t("button.save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function EditTabMenu({ active, basePath }: { active: string; basePath: string }) {
+  const { t } = useLegacyMessages();
+  const tabs = [
+    ["/user/editform", "profile", "userinfo.editProfile"],
+    ["/user/editform/password", "password", "userinfo.changePassword"],
+    ["/user/editform/notifications", "notifications", "userinfo.changeNotifications"],
+    ["/user/editform/emails", "emails", "userinfo.changeEmails"],
+    ["/user/editform/token", "token", "userinfo.token"],
+  ] as const;
+
+  return (
+    <ul className="nav nav-tabs mt20">
+      {tabs.map(([href, id, messageKey]) => (
+        <li key={id} className={active === id ? "active" : undefined}>
+          <a href={prefixBasePath(basePath, href)}>{t(messageKey)}</a>
+        </li>
+      ))}
+    </ul>
+  );
+}

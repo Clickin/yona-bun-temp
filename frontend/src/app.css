@@ -761,6 +761,11 @@ button[type="submit"]:focus {
   height: 20px;
 }
 
+.avatar-wrap.xlarge {
+  width: 128px;
+  height: 128px;
+}
+
 .avatar-wrap img {
   width: 100%;
   vertical-align: top;
