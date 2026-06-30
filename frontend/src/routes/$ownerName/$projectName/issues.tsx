@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import type { HTMLAttributes, LiHTMLAttributes } from "react";
+import { useEffect, useRef, type HTMLAttributes, type LiHTMLAttributes } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
@@ -537,6 +537,7 @@ function ProjectIssueItem({
   const assigneeLoginId = stringField(issue.assigneeLoginId, "");
   const createdLabel = stringField(issue.createdLabel, stringField(issue.updatedLabel, ""));
   const issueWeight = issue.weight ?? 0;
+  const titleParts = splitHeaderWordsInBrackets(issue.title);
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
   const legacyFor = {
     htmlFor: `issue-${issueId}`,
@@ -601,8 +602,13 @@ function ProjectIssueItem({
                 <i className="yobicon-angle-circled-down"></i>
               </span>
             ) : null}
+            {titleParts.prefixes.map((prefix) => (
+              <LegacyTitlePrefixAnchor key={`${issueId}-${prefix}`}>
+                {prefix}
+              </LegacyTitlePrefixAnchor>
+            ))}
             <a href={issueHref} className="title">
-              {issue.title}
+              {titleParts.title}
             </a>
           </div>
           <div className="infos">
@@ -1320,6 +1326,37 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
+}
+
+function LegacyTitlePrefixAnchor({ children }: { children: string }) {
+  const anchorRef = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    anchorRef.current?.setAttribute("href", "javascript:void(0)");
+  }, []);
+  return (
+    <a ref={anchorRef} href="/" className="title-prefix">
+      {children}
+    </a>
+  );
+}
+
+function splitHeaderWordsInBrackets(title: string) {
+  const prefixes: string[] = [];
+  const pattern = /^\s*(\[[^\]]+\])/u;
+  let rest = title;
+  while (true) {
+    const match = pattern.exec(rest);
+    if (!match) {
+      break;
+    }
+    prefixes.push(match[1].trim());
+    rest = rest.slice(match[0].length);
+  }
+  const onlyPrefixes = rest.trim() === "";
+  return {
+    prefixes: onlyPrefixes ? [] : prefixes,
+    title: onlyPrefixes ? title : rest.trimStart(),
+  };
 }
 
 function truncateParentIssueTitle(title: string) {

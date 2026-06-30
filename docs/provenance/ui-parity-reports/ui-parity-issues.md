@@ -47,6 +47,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now maps existing REST issue item fields directly into the legacy row DOM. The sort filter container remains legacy-conditional and is empty for a single visible issue, matching `partial_list_wrap.scala.html`.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` now includes the RED-to-GREEN populated `/admin/sample/issues?filter=bug` whole-screen DOM comparison alongside the empty-state proof.
 
+## 2026-07-01 Project Issue Title Prefix Follow-Up
+
+- Restored the `issue/partial_list.scala.html` title helper branch for leading bracketed title words, matching legacy `TemplateHelper.showHeaderWordsInBracketsIfExist` and `removeHeaderWords`.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now preserves the full title in row `data-value`, renders one `.title-prefix` anchor with legacy `href="javascript:void(0)"` for each leading bracket prefix, and renders the remaining title in the normal issue title link.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=prefix` whole-screen DOM comparison proving `.title-prefix`, stripped title text, title-wrap order, mass-update toolbar, Excel action, keymap trigger, and pagination.
+
 ## 2026-07-01 Project Issue Mass Update Toolbar Follow-Up
 
 - Restored the visible `issue/partial_massupdate.scala.html` toolbar in the flat project issue list for non-empty member-visible issue lists, including `#mass-update-form`, `#check-all`, state/assignee/milestone/attach-label/detach-label dropdown shells, disabled buttons, label category/divider rows, and the multi-row sort filter branch from `partial_list_wrap.scala.html`.
