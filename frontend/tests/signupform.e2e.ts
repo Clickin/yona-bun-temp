@@ -228,7 +228,19 @@ test("anonymous signup form matches legacy user/signup.scala.html screen DOM", a
     buttonRowMarginBottom: "20px",
     formMarginTop: "14px",
     formWidth: "400px",
+    gnbInnerHeight: "40px",
+    gnbInnerWidth: 1254,
+    gnbOuterBackground: "rgb(27, 27, 27)",
+    gnbOuterHeight: "40px",
+    logoBackground: "rgb(255, 87, 34)",
+    logoLineHeight: "40px",
+    logoPadding: "6px 10px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
     passwordMarginBottom: "15px",
+    providerColor: "rgb(51, 51, 51)",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
     tagLineFontSize: "14px",
     tagLineMarginBottom: "26px",
     tagLinePaddingTop: "40px",
@@ -520,6 +532,9 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
 
 async function readDesktopSignupMetrics(page: Page) {
   return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const logo = document.querySelector<HTMLElement>(".logo-letter");
     const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.signup");
     const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
     const tagLine = document.querySelector<HTMLElement>(".tag-line-wrap .tag-line");
@@ -529,7 +544,13 @@ async function readDesktopSignupMetrics(page: Page) {
     const buttonRow = document.querySelector<HTMLElement>(".signup-form-wrap .btns-row");
     const actRow = document.querySelector<HTMLElement>(".signup-form-wrap .act-row");
     const actionLink = document.querySelector<HTMLElement>(".signup-form-wrap .go-login");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
     if (
+      !gnbOuter ||
+      !gnbInner ||
+      !logo ||
       !tagLineWrap ||
       !title ||
       !tagLine ||
@@ -538,11 +559,17 @@ async function readDesktopSignupMetrics(page: Page) {
       !passwordInput ||
       !buttonRow ||
       !actRow ||
-      !actionLink
+      !actionLink ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
     ) {
       throw new Error("Expected signup metric targets are missing.");
     }
 
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const gnbInnerStyle = getComputedStyle(gnbInner);
+    const logoStyle = getComputedStyle(logo);
     const tagLineWrapStyle = getComputedStyle(tagLineWrap);
     const formWrapStyle = getComputedStyle(formWrap);
     const loginInputStyle = getComputedStyle(loginInput);
@@ -550,6 +577,8 @@ async function readDesktopSignupMetrics(page: Page) {
     const buttonRowStyle = getComputedStyle(buttonRow);
     const actionLinkStyle = getComputedStyle(actionLink);
     const actRowStyle = getComputedStyle(actRow);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
 
     return {
       actionLinkColor: actionLinkStyle.color,
@@ -559,7 +588,19 @@ async function readDesktopSignupMetrics(page: Page) {
       buttonRowMarginBottom: buttonRowStyle.marginBottom,
       formMarginTop: formWrapStyle.marginTop,
       formWidth: formWrapStyle.width,
+      gnbInnerHeight: gnbInnerStyle.height,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterBackground: gnbOuterStyle.backgroundColor,
+      gnbOuterHeight: gnbOuterStyle.height,
+      logoBackground: logoStyle.backgroundColor,
+      logoLineHeight: logoStyle.lineHeight,
+      logoPadding: logoStyle.padding,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
       passwordMarginBottom: passwordInputStyle.marginBottom,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
       tagLineFontSize: getComputedStyle(tagLine).fontSize,
       tagLineMarginBottom: tagLineWrapStyle.marginBottom,
       tagLinePaddingTop: tagLineWrapStyle.paddingTop,
