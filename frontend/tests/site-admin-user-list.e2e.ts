@@ -178,6 +178,24 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   );
 
   expect(actual).toEqual(expected);
+  expect(await userListMetrics(page)).toEqual({
+    actionColumnRatio: 0.4,
+    actionRowButtonCount: 5,
+    avatarHeight: 0,
+    avatarWidth: 0,
+    contentWidthRatio: 0.83,
+    firstHeaderColumnRatio: 0.23,
+    firstRowColumnRatio: 0.23,
+    listHeadHeight: 30,
+    modalWidth: 562,
+    nameIdGap: -16,
+    paginationOffsetTop: 16,
+    searchFormOffsetTop: -16,
+    sidebarWidthRatio: 0.15,
+    tabHeight: 51,
+    titleAreaHeight: 0,
+    userSearchInputWidth: 160,
+  });
 });
 
 test("site admin user actions follow legacy confirmation and alert flow", async ({ page }) => {
@@ -415,6 +433,74 @@ async function canonicalizeScreenRoots(page: Page) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+  });
+}
+
+async function userListMetrics(page: Page) {
+  return page.evaluate(() => {
+    const titleArea = requireElement(".title_area");
+    const title = requireElement(".title_area h2");
+    const searchForm = requireElement(".title_area .form-search");
+    const searchInput = requireElement('.title_area input[name="query"]');
+    const row = requireElement(".site-setting-wrap > .row-fluid");
+    const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
+    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const tabs = requireElement(".span10 > .nav.nav-tabs");
+    const listHead = requireElement(".listhead");
+    const firstHeaderColumn = requireElement(".listhead .span3");
+    const firstRow = requireElement(".user-list-wrap .listitem");
+    const firstRowColumn = requireElement(".user-list-wrap .listitem .span3");
+    const actionColumn = requireElement(".user-list-wrap .action-buttons");
+    const avatar = requireElement(".user-list-wrap .list-avatar img");
+    const userName = requireElement(".user-list-wrap .user-name");
+    const userId = requireElement(".user-list-wrap .user-id");
+    const pagination = requireElement("#pagination");
+    const modal = requireElement("#alertDeletionWrap");
+    const titleAreaRect = titleArea.getBoundingClientRect();
+    const titleRect = title.getBoundingClientRect();
+    const searchFormRect = searchForm.getBoundingClientRect();
+    const searchInputRect = searchInput.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const tabsRect = tabs.getBoundingClientRect();
+    const listHeadRect = listHead.getBoundingClientRect();
+    const firstHeaderColumnRect = firstHeaderColumn.getBoundingClientRect();
+    const firstRowRect = firstRow.getBoundingClientRect();
+    const firstRowColumnRect = firstRowColumn.getBoundingClientRect();
+    const actionColumnRect = actionColumn.getBoundingClientRect();
+    const avatarRect = avatar.getBoundingClientRect();
+    const userNameRect = userName.getBoundingClientRect();
+    const userIdRect = userId.getBoundingClientRect();
+    const paginationRect = pagination.getBoundingClientRect();
+    const modalRect = modal.getBoundingClientRect();
+
+    return {
+      actionColumnRatio: Number((actionColumnRect.width / firstRowRect.width).toFixed(2)),
+      actionRowButtonCount: actionColumn.querySelectorAll(".ybtn").length,
+      avatarHeight: Math.round(avatarRect.height),
+      avatarWidth: Math.round(avatarRect.width),
+      contentWidthRatio: Number((contentRect.width / rowRect.width).toFixed(2)),
+      firstHeaderColumnRatio: Number((firstHeaderColumnRect.width / listHeadRect.width).toFixed(2)),
+      firstRowColumnRatio: Number((firstRowColumnRect.width / firstRowRect.width).toFixed(2)),
+      listHeadHeight: Math.round(listHeadRect.height),
+      modalWidth: Math.round(modalRect.width),
+      nameIdGap: Math.round(userIdRect.top - userNameRect.bottom),
+      paginationOffsetTop: Math.round(paginationRect.top - firstRowRect.bottom),
+      searchFormOffsetTop: Math.round(searchFormRect.top - titleRect.top),
+      sidebarWidthRatio: Number((sidebarRect.width / rowRect.width).toFixed(2)),
+      tabHeight: Math.round(tabsRect.height),
+      titleAreaHeight: Math.round(titleAreaRect.height),
+      userSearchInputWidth: Math.round(searchInputRect.width),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
     }
   });
 }
