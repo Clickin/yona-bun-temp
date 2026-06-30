@@ -125,6 +125,13 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
     textWidth: "386px",
     titleLineHeight: "42px",
   });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await readMobileLoginMetrics(page)).toEqual({
+    formWidth: "370.5px",
+    gnbInnerWidth: 382,
+    loginInputWidth: "351.969px",
+    passwordInputWidth: "351.969px",
+  });
   await expect(page.locator(".links-wrap a")).toHaveAttribute("href", `${basePath}/lostPassword`);
 });
 
@@ -445,6 +452,25 @@ async function readDesktopLoginMetrics(page: Page) {
       textMarginBottom: loginInputStyle.marginBottom,
       textWidth: loginInputStyle.width,
       titleLineHeight: getComputedStyle(title).lineHeight,
+    };
+  });
+}
+
+async function readMobileLoginMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
+    const loginInput = document.querySelector<HTMLElement>("#loginIdOrEmailD");
+    const passwordInput = document.querySelector<HTMLElement>("#password");
+    if (!gnbInner || !formWrap || !loginInput || !passwordInput) {
+      throw new Error("Expected mobile login metric targets are missing.");
+    }
+
+    return {
+      formWidth: getComputedStyle(formWrap).width,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      loginInputWidth: getComputedStyle(loginInput).width,
+      passwordInputWidth: getComputedStyle(passwordInput).width,
     };
   });
 }

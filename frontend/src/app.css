@@ -981,6 +981,14 @@ button[type="submit"]:focus {
     width: 95%;
   }
 
+  .login-form-wrap {
+    width: 95% !important;
+  }
+
+  .login-form-wrap .text {
+    width: 95% !important;
+  }
+
   .dl-horizontal dt {
     float: none;
     width: auto;
