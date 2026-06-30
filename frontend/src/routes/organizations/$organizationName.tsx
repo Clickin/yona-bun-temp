@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { leaveOrganizationRest, readOrganizationContainerRest } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
 import type { OrganizationContainer, YonaRecord, YonaUserItem } from "../../api/types";
@@ -15,6 +15,13 @@ export const Route = createFileRoute("/organizations/$organizationName")({
 
 function OrganizationHomeRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { organizationName } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const exactPath = `/organizations/${organizationName}`;
+
+  if (pathname !== exactPath && pathname !== `${exactPath}/`) {
+    return <Outlet />;
+  }
 
   return (
     <YonaQueryProvider>

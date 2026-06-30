@@ -45,6 +45,12 @@ are implemented as REST JSON/API-return plus React-rendered legacy DOM.
 | `frontend/src/organization-home-parity.spec.tsx`, `organization-shell-i18n.spec.tsx`, `workspace-profile-i18n.spec.tsx`, `workspace-settings-parity.spec.tsx`, `directory-home-user-files-notification-i18n.spec.tsx` | Static selector/source proof. |
 | `frontend/tests/directory-create-import-proof.e2e.ts`, `organization-directory-admin-parity.e2e.ts`, `user-profile-parity.e2e.ts`, `user-files.e2e.ts`, `workspace-settings-parity.e2e.ts`, `user-profile-settings.e2e.ts`, `user-password-settings.e2e.ts`, `user-notification-settings.e2e.ts`, `user-email-settings.e2e.ts`, `user-token-settings.e2e.ts`, `search-parity.e2e.ts`, `authenticated-home-empty-notifications.e2e.ts` | Browser-visible interaction proof. |
 
+## 2026-07-01 Organization Board Aggregate Template-First Rebuild
+
+- Rebuilt `/organizations/:organizationName/boards` in `frontend/src/routes/organizations/$organizationName/boards.tsx` from `organization/group_board_list.scala.html` and `organization/group_board_list_partial.scala.html`.
+- Scope: the flat route renders organization header/menu chrome with Board active, `#option_form`, project multi-select, keyword search, two-column checkbox, `.post-list-wrap` rows, `.group-project-name`, comment count links, empty state, and existing organization container plus organization board REST query boundaries.
+- Verification: `pnpm --dir frontend test:e2e -- organization-boards.e2e.ts`.
+
 ## Open Reset Queue Summary
 
 | status | count |
@@ -76,7 +82,7 @@ are implemented as REST JSON/API-return plus React-rendered legacy DOM.
 | `index/partial_notifications.scala.html` | Notification load-more appends server-rendered fragments in legacy. | `frontend/src/routes/-home-route-screen.tsx`, `frontend/src/routes/notifications.tsx` | data-boundary | covered in current follow-up | P6 | none | React renders legacy `#notification-more[href="javascript:void(0);"]`, prevents navigation, fetches `/api/v1/notifications?from=<items.length>&size=20`, appends rows, and removes the link when `hasMore=false`; direct `/notification?from=&limit=` returns JSON for API-style requests and SPA shell for HTML Accept. |
 | Legacy server-rendered notification fragment as runtime data source | Legacy `NotificationApp.notifications` returned `partial_notifications` HTML fragment. | REST JSON plus React render | data-boundary | not-applicable | P6 | none unless parent reclassifies | Keeping legacy HTML fragment injection as a React runtime data source is out of scope under the reset rule. The conversion boundary is API-return plus React-rendered legacy DOM. |
 | Global/project/org search rows intersecting user/org/notification surfaces | `/search`, `/organizations/:org/search`, project/org scoped search chrome. | `frontend/src/routes/-search-views.tsx`, search route files | layout | covered in current follow-up | P6 | none | Search rows are tracked in `ui-parity-search-notification.md`; organization scoped chrome uses real org container header/menu and remains relevant to P6 shell parity. Repository-scoped `/admin/sample/search` integrated delta remains owned by P5 until parent reassigns. |
-| Organization aggregate issue/board/PR list shells | `/organizations/:org/issues`, `/boards`, `/pullrequests`, `/closedPullrequests`. | organization aggregate route files and P3/P4/P5 list renderers | layout | covered in current follow-up | P6 | none | Organization shell ownership is covered here; row/list internals are covered in P3/P4/P5. Existing organization and PR/board/issue evidence proves route shells, project-name rows, filters, tabs, and pagination. |
+| Organization aggregate issue/board/PR list shells | `/organizations/:org/issues`, `/boards`, `/pullrequests`, `/closedPullrequests`. | organization aggregate route files and P3/P4/P5 list renderers | layout | covered in current follow-up | P6 | none | Organization shell ownership is covered here; row/list internals are covered in P3/P4/P5. `frontend/tests/organization-boards.e2e.ts` whole-screen compares `/organizations/weblabs/boards` against `organization/group_board_list.scala.html` plus `group_board_list_partial.scala.html`, proving Board-active org chrome, `#option_form`, project multi-select, keyword search, two-column checkbox, row project-name/comment-count anchors, and REST/TanStack organization board query boundaries. Existing organization and PR/issue evidence covers the sibling route shells. |
 | Public/current-user route auth gates | `/me`, `/user/editform/**`, `/user/files`, notification routes. | route guards and session REST | permission | covered in current follow-up | P6 | none | Existing auth/workspace specs and e2e prove anonymous guard/loading states, authenticated render, guest stream hiding, private/public ACL filters, and direct legacy alias compatibility. |
 | Raw visible i18n keys in P6 surfaces | All P6 templates resolve `Messages(...)` labels; raw keys are failures. | i18n/static/browser proof across P6 files | copy | covered in current follow-up | P6 | none | `directory-home-user-files-notification-i18n.spec.tsx`, `organization-shell-i18n.spec.tsx`, `workspace-profile-i18n.spec.tsx`, `workspace-settings-i18n.spec.tsx`, and related e2e raw-key scans cover the P6 surfaces. |
 
@@ -97,6 +103,7 @@ Browser proof:
 - `frontend/tests/organization-directory-admin-parity.e2e.ts`
 - `frontend/tests/organization-home.e2e.ts`
 - `frontend/tests/organization-members-form.e2e.ts`
+- `frontend/tests/organization-boards.e2e.ts`
 - `frontend/tests/organization-settings-form.e2e.ts`
 - `frontend/tests/user-profile-parity.e2e.ts`
 - `frontend/tests/workspace-settings-parity.e2e.ts`
@@ -162,6 +169,14 @@ integrated visual sweep covers all packet reports.
   shell and existing organization settings/update REST boundary. Focused
   coverage:
   `pnpm --dir frontend test:e2e -- organization-settings-form.e2e.ts`.
+- 2026-07-01 organization board aggregate template-first rebuild:
+  `frontend/src/routes/organizations/$organizationName/boards.tsx` now owns the
+  concrete `organization/group_board_list.scala.html` screen under the legacy
+  site shell and existing organization board REST boundary. The organization
+  home parent route now yields to child routes through `<Outlet />`, so direct
+  `/organizations/:org/boards` renders the child screen instead of the
+  organization home body. Focused coverage:
+  `pnpm --dir frontend test:e2e -- organization-boards.e2e.ts`.
 - 2026-06-27 organization aggregate shell follow-up:
   `frontend/src/routes/organizations/$organizationName/route.tsx` now owns the
   organization header/menu/page-wrap shell for `/issues`, `/boards`,
