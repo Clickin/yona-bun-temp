@@ -911,6 +911,20 @@ button[type="submit"]:focus {
   color: #b94a48;
 }
 
+.alert-block {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.alert-block > p,
+.alert-block > ul {
+  margin-bottom: 0;
+}
+
+.alert-block p + p {
+  margin-top: 5px;
+}
+
 .login-form-wrap .alert h4,
 .signup-form-wrap .alert h4 {
   font-size: 15px;

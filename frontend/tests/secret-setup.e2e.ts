@@ -138,8 +138,18 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
     providerColor: "rgb(51, 51, 51)",
     providerFontSize: "9px",
     providerMarginLeft: "4px",
+    secretBoxBackgroundColor: "rgb(252, 248, 227)",
+    secretBoxBorderColor: "rgb(251, 238, 213)",
+    secretBoxBorderRadius: "4px",
+    secretBoxColor: "rgb(192, 152, 83)",
+    secretBoxHeadingColor: "rgb(192, 152, 83)",
+    secretBoxHeadingMargin: "0px",
     secretBoxMarginBottom: "20px",
     secretBoxMarginTop: "20px",
+    secretBoxPaddingBottom: "14px",
+    secretBoxPaddingLeft: "14px",
+    secretBoxPaddingRight: "35px",
+    secretBoxPaddingTop: "14px",
     secretBoxWidth: "640px",
   });
 
@@ -176,9 +186,20 @@ test("first-run secret setup keeps legacy mobile standalone form proportions", a
     pageWrapOuterPadding: "0px",
     pageWrapOuterWidth: 390,
     providerFontSize: "9px",
+    secretBoxBackgroundColor: "rgb(252, 248, 227)",
+    secretBoxBorderColor: "rgb(251, 238, 213)",
+    secretBoxBorderRadius: "4px",
+    secretBoxColor: "rgb(192, 152, 83)",
+    secretBoxHeadingColor: "rgb(192, 152, 83)",
+    secretBoxHeadingMargin: "0px",
     secretBoxMarginBottom: "20px",
     secretBoxMarginTop: "20px",
-    secretBoxWidth: 195,
+    secretBoxPaddingBottom: "14px",
+    secretBoxPaddingLeft: "14px",
+    secretBoxPaddingRight: "35px",
+    secretBoxPaddingTop: "14px",
+    secretBoxStyleWidth: "195px",
+    secretBoxWidth: 246,
   });
 });
 
@@ -209,6 +230,7 @@ async function readDesktopSecretMetrics(page: Page) {
   return page.evaluate(() => {
     const logo = document.querySelector<HTMLElement>(".secret-wrap .logo");
     const secretBox = document.querySelector<HTMLElement>(".secret-box");
+    const secretBoxHeading = document.querySelector<HTMLElement>(".secret-box h4");
     const formWrap = document.querySelector<HTMLElement>(".signup-form-wrap");
     const passwordInput = document.querySelector<HTMLElement>("#password");
     const buttonRow = document.querySelector<HTMLElement>(".signup-form-wrap .btns-row");
@@ -218,6 +240,7 @@ async function readDesktopSecretMetrics(page: Page) {
     if (
       !logo ||
       !secretBox ||
+      !secretBoxHeading ||
       !formWrap ||
       !passwordInput ||
       !buttonRow ||
@@ -230,6 +253,7 @@ async function readDesktopSecretMetrics(page: Page) {
 
     const logoStyle = getComputedStyle(logo);
     const secretBoxStyle = getComputedStyle(secretBox);
+    const secretBoxHeadingStyle = getComputedStyle(secretBoxHeading);
     const formWrapStyle = getComputedStyle(formWrap);
     const passwordInputStyle = getComputedStyle(passwordInput);
     const buttonRowStyle = getComputedStyle(buttonRow);
@@ -253,8 +277,18 @@ async function readDesktopSecretMetrics(page: Page) {
       providerColor: providerStyle.color,
       providerFontSize: providerStyle.fontSize,
       providerMarginLeft: providerStyle.marginLeft,
+      secretBoxBackgroundColor: secretBoxStyle.backgroundColor,
+      secretBoxBorderColor: secretBoxStyle.borderColor,
+      secretBoxBorderRadius: secretBoxStyle.borderRadius,
+      secretBoxColor: secretBoxStyle.color,
+      secretBoxHeadingColor: secretBoxHeadingStyle.color,
+      secretBoxHeadingMargin: secretBoxHeadingStyle.margin,
       secretBoxMarginBottom: secretBoxStyle.marginBottom,
       secretBoxMarginTop: secretBoxStyle.marginTop,
+      secretBoxPaddingBottom: secretBoxStyle.paddingBottom,
+      secretBoxPaddingLeft: secretBoxStyle.paddingLeft,
+      secretBoxPaddingRight: secretBoxStyle.paddingRight,
+      secretBoxPaddingTop: secretBoxStyle.paddingTop,
       secretBoxWidth: secretBoxStyle.width,
     };
   });
@@ -264,6 +298,7 @@ async function readMobileSecretMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const secretBox = document.querySelector<HTMLElement>(".secret-box");
+    const secretBoxHeading = document.querySelector<HTMLElement>(".secret-box h4");
     const formWrap = document.querySelector<HTMLElement>(".signup-form-wrap");
     const definitionList = document.querySelector<HTMLElement>(".signup-form-wrap dl");
     const passwordInput = document.querySelector<HTMLElement>("#password");
@@ -273,6 +308,7 @@ async function readMobileSecretMetrics(page: Page) {
     if (
       !pageWrapOuter ||
       !secretBox ||
+      !secretBoxHeading ||
       !formWrap ||
       !definitionList ||
       !passwordInput ||
@@ -285,6 +321,7 @@ async function readMobileSecretMetrics(page: Page) {
 
     const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
     const secretBoxStyle = getComputedStyle(secretBox);
+    const secretBoxHeadingStyle = getComputedStyle(secretBoxHeading);
     const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
 
     return {
@@ -299,8 +336,19 @@ async function readMobileSecretMetrics(page: Page) {
       pageWrapOuterPadding: pageWrapOuterStyle.padding,
       pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
       providerFontSize: getComputedStyle(provider).fontSize,
+      secretBoxBackgroundColor: secretBoxStyle.backgroundColor,
+      secretBoxBorderColor: secretBoxStyle.borderColor,
+      secretBoxBorderRadius: secretBoxStyle.borderRadius,
+      secretBoxColor: secretBoxStyle.color,
+      secretBoxHeadingColor: secretBoxHeadingStyle.color,
+      secretBoxHeadingMargin: secretBoxHeadingStyle.margin,
       secretBoxMarginBottom: secretBoxStyle.marginBottom,
       secretBoxMarginTop: secretBoxStyle.marginTop,
+      secretBoxPaddingBottom: secretBoxStyle.paddingBottom,
+      secretBoxPaddingLeft: secretBoxStyle.paddingLeft,
+      secretBoxPaddingRight: secretBoxStyle.paddingRight,
+      secretBoxPaddingTop: secretBoxStyle.paddingTop,
+      secretBoxStyleWidth: secretBoxStyle.width,
       secretBoxWidth: Math.round(secretBox.getBoundingClientRect().width),
     };
   });
