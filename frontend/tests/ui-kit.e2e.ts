@@ -48,6 +48,33 @@ test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({
   });
 });
 
+test("standalone UI kit keeps legacy mobile shell proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(`${basePath}/_UIKit`);
+  await expect(page.locator(".page-wrap-outer")).toBeVisible();
+
+  expect(await readMobileUIKitMetrics(page)).toEqual({
+    bodyColor: "rgb(204, 204, 204)",
+    gnbOuterMinWidth: "10px",
+    gnbOuterPadding: "0px 10px",
+    gnbOuterTextAlign: "center",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterMinWidth: "10px",
+    pageFooterOuterPadding: "10px",
+    pageFooterWidth: 370,
+    pageWrapOuterMinHeight: "450px",
+    pageWrapOuterMinWidth: "10px",
+    pageWrapOuterPadding: "0px",
+    pageWrapOuterWidth: 390,
+    providerFontSize: "9px",
+    subtitleFontSize: "24px",
+    subtitleHeight: "55px",
+    subtitleLineHeight: "55px",
+  });
+});
+
 async function readDesktopUIKitMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
@@ -107,6 +134,44 @@ async function readDesktopUIKitMetrics(page: Page) {
       subtitleHeight: subtitleStyle.height,
       subtitleLineHeight: subtitleStyle.lineHeight,
       subtitleVerticalAlign: subtitleStyle.verticalAlign,
+    };
+  });
+}
+
+async function readMobileUIKitMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const subtitle = document.querySelector<HTMLElement>(".subtitle");
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (!gnbOuter || !subtitle || !pageWrapOuter || !pageFooter || !pageFooterOuter || !provider) {
+      throw new Error("Expected UI kit mobile metric targets are missing.");
+    }
+
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const subtitleStyle = getComputedStyle(subtitle);
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+
+    return {
+      bodyColor: getComputedStyle(document.body).color,
+      gnbOuterMinWidth: gnbOuterStyle.minWidth,
+      gnbOuterPadding: gnbOuterStyle.padding,
+      gnbOuterTextAlign: gnbOuterStyle.textAlign,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterMinWidth: pageFooterOuterStyle.minWidth,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      pageFooterWidth: Math.round(pageFooter.getBoundingClientRect().width),
+      pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
+      pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      pageWrapOuterPadding: pageWrapOuterStyle.padding,
+      pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
+      providerFontSize: getComputedStyle(provider).fontSize,
+      subtitleFontSize: subtitleStyle.fontSize,
+      subtitleHeight: subtitleStyle.height,
+      subtitleLineHeight: subtitleStyle.lineHeight,
     };
   });
 }
