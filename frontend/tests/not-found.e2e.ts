@@ -83,11 +83,20 @@ test("unmatched route keeps legacy mobile error shell proportions", async ({ pag
   await expect(page.locator(".error-wrap")).toBeVisible();
 
   expect(await readMobileNotFoundMetrics(page)).toEqual({
+    errorIconHeight: "80px",
+    errorIconWidth: "50px",
+    errorPaddingBottom: "100px",
     errorPaddingTop: "100px",
+    errorTextColor: "rgb(137, 137, 137)",
     errorTextFontSize: "16px",
+    errorTextFontWeight: "700",
+    errorTextMarginBottom: "30px",
+    errorTextMarginTop: "30px",
+    footerLineHeight: "34px",
     gnbInnerWidth: 363,
     gnbOuterMinWidth: "10px",
     gnbOuterPadding: "0px 10px",
+    homeButtonHeight: "20px",
     pageFooterOuterMinWidth: "10px",
     pageFooterOuterPadding: "10px",
     pageFooterWidth: 370,
@@ -96,6 +105,7 @@ test("unmatched route keeps legacy mobile error shell proportions", async ({ pag
     pageWrapOuterWidth: 390,
     projectPageWrapMarginTop: "5px",
     projectPageWrapWidth: 390,
+    providerFontSize: "9px",
   });
 });
 
@@ -175,18 +185,24 @@ async function readMobileNotFoundMetrics(page: Page) {
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const projectPageWrap = document.querySelector<HTMLElement>(".project-page-wrap");
     const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
+    const errorIcon = document.querySelector<HTMLElement>(".error-wrap .ico-err2");
     const errorText = document.querySelector<HTMLElement>(".error-wrap p");
+    const homeButton = document.querySelector<HTMLElement>(".error-wrap .ybtn");
     const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");
     const footer = document.querySelector<HTMLElement>(".page-footer");
+    const provider = document.querySelector<HTMLElement>(".page-footer .provider");
     if (
       !gnbOuter ||
       !gnbInner ||
       !pageWrapOuter ||
       !projectPageWrap ||
       !errorWrap ||
+      !errorIcon ||
       !errorText ||
+      !homeButton ||
       !footerOuter ||
-      !footer
+      !footer ||
+      !provider
     ) {
       throw new Error("Expected not-found mobile metric targets are missing.");
     }
@@ -194,14 +210,26 @@ async function readMobileNotFoundMetrics(page: Page) {
     const gnbOuterStyle = getComputedStyle(gnbOuter);
     const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
     const projectPageWrapStyle = getComputedStyle(projectPageWrap);
+    const errorWrapStyle = getComputedStyle(errorWrap);
+    const errorIconStyle = getComputedStyle(errorIcon);
+    const errorTextStyle = getComputedStyle(errorText);
     const footerOuterStyle = getComputedStyle(footerOuter);
 
     return {
-      errorPaddingTop: getComputedStyle(errorWrap).paddingTop,
-      errorTextFontSize: getComputedStyle(errorText).fontSize,
+      errorIconHeight: errorIconStyle.height,
+      errorIconWidth: errorIconStyle.width,
+      errorPaddingBottom: errorWrapStyle.paddingBottom,
+      errorPaddingTop: errorWrapStyle.paddingTop,
+      errorTextColor: errorTextStyle.color,
+      errorTextFontSize: errorTextStyle.fontSize,
+      errorTextFontWeight: errorTextStyle.fontWeight,
+      errorTextMarginBottom: errorTextStyle.marginBottom,
+      errorTextMarginTop: errorTextStyle.marginTop,
+      footerLineHeight: getComputedStyle(footer).lineHeight,
       gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
       gnbOuterMinWidth: gnbOuterStyle.minWidth,
       gnbOuterPadding: gnbOuterStyle.padding,
+      homeButtonHeight: getComputedStyle(homeButton).height,
       pageFooterOuterMinWidth: footerOuterStyle.minWidth,
       pageFooterOuterPadding: footerOuterStyle.padding,
       pageFooterWidth: Math.round(footer.getBoundingClientRect().width),
@@ -210,6 +238,7 @@ async function readMobileNotFoundMetrics(page: Page) {
       pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
       projectPageWrapMarginTop: projectPageWrapStyle.marginTop,
       projectPageWrapWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
+      providerFontSize: getComputedStyle(provider).fontSize,
     };
   });
 }
