@@ -26,3 +26,17 @@ test("auth aliases redirect to canonical legacy public routes", async ({ page })
     "reset-token",
   );
 });
+
+test("legacy GET /users/login renders the index screen at the original URL", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/users/login?from=legacy`);
+  expect(new URL(page.url()).pathname).toBe(`${basePath}/users/login`);
+  expect(new URL(page.url()).searchParams.get("from")).toBe("legacy");
+  await expect(page.locator(".gnb-outer")).toBeVisible();
+  await expect(page.locator(".siteintro-bg")).toBeVisible();
+  await expect(page.locator(".signup-btn a")).toHaveAttribute(
+    "href",
+    `${basePath}/users/signupform`,
+  );
+});

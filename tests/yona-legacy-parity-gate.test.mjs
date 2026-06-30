@@ -348,6 +348,7 @@ test("passes partial legacy slices when tests and parity audit updates land toge
 test("maps auth runtime context changes to the account lifecycle slice", () => {
   const result = runGate([
     "frontend/src/app-runtime-context.tsx",
+    "frontend/src/routes/users/login.tsx",
     "frontend/src/routes/users/loginform.tsx",
     "frontend/src/routes/users/signupform/route.tsx",
     "frontend/src/routes/login.tsx",
