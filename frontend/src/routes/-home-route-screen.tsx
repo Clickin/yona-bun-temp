@@ -425,12 +425,15 @@ function NotificationStreamItem({
 }
 
 export function SiteLayoutShell({
+  activeMenu,
   children,
   runtimeConfig,
 }: {
+  activeMenu?: "projects";
   children: React.ReactNode;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { t } = useLegacyMessages();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const session = sessionQuery.data;
   const shouldRenderAnonymousUserMenu = sessionQuery.data?.isAnonymous !== false;
@@ -454,6 +457,19 @@ export function SiteLayoutShell({
                 Y
               </a>
             </li>
+            {activeMenu === "projects" ? (
+              <>
+                <li className="active">
+                  <a
+                    href={prefixBasePath(runtimeConfig.basePath, "/projects")}
+                    className="show-progress-bar"
+                  >
+                    {t("title.list")}
+                  </a>
+                </li>
+                <li className="divider"></li>
+              </>
+            ) : null}
             <li>
               <form
                 action={prefixBasePath(runtimeConfig.basePath, "/search")}

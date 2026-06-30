@@ -296,6 +296,13 @@ export function listProjectsRest(
   });
 }
 
+export function listProjectsQueryOptions(runtimeConfig: RuntimeConfig) {
+  return queryOptions({
+    queryFn: () => listProjectsRest(runtimeConfig),
+    queryKey: apiQueryKeys.project.list(),
+  });
+}
+
 export function listOrganizationsRest(
   runtimeConfig: RuntimeConfig,
   fetchImpl: typeof fetch = fetch,

@@ -5,6 +5,7 @@ export const apiQueryKeys = {
     capabilities: () => [...apiQueryKeys.v1(), "auth", "capabilities"] as const,
   },
   project: {
+    list: () => [...apiQueryKeys.v1(), "projects"] as const,
     base: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.v1(), "owners", ownerName, "projects", projectName] as const,
     container: (ownerName: string, projectName: string) =>
