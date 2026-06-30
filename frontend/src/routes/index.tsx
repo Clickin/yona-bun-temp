@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { HomeRouteScreen } from "./-home-route-screen";
 
 type IndexSearch = {
-  signup: string;
-  verify: string;
+  signup?: string;
+  verify?: string;
 };
 
 export const Route = createFileRoute("/")({

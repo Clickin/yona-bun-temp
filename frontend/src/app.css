@@ -15,6 +15,17 @@ body {
   text-rendering: auto;
 }
 
+.blind {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  font-size: 0;
+  line-height: 0;
+}
+
 .hide {
   display: none;
 }
@@ -471,6 +482,30 @@ button[type="submit"]:focus {
   height: 40px;
   margin: 0 auto;
   color: #788ba7;
+}
+
+.gnb-inner .logo {
+  display: block;
+  float: left;
+  width: 44px;
+  height: 40px;
+  background-repeat: no-repeat;
+  background-position: 11px 10px;
+}
+
+.gnb-inner .logo::before {
+  float: left;
+  width: 1px;
+  height: 40px;
+  content: " ";
+}
+
+.gnb-inner .logo::after {
+  float: left;
+  width: 1px;
+  height: 40px;
+  margin-left: 40px;
+  content: " ";
 }
 
 .gnb-nav {

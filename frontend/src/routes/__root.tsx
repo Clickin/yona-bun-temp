@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
 export interface AppRouterContext {
@@ -101,16 +101,70 @@ function RootResetShell() {
 
 function RootAliasNotFound() {
   const { runtimeConfig } = Route.useRouteContext();
+  const basePath = runtimeConfig.basePath === "/" ? "" : runtimeConfig.basePath;
+  const pathname =
+    typeof window === "undefined" ? "/" : window.location.pathname.slice(basePath.length) || "/";
 
   React.useEffect(() => {
-    const basePath = runtimeConfig.basePath === "/" ? "" : runtimeConfig.basePath;
-    const pathname = window.location.pathname.slice(basePath.length) || "/";
     if (pathname === "/reset-password") {
       window.location.replace(
         `${prefixBasePath(runtimeConfig.basePath, "/resetPassword")}${window.location.search}`,
       );
     }
-  }, [runtimeConfig.basePath]);
+  }, [pathname, runtimeConfig.basePath]);
 
-  return null;
+  if (pathname === "/reset-password") {
+    return null;
+  }
+
+  return (
+    <>
+      <header className="gnb-outer">
+        <div className="gnb-inner">
+          <Link to="/" className="logo">
+            <h1 className="blind">{runtimeConfig.siteName ?? "Yona"}</h1>
+          </Link>
+          <ul className="gnb-nav">
+            <li>
+              <a href={prefixBasePath(runtimeConfig.basePath, "/projects")}>Project list</a>
+            </li>
+            <li>
+              <Link to="/_help">Help</Link>
+            </li>
+            <li>
+              <a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">
+                Feedback
+              </a>
+            </li>
+          </ul>
+        </div>
+      </header>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="error-wrap">
+            <i className="ico ico-err2" />
+            <p>Page not found</p>
+            <Link to="/" className="ybtn ybtn-info">
+              Home
+            </Link>
+          </div>
+        </div>
+      </div>
+      <footer className="page-footer-outer">
+        <div className="page-footer">
+          <span className="provider">
+            Copyright ©{" "}
+            <a href="http://navercorp.com/" target="_blank">
+              NAVER Corp.
+            </a>{" "}
+            Supported by{" "}
+            <a href="https://developers.naver.com/d2/" target="_blank" className="d2-program">
+              <span className="d2">D2</span>
+              <span className="program"> Program</span>
+            </a>
+          </span>
+        </div>
+      </footer>
+    </>
+  );
 }
