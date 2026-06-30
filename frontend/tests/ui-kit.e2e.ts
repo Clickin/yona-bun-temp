@@ -98,6 +98,37 @@ test("standalone UI kit dropdown matches legacy yobi.ui.Dropdown interaction", a
   await expect(dropdown.locator('input[type="hidden"][name="assigneeId"]')).toHaveValue("0");
 });
 
+test("standalone UI kit root shell skips yobi dropdown mutation for data-activate manual", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/_UIKit`);
+  await page.locator(".page-wrap-outer").evaluate((container) => {
+    container.insertAdjacentHTML(
+      "beforeend",
+      `<div id="manual-branch-dropdown" class="btn-group branches pull-right" data-name="branch" data-activate="manual">
+        <button class="btn dropdown-toggle large" data-toggle="dropdown">
+          <span class="d-label">HEAD</span>
+          <span class="d-caret"><span class="caret"></span></span>
+        </button>
+        <ul class="dropdown-menu">
+          <li data-value="main"><a href="/yona/project/commits/main">main</a></li>
+        </ul>
+      </div>`,
+    );
+  });
+
+  const dropdown = page.locator("#manual-branch-dropdown");
+  await dropdown.locator('[data-toggle="dropdown"]').click();
+  await expect(dropdown).toHaveClass(/open/);
+
+  await dropdown.locator('li[data-value="main"]').click();
+  await expect(dropdown.locator(".d-label")).toHaveText("HEAD");
+  await expect(dropdown.locator("li.active")).toHaveCount(0);
+  await expect(dropdown.locator('input[type="hidden"][name="branch"]')).toHaveCount(0);
+});
+
 test("standalone UI kit root shell hides legacy data-via-email original message", async ({
   page,
 }) => {

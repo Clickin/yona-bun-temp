@@ -86,7 +86,12 @@ function RootResetShell() {
       if (selectedItem) {
         const container = selectedItem.closest<HTMLElement>(".btn-group[data-name]");
         const fieldName = container?.dataset.name;
-        if (!container || !fieldName || selectedItem.dataset.value === undefined) {
+        if (
+          !container ||
+          container.dataset.activate === "manual" ||
+          !fieldName ||
+          selectedItem.dataset.value === undefined
+        ) {
           event.preventDefault();
           return;
         }
