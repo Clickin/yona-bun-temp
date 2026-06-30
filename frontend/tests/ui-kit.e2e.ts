@@ -165,6 +165,41 @@ test("standalone UI kit root shell applies legacy navbar search scope selection"
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("Group");
 });
 
+test("standalone UI kit root shell mounts legacy anonymous login dialog", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/_UIKit`);
+  const dialog = page.locator("#loginDialog");
+  await expect(dialog).toHaveClass(/modal/);
+  await expect(dialog).toHaveClass(/hide/);
+  await expect(dialog).toHaveClass(/loginDialog/);
+  await expect(dialog.locator("form.frm-wrap.login-form-wrap")).toHaveAttribute(
+    "action",
+    "/users/login",
+  );
+  await expect(dialog.locator("form.frm-wrap.login-form-wrap")).toHaveAttribute("method", "post");
+  await expect(dialog.locator("#loginIdOrEmailD")).toHaveAttribute("name", "loginIdOrEmail");
+  await expect(dialog.locator("#loginIdOrEmailD")).toHaveAttribute(
+    "placeholder",
+    "Login ID or E-mail",
+  );
+  await expect(dialog.locator("#passwordD")).toHaveAttribute("name", "password");
+  await expect(dialog.locator("#passwordD")).toHaveAttribute("placeholder", "Password");
+  await expect(dialog.locator(".error .error-message")).toHaveCount(1);
+  await expect(dialog.locator("#remember-meD")).toBeChecked();
+  await expect(dialog.locator('label[for="remember-meD"].bg-checkbox')).toHaveText(
+    "Stay logged in",
+  );
+  await expect(dialog.locator(".act-row a").first()).toHaveAttribute(
+    "href",
+    `${basePath}/lostPassword`,
+  );
+  await expect(dialog.locator(".act-row a").last()).toHaveAttribute(
+    "href",
+    `${basePath}/users/signupform`,
+  );
+});
+
 test("standalone UI kit root shell hides legacy data-via-email original message", async ({
   page,
 }) => {

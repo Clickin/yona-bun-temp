@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Link, Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
+import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
 export interface AppRouterContext {
@@ -12,9 +13,11 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
 });
 
 function RootResetShell() {
+  const { runtimeConfig } = Route.useRouteContext();
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const rendersPlainResponseState = pathname.startsWith("/verify/");
+  const rendersStandaloneLoginState = pathname === "/users/loginform";
 
   React.useEffect(() => {
     if (rendersPlainResponseState) {
@@ -244,9 +247,81 @@ function RootResetShell() {
               '<div class="toast" tabindex="-1"><div class="btn-dismiss"><button type="button" class="btn-transparent">&times;</button></div><div class="center-text"><span class="v"></span><div class="msg"></div></div></div>'
             }
           </script>
+          {rendersStandaloneLoginState ? null : (
+            <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+              <RootLoginDialog basePath={runtimeConfig.basePath} />
+            </LegacyI18nProvider>
+          )}
         </>
       )}
     </>
+  );
+}
+
+function RootLoginDialog({ basePath }: { basePath: string }) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div id="loginDialog" className="modal hide loginDialog" tabIndex={-1} role="dialog">
+      <div className="modal-body">
+        <div className="pull-right">
+          <button type="button" className="close" data-dismiss="modal" aria-hidden="true">
+            &times;
+          </button>
+        </div>
+        <form action="/users/login" method="post" className="frm-wrap login-form-wrap">
+          <dl>
+            <dd>
+              <input
+                id="loginIdOrEmailD"
+                name="loginIdOrEmail"
+                type="text"
+                className="text email"
+                autoComplete="off"
+                placeholder={t("user.login.key")}
+              />
+            </dd>
+            <dd>
+              <input
+                id="passwordD"
+                name="password"
+                type="password"
+                className="text password"
+                autoComplete="off"
+                placeholder={t("user.password")}
+              />
+            </dd>
+          </dl>
+          <div className="error">
+            <i className="yobicon-error" />
+            <span className="error-message" />
+          </div>
+          <div className="btns-row nm">
+            <button type="submit" className="ybtn ybtn-primary fullsize">
+              {t("button.login")}
+            </button>
+          </div>
+          <div className="btns-row nm" />
+          <div className="act-row right-txt mt20">
+            <div className="pull-left">
+              <input
+                id="remember-meD"
+                type="checkbox"
+                name="rememberMe"
+                className="checkbox"
+                defaultChecked
+              />
+              <label htmlFor="remember-meD" className="bg-checkbox">
+                {t("title.rememberMe")}
+              </label>
+            </div>
+            <a href={prefixBasePath(basePath, "/lostPassword")}>{t("title.resetPassword")}</a>
+            <span className="gray-txt ml10 mr10">|</span>
+            <a href={prefixBasePath(basePath, "/users/signupform")}>{t("title.signup")}</a>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 
