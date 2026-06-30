@@ -23,6 +23,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: the member management state keeps a single local component tree because the legacy body is one add-member form, member list, role/delete controls, and enrollment request block; the route reads project container data for the shell and members REST data for list/mutation boundaries.
 - Verification: `pnpm --dir frontend test:e2e -- project-members-form.e2e.ts`.
 
+## 2026-07-01 Project Issue Labels Template-First Rebuild
+
+- Rebuilt the concrete flat route `frontend/src/routes/$ownerName/$projectName/issue/labelsform.tsx` from `project/issuelabels.scala.html`, `project/partial_issuelabels_list.scala.html`, `project/partial_issuelabels_editcategory.scala.html`, `project/partial_issuelabels_editlabel.scala.html`, `project/header.scala.html`, `projectMenu.scala.html`, and `project/partial_settingmenu.scala.html`.
+- Scope: the empty label editor keeps a single local component tree because the legacy body is one copy-label form, add-label form, empty list, and edit modal pair; the route reads project container data for the shell and project labels REST data for list/mutation boundaries.
+- Verification: `pnpm --dir frontend test:e2e -- project-labels-form.e2e.ts`.
+
 ## 2026-06-27 Webhooks Layout Follow-Up
 
 - Moved project webhooks settings shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/webhooks`, keeping the settings menu active and rendering `ProjectWebhooksPage` through the TanStack Router `<Outlet />`.
@@ -118,6 +124,10 @@ Mode: read-only audit, no files edited by the explorer
 - `yona-original/app/views/project/partial_dashboard_pullrequests.scala.html`
 - `yona-original/app/views/project/setting.scala.html`
 - `yona-original/app/views/project/members.scala.html`
+- `yona-original/app/views/project/issuelabels.scala.html`
+- `yona-original/app/views/project/partial_issuelabels_list.scala.html`
+- `yona-original/app/views/project/partial_issuelabels_editcategory.scala.html`
+- `yona-original/app/views/project/partial_issuelabels_editlabel.scala.html`
 - `yona-original/app/views/project/watchers.scala.html`
 - `yona-original/app/views/project/webhooks.scala.html`
 - `yona-original/app/views/project/transfer.scala.html`
@@ -135,6 +145,7 @@ Mode: read-only audit, no files edited by the explorer
 - `frontend/src/routes/$ownerName/$projectName/setting.tsx`
 - `frontend/src/routes/$owner/$projectName/members/route.tsx`
 - `frontend/src/routes/$ownerName/$projectName/members.tsx`
+- `frontend/src/routes/$ownerName/$projectName/issue/labelsform.tsx`
 - `frontend/src/routes/$ownerName/$projectName/watchers.tsx`
 - `frontend/src/routes/$ownerName/$projectName/webhooks.tsx`
 - `frontend/src/routes/$ownerName/$projectName/transfer.tsx`
@@ -148,6 +159,7 @@ Mode: read-only audit, no files edited by the explorer
 - `frontend/src/route-parity.spec.tsx`
 - `frontend/tests/project-fork-form.e2e.ts`
 - `frontend/tests/project-members-form.e2e.ts`
+- `frontend/tests/project-labels-form.e2e.ts`
 - `frontend/tests/project-settings-form.e2e.ts`
 - `frontend/tests/project-statistics.e2e.ts`
 - `frontend/tests/project-transfer-form.e2e.ts`
@@ -191,6 +203,7 @@ Total rows: 18
 | `/:owner/:project/setting` / `/:owner/:project/settingform` menu settings persistence | `setting.scala.html` submits menu checkboxes for code/issue/PR/review/milestone/board. | `frontend/src/routes/$ownerName/$projectName/setting.tsx` renders the legacy site shell, active settings tab, multipart `#saveSetting` form, menu checkboxes, and project/default-branch REST mutation boundaries. `frontend/tests/project-settings-form.e2e.ts` covers the whole-screen DOM; `frontend/tests/project-settings-parity.e2e.ts` retains behavioral PATCH/refetch coverage. | covered in 2026-07-01 template-first reset slice | `frontend/tests/project-settings-form.e2e.ts` |
 | `/:owner/:project/setting` / `/:owner/:project/settingform` general settings controls | Legacy settings include logo upload shell, name/overview fields, share radios, Git issue-template edit row, code-access radios, reviewer-count dropdown, default branch select, protected scope only for grouped projects, field validation, and updater-only access. | `frontend/src/routes/$ownerName/$projectName/setting.tsx` renders the initial Git settings form from `project/setting.scala.html`, including logo/upload copy, project name/description, share/code-access radios, reviewer count, default branch select, and menu checkboxes. Existing settings parity tests retain mutation, validation, and forbidden-state coverage. | covered in 2026-07-01 template-first reset slice | `frontend/tests/project-settings-form.e2e.ts` |
 | `/:owner/:project/members` | `members.scala.html` provides add-member typeahead form, role dropdown, delete action, owner label, enrollment request accept, and update-gated access to the management route. | `frontend/src/routes/$ownerName/$projectName/members.tsx` renders the legacy site shell, project header/menu, project settings tab menu with Member active, add-member form, owner/member rows, role dropdown/delete anchors, enrollment request block, and REST member mutation boundaries. `frontend/tests/project-members-form.e2e.ts` covers the whole-screen DOM; `frontend/tests/project-members-parity.e2e.ts` retains mutation/forbidden-state coverage. | covered in 2026-07-01 template-first reset slice | `frontend/tests/project-members-form.e2e.ts` |
+| `/:owner/:project/issue/labelsform` | `issuelabels.scala.html` renders copy-label and new-label forms, preset color buttons, `partial_issuelabels_list` empty/list state, and hidden edit category/label modals. | `frontend/src/routes/$ownerName/$projectName/issue/labelsform.tsx` renders the legacy site shell, project header/menu, project settings tab menu with Issue Label active, empty label editor forms, preset color controls, empty list message, and modal shells from the project labels REST boundary. | covered in 2026-07-01 template-first reset slice | `frontend/tests/project-labels-form.e2e.ts` |
 | `/:owner/:project/watchers` | `watchers.scala.html` lists watcher title/description and watcher avatar/name/login links under the project shell with no active project menu item. | `frontend/src/routes/$ownerName/$projectName/watchers.tsx` renders the legacy site shell, project header/menu, no-active project menu state, watcher title/description, and `.members.project.row-fluid` watcher rows from the watcher REST boundary. | covered in 2026-06-30 template-first reset slice | `frontend/tests/project-watchers.e2e.ts` |
 | `/:owner/:project/webhooks` | `webhooks.scala.html` and `partial_webhooks_list.scala.html` render create form, payload/secret inputs, type radios, git-push checkbox/help, list, delete, and empty-list state. | `frontend/src/routes/$ownerName/$projectName/webhooks.tsx` renders the legacy site shell, project header/menu, project settings tab menu with Webhooks active, create form/help, empty list shell, and REST webhook create/delete boundary. | covered in 2026-06-30 template-first reset slice | `frontend/tests/project-webhooks-form.e2e.ts` |
 | `/:owner/:project/transfer` | `transfer.scala.html` renders the new-owner input row, transfer warning list, checkbox, danger button, and Yes/No confirmation modal. | `frontend/src/routes/$ownerName/$projectName/transfer.tsx` renders the legacy site shell, project header/menu, project settings tab menu, `#owner`, warning bubble, `#accept`, `#btnTransfer`, non-fade `#alertTransfer`, and REST transfer request boundary. | covered in 2026-06-30 template-first reset slice | `frontend/tests/project-transfer-form.e2e.ts` |
@@ -212,6 +225,7 @@ Total rows: 18
 | `/:owner/:project` | leave project | `#projectLeaveBtn` opens `#alertLeave`; modal has `project.member.leaveConfirm`, Yes/No | `#projectLeaveBtn` opens `#alertLeave`; confirm `#leaveBtn` calls REST leave mutation | click Leave, cancel, reopen, confirm | REST delete member mutation | covered by `project-home-parity.e2e.ts` |
 | `/:owner/:project/setting` | Git settings form shell | `#saveSetting`, logo upload shell, `#project-name`, `#project-desc`, share/code-access radios, reviewer count, `#project-default-branch`, `#menuSettingCode` etc. | same whole-screen DOM, settings submenu, multipart form, field IDs/names, radio/checkbox states, reviewer/default-branch controls, and Save button | initial render; existing mutation spec covers save/refetch/validation/forbidden state | REST project settings plus code branches; submit uses project update and default-branch REST boundaries | covered in 2026-07-01 template-first reset slice |
 | `/:owner/:project/members` | member management shell | `#addNewMember #loginId`, `.members.project .member`, role dropdown `data-action="apply"`, delete `data-action="delete"`, owner badge, enrollment request legend | same whole-screen DOM, settings submenu, add-member form, owner/member rows, role dropdown/delete anchors, and enrollment request block | initial render; existing mutation spec covers add/accept/role/delete/forbidden state | REST project container plus `GET/POST/PATCH/DELETE /members` | covered in 2026-07-01 template-first reset slice |
+| `/:owner/:project/issue/labelsform` | empty label editor shell | `#copyLabel`, `#frmNewLabel`, `.label-preset-colors`, `#labelsList .error-wrap`, `#editCategory`, `#editLabel` | same whole-screen DOM, settings submenu, copy/add forms, 17 new-label color buttons, empty list, category modal, and label modal | initial render; submit handlers retain REST mutation boundaries | REST project container plus `GET/POST /labels` and copy label REST boundary | covered in 2026-07-01 template-first reset slice |
 | `/:owner/:project/watchers` | watcher list shell | `project.watcher.title`, `project.watcher.description`, `.members.project .member` | same whole-screen DOM, project shell, no-active menu state, title/description, and watcher rows | initial render | REST project container plus `GET /watchers` | covered in 2026-06-30 template-first reset slice |
 | `/:owner/:project/webhooks` | empty webhook form/list shell | `#formNewWebhook`, payload/secret, type radios, `#gitPush`, `#webhooksList .error-wrap` | same whole-screen DOM, settings submenu, create form/help, and empty-list state | initial render; create/delete use REST mutation boundaries | REST project container plus `GET/POST/DELETE /webhooks` | covered in 2026-06-30 template-first reset slice |
 | `/:owner/:project/transfer` | transfer form shell | `#owner`, `#accept`, `#btnTransfer`, modal `#alertTransfer`, `#btnTransferExec` | same whole-screen DOM, IDs/copy, warning bubble, settings submenu, and non-fade modal class | initial render and hidden modal state; confirm uses REST mutation boundary | REST `POST /transfer` on confirm | covered in 2026-06-30 template-first reset slice |

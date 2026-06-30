@@ -1,0 +1,749 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import type { FormEvent } from "react";
+import {
+  copyProjectLabelsRest,
+  createProjectLabelRest,
+  listProjectLabelsQueryOptions,
+} from "../../../../api/project-labels";
+import { readProjectSettingsQueryOptions } from "../../../../api/org-project";
+import { apiQueryKeys } from "../../../../api/query-keys";
+import type { ProjectContainer, YonaRecord } from "../../../../api/types";
+import { readSessionBootstrap } from "../../../../auth-workspace-client";
+import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
+import { YonaQueryProvider } from "../../../../query-client";
+import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
+import { SiteLayoutShell } from "../../../-home-route-screen";
+
+const NEW_LABEL_COLORS = [
+  "#f44336",
+  "#e91e63",
+  "#9c27b0",
+  "#3f51b5",
+  "#2196f3",
+  "#03a9f4",
+  "#00bcd4",
+  "#009688",
+  "#4caf50",
+  "#8bc34a",
+  "#cddc39",
+  "#ffeb3b",
+  "#ffc107",
+  "#ff9800",
+  "#ff5722",
+  "#795548",
+  "#9e9e9e",
+];
+const EDIT_LABEL_COLORS = [
+  "#FF7770",
+  "#F18CA7",
+  "#FFB399",
+  "#F1D55C",
+  "#A5D870",
+  "#32CDA1",
+  "#9985D8",
+  "#40A0EB",
+  "#6BC4E9",
+  "#DCBD98",
+  "#8C8C9C",
+  "#7A9CB4",
+];
+
+export const Route = createFileRoute("/$ownerName/$projectName/issue/labelsform")({
+  component: ProjectLabelsRoute,
+});
+
+function ProjectLabelsRoute() {
+  const { runtimeConfig } = Route.useRouteContext();
+
+  return (
+    <YonaQueryProvider>
+      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+          <ProjectLabelsScreen runtimeConfig={runtimeConfig} />
+        </SiteLayoutShell>
+      </LegacyI18nProvider>
+    </YonaQueryProvider>
+  );
+}
+
+function ProjectLabelsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  const projectQuery = useQuery(
+    readProjectSettingsQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const labelsQuery = useQuery(
+    listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+
+  if (!projectQuery.data || !labelsQuery.data) {
+    return null;
+  }
+
+  return (
+    <>
+      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectMenu basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectLabelsBody
+        labels={labelsQuery.data.labels}
+        project={projectQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
+      <EditCategoryModal />
+      <EditLabelModal labels={labelsQuery.data.labels} />
+    </>
+  );
+}
+
+function ProjectLabelsBody({
+  labels,
+  project,
+  runtimeConfig,
+}: {
+  labels: YonaRecord[];
+  project: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { ownerName, projectName } = Route.useParams();
+  const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
+  const copyMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return copyProjectLabelsRest(runtimeConfig, csrfToken, {
+        fromOwnerName: String(formData.get("owner") ?? ""),
+        fromProjectName: String(formData.get("projectName") ?? ""),
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.labels(ownerName, projectName),
+      });
+    },
+  });
+  const createMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return createProjectLabelRest(runtimeConfig, csrfToken, {
+        categoryName: String(formData.get("category") ?? ""),
+        labelColor: String(formData.get("color") ?? ""),
+        labelName: String(formData.get("name") ?? ""),
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.labels(ownerName, projectName),
+      });
+    },
+  });
+
+  function onCopy(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    copyMutation.mutate(new FormData(event.currentTarget));
+  }
+
+  function onCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    createMutation.mutate(new FormData(event.currentTarget));
+  }
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap label-editor-wrap">
+        <ProjectSettingMenu
+          active="labels"
+          basePath={runtimeConfig.basePath}
+          ownerName={ownerName}
+          project={project}
+          projectName={projectName}
+        />
+
+        {booleanField(project.viewerCanUpdate) ? (
+          <>
+            <form
+              id="copyLabel"
+              action={prefixBasePath(
+                runtimeConfig.basePath,
+                `/${ownerName}/${projectName}/labels/copy`,
+              )}
+              method="post"
+              className="new-label-wrap"
+              onSubmit={onCopy}
+            >
+              <strong className="form-legend">{t("label.copy.append")}</strong>
+              <div className="form-wrap">
+                <input
+                  type="text"
+                  name="owner"
+                  className="input-label mr5"
+                  placeholder={t("project.owner")}
+                />
+                <input
+                  type="text"
+                  name="projectName"
+                  className="input-label"
+                  placeholder={t("project.name")}
+                />
+              </div>
+              <button type="submit" className="ybtn ybtn-info btn-submit">
+                {t("label.copy")}
+              </button>
+              <div>{t("label.copy.description")}</div>
+              <div>{t("label.copy.description2")}</div>
+            </form>
+            <form
+              id="frmNewLabel"
+              action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/labels`)}
+              method="post"
+              className="new-label-wrap"
+              onSubmit={onCreate}
+            >
+              <strong className="form-legend">{t("label.new")}</strong>
+              <div className="form-wrap">
+                <div>
+                  <input
+                    type="text"
+                    name="category"
+                    className="input-label mr5"
+                    maxLength={250}
+                    data-provider="typeahead"
+                    autoComplete="off"
+                    placeholder={t("label.category")}
+                  />
+                  <input
+                    type="text"
+                    name="name"
+                    className="input-label"
+                    maxLength={250}
+                    autoComplete="off"
+                    placeholder={t("label.name")}
+                  />
+                </div>
+                <div className="label-preset-colors">
+                  {NEW_LABEL_COLORS.map((color) => (
+                    <ColorButton color={color} key={color} />
+                  ))}
+                  <input
+                    type="text"
+                    name="color"
+                    className="input-small input-label-color"
+                    placeholder={t("label.customColor")}
+                  />
+                </div>
+              </div>
+              <button type="submit" className="ybtn ybtn-primary btn-submit">
+                {t("label.add")}
+              </button>
+            </form>
+          </>
+        ) : null}
+
+        <div id="labelsList" className="issue-label-list-wrap">
+          <ProjectLabelsList labels={labels} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectLabelsList({ labels }: { labels: YonaRecord[] }) {
+  const { t } = useLegacyMessages();
+
+  if (labels.length === 0) {
+    return (
+      <div className="error-wrap">
+        <i className="ico ico-err1"></i>
+        <p>{t("label.list.empty")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="row-fluid list-head">
+        <div className="span3 category">
+          <strong>{t("label.category")}</strong>
+        </div>
+        <div className="span9 name">
+          <strong>{t("label.name")}</strong>
+        </div>
+      </div>
+      {labels.map((label) => (
+        <div
+          className="row-fluid list-item category-wrap"
+          data-category={stringField(label.categoryId, "")}
+          data-category-name={stringField(label.category, "")}
+          key={stringField(label.id, stringField(label.name, ""))}
+        >
+          <div className="span3">
+            <h5 className="right-txt mr20">
+              <span className="category-name">{stringField(label.category, "")}</span>
+            </h5>
+          </div>
+          <div className="span9">
+            <table className="table nm">
+              <tbody>
+                <tr data-label-id={stringField(label.id, "")}>
+                  <td>
+                    <span
+                      className="issue-label active"
+                      data-label-id={stringField(label.id, "")}
+                      data-label-name={stringField(label.name, "")}
+                    >
+                      {stringField(label.name, "")}
+                    </span>
+                  </td>
+                  <td className="actions"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function EditCategoryModal() {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div
+      id="editCategory"
+      className="modal hide yobiDialog"
+      tabIndex={-1}
+      role="dialog"
+      aria-hidden="true"
+    >
+      <div className="btn-dismiss">
+        <button type="button" className="btn-transparent" data-dismiss="modal">
+          ×
+        </button>
+      </div>
+      <div className="message edit-label-category-form">
+        <div className="center-txt">
+          <input
+            type="text"
+            name="name"
+            className="text category-name"
+            placeholder={t("label.category")}
+          />
+
+          <div className="desc">
+            {t("label.category.option")}
+            <select
+              name="isExclusive"
+              data-toggle="select2"
+              data-dropdown-css-class="select2-without-searchbox"
+            >
+              <option value="false">{t("label.category.option.multiple")}</option>
+              <option value="true">{t("label.category.option.single")}</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="center-txt buttons mt20 mb20">
+          <button type="button" className="ybtn ybtn-info btnSubmit">
+            {t("button.save")}
+          </button>
+          <button type="button" className="ybtn ybtn-default" data-dismiss="modal">
+            {t("button.cancel")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditLabelModal({ labels }: { labels: YonaRecord[] }) {
+  const { t } = useLegacyMessages();
+  const categoriesById = new Map<string, { id: string; name: string }>();
+  for (const label of labels) {
+    const id = stringField(label.categoryId, "");
+    if (id) {
+      categoriesById.set(id, { id, name: stringField(label.category, "") });
+    }
+  }
+  const categories = Array.from(categoriesById.values());
+
+  return (
+    <div
+      id="editLabel"
+      className="modal hide yobiDialog"
+      tabIndex={-1}
+      role="dialog"
+      aria-hidden="true"
+    >
+      <div className="btn-dismiss">
+        <button type="button" className="btn-transparent" data-dismiss="modal">
+          ×
+        </button>
+      </div>
+      <div className="message edit-label-form">
+        <div className="center-txt">
+          <select name="category.id" data-toggle="select2">
+            {categories.map((category) => (
+              <option value={category.id} key={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="text"
+            name="name"
+            className="text input-label-name"
+            maxLength={250}
+            placeholder={t("label.name")}
+          />
+
+          <div className="label-preset-colors edit">
+            {EDIT_LABEL_COLORS.map((color) => (
+              <ColorButton color={color} key={color} />
+            ))}
+            <input
+              type="text"
+              name="color"
+              className="input-small input-label-color"
+              placeholder={t("label.customColor")}
+            />
+          </div>
+        </div>
+        <div className="center-txt buttons mt20 mb20">
+          <button type="button" className="ybtn ybtn-info btnSubmit">
+            {t("button.save")}
+          </button>
+          <button type="button" className="ybtn ybtn-default" data-dismiss="modal">
+            {t("button.cancel")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ColorButton({ color }: { color: string }) {
+  return (
+    <button
+      type="button"
+      className="issue-label btn-preset-color"
+      style={{ backgroundColor: color }}
+    ></button>
+  );
+}
+
+function ProjectHeader({ basePath, project }: { basePath: string; project: ProjectContainer }) {
+  const { t } = useLegacyMessages();
+  const ownerName = stringField(project.ownerName, "owner");
+  const projectName = stringField(project.projectName, "project");
+  const projectIdValue = projectId(project);
+  const logoUrl = projectLogoUrl(project);
+  const backgroundImageUrl =
+    stringField(recordField(project).backgroundImageUrl, "") ||
+    stringField(recordField(project).backgroundUrl, "") ||
+    "/assets/images/bg-default-project.png";
+  const isForked =
+    booleanField(recordField(project).isForkedFromOrigin) ||
+    booleanField(recordField(project).isForked);
+  const originalOwnerName =
+    stringField(recordField(project).originalOwnerName, "") ||
+    stringField(recordField(project).originOwnerName, "");
+  const originalProjectName =
+    stringField(recordField(project).originalProjectName, "") ||
+    stringField(recordField(project).originProjectName, "");
+
+  return (
+    <div
+      className="project-header-outer"
+      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
+    >
+      <div className="project-header-inner">
+        <div className="project-header-wrap">
+          <div className="project-header-avatar">
+            <img src={logoUrl} alt="" />
+          </div>
+          <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
+            <div className="project-breadcrumb">
+              <span className="project-author hide-in-mobile">
+                <a href={prefixBasePath(basePath, `/${ownerName}`)}>{ownerName}</a>
+              </span>
+              <span className="project-separator hide-in-mobile">/</span>
+              <span className="project-name">
+                <a href={projectHref(basePath, ownerName, projectName)}>{projectName}</a>
+              </span>
+              <span className="user-project-list" data-project-id={projectIdValue}>
+                <i
+                  className={`${projectFavorited(project) ? "starred" : ""} star material-icons va-text-top`}
+                >
+                  star
+                </i>
+              </span>
+              {booleanField(recordField(project).isPrivate) ? (
+                <span className="project-private">
+                  <i className="yobicon-lock"></i>
+                </span>
+              ) : null}
+              {booleanField(recordField(project).isProtected) ? (
+                <span className="project-protected" title="Group Project">
+                  G
+                </span>
+              ) : null}
+            </div>
+            {isForked ? (
+              <div className="project-origin">
+                <span className="project-origin-title">{t("fork.original")}</span>
+                <a
+                  href={projectHref(basePath, originalOwnerName, originalProjectName)}
+                  className="project-origin-name"
+                >
+                  {originalOwnerName} / {originalProjectName}
+                </a>
+              </div>
+            ) : null}
+          </div>
+          <div className="project-util-wrap">
+            <ul className="project-util"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectMenu({ basePath, project }: { basePath: string; project: ProjectContainer }) {
+  const { t } = useLegacyMessages();
+  const ownerName = stringField(project.ownerName, "owner");
+  const projectName = stringField(project.projectName, "project");
+  const menuSetting = projectMenuSetting(project);
+
+  return (
+    <div className="project-menu-outer">
+      <div className="project-menu-inner">
+        <ul className="project-menu-nav project-menu-gruop">
+          <ProjectMenuItem
+            href={projectHref(basePath, ownerName, projectName)}
+            label={t("title.projectHome")}
+            short="H"
+          />
+          {booleanField(menuSetting.code) ? (
+            <ProjectMenuItem
+              className="code-menu "
+              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/code`)}
+              label={t("menu.code")}
+              short="C"
+            />
+          ) : null}
+          {booleanField(menuSetting.issue) ? (
+            <ProjectMenuItem
+              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
+              label={t("menu.issue")}
+              short="I"
+            />
+          ) : null}
+          {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
+            <ProjectMenuItem
+              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/pullRequests`)}
+              label={t("menu.pullRequest")}
+              short="P"
+            />
+          ) : null}
+          {booleanField(menuSetting.review) ? (
+            <ProjectMenuItem
+              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/reviews`)}
+              label={t("menu.review")}
+              short="R"
+            />
+          ) : null}
+          {booleanField(menuSetting.milestone) ? (
+            <ProjectMenuItem
+              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/milestones`)}
+              label={t("milestone")}
+              short="M"
+            />
+          ) : null}
+          {booleanField(menuSetting.board) ? (
+            <ProjectMenuItem
+              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/posts`)}
+              label={t("menu.board")}
+              short="B"
+            />
+          ) : null}
+        </ul>
+        {booleanField(project.viewerCanUpdate) ? (
+          <div className="project-setting">
+            <ul className="project-menu-nav">
+              <li className="active">
+                <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`)}>
+                  <i className="yobicon-cog"></i>
+                  <span className="blind">
+                    <span className="menu-name">{t("menu.admin")}</span>
+                  </span>
+                  <CountBadge count={numberField(project.enrollmentRequestCount)} />
+                </a>
+              </li>
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ProjectMenuItem({
+  className = "",
+  href,
+  label,
+  short,
+}: {
+  className?: string;
+  href: string;
+  label: string;
+  short: string;
+}) {
+  return (
+    <li className={className}>
+      <a href={href}>
+        <span className="menu-name">{label}</span>
+        <span className="short-menu">{short}</span>
+      </a>
+    </li>
+  );
+}
+
+function ProjectSettingMenu({
+  active,
+  basePath,
+  ownerName,
+  project,
+  projectName,
+}: {
+  active: "labels";
+  basePath: string;
+  ownerName: string;
+  project: ProjectContainer;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+  const menuSetting = projectMenuSetting(project);
+
+  return (
+    <ul className="nav nav-tabs">
+      <li id="subMenuProjectSetting" className="">
+        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`)}>
+          {t("project.setting")}
+        </a>
+      </li>
+      <li id="subMenuProjectMember" className="">
+        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/members`)}>
+          {t("project.member")}
+          <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
+        </a>
+      </li>
+      <li id="subMenuIssueLabel" className={active === "labels" ? "active" : ""}>
+        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}>
+          {t("issue.label")}
+        </a>
+      </li>
+      <li id="subMenuWebhook" className="">
+        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/webhooks`)}>
+          {t("project.webhook")}
+        </a>
+      </li>
+      <li id="subMenuProjectTransfer" className="">
+        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/transfer`)}>
+          {t("project.transfer")}
+        </a>
+      </li>
+      <li id="subMenuProjectDelete" className="">
+        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/deleteform`)}>
+          {t("project.delete")}
+        </a>
+      </li>
+      <li
+        id="subMenuProjectChangeVCS"
+        className=""
+        style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
+      >
+        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/changeVCS`)}>
+          {t("project.changeVCS")}
+        </a>
+      </li>
+    </ul>
+  );
+}
+
+function CountBadge({
+  className = "project-menu-count",
+  count,
+}: {
+  className?: string;
+  count: number;
+}) {
+  return count > 0 ? <span className={className}>{count}</span> : null;
+}
+
+function projectMenuSetting(project: ProjectContainer) {
+  const record = recordField(project);
+  const nested = recordField(record.menuSetting);
+  return {
+    board: nested.board ?? record.showBoard,
+    code: nested.code ?? record.showCode,
+    issue: nested.issue ?? record.showIssue,
+    milestone: nested.milestone ?? record.showMilestone,
+    pullRequest: nested.pullRequest ?? record.showPullRequest,
+    review: nested.review ?? record.showReview,
+  };
+}
+
+function projectHref(basePath: string, ownerName: string, projectName: string) {
+  return prefixBasePath(basePath, `/${ownerName}/${projectName}`);
+}
+
+function projectId(project: ProjectContainer) {
+  return (
+    stringField(recordField(project).id, "") || stringField(recordField(project).projectId, "")
+  );
+}
+
+function projectLogoUrl(project: ProjectContainer) {
+  return stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
+}
+
+function projectFavorited(project: ProjectContainer) {
+  return (
+    booleanField(recordField(project).isFavorite) || booleanField(recordField(project).isFavorited)
+  );
+}
+
+function recordField(value: unknown) {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function stringField(value: unknown, fallback: string) {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "bigint") {
+    return String(value);
+  }
+  return fallback;
+}
+
+function numberField(value: unknown) {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function booleanField(value: unknown) {
+  return value === true;
+}
