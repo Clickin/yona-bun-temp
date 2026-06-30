@@ -50,6 +50,17 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_SETTINGS.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await projectHeaderMetrics(page)).toEqual({
+    avatarHeight: 90,
+    avatarTopOffsetFromHeaderBottom: -60,
+    avatarWidth: 90,
+    headerHeight: 120,
+    headerInnerHeight: 120,
+    menuHeight: 40,
+    menuTopOffsetFromHeaderBottom: 0,
+    wrapHeight: 120,
+    wrapWidthRatio: 0.97,
+  });
 });
 
 async function mockProjectSettings(page: Page) {
@@ -173,6 +184,41 @@ async function canonicalizeScreenRoots(page: Page) {
         return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
       }
       return attr.value.replace(/\s+/g, " ").trim();
+    }
+  });
+}
+
+async function projectHeaderMetrics(page: Page) {
+  return page.evaluate(() => {
+    const header = requireElement(".project-header-outer");
+    const inner = requireElement(".project-header-inner");
+    const wrap = requireElement(".project-header-wrap");
+    const avatar = requireElement(".project-header-avatar");
+    const menu = requireElement(".project-menu-outer");
+    const headerRect = header.getBoundingClientRect();
+    const innerRect = inner.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+    const avatarRect = avatar.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+
+    return {
+      avatarHeight: Math.round(avatarRect.height),
+      avatarTopOffsetFromHeaderBottom: Math.round(avatarRect.top - headerRect.bottom),
+      avatarWidth: Math.round(avatarRect.width),
+      headerHeight: Math.round(headerRect.height),
+      headerInnerHeight: Math.round(innerRect.height),
+      menuHeight: Math.round(menuRect.height),
+      menuTopOffsetFromHeaderBottom: Math.round(menuRect.top - headerRect.bottom),
+      wrapHeight: Math.round(wrapRect.height),
+      wrapWidthRatio: Number((wrapRect.width / headerRect.width).toFixed(2)),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
     }
   });
 }
