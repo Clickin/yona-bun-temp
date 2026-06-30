@@ -109,7 +109,7 @@ export function LegacySearchBody({
                   />
                 </div>
                 <div className="search-result-wrap">
-                  <SearchResultList result={result} />
+                  <SearchResultList result={result} runtimeConfig={runtimeConfig} />
                 </div>
               </div>
             </div>
@@ -120,7 +120,15 @@ export function LegacySearchBody({
   );
 }
 
-function SearchResultList({ result }: { result: SearchResponse }) {
+function SearchResultList({
+  result,
+  runtimeConfig,
+}: {
+  result: SearchResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { t } = useLegacyMessages();
+
   if (result.items.length === 0) {
     return <div className="empty-result"></div>;
   }
@@ -141,16 +149,36 @@ function SearchResultList({ result }: { result: SearchResponse }) {
                 {item.ownerName}/{item.projectName}
               </a>
             </div>
+            {item.originOwnerName && item.originProjectName ? (
+              <div className="search-meta-info nm np">
+                <span>
+                  <i className="yobicon-split yobicon-white vmiddle"></i>
+                  {t("fork.original")}
+                </span>
+                <span>
+                  <a
+                    href={prefixBasePath(
+                      runtimeConfig.basePath,
+                      `/${item.originOwnerName}/${item.originProjectName}`,
+                    )}
+                    className="project-link"
+                  >
+                    {item.originOwnerName}/{item.originProjectName}
+                  </a>
+                </span>
+              </div>
+            ) : null}
             <div className="search-content np">
               <p className="search-content-body">{item.snippets[0]?.text ?? ""}</p>
             </div>
             <div className="search-meta-info np">
               <span className="meta-info">
-                Create a project <strong title={item.createdLabel}>{item.createdLabel}</strong>
+                {t("project.create")} <strong title={item.createdLabel}>{item.createdLabel}</strong>
               </span>
               {item.updatedLabel ? (
                 <span className="meta-info">
-                  Latest code update <strong title={item.updatedLabel}>{item.updatedLabel}</strong>
+                  {t("project.codeUpdate")}{" "}
+                  <strong title={item.updatedLabel}>{item.updatedLabel}</strong>
                 </span>
               ) : null}
             </div>
