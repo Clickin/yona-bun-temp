@@ -220,6 +220,23 @@ test("anonymous signup form matches legacy user/signup.scala.html screen DOM", a
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopSignupMetrics(page)).toEqual({
+    actionLinkColor: "rgb(92, 92, 92)",
+    actionLinkFontWeight: "700",
+    actionRowColor: "rgb(153, 153, 153)",
+    actionRowTextAlign: "right",
+    buttonRowMarginBottom: "20px",
+    formMarginTop: "14px",
+    formWidth: "400px",
+    passwordMarginBottom: "15px",
+    tagLineFontSize: "14px",
+    tagLineMarginBottom: "26px",
+    tagLinePaddingTop: "40px",
+    textHeight: "30px",
+    textMarginBottom: "15px",
+    textWidth: "386px",
+    titleLineHeight: "42px",
+  });
   await expect(page.locator(".go-login")).toHaveAttribute("href", `${basePath}/users/loginform`);
 });
 
@@ -498,6 +515,59 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
+  });
+}
+
+async function readDesktopSignupMetrics(page: Page) {
+  return page.evaluate(() => {
+    const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.signup");
+    const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
+    const tagLine = document.querySelector<HTMLElement>(".tag-line-wrap .tag-line");
+    const formWrap = document.querySelector<HTMLElement>(".signup-form-wrap");
+    const loginInput = document.querySelector<HTMLElement>("#loginId");
+    const passwordInput = document.querySelector<HTMLElement>("#password");
+    const buttonRow = document.querySelector<HTMLElement>(".signup-form-wrap .btns-row");
+    const actRow = document.querySelector<HTMLElement>(".signup-form-wrap .act-row");
+    const actionLink = document.querySelector<HTMLElement>(".signup-form-wrap .go-login");
+    if (
+      !tagLineWrap ||
+      !title ||
+      !tagLine ||
+      !formWrap ||
+      !loginInput ||
+      !passwordInput ||
+      !buttonRow ||
+      !actRow ||
+      !actionLink
+    ) {
+      throw new Error("Expected signup metric targets are missing.");
+    }
+
+    const tagLineWrapStyle = getComputedStyle(tagLineWrap);
+    const formWrapStyle = getComputedStyle(formWrap);
+    const loginInputStyle = getComputedStyle(loginInput);
+    const passwordInputStyle = getComputedStyle(passwordInput);
+    const buttonRowStyle = getComputedStyle(buttonRow);
+    const actionLinkStyle = getComputedStyle(actionLink);
+    const actRowStyle = getComputedStyle(actRow);
+
+    return {
+      actionLinkColor: actionLinkStyle.color,
+      actionLinkFontWeight: actionLinkStyle.fontWeight,
+      actionRowColor: actRowStyle.color,
+      actionRowTextAlign: actRowStyle.textAlign,
+      buttonRowMarginBottom: buttonRowStyle.marginBottom,
+      formMarginTop: formWrapStyle.marginTop,
+      formWidth: formWrapStyle.width,
+      passwordMarginBottom: passwordInputStyle.marginBottom,
+      tagLineFontSize: getComputedStyle(tagLine).fontSize,
+      tagLineMarginBottom: tagLineWrapStyle.marginBottom,
+      tagLinePaddingTop: tagLineWrapStyle.paddingTop,
+      textHeight: loginInputStyle.height,
+      textMarginBottom: loginInputStyle.marginBottom,
+      textWidth: loginInputStyle.width,
+      titleLineHeight: getComputedStyle(title).lineHeight,
+    };
   });
 }
 
