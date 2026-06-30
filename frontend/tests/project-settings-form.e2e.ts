@@ -32,6 +32,20 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
   await expect(page.locator("#saveSetting")).toBeVisible();
   await expect(page.locator("#project-default-branch")).toHaveValue("main");
   await expect(page.locator("#menuSettingPullRequest")).toBeChecked();
+  expect(
+    await page
+      .locator(
+        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+      )
+      .evaluateAll((roots) => roots.map((root) => root.className)),
+  ).toEqual([
+    "unsupported hidden",
+    "gnb-outer",
+    "project-header-outer",
+    "project-menu-outer",
+    "page-wrap-outer",
+    "page-footer-outer",
+  ]);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_SETTINGS.replaceAll("__BASE_PATH__", basePath)),
