@@ -6,6 +6,8 @@ export const apiQueryKeys = {
   },
   project: {
     list: () => [...apiQueryKeys.v1(), "projects"] as const,
+    createFormOptions: (owner: string) =>
+      [...apiQueryKeys.v1(), "projects", "form-options", { owner }] as const,
     base: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.v1(), "owners", ownerName, "projects", projectName] as const,
     container: (ownerName: string, projectName: string) =>

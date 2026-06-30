@@ -320,6 +320,16 @@ export function listOrganizationsQueryOptions(runtimeConfig: RuntimeConfig) {
   });
 }
 
+export function projectCreateFormOptionsQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: { owner?: string } = {},
+) {
+  return queryOptions({
+    queryFn: () => readProjectCreateFormOptionsRest(runtimeConfig, input),
+    queryKey: apiQueryKeys.project.createFormOptions(input.owner ?? ""),
+  });
+}
+
 export function readProjectCreateFormOptionsRest(
   runtimeConfig: RuntimeConfig,
   input: { owner?: string } = {},

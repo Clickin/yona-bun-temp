@@ -95,12 +95,17 @@ const PARITY_SLICES = [
     label: "Public project directory",
     status: "parity",
     implementationPatterns: [
+      /^frontend\/src\/routes\/projectform\.tsx$/i,
       /^frontend\/src\/routes\/projects\.tsx$/i,
       /^frontend\/src\/routes\/projects\/route\.tsx$/i,
       /^frontend\/src\/app\.css$/i,
     ],
     testKeywords: ["project-directory-route", "projects", "directory-parity"],
-    provenanceDocs: ["docs/provenance/core-parity-audit.md"],
+    provenanceDocs: [
+      "docs/provenance/core-parity-audit.md",
+      "docs/provenance/ui-parity-reports/template-first-p2-project-shell.md",
+      "docs/provenance/ui-parity-reports/2026-06-28-rendered-evidence-execution-manifest.md",
+    ],
   },
   {
     id: "public-organization-directory",
@@ -236,6 +241,7 @@ const DOMAIN_BUCKETS = [
     status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/(?:milestones|session|translation|types)\.ts$/i,
+      /^frontend\/src\/api\/org-project\.ts$/i,
       /^frontend\/src\/api\/query-keys\.ts$/i,
       /^frontend\/src\/auth-workspace-client\.ts$/i,
     ],
