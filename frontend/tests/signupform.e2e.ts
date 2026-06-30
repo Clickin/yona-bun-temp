@@ -104,6 +104,110 @@ const SOCIAL_ONLY_FORM_BODY = `
       </div>
 `;
 
+const EXPECTED_PUBLIC_LANDING = `
+<div class="unsupported hidden">
+  <div class="unsupported-inner">
+    <p id="unsupported-content"></p>
+  </div>
+</div>
+<header class="gnb-outer">
+  <div class="gnb-inner">
+    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+      <i class="yobicon-arrow-left"></i>
+      <i class="yobicon-arrow-right"></i>
+    </div>
+    <ul class="gnb-nav">
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li>
+        <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
+          <input type="hidden" name="searchType" value="auto">
+          <div class="search-box">
+            <input type="text" name="keyword" autocomplete="off">
+            <button type="submit"><i class="yobicon-search"></i></button>
+          </div>
+        </form>
+      </li>
+    </ul>
+  </div>
+</header>
+<div class="siteintro-bg row">
+  <div class="siteintro">
+    <div class="siteintro-cover">
+      <div class="siteintro-wrap">
+        <h1 class="site-heading">21st Century Software Development Platform</h1>
+        <ul class="site-features">
+          <li>Just focus on what you have to do</li>
+        </ul>
+      </div>
+      <div class="signup-btn">
+        <a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success ybtn-padding">Sign up for Yona</a>
+      </div>
+    </div>
+  </div>
+  <div class="feature">
+    <h2><span>Key features</span></h2>
+    <ul class="feature-wrap row">
+      <li>
+        <div class="feature-image"><i class="yobicon-cgicenter"></i></div>
+        <div class="feature-info">
+          <h3 class="feature-title">Project / Organization</h3>
+          <p class="feature-desc">Work based on projects/organizations supported by proper roles</p>
+        </div>
+      </li>
+      <li>
+        <div class="feature-image"><i class="yobicon-code"></i></div>
+        <div class="feature-info">
+          <h3 class="feature-title">Code management</h3>
+          <p class="feature-desc">Your code is safely stored in a version controlled system.</p>
+        </div>
+      </li>
+      <li>
+        <div class="feature-image"><i class="yobicon-articles"></i></div>
+        <div class="feature-info">
+          <h3 class="feature-title">Issue tracker</h3>
+          <p class="feature-desc">Yona provides an issue tracker to help you deal with your issues more easily and clearly.</p>
+        </div>
+      </li>
+      <li>
+        <div class="feature-image"><i class="yobicon-lock"></i></div>
+        <div class="feature-info">
+          <h3 class="feature-title">Private repositories</h3>
+          <p class="feature-desc">Keep your code private at your private repositories.</p>
+        </div>
+      </li>
+      <li>
+        <div class="feature-image"><i class="yobicon-preview"></i></div>
+        <div class="feature-info">
+          <h3 class="feature-title">Code review</h3>
+          <p class="feature-desc">Review all changes in the code with your team before merging. Code discussion will help improve your code.</p>
+        </div>
+      </li>
+      <li>
+        <div class="feature-image"><i class="yobicon-friends"></i></div>
+        <div class="feature-info">
+          <h3 class="feature-title">Team play</h3>
+          <p class="feature-desc">Yona provides a simple and easy team management tool to help you build teams for projects.</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+<footer class="page-footer-outer">
+  <div class="page-footer">
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+  </div>
+</footer>
+<div id="yobiToasts" class="yobiToasts">
+  <div class="toast" tabindex="-1">
+    <div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div>
+    <div class="center-text"><span class="v"></span><div class="msg">Sign-up request has been sent. Site admin will review and accept your request. Thanks.</div></div>
+  </div>
+</div>
+`;
+
 test("anonymous signup form matches legacy user/signup.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/users/signupform`);
@@ -157,6 +261,48 @@ test("social-login-only signup matches legacy user/signup.scala.html screen DOM"
   expect(actual).toEqual(expected);
 });
 
+test("signup requiring admin confirmation redirects to legacy flash landing state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, { signupRequireConfirm: true });
+  await mockAnonymousSession(page);
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "signup-csrf" },
+      json: {},
+    });
+  });
+  await page.route("**/api/v1/auth/register", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: { isAnonymous: true },
+    });
+  });
+  await page.goto(`${basePath}/users/signupform`);
+
+  await page.fill("#loginId", "door");
+  await page.fill("#uname", "Door");
+  await page.fill("#email", "door@example.com");
+  await page.fill("#password", "passw0rd");
+  await page.fill("#retypedPassword", "passw0rd");
+  await page.locator('form[name="signup"] button[type="submit"]').click();
+
+  await expect(page).toHaveURL(new RegExp(`${basePath}/\\?signup=requested$`));
+  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
+    "Sign-up request has been sent. Site admin will review and accept your request. Thanks.",
+  );
+
+  const actual = await canonicalizeScreenAndToastRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    EXPECTED_PUBLIC_LANDING.replaceAll("__BASE_PATH__", basePath),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
 async function mockCapabilities(
   page: Page,
   overrides: {
@@ -177,6 +323,15 @@ async function mockCapabilities(
         signupRequireConfirm: overrides.signupRequireConfirm ?? false,
         socialLoginOnly: overrides.socialLoginOnly ?? false,
       },
+    });
+  });
+}
+
+async function mockAnonymousSession(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: { defaultLandingPath: "", isAnonymous: true },
     });
   });
 }
@@ -238,6 +393,57 @@ async function canonicalizeScreenRoots(page: Page) {
   });
 }
 
+async function canonicalizeScreenAndToastRoots(page: Page) {
+  return page.evaluate(() => {
+    const roots = Array.from(
+      document.querySelectorAll(
+        ".unsupported, .gnb-outer, .siteintro-bg, .page-footer-outer, #yobiToasts",
+      ),
+    );
+    return roots.map((root) => visit(root)).join("");
+
+    function visit(current: Element): string {
+      const stableAttributes = [
+        "id",
+        "class",
+        "name",
+        "type",
+        "method",
+        "action",
+        "value",
+        "autocomplete",
+        "href",
+        "target",
+        "title",
+        "tabindex",
+        "data-toggle",
+        "data-placement",
+      ];
+      const attrs = stableAttributes
+        .filter((name) => current.hasAttribute(name))
+        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .join(" ");
+      const open = attrs
+        ? `<${current.tagName.toLowerCase()} ${attrs}>`
+        : `<${current.tagName.toLowerCase()}>`;
+      const children = Array.from(current.childNodes)
+        .map((child) => {
+          if (child.nodeType === Node.TEXT_NODE) {
+            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
+          }
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            return visit(child as Element);
+          }
+          return "";
+        })
+        .filter(Boolean)
+        .join("");
+
+      return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+  });
+}
+
 async function canonicalizeHtml(page: Page, html: string) {
   return page.evaluate(
     ({ markup }) => {
@@ -261,6 +467,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "href",
           "target",
           "title",
+          "tabindex",
           "data-toggle",
           "data-placement",
           "for",

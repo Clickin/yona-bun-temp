@@ -7,11 +7,12 @@ import type { ReadAuthUiCapabilitiesResponse } from "../../api/types";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
-import type { RuntimeConfig } from "../../runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   defaultAdminContact?: string;
+  emailVerificationEnabled?: boolean;
   signupRequireConfirm?: boolean;
   socialLoginOnly?: boolean;
 };
@@ -64,9 +65,19 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     onError(error) {
       setSubmitError(error instanceof Error ? error.message : t("user.enroll.failed"));
     },
-    async onSuccess() {
+    async onSuccess(response) {
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.session() });
-      router.history.push("/");
+      const redirectPath =
+        typeof response.redirectPath === "string"
+          ? response.redirectPath
+          : signupRequireConfirm
+            ? "/?signup=requested"
+            : capabilities?.emailVerificationEnabled === true
+              ? "/?verify=sent"
+              : "/";
+      router.history.push(
+        prefixBasePath(runtimeConfig.basePath, safeLocalPath(redirectPath) ?? "/"),
+      );
     },
   });
 
@@ -242,4 +253,11 @@ function ObfuscatedContactMessage({ message }: { message: string }) {
       {match[3]}
     </>
   );
+}
+
+function safeLocalPath(value: string) {
+  if (!value.startsWith("/") || value.startsWith("//")) {
+    return null;
+  }
+  return value;
 }

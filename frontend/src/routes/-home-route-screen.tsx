@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
@@ -7,25 +8,33 @@ import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
 export function HomeRouteScreen({
+  flashMessageKey = "",
   runtimeConfig,
   routePath = "/",
 }: {
+  flashMessageKey?: string;
   runtimeConfig: RuntimeConfig;
   routePath?: string;
 }) {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <HomeScreen routePath={routePath} runtimeConfig={runtimeConfig} />
+        <HomeScreen
+          flashMessageKey={flashMessageKey}
+          routePath={routePath}
+          runtimeConfig={runtimeConfig}
+        />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
 function HomeScreen({
+  flashMessageKey,
   routePath,
   runtimeConfig,
 }: {
+  flashMessageKey: string;
   routePath: string;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -55,6 +64,18 @@ function HomeScreen({
     routePath !== "/" &&
     routePathWithoutSlash !== "" &&
     routePathWithoutSlash !== defaultLandingWithoutSlash;
+
+  React.useEffect(() => {
+    if (!flashMessageKey) {
+      return;
+    }
+    document.dispatchEvent(new Event("yobi:notify-scan"));
+    const timeoutId = window.setTimeout(
+      () => document.dispatchEvent(new Event("yobi:notify-scan")),
+      0,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [flashMessageKey]);
 
   if (isAuthenticated) {
     return (
@@ -173,6 +194,11 @@ function HomeScreen({
 
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      {flashMessageKey ? (
+        <span data-toggle="yobi-notify" data-message={t(flashMessageKey)} hidden>
+          {t(flashMessageKey)}
+        </span>
+      ) : null}
       <div className="siteintro-bg row">
         <div className="siteintro">
           <div className="siteintro-cover">

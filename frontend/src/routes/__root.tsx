@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
+import { Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
 export interface AppRouterContext {
@@ -12,18 +12,31 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
 });
 
 function RootResetShell() {
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+
   React.useEffect(() => {
+    scanNotifySources();
+    const timeoutId = window.setTimeout(scanNotifySources, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [locationHref]);
+
+  React.useEffect(() => {
+    document.addEventListener("yobi:notify-scan", scanNotifySources);
+    return () => document.removeEventListener("yobi:notify-scan", scanNotifySources);
+  });
+
+  function scanNotifySources() {
     document.querySelectorAll<HTMLElement>('[data-toggle="yobi-notify"]').forEach((source) => {
       if (source.dataset.yobiNotified === "true") {
         return;
       }
-      source.dataset.yobiNotified = "true";
       const message = source.dataset.message ?? source.textContent ?? "";
       const container = document.querySelector("#yobiToasts");
       if (!container || message.trim() === "") {
         return;
       }
 
+      source.dataset.yobiNotified = "true";
       const toast = document.createElement("div");
       toast.className = "toast";
       toast.tabIndex = -1;
@@ -35,7 +48,7 @@ function RootResetShell() {
       container.append(toast);
       source.remove();
     });
-  });
+  }
 
   return (
     <>
