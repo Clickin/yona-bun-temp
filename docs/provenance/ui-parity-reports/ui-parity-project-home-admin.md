@@ -83,6 +83,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: the screen keeps a single local component tree because the legacy body is only the project shell with the Issue menu active and `<h1>Under Construction</h1>`.
 - Verification: `pnpm --dir frontend test:e2e -- project-statistics.e2e.ts`.
 
+## 2026-06-30 Project Fork Form Template-First Rebuild
+
+- Rebuilt the concrete flat route `frontend/src/routes/$ownerName/$projectName/newFork.tsx` from `git/fork.scala.html` plus `project/header.scala.html` and `projectMenu.scala.html`.
+- Scope: the positive no-existing-fork state keeps a single local component tree because the legacy body is one fork form/help panel; the route reads fork-options REST data for the shell, owner options, existing fork state, and form defaults.
+- Verification: `pnpm --dir frontend test:e2e -- project-fork-form.e2e.ts`.
+
 ## Legacy Evidence Checked
 
 - `yona-original/app/views/project/home.scala.html`
@@ -114,12 +120,13 @@ Mode: read-only audit, no files edited by the explorer
 - `frontend/src/routes/$ownerName/$projectName/transfer.tsx`
 - `frontend/src/routes/$owner/$projectName/changeVCS/route.tsx`
 - `frontend/src/routes/$owner/$projectName/deleteform/route.tsx`
-- `frontend/src/routes/$owner/$projectName/newFork/route.tsx`
+- `frontend/src/routes/$ownerName/$projectName/newFork.tsx`
 - `frontend/src/routes/$ownerName/$projectName/statistics.tsx`
 - `frontend/src/app-view-models.ts`
 - `frontend/src/project-home-tabs.spec.tsx`
 - `frontend/src/project-settings-parity.spec.tsx`
 - `frontend/src/route-parity.spec.tsx`
+- `frontend/tests/project-fork-form.e2e.ts`
 - `frontend/tests/project-statistics.e2e.ts`
 - `frontend/tests/project-transfer-form.e2e.ts`
 - `frontend/tests/project-watchers.e2e.ts`
@@ -157,7 +164,7 @@ Total rows: 18
 | `/:owner/:project` project header | Legacy project pages render project header/breadcrumb/private/protected/fork context through project layout/menu evidence. | `ProjectHeader` renders owner/project links, logo/background, favorite star, private/protected markers, fork origin link. | covered | none |
 | `/:owner/:project` right member block | `home.scala.html` renders member avatars/links/display name/login and an add-member link when update is allowed. | `ProjectDetailPage` now renders `.member-wrap`, `.project-members .member`, profile avatar/name anchors, and `#member-add-link`; `project-home-tabs.spec.tsx` pins the selectors. `frontend/tests/project-home-parity.e2e.ts` proves the member block and updater add link in the browser. | covered in Wave 2 | none |
 | `/:owner/:project` leave project | `home.scala.html` opens `#alertLeave` modal with leave confirm copy and Yes/No buttons before deleting membership. | `ProjectDetailPage` now makes `#projectLeaveBtn` open the legacy `#alertLeave` modal shell and calls the REST leave mutation only from `#leaveBtn`; `project-home-tabs.spec.tsx` pins the hidden modal/copy/buttons. `frontend/tests/project-home-parity.e2e.ts` clicks Leave, closes with No without REST, reopens, confirms with Yes, asserts the `/api/v1/owners/:owner/projects/:project/members/:userId` DELETE CSRF header, and verifies redirect. | covered in Wave 2 | none |
-| `/:owner/:project/newFork` | Legacy fork flow uses project owner/name/scope form, fork help image/copy, existing fork notice. | `ProjectForkPage` and route preserve form shell, REST mutation, redirect, existing-fork notice/link, and disabled/no-submit states. `frontend/tests/project-fork-parity.e2e.ts` now browser-proves the positive shell plus POST/CSRF payload, empty-name disabled submit with zero REST POSTs, and existing-fork notice/link with `canFork=false` disabled submit and zero REST POSTs. | covered in current follow-up | none |
+| `/:owner/:project/newFork` | `git/fork.scala.html` renders the project shell with Pull Request active, fork help image/copy, owner/name/scope controls, and Fork/Cancel actions. | `frontend/src/routes/$ownerName/$projectName/newFork.tsx` renders the legacy site shell, project header/menu, Pull Request-active project menu, no-existing-fork help panel, fork owner/name/scope form, and REST fork mutation boundary. | covered in 2026-06-30 template-first reset slice | `frontend/tests/project-fork-form.e2e.ts` |
 | `/:owner/:project/settingform` menu settings persistence | `setting.scala.html` submits menu checkboxes for code/issue/PR/review/milestone/board. | `ProjectSettingsPage` submits menu booleans through `updateProject`; backend updates `project_menu_setting`; project menu consumes returned `show*` flags. `frontend/tests/project-settings-parity.e2e.ts` now unchecks issue/review in browser, asserts the PATCH REST payload, refetches settings, and verifies the project menu labels are hidden after save. | covered in current follow-up | none |
 | `/:owner/:project/settingform` general settings controls | Legacy settings include mutable code-access radios, Git issue-template edit row, reviewer-count panel hidden when code menu off, default branch select, protected scope only for grouped projects, field validation, and updater-only access. | Wave 5 keeps the legacy code-access radios mutable/submitted through React REST JSON and persists `isCodeAccessibleMemberOnly`; the settings route now reads existing branch JSON, renders `#defaultBranceSettingPanel #project-default-branch[data-toggle=select2][data-format=branch]`, and calls the existing default-branch REST mutation only when the selected branch changed. Git issue-template, reviewer-count visibility, SVN hiding, and protected-scope visibility remain covered from Wave 2. `frontend/tests/project-settings-parity.e2e.ts` now proves mutable code-access, reviewer count, overview, default-branch browser submission, invalid project-name validation with zero REST PATCH, invalid logo-file validation with zero REST PATCH, non-updater REST 403 forbidden shell, CSRF headers, PATCH body, branch-default POST body, refetch, and visible post-save state. | covered in current follow-up | none |
 | `/:owner/:project/members` | `members.scala.html` provides add-member typeahead form, role dropdown, delete action, owner label, enrollment request accept, and update-gated access to the management route. | `ProjectMembersPage` preserves these controls and routes mutations through REST. `frontend/tests/project-members-parity.e2e.ts` now browser-proves add-member, enrollment accept, role update, and delete visible mutations while asserting POST/PATCH/DELETE methods, CSRF headers, request paths/bodies, and the non-updater 403 legacy forbidden shell with management controls absent. | covered in current follow-up | none |
@@ -190,7 +197,7 @@ Total rows: 18
 | `/:owner/:project/transfer` | transfer form shell | `#owner`, `#accept`, `#btnTransfer`, modal `#alertTransfer`, `#btnTransferExec` | same whole-screen DOM, IDs/copy, warning bubble, settings submenu, and non-fade modal class | initial render and hidden modal state; confirm uses REST mutation boundary | REST `POST /transfer` on confirm | covered in 2026-06-30 template-first reset slice |
 | `/:owner/:project/changeVCS` | change-VCS form shell | `#acceptChangeVCS`, `#btnChangeVCS`, modal `#alertChangeVCS`, `#btnChangeVCSExec` | same whole-screen DOM, IDs/copy, warning bubble, settings submenu, and non-fade modal class | initial render and hidden modal state; confirm uses REST mutation boundary | REST `POST /change-vcs` on confirm | covered in 2026-06-30 template-first reset slice |
 | `/:owner/:project/deleteform` | delete form shell | `#accept`, `#btnDelete`, modal `#alertDeletion`, `#btnDeleteExec` | same whole-screen DOM, IDs/copy, warning bubble, settings submenu, and non-fade modal class | initial render and hidden modal state; confirm uses REST mutation boundary | REST `DELETE /project` on confirm | covered in 2026-06-30 template-first reset slice |
-| `/:owner/:project/newFork` | fork form | `#helpMessage`, `#project-owner`, `#inputName`, project scope radios, fork button; existing-fork notice/link | same help/form/scope/button shell; existing-fork notice/link and disabled submit when unavailable | empty name no-submit, existing-fork no-submit, fill name, submit | REST `POST /fork` with CSRF and legacy payload only when enabled | covered in current follow-up |
+| `/:owner/:project/newFork` | fork form shell, no existing fork | `#helpMessage`, `#project-owner`, `#inputName`, project scope radios, fork button | same whole-screen DOM, project shell, Pull Request-active menu, help image/copy, owner/name/scope controls, and Fork/Cancel actions | initial render; submit uses REST mutation boundary | REST fork-options read plus `POST /fork` with CSRF | covered in 2026-06-30 template-first reset slice |
 | `/:owner/:project/statistics` | statistics page shell | Issue-active project menu and `<h1>Under Construction</h1>` | same whole-screen DOM, project shell, and body heading | initial render | REST project container read only | covered in 2026-06-30 template-first reset slice |
 
 ## Nested Layout Follow-Ups
