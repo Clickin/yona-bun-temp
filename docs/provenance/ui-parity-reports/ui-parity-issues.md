@@ -53,6 +53,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` derives the toolbar's visible options from the loaded issue list REST items for this screen; mutation behavior remains on the existing REST/TanStack mass-update boundary and is not re-proved by this DOM slice.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` now includes the RED-to-GREEN `/admin/sample/issues?filter=bulk` whole-screen DOM comparison for the multi-row toolbar/filter state.
 
+## 2026-07-01 Project Issue Draft Row Follow-Up
+
+- Restored the `issue/partial_list_draft.scala.html` caller state in the flat project issue list: unfiltered open page 1 renders `draftItems` before normal issue rows and shows the legacy `.draft-number` `#Draft` marker.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now applies the same visible-condition gate from `partial_list_wrap.scala.html` (`pageNum == 1`, open state, no active filters) before rendering draft rows.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues` whole-screen DOM comparison proving draft-before-normal ordering, row id/data hooks, and the `#Draft` marker.
+
 ## 2026-06-27 Issue Detail Layout Follow-Up
 
 - Moved project issue detail shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/issue/:issueNumber`, keeping the issue menu active, detail keymap mode, and `issue-detail-page` shell CSS hook.

@@ -140,6 +140,7 @@ function ProjectIssuesBody({
   const { t } = useLegacyMessages();
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const hasIssues = issues.items.length > 0;
+  const draftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
 
   return (
     <div className="page-wrap-outer">
@@ -217,6 +218,15 @@ function ProjectIssuesBody({
                   ) : null}
                 </div>
                 <ul className="post-list-wrap row-fluid">
+                  {draftItems.map((issue) => (
+                    <ProjectIssueItem
+                      basePath={runtimeConfig.basePath}
+                      issue={issue}
+                      key={`draft-${issue.id || issue.issueNumber}`}
+                      ownerName={ownerName}
+                      projectName={projectName}
+                    />
+                  ))}
                   {issues.items.map((issue) => (
                     <ProjectIssueItem
                       basePath={runtimeConfig.basePath}
@@ -277,6 +287,20 @@ function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string
         );
       })}
     </div>
+  );
+}
+
+function shouldShowDraftItems(search: ProjectIssuesSearch) {
+  return (
+    search.state === "open" &&
+    search.pageNum === 1 &&
+    !search.assigneeId &&
+    !search.authorId &&
+    !search.commenterId &&
+    !search.dueDate &&
+    !search.filter &&
+    search.labelIds.length === 0 &&
+    !search.milestoneId
   );
 }
 
@@ -540,7 +564,13 @@ function ProjectIssueItem({
         <div {...legacyFor} className="issue-item-row">
           <div className="title-wrap">
             <a href={issueHref} className="title">
-              <span className="post-id">#{issueNumber}</span>
+              <span className="post-id">
+                {issue.isDraft ? (
+                  <span className="draft-number">#{t("issue.state.draft")}</span>
+                ) : (
+                  `#${issueNumber}`
+                )}
+              </span>
             </a>
             <a href={issueHref} className="title">
               {issue.title}
