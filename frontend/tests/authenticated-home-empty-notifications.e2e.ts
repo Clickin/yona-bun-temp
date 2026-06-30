@@ -290,6 +290,93 @@ test("direct notifications route matches legacy populated notification row DOM",
   });
 });
 
+test("direct notifications route preserves legacy notification row expand targets", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedNotifications(page, [
+    {
+      actor: {
+        avatarUrl: "/assets/images/default-avatar-64.png",
+        displayName: "Site Admin",
+        loginId: "admin",
+      },
+      createdAt: "2026-06-30T12:00:00Z",
+      createdLabel: "just now",
+      eventType: "NEW_COMMENT",
+      id: "42",
+      message: "A new comment was added.",
+      targetHref: "/admin/sample/issue/1",
+      targetTitle: "Issue #1 updated",
+      typeIcon: "comment2",
+    },
+  ]);
+
+  await page.goto(`${basePath}/notifications`);
+  await expect(page.locator(".notification-stream")).toHaveCount(1);
+  const beforeUrl = page.url();
+  const messageWrap = page.locator("#message-42");
+
+  await expect(messageWrap).toHaveClass(/nowrap/);
+  await page.locator(".notification-stream .title a").evaluate((anchor) => {
+    anchor.addEventListener("click", (event) => event.preventDefault(), { once: true });
+    anchor.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  });
+  await expect(messageWrap).toHaveClass(/nowrap/);
+  await page.locator(".notification-stream .avatar-wrap img").evaluate((image) => {
+    image.closest("a")?.addEventListener("click", (event) => event.preventDefault(), {
+      once: true,
+    });
+    image.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  });
+  await expect(messageWrap).toHaveClass(/nowrap/);
+
+  await page.locator(".notification-stream .message").click();
+  await expect(messageWrap).not.toHaveClass(/nowrap/);
+  await expect
+    .poll(() => messageWrap.evaluate((element) => element.style.minHeight))
+    .toMatch(/px$/u);
+  await page.locator(".notification-stream .message").click();
+  await expect(messageWrap).toHaveClass(/nowrap/);
+  await expect.poll(() => messageWrap.evaluate((element) => element.style.minHeight)).toBe("");
+  expect(page.url()).toBe(beforeUrl);
+});
+
+test("direct notifications route shows legacy overflowing row more marker", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedNotifications(page, [
+    {
+      actor: {
+        avatarUrl: "/assets/images/default-avatar-64.png",
+        displayName: "Site Admin",
+        loginId: "admin",
+      },
+      createdAt: "2026-06-30T12:00:00Z",
+      createdLabel: "just now",
+      eventType: "NEW_COMMENT",
+      id: "42",
+      message: Array.from({ length: 80 }, () => "Overflow notification body").join(" "),
+      targetHref: "/admin/sample/issue/1",
+      targetTitle: "Issue #1 updated",
+      typeIcon: "comment2",
+    },
+  ]);
+
+  await page.goto(`${basePath}/notifications`);
+  await expect(page.locator(".notification-stream")).toHaveCount(1);
+  const more = page.locator(".notification-stream .more");
+  const messageWrap = page.locator("#message-42");
+
+  await expect(more).toHaveText("...");
+  await expect(more).toBeVisible();
+  await page.locator(".notification-stream .message").click();
+  await expect(messageWrap).not.toHaveClass(/nowrap/);
+  await expect(more).toBeHidden();
+  await page.locator(".notification-stream .message").click();
+  await expect(messageWrap).toHaveClass(/nowrap/);
+  await expect(more).toBeVisible();
+});
+
 test("direct notifications route appends legacy notification-more rows", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const firstPageItems = Array.from({ length: 20 }, (_, index) =>

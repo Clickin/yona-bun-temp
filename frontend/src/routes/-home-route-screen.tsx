@@ -318,6 +318,60 @@ function NotificationStreamItem({
   runtimeConfig: RuntimeConfig;
 }) {
   const userHref = prefixBasePath(runtimeConfig.basePath, `/${notification.actor.loginId}`);
+  const streamDescRef = React.useRef<HTMLDivElement>(null);
+  const messageWrapRef = React.useRef<HTMLDivElement>(null);
+  const [hasOverflow, setHasOverflow] = React.useState(false);
+  const [isMoreVisible, setIsMoreVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    const streamDesc = streamDescRef.current;
+    if (!streamDesc) {
+      return;
+    }
+
+    streamDesc.addEventListener("click", handleLearnMoreClick);
+    return () => streamDesc.removeEventListener("click", handleLearnMoreClick);
+  });
+
+  React.useLayoutEffect(() => {
+    const messageWrap = messageWrapRef.current;
+    if (!messageWrap) {
+      return;
+    }
+
+    const currentOverflow = messageWrap.style.overflow;
+    if (!currentOverflow || currentOverflow === "visible") {
+      messageWrap.style.overflow = "hidden";
+    }
+    const isOverflowing =
+      messageWrap.clientWidth < messageWrap.scrollWidth ||
+      messageWrap.clientHeight < messageWrap.scrollHeight;
+    messageWrap.style.overflow = currentOverflow;
+    setHasOverflow(isOverflowing);
+    setIsMoreVisible(isOverflowing);
+  }, [notification.message]);
+
+  function handleLearnMoreClick(event: MouseEvent) {
+    const target = event.target;
+    if (!(target instanceof Element) || target.closest("a, img")) {
+      return;
+    }
+
+    const messageWrap = document.getElementById(`message-${notification.id}`);
+    if (!messageWrap) {
+      return;
+    }
+
+    messageWrap.classList.toggle("nowrap");
+    const message = messageWrap.querySelector<HTMLElement>(".message");
+    messageWrap.style.minHeight = messageWrap.classList.contains("nowrap")
+      ? ""
+      : `${message?.getBoundingClientRect().height ?? 0}px`;
+    if (hasOverflow) {
+      setIsMoreVisible(messageWrap.classList.contains("nowrap"));
+    }
+  }
+
   return (
     <li className="notification-stream">
       <div className={`stream-type ${notification.typeIcon}`}>
@@ -327,6 +381,7 @@ function NotificationStreamItem({
         className="stream-desc"
         data-target={`message-${notification.id}`}
         data-toggle="learnmore"
+        ref={streamDescRef}
       >
         <div className="stream-info">
           <div className="title">
@@ -338,9 +393,18 @@ function NotificationStreamItem({
               notification.targetTitle
             )}
           </div>
-          <div className="message-wrap nowrap" id={`message-${notification.id}`}>
+          <div
+            className="message-wrap nowrap"
+            id={`message-${notification.id}`}
+            ref={messageWrapRef}
+          >
             <div className="message">{notification.message}</div>
           </div>
+          {hasOverflow ? (
+            <div className="more" style={isMoreVisible ? undefined : { display: "none" }}>
+              ...
+            </div>
+          ) : null}
           <div className="meta">
             <a className="avatar-wrap smaller" href={userHref}>
               <img src={notification.actor.avatarUrl} alt="" />
