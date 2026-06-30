@@ -117,9 +117,54 @@ test("organization create form matches legacy organization/create.scala.html DOM
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_ORGANIZATION_NEW.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await organizationCreateMetrics(page)).toEqual({
+    actionsOffsetTop: 4,
+    alertDataErrType: "name",
+    descriptionHeight: 40,
+    descriptionWidth: 686,
+    formWidth: 700,
+    nameInputWidth: 686,
+    pageWrapWidth: 1280,
+    submitButtonHeight: 30,
+    titleFontSize: 13,
+    warningDisplay: "none",
+  });
+});
+
+test("organization create form validates name and posts REST payload", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const requests = await mockAuthenticatedSession(page);
+
+  await page.goto(`${basePath}/organizations/new`);
+  await page.locator("#name").fill("bad name");
+  await page
+    .locator('form[name="new-org"]')
+    .evaluate((form: HTMLFormElement) => form.requestSubmit());
+  await expect(page.locator(".wrongName")).toBeVisible();
+  expect(requests.createdOrganizations).toEqual([]);
+
+  await page.locator("#name").fill("team-alpha");
+  await page.locator("#descr").fill("Alpha team");
+  await page
+    .locator('form[name="new-org"]')
+    .evaluate((form: HTMLFormElement) => form.requestSubmit());
+
+  await expect
+    .poll(() => requests.createdOrganizations)
+    .toEqual([
+      {
+        description: "Alpha team",
+        organizationName: "team-alpha",
+      },
+    ]);
+  await expect(page).toHaveURL(`${basePath}/organizations/team-alpha`);
 });
 
 async function mockAuthenticatedSession(page: Page) {
+  const requests = {
+    createdOrganizations: [] as Array<{ description: string; organizationName: string }>,
+  };
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -136,6 +181,37 @@ async function mockAuthenticatedSession(page: Page) {
       }),
     });
   });
+  await page.route("**/api/v1/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "test-csrf-token" },
+      body: JSON.stringify({ user: { loginId: "admin" } }),
+    });
+  });
+  await page.route("**/api/v1/organizations", async (route) => {
+    if (route.request().method() === "POST") {
+      const body = route.request().postDataJSON() as {
+        description?: string;
+        organizationName?: string;
+      };
+      requests.createdOrganizations.push({
+        description: body.description ?? "",
+        organizationName: body.organizationName ?? "",
+      });
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        description: "Alpha team",
+        id: 44,
+        logoUrl: "/assets/images/organization_default_logo.png",
+        organizationName: "team-alpha",
+        redirectPath: "/organizations/team-alpha",
+      }),
+    });
+  });
+
+  return requests;
 }
 
 async function canonicalizeScreenRoots(page: Page) {
@@ -245,4 +321,47 @@ async function canonicalizeHtml(page: Page, html: string) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
   }, html);
+}
+
+async function organizationCreateMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrap = requireElement(".project-page-wrap");
+    const form = requireElement('form[name="new-org"]');
+    const legend = requireElement("legend");
+    const alert = requireElement(".n-alert");
+    const warning = requireElement(".wrongName");
+    const nameInput = requireElement("#name");
+    const description = requireElement("#descr");
+    const actions = requireElement(".actions");
+    const submitButton = requireElement(".actions .ybtn-success");
+    const formRect = form.getBoundingClientRect();
+    const actionsRect = actions.getBoundingClientRect();
+    const descriptionRect = description.getBoundingClientRect();
+    const nameInputRect = nameInput.getBoundingClientRect();
+    const pageWrapRect = pageWrap.getBoundingClientRect();
+    const submitButtonRect = submitButton.getBoundingClientRect();
+    const legendStyle = getComputedStyle(legend);
+    const warningStyle = getComputedStyle(warning);
+
+    return {
+      actionsOffsetTop: Math.round(actionsRect.top - descriptionRect.bottom),
+      alertDataErrType: alert.getAttribute("data-errType"),
+      descriptionHeight: Math.round(descriptionRect.height),
+      descriptionWidth: Math.round(descriptionRect.width),
+      formWidth: Math.round(formRect.width),
+      nameInputWidth: Math.round(nameInputRect.width),
+      pageWrapWidth: Math.round(pageWrapRect.width),
+      submitButtonHeight: Math.round(submitButtonRect.height),
+      titleFontSize: Math.round(parseFloat(legendStyle.fontSize)),
+      warningDisplay: warningStyle.display,
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
 }
