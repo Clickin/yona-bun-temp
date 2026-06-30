@@ -53,6 +53,33 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
   });
 });
 
+test("restart notice keeps legacy mobile standalone proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(`${basePath}/restart`);
+  await expect(page.locator(".secret-wrap")).toBeVisible();
+
+  expect(await readMobileRestartMetrics(page)).toEqual({
+    pageFooterLineHeight: "34px",
+    pageFooterOuterMinWidth: "10px",
+    pageFooterOuterPadding: "10px",
+    pageFooterWidth: 370,
+    pageWrapOuterMinWidth: "10px",
+    pageWrapOuterPadding: "0px",
+    pageWrapOuterWidth: 390,
+    providerFontSize: "9px",
+    logoHeight: "55px",
+    logoMarginBottom: "50px",
+    logoMarginTop: "50px",
+    logoWidth: "123px",
+    secretBoxMarginBottom: "20px",
+    secretBoxMarginTop: "20px",
+    secretBoxWidth: 195,
+    secretWrapPaddingBottom: "50px",
+    secretWrapPaddingTop: "50px",
+  });
+});
+
 async function readDesktopRestartMetrics(page: Page) {
   return page.evaluate(() => {
     const secretWrap = document.querySelector<HTMLElement>(".secret-wrap");
@@ -85,6 +112,55 @@ async function readDesktopRestartMetrics(page: Page) {
       secretBoxMarginBottom: secretBoxStyle.marginBottom,
       secretBoxMarginTop: secretBoxStyle.marginTop,
       secretBoxWidth: secretBoxStyle.width,
+      secretWrapPaddingBottom: secretWrapStyle.paddingBottom,
+      secretWrapPaddingTop: secretWrapStyle.paddingTop,
+    };
+  });
+}
+
+async function readMobileRestartMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const secretWrap = document.querySelector<HTMLElement>(".secret-wrap");
+    const logo = document.querySelector<HTMLElement>(".secret-wrap .logo");
+    const secretBox = document.querySelector<HTMLElement>(".secret-box");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (
+      !pageWrapOuter ||
+      !secretWrap ||
+      !logo ||
+      !secretBox ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
+    ) {
+      throw new Error("Expected restart mobile metric targets are missing.");
+    }
+
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const secretWrapStyle = getComputedStyle(secretWrap);
+    const logoStyle = getComputedStyle(logo);
+    const secretBoxStyle = getComputedStyle(secretBox);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+
+    return {
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterMinWidth: pageFooterOuterStyle.minWidth,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      pageFooterWidth: Math.round(pageFooter.getBoundingClientRect().width),
+      pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      pageWrapOuterPadding: pageWrapOuterStyle.padding,
+      pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
+      providerFontSize: getComputedStyle(provider).fontSize,
+      logoHeight: logoStyle.height,
+      logoMarginBottom: logoStyle.marginBottom,
+      logoMarginTop: logoStyle.marginTop,
+      logoWidth: logoStyle.width,
+      secretBoxMarginBottom: secretBoxStyle.marginBottom,
+      secretBoxMarginTop: secretBoxStyle.marginTop,
+      secretBoxWidth: Math.round(secretBox.getBoundingClientRect().width),
       secretWrapPaddingBottom: secretWrapStyle.paddingBottom,
       secretWrapPaddingTop: secretWrapStyle.paddingTop,
     };
