@@ -69,6 +69,18 @@ test("verification success matches legacy user/verified.scala.html screen DOM", 
 
   expect(actual).toEqual(expected);
   expect(await readDesktopVerifiedMetrics(page)).toEqual({
+    gnbInnerHeight: "40px",
+    gnbInnerWidth: 1254,
+    gnbOuterBackground: "rgb(27, 27, 27)",
+    gnbOuterHeight: "40px",
+    logoBackground: "rgb(255, 87, 34)",
+    logoLineHeight: "40px",
+    logoPadding: "6px 10px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
+    providerColor: "rgb(51, 51, 51)",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
     tagLineColor: "rgb(124, 124, 124)",
     tagLineFontSize: "15.6px",
     tagLineMarginBottom: "15.6px",
@@ -110,17 +122,50 @@ test("invalid verification renders legacy plain not-found body", async ({ page }
 
 async function readDesktopVerifiedMetrics(page: Page) {
   return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const logo = document.querySelector<HTMLElement>(".logo-letter");
     const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.reset-password");
     const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
     const tagLine = document.querySelector<HTMLElement>(".tag-line-wrap .tag-line");
-    if (!tagLineWrap || !title || !tagLine) {
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (
+      !gnbOuter ||
+      !gnbInner ||
+      !logo ||
+      !tagLineWrap ||
+      !title ||
+      !tagLine ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
+    ) {
       throw new Error("Expected verified metric targets are missing.");
     }
 
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const gnbInnerStyle = getComputedStyle(gnbInner);
+    const logoStyle = getComputedStyle(logo);
     const tagLineWrapStyle = getComputedStyle(tagLineWrap);
     const tagLineStyle = getComputedStyle(tagLine);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
 
     return {
+      gnbInnerHeight: gnbInnerStyle.height,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterBackground: gnbOuterStyle.backgroundColor,
+      gnbOuterHeight: gnbOuterStyle.height,
+      logoBackground: logoStyle.backgroundColor,
+      logoLineHeight: logoStyle.lineHeight,
+      logoPadding: logoStyle.padding,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
       tagLineColor: tagLineStyle.color,
       tagLineFontSize: tagLineStyle.fontSize,
       tagLineMarginBottom: tagLineStyle.marginBottom,
