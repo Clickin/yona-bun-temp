@@ -241,6 +241,13 @@ function ProjectHomeBody({
               <div className="tab-pane active">
                 {tabId === "history" ? (
                   <HistoryPane basePath={runtimeConfig.basePath} project={project} />
+                ) : tabId === "dashboard" ? (
+                  <DashboardPane
+                    basePath={runtimeConfig.basePath}
+                    ownerName={ownerName}
+                    project={project}
+                    projectName={projectName}
+                  />
                 ) : (
                   <ReadmePane
                     basePath={runtimeConfig.basePath}
@@ -488,6 +495,348 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
           })}
         </ul>
       </div>
+    </div>
+  );
+}
+
+function DashboardPane({
+  basePath,
+  ownerName,
+  project,
+  projectName,
+}: {
+  basePath: string;
+  ownerName: string;
+  project: ProjectContainer;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+  const menuSetting = projectMenuSetting(project);
+  const dashboard = recordField(recordField(project).dashboard);
+  const assignees = arrayField(dashboard.assignees);
+  const milestones = arrayField(dashboard.milestones);
+  const labels = arrayField(dashboard.labels);
+  const pullRequests = arrayField(dashboard.pullRequests);
+  const unassignedCount = numberField(dashboard.unassignedOpenIssueCount);
+  const noMilestoneCount = numberField(dashboard.noMilestoneOpenIssueCount);
+  const totalOpenIssues =
+    assignees.reduce((sum, item) => sum + numberField(recordField(item).openIssueCount), 0) +
+    unassignedCount;
+
+  return (
+    <div className="content-container nm">
+      <div className="project-overview-home row-fluid">
+        <div className="span6">
+          {booleanField(menuSetting.issue) ? (
+            <>
+              <h5>{t("project.dashboard.openIssuesByAssignee")}</h5>
+              <div className="overview-assignee">
+                {assignees.length === 0 && unassignedCount === 0 ? (
+                  <DashboardEmpty
+                    actionHref={prefixBasePath(basePath, `/${ownerName}/${projectName}/issueform`)}
+                    actionText={t("issue.menu.new")}
+                    message={t("issue.is.empty")}
+                  />
+                ) : (
+                  <>
+                    {assignees.map((assignee) => {
+                      const record = recordField(assignee);
+                      const userId = numberField(record.userId);
+                      const count = numberField(record.openIssueCount);
+                      const loginId = stringField(record.loginId, "");
+                      const userLabel = stringField(record.userLabel, loginId);
+                      const percent = percentOf(count, totalOpenIssues);
+                      return (
+                        <div className="row-fluid" key={`${userId}-${loginId}`}>
+                          <div className="span6">
+                            <a
+                              href={issueHref(
+                                basePath,
+                                ownerName,
+                                projectName,
+                                `assigneeId=${userId}`,
+                              )}
+                              className="usf-group"
+                              title={`${userLabel} (@${loginId})`}
+                            >
+                              <span className="avatar-wrap smaller">
+                                <img
+                                  src={stringField(
+                                    record.avatarUrl,
+                                    "/assets/images/default-avatar-32.png",
+                                  )}
+                                  width="20"
+                                  height="20"
+                                  alt=""
+                                />
+                              </span>
+                              <strong className="name">{userLabel}</strong>
+                              <span className="loginid">
+                                {" "}
+                                <strong>@</strong>
+                                {loginId}
+                              </span>
+                            </a>
+                          </div>
+                          <div className="span3 num">
+                            <strong>{count}</strong>
+                          </div>
+                          <div className="span3 nm">
+                            <ProgressBar className="progress-warning" percent={percent} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="row-fluid">
+                      <div className="span6">
+                        <a
+                          href={issueHref(basePath, ownerName, projectName, "assigneeId=-1")}
+                          className="usf-group"
+                        >
+                          <span className="avatar-wrap smaller">
+                            <i className="yobicon-blankstare"></i>
+                          </span>
+                          <span className="name">{t("issue.noAssignee")}</span>
+                        </a>
+                      </div>
+                      <div className="span3 num">
+                        <strong>{unassignedCount}</strong>
+                      </div>
+                      <div className="span3 nm">
+                        <ProgressBar
+                          className="progress-warning"
+                          percent={percentOf(unassignedCount, totalOpenIssues)}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <hr />
+
+              <h5>{t("project.dashboard.openIssuesByMilestone")}</h5>
+              <div className="overview-milestone">
+                {milestones.length === 0 ? (
+                  <DashboardEmpty
+                    actionHref={prefixBasePath(
+                      basePath,
+                      `/${ownerName}/${projectName}/newMilestoneForm`,
+                    )}
+                    actionText={t("milestone.menu.new")}
+                    message={t("milestone.is.empty")}
+                  />
+                ) : (
+                  <>
+                    {milestones.map((milestone) => {
+                      const record = recordField(milestone);
+                      const milestoneId = numberField(record.id);
+                      const count = numberField(record.openIssueCount);
+                      const percent = numberField(record.completionPercent);
+                      return (
+                        <div className="row-fluid" key={milestoneId}>
+                          <div className="span6">
+                            <a
+                              href={issueHref(
+                                basePath,
+                                ownerName,
+                                projectName,
+                                `milestoneId=${milestoneId}`,
+                              )}
+                            >
+                              {stringField(record.title, "")}
+                            </a>
+                          </div>
+                          <div className="span3 num">
+                            <strong>{count}</strong>
+                          </div>
+                          <div className="span3 nm">
+                            <ProgressBar className="progress-success" percent={percent} success />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="row-fluid">
+                      <div className="span6">
+                        <a href={issueHref(basePath, ownerName, projectName, "milestoneId=-1")}>
+                          {t("issue.noMilestone")}
+                        </a>
+                      </div>
+                      <div className="span3 num">
+                        <strong>{noMilestoneCount}</strong>
+                      </div>
+                      <div className="span3 nm"></div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          ) : null}
+
+          {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
+            <>
+              {booleanField(menuSetting.issue) ? <hr /> : null}
+              <h5>{t("project.dashboard.pullRequests")}</h5>
+              <div className="overview-pullrequest">
+                {pullRequests.length > 0 ? (
+                  pullRequests.map((pullRequest) => {
+                    const record = recordField(pullRequest);
+                    const number = numberField(record.pullRequestNumber);
+                    return (
+                      <div className="row-fluid" key={number}>
+                        <div className="span9 title">
+                          <a
+                            href={prefixBasePath(
+                              basePath,
+                              `/${ownerName}/${projectName}/pullRequests?contributorId=${numberField(record.contributorUserId)}`,
+                            )}
+                            className="usf-group"
+                          >
+                            <span
+                              className="avatar-wrap smaller"
+                              data-toggle="tooltip"
+                              title={`${stringField(record.contributorUserLabel, "")} (@${stringField(record.contributorLoginId, "")})`}
+                            >
+                              <img
+                                src={stringField(
+                                  record.contributorAvatarUrl,
+                                  "/assets/images/default-avatar-32.png",
+                                )}
+                                width="20"
+                                height="20"
+                                alt=""
+                              />
+                            </span>
+                          </a>
+                          <a
+                            href={prefixBasePath(
+                              basePath,
+                              `/${ownerName}/${projectName}/pullRequest/${number}`,
+                            )}
+                          >
+                            {stringField(record.title, "")}
+                          </a>
+                        </div>
+                        <div className="span3 num right-txt" style={{ color: "#999" }}>
+                          {stringField(record.createdLabel, "")}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <DashboardEmpty
+                    actionHref={prefixBasePath(
+                      basePath,
+                      `/${ownerName}/${projectName}/newPullRequestForm`,
+                    )}
+                    actionText={t("pullRequest.new")}
+                    message={t("pullRequest.is.empty")}
+                  />
+                )}
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        {booleanField(menuSetting.issue) ? (
+          <div className="span6">
+            <h5>{t("project.dashboard.openIssuesByLabel")}</h5>
+            <DashboardLabels
+              basePath={basePath}
+              labels={labels}
+              ownerName={ownerName}
+              projectName={projectName}
+            />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function DashboardLabels({
+  basePath,
+  labels,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  labels: unknown[];
+  ownerName: string;
+  projectName: string;
+}) {
+  const groups = new Map<string, Record<string, unknown>[]>();
+  for (const label of labels) {
+    const record = recordField(label);
+    const categoryName = stringField(record.categoryName, "");
+    groups.set(categoryName, [...(groups.get(categoryName) ?? []), record]);
+  }
+
+  return (
+    <>
+      {Array.from(groups.entries()).map(([categoryName, categoryLabels]) => (
+        <dl className="dl-horizontal overview-label" key={categoryName}>
+          <dt>{categoryName}</dt>
+          <dd>
+            {categoryLabels.map((label) => {
+              const labelId = numberField(label.id);
+              return (
+                <div className="row-fluid" key={labelId}>
+                  <div className="span10">
+                    <a href={issueHref(basePath, ownerName, projectName, `labelIds=${labelId}`)}>
+                      <span className="issue-label list-label active" data-label-id={labelId}>
+                        {stringField(label.name, "")}
+                      </span>
+                    </a>
+                  </div>
+                  <div className="span2 num">
+                    <strong>{numberField(label.openIssueCount)}</strong>
+                  </div>
+                </div>
+              );
+            })}
+          </dd>
+        </dl>
+      ))}
+    </>
+  );
+}
+
+function DashboardEmpty({
+  actionHref,
+  actionText,
+  message,
+}: {
+  actionHref: string;
+  actionText: string;
+  message: string;
+}) {
+  return (
+    <div className="empty">
+      <p>{message}</p>
+      <a href={actionHref} target="_blank" className="ybtn ybtn-small">
+        {actionText}
+      </a>
+    </div>
+  );
+}
+
+function ProgressBar({
+  className,
+  percent,
+  success = false,
+}: {
+  className: string;
+  percent: number;
+  success?: boolean;
+}) {
+  return (
+    <div
+      className={`progress ${className} ${percent === 0 ? "empty" : ""}`}
+      data-toggle="tooltip"
+      title={`${percent}%`}
+    >
+      <div className={`bar${success ? " bar-success" : ""}`} style={{ width: `${percent}%` }}></div>
     </div>
   );
 }
@@ -753,6 +1102,14 @@ function normalizeHistoryHref(basePath: string, href: string) {
     return href;
   }
   return href.startsWith(basePath) ? href : prefixBasePath(basePath, href);
+}
+
+function issueHref(basePath: string, ownerName: string, projectName: string, query: string) {
+  return prefixBasePath(basePath, `/${ownerName}/${projectName}/issues?${query}`);
+}
+
+function percentOf(value: number, total: number) {
+  return total > 0 ? Math.round((value / total) * 100) : 0;
 }
 
 function recordField(value: unknown) {
