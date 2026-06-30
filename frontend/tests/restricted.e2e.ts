@@ -53,24 +53,7 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await page.route("**/api/v1/session", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        localUser: {
-          email: "admin@example.com",
-          emailValidated: false,
-          loginId: "admin",
-          name: "Site Admin",
-        },
-        currentAuth: {
-          expires: -1,
-          id: "admin",
-          provider: "password",
-        },
-      }),
-    });
-  });
+  await mockRestrictedSession(page);
 
   await page.goto(`${basePath}/restricted`);
   await expect(page.locator(".gnb-outer")).toBeVisible();
@@ -109,6 +92,52 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
     providerMarginLeft: "4px",
   });
 });
+
+test("restricted page keeps legacy mobile shell and fixed iframe proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockRestrictedSession(page);
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(`${basePath}/restricted`);
+  await expect(page.locator(".page-wrap-outer")).toBeVisible();
+
+  expect(await readMobileRestrictedMetrics(page)).toEqual({
+    footerLineHeight: "34px",
+    footerOuterMinWidth: "10px",
+    footerOuterPadding: "10px",
+    footerWidth: 370,
+    gnbInnerWidth: 363,
+    gnbOuterMinWidth: "10px",
+    gnbOuterPadding: "0px 10px",
+    iframeHeight: "315px",
+    iframeWidth: "560px",
+    pageWrapOuterMinWidth: "10px",
+    pageWrapOuterPadding: "0px",
+    pageWrapOuterWidth: 390,
+    providerFontSize: "9px",
+  });
+});
+
+async function mockRestrictedSession(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        localUser: {
+          email: "admin@example.com",
+          emailValidated: false,
+          loginId: "admin",
+          name: "Site Admin",
+        },
+        currentAuth: {
+          expires: -1,
+          id: "admin",
+          provider: "password",
+        },
+      }),
+    });
+  });
+}
 
 async function readDesktopRestrictedMetrics(page: Page) {
   return page.evaluate(() => {
@@ -161,6 +190,50 @@ async function readDesktopRestrictedMetrics(page: Page) {
       providerColor: providerStyle.color,
       providerFontSize: providerStyle.fontSize,
       providerMarginLeft: providerStyle.marginLeft,
+    };
+  });
+}
+
+async function readMobileRestrictedMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const iframe = document.querySelector<HTMLElement>("iframe");
+    const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const footer = document.querySelector<HTMLElement>(".page-footer");
+    const provider = document.querySelector<HTMLElement>(".page-footer .provider");
+    if (
+      !gnbOuter ||
+      !gnbInner ||
+      !pageWrapOuter ||
+      !iframe ||
+      !footerOuter ||
+      !footer ||
+      !provider
+    ) {
+      throw new Error("Expected restricted mobile metric targets are missing.");
+    }
+
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const iframeStyle = getComputedStyle(iframe);
+    const footerOuterStyle = getComputedStyle(footerOuter);
+
+    return {
+      footerLineHeight: getComputedStyle(footer).lineHeight,
+      footerOuterMinWidth: footerOuterStyle.minWidth,
+      footerOuterPadding: footerOuterStyle.padding,
+      footerWidth: Math.round(footer.getBoundingClientRect().width),
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterMinWidth: gnbOuterStyle.minWidth,
+      gnbOuterPadding: gnbOuterStyle.padding,
+      iframeHeight: iframeStyle.height,
+      iframeWidth: iframeStyle.width,
+      pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      pageWrapOuterPadding: pageWrapOuterStyle.padding,
+      pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
+      providerFontSize: getComputedStyle(provider).fontSize,
     };
   });
 }
