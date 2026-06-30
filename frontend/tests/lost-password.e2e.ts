@@ -90,6 +90,18 @@ test("anonymous lost-password form matches legacy site/lostPassword.scala.html s
     buttonRowMarginBottom: "20px",
     formMarginTop: "54px",
     formWidth: "400px",
+    gnbInnerHeight: "40px",
+    gnbInnerWidth: 1254,
+    gnbOuterBackground: "rgb(27, 27, 27)",
+    gnbOuterHeight: "40px",
+    logoBackground: "rgb(255, 87, 34)",
+    logoLineHeight: "40px",
+    logoPadding: "6px 10px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
+    providerColor: "rgb(51, 51, 51)",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
     tagLineMarginBottom: "26px",
     tagLinePaddingTop: "80px",
     textHeight: "30px",
@@ -190,24 +202,59 @@ async function canonicalizeScreenRoots(page: Page) {
 
 async function readDesktopLostPasswordMetrics(page: Page) {
   return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const logo = document.querySelector<HTMLElement>(".logo-letter");
     const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.reset-password");
     const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
     const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
     const loginInput = document.querySelector<HTMLElement>("#loginId");
     const buttonRow = document.querySelector<HTMLElement>(".login-form-wrap .btns-row");
-    if (!tagLineWrap || !title || !formWrap || !loginInput || !buttonRow) {
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (
+      !gnbOuter ||
+      !gnbInner ||
+      !logo ||
+      !tagLineWrap ||
+      !title ||
+      !formWrap ||
+      !loginInput ||
+      !buttonRow ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
+    ) {
       throw new Error("Expected lost-password metric targets are missing.");
     }
 
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const gnbInnerStyle = getComputedStyle(gnbInner);
+    const logoStyle = getComputedStyle(logo);
     const tagLineWrapStyle = getComputedStyle(tagLineWrap);
     const formWrapStyle = getComputedStyle(formWrap);
     const loginInputStyle = getComputedStyle(loginInput);
     const buttonRowStyle = getComputedStyle(buttonRow);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
 
     return {
       buttonRowMarginBottom: buttonRowStyle.marginBottom,
       formMarginTop: formWrapStyle.marginTop,
       formWidth: formWrapStyle.width,
+      gnbInnerHeight: gnbInnerStyle.height,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterBackground: gnbOuterStyle.backgroundColor,
+      gnbOuterHeight: gnbOuterStyle.height,
+      logoBackground: logoStyle.backgroundColor,
+      logoLineHeight: logoStyle.lineHeight,
+      logoPadding: logoStyle.padding,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
       tagLineMarginBottom: tagLineWrapStyle.marginBottom,
       tagLinePaddingTop: tagLineWrapStyle.paddingTop,
       textHeight: loginInputStyle.height,
