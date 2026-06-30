@@ -89,6 +89,15 @@ test("verification success matches legacy user/verified.scala.html screen DOM", 
     tagLineWrapMarginBottom: "26px",
     titleLineHeight: "42px",
   });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await readMobileVerifiedMetrics(page)).toEqual({
+    footerMinWidth: "10px",
+    gnbInnerWidth: 382,
+    gnbOuterMinWidth: "10px",
+    pageFooterPadding: "10px 0px",
+    tagLinePaddingTop: "80px",
+    titleLineHeight: "42px",
+  });
 });
 
 test("invalid verification renders legacy plain not-found body", async ({ page }) => {
@@ -172,6 +181,31 @@ async function readDesktopVerifiedMetrics(page: Page) {
       tagLineMarginTop: tagLineStyle.marginTop,
       tagLinePaddingTop: tagLineWrapStyle.paddingTop,
       tagLineWrapMarginBottom: tagLineWrapStyle.marginBottom,
+      titleLineHeight: getComputedStyle(title).lineHeight,
+    };
+  });
+}
+
+async function readMobileVerifiedMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.reset-password");
+    const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    if (!gnbOuter || !gnbInner || !tagLineWrap || !title || !pageFooterOuter) {
+      throw new Error("Expected mobile verified metric targets are missing.");
+    }
+
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const tagLineWrapStyle = getComputedStyle(tagLineWrap);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    return {
+      footerMinWidth: pageFooterOuterStyle.minWidth,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterMinWidth: gnbOuterStyle.minWidth,
+      pageFooterPadding: pageFooterOuterStyle.padding,
+      tagLinePaddingTop: tagLineWrapStyle.paddingTop,
       titleLineHeight: getComputedStyle(title).lineHeight,
     };
   });
