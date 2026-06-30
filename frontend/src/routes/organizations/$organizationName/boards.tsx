@@ -30,7 +30,7 @@ export const Route = createFileRoute("/organizations/$organizationName/boards")(
       orderBy: stringSearch(search.orderBy, "updatedDate"),
       orderDir: stringSearch(search.orderDir, "desc"),
       pageNum: Number(search.pageNum) || 1,
-      projectNames: arraySearch(search.projectNames),
+      projectNames: arraySearch(search.projectNames ?? search["projectNames[]"]),
     };
   },
 });
@@ -210,7 +210,6 @@ function BoardFilters({
           return (
             <a
               href={boardListHref(basePath, organizationName, {
-                ...search,
                 orderBy: filter.field,
                 orderDir: active ? nextDir : "desc",
               })}
@@ -398,15 +397,11 @@ function OrganizationMenu({
 function boardListHref(
   basePath: string,
   organizationName: string,
-  search: OrganizationBoardsSearch,
+  search: Pick<OrganizationBoardsSearch, "orderBy" | "orderDir">,
 ) {
   const params = new URLSearchParams();
   params.set("orderBy", search.orderBy);
   params.set("orderDir", search.orderDir);
-  if (search.filter) {
-    params.set("filter", search.filter);
-  }
-  search.projectNames.forEach((projectName) => params.append("projectNames", projectName));
   return `${prefixBasePath(basePath, `/organizations/${organizationName}/boards`)}?${params.toString()}`;
 }
 
