@@ -34,6 +34,7 @@ const EXPECTED_LOST_PASSWORD_SCREEN = `
     <p class="tag-line">Web-based platform for collaborative software development</p>
   </div>
   <div class="login-form-wrap frm-wrap">
+    __ALERT__
     <form method="post" action="/lostPassword">
       <dl>
         <dd>
@@ -59,6 +60,21 @@ const EXPECTED_LOST_PASSWORD_SCREEN = `
 </footer>
 `;
 
+const SUCCESS_ALERT = `
+<div class="alert alert-success">
+  <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <h4>Mail has been sent.</h4>
+</div>
+`;
+
+const ERROR_ALERT = `
+<div class="alert alert-error">
+  <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <h4>Failed to send mail.</h4>
+  Invalid password reset request
+</div>
+`;
+
 test("anonymous lost-password form matches legacy site/lostPassword.scala.html screen DOM", async ({
   page,
 }) => {
@@ -67,13 +83,46 @@ test("anonymous lost-password form matches legacy site/lostPassword.scala.html s
 
   await expect(page.locator(".page.full")).toBeVisible();
   const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(page, expectedLostPasswordScreen(basePath, ""));
+
+  expect(actual).toEqual(expected);
+});
+
+test("lost-password requested alert matches legacy site/lostPassword.scala.html screen DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/lostPassword?requested=1`);
+
+  await expect(page.locator(".alert.alert-success")).toBeVisible();
+  const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_LOST_PASSWORD_SCREEN.replaceAll("__BASE_PATH__", basePath),
+    expectedLostPasswordScreen(basePath, SUCCESS_ALERT),
   );
 
   expect(actual).toEqual(expected);
 });
+
+test("lost-password invalid-request alert matches legacy site/lostPassword.scala.html screen DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/lostPassword?error=site.resetPasswordEmail.invalidRequest`);
+
+  await expect(page.locator(".alert.alert-error")).toBeVisible();
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(page, expectedLostPasswordScreen(basePath, ERROR_ALERT));
+
+  expect(actual).toEqual(expected);
+});
+
+function expectedLostPasswordScreen(basePath: string, alertHtml: string) {
+  return EXPECTED_LOST_PASSWORD_SCREEN.replaceAll("__BASE_PATH__", basePath).replace(
+    "__ALERT__",
+    alertHtml,
+  );
+}
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
@@ -93,6 +142,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "title",
         "data-toggle",
         "data-placement",
+        "data-dismiss",
         "for",
         "checked",
         "required",
@@ -152,6 +202,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "title",
           "data-toggle",
           "data-placement",
+          "data-dismiss",
           "for",
           "checked",
           "required",

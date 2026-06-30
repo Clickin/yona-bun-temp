@@ -16,8 +16,8 @@ type LostPasswordSearch = {
 export const Route = createFileRoute("/lostPassword")({
   component: LostPasswordRoute,
   validateSearch: (search: Record<string, unknown>): LostPasswordSearch => ({
-    error: typeof search.error === "string" ? search.error : "",
-    requested: typeof search.requested === "string" ? search.requested : "",
+    error: search.error == null ? "" : String(search.error),
+    requested: search.requested == null ? "" : String(search.requested),
   }),
 });
 
