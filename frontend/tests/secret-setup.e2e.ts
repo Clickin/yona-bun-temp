@@ -51,10 +51,43 @@ const EXPECTED_SECRET_SCREEN = `
 </footer>
 `;
 
+const EXPECTED_SECRET_NOT_FOUND_SCREEN = `
+<header class="gnb-outer">
+  <div class="gnb-inner">
+    <a href="__BASE_PATH__" class="logo"><h1 class="blind">Yona</h1></a>
+    <ul class="gnb-nav">
+      <li><a href="__BASE_PATH__/projects">Project list</a></li>
+      <li><a href="__BASE_PATH__/_help">Help</a></li>
+      <li><a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">Feedback</a></li>
+    </ul>
+  </div>
+</header>
+<div class="page-wrap-outer">
+  <div class="project-page-wrap">
+    <div class="error-wrap">
+      <i class="ico ico-err2"></i>
+      <p>Page not found</p>
+      <a href="__BASE_PATH__" class="ybtn ybtn-info">Home</a>
+    </div>
+  </div>
+</div>
+<footer class="page-footer-outer">
+  <div class="page-footer">
+    <span class="provider">Copyright © <a href="http://navercorp.com/" target="_blank">NAVER Corp.</a> Supported by <a href="https://developers.naver.com/d2/" target="_blank" class="d2-program"><span class="d2">D2</span><span class="program"> Program</span></a></span>
+  </div>
+</footer>
+`;
+
 test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
   await page.route("**/api/auth/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -97,9 +130,34 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
   await expect(page).toHaveURL(`${basePath}/restart`);
 });
 
+test("secret setup disabled matches legacy error/notfound_default.scala.html screen DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: false }),
+    });
+  });
+
+  await page.goto(`${basePath}/secret`);
+  await expect(page.locator(".error-wrap")).toBeVisible();
+
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    EXPECTED_SECRET_NOT_FOUND_SCREEN.replaceAll("__BASE_PATH__", basePath),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
-    const roots = Array.from(document.querySelectorAll(".page-wrap-outer, .page-footer-outer"));
+    const roots = Array.from(
+      document.querySelectorAll(".gnb-outer, .page-wrap-outer, .page-footer-outer"),
+    );
     return roots.map((root) => visit(root)).join("");
 
     function visit(current: Element): string {
@@ -114,6 +172,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "autocomplete",
         "placeholder",
         "href",
+        "target",
         "for",
         "checked",
         "required",
@@ -165,6 +224,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "autocomplete",
           "placeholder",
           "href",
+          "target",
           "for",
           "checked",
           "required",
