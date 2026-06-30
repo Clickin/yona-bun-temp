@@ -98,6 +98,21 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
   const expected = await canonicalizeHtml(page, expectedLoginScreen(basePath, defaultFormBody()));
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopLoginMetrics(page)).toEqual({
+    actRowLineHeight: "22px",
+    buttonRowMarginBottom: "20px",
+    checkboxMarginLeft: "0px",
+    checkboxMarginTop: "4px",
+    formMarginTop: "54px",
+    formWidth: "400px",
+    passwordMarginBottom: "15px",
+    tagLineMarginBottom: "26px",
+    tagLinePaddingTop: "80px",
+    textHeight: "30px",
+    textMarginBottom: "10px",
+    textWidth: "386px",
+    titleLineHeight: "42px",
+  });
   await expect(page.locator(".links-wrap a")).toHaveAttribute("href", `${basePath}/lostPassword`);
 });
 
@@ -342,6 +357,54 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
+  });
+}
+
+async function readDesktopLoginMetrics(page: Page) {
+  return page.evaluate(() => {
+    const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.login");
+    const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
+    const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
+    const loginInput = document.querySelector<HTMLElement>("#loginIdOrEmailD");
+    const passwordInput = document.querySelector<HTMLElement>("#password");
+    const buttonRow = document.querySelector<HTMLElement>(".login-form-wrap .btns-row");
+    const actRow = document.querySelector<HTMLElement>(".login-form-wrap .act-row");
+    const checkbox = document.querySelector<HTMLElement>("#remember-me");
+    if (
+      !tagLineWrap ||
+      !title ||
+      !formWrap ||
+      !loginInput ||
+      !passwordInput ||
+      !buttonRow ||
+      !actRow ||
+      !checkbox
+    ) {
+      throw new Error("Expected login metric targets are missing.");
+    }
+
+    const tagLineWrapStyle = getComputedStyle(tagLineWrap);
+    const formWrapStyle = getComputedStyle(formWrap);
+    const loginInputStyle = getComputedStyle(loginInput);
+    const passwordInputStyle = getComputedStyle(passwordInput);
+    const buttonRowStyle = getComputedStyle(buttonRow);
+    const checkboxStyle = getComputedStyle(checkbox);
+
+    return {
+      actRowLineHeight: getComputedStyle(actRow).lineHeight,
+      buttonRowMarginBottom: buttonRowStyle.marginBottom,
+      checkboxMarginLeft: checkboxStyle.marginLeft,
+      checkboxMarginTop: checkboxStyle.marginTop,
+      formMarginTop: formWrapStyle.marginTop,
+      formWidth: formWrapStyle.width,
+      passwordMarginBottom: passwordInputStyle.marginBottom,
+      tagLineMarginBottom: tagLineWrapStyle.marginBottom,
+      tagLinePaddingTop: tagLineWrapStyle.paddingTop,
+      textHeight: loginInputStyle.height,
+      textMarginBottom: loginInputStyle.marginBottom,
+      textWidth: loginInputStyle.width,
+      titleLineHeight: getComputedStyle(title).lineHeight,
+    };
   });
 }
 
