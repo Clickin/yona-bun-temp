@@ -140,6 +140,20 @@ test("organization settings form matches legacy organization/setting.scala.html 
   await expect(page.locator("#saveSetting")).toBeVisible();
   await expect(page.locator("#project-name")).toHaveValue("weblabs");
   await expect(page.locator("#project-desc")).toHaveValue("Web labs group");
+  expect(
+    await page
+      .locator(
+        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+      )
+      .evaluateAll((roots) => roots.map((root) => root.className)),
+  ).toEqual([
+    "unsupported hidden",
+    "gnb-outer",
+    "project-header-outer",
+    "project-menu-outer",
+    "page-wrap-outer",
+    "page-footer-outer",
+  ]);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
