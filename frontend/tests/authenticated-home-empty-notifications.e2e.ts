@@ -129,15 +129,27 @@ test("authenticated home empty notifications matches legacy index notifications 
   expect(actual).toEqual(expected);
   expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual({
     activityStreamsMarginTop: "0px",
+    gnbInnerHeight: "40px",
+    gnbInnerWidth: 1254,
+    gnbOuterBackground: "rgb(27, 27, 27)",
+    gnbOuterHeight: "40px",
     guideToggleButtonBorderBottomLeftRadius: "6px",
     guideToggleButtonBorderBottomRightRadius: "6px",
     guideToggleButtonPaddingLeft: "25px",
+    logoBackground: "rgb(255, 87, 34)",
+    logoLineHeight: "40px",
+    logoPadding: "6px 10px",
     mainStreamMarginBottom: "15px",
     navLinkColor: "rgb(85, 85, 85)",
     navLinkFontWeight: "700",
     navLinkPaddingLeft: "30px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
+    providerColor: "rgb(51, 51, 51)",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
     warningBackground: "rgb(139, 139, 139)",
     warningBorderRadius: "6px",
     warningColor: "rgb(255, 255, 255)",
@@ -230,41 +242,70 @@ test("direct notifications route matches legacy populated notification row DOM",
 
 async function readDesktopAuthenticatedHomeMetrics(page: Page) {
   return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const logo = document.querySelector<HTMLElement>(".logo-letter");
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const mainStream = document.querySelector<HTMLElement>(".main-stream");
     const activityStreams = document.querySelector<HTMLElement>(".activity-streams");
     const warning = document.querySelector<HTMLElement>(".warning-none");
     const guideToggleButton = document.querySelector<HTMLElement>(".guide-toggle button");
     const navLink = document.querySelector<HTMLElement>(".nav-tabs > li > a");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
     if (
+      !gnbOuter ||
+      !gnbInner ||
+      !logo ||
       !pageWrapOuter ||
       !mainStream ||
       !activityStreams ||
       !warning ||
       !guideToggleButton ||
-      !navLink
+      !navLink ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
     ) {
       throw new Error("Expected authenticated home metric targets are missing.");
     }
 
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const gnbInnerStyle = getComputedStyle(gnbInner);
+    const logoStyle = getComputedStyle(logo);
     const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
     const mainStreamStyle = getComputedStyle(mainStream);
     const activityStreamsStyle = getComputedStyle(activityStreams);
     const warningStyle = getComputedStyle(warning);
     const guideToggleButtonStyle = getComputedStyle(guideToggleButton);
     const navLinkStyle = getComputedStyle(navLink);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
 
     return {
       activityStreamsMarginTop: activityStreamsStyle.marginTop,
+      gnbInnerHeight: gnbInnerStyle.height,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterBackground: gnbOuterStyle.backgroundColor,
+      gnbOuterHeight: gnbOuterStyle.height,
       guideToggleButtonBorderBottomLeftRadius: guideToggleButtonStyle.borderBottomLeftRadius,
       guideToggleButtonBorderBottomRightRadius: guideToggleButtonStyle.borderBottomRightRadius,
       guideToggleButtonPaddingLeft: guideToggleButtonStyle.paddingLeft,
+      logoBackground: logoStyle.backgroundColor,
+      logoLineHeight: logoStyle.lineHeight,
+      logoPadding: logoStyle.padding,
       mainStreamMarginBottom: mainStreamStyle.marginBottom,
       navLinkColor: navLinkStyle.color,
       navLinkFontWeight: navLinkStyle.fontWeight,
       navLinkPaddingLeft: navLinkStyle.paddingLeft,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
       pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
       pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
       warningBackground: warningStyle.backgroundColor,
       warningBorderRadius: warningStyle.borderTopLeftRadius,
       warningColor: warningStyle.color,
