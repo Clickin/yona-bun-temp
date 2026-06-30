@@ -15,6 +15,11 @@ import { SiteLayoutShell } from "../-home-route-screen";
 
 export const Route = createFileRoute("/$ownerName/$projectName")({
   component: ProjectHomeRoute,
+  validateSearch(search) {
+    return {
+      tabId: typeof search.tabId === "string" ? search.tabId : "readme",
+    };
+  },
 });
 
 function ProjectHomeRoute() {
@@ -33,6 +38,7 @@ function ProjectHomeRoute() {
 
 function ProjectHomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  const { tabId } = Route.useSearch();
   const query = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -45,7 +51,7 @@ function ProjectHomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={query.data} />
       <ProjectMenu active="home" basePath={runtimeConfig.basePath} project={query.data} />
-      <ProjectHomeBody project={query.data} runtimeConfig={runtimeConfig} />
+      <ProjectHomeBody project={query.data} runtimeConfig={runtimeConfig} tabId={tabId} />
     </>
   );
 }
@@ -53,9 +59,11 @@ function ProjectHomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
 function ProjectHomeBody({
   project,
   runtimeConfig,
+  tabId,
 }: {
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
+  tabId: string;
 }) {
   const { t } = useLegacyMessages();
   const { ownerName, projectName } = Route.useParams();
@@ -204,10 +212,10 @@ function ProjectHomeBody({
         <div className="row-fluid">
           <div className="span9 span-left-pane">
             <ul className="nav nav-tabs">
-              <li className="active">
+              <li className={tabId === "readme" ? "active" : ""}>
                 <a href={projectHref(runtimeConfig.basePath, ownerName, projectName)}>README</a>
               </li>
-              <li className="">
+              <li className={tabId === "history" ? "active" : ""}>
                 <a
                   href={prefixBasePath(
                     runtimeConfig.basePath,
@@ -217,7 +225,7 @@ function ProjectHomeBody({
                   {t("project.history.recent")}
                 </a>
               </li>
-              <li className="">
+              <li className={tabId === "dashboard" ? "active" : ""}>
                 <a
                   href={prefixBasePath(
                     runtimeConfig.basePath,
@@ -231,12 +239,16 @@ function ProjectHomeBody({
 
             <div className="tab-content">
               <div className="tab-pane active">
-                <ReadmePane
-                  basePath={runtimeConfig.basePath}
-                  ownerName={ownerName}
-                  project={project}
-                  projectName={projectName}
-                />
+                {tabId === "history" ? (
+                  <HistoryPane basePath={runtimeConfig.basePath} project={project} />
+                ) : (
+                  <ReadmePane
+                    basePath={runtimeConfig.basePath}
+                    ownerName={ownerName}
+                    project={project}
+                    projectName={projectName}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -409,6 +421,73 @@ function ReadmePane({
           )}
         </p>
       )}
+    </div>
+  );
+}
+
+function HistoryPane({ basePath, project }: { basePath: string; project: ProjectContainer }) {
+  const { t } = useLegacyMessages();
+  const historyRecord = recordField(recordField(project).history);
+  const items = arrayField(historyRecord.items);
+
+  return (
+    <div className="content-container nm">
+      <div className="main-stream" style={{ width: "100%" }}>
+        <ul className="activity-streams unstyled">
+          {items.map((item) => {
+            const itemRecord = recordField(item);
+            const actorUrl = normalizeHistoryHref(basePath, stringField(itemRecord.actorUrl, "#"));
+            const itemUrl = normalizeHistoryHref(basePath, stringField(itemRecord.url, "#"));
+            const itemType = stringField(itemRecord.itemType, "");
+            const shortTitle = stringField(itemRecord.shortTitle, "");
+            const title = stringField(itemRecord.title, "");
+            const createdLabel = stringField(itemRecord.createdLabel, "");
+            return (
+              <li className="activity-stream" key={`${itemUrl}-${shortTitle}-${createdLabel}`}>
+                <a href={actorUrl} className="avatar-wrap pull-left mr10">
+                  <img
+                    src={stringField(
+                      itemRecord.actorAvatarUrl,
+                      "/assets/images/default-avatar-64.png",
+                    )}
+                    width="32"
+                    height="32"
+                    alt=""
+                  />
+                </a>
+                <div className="activity-desc">
+                  <p className="header-text" style={{ marginBottom: "5px" }}>
+                    <a href={actorUrl} className="actor">
+                      {stringField(itemRecord.actorName, "")}
+                    </a>{" "}
+                    {t(`project.history.type.${itemType}`)}{" "}
+                    <span className="whereis">
+                      <a href={itemUrl} className="where">
+                        {shortTitle}
+                      </a>{" "}
+                      <a href={itemUrl} className="title">
+                        {title}
+                      </a>
+                    </span>
+                  </p>
+                  <p className="others" style={{ paddingLeft: "0" }}>
+                    <span
+                      className="date"
+                      style={{ marginLeft: "0" }}
+                      title={stringField(
+                        itemRecord.createdTitle,
+                        stringField(itemRecord.createdLabel, ""),
+                      )}
+                    >
+                      {createdLabel}
+                    </span>
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -667,6 +746,13 @@ function projectFavorited(project: ProjectContainer) {
   return (
     booleanField(recordField(project).isFavorite) || booleanField(recordField(project).isFavorited)
   );
+}
+
+function normalizeHistoryHref(basePath: string, href: string) {
+  if (href === "#" || href.startsWith("http://") || href.startsWith("https://")) {
+    return href;
+  }
+  return href.startsWith(basePath) ? href : prefixBasePath(basePath, href);
 }
 
 function recordField(value: unknown) {
