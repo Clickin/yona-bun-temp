@@ -11,6 +11,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { SitePagination } from "./-pagination";
 import { useState } from "react";
 
 type ProjectListSearch = {
@@ -129,7 +130,19 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                 ))}
               </ul>
 
-              <div id="pagination"></div>
+              <SitePagination
+                currentPage={query.data?.page ?? pageNum}
+                pageHref={(nextPage) =>
+                  prefixBasePath(
+                    runtimeConfig.basePath,
+                    `/sites/projectList?${new URLSearchParams({
+                      ...(filter ? { filter } : {}),
+                      pageNum: String(nextPage),
+                    }).toString()}`,
+                  )
+                }
+                totalPages={query.data?.totalPages ?? 0}
+              />
 
               <div
                 id="alertDeletionWrap"

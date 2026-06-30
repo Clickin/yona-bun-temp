@@ -173,6 +173,7 @@ test("active template-first UI parity surfaces are closed in the gate", () => {
       "site-admin-core",
       [
         "frontend/src/api/site-admin.ts",
+        "frontend/src/routes/sites/-pagination.tsx",
         "frontend/tests/site-admin-user-list-parity.e2e.ts",
         "docs/provenance/core-parity-audit.md",
       ],

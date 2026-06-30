@@ -5149,6 +5149,33 @@ div.markdown-preview {
   border-bottom: 0;
 }
 
+.page-navigation-wrap {
+  clear: both;
+  width: 100%;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.page-navigation-wrap .page-nums {
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+  font-size: 0;
+  list-style: none;
+}
+
+.page-navigation-wrap .page-num {
+  display: inline-block;
+  padding: 0 10px;
+  color: #8e9094;
+  font-size: 12px;
+}
+
+.page-navigation-wrap .input-mini {
+  width: 30px;
+  margin: 0;
+}
+
 .site-admin-page .listitem-col {
   min-width: 0;
 }

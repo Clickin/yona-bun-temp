@@ -113,7 +113,15 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
             </div>
           </li>
         </ul>
-        <div id="pagination"></div>
+        <div id="pagination" class="page-navigation-wrap">
+          <ul class="page-nums">
+            <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">PREV</span></li>
+            <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="1" min="1" pattern="[0-9]*"></li>
+            <li class="page-num delimiter">/</li>
+            <li class="page-num">1</li>
+            <li class="page-num ikon"><span class="off">NEXT</span><i class="ico btn-pg-next off"></i></li>
+          </ul>
+        </div>
         <div id="alertDeletionWrap" class="modal fade">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal">×</button>
@@ -157,6 +165,12 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     "data-href",
     `${basePath}/sites/project/delete/77`,
   );
+  await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
+  await expect(page.locator("#pagination .page-nums .page-num")).toHaveCount(5);
+  await expect(page.locator("#pagination.pagination")).toHaveCount(0);
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "1");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("min", "1");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
   expect(await siteLayoutRootOrder(page)).toEqual([
     "unsupported hidden",
     "gnb-outer",
@@ -300,6 +314,9 @@ async function canonicalizeScreenRoots(page: Page) {
         "href",
         "target",
         "title",
+        "max",
+        "min",
+        "pattern",
         "data-toggle",
         "data-placement",
         "data-project-name",
@@ -435,6 +452,9 @@ async function canonicalizeHtml(page: Page, html: string) {
         "href",
         "target",
         "title",
+        "max",
+        "min",
+        "pattern",
         "data-toggle",
         "data-placement",
         "data-project-name",

@@ -18,6 +18,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { SitePagination } from "./-pagination";
 
 type UserListSearch = {
   pageNum: number;
@@ -198,7 +199,20 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 ))}
               </ul>
 
-              <div id="pagination"></div>
+              <SitePagination
+                currentPage={response?.page ?? search.pageNum}
+                pageHref={(pageNum) => {
+                  const params = new URLSearchParams({
+                    pageNum: String(pageNum),
+                    state: search.state,
+                  });
+                  if (search.query) {
+                    params.set("query", search.query);
+                  }
+                  return prefixBasePath(runtimeConfig.basePath, `/sites/userList?${params}`);
+                }}
+                totalPages={response?.totalPages ?? 0}
+              />
 
               <div
                 id="alertDeletionWrap"
