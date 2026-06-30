@@ -34,7 +34,47 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopRestartMetrics(page)).toEqual({
+    logoHeight: "55px",
+    logoLineHeight: "55px",
+    logoMarginBottom: "50px",
+    logoMarginTop: "50px",
+    logoWidth: "123px",
+    secretBoxMarginBottom: "20px",
+    secretBoxMarginTop: "20px",
+    secretBoxWidth: "640px",
+    secretWrapPaddingBottom: "50px",
+    secretWrapPaddingTop: "50px",
+  });
 });
+
+async function readDesktopRestartMetrics(page: Page) {
+  return page.evaluate(() => {
+    const secretWrap = document.querySelector<HTMLElement>(".secret-wrap");
+    const logo = document.querySelector<HTMLElement>(".secret-wrap .logo");
+    const secretBox = document.querySelector<HTMLElement>(".secret-box");
+    if (!secretWrap || !logo || !secretBox) {
+      throw new Error("Expected restart metric targets are missing.");
+    }
+
+    const secretWrapStyle = getComputedStyle(secretWrap);
+    const logoStyle = getComputedStyle(logo);
+    const secretBoxStyle = getComputedStyle(secretBox);
+
+    return {
+      logoHeight: logoStyle.height,
+      logoLineHeight: logoStyle.lineHeight,
+      logoMarginBottom: logoStyle.marginBottom,
+      logoMarginTop: logoStyle.marginTop,
+      logoWidth: logoStyle.width,
+      secretBoxMarginBottom: secretBoxStyle.marginBottom,
+      secretBoxMarginTop: secretBoxStyle.marginTop,
+      secretBoxWidth: secretBoxStyle.width,
+      secretWrapPaddingBottom: secretWrapStyle.paddingBottom,
+      secretWrapPaddingTop: secretWrapStyle.paddingTop,
+    };
+  });
+}
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
