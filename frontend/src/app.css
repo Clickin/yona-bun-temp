@@ -1014,6 +1014,13 @@ button[type="submit"]:focus {
     display: none !important;
   }
 
+  input[type="text"],
+  input[type="number"],
+  input[type="password"],
+  textarea {
+    font-size: 16px !important;
+  }
+
   .dl-horizontal dt {
     float: none;
     width: auto;

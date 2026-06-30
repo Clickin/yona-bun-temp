@@ -109,6 +109,13 @@ test("anonymous lost-password form matches legacy site/lostPassword.scala.html s
     textWidth: "386px",
     titleLineHeight: "42px",
   });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await readMobileLostPasswordMetrics(page)).toEqual({
+    emailInputFontSize: "16px",
+    formWidth: "370.5px",
+    loginInputFontSize: "16px",
+    loginInputWidth: "351.969px",
+  });
 });
 
 test("lost-password requested alert matches legacy site/lostPassword.scala.html screen DOM", async ({
@@ -261,6 +268,25 @@ async function readDesktopLostPasswordMetrics(page: Page) {
       textMarginBottom: loginInputStyle.marginBottom,
       textWidth: loginInputStyle.width,
       titleLineHeight: getComputedStyle(title).lineHeight,
+    };
+  });
+}
+
+async function readMobileLostPasswordMetrics(page: Page) {
+  return page.evaluate(() => {
+    const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
+    const loginInput = document.querySelector<HTMLElement>("#loginId");
+    const emailInput = document.querySelector<HTMLElement>("#emailAddress");
+    if (!formWrap || !loginInput || !emailInput) {
+      throw new Error("Expected mobile lost-password metric targets are missing.");
+    }
+
+    const loginInputStyle = getComputedStyle(loginInput);
+    return {
+      emailInputFontSize: getComputedStyle(emailInput).fontSize,
+      formWidth: getComputedStyle(formWrap).width,
+      loginInputFontSize: loginInputStyle.fontSize,
+      loginInputWidth: loginInputStyle.width,
     };
   });
 }
