@@ -127,6 +127,23 @@ test("authenticated home empty notifications matches legacy index notifications 
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual({
+    activityStreamsMarginTop: "0px",
+    guideToggleButtonBorderBottomLeftRadius: "6px",
+    guideToggleButtonBorderBottomRightRadius: "6px",
+    guideToggleButtonPaddingLeft: "25px",
+    mainStreamMarginBottom: "15px",
+    navLinkColor: "rgb(85, 85, 85)",
+    navLinkFontWeight: "700",
+    navLinkPaddingLeft: "30px",
+    pageWrapOuterMarginTop: "10px",
+    pageWrapOuterMinHeight: "450px",
+    warningBackground: "rgb(139, 139, 139)",
+    warningBorderRadius: "6px",
+    warningColor: "rgb(255, 255, 255)",
+    warningFontSize: "16px",
+    warningPaddingTop: "15px",
+  });
 });
 
 test("direct notifications route matches legacy Application.notifications empty state DOM", async ({
@@ -182,7 +199,142 @@ test("direct notifications route matches legacy populated notification row DOM",
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopNotificationStreamMetrics(page)).toEqual({
+    agoMarginLeft: "0px",
+    avatarMarginTop: "3px",
+    messageColor: "rgb(136, 136, 136)",
+    messageFontSize: "13px",
+    messageLineHeight: "20px",
+    messageMarginTop: "3px",
+    metaColor: "rgb(187, 187, 187)",
+    metaFontSize: "12px",
+    metaMarginTop: "5px",
+    streamBorderBottomWidth: "1px",
+    streamColor: "rgb(221, 221, 221)",
+    streamDescDisplay: "inline-block",
+    streamDescPaddingLeft: "7px",
+    streamDescWidth: "732.812px",
+    streamPaddingLeft: "25px",
+    streamPaddingTop: "5px",
+    streamTypeColor: "rgb(139, 0, 139)",
+    streamTypeDisplay: "inline-block",
+    streamTypeFontSize: "20px",
+    streamTypeLineHeight: "20px",
+    streamTypeMarginTop: "2px",
+    streamTypePaddingLeft: "6px",
+    titleColor: "rgb(81, 170, 204)",
+    titleFontSize: "14px",
+    titleFontWeight: "700",
+  });
 });
+
+async function readDesktopAuthenticatedHomeMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const mainStream = document.querySelector<HTMLElement>(".main-stream");
+    const activityStreams = document.querySelector<HTMLElement>(".activity-streams");
+    const warning = document.querySelector<HTMLElement>(".warning-none");
+    const guideToggleButton = document.querySelector<HTMLElement>(".guide-toggle button");
+    const navLink = document.querySelector<HTMLElement>(".nav-tabs > li > a");
+    if (
+      !pageWrapOuter ||
+      !mainStream ||
+      !activityStreams ||
+      !warning ||
+      !guideToggleButton ||
+      !navLink
+    ) {
+      throw new Error("Expected authenticated home metric targets are missing.");
+    }
+
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const mainStreamStyle = getComputedStyle(mainStream);
+    const activityStreamsStyle = getComputedStyle(activityStreams);
+    const warningStyle = getComputedStyle(warning);
+    const guideToggleButtonStyle = getComputedStyle(guideToggleButton);
+    const navLinkStyle = getComputedStyle(navLink);
+
+    return {
+      activityStreamsMarginTop: activityStreamsStyle.marginTop,
+      guideToggleButtonBorderBottomLeftRadius: guideToggleButtonStyle.borderBottomLeftRadius,
+      guideToggleButtonBorderBottomRightRadius: guideToggleButtonStyle.borderBottomRightRadius,
+      guideToggleButtonPaddingLeft: guideToggleButtonStyle.paddingLeft,
+      mainStreamMarginBottom: mainStreamStyle.marginBottom,
+      navLinkColor: navLinkStyle.color,
+      navLinkFontWeight: navLinkStyle.fontWeight,
+      navLinkPaddingLeft: navLinkStyle.paddingLeft,
+      pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
+      pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
+      warningBackground: warningStyle.backgroundColor,
+      warningBorderRadius: warningStyle.borderTopLeftRadius,
+      warningColor: warningStyle.color,
+      warningFontSize: warningStyle.fontSize,
+      warningPaddingTop: warningStyle.paddingTop,
+    };
+  });
+}
+
+async function readDesktopNotificationStreamMetrics(page: Page) {
+  return page.evaluate(() => {
+    const stream = document.querySelector<HTMLElement>(".notification-stream");
+    const streamType = document.querySelector<HTMLElement>(".notification-stream .stream-type");
+    const streamDesc = document.querySelector<HTMLElement>(".notification-stream .stream-desc");
+    const title = document.querySelector<HTMLElement>(".notification-stream .title");
+    const messageWrap = document.querySelector<HTMLElement>(".notification-stream .message-wrap");
+    const meta = document.querySelector<HTMLElement>(".notification-stream .meta");
+    const avatar = document.querySelector<HTMLElement>(".notification-stream .avatar-wrap");
+    const ago = document.querySelector<HTMLElement>(".notification-stream .ago");
+    if (
+      !stream ||
+      !streamType ||
+      !streamDesc ||
+      !title ||
+      !messageWrap ||
+      !meta ||
+      !avatar ||
+      !ago
+    ) {
+      throw new Error("Expected notification stream metric targets are missing.");
+    }
+
+    const streamStyle = getComputedStyle(stream);
+    const streamTypeStyle = getComputedStyle(streamType);
+    const streamDescStyle = getComputedStyle(streamDesc);
+    const titleStyle = getComputedStyle(title);
+    const messageWrapStyle = getComputedStyle(messageWrap);
+    const metaStyle = getComputedStyle(meta);
+    const avatarStyle = getComputedStyle(avatar);
+    const agoStyle = getComputedStyle(ago);
+
+    return {
+      agoMarginLeft: agoStyle.marginLeft,
+      avatarMarginTop: avatarStyle.marginTop,
+      messageColor: messageWrapStyle.color,
+      messageFontSize: messageWrapStyle.fontSize,
+      messageLineHeight: messageWrapStyle.lineHeight,
+      messageMarginTop: messageWrapStyle.marginTop,
+      metaColor: metaStyle.color,
+      metaFontSize: metaStyle.fontSize,
+      metaMarginTop: metaStyle.marginTop,
+      streamBorderBottomWidth: streamStyle.borderBottomWidth,
+      streamColor: streamStyle.color,
+      streamDescDisplay: streamDescStyle.display,
+      streamDescPaddingLeft: streamDescStyle.paddingLeft,
+      streamDescWidth: streamDescStyle.width,
+      streamPaddingLeft: streamStyle.paddingLeft,
+      streamPaddingTop: streamStyle.paddingTop,
+      streamTypeColor: streamTypeStyle.color,
+      streamTypeDisplay: streamTypeStyle.display,
+      streamTypeFontSize: streamTypeStyle.fontSize,
+      streamTypeLineHeight: streamTypeStyle.lineHeight,
+      streamTypeMarginTop: streamTypeStyle.marginTop,
+      streamTypePaddingLeft: streamTypeStyle.paddingLeft,
+      titleColor: titleStyle.color,
+      titleFontSize: titleStyle.fontSize,
+      titleFontWeight: titleStyle.fontWeight,
+    };
+  });
+}
 
 async function mockAuthenticatedEmptyNotifications(page: Page) {
   await mockAuthenticatedNotifications(page, []);
