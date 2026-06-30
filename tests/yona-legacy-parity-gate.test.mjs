@@ -199,6 +199,21 @@ test("active template-first UI parity surfaces are closed in the gate", () => {
   }
 });
 
+test("maps authenticated home evidence to public landing slice", () => {
+  const result = runGate([
+    "frontend/src/routes/index.tsx",
+    "frontend/tests/authenticated-home-empty-notifications.e2e.ts",
+    "docs/provenance/ui-parity-reports/template-first-p1-auth-public-home.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["public-landing", "parity"]],
+  );
+});
+
 test("passes when only documentation changes are present", () => {
   const result = runGate(["docs/agents/09-llm-onboarding-checklist.md"]);
 

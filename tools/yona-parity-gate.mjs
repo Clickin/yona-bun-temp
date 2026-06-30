@@ -82,9 +82,10 @@ const PARITY_SLICES = [
       /^frontend\/src\/routes\/-home-view\.tsx$/i,
       /^frontend\/src\/routes\/__root\.tsx$/i,
     ],
-    testKeywords: ["public-landing", "home-route", "layout-parity"],
+    testKeywords: ["authenticated-home", "public-landing", "home-route", "layout-parity"],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
+      "docs/provenance/ui-parity-reports/template-first-p1-auth-public-home.md",
       "docs/provenance/ui-parity-reports/template-first-p0-global-shell.md",
     ],
   },
