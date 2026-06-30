@@ -24,11 +24,12 @@
 
 ## Current Frontend Status
 
-- 2026-07-01 flat route rebuild started with the global `/search` branch from `search/result.scala.html` and `search/partial_search.scala.html`.
+- 2026-07-01 flat route rebuild started with the global `/search` and project-scoped `/:owner/:project/search` branches from `search/result.scala.html` and `search/partial_search.scala.html`.
 - Covered rendered state: anonymous global `/search?keyword=missing&searchType=project` site-layout branch with the legacy breadcrumb, category list, `#searchInnerForm`, result title HTML, and `<div class="empty-result"></div>` from `partial_projects.scala.html`.
-- React target: `frontend/src/routes/search.tsx`.
-- Whole-screen evidence: `frontend/tests/search-global.e2e.ts`.
-- Remaining frontend gap: project-scoped `/:owner/:project/search` and organization-scoped `/organizations/:organizationName/search` routes still need their own template-first rebuilds with `projectLayout` and `organizationLayout` shell evidence, plus populated result-row coverage for each legacy `search/partial_*.scala.html` branch.
+- Covered rendered state: authenticated project `/admin/sample/search?keyword=missing&searchType=review` project-layout branch with `projectLayout`, `projectMenu(project, MenuType.NONE, "main-menu-only")`, no project category tab, review active category, and `<div class="empty-result"></div>`.
+- React targets: `frontend/src/routes/search.tsx`, `frontend/src/routes/$ownerName/$projectName/search.tsx`, `frontend/src/routes/-search-screen.tsx`.
+- Whole-screen evidence: `frontend/tests/search-global.e2e.ts`, `frontend/tests/search-project.e2e.ts`.
+- Remaining frontend gap: organization-scoped `/organizations/:organizationName/search` route still needs its own template-first rebuild with `organizationLayout` shell evidence, plus populated result-row coverage for each legacy `search/partial_*.scala.html` branch.
 
 ## Deferred Index Evidence Note
 
@@ -57,7 +58,7 @@
 | `SearchResultTests.makeSnipet`, `merge_overlap` | snippet generation preserves keyword-centered excerpt behavior and overlap merge behavior | snippet helper test in `crates/search` |
 | `Search.findUsers`, `findProjects`, `findIssues`, `findPosts`, `findMilestones`, `findIssueComments`, `findPostComments`, `findReviews` | legacy result lists use type-specific baseline order: users/projects by name ascending, milestones by due date descending, issues/posts/comments/reviews by created date descending | `crates/search` relevance score/rank helpers preserve lightweight relevance first and the legacy baseline order for ties; persistence/server wiring remains outside this slice |
 | `AccessControlTest.*` | result inclusion must respect the same read boundary as project and issue visibility | ACL-backed filter reuse in `crates/search` and `crates/domain` |
-| `search/partial_search.scala.html`, `SearchApp` invalid-query/project-type branches, `error/badrequest_default.scala.html` | legacy classes, tabs, badges, form ids, result title, empty result, pagination anchors, and common `error.badrequest` shell for invalid/missing query parameters, project-scoped `searchType=project`, and non-forbidden/non-not-found REST query failures stay visible without temporary `Search failed.` copy | Current flat-route global start: `frontend/src/routes/search.tsx`, `frontend/tests/search-global.e2e.ts`; remaining scoped routes need follow-up evidence. |
+| `search/partial_search.scala.html`, `SearchApp` invalid-query/project-type branches, `error/badrequest_default.scala.html` | legacy classes, tabs, badges, form ids, result title, empty result, pagination anchors, and common `error.badrequest` shell for invalid/missing query parameters, project-scoped `searchType=project`, and non-forbidden/non-not-found REST query failures stay visible without temporary `Search failed.` copy | Current flat-route global/project start: `frontend/src/routes/search.tsx`, `frontend/src/routes/$ownerName/$projectName/search.tsx`, `frontend/src/routes/-search-screen.tsx`, `frontend/tests/search-global.e2e.ts`, `frontend/tests/search-project.e2e.ts`; organization scope and populated result rows need follow-up evidence. |
 
 ## Explicit Deferrals
 

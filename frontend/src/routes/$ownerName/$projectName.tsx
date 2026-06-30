@@ -961,7 +961,7 @@ export function ProjectMenu({
   basePath,
   project,
 }: {
-  active: "board" | "home" | "issue";
+  active?: "board" | "home" | "issue";
   basePath: string;
   project: ProjectContainer;
 }) {
