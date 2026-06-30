@@ -121,7 +121,15 @@ function ProjectPostsBody({
                 <i className="yobicon-search"></i>
               </button>
             </div>
-            {labels.length > 0 ? <BoardLabels labels={labels} search={search} /> : null}
+            {labels.length > 0 ? (
+              <BoardLabels
+                basePath={runtimeConfig.basePath}
+                labels={labels}
+                ownerName={ownerName}
+                projectName={projectName}
+                search={search}
+              />
+            ) : null}
             <TwoColumnModeCheckbox />
           </form>
           <div className="pull-right">
@@ -179,25 +187,98 @@ function ProjectPostsBody({
   );
 }
 
-function BoardLabels({ labels, search }: { labels: BoardLabel[]; search: ProjectPostsSearch }) {
+function BoardLabels({
+  basePath,
+  labels,
+  ownerName,
+  projectName,
+  search,
+}: {
+  basePath: string;
+  labels: BoardLabel[];
+  ownerName: string;
+  projectName: string;
+  search: ProjectPostsSearch;
+}) {
+  const { t } = useLegacyMessages();
+  const labelGroups = groupLabels(labels);
+
   return (
     <div className="board-labels">
-      <select
-        id="labelIds"
-        name="labelIds"
-        multiple
-        data-toggle="select2"
-        data-format="issuelabel"
-        defaultValue={search.labelIds}
-      >
-        {labels.map((label) => (
-          <option value={label.id} data-category-id={label.categoryId} key={label.id}>
-            {label.name}
-          </option>
-        ))}
-      </select>
+      <dl className="">
+        <dt>
+          {t("label")}{" "}
+          <a
+            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
+            target="_blank"
+            className="label-edit"
+          >
+            [{t("button.edit")}]
+          </a>
+        </dt>
+        <dd>
+          <select
+            id="labelIds"
+            name="labelIds"
+            multiple
+            data-search="labelIds"
+            data-toggle="select2"
+            data-format="issuelabel"
+            data-allow-clear="true"
+            data-dropdown-css-class="issue-labels"
+            data-container-css-class="issue-labels bordered fullsize"
+            data-placeholder={t("label.select")}
+            className="hide"
+            defaultValue={search.labelIds}
+          >
+            <option></option>
+            {labelGroups.map((group) => (
+              <optgroup
+                label={group.categoryName}
+                data-category-id={group.categoryId}
+                data-category-exclusive={String(group.categoryIsExclusive)}
+                key={group.categoryId}
+              >
+                {group.labels.map((label) => (
+                  <option
+                    value={label.id}
+                    data-category-id={label.categoryId}
+                    data-category-exclusive={String(label.categoryIsExclusive)}
+                    key={label.id}
+                  >
+                    {label.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </dd>
+      </dl>
     </div>
   );
+}
+
+function groupLabels(labels: BoardLabel[]) {
+  const groups = new Map<
+    string,
+    {
+      categoryId: string;
+      categoryIsExclusive: boolean;
+      categoryName: string;
+      labels: BoardLabel[];
+    }
+  >();
+  for (const label of labels) {
+    const group = groups.get(label.categoryId) ?? {
+      categoryId: label.categoryId,
+      categoryIsExclusive: label.categoryIsExclusive,
+      categoryName: label.categoryName,
+      labels: [],
+    };
+    group.labels.push(label);
+    groups.set(label.categoryId, group);
+  }
+  return Array.from(groups.values());
 }
 
 function BoardFilters({

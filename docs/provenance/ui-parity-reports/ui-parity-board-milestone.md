@@ -113,6 +113,12 @@ Worker update, 2026-06-26:
   instead of always rendering the home body, so `/posts` mounts the board list
   body with active board menu. Verification: `pnpm --dir frontend check`;
   `pnpm --dir frontend test:e2e -- project-posts.e2e.ts`.
+- Worker update, 2026-07-01 board list label selector follow-up: project board
+  list now renders the shared legacy `issue.partial_select_label` shape inside
+  `.board-labels`, including `dl/dt/dd`, manager label-edit link, hidden
+  Select2 source attributes, empty option, category optgroup, and category
+  metadata. Verification: `pnpm --dir frontend test:e2e --
+  project-posts.e2e.ts`.
 
 ## Evidence Checked
 
@@ -159,7 +165,7 @@ Total rows: 20
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
-| `/:owner/:project/posts` | Board list search form, label select, sort links, notice wrap, empty state, pagination shell. | `frontend/src/routes/$ownerName/$projectName/posts.tsx` renders project header/menu, legacy `post-list project-page-wrap`, `#option_form`, label selector, notice rows, sort links, row anchors, comment counts, and pagination shell from REST board list/form-option data. | covered | `frontend/src/routes/$ownerName/$projectName/posts.tsx`, `frontend/tests/project-posts.e2e.ts` |
+| `/:owner/:project/posts` | Board list search form, shared `issue.partial_select_label` label selector, sort links, notice wrap, empty state, pagination shell. | `frontend/src/routes/$ownerName/$projectName/posts.tsx` renders project header/menu, legacy `post-list project-page-wrap`, `#option_form`, `.board-labels` with the shared label `dl/dt/dd` + Select2 source attributes/optgroups, notice rows, sort links, row anchors, comment counts, and pagination shell from REST board list/form-option data. | covered | `frontend/src/routes/$ownerName/$projectName/posts.tsx`, `frontend/tests/project-posts.e2e.ts` |
 | `/organizations/:name/boards` | Organization board aggregate with project multiselect, keyword search, sort, pagination, cross-project rows. | `OrganizationBoardListPage` preserves organization header/menu and aggregate controls. | covered | none |
 | `/organizations/:name/boards` notice pinning | Legacy template has optional notice-wrap, but provenance records org aggregation as no separate notice pinning. | Contract pins no separate org notice pinning. | not-applicable | none |
 | board create/edit notice/readme/online commit controls | Legacy form renders notice/readme/issue-template/branch/path/line-ending/file uploader/notification controls. | `ProjectPostFormPage` renders those controls and hides notice/readme for online commit contexts. | covered | none |
@@ -184,7 +190,7 @@ Total rows: 20
 
 | path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/:owner/:project/posts?filter=x&labelIds[]=7&orderBy=numOfComments&pageNum=2` | populated board list | `#option_form`, `.board-labels select`, `.filter-wrap.board`, `.notice-wrap`, `#pagination input[name=pageNum]` | same selectors in the flat project board list route | search, label, sort, page | React route consumes posts REST list and post form options for labels | covered |
+| `/:owner/:project/posts?filter=x&labelIds[]=7&orderBy=numOfComments&pageNum=2` | populated board list | `#option_form`, `.board-labels dl select#labelIds[data-format=issuelabel]`, `.filter-wrap.board`, `.notice-wrap`, `#pagination input[name=pageNum]` | same selectors in the flat project board list route, including the shared label partial wrapper and Select2 metadata | search, label, sort, page | React route consumes posts REST list and post form options for labels | covered |
 | `/organizations/:name/boards?projectNames[]=p&filter=x` | populated organization aggregate | `#projects[name="projectNames[]"]`, `.textbox.group-board`, `.group-project-name` | same selectors in `OrganizationBoardListPage` | project selector, keyword, sort | organization boards REST list | covered |
 | `/:owner/:project/postform` | create form labels | Legacy create form has no label fieldset | no `.board-label-picker`; edit preserves existing labels without visible form control | inspect create form | REST create/update still accepts `labelIds` but React form does not expose non-legacy picker | covered |
 | `/:owner/:project/postform` | attachments | `common.fileUploader(ResourceType.BOARD_POST, null)` visible shell | same `.upload-wrap.content-footer[data-resource-type=BOARD_POST]` shell plus paste/drop upload | paste image, inspect uploader | `/files` upload then REST create | covered |
