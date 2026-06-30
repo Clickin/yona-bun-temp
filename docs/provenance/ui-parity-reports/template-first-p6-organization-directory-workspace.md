@@ -57,6 +57,12 @@ are implemented as REST JSON/API-return plus React-rendered legacy DOM.
 - Scope: the flat routes render organization header/menu chrome with Pull request active, category-specific left `#search` form action, open/closed active tabs, `.post-list-wrap` rows, review progress, assignee avatar, state badge, and existing organization container plus organization pull-request REST query boundaries.
 - Verification: `pnpm --dir frontend test:e2e -- organization-pullrequests.e2e.ts`.
 
+## 2026-07-01 Organization Issue Aggregate Template-First Rebuild
+
+- Rebuilt `/organizations/:organizationName/issues` in `frontend/src/routes/organizations/$organizationName/issues.tsx` from `organization/group_issue_list.scala.html`, `organization/group_issue_search_partial.scala.html`, `organization/group_issue_list_quicksearch.scala.html`, and `organization/group_issue_list_partial.scala.html`.
+- Scope: the flat route renders organization header/menu chrome with Issue active, quick-search links, project multi-select, hidden filter/search fields, open/closed tabs, two-column toggle, `.post-list-wrap` issue rows, project/milestone/comment/vote/label anchors, assignee/due-date rail, pagination placeholder, and existing organization container plus organization issue REST query boundaries. The REST organization issue list now exposes `createdLabel` so the row can render the legacy `issue.createdDate` label instead of substituting update time.
+- Verification: `pnpm --dir frontend test:e2e -- organization-issues.e2e.ts`.
+
 ## Open Reset Queue Summary
 
 | status | count |
@@ -88,7 +94,7 @@ are implemented as REST JSON/API-return plus React-rendered legacy DOM.
 | `index/partial_notifications.scala.html` | Notification load-more appends server-rendered fragments in legacy. | `frontend/src/routes/-home-route-screen.tsx`, `frontend/src/routes/notifications.tsx` | data-boundary | covered in current follow-up | P6 | none | React renders legacy `#notification-more[href="javascript:void(0);"]`, prevents navigation, fetches `/api/v1/notifications?from=<items.length>&size=20`, appends rows, and removes the link when `hasMore=false`; direct `/notification?from=&limit=` returns JSON for API-style requests and SPA shell for HTML Accept. |
 | Legacy server-rendered notification fragment as runtime data source | Legacy `NotificationApp.notifications` returned `partial_notifications` HTML fragment. | REST JSON plus React render | data-boundary | not-applicable | P6 | none unless parent reclassifies | Keeping legacy HTML fragment injection as a React runtime data source is out of scope under the reset rule. The conversion boundary is API-return plus React-rendered legacy DOM. |
 | Global/project/org search rows intersecting user/org/notification surfaces | `/search`, `/organizations/:org/search`, project/org scoped search chrome. | `frontend/src/routes/-search-views.tsx`, search route files | layout | covered in current follow-up | P6 | none | Search rows are tracked in `ui-parity-search-notification.md`; organization scoped chrome uses real org container header/menu and remains relevant to P6 shell parity. Repository-scoped `/admin/sample/search` integrated delta remains owned by P5 until parent reassigns. |
-| Organization aggregate issue/board/PR list shells | `/organizations/:org/issues`, `/boards`, `/pullrequests`, `/closedPullrequests`. | organization aggregate route files and P3/P4/P5 list renderers | layout | covered in current follow-up | P6 | none | Organization shell ownership is covered here; row/list internals are covered in P3/P4/P5. `frontend/tests/organization-boards.e2e.ts` whole-screen compares `/organizations/weblabs/boards` against `organization/group_board_list.scala.html` plus `group_board_list_partial.scala.html`, proving Board-active org chrome and board rows. `frontend/tests/organization-pullrequests.e2e.ts` whole-screen compares `/organizations/weblabs/pullrequests` and `/organizations/weblabs/closedPullrequests` against `organization/group_pullrequest_list.scala.html` plus `group_pullrequest_list_partial.scala.html`, proving Pull request-active org chrome, category-specific left search action, open/closed active tabs, PR rows, review progress, assignee/state cells, and REST/TanStack organization pull-request query boundaries. Existing issue evidence covers the sibling issue route shell. |
+| Organization aggregate issue/board/PR list shells | `/organizations/:org/issues`, `/boards`, `/pullrequests`, `/closedPullrequests`. | organization aggregate route files and P3/P4/P5 list renderers | layout | covered in current follow-up | P6 | none | Organization shell ownership is covered here; row/list internals are covered in P3/P4/P5. `frontend/tests/organization-issues.e2e.ts` whole-screen compares `/organizations/weblabs/issues` against `organization/group_issue_list.scala.html`, `group_issue_search_partial.scala.html`, `group_issue_list_quicksearch.scala.html`, and `group_issue_list_partial.scala.html`, proving Issue-active org chrome, quick search, project selector, hidden search fields, open/closed tabs, issue rows, project/milestone/comment/vote/label anchors, assignee/due-date rail, pagination placeholder, and REST/TanStack organization issue query boundaries. `frontend/tests/organization-boards.e2e.ts` whole-screen compares `/organizations/weblabs/boards` against `organization/group_board_list.scala.html` plus `group_board_list_partial.scala.html`, proving Board-active org chrome and board rows. `frontend/tests/organization-pullrequests.e2e.ts` whole-screen compares `/organizations/weblabs/pullrequests` and `/organizations/weblabs/closedPullrequests` against `organization/group_pullrequest_list.scala.html` plus `group_pullrequest_list_partial.scala.html`, proving Pull request-active org chrome, category-specific left search action, open/closed active tabs, PR rows, review progress, assignee/state cells, and REST/TanStack organization pull-request query boundaries. |
 | Public/current-user route auth gates | `/me`, `/user/editform/**`, `/user/files`, notification routes. | route guards and session REST | permission | covered in current follow-up | P6 | none | Existing auth/workspace specs and e2e prove anonymous guard/loading states, authenticated render, guest stream hiding, private/public ACL filters, and direct legacy alias compatibility. |
 | Raw visible i18n keys in P6 surfaces | All P6 templates resolve `Messages(...)` labels; raw keys are failures. | i18n/static/browser proof across P6 files | copy | covered in current follow-up | P6 | none | `directory-home-user-files-notification-i18n.spec.tsx`, `organization-shell-i18n.spec.tsx`, `workspace-profile-i18n.spec.tsx`, `workspace-settings-i18n.spec.tsx`, and related e2e raw-key scans cover the P6 surfaces. |
 
@@ -109,6 +115,7 @@ Browser proof:
 - `frontend/tests/organization-directory-admin-parity.e2e.ts`
 - `frontend/tests/organization-home.e2e.ts`
 - `frontend/tests/organization-members-form.e2e.ts`
+- `frontend/tests/organization-issues.e2e.ts`
 - `frontend/tests/organization-boards.e2e.ts`
 - `frontend/tests/organization-pullrequests.e2e.ts`
 - `frontend/tests/organization-settings-form.e2e.ts`
@@ -191,6 +198,13 @@ integrated visual sweep covers all packet reports.
   and closed screens under the legacy site shell and existing organization
   pull-request REST boundary. Focused coverage:
   `pnpm --dir frontend test:e2e -- organization-pullrequests.e2e.ts`.
+- 2026-07-01 organization issue aggregate template-first rebuild:
+  `frontend/src/routes/organizations/$organizationName/issues.tsx` now owns
+  the concrete `organization/group_issue_list.scala.html` screen and included
+  search/quicksearch/list partials under the legacy site shell and existing
+  organization issue REST boundary, with `createdLabel` projected for the
+  legacy created-date row. Focused coverage:
+  `pnpm --dir frontend test:e2e -- organization-issues.e2e.ts`.
 - 2026-06-27 organization aggregate shell follow-up:
   `frontend/src/routes/organizations/$organizationName/route.tsx` now owns the
   organization header/menu/page-wrap shell for `/issues`, `/boards`,
