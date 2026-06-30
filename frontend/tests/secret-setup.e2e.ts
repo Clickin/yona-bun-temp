@@ -151,6 +151,37 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
   await expect(page).toHaveURL(`${basePath}/restart`);
 });
 
+test("first-run secret setup keeps legacy mobile standalone form proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(`${basePath}/secret`);
+  await expect(page.locator(".secret-wrap")).toBeVisible();
+
+  expect(await readMobileSecretMetrics(page)).toEqual({
+    formDefinitionListTextAlign: "right",
+    formWidth: "370.5px",
+    inputWidth: "148.188px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterMinWidth: "10px",
+    pageFooterOuterPadding: "10px",
+    pageFooterWidth: 370,
+    pageWrapOuterMinWidth: "10px",
+    pageWrapOuterPadding: "0px",
+    pageWrapOuterWidth: 390,
+    providerFontSize: "9px",
+    secretBoxMarginBottom: "20px",
+    secretBoxMarginTop: "20px",
+    secretBoxWidth: 195,
+  });
+});
+
 test("secret setup disabled matches legacy error/notfound_default.scala.html screen DOM", async ({
   page,
 }) => {
@@ -225,6 +256,52 @@ async function readDesktopSecretMetrics(page: Page) {
       secretBoxMarginBottom: secretBoxStyle.marginBottom,
       secretBoxMarginTop: secretBoxStyle.marginTop,
       secretBoxWidth: secretBoxStyle.width,
+    };
+  });
+}
+
+async function readMobileSecretMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const secretBox = document.querySelector<HTMLElement>(".secret-box");
+    const formWrap = document.querySelector<HTMLElement>(".signup-form-wrap");
+    const definitionList = document.querySelector<HTMLElement>(".signup-form-wrap dl");
+    const passwordInput = document.querySelector<HTMLElement>("#password");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (
+      !pageWrapOuter ||
+      !secretBox ||
+      !formWrap ||
+      !definitionList ||
+      !passwordInput ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
+    ) {
+      throw new Error("Expected secret setup mobile metric targets are missing.");
+    }
+
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const secretBoxStyle = getComputedStyle(secretBox);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+
+    return {
+      formDefinitionListTextAlign: getComputedStyle(definitionList).textAlign,
+      formWidth: getComputedStyle(formWrap).width,
+      inputWidth: getComputedStyle(passwordInput).width,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterMinWidth: pageFooterOuterStyle.minWidth,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      pageFooterWidth: Math.round(pageFooter.getBoundingClientRect().width),
+      pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      pageWrapOuterPadding: pageWrapOuterStyle.padding,
+      pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
+      providerFontSize: getComputedStyle(provider).fontSize,
+      secretBoxMarginBottom: secretBoxStyle.marginBottom,
+      secretBoxMarginTop: secretBoxStyle.marginTop,
+      secretBoxWidth: Math.round(secretBox.getBoundingClientRect().width),
     };
   });
 }
