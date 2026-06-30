@@ -92,7 +92,7 @@ test("active template-first UI parity surfaces are closed in the gate", () => {
     [
       "auth-account-lifecycle",
       [
-        "frontend/src/routes/users/loginform/route.tsx",
+        "frontend/src/routes/users/loginform.tsx",
         "frontend/tests/auth-public-entry-parity.e2e.ts",
         "docs/provenance/ui-parity-reports/template-first-p1-auth-public-home.md",
       ],
@@ -325,7 +325,7 @@ test("passes partial legacy slices when tests and parity audit updates land toge
 test("maps auth runtime context changes to the account lifecycle slice", () => {
   const result = runGate([
     "frontend/src/app-runtime-context.tsx",
-    "frontend/src/routes/users/loginform/route.tsx",
+    "frontend/src/routes/users/loginform.tsx",
     "frontend/src/routes/users/signupform/route.tsx",
     "frontend/src/routes/lostPassword/route.tsx",
     "frontend/src/routes/resetPassword/route.tsx",

@@ -722,6 +722,40 @@ button[type="submit"]:focus {
   display: block;
 }
 
+.center-wrap {
+  text-align: center;
+}
+
+.page .tag-line-wrap {
+  margin-top: 7px;
+  margin-bottom: 26px;
+  text-align: center;
+}
+
+.page .tag-line-wrap.login,
+.page .tag-line-wrap.reset-password {
+  padding-top: 80px;
+  margin-top: 0;
+}
+
+.page .tag-line-wrap .title {
+  display: inline-block;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 3.3em;
+  font-weight: normal;
+  line-height: 42px;
+}
+
+.page .tag-line-wrap .title .highlight {
+  color: #ff7332;
+}
+
+.page .tag-line-wrap .tag-line {
+  margin-top: 10px;
+  color: #7c7c7c;
+  font-size: 1.2em;
+}
+
 .login-form-wrap,
 .signup-form-wrap {
   position: relative;
@@ -743,6 +777,12 @@ button[type="submit"]:focus {
 .signup-form-wrap .text:focus {
   border-bottom: 1px solid #f36c22;
   outline: none;
+  box-shadow: none;
+}
+
+.login-form-wrap .text.password,
+.signup-form-wrap .text.password {
+  margin-bottom: 15px;
 }
 
 .login-form-wrap {
@@ -761,6 +801,32 @@ button[type="submit"]:focus {
   text-align: center;
 }
 
+.login-form-wrap .remember-me-wrap {
+  margin-top: 0;
+}
+
+.login-form-wrap .remember-me-wrap .checkbox {
+  margin-top: 4px !important;
+  margin-left: 0 !important;
+}
+
+.login-form-wrap .act-row {
+  line-height: 22px;
+  overflow: auto;
+}
+
+.login-form-wrap .social-login-title-line {
+  margin-top: 12px;
+  margin-bottom: 10px;
+}
+
+.login-form-wrap .email-verification-help {
+  padding: 5px;
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
 .signup-form-wrap .btns-row {
   display: block;
   margin: 0 auto 20px;
@@ -776,6 +842,16 @@ button[type="submit"]:focus {
   box-sizing: border-box;
   display: block;
   width: 100%;
+}
+
+.ybtn.ybtn-large {
+  padding: 10px 15px !important;
+  font-size: 16px !important;
+}
+
+.oauth-login-btn {
+  display: block;
+  margin: 10px 0;
 }
 
 .frm-wrap dl,

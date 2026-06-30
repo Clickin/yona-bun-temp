@@ -1,6 +1,9 @@
 export const apiQueryKeys = {
   all: ["api"] as const,
   v1: () => [...apiQueryKeys.all, "v1"] as const,
+  auth: {
+    capabilities: () => [...apiQueryKeys.v1(), "auth", "capabilities"] as const,
+  },
   project: {
     base: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.v1(), "owners", ownerName, "projects", projectName] as const,
