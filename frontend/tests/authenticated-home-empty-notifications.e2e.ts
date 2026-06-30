@@ -164,6 +164,13 @@ test("authenticated home empty notifications matches legacy index notifications 
   expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual(
     EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS,
   );
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await readMobileAuthenticatedHomeMetrics(page)).toEqual({
+    defaultLandingButtonDisplay: null,
+    mainStreamWidth: 390,
+    pageWrapOuterWidth: 390,
+    siteGuideOuterMargin: "40px 0px 0px",
+  });
 });
 
 test("direct notifications route matches legacy Application.notifications empty state DOM", async ({
@@ -188,7 +195,7 @@ test("direct notifications route matches legacy Application.notifications empty 
     EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS,
   );
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await readMobileDirectNotificationsMetrics(page)).toEqual({
+  expect(await readMobileAuthenticatedHomeMetrics(page)).toEqual({
     defaultLandingButtonDisplay: "none",
     mainStreamWidth: 390,
     pageWrapOuterWidth: 390,
@@ -328,18 +335,20 @@ async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
   });
 }
 
-async function readMobileDirectNotificationsMetrics(page: Page) {
+async function readMobileAuthenticatedHomeMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const siteGuideOuter = document.querySelector<HTMLElement>(".site-guide-outer");
     const mainStream = document.querySelector<HTMLElement>(".main-stream");
     const defaultLandingButton = document.querySelector<HTMLElement>("#setDefaultLoginPage");
-    if (!pageWrapOuter || !siteGuideOuter || !mainStream || !defaultLandingButton) {
-      throw new Error("Expected mobile direct notifications metric targets are missing.");
+    if (!pageWrapOuter || !siteGuideOuter || !mainStream) {
+      throw new Error("Expected mobile authenticated home metric targets are missing.");
     }
 
     return {
-      defaultLandingButtonDisplay: getComputedStyle(defaultLandingButton).display,
+      defaultLandingButtonDisplay: defaultLandingButton
+        ? getComputedStyle(defaultLandingButton).display
+        : null,
       mainStreamWidth: Math.round(mainStream.getBoundingClientRect().width),
       pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
       siteGuideOuterMargin: getComputedStyle(siteGuideOuter).margin,
