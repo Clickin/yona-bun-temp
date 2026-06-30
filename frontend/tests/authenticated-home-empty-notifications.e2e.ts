@@ -223,6 +223,43 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
 </div>
 `;
 
+const EXPECTED_SIDEBAR_RECENT_ISSUE_TAB = `
+<div id="usermenu-tab-content-list" class="tab-content">
+  <div>
+    <div class="search-result">
+      <div class="tab-pane myproject-list-wrap">
+        <div class="group">
+          <input class="search-input project-search" type="text" id="query" autocomplete="off" placeholder="Type name">
+          <span class="bar"></span>
+        </div>
+        <div class="tab-content">
+          <ul class="tab-pane user-ul active" id="recentlyVisitedIssues">
+            <li class="user-li" data-location="__BASE_PATH__/admin/sample/issue/42">
+              <div class="project-list project-flex-container" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="42">
+                <div class="project-item project-item-container">
+                  <div class="issue-item projectName-owner flex-item">
+                    <div class="issue-title-start">-</div><div class="issue-title flex-item">Crash on login</div>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li class="user-li" data-location="__BASE_PATH__/weblabs/playground/issue/7">
+              <div class="project-list project-flex-container" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="7">
+                <div class="project-item project-item-container">
+                  <div class="issue-item projectName-owner flex-item">
+                    <div class="issue-title-start">-</div><div class="issue-title flex-item">Review onboarding copy</div>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
 const EXPECTED_AUTHENTICATED_NOTIFICATION_SHELL_METRICS = {
   activityStreamsMarginTop: "0px",
   gnbInnerHeight: "40px",
@@ -320,6 +357,28 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
     await canonicalizeHtml(
       page,
       EXPECTED_SIDEBAR_PROJECT_TAB.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("authenticated root sidebar recent issue tab matches legacy index/myRecentIssueList DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+  await mockWorkspaceSidebarProjects(page);
+
+  await page.goto(`${basePath}/`);
+  await page.locator("#sidebar-open-btn a").click();
+  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
+  await page.locator(".myRecentIssueList a").click();
+  await expect(page.locator("#usermenu-tab-content-list #recentlyVisitedIssues")).toBeVisible();
+  await expect(page.locator("#usermenu-tab-content-list .user-li")).toHaveCount(2);
+
+  expect(await canonicalizeSelector(page, "#usermenu-tab-content-list")).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_SIDEBAR_RECENT_ISSUE_TAB.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
@@ -890,7 +949,20 @@ async function mockWorkspaceSidebarProjects(page: Page) {
       body: JSON.stringify({
         emails: [],
         favoriteProjects: [],
-        issueItems: [],
+        issueItems: [
+          {
+            issueNumber: 42,
+            ownerName: "admin",
+            projectName: "sample",
+            title: "Crash on login",
+          },
+          {
+            issueNumber: 7,
+            ownerName: "weblabs",
+            projectName: "playground",
+            title: "Review onboarding copy",
+          },
+        ],
         memberProjects: [
           {
             id: 9,

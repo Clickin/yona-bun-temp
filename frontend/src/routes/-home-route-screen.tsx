@@ -793,6 +793,9 @@ function SidebarTabContent({
   if (activeTab === "project") {
     return <SidebarProjectList basePath={basePath} workspace={workspace} />;
   }
+  if (activeTab === "recent") {
+    return <SidebarRecentIssueList basePath={basePath} workspace={workspace} />;
+  }
   return <>{"Loading..."}</>;
 }
 
@@ -923,6 +926,83 @@ function SidebarProjectItem({ basePath, project }: { basePath: string; project: 
   );
 }
 
+function SidebarRecentIssueList({
+  basePath,
+  workspace,
+}: {
+  basePath: string;
+  workspace: YonaRecord;
+}) {
+  const { t } = useLegacyMessages();
+  const issues = recordArray(workspace.issueItems);
+
+  return (
+    <div>
+      <div className="search-result">
+        <div className="tab-pane myproject-list-wrap">
+          <div className="group">
+            <input
+              className="search-input project-search"
+              type="text"
+              id="query"
+              autoComplete="off"
+              placeholder={t("title.type.name")}
+            />
+            <span className="bar"></span>
+          </div>
+          <div className="tab-content">
+            {issues.length === 0 ? (
+              <div id="recentlyVisitedIssues" className="no-result tab-pane user-ul active">
+                {t("title.no.results")}
+              </div>
+            ) : (
+              <ul className="tab-pane user-ul active" id="recentlyVisitedIssues">
+                {issues.map((issue) => (
+                  <SidebarRecentIssueItem
+                    basePath={basePath}
+                    issue={issue}
+                    key={recentIssueKey(issue)}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SidebarRecentIssueItem({ basePath, issue }: { basePath: string; issue: YonaRecord }) {
+  const ownerName = valueString(issue.ownerName ?? issue.owner_name ?? issue.owner, "");
+  const projectName = valueString(issue.projectName ?? issue.project_name ?? issue.project, "");
+  const issueNumber = valueString(issue.issueNumber ?? issue.issue_number ?? issue.number, "");
+  const title = valueString(issue.title, "");
+  const issueHref = valueString(
+    issue.url ?? issue.href,
+    prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`),
+  );
+
+  return (
+    <li className="user-li" data-location={issueHref}>
+      <div
+        className="project-list project-flex-container"
+        data-toggle="popover"
+        data-trigger="hover"
+        data-placement="right"
+        data-content={issueNumber}
+      >
+        <div className="project-item project-item-container">
+          <div className="issue-item projectName-owner flex-item">
+            <div className="issue-title-start">-</div>
+            <div className="issue-title flex-item">{title}</div>
+          </div>
+        </div>
+      </div>
+    </li>
+  );
+}
+
 function stringField(record: YonaRecord, key: string, fallback: string): string {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : fallback;
@@ -949,6 +1029,14 @@ function projectKey(project: YonaRecord) {
     project.id ??
       `${valueString(project.ownerName ?? project.owner, "")}/${valueString(project.projectName ?? project.name, "")}`,
     "project",
+  );
+}
+
+function recentIssueKey(issue: YonaRecord) {
+  return valueString(
+    issue.id ??
+      `${valueString(issue.ownerName ?? issue.owner_name ?? issue.owner, "")}/${valueString(issue.projectName ?? issue.project_name ?? issue.project, "")}/${valueString(issue.issueNumber ?? issue.issue_number ?? issue.number, "")}`,
+    "issue",
   );
 }
 
