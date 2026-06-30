@@ -31,14 +31,15 @@ template output gaps.
 
 | Current source | Current responsibility |
 | --- | --- |
-| `frontend/src/routes/-board-views.tsx` | Project board list, post form, board detail, comments, labels, attachments, delete modal. |
+| `frontend/src/routes/-board-views.tsx` | Project board post form, board detail, comments, labels, attachments, delete modal. |
+| `frontend/src/routes/$ownerName/$projectName/posts.tsx` | Project board list flat route with legacy search, label filter, notice, sort, row, and pagination shell. |
 | `frontend/src/routes/-milestone-views.tsx` | Milestone list, form, detail, linked issue list, mass update, validation, attachments. |
-| `frontend/src/routes/$owner/$projectName/posts/route.tsx`, `postform/route.tsx`, `post/$postNumber/**` | Project board route entrypoints. |
+| `frontend/src/routes/$owner/$projectName/postform/route.tsx`, `post/$postNumber/**` | Remaining project board route entrypoints. |
 | `frontend/src/routes/organizations/$organizationName/boards.tsx` | Organization board aggregate flat route entrypoint. |
 | `frontend/src/routes/$owner/$projectName/milestones/route.tsx`, `newMilestoneForm/route.tsx`, `milestone/$milestoneId/**` | Milestone route entrypoints. |
 | `frontend/src/app.css` | Shared legacy board/milestone shell, grid, form, modal, list styling. |
 | `frontend/src/board-milestone-parity.spec.tsx` | Static selector and source-contract proof for board/milestone components. |
-| `frontend/tests/board-posting-parity.e2e.ts`, `frontend/tests/milestone-delete-modal-parity.e2e.ts` | Browser interaction proof for board post attachments/delete/labels and milestone validation/delete/state actions. |
+| `frontend/tests/project-posts.e2e.ts`, `frontend/tests/board-posting-parity.e2e.ts`, `frontend/tests/milestone-delete-modal-parity.e2e.ts` | Browser interaction proof for project board list, board post attachments/delete/labels, and milestone validation/delete/state actions. |
 
 ## Open Reset Queue Summary
 
@@ -59,7 +60,7 @@ recorded below as non-comparable sample-data states.
 
 | legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `board/list.scala.html`, `board/partial_list.scala.html` | Project board list `/admin/sample/posts` with search, label, notice, sort, pagination states. | `frontend/src/routes/-board-views.tsx`, `frontend/src/routes/$owner/$projectName/posts/route.tsx` | layout | covered in current follow-up | P4 | none | Older worker evidence plus `frontend/src/board-milestone-parity.spec.tsx` and `frontend/tests/board-posting-parity.e2e.ts` prove `#option_form`, `.board-labels`, `.filter-wrap.board`, `.notice-wrap`, `.post-list-wrap`, row anchors, comment counts, and pagination shell. Search submit keeps legacy GET form attributes but routes through TanStack navigation and router-location refetch. |
+| `board/list.scala.html`, `board/partial_list.scala.html` | Project board list `/admin/sample/posts` with search, label, notice, sort, pagination states. | `frontend/src/routes/$ownerName/$projectName/posts.tsx` | layout | covered in 2026-07-01 template-first reset slice | P4 | none | `frontend/tests/project-posts.e2e.ts` was RED against the missing flat board body, then GREEN after the `/admin/sample/posts` route rebuild and parent `<Outlet />` fix. It whole-screen compares project chrome, `#option_form`, `.board-labels select`, `.filter-wrap.board`, `.notice-wrap`, `.post-list-wrap`, row anchors, comment counts, label links, and pagination shell against `board/list.scala.html` plus `board/partial_list.scala.html`. |
 | `organization/group_board_list.scala.html`, `group_board_list_partial.scala.html` | Organization board aggregate `/organizations/:name/boards` with project filter and keyword search. | `frontend/src/routes/organizations/$organizationName/boards.tsx` | layout | covered in 2026-07-01 template-first reset slice | P4 | none | `frontend/tests/organization-boards.e2e.ts` was RED against the missing child route rendering, then GREEN after the flat route rebuild and parent `<Outlet />` fix. It whole-screen compares `#projects[name="projectNames[]"]`, `.textbox.group-board`, `.two-column-icon`, `.group-project-name`, `.post-list-wrap`, comment count links, and org chrome against `group_board_list.scala.html` plus `group_board_list_partial.scala.html`. |
 | `organization/group_board_list.scala.html` | Organization board aggregate notice pinning. | `frontend/src/routes/-board-views.tsx` | data-boundary | not-applicable | P4 | none unless parent reclassifies | Legacy aggregate does not have a separate org-level notice pinning behavior; project board notice rows remain covered by the project board list row. |
 | `board/create.scala.html`, `board/edit.scala.html` | Board create/edit forms, including online commit/readme/issue-template variants and no label picker. | `frontend/src/routes/-board-views.tsx`, `frontend/src/routes/$owner/$projectName/postform/route.tsx`, `post/$postNumber/editform/route.tsx` | layout | covered in current follow-up | P4 | none | `frontend/src/board-milestone-parity.spec.tsx` proves no `.board-label-picker`, legacy `BOARD_POST` uploader shell, title/editor/notice/readme hidden fields, and notification checkbox/source contract. |
@@ -87,6 +88,7 @@ Browser interaction proof:
 - `frontend/tests/board-posting-parity.e2e.ts`
 - `frontend/tests/milestone-delete-modal-parity.e2e.ts`
 - `frontend/tests/organization-boards.e2e.ts`
+- `frontend/tests/project-posts.e2e.ts`
 
 Integrated browser sweep evidence:
 

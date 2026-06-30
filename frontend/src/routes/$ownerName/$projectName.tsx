@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
   deleteProjectMemberRest,
   readProjectContainerQueryOptions,
@@ -24,6 +24,13 @@ export const Route = createFileRoute("/$ownerName/$projectName")({
 
 function ProjectHomeRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { ownerName, projectName } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isProjectHome = pathname === `/${ownerName}/${projectName}`;
+
+  if (!isProjectHome) {
+    return <Outlet />;
+  }
 
   return (
     <YonaQueryProvider>
@@ -865,7 +872,13 @@ function ProjectMember({ basePath, member }: { basePath: string; member: YonaUse
   );
 }
 
-function ProjectHeader({ basePath, project }: { basePath: string; project: ProjectContainer }) {
+export function ProjectHeader({
+  basePath,
+  project,
+}: {
+  basePath: string;
+  project: ProjectContainer;
+}) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
@@ -943,12 +956,12 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
   );
 }
 
-function ProjectMenu({
+export function ProjectMenu({
   active,
   basePath,
   project,
 }: {
-  active: "home";
+  active: "board" | "home";
   basePath: string;
   project: ProjectContainer;
 }) {
@@ -1005,6 +1018,7 @@ function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.board) ? (
             <ProjectMenuItem
+              active={active === "board"}
               href={prefixBasePath(basePath, `/${ownerName}/${projectName}/posts`)}
               label={t("menu.board")}
               short="B"
