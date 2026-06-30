@@ -167,6 +167,8 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await page.goto(`${basePath}/sites/userList`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
+  await expect(page.locator('.site-setting-nav a[href$="/sites/setting"]')).toHaveCount(0);
+  await expect(page.locator(".site-setting-wrap")).not.toContainText("TODO");
   await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
 
   const actual = await canonicalizeScreenRoots(page);
