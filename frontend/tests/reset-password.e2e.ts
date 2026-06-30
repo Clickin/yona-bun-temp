@@ -142,6 +142,13 @@ test("reset password form matches legacy user/resetPassword.scala.html screen DO
     textWidth: "386px",
     titleLineHeight: "42px",
   });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await readMobileResetPasswordMetrics(page)).toEqual({
+    formWidth: "370.5px",
+    passwordFontSize: "16px",
+    passwordInputWidth: "351.969px",
+    retypedPasswordFontSize: "16px",
+  });
 });
 
 test("invalid reset password link matches legacy error/badrequest_default.scala.html shell DOM", async ({
@@ -275,6 +282,25 @@ async function readDesktopResetPasswordMetrics(page: Page) {
       textHeight: passwordInputStyle.height,
       textWidth: passwordInputStyle.width,
       titleLineHeight: getComputedStyle(title).lineHeight,
+    };
+  });
+}
+
+async function readMobileResetPasswordMetrics(page: Page) {
+  return page.evaluate(() => {
+    const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
+    const passwordInput = document.querySelector<HTMLElement>("#password");
+    const retypedPasswordInput = document.querySelector<HTMLElement>("#retypedPassword");
+    if (!formWrap || !passwordInput || !retypedPasswordInput) {
+      throw new Error("Expected mobile reset-password metric targets are missing.");
+    }
+
+    const passwordStyle = getComputedStyle(passwordInput);
+    return {
+      formWidth: getComputedStyle(formWrap).width,
+      passwordFontSize: passwordStyle.fontSize,
+      passwordInputWidth: passwordStyle.width,
+      retypedPasswordFontSize: getComputedStyle(retypedPasswordInput).fontSize,
     };
   });
 }
