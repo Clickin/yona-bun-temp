@@ -70,6 +70,27 @@ test("legacy GET /users/login renders the index screen at the original URL", asy
   expect(await readDesktopIndexMetrics(page)).toEqual(canonicalIndexMetrics);
 });
 
+test("legacy GET /users/login keeps the public index mobile proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(`${basePath}/`);
+  await expect(page.locator(".siteintro-bg")).toBeVisible();
+  const canonicalIndexRoots = await canonicalizeIndexRoots(page);
+  const canonicalIndexMetrics = await readMobileIndexMetrics(page);
+
+  await page.goto(`${basePath}/users/login?from=legacy`);
+  expect(new URL(page.url()).pathname).toBe(`${basePath}/users/login`);
+  expect(new URL(page.url()).searchParams.get("from")).toBe("legacy");
+  await expect(page.locator(".siteintro-bg")).toBeVisible();
+  await expect(page.locator(".signup-btn a")).toHaveAttribute(
+    "href",
+    `${basePath}/users/signupform`,
+  );
+  expect(await canonicalizeIndexRoots(page)).toEqual(canonicalIndexRoots);
+  expect(await readMobileIndexMetrics(page)).toEqual(canonicalIndexMetrics);
+});
+
 async function canonicalizeIndexRoots(page: Page) {
   return canonicalizeRoots(page, ".unsupported, .gnb-outer, .siteintro-bg, .page-footer-outer");
 }
@@ -198,6 +219,56 @@ async function readDesktopIndexMetrics(page: Page) {
       signupMarginTop: getComputedStyle(signup).marginTop,
       siteIntroCoverPaddingBottom: siteIntroCoverStyle.paddingBottom,
       siteIntroCoverPaddingTop: siteIntroCoverStyle.paddingTop,
+      siteIntroCoverWidth: Math.round(siteIntroCover.getBoundingClientRect().width),
+    };
+  });
+}
+
+async function readMobileIndexMetrics(page: Page) {
+  return page.evaluate(() => {
+    const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const heading = document.querySelector<HTMLElement>(".site-heading");
+    const featureWrap = document.querySelector<HTMLElement>(".feature-wrap");
+    const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (
+      !siteIntroCover ||
+      !gnbOuter ||
+      !heading ||
+      !featureWrap ||
+      !featureItem ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
+    ) {
+      throw new Error("Expected legacy mobile index metric targets are missing.");
+    }
+
+    const siteIntroCoverStyle = getComputedStyle(siteIntroCover);
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const headingStyle = getComputedStyle(heading);
+    const featureItemStyle = getComputedStyle(featureItem);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
+
+    return {
+      featureItemMarginLeft: featureItemStyle.marginLeft,
+      featureItemMarginTop: featureItemStyle.marginTop,
+      featureItemWidth: Math.round(featureItem.getBoundingClientRect().width),
+      featureWrapWidth: Math.round(featureWrap.getBoundingClientRect().width),
+      gnbOuterMinWidth: gnbOuterStyle.minWidth,
+      gnbOuterPadding: gnbOuterStyle.padding,
+      headingFontSize: headingStyle.fontSize,
+      headingPaddingLeft: headingStyle.paddingLeft,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterMinWidth: pageFooterOuterStyle.minWidth,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      pageFooterWidth: Math.round(pageFooter.getBoundingClientRect().width),
+      providerFontSize: providerStyle.fontSize,
+      siteIntroCoverOverflow: siteIntroCoverStyle.overflow,
       siteIntroCoverWidth: Math.round(siteIntroCover.getBoundingClientRect().width),
     };
   });
