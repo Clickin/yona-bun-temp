@@ -855,6 +855,16 @@ export function readProjectSettingsRest(
   );
 }
 
+export function readProjectSettingsQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectPathInput,
+) {
+  return queryOptions({
+    queryFn: () => readProjectSettingsRest(runtimeConfig, input.ownerName, input.projectName),
+    queryKey: apiQueryKeys.project.base(input.ownerName, input.projectName),
+  });
+}
+
 export function readProjectMembersRest(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
