@@ -170,6 +170,22 @@ test("lost-password requested alert matches legacy site/lostPassword.scala.html 
   });
 });
 
+test("lost-password requested alert close follows legacy Bootstrap data-dismiss behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/lostPassword?requested=1`);
+
+  const alert = page.locator(".login-form-wrap .alert.alert-success");
+  await expect(alert).toBeVisible();
+  await expect(alert.locator('[data-dismiss="alert"]')).toHaveCount(1);
+
+  await alert.locator('[data-dismiss="alert"]').click();
+
+  await expect(page.locator(".login-form-wrap .alert.alert-success")).toHaveCount(0);
+  await expect(page.locator(".login-form-wrap form")).toBeVisible();
+});
+
 test("lost-password invalid-request alert matches legacy site/lostPassword.scala.html screen DOM", async ({
   page,
 }) => {

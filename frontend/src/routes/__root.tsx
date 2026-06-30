@@ -72,6 +72,13 @@ function RootResetShell() {
         return;
       }
 
+      const dismissAlert = target?.closest<HTMLElement>('[data-dismiss="alert"]');
+      if (dismissAlert) {
+        dismissAlert.closest<HTMLElement>(".alert")?.remove();
+        event.preventDefault();
+        return;
+      }
+
       const markdownHelp = target?.closest<HTMLElement>('[data-toggle="markdown-help"]');
       if (markdownHelp) {
         const markdownHelpRoot = markdownHelp.closest(".markdown-help");
