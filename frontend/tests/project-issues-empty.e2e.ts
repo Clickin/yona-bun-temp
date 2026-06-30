@@ -30,6 +30,24 @@ const EXPECTED_PROJECT_ISSUES_POPULATED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceA
     `${POPULATED_SPAN10_WITH_TOOLBAR}</div></div></div></div>\n<footer`,
   );
 
+const SHARER_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
+  '<a href="__BASE_PATH__/admin/sample/issue/11#vote"><span class="count-groups item-icon strong"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span>',
+  '<a href="__BASE_PATH__/admin/sample/issue/11#vote"><span class="count-groups item-icon strong"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a><a class="sharer-color" data-toggle="tooltip" data-placement="bottom" title="Issue Sharer"><span class="count-groups item-icon"><i class="yobicon-friends"></i></span><span class="count-groups item-count strong">2</span></a></span>',
+).replace("filter=bug&amp;format=xls", "filter=sharer&amp;format=xls");
+
+const EXPECTED_PROJECT_ISSUES_SHARER = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
+  'value="empty"',
+  'value="sharer"',
+)
+  .replaceAll(
+    '>Open<span class="num-badge pull-right">0</span>',
+    '>Open<span class="num-badge pull-right">1</span>',
+  )
+  .replace(
+    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
+    `${SHARER_SPAN10}</div></div></div></div>\n<footer`,
+  );
+
 const SORT_FILTERS = `<div class="filters pull-right"><a href="#" orderby="dueDate" orderdir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Due Date</a><a href="#" orderby="updatedDate" orderdir="asc" class="filter active"><i class="ico btn-gray-arrow down"></i>Updated</a><a href="#" orderby="createdDate" orderdir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Created</a><a href="#" orderby="numOfComments" orderdir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Comments</a></div>`;
 const DRAFT_ISSUE_ROW = `<li class="post-item title" id="issue-item-41" data-item="issue-item" data-value="admin 10 Draft issue" href="__BASE_PATH__/admin/sample/issue/10"><div class="span9 span-hard-wrap"><label for="issue-41" class="mass-update-check hide-in-mobile"><input id="issue-41" type="checkbox" name="checked-issue" data-toggle="issue-checkbox" data-issue-id="41" data-issue-labels=""></label><div for="issue-41" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/10" class="title"><span class="post-id"><span class="draft-number">#Draft</span></span></a><a href="__BASE_PATH__/admin/sample/issue/10" class="title">Draft issue</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="admin">Site Admin</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 1, 2026">Jul 1, 2026</span><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><div class="empty-avatar-wrap">&nbsp;</div></div></div></li>`;
 const DRAFT_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
@@ -182,6 +200,28 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
   );
 });
 
+test("project issue list sharer count matches legacy common/sharerCount.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "sharer");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=sharer`);
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator(".item-count-groups .sharer-color")).toHaveAttribute(
+    "title",
+    "Issue Sharer",
+  );
+  await expect(page.locator(".item-count-groups .yobicon-friends")).toHaveCount(1);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_ISSUES_SHARER.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 test("project issue draft row renders before normal list like legacy partial_list_draft.scala.html", async ({
   page,
 }) => {
@@ -281,7 +321,15 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
 
 async function mockProjectIssues(
   page: Page,
-  state: "bulk" | "children" | "draft" | "empty" | "populated" | "subtask" | "weighted" = "empty",
+  state:
+    | "bulk"
+    | "children"
+    | "draft"
+    | "empty"
+    | "populated"
+    | "sharer"
+    | "subtask"
+    | "weighted" = "empty",
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -332,132 +380,142 @@ async function mockProjectIssues(
       body: JSON.stringify(
         state === "populated"
           ? populatedIssueResponse()
-          : state === "subtask"
+          : state === "sharer"
             ? {
                 ...populatedIssueResponse(),
                 items: [
                   {
                     ...populatedIssueResponse().items[0],
-                    childClosedCount: 1,
-                    childOpenCount: 2,
-                    parentIssueNumber: 9,
-                    parentIssueTitle: "Parent issue title",
+                    sharerCount: 2,
                   },
                 ],
               }
-            : state === "weighted"
+            : state === "subtask"
               ? {
                   ...populatedIssueResponse(),
-                  closedIssueCount: 1,
                   items: [
                     {
                       ...populatedIssueResponse().items[0],
-                      dueDateLabel: "Jul 5, 2026",
-                      dueDateOverdue: false,
-                      dueDateText: "Jul 5, 2026",
-                      state: "closed",
-                      weight: 4,
+                      childClosedCount: 1,
+                      childOpenCount: 2,
+                      parentIssueNumber: 9,
+                      parentIssueTitle: "Parent issue title",
                     },
                   ],
-                  openIssueCount: 0,
-                  totalCount: 1,
-                  totalPages: 1,
                 }
-              : state === "children"
+              : state === "weighted"
                 ? {
                     ...populatedIssueResponse(),
+                    closedIssueCount: 1,
                     items: [
                       {
                         ...populatedIssueResponse().items[0],
-                        childIssues: [
-                          {
-                            assigneeLabel: "Dev Member",
-                            createdLabel: "Jul 3, 2026",
-                            issueNumber: 13,
-                            labels: [],
-                            state: "open",
-                            title: "Open child issue",
-                          },
-                          {
-                            assigneeLabel: "",
-                            createdLabel: "Jul 4, 2026",
-                            issueNumber: 14,
-                            labels: [],
-                            state: "closed",
-                            title: "Closed child issue",
-                          },
-                        ],
+                        dueDateLabel: "Jul 5, 2026",
+                        dueDateOverdue: false,
+                        dueDateText: "Jul 5, 2026",
+                        state: "closed",
+                        weight: 4,
                       },
                     ],
+                    openIssueCount: 0,
+                    totalCount: 1,
+                    totalPages: 1,
                   }
-                : state === "draft"
+                : state === "children"
                   ? {
                       ...populatedIssueResponse(),
-                      draftItems: [
+                      items: [
                         {
-                          authorAvatarUrl: "/assets/images/default-avatar-32.png",
-                          authorLabel: "Site Admin",
-                          authorLoginId: "admin",
-                          authorUserId: 1,
-                          commentCount: 0,
-                          createdLabel: "Jul 1, 2026",
-                          id: 41,
-                          isDraft: true,
-                          issueNumber: 10,
-                          labels: [],
-                          ownerName: "admin",
-                          projectName: "sample",
-                          state: "open",
-                          title: "Draft issue",
-                          updatedLabel: "Jul 1, 2026",
-                          voterCount: 0,
+                          ...populatedIssueResponse().items[0],
+                          childIssues: [
+                            {
+                              assigneeLabel: "Dev Member",
+                              createdLabel: "Jul 3, 2026",
+                              issueNumber: 13,
+                              labels: [],
+                              state: "open",
+                              title: "Open child issue",
+                            },
+                            {
+                              assigneeLabel: "",
+                              createdLabel: "Jul 4, 2026",
+                              issueNumber: 14,
+                              labels: [],
+                              state: "closed",
+                              title: "Closed child issue",
+                            },
+                          ],
                         },
                       ],
-                      totalCount: 1,
-                      totalPages: 1,
                     }
-                  : state === "bulk"
+                  : state === "draft"
                     ? {
-                        closedIssueCount: 2,
-                        draftItems: [],
-                        items: [
-                          populatedIssueResponse().items[0],
+                        ...populatedIssueResponse(),
+                        draftItems: [
                           {
                             authorAvatarUrl: "/assets/images/default-avatar-32.png",
                             authorLabel: "Site Admin",
                             authorLoginId: "admin",
+                            authorUserId: 1,
                             commentCount: 0,
-                            createdLabel: "Jul 2, 2026",
-                            id: 43,
-                            issueNumber: 12,
+                            createdLabel: "Jul 1, 2026",
+                            id: 41,
+                            isDraft: true,
+                            issueNumber: 10,
                             labels: [],
                             ownerName: "admin",
                             projectName: "sample",
                             state: "open",
-                            title: "Follow up issue",
-                            updatedLabel: "Jul 2, 2026",
+                            title: "Draft issue",
+                            updatedLabel: "Jul 1, 2026",
                             voterCount: 0,
                           },
                         ],
-                        openIssueCount: 2,
-                        ownerName: "admin",
-                        pageNum: 1,
-                        pageSize: 15,
-                        projectName: "sample",
-                        totalCount: 2,
+                        totalCount: 1,
                         totalPages: 1,
                       }
-                    : {
-                        closedIssueCount: 0,
-                        draftItems: [],
-                        items: [],
-                        openIssueCount: 0,
-                        ownerName: "admin",
-                        pageNum: 1,
-                        pageSize: 15,
-                        projectName: "sample",
-                        totalCount: 0,
-                      },
+                    : state === "bulk"
+                      ? {
+                          closedIssueCount: 2,
+                          draftItems: [],
+                          items: [
+                            populatedIssueResponse().items[0],
+                            {
+                              authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                              authorLabel: "Site Admin",
+                              authorLoginId: "admin",
+                              commentCount: 0,
+                              createdLabel: "Jul 2, 2026",
+                              id: 43,
+                              issueNumber: 12,
+                              labels: [],
+                              ownerName: "admin",
+                              projectName: "sample",
+                              state: "open",
+                              title: "Follow up issue",
+                              updatedLabel: "Jul 2, 2026",
+                              voterCount: 0,
+                            },
+                          ],
+                          openIssueCount: 2,
+                          ownerName: "admin",
+                          pageNum: 1,
+                          pageSize: 15,
+                          projectName: "sample",
+                          totalCount: 2,
+                          totalPages: 1,
+                        }
+                      : {
+                          closedIssueCount: 0,
+                          draftItems: [],
+                          items: [],
+                          openIssueCount: 0,
+                          ownerName: "admin",
+                          pageNum: 1,
+                          pageSize: 15,
+                          projectName: "sample",
+                          totalCount: 0,
+                        },
       ),
     });
   });

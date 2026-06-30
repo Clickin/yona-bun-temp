@@ -260,6 +260,7 @@ export type RestIssueListItem = ListProjectIssuesResponse["items"][number] & {
   id?: bigint | number;
   parentIssueNumber?: bigint | number | null;
   parentIssueTitle?: string;
+  sharerCount?: number;
   weight?: number;
 };
 

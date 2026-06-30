@@ -648,7 +648,7 @@ function ProjectIssueItem({
                 </a>
               </span>
             ) : null}
-            {issue.commentCount > 0 || issue.voterCount > 0 ? (
+            {issue.commentCount > 0 || issue.voterCount > 0 || (issue.sharerCount ?? 0) > 0 ? (
               <span className="infos-item item-count-groups">
                 {issue.commentCount > 0 ? (
                   <a href={`${issueHref}#comments`}>
@@ -664,6 +664,20 @@ function ProjectIssueItem({
                       <i className="yobicon-hearts"></i>
                     </span>
                     <span className="count-groups item-count strong">{issue.voterCount}</span>
+                  </a>
+                ) : null}
+                {(issue.sharerCount ?? 0) > 0 ? (
+                  /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy sharerCount.scala.html renders an anchor without href. */
+                  <a
+                    className="sharer-color"
+                    data-toggle="tooltip"
+                    data-placement="bottom"
+                    title={t("issue.sharer")}
+                  >
+                    <span className="count-groups item-icon">
+                      <i className="yobicon-friends"></i>
+                    </span>
+                    <span className="count-groups item-count strong">{issue.sharerCount}</span>
                   </a>
                 ) : null}
               </span>
