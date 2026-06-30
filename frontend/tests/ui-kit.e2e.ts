@@ -75,6 +75,24 @@ test("standalone UI kit keeps legacy mobile shell proportions", async ({ page })
   });
 });
 
+test("standalone UI kit dropdown matches legacy yobi.ui.Dropdown interaction", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/_UIKit`);
+  const dropdown = page.locator('.btn-group[data-name="assigneeId"]').first();
+  await expect(dropdown).toBeVisible();
+  await expect(dropdown.locator(".dropdown-menu")).toBeHidden();
+
+  await dropdown.locator('[data-toggle="dropdown"]').click();
+  await expect(dropdown).toHaveClass(/open/);
+  await expect(dropdown.locator(".dropdown-menu")).toBeVisible();
+
+  await dropdown.locator('li[data-value="0"]').click();
+  await expect(dropdown.locator(".d-label")).toHaveText("담당자 없음");
+  await expect(dropdown.locator('li[data-value="0"]')).toHaveClass(/active/);
+  await expect(dropdown.locator('input[type="hidden"][name="assigneeId"]')).toHaveValue("0");
+});
+
 async function readDesktopUIKitMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");

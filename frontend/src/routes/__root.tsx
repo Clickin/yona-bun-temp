@@ -33,6 +33,86 @@ function RootResetShell() {
     return () => document.removeEventListener("yobi:notify-scan", scanNotifySources);
   }, [rendersPlainResponseState]);
 
+  React.useEffect(() => {
+    if (rendersPlainResponseState) {
+      return;
+    }
+
+    function closeDropdowns(except?: Element | null) {
+      document.querySelectorAll(".btn-group.open, .dropdown.open").forEach((container) => {
+        if (container !== except) {
+          container.classList.remove("open");
+        }
+      });
+    }
+
+    function handleDocumentClick(event: MouseEvent) {
+      const target = event.target instanceof Element ? event.target : null;
+      const searchScope = target?.closest<HTMLElement>('[data-toggle="search-scope"]');
+      if (searchScope) {
+        const action = searchScope.dataset.action;
+        if (action) {
+          document
+            .querySelector<HTMLFormElement>('form[name="gnb-search-form"]')
+            ?.setAttribute("action", action);
+        }
+        const scopeTitle = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+        if (scopeTitle) {
+          scopeTitle.textContent = searchScope.textContent ?? "";
+        }
+        event.preventDefault();
+        return;
+      }
+
+      const toggle = target?.closest<HTMLElement>('[data-toggle="dropdown"]');
+      if (toggle) {
+        const container = toggle.closest(".btn-group, .dropdown");
+        const isOpen = container?.classList.contains("open") ?? false;
+        closeDropdowns(container);
+        container?.classList.toggle("open", !isOpen);
+        event.preventDefault();
+        return;
+      }
+
+      const selectedItem = target?.closest<HTMLElement>(".btn-group[data-name] .dropdown-menu li");
+      if (selectedItem) {
+        const container = selectedItem.closest<HTMLElement>(".btn-group[data-name]");
+        const fieldName = container?.dataset.name;
+        if (!container || !fieldName || selectedItem.dataset.value === undefined) {
+          event.preventDefault();
+          return;
+        }
+
+        const label = container.querySelector<HTMLElement>(".d-label");
+        if (label) {
+          label.innerHTML = selectedItem.innerHTML;
+        }
+        container.querySelectorAll(".dropdown-menu li.active").forEach((item) => {
+          item.classList.remove("active");
+        });
+        selectedItem.classList.add("active");
+
+        let hiddenInput = container.querySelector<HTMLInputElement>(
+          `input[type="hidden"][name="${CSS.escape(fieldName)}"]`,
+        );
+        if (!hiddenInput) {
+          hiddenInput = document.createElement("input");
+          hiddenInput.type = "hidden";
+          hiddenInput.name = fieldName;
+          container.append(hiddenInput);
+        }
+        hiddenInput.value = selectedItem.dataset.value ?? "";
+      }
+
+      if (!target?.closest(".btn-group.open, .dropdown.open")) {
+        closeDropdowns();
+      }
+    }
+
+    document.addEventListener("click", handleDocumentClick);
+    return () => document.removeEventListener("click", handleDocumentClick);
+  }, [rendersPlainResponseState]);
+
   function scanNotifySources() {
     document.querySelectorAll<HTMLElement>('[data-toggle="yobi-notify"]').forEach((source) => {
       if (source.dataset.yobiNotified === "true") {
