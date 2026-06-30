@@ -11,6 +11,7 @@ import {
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
+import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
@@ -408,6 +409,7 @@ function ProjectBoardPost({ basePath, post }: { basePath: string; post: BoardPos
             data-category-id={label.categoryId}
             data-label-id={label.id}
             key={label.id}
+            style={issueLabelStyle(label.color)}
           >
             {label.name}
           </a>
