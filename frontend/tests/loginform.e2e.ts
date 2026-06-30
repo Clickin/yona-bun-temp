@@ -35,7 +35,7 @@ const EXPECTED_LOGIN_SCREEN = `
   </div>
   <div class="login-form-wrap frm-wrap">
     <form action="/users/login" method="POST">
-      <input type="hidden" name="redirectUrl" value="/me">
+      <input type="hidden" name="redirectUrl" value="__REDIRECT_URL__">
       __FORM_BODY__
     </form>
   </div>
@@ -124,11 +124,34 @@ test("social-login-only form matches legacy user/login.scala.html screen DOM", a
   expect(actual).toEqual(expected);
 });
 
-function expectedLoginScreen(basePath: string, formBody: string) {
-  return EXPECTED_LOGIN_SCREEN.replaceAll("__BASE_PATH__", basePath).replace(
-    "__FORM_BODY__",
-    formBody.replaceAll("__BASE_PATH__", basePath),
+test("password-reset login flash matches legacy common/scripts.scala.html notification", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/users/loginform?password=reset`);
+
+  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
+    "Please log in with the new password!",
   );
+  const actual = await canonicalizeScreenAndToastRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    `${expectedLoginScreen(basePath, DEFAULT_FORM_BODY, "")}
+    <div id="yobiToasts" class="yobiToasts">
+      <div class="toast" tabindex="-1">
+        <div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div>
+        <div class="center-text"><span class="v"></span><div class="msg">Please log in with the new password!</div></div>
+      </div>
+    </div>`,
+  );
+
+  expect(actual).toEqual(expected);
+});
+
+function expectedLoginScreen(basePath: string, formBody: string, redirectUrl = "/me") {
+  return EXPECTED_LOGIN_SCREEN.replaceAll("__BASE_PATH__", basePath)
+    .replace("__REDIRECT_URL__", redirectUrl)
+    .replace("__FORM_BODY__", formBody.replaceAll("__BASE_PATH__", basePath));
 }
 
 async function canonicalizeScreenRoots(page: Page) {
@@ -186,6 +209,64 @@ async function canonicalizeScreenRoots(page: Page) {
   });
 }
 
+async function canonicalizeScreenAndToastRoots(page: Page) {
+  return page.evaluate(() => {
+    const roots = Array.from(
+      document.querySelectorAll(
+        ".unsupported, .gnb-outer, .page.full, .page-footer-outer, #yobiToasts",
+      ),
+    );
+    return roots.map((root) => visit(root)).join("");
+
+    function visit(current: Element): string {
+      const stableAttributes = [
+        "id",
+        "class",
+        "name",
+        "type",
+        "method",
+        "action",
+        "value",
+        "autocomplete",
+        "placeholder",
+        "href",
+        "src",
+        "alt",
+        "target",
+        "title",
+        "aria-hidden",
+        "version",
+        "data-toggle",
+        "data-placement",
+        "for",
+        "checked",
+        "tabindex",
+      ];
+      const attrs = stableAttributes
+        .filter((name) => current.hasAttribute(name))
+        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .join(" ");
+      const open = attrs
+        ? `<${current.tagName.toLowerCase()} ${attrs}>`
+        : `<${current.tagName.toLowerCase()}>`;
+      const children = Array.from(current.childNodes)
+        .map((child) => {
+          if (child.nodeType === Node.TEXT_NODE) {
+            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
+          }
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            return visit(child as Element);
+          }
+          return "";
+        })
+        .filter(Boolean)
+        .join("");
+
+      return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+  });
+}
+
 async function canonicalizeHtml(page: Page, html: string) {
   return page.evaluate(
     ({ markup }) => {
@@ -217,6 +298,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "data-placement",
           "for",
           "checked",
+          "tabindex",
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))

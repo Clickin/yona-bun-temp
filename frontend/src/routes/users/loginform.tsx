@@ -11,6 +11,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type LoginFormSearch = {
+  password: string;
   redirectUrl: string;
 };
 
@@ -28,6 +29,7 @@ const LegacyInternalLink = Link as React.ComponentType<
 export const Route = createFileRoute("/users/loginform")({
   component: LoginFormRoute,
   validateSearch: (search: Record<string, unknown>): LoginFormSearch => ({
+    password: typeof search.password === "string" ? search.password : "",
     redirectUrl: typeof search.redirectUrl === "string" ? search.redirectUrl : "",
   }),
 });
@@ -45,7 +47,7 @@ function LoginFormRoute() {
 }
 
 function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { redirectUrl } = Route.useSearch();
+  const { password, redirectUrl } = Route.useSearch();
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -65,6 +67,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     nonEmptyString(capabilities?.passwordPlaceholder) ?? t("user.password");
   const siteName = runtimeConfig.siteName ?? "Yona";
   const title = lookupLegacyMessage(language, "title.loginFor", { args: [siteName] });
+  const showPasswordResetFlash = password === "reset";
   const signInMutation = useMutation({
     mutationFn: async (input: { identifier: string; password: string; rememberMe: boolean }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -95,6 +98,11 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           <p className="tag-line">{t("app.description")}</p>
         </div>
         <div className="login-form-wrap frm-wrap">
+          {showPasswordResetFlash ? (
+            <span data-toggle="yobi-notify" data-message={t("user.loginWithNewPassword")} hidden>
+              {t("user.loginWithNewPassword")}
+            </span>
+          ) : null}
           {capabilities?.emailVerificationEnabled === true ? (
             <div className="email-verification-help">
               {t("notification.confirm.mail.will.be.sent")}
