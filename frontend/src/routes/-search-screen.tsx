@@ -248,6 +248,55 @@ function SearchResultList({
     );
   }
 
+  if (result.searchType === "milestone") {
+    return (
+      <>
+        <ul className="search-list-wrap">
+          {result.items.map((item) => (
+            <li className="search-list-item" key={item.id}>
+              <div className="title-wrap">
+                <a href={item.href} className="title">
+                  {item.title}
+                </a>
+              </div>
+              <div className="search-content">
+                {item.snippets.map((snippet) => (
+                  <p
+                    className="search-content-body"
+                    key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
+                  >
+                    {snippet.text}
+                    {snippet.truncated ? " ..... " : null}
+                  </p>
+                ))}
+              </div>
+              <div className="search-meta-info">
+                {result.scope !== "project" ? (
+                  <a
+                    href={prefixBasePath(
+                      runtimeConfig.basePath,
+                      `/${item.ownerName}/${item.projectName}`,
+                    )}
+                    className="project-link meta-item"
+                  >
+                    {item.ownerName}/{item.projectName}
+                  </a>
+                ) : null}
+                {item.updatedLabel ? (
+                  <span className="due-date meta-item">
+                    {t("label.dueDate")} <strong>{item.updatedLabel}</strong>{" "}
+                    {item.dueDateUntilLabel ? `(${item.dueDateUntilLabel})` : null}
+                  </span>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div id="pagination"></div>
+      </>
+    );
+  }
+
   return <div className="empty-result"></div>;
 }
 
