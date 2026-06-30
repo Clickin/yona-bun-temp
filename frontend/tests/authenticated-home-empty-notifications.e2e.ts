@@ -266,6 +266,19 @@ test("direct notifications route matches legacy populated notification row DOM",
     titleFontSize: "14px",
     titleFontWeight: "700",
   });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await readMobileNotificationStreamMetrics(page)).toEqual({
+    avatarDisplay: "inline-block",
+    messageLineHeight: "20px",
+    messageWhiteSpace: "normal",
+    metaFontSize: "12px",
+    streamDescDisplay: "inline-block",
+    streamDescWidth: 338,
+    streamPaddingLeft: "25px",
+    streamTypeDisplay: "inline-block",
+    streamTypeFontSize: "20px",
+    titleFontSize: "14px",
+  });
 });
 
 async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
@@ -489,6 +502,42 @@ async function readDesktopNotificationStreamMetrics(page: Page) {
       titleColor: titleStyle.color,
       titleFontSize: titleStyle.fontSize,
       titleFontWeight: titleStyle.fontWeight,
+    };
+  });
+}
+
+async function readMobileNotificationStreamMetrics(page: Page) {
+  return page.evaluate(() => {
+    const stream = document.querySelector<HTMLElement>(".notification-stream");
+    const streamType = document.querySelector<HTMLElement>(".notification-stream .stream-type");
+    const streamDesc = document.querySelector<HTMLElement>(".notification-stream .stream-desc");
+    const title = document.querySelector<HTMLElement>(".notification-stream .title");
+    const messageWrap = document.querySelector<HTMLElement>(".notification-stream .message-wrap");
+    const meta = document.querySelector<HTMLElement>(".notification-stream .meta");
+    const avatar = document.querySelector<HTMLElement>(".notification-stream .avatar-wrap");
+    if (!stream || !streamType || !streamDesc || !title || !messageWrap || !meta || !avatar) {
+      throw new Error("Expected mobile notification stream metric targets are missing.");
+    }
+
+    const streamStyle = getComputedStyle(stream);
+    const streamTypeStyle = getComputedStyle(streamType);
+    const streamDescStyle = getComputedStyle(streamDesc);
+    const titleStyle = getComputedStyle(title);
+    const messageWrapStyle = getComputedStyle(messageWrap);
+    const metaStyle = getComputedStyle(meta);
+    const avatarStyle = getComputedStyle(avatar);
+
+    return {
+      avatarDisplay: avatarStyle.display,
+      messageLineHeight: messageWrapStyle.lineHeight,
+      messageWhiteSpace: messageWrapStyle.whiteSpace,
+      metaFontSize: metaStyle.fontSize,
+      streamDescDisplay: streamDescStyle.display,
+      streamDescWidth: Math.round(streamDesc.getBoundingClientRect().width),
+      streamPaddingLeft: streamStyle.paddingLeft,
+      streamTypeDisplay: streamTypeStyle.display,
+      streamTypeFontSize: streamTypeStyle.fontSize,
+      titleFontSize: titleStyle.fontSize,
     };
   });
 }
