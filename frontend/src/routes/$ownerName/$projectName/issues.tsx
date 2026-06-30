@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, type HTMLAttributes, type LiHTMLAttributes } from "react";
+import { Fragment, useEffect, useRef, type HTMLAttributes, type LiHTMLAttributes } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
@@ -208,7 +208,7 @@ function ProjectIssuesBody({
                   <i className="ico ico-err1"></i>
                   <p>{t("issue.is.empty")}</p>
                 </div>
-                <IssueListKeymap />
+                <IssueListKeymap project={project} />
               </>
             ) : (
               <>
@@ -259,7 +259,7 @@ function ProjectIssuesBody({
                     <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}
                   </a>
                 </div>
-                <IssueListKeymap />
+                <IssueListKeymap project={project} />
                 <div id="pagination" data-total={totalPages(issues)}></div>
               </>
             )}
@@ -1174,15 +1174,79 @@ function ShowSubtasksCheckbox() {
   );
 }
 
-function IssueListKeymap() {
+function IssueListKeymap({ project }: { project: ProjectContainer }) {
   const { t } = useLegacyMessages();
+  const isMac =
+    typeof navigator !== "undefined" && navigator.userAgent.toLowerCase().includes("macintosh");
+  const ctrlKey = isMac ? "⌘" : "CTRL";
+  const showPullRequest = stringField((project as Record<string, unknown>).vcs, "GIT") === "GIT";
+  const showProjectSetting = projectMemberControlsEnabled(project);
 
   return (
     <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
       <a href="#helpKeys" data-toggle="modal" className="ybtn ybtn-inverse ybtn-mini">
         {t("title.keymap")}
       </a>
+      <div id="helpKeys" className="modal hide fade keymap-help" tabIndex={-1} role="dialog">
+        <div className="row-fluid">
+          <div className="span3">
+            <h5>{t("project.projects")}</h5>
+            <KeymapEntry keys={["H"]} label={t("menu.home")} />
+            <KeymapEntry keys={["B"]} label={t("menu.board")} />
+            <KeymapEntry keys={["I"]} label={t("menu.issue")} />
+            <KeymapEntry keys={["C"]} label={t("menu.code")} />
+            <KeymapEntry keys={["M"]} label={t("milestone")} />
+            {showPullRequest ? <KeymapEntry keys={["P"]} label={t("menu.pullRequest")} /> : null}
+            {showProjectSetting ? <KeymapEntry keys={["Q"]} label={t("project.setting")} /> : null}
+          </div>
+          <div className="span9">
+            <div className="row-fluid">
+              <div className="span5">
+                <h5>{t("title.issueList")}</h5>
+                <KeymapEntry keys={["N"]} label={t("issue.menu.new")} />
+                <KeymapEntry keys={["←"]} label={t("button.prevPage")} />
+                <KeymapEntry keys={["→"]} label={t("button.nextPage")} />
+                <KeymapEntry keys={[ctrlKey, "A"]} label={t("button.selectAll")} />
+              </div>
+              <div className="span7">
+                <h5>{t("site")}</h5>
+                <KeymapEntry keys={["A"]} label={t("issue.myIssue")} />
+                <KeymapEntry keys={["U"]} label={t("userinfo.profile")} />
+                <KeymapEntry keys={["F"]} label={t("user.menu")} />
+                <KeymapEntry
+                  keys={isMac ? ["CTRL", "ALT", "S"] : ["ALT", "S"]}
+                  label={t("site.search")}
+                />
+                <KeymapEntry keys={[ctrlKey, "ENTER"]} label={t("button.submitForm")} />
+              </div>
+            </div>
+            <div className="row-fluid mt20">
+              <div className="span12"></div>
+            </div>
+          </div>
+        </div>
+        <p className="actrow">
+          <button type="button" className="ybtn ybtn-info" data-dismiss="modal">
+            {t("button.confirm")}
+          </button>
+        </p>
+      </div>
     </div>
+  );
+}
+
+function KeymapEntry({ keys, label }: { keys: string[]; label: string }) {
+  return (
+    <>
+      {keys.map((key, index) => (
+        <Fragment key={key}>
+          {index > 0 ? " + " : ""}
+          <span className="ybtn ybtn-small">{key}</span>
+        </Fragment>
+      ))}
+      <span className="help-inline">{label}</span>
+      <br />
+    </>
   );
 }
 
