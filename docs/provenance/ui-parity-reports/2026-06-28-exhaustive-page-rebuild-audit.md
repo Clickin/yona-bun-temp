@@ -401,7 +401,7 @@ audit ledger itself has no remaining `reopen: inspect` rows.
 
 | legacy template | packet | audit disposition |
 | --- | --- | --- |
-| `organization/create.scala.html` | P6 organization | metric guard passed: `directory-create-import-proof.e2e.ts` asserts legacy organization create form shell, `form[name=new-org]` fields/actions ordering, input/textarea sizing, validation branch, and TanStack Query REST POST redirect boundary |
+| `organization/create.scala.html` | P6 organization | metric guard passed: `organizations-new.e2e.ts` asserts legacy organization create form shell, `form[name=new-org]` field/action ordering, `.n-alert[data-errType=name]`, hidden `.wrongName`, input/textarea hooks, create/cancel actions, and TanStack Query REST create boundary |
 | `organization/deleteForm.scala.html` | P6 organization | metric guard passed: `organization-directory-admin-parity.e2e.ts` asserts legacy settings shell ownership, active delete tab, `.box-wrap.bottom` delete action placement, `#btnDelete`, `#alertDeletion` modal header/body/footer order, confirm button placement, and TanStack Query REST DELETE redirect |
 | `organization/group_board_list.scala.html` | P6 organization | metric guard passed: `board-posting-parity.e2e.ts` asserts organization board shell stack, toolbar form, project selector/search/two-column controls, filter/list ordering, row avatar/title/info/project alignment, pagination placement, and legacy sort anchors |
 | `organization/group_board_list_partial.scala.html` | P6 organization | metric guard passed: `board-posting-parity.e2e.ts` asserts organization board row partial avatar/title/meta/project/comment/id placement, post row width, and pagination relation |

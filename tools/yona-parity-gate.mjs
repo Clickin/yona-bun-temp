@@ -112,12 +112,17 @@ const PARITY_SLICES = [
     label: "Public organization directory",
     status: "parity",
     implementationPatterns: [
+      /^frontend\/src\/routes\/organizations\/new\.tsx$/i,
       /^frontend\/src\/routes\/orgs\.tsx$/i,
       /^frontend\/src\/routes\/orgs\/route\.tsx$/i,
       /^frontend\/src\/app\.css$/i,
     ],
-    testKeywords: ["organization-directory-route", "orgs", "directory-parity"],
-    provenanceDocs: ["docs/provenance/core-parity-audit.md"],
+    testKeywords: ["organization", "organizations-new", "organization-directory-route", "orgs", "directory-parity"],
+    provenanceDocs: [
+      "docs/provenance/core-parity-audit.md",
+      "docs/provenance/ui-parity-reports/template-first-p6-organization-directory-workspace.md",
+      "docs/provenance/ui-parity-reports/2026-06-28-rendered-evidence-execution-manifest.md",
+    ],
   },
   {
     id: "anonymous-help-route",
