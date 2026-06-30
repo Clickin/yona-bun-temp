@@ -8,6 +8,7 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { SiteLayoutShell } from "../-home-route-screen";
 
 type LoginFormSearch = {
   redirectUrl: string;
@@ -85,97 +86,99 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   });
 
   return (
-    <div className="page full">
-      <div className="center-wrap tag-line-wrap login">
-        <h1 className="title">
-          <HighlightedLegacyMessage message={title} />
-        </h1>
-        <p className="tag-line">{t("app.description")}</p>
-      </div>
-      <div className="login-form-wrap frm-wrap">
-        {capabilities?.emailVerificationEnabled === true ? (
-          <div className="email-verification-help">
-            {t("notification.confirm.mail.will.be.sent")}
-          </div>
-        ) : null}
-        <form action="/users/login" method="POST" onSubmit={(event) => void handleSubmit(event)}>
-          <input type="hidden" name="redirectUrl" value={redirectUrl} />
-          {socialLoginOnly ? (
-            <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
-          ) : (
-            <>
-              <dl>
-                <dd>
-                  <input
-                    id="loginIdOrEmailD"
-                    name="loginIdOrEmail"
-                    type="text"
-                    className="text email"
-                    autoComplete="off"
-                    placeholder={loginIdPlaceholder}
-                  />
-                </dd>
-                <dd>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    className="text password"
-                    autoComplete="off"
-                    placeholder={passwordPlaceholder}
-                  />
-                </dd>
-              </dl>
-              {submitError ? <div className="error-message">{submitError}</div> : null}
-              <div className="btns-row">
-                <button
-                  type="submit"
-                  className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
-                  disabled={signInMutation.isPending}
-                >
-                  {t("button.login")}
-                </button>
-              </div>
-            </>
-          )}
-
-          <div className="btns-row nm">
-            {socialProviders.length > 0 && !socialLoginOnly ? (
-              <div className="social-login-title-line"> {t("title.or")} </div>
-            ) : null}
-            {socialProviders.map((provider) => (
-              <OAuthProviderLink
-                key={provider}
-                basePath={runtimeConfig.basePath}
-                provider={provider}
-              />
-            ))}
-          </div>
-          {!socialLoginOnly ? (
-            <div className="act-row mt5">
-              <div className="remember-me-wrap pull-left">
-                <input
-                  id="remember-me"
-                  type="checkbox"
-                  name="rememberMe"
-                  className="checkbox"
-                  defaultChecked
-                />
-                <label htmlFor="remember-me" className="bg-checkbox">
-                  {t("title.rememberMe")}
-                </label>
-              </div>
-
-              <div className="links-wrap pull-right">
-                <LegacyInternalLink to="/lostPassword">
-                  {t("title.forgotpassword")}
-                </LegacyInternalLink>
-              </div>
+    <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <div className="page full">
+        <div className="center-wrap tag-line-wrap login">
+          <h1 className="title">
+            <HighlightedLegacyMessage message={title} />
+          </h1>
+          <p className="tag-line">{t("app.description")}</p>
+        </div>
+        <div className="login-form-wrap frm-wrap">
+          {capabilities?.emailVerificationEnabled === true ? (
+            <div className="email-verification-help">
+              {t("notification.confirm.mail.will.be.sent")}
             </div>
           ) : null}
-        </form>
+          <form action="/users/login" method="POST" onSubmit={(event) => void handleSubmit(event)}>
+            <input type="hidden" name="redirectUrl" value={redirectUrl} />
+            {socialLoginOnly ? (
+              <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
+            ) : (
+              <>
+                <dl>
+                  <dd>
+                    <input
+                      id="loginIdOrEmailD"
+                      name="loginIdOrEmail"
+                      type="text"
+                      className="text email"
+                      autoComplete="off"
+                      placeholder={loginIdPlaceholder}
+                    />
+                  </dd>
+                  <dd>
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      className="text password"
+                      autoComplete="off"
+                      placeholder={passwordPlaceholder}
+                    />
+                  </dd>
+                </dl>
+                {submitError ? <div className="error-message">{submitError}</div> : null}
+                <div className="btns-row">
+                  <button
+                    type="submit"
+                    className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
+                    disabled={signInMutation.isPending}
+                  >
+                    {t("button.login")}
+                  </button>
+                </div>
+              </>
+            )}
+
+            <div className="btns-row nm">
+              {socialProviders.length > 0 && !socialLoginOnly ? (
+                <div className="social-login-title-line"> {t("title.or")} </div>
+              ) : null}
+              {socialProviders.map((provider) => (
+                <OAuthProviderLink
+                  key={provider}
+                  basePath={runtimeConfig.basePath}
+                  provider={provider}
+                />
+              ))}
+            </div>
+            {!socialLoginOnly ? (
+              <div className="act-row mt5">
+                <div className="remember-me-wrap pull-left">
+                  <input
+                    id="remember-me"
+                    type="checkbox"
+                    name="rememberMe"
+                    className="checkbox"
+                    defaultChecked
+                  />
+                  <label htmlFor="remember-me" className="bg-checkbox">
+                    {t("title.rememberMe")}
+                  </label>
+                </div>
+
+                <div className="links-wrap pull-right">
+                  <LegacyInternalLink to="/lostPassword">
+                    {t("title.forgotpassword")}
+                  </LegacyInternalLink>
+                </div>
+              </div>
+            ) : null}
+          </form>
+        </div>
       </div>
-    </div>
+    </SiteLayoutShell>
   );
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
