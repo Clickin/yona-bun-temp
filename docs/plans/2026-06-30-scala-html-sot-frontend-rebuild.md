@@ -62,7 +62,8 @@ Each Scala HTML route/state gets a new E2E test before TSX implementation.
 
 The new test must:
 
-- Navigate through rendered links/buttons for intermediate SPA page movement.
+- Navigate through rendered TanStack Router `Link` anchors or legacy buttons for
+  intermediate SPA page movement.
 - Use direct `page.goto` only for the initial entry or for a route that has no
   visible legacy navigation path.
 - Compare rendered DOM structure from the legacy page against rendered SPA DOM,
@@ -88,8 +89,10 @@ frontend is a React SPA with TanStack Router.
 Allowed change:
 
 - React owns client-side route transitions.
-- Internal navigation may use TanStack Router `Link`/navigation while preserving
-  the legacy `href` deep link.
+- Internal view-to-view navigation must use TanStack Router `Link` components
+  while preserving the legacy `href` deep link in the rendered anchor.
+- Programmatic navigation is allowed only for legacy non-anchor flows such as
+  form success redirects, modal decisions, or imperative callbacks.
 - The initial Vite/root mount wrapper may differ from the legacy document shell.
 
 Not allowed:
@@ -97,8 +100,17 @@ Not allowed:
 - Changing visible route URLs.
 - Reordering navbar/project/org/site-admin menu items.
 - Replacing legacy anchors with buttons when the legacy UI used links.
+- Replacing internal legacy anchors with plain React `<a>` handlers when a
+  TanStack Router `Link` can represent the same deep link.
 - Testing intermediate page movement by direct `goto` instead of clicking the
-  rendered navigation that users see.
+  rendered `Link`/anchor navigation that users see.
+
+E2E requirement:
+
+- For internal navigation parity, tests must click the rendered `Link` anchor,
+  assert the legacy `href`, and then assert the SPA URL/DOM transition.
+- Direct route entry is only the first step of a scenario, not proof that page
+  navigation parity works.
 
 ### 2. Sidebar And User Menu Fragments
 

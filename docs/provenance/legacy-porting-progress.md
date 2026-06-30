@@ -3,7 +3,7 @@
 > Status dashboard. This document is a progress mirror for humans and agents.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and the narrower provenance docs under `docs/provenance/**`.
 
-Last updated: 2026-06-23
+Last updated: 2026-06-30
 
 ## Progress Estimate
 
@@ -16,6 +16,7 @@ Last updated: 2026-06-23
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace/public profile, organization/project ownership, issue-tracker core behavior, Git read/admin surfaces, PR/review interaction surfaces including create/edit merge preflight, and board/posting core app behavior.
+- Frontend UI parity is reset to a Scala HTML source-of-truth flow as of 2026-06-30: active hand-designed TSX views and selector-presence tests are not accepted as parity evidence, view-model layers that decide page shape are deletion targets, and only DOM-neutral support boundaries such as REST API clients, TanStack Query client setup, i18n lookup helpers, runtime config, and generated router plumbing may remain while each route is rebuilt RED-GREEN from legacy-rendered HTML.
 - The app-runtime first-priority core parity audit is closed at the provenance-row level, and the 2026-06-23 deferred closure directive records every remaining row as implemented, retired by re-audit, or explicitly non-blocking/not-applicable.
 - Legacy `PullRequestApp.doClone` direct fork creation is restored as `POST /:owner/:project/clone`, returning the legacy `{status,url}` JSON wrapper while reusing the app fork implementation for native bare repository clone and `original_project_id` persistence.
 - Workspace and public profile PR streams now follow legacy `user/partial_pullRequests.scala.html` scalar output for PR number, author/no-author fallback, comment icon counts, receiver avatar shell, and `pullRequest.state.*` state labels instead of temporary English prefixes.
