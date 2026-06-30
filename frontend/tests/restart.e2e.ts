@@ -35,6 +35,11 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
 
   expect(actual).toEqual(expected);
   expect(await readDesktopRestartMetrics(page)).toEqual({
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
+    providerColor: "rgb(51, 51, 51)",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
     logoHeight: "55px",
     logoLineHeight: "55px",
     logoMarginBottom: "50px",
@@ -53,15 +58,25 @@ async function readDesktopRestartMetrics(page: Page) {
     const secretWrap = document.querySelector<HTMLElement>(".secret-wrap");
     const logo = document.querySelector<HTMLElement>(".secret-wrap .logo");
     const secretBox = document.querySelector<HTMLElement>(".secret-box");
-    if (!secretWrap || !logo || !secretBox) {
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (!secretWrap || !logo || !secretBox || !pageFooter || !pageFooterOuter || !provider) {
       throw new Error("Expected restart metric targets are missing.");
     }
 
     const secretWrapStyle = getComputedStyle(secretWrap);
     const logoStyle = getComputedStyle(logo);
     const secretBoxStyle = getComputedStyle(secretBox);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
 
     return {
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
       logoHeight: logoStyle.height,
       logoLineHeight: logoStyle.lineHeight,
       logoMarginBottom: logoStyle.marginBottom,
