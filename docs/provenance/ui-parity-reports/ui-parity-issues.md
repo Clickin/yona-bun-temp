@@ -49,9 +49,9 @@ Mode: read-only audit, no files edited by the explorer
 
 ## 2026-07-01 Project Issue Non-Member Controls Follow-Up
 
-- Restored the legacy `ProjectUser.isMember` gates from `issue/partial_list_wrap.scala.html` and `issue/partial_list.scala.html` for project issue lists.
-- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now hides the mass-update toolbar and per-row mass-update checkbox when the loaded project container does not expose update/member controls.
-- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=non-member` whole-screen DOM comparison proving no settings cog, no `.mass-update-wrap`, no `.mass-update-check`, and otherwise preserved populated row/Excel/keymap/pagination DOM.
+- Restored the legacy `ProjectUser.isMember` gates from `issue/partial_list_wrap.scala.html` and `issue/partial_list.scala.html`, plus the issue-label creation gate from `issue/partial_searchform.scala.html`, for project issue lists.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now hides the mass-update toolbar, per-row mass-update checkbox, and label management action when the loaded project container does not expose update/member controls.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=non-member` whole-screen DOM comparison proving no settings cog, no `.mass-update-wrap`, no `.mass-update-check`, no `.labels-wrap .ybtn`, and otherwise preserved populated row/Excel/keymap/pagination DOM.
 
 ## 2026-07-01 Project Issue Milestone Menu Gate Follow-Up
 

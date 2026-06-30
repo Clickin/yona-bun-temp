@@ -48,6 +48,10 @@ const EXPECTED_PROJECT_ISSUES_NON_MEMBER = EXPECTED_PROJECT_ISSUES_EMPTY.replace
     "",
   )
   .replace(
+    '<div class="labels-wrap"><a href="__BASE_PATH__/admin/sample/issue/labelsform" class="ybtn ybtn-default ybtn-mini pull-right"><i class="yobicon-cog vmiddle"></i><span class="vmiddle" style="margin-left:2px;">Manage label</span></a></div>',
+    '<div class="labels-wrap"></div>',
+  )
+  .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${NON_MEMBER_SPAN10}</div></div></div></div>\n<footer`,
   );
@@ -294,6 +298,7 @@ test("project issue list hides mass update controls for non-members", async ({ p
   await expect(page.locator(".project-setting")).toHaveCount(0);
   await expect(page.locator(".mass-update-wrap")).toHaveCount(0);
   await expect(page.locator(".mass-update-check")).toHaveCount(0);
+  await expect(page.locator(".labels-wrap .ybtn")).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(

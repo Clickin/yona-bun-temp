@@ -166,6 +166,7 @@ function ProjectIssuesBody({
                 ownerName={ownerName}
                 projectName={projectName}
                 search={search}
+                showLabelManagement={showMassUpdateControls}
               />
             </div>
           </div>
@@ -986,12 +987,14 @@ function IssueSearchForm({
   ownerName,
   projectName,
   search,
+  showLabelManagement,
 }: {
   basePath: string;
   currentUserId: string;
   ownerName: string;
   projectName: string;
   search: ProjectIssuesSearch;
+  showLabelManagement: boolean;
 }) {
   const { t } = useLegacyMessages();
 
@@ -1080,15 +1083,17 @@ function IssueSearchForm({
           </dd>
         </dl>
         <div className="labels-wrap">
-          <a
-            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
-            className="ybtn ybtn-default ybtn-mini pull-right"
-          >
-            <i className="yobicon-cog vmiddle"></i>
-            <span className="vmiddle" style={{ marginLeft: "2px" }}>
-              {t("label.manage")}
-            </span>
-          </a>
+          {showLabelManagement ? (
+            <a
+              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
+              className="ybtn ybtn-default ybtn-mini pull-right"
+            >
+              <i className="yobicon-cog vmiddle"></i>
+              <span className="vmiddle" style={{ marginLeft: "2px" }}>
+                {t("label.manage")}
+              </span>
+            </a>
+          ) : null}
         </div>
       </div>
     </form>
