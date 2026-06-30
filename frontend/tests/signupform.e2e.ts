@@ -203,7 +203,7 @@ const EXPECTED_PUBLIC_LANDING = `
 <div id="yobiToasts" class="yobiToasts">
   <div class="toast" tabindex="-1">
     <div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div>
-    <div class="center-text"><span class="v"></span><div class="msg">Sign-up request has been sent. Site admin will review and accept your request. Thanks.</div></div>
+    <div class="center-text"><span class="v"></span><div class="msg">__TOAST_MESSAGE__</div></div>
   </div>
 </div>
 `;
@@ -297,7 +297,46 @@ test("signup requiring admin confirmation redirects to legacy flash landing stat
   const actual = await canonicalizeScreenAndToastRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_PUBLIC_LANDING.replaceAll("__BASE_PATH__", basePath),
+    expectedPublicLanding(
+      basePath,
+      "Sign-up request has been sent. Site admin will review and accept your request. Thanks.",
+    ),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
+test("signup requiring email verification redirects to legacy flash landing state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, { emailVerificationEnabled: true });
+  await mockAnonymousSession(page);
+  await mockSessionBootstrap(page);
+  await page.route("**/api/v1/auth/register", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: { isAnonymous: true },
+    });
+  });
+  await page.goto(`${basePath}/users/signupform`);
+
+  await page.fill("#loginId", "door");
+  await page.fill("#uname", "Door");
+  await page.fill("#email", "door@example.com");
+  await page.fill("#password", "passw0rd");
+  await page.fill("#retypedPassword", "passw0rd");
+  await page.locator('form[name="signup"] button[type="submit"]').click();
+
+  await expect(page).toHaveURL(new RegExp(`${basePath}/\\?verify=sent$`));
+  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
+    "User verification mail was sent.",
+  );
+
+  const actual = await canonicalizeScreenAndToastRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    expectedPublicLanding(basePath, "User verification mail was sent."),
   );
 
   expect(actual).toEqual(expected);
@@ -307,6 +346,7 @@ async function mockCapabilities(
   page: Page,
   overrides: {
     defaultAdminContact?: string;
+    emailVerificationEnabled?: boolean;
     signupRequireConfirm?: boolean;
     socialLoginOnly?: boolean;
   },
@@ -316,13 +356,23 @@ async function mockCapabilities(
       contentType: "application/json",
       json: {
         defaultAdminContact: overrides.defaultAdminContact ?? "",
-        emailVerificationEnabled: false,
+        emailVerificationEnabled: overrides.emailVerificationEnabled ?? false,
         enabledSocialProviders: [],
         loginIdPlaceholder: "",
         passwordPlaceholder: "",
         signupRequireConfirm: overrides.signupRequireConfirm ?? false,
         socialLoginOnly: overrides.socialLoginOnly ?? false,
       },
+    });
+  });
+}
+
+async function mockSessionBootstrap(page: Page) {
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "signup-csrf" },
+      json: {},
     });
   });
 }
@@ -340,6 +390,13 @@ function expectedSignupScreen(basePath: string, confirmHtml: string, formBody: s
   return EXPECTED_SIGNUP_SCREEN.replaceAll("__BASE_PATH__", basePath)
     .replace("__CONFIRM__", confirmHtml)
     .replace("__FORM_BODY__", formBody.replaceAll("__BASE_PATH__", basePath));
+}
+
+function expectedPublicLanding(basePath: string, toastMessage: string) {
+  return EXPECTED_PUBLIC_LANDING.replaceAll("__BASE_PATH__", basePath).replace(
+    "__TOAST_MESSAGE__",
+    toastMessage,
+  );
 }
 
 async function canonicalizeScreenRoots(page: Page) {
