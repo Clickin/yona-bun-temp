@@ -30,6 +30,7 @@ JavaScript or Play form handlers.
 | `yona-original/app/views/user/resetPassword.scala.html` | Reset password form. | `form[name=passwordReset]`, `input[name=hashString]`, `#password`, `#retypedPassword`, `.btns-row`. |
 | `yona-original/app/views/error/badrequest_default.scala.html` | Invalid reset URL error shell. | `.page-wrap-outer`, `.project-page-wrap`, `.error-wrap`, `.ico-404`, Home link. |
 | `yona-original/app/views/help/toc.scala.html` | Anonymous help/FAQ page. | `.site-breadcrumb-outer`, `.site-breadcrumb-inner h3`, `.page-wrap`, `.qas > .qa`, `.question-wrap`, `.answer-wrap`, row open/closed toggle. |
+| `yona-original/app/views/restricted.scala.html`, `siteLayout.scala.html`, `common/navbar.scala.html` | Authenticated restricted sample page. | `.unsupported`, `.gnb-outer`, `.gnb-nav`, `.page-wrap-outer`, `.page-wrap`, fixed YouTube iframe, local user name/email, verification marker, provider/user ID, session expiry, `.page-footer-outer`. |
 
 ## Current React/API Targets
 
@@ -41,6 +42,7 @@ JavaScript or Play form handlers.
 | `frontend/src/routes/resetPassword.tsx` | Active template-first reset implementation for the `/resetPassword?s=...` valid reset form screen, copied from `user/resetPassword.scala.html` and bound to password-reset REST helpers through TanStack Query. |
 | `frontend/src/routes/restart.tsx` | Active template-first reset implementation for the `/restart` notice screen, copied from `welcome/restart.scala.html`. |
 | `frontend/src/routes/secret.tsx` | Active template-first reset implementation for the first-run `/secret` setup screen, copied from `welcome/secret.scala.html` and bound to the secret-admin REST helper through TanStack Query. |
+| `frontend/src/routes/restricted.tsx` | Active template-first reset implementation for the authenticated `/restricted` sample screen, copied from `restricted.scala.html` under `siteLayout.scala.html` and bound to current session REST through TanStack Query. |
 | `frontend/src/routes/-auth-views.tsx` | Login, signup, lost/reset password, verify, first-run setup, OAuth/social-login-only public auth surfaces. |
 | `frontend/src/routes/-home-view.tsx`, `frontend/src/routes/index.tsx` | Anonymous home intro and authenticated/default landing notification states. |
 | `frontend/src/routes/users/loginform.tsx`, `users/signupform.tsx`, `lostPassword.tsx`, `resetPassword.tsx`, `(legacy-auth)/reset-password/route.tsx`, `login/route.tsx`, `forgot-password/route.tsx` | Canonical public auth route entrypoints and aliases; login, signup, lost-password, and reset-password form are now active 2026-06-30 template-first reset routes. |
@@ -54,6 +56,7 @@ JavaScript or Play form handlers.
 | `frontend/tests/help-toc.e2e.ts` | Whole rendered DOM parity proof for anonymous `/_help`; compares the breadcrumb/page/FAQ roots and clicks the first FAQ row open/closed. |
 | `frontend/tests/restart.e2e.ts` | Whole rendered DOM parity proof for `/restart`; compares the page/footer roots from `welcome/restart.scala.html`. |
 | `frontend/tests/secret-setup.e2e.ts` | Whole rendered DOM parity proof for `/secret`; compares the page/footer roots and proves CSRF-backed secret-admin REST submit plus base-path restart redirect. |
+| `frontend/tests/restricted.e2e.ts` | Whole rendered DOM parity proof for `/restricted`; compares unsupported/nav/page/footer roots and session-bound identity/provider/expiry content from `restricted.scala.html`. |
 | `frontend/tests/verify-user.e2e.ts` | Whole `.page.full` rendered DOM parity proof for `/verify/:loginId/:verificationCode` success; mocks only the verify REST result and preserves the legacy verified-user shell. |
 | `frontend/src/auth-workspace-shell.spec.tsx`, `wave1-auth-workspace-parity.spec.tsx`, `help-route-parity.spec.tsx` | Static selector/source proof. |
 | `frontend/tests/auth-public-entry-parity.e2e.ts`, `root-shell-parity.e2e.ts` | Browser-visible public auth/help/root-shell proof. |
@@ -65,7 +68,7 @@ JavaScript or Play form handlers.
 | gap | 0 |
 | deviation | 0 |
 | weak evidence | 0 |
-| covered | 11 |
+| covered | 12 |
 | not-applicable | 1 |
 | needs-parent-decision | 0 |
 
@@ -86,6 +89,7 @@ JavaScript or Play form handlers.
 | Verification invalid HTTP deep-link status | Legacy invalid verification returns direct 404 plain body. | React SPA fallback plus REST verify status | route | not-applicable | P1 | none unless parent reclassifies direct-route ownership | Exact deep-link document HTTP status belongs to server direct-route/fallback ownership, not the React auth view packet. The user-visible React result and REST status are covered. |
 | Auth aliases | `/login`, `/register`, `/forgot-password`, `/reset-password` convenience paths. | alias route files and `RedirectPage` | route | covered in current follow-up | P1 | none | E2E proves aliases redirect to canonical legacy paths while preserving base path and reset query; canonical screens retain legacy shell and REST JSON submit boundary. |
 | `help/toc.scala.html` | `/_help` anonymous help/FAQ route. | `frontend/src/routes/[_]help.tsx` | interaction | covered in 2026-06-30 template-first reset slice | P1 | none; single component kept because the legacy screen is one template plus one click toggle | `frontend/tests/help-toc.e2e.ts` was RED against the reset route tree, then GREEN after the Scala HTML skeleton was ported. It compares the two stable rendered roots, including `.site-breadcrumb-outer`, `.page-wrap`, all six `.qas > .qa` rows, `.question-wrap`, `.answer-wrap`, legacy anchors, runtime `app.name` substitution, and exact `style="width:100%"`; it also clicks the first row open/closed to prove `.qa.open`. Verification: `pnpm --dir frontend test:e2e -- help-toc.e2e.ts`. |
+| `restricted.scala.html`, `siteLayout.scala.html`, `common/navbar.scala.html` | `/restricted` authenticated sample route. | `frontend/src/routes/restricted.tsx`, `frontend/src/api/session.ts` | interaction | covered in 2026-06-30 template-first reset slice | P1 | none; single component kept because the legacy screen is one tiny authenticated template plus the global site wrapper | `frontend/tests/restricted.e2e.ts` was RED against the reset route tree, then GREEN after `restricted.scala.html` was ported. It compares the stable `.unsupported`, `.gnb-outer`, `.page-wrap-outer`, and `.page-footer-outer` roots, including the global logo/search shell, heading, fixed `560x315` Gangnam Style iframe, local user name/email, verification marker, provider/user ID copy, and `expires == -1` text. Verification: `pnpm --dir frontend check`; `pnpm --dir frontend test:e2e -- restricted.e2e.ts`. |
 
 ## Verifier Evidence
 
@@ -104,6 +108,7 @@ Browser proof:
 - `frontend/tests/restart.e2e.ts`
 - `frontend/tests/reset-password.e2e.ts`
 - `frontend/tests/root-shell-parity.e2e.ts`
+- `frontend/tests/restricted.e2e.ts`
 - `frontend/tests/secret-setup.e2e.ts`
 - `frontend/tests/signupform.e2e.ts`
 - `frontend/tests/verify-user.e2e.ts`

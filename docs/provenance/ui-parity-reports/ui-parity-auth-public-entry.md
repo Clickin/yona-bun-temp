@@ -24,6 +24,7 @@ Date: 2026-06-26
   `frontend/src/routes/lostPassword.tsx`,
   `frontend/src/routes/resetPassword.tsx`,
   `frontend/src/routes/restart.tsx`,
+  `frontend/src/routes/restricted.tsx`,
   `frontend/src/routes/secret.tsx`,
   `frontend/src/routes/(legacy-auth)/reset-password/route.tsx`,
   `frontend/src/routes/login/route.tsx`,
@@ -41,6 +42,7 @@ Date: 2026-06-26
   `frontend/tests/loginform.e2e.ts`, `frontend/tests/signupform.e2e.ts`,
   `frontend/tests/lost-password.e2e.ts`, `frontend/tests/reset-password.e2e.ts`,
   `frontend/tests/restart.e2e.ts`, `frontend/tests/secret-setup.e2e.ts`,
+  `frontend/tests/restricted.e2e.ts`,
   `frontend/tests/verify-user.e2e.ts`
 
 ## Route Inventory Summary
@@ -49,7 +51,7 @@ Total rows: 10
 
 | Status | Count |
 | --- | ---: |
-| covered | 9 |
+| covered | 10 |
 | weak evidence | 0 |
 | gap | 0 |
 | deviation | 0 |
@@ -77,6 +79,7 @@ Total rows: 10
 | path | state | legacy selector/copy | Rust selector/copy | interaction | API/direct boundary | status |
 | --- | --- | --- | --- | --- | --- | --- |
 | `/restart` | restart notice after first-run setup | `welcome/restart.scala.html` standalone page/footer shell, logo, welcome heading, restart notice, footer provider | active flat route `frontend/src/routes/restart.tsx` preserves `.page-wrap-outer`, `.container.page-wrap`, `.secret-wrap`, `.logo`, `p.secret-box.txt-center`, and footer provider; `frontend/tests/restart.e2e.ts` whole-screen browser proof added on 2026-06-30 | direct route render | anonymous React page, no REST mutation | covered |
+| `/restricted` | authenticated restricted sample | `restricted.scala.html` in `siteLayout.scala.html`, global nav/search wrapper, fixed YouTube iframe, local user name/email, verification state, provider/user ID, session expiry text | active flat route `frontend/src/routes/restricted.tsx` preserves `.unsupported`, `.gnb-outer`, `.gnb-nav`, `.page-wrap-outer`, `.page-wrap`, fixed iframe, session-bound identity/auth copy, and footer provider; `frontend/tests/restricted.e2e.ts` whole-screen browser proof added on 2026-06-30 | direct route render with mocked current session | React reads `/api/v1/session`; server auth guard remains backend-owned | covered |
 | `/secret` | first-run/no-admin setup | `welcome/secret.scala.html` standalone page/footer shell, read-only `loginId=admin`, admin name/password/email fields, restart redirect after setup | active flat route `frontend/src/routes/secret.tsx` preserves the page/footer roots, `.secret-wrap`, warning alert, `.signup-form-wrap.frm-wrap`, legacy form attributes, read-only admin id, field order, submit button, footer provider, and base-path restart redirect; `frontend/tests/secret-setup.e2e.ts` whole-screen browser proof added on 2026-06-30 | fill admin fields, submit, assert restart redirect | React bootstraps CSRF through `/api/auth/session` and submits `/api/v1/auth/secret` REST JSON | covered |
 | `/users/loginform` | anonymous login | login form fields, `rememberMe`, `redirectUrl`, forgot-password link | active template-first reset route `frontend/src/routes/users/loginform.tsx` preserves the rendered `.page.full` DOM and legacy link shape; `frontend/tests/loginform.e2e.ts` whole-container browser proof added on 2026-06-30 | direct route render; focused submit wiring stays on existing React mutation boundary | React reads `/api/v1/auth/capabilities`, bootstraps CSRF through `/api/auth/session`, and submits `/api/v1/auth/sign-in` REST JSON | covered |
 | `/users/signupform` | anonymous signup | signup form fields, `form[name=signup]`, login link, confirmation/admin-contact states | active template-first reset route `frontend/src/routes/users/signupform.tsx` preserves the rendered `.page.full` DOM and legacy link shape; `frontend/tests/signupform.e2e.ts` whole-container browser proof added on 2026-06-30 | direct route render; focused submit wiring stays on existing React mutation boundary | React reads `/api/v1/auth/capabilities`, bootstraps CSRF through `/api/auth/session`, and submits `/api/v1/auth/register` REST JSON | covered |

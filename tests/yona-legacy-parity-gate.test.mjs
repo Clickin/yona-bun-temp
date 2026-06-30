@@ -349,9 +349,9 @@ test("maps auth runtime context changes to the account lifecycle slice", () => {
 
 test("maps restricted sample route changes to the account lifecycle slice", () => {
   const result = runGate([
-    "frontend/src/routes/-restricted-view.tsx",
-    "frontend/src/restricted-route-parity.spec.tsx",
-    "docs/provenance/ui-parity-reports/template-first-p7-site-admin-error-security.md",
+    "frontend/src/routes/restricted.tsx",
+    "frontend/tests/restricted.e2e.ts",
+    "docs/provenance/ui-parity-reports/template-first-p1-auth-public-home.md",
   ]);
 
   assert.equal(result.verdict, "pass");
