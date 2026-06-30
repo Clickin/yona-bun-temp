@@ -257,6 +257,7 @@ export type RestIssueListItem = ListProjectIssuesResponse["items"][number] & {
   }>;
   dueDateLabel?: string;
   dueDateOverdue?: boolean;
+  dueDateText?: string;
   id?: bigint | number;
   parentIssueNumber?: bigint | number | null;
   parentIssueTitle?: string;

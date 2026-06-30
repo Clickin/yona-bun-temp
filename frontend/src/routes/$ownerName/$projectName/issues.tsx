@@ -743,7 +743,9 @@ function ProjectIssueItem({
             <span className="vmiddle">
               {issue.state === "open" && issue.dueDateOverdue
                 ? t("issue.dueDate.overdue")
-                : issue.dueDateLabel}
+                : issue.state === "open"
+                  ? (issue.dueDateText ?? issue.dueDateLabel)
+                  : issue.dueDateLabel}
             </span>
           </div>
         ) : null}

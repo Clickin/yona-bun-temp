@@ -53,6 +53,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now preserves the full title in row `data-value`, renders one `.title-prefix` anchor with legacy `href="javascript:void(0)"` for each leading bracket prefix, and renders the remaining title in the normal issue title link.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=prefix` whole-screen DOM comparison proving `.title-prefix`, stripped title text, title-wrap order, mass-update toolbar, Excel action, keymap trigger, and pagination.
 
+## 2026-07-01 Project Issue Open Due Date Follow-Up
+
+- Restored the open, not-overdue `issue/partial_list.scala.html` due-date branch where the tooltip title keeps the absolute date while visible text uses legacy `issue.until`.
+- Scope: `frontend/src/auth-workspace-client.ts` exposes optional `dueDateText`; `frontend/src/routes/$ownerName/$projectName/issues.tsx` uses it only for open non-overdue issue rows, preserving overdue and closed-row copy.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=upcoming` whole-screen DOM comparison proving the relative due-date text, absolute tooltip title, neutral due-date class, mass-update toolbar, Excel action, keymap trigger, and pagination.
+
 ## 2026-07-01 Project Issue Mass Update Toolbar Follow-Up
 
 - Restored the visible `issue/partial_massupdate.scala.html` toolbar in the flat project issue list for non-empty member-visible issue lists, including `#mass-update-form`, `#check-all`, state/assignee/milestone/attach-label/detach-label dropdown shells, disabled buttons, label category/divider rows, and the multi-row sort filter branch from `partial_list_wrap.scala.html`.
