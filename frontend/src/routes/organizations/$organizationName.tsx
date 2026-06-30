@@ -325,7 +325,7 @@ function MemberPanel({
   );
 }
 
-function OrganizationHeader({
+export function OrganizationHeader({
   basePath,
   logoUrl,
   organizationName,
@@ -355,13 +355,13 @@ function OrganizationHeader({
   );
 }
 
-function OrganizationMenu({
+export function OrganizationMenu({
   active,
   basePath,
   organizationName,
   viewerCanUpdate,
 }: {
-  active: "home";
+  active?: "home";
   basePath: string;
   organizationName: string;
   viewerCanUpdate: boolean;
