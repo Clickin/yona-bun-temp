@@ -212,6 +212,62 @@ button.close {
   -webkit-appearance: none;
 }
 
+.yobiToasts {
+  position: fixed;
+  right: 20px !important;
+  bottom: 25px !important;
+  z-index: 9999;
+  margin: 10px;
+  overflow: hidden;
+}
+
+.yobiToasts .toast {
+  position: relative;
+  box-sizing: border-box;
+  width: 450px;
+  padding: 10px 20px;
+  margin: 10px;
+  font-weight: bold;
+  color: #000;
+  word-break: keep-all;
+  word-wrap: break-word;
+  outline: none;
+  background-color: #cddc39;
+  border-radius: 2px;
+  box-shadow: 1px 1px 3px #000;
+  opacity: 0.9;
+  transition-duration: 0.3s;
+}
+
+.yobiToasts .toast .btn-dismiss {
+  position: absolute;
+  top: 5px;
+  left: 420px;
+}
+
+.yobiToasts .toast .btn-dismiss button {
+  color: #000;
+  font-size: 25px;
+  font-weight: bold;
+}
+
+.yobiToasts .toast .v {
+  display: inline-block;
+  width: 0;
+  height: 50px;
+  vertical-align: middle;
+}
+
+.yobiToasts .toast .msg {
+  display: inline-block;
+  width: 90%;
+  margin: 0;
+  font-size: 15px;
+  vertical-align: middle;
+  word-break: break-all;
+  word-wrap: break-word;
+}
+
 a {
   color: inherit;
   text-decoration: none;
