@@ -192,10 +192,13 @@ function SearchResultList({
     result.searchType === "issue" ||
     result.searchType === "post" ||
     result.searchType === "issue_comment" ||
-    result.searchType === "post_comment"
+    result.searchType === "post_comment" ||
+    result.searchType === "review"
   ) {
     const titleClassName =
-      result.searchType === "issue_comment" || result.searchType === "post_comment"
+      result.searchType === "issue_comment" ||
+      result.searchType === "post_comment" ||
+      result.searchType === "review"
         ? undefined
         : "title";
     return (

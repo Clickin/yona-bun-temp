@@ -218,6 +218,26 @@ const EXPECTED_GLOBAL_POST_COMMENT_SEARCH = `
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
+const EXPECTED_GLOBAL_REVIEW_SEARCH = `
+<div class="unsupported hidden">
+  <div class="unsupported-inner"><p id="unsupported-content"></p></div>
+</div>
+<header class="gnb-outer">
+  <div class="gnb-inner">
+    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <ul class="gnb-nav">
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+    </ul>
+    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
+    <ul class="gnb-usermenu"><li class="gnb-usermenu-item" id="required-logged-in"><a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a></li><li class="divider"></li><li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li></ul>
+  </div>
+</header>
+<div class="site-breadcrumb-outer"><div class="site-breadcrumb-inner"><h3>Search</h3></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="project-page-wrap"><div class="row-fluid"><div class="span2"><ul class="lst-stacked unstyled search-category-wrap"><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue">Issues<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="user">Users<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="project">Projects<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post">Posts<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="milestone">Milestones<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue_comment">Issue Comments<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post_comment">Post Comments<span class="num-badge pull-right">0</span></a></li><li class="active "><a href="#" data-toggle="search-category" data-type="review">Code Reviews<span class="num-badge pull-right">1</span></a></li></ul></div><div class="span10"><div class="search-box-wrap"><form id="searchInnerForm" method="get" action="__BASE_PATH__/search"><input type="hidden" name="searchType" value="review"><input type="text" id="searchKeyword" name="keyword" class="span11" value="review"><button type="submit" class="ybtn">Search</button></form><h3 class="search-result-title">Found <strong>1</strong> result(s) in Code Reviews</h3></div><div class="search-result-wrap"><ul class="search-list-wrap"><li class="search-list-item"><div class="title-wrap"><span class="post-id">#3</span><a href="__BASE_PATH__/admin/sample/pullRequest/3#comment-99">Re) Refactor auth flow</a></div><div class="search-content"><p class="search-content-body">Review body.....</p></div><div class="search-meta-info"><a href="__BASE_PATH__/admin/sample" class="project-link meta-item">admin/sample</a><a href="__BASE_PATH__/carol" class="meta-item" data-toggle="tooltip" data-placement="top" title="carol">Carol</a><span class="meta-item" title="Jun 28, 2026">Jun 28, 2026</span></div></li></ul><div id="pagination"></div></div></div></div></div></div></div>
+<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
+`;
+
 test("global search matches legacy search/result.scala.html empty project result DOM", async ({
   page,
 }) => {
@@ -327,6 +347,23 @@ test("global post comment search renders legacy partial_post_comments.scala.html
     await canonicalizeHtml(
       page,
       EXPECTED_GLOBAL_POST_COMMENT_SEARCH.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("global review search renders legacy partial_reviews.scala.html populated row", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockGlobalSearch(page);
+
+  await page.goto(`${basePath}/search?keyword=review&searchType=review`);
+  await expect(page.locator(".search-list-wrap .search-list-item")).toBeVisible();
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_GLOBAL_REVIEW_SEARCH.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
@@ -630,6 +667,54 @@ async function mockGlobalSearch(page: Page) {
           requestedSearchType: "post_comment",
           scope: "global",
           searchType: "post_comment",
+          totalCount: 1,
+        }),
+      });
+      return;
+    }
+    if (keyword === "review") {
+      const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          context: {
+            organizationName: "",
+            ownerName: "",
+            projectName: "",
+          },
+          counts: {
+            issueComments: 0,
+            issues: 0,
+            milestones: 0,
+            postComments: 0,
+            posts: 0,
+            projects: 0,
+            reviews: 1,
+            users: 0,
+          },
+          items: [
+            {
+              authorLabel: "Carol",
+              authorLoginId: "carol",
+              createdLabel: "Jun 28, 2026",
+              href: `${basePath}/admin/sample/pullRequest/3#comment-99`,
+              id: "99",
+              number: "3",
+              ownerName: "admin",
+              projectName: "sample",
+              snippets: [{ highlights: [], text: "Review body", truncated: true }],
+              state: "open",
+              title: "Re) Refactor auth flow",
+              type: "review",
+              updatedLabel: "",
+            },
+          ],
+          keyword: "review",
+          pageNum: 1,
+          pageSize: 20,
+          requestedSearchType: "review",
+          scope: "global",
+          searchType: "review",
           totalCount: 1,
         }),
       });
