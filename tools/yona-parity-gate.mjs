@@ -117,8 +117,9 @@ const PARITY_SLICES = [
     implementationPatterns: [
       /^frontend\/src\/routes\/-help-views\.tsx$/i,
       /^frontend\/src\/routes\/\[_\]help\/route\.tsx$/i,
+      /^frontend\/src\/routes\/\[_\]help\.tsx$/i,
     ],
-    testKeywords: ["help-route", "help", "route-parity"],
+    testKeywords: ["help-route", "help-toc", "help", "route-parity"],
     provenanceDocs: ["docs/agents/06-phase-plan.md", "docs/provenance/legacy-porting-progress.md"],
   },
   {

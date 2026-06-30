@@ -287,8 +287,8 @@ test("passes parity-complete canonical route changes when a parity test changes 
 
 test("maps anonymous help route changes to the help parity slice", () => {
   const result = runGate([
-    "frontend/src/routes/-help-views.tsx",
-    "frontend/src/help-route-parity.spec.tsx",
+    "frontend/src/routes/[_]help.tsx",
+    "frontend/tests/help-toc.e2e.ts",
     "docs/provenance/legacy-porting-progress.md",
   ]);
 

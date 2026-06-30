@@ -4148,6 +4148,94 @@ div.markdown-preview {
   font-weight: 400;
 }
 
+.qas {
+  padding: 0;
+  margin: 30px 0 0;
+  list-style: none;
+}
+
+.qas .qa {
+  margin-bottom: 14px;
+  border-bottom: 1px solid #dcdcdc;
+}
+
+.qas .qa:last-of-type {
+  border-bottom: none;
+}
+
+.qas .question-wrap,
+.qas .answer-wrap {
+  box-sizing: border-box;
+}
+
+.qas .question-wrap i,
+.qas .answer-wrap i {
+  font-size: 2em;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
+.qas .question-wrap i.q {
+  color: #f36c22;
+}
+
+.qas .answer-wrap i.a {
+  margin-right: 30px;
+  color: #000;
+}
+
+.qas .question-wrap {
+  display: table;
+  width: 100%;
+  padding: 0 15px;
+  margin-bottom: 14px;
+  line-height: 1.2;
+}
+
+.qas .question-wrap .icor {
+  width: 14px;
+  height: 14px;
+  margin: 17px !important;
+}
+
+.qas .question-wrap .question {
+  display: table-cell;
+  width: 85%;
+  font-size: 14px;
+  color: #4c4c4c;
+  text-decoration: none;
+  vertical-align: middle;
+}
+
+.qas .answer-wrap {
+  display: none;
+  padding: 15px;
+  background-color: #f3f3f3;
+  border-top: 1px solid #dcdcdc;
+}
+
+.qas .answer-wrap .ico {
+  margin-right: 20px;
+}
+
+.qas .answer-wrap .answer {
+  display: table-cell;
+  padding-right: 9%;
+  line-height: 180%;
+  text-align: justify;
+  vertical-align: top;
+  word-break: break-all;
+}
+
+.qas .qa.open .question-wrap {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.qas .qa.open .answer-wrap {
+  display: table;
+}
+
 .site-admin-page .row-fluid {
   display: flex;
   flex-wrap: wrap;

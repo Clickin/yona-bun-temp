@@ -43,12 +43,13 @@ JavaScript or Play form handlers.
 | `frontend/src/routes/-home-view.tsx`, `frontend/src/routes/index.tsx` | Anonymous home intro and authenticated/default landing notification states. |
 | `frontend/src/routes/users/loginform.tsx`, `users/signupform.tsx`, `lostPassword.tsx`, `resetPassword.tsx`, `(legacy-auth)/reset-password/route.tsx`, `login/route.tsx`, `forgot-password/route.tsx` | Canonical public auth route entrypoints and aliases; login, signup, lost-password, and reset-password form are now active 2026-06-30 template-first reset routes. |
 | `frontend/src/routes/verify/$loginId/$verificationCode/route.tsx` | Verification success/invalid UI. |
-| `frontend/src/routes/[_]help/route.tsx`, `frontend/src/routes/-help-views.tsx` | Anonymous help/FAQ route and view. |
+| `frontend/src/routes/[_]help.tsx` | Active template-first reset implementation for the anonymous `/_help` screen, copied from `help/toc.scala.html` with the FAQ toggle kept in the route component. |
 | `frontend/src/api/auth.ts`, `frontend/src/auth-workspace-client.ts` | REST JSON auth/session/capability/password/verify boundaries. |
 | `frontend/tests/loginform.e2e.ts` | Whole `.page.full` rendered DOM parity proof for anonymous `/users/loginform?redirectUrl=/me`; normalizes only mounted base path for the lost-password `Link` href. |
 | `frontend/tests/signupform.e2e.ts` | Whole `.page.full` rendered DOM parity proof for anonymous `/users/signupform`; normalizes only mounted base path for the login `Link` href. |
 | `frontend/tests/lost-password.e2e.ts` | Whole `.page.full` rendered DOM parity proof for anonymous `/lostPassword`; normalizes React/browser boolean-attribute handling only where needed. |
 | `frontend/tests/reset-password.e2e.ts` | Whole `.page.full` rendered DOM parity proof for `/resetPassword?s=reset-token`; preserves the hidden reset hash input and submit form shape. |
+| `frontend/tests/help-toc.e2e.ts` | Whole rendered DOM parity proof for anonymous `/_help`; compares the breadcrumb/page/FAQ roots and clicks the first FAQ row open/closed. |
 | `frontend/src/auth-workspace-shell.spec.tsx`, `wave1-auth-workspace-parity.spec.tsx`, `help-route-parity.spec.tsx` | Static selector/source proof. |
 | `frontend/tests/auth-public-entry-parity.e2e.ts`, `root-shell-parity.e2e.ts` | Browser-visible public auth/help/root-shell proof. |
 
@@ -78,7 +79,7 @@ JavaScript or Play form handlers.
 | Verification route/controller output | `/verify/:loginId/:verificationCode` success and invalid verification. | `frontend/src/routes/verify/$loginId/$verificationCode/route.tsx`, auth verify REST route | route | covered in current follow-up | P1 | none | Browser proof covers success and invalid visible copy after REST resolution; invalid state renders plain `Invalid verification` without SPA error shell. |
 | Verification invalid HTTP deep-link status | Legacy invalid verification returns direct 404 plain body. | React SPA fallback plus REST verify status | route | not-applicable | P1 | none unless parent reclassifies direct-route ownership | Exact deep-link document HTTP status belongs to server direct-route/fallback ownership, not the React auth view packet. The user-visible React result and REST status are covered. |
 | Auth aliases | `/login`, `/register`, `/forgot-password`, `/reset-password` convenience paths. | alias route files and `RedirectPage` | route | covered in current follow-up | P1 | none | E2E proves aliases redirect to canonical legacy paths while preserving base path and reset query; canonical screens retain legacy shell and REST JSON submit boundary. |
-| `help/toc.scala.html` | `/_help` anonymous help/FAQ route. | `frontend/src/routes/[_]help/route.tsx`, `frontend/src/routes/-help-views.tsx` | interaction | covered in current follow-up | P1 | none | `frontend/src/help-route-parity.spec.tsx` and public entry e2e prove breadcrumb, `.qas > .qa`, `.question-wrap`, `.answer-wrap`, runtime `app.name` substitution, FAQ row open/closed toggle, anonymous access, and no visible raw `title.help`/`app.name`. |
+| `help/toc.scala.html` | `/_help` anonymous help/FAQ route. | `frontend/src/routes/[_]help.tsx` | interaction | covered in 2026-06-30 template-first reset slice | P1 | none; single component kept because the legacy screen is one template plus one click toggle | `frontend/tests/help-toc.e2e.ts` was RED against the reset route tree, then GREEN after the Scala HTML skeleton was ported. It compares the two stable rendered roots, including `.site-breadcrumb-outer`, `.page-wrap`, all six `.qas > .qa` rows, `.question-wrap`, `.answer-wrap`, legacy anchors, runtime `app.name` substitution, and exact `style="width:100%"`; it also clicks the first row open/closed to prove `.qa.open`. Verification: `pnpm --dir frontend test:e2e -- help-toc.e2e.ts`. |
 
 ## Verifier Evidence
 
@@ -92,6 +93,7 @@ Browser proof:
 
 - `frontend/tests/auth-public-entry-parity.e2e.ts`
 - `frontend/tests/loginform.e2e.ts`
+- `frontend/tests/help-toc.e2e.ts`
 - `frontend/tests/lost-password.e2e.ts`
 - `frontend/tests/reset-password.e2e.ts`
 - `frontend/tests/root-shell-parity.e2e.ts`
