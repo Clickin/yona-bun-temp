@@ -145,6 +145,11 @@ test("reset password form matches legacy user/resetPassword.scala.html screen DO
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileResetPasswordMetrics(page)).toEqual({
     formWidth: "370.5px",
+    gnbInnerWidth: 363,
+    gnbOuterMinWidth: "10px",
+    gnbOuterPadding: "0px 10px",
+    pageFooterOuterMinWidth: "10px",
+    pageFooterOuterPadding: "10px",
     passwordFontSize: "16px",
     passwordInputWidth: "351.969px",
     retypedPasswordFontSize: "16px",
@@ -328,16 +333,33 @@ async function readDesktopResetPasswordMetrics(page: Page) {
 
 async function readMobileResetPasswordMetrics(page: Page) {
   return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
     const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
     const passwordInput = document.querySelector<HTMLElement>("#password");
     const retypedPasswordInput = document.querySelector<HTMLElement>("#retypedPassword");
-    if (!formWrap || !passwordInput || !retypedPasswordInput) {
+    if (
+      !gnbOuter ||
+      !gnbInner ||
+      !formWrap ||
+      !pageFooterOuter ||
+      !passwordInput ||
+      !retypedPasswordInput
+    ) {
       throw new Error("Expected mobile reset-password metric targets are missing.");
     }
 
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
     const passwordStyle = getComputedStyle(passwordInput);
     return {
       formWidth: getComputedStyle(formWrap).width,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterMinWidth: gnbOuterStyle.minWidth,
+      gnbOuterPadding: gnbOuterStyle.padding,
+      pageFooterOuterMinWidth: pageFooterOuterStyle.minWidth,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
       passwordFontSize: passwordStyle.fontSize,
       passwordInputWidth: passwordStyle.width,
       retypedPasswordFontSize: getComputedStyle(retypedPasswordInput).fontSize,
