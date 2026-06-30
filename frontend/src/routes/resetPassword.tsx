@@ -75,57 +75,59 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   }
 
   return (
-    <div className="page full">
-      <div className="center-wrap tag-line-wrap reset-password">
-        <h1 className="title">
-          <HighlightedLegacyMessage message={title} />
-        </h1>
-        <p className="tag-line">{t("app.description")}</p>
-      </div>
+    <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <div className="page full">
+        <div className="center-wrap tag-line-wrap reset-password">
+          <h1 className="title">
+            <HighlightedLegacyMessage message={title} />
+          </h1>
+          <p className="tag-line">{t("app.description")}</p>
+        </div>
 
-      <div className="login-form-wrap frm-wrap">
-        <form
-          action="/resetPassword"
-          method="post"
-          name="passwordReset"
-          onSubmit={(event) => void handleSubmit(event)}
-        >
-          <input type="hidden" name="hashString" value={s} />
-          <dl>
-            <dd>
-              <input
-                id="password"
-                type="password"
-                name="password"
-                className="text password"
-                placeholder={t("user.password")}
-                autoComplete="off"
-              />
-            </dd>
-            <dd>
-              <input
-                id="retypedPassword"
-                type="password"
-                name="retypedPassword"
-                className="text password"
-                placeholder={t("validation.retypePassword")}
-                autoComplete="off"
-              />
-            </dd>
-          </dl>
+        <div className="login-form-wrap frm-wrap">
+          <form
+            action="/resetPassword"
+            method="post"
+            name="passwordReset"
+            onSubmit={(event) => void handleSubmit(event)}
+          >
+            <input type="hidden" name="hashString" value={s} />
+            <dl>
+              <dd>
+                <input
+                  id="password"
+                  type="password"
+                  name="password"
+                  className="text password"
+                  placeholder={t("user.password")}
+                  autoComplete="off"
+                />
+              </dd>
+              <dd>
+                <input
+                  id="retypedPassword"
+                  type="password"
+                  name="retypedPassword"
+                  className="text password"
+                  placeholder={t("validation.retypePassword")}
+                  autoComplete="off"
+                />
+              </dd>
+            </dl>
 
-          <div className="btns-row">
-            <button
-              type="submit"
-              className="ybtn ybtn-primary ybtn-fullsize"
-              disabled={resetMutation.isPending}
-            >
-              {t("button.confirm")}
-            </button>
-          </div>
-        </form>
+            <div className="btns-row">
+              <button
+                type="submit"
+                className="ybtn ybtn-primary ybtn-fullsize"
+                disabled={resetMutation.isPending}
+              >
+                {t("button.confirm")}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </SiteLayoutShell>
   );
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
