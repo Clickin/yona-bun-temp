@@ -143,6 +143,10 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
   await expect(page.locator(".yobi-migration form")).toHaveCount(0);
   await expect(page.locator(".source-project input.search-query")).toBeDisabled();
   await expect(page.locator(".destination-project input.search-query")).toBeDisabled();
+  await expect(page.locator('head meta[name="viewport"]')).toHaveAttribute(
+    "content",
+    "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
+  );
   await expect(page.locator(".yobi-migration button.btn-danger")).toHaveCount(3);
   expect(
     await page
