@@ -2,6 +2,7 @@ import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
+import { SiteLayoutShell } from "./-home-route-screen";
 
 export const Route = createFileRoute("/_help")({
   component: HelpTocRoute,
@@ -13,7 +14,9 @@ function HelpTocRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <HelpTocScreen />
+        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+          <HelpTocScreen />
+        </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );

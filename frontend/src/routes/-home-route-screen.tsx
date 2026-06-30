@@ -265,7 +265,7 @@ function NotificationStreamItem({
   );
 }
 
-function SiteLayoutShell({
+export function SiteLayoutShell({
   children,
   runtimeConfig,
 }: {
