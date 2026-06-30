@@ -430,6 +430,9 @@ export function SiteLayoutShell({
   children: React.ReactNode;
   runtimeConfig: RuntimeConfig;
 }) {
+  const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
+  const shouldRenderAnonymousUserMenu = sessionQuery.data?.isAnonymous !== false;
+
   return (
     <>
       <div className="unsupported hidden">
@@ -465,6 +468,9 @@ export function SiteLayoutShell({
               </form>
             </li>
           </ul>
+          {shouldRenderAnonymousUserMenu ? (
+            <AnonymousSiteUserMenu basePath={runtimeConfig.basePath} />
+          ) : null}
         </div>
       </header>
       {children}
@@ -498,6 +504,71 @@ export function SiteLayoutShell({
           </span>
         </div>
       </footer>
+    </>
+  );
+}
+
+function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <>
+      <div id="mySidenav" className="sidenav">
+        <div className="span5 right-menu span-hard-wrap">
+          <div className="row-fluid user-menu-wrap">
+            <span className="user-menu">
+              <a href={prefixBasePath(basePath, "/user/anonymous")}>{t("userinfo.profile")}</a>
+            </span>
+            <span className="user-menu">
+              <a href={prefixBasePath(basePath, "/user/editform")}>
+                {t("userinfo.accountSetting")}
+              </a>
+            </span>
+            <a href={prefixBasePath(basePath, "/logout")}>
+              <span className="user-menu logout label">{t("title.logout")}</span>
+            </a>
+          </div>
+          <ul className="nav nav-tabs nm">
+            <li className="myOrganizationList active">
+              <a href="#myOrganizationList" data-toggle="tab">
+                {t("title.favorite")}
+              </a>
+            </li>
+            <li className="myProjectList">
+              <a href="#myProjectList" data-toggle="tab">
+                {t("title.project")}
+              </a>
+            </li>
+            <li className="myRecentIssueList">
+              <a href="#myRecentIssueList" data-toggle="tab">
+                {t("title.recently.visited.issue")}
+              </a>
+            </li>
+          </ul>
+          <div className="tab-content tab-box">
+            <div id="usermenu-tab-content-list" className="tab-content">
+              {"Loading..."}
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul className="gnb-usermenu">
+        <li className="gnb-usermenu-item" id="required-logged-in">
+          <a
+            href={prefixBasePath(basePath, "/users/loginform")}
+            className="user-item-btn"
+            data-login="required"
+          >
+            {t("title.login")}
+          </a>
+        </li>
+        <li className="divider"></li>
+        <li>
+          <a href={prefixBasePath(basePath, "/users/signupform")} className="ybtn ybtn-success">
+            {t("title.signup")}
+          </a>
+        </li>
+      </ul>
     </>
   );
 }

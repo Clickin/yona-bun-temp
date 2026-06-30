@@ -24,6 +24,30 @@ const EXPECTED_SIGNUP_SCREEN = `
         </form>
       </li>
     </ul>
+    <div id="mySidenav" class="sidenav">
+      <div class="span5 right-menu span-hard-wrap">
+        <div class="row-fluid user-menu-wrap">
+          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
+          <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
+          <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
+        </div>
+        <ul class="nav nav-tabs nm">
+          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
+          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
+          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+        </ul>
+        <div class="tab-content tab-box">
+          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
+        </div>
+      </div>
+    </div>
+    <ul class="gnb-usermenu">
+      <li class="gnb-usermenu-item" id="required-logged-in">
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
+      </li>
+      <li class="divider"></li>
+      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
+    </ul>
   </div>
 </header>
 <div class="page full">
@@ -127,6 +151,30 @@ const EXPECTED_PUBLIC_LANDING = `
           </div>
         </form>
       </li>
+    </ul>
+    <div id="mySidenav" class="sidenav">
+      <div class="span5 right-menu span-hard-wrap">
+        <div class="row-fluid user-menu-wrap">
+          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
+          <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
+          <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
+        </div>
+        <ul class="nav nav-tabs nm">
+          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
+          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
+          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+        </ul>
+        <div class="tab-content tab-box">
+          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
+        </div>
+      </div>
+    </div>
+    <ul class="gnb-usermenu">
+      <li class="gnb-usermenu-item" id="required-logged-in">
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
+      </li>
+      <li class="divider"></li>
+      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
     </ul>
   </div>
 </header>
@@ -288,7 +336,9 @@ test("social-login-only signup matches legacy user/signup.scala.html screen DOM"
   await mockCapabilities(page, { socialLoginOnly: true });
   await page.goto(`${basePath}/users/signupform`);
 
-  await expect(page.locator(".btns-row.nm")).toHaveText("Only allow sign-in via social login");
+  await expect(page.locator(".signup-form-wrap form > .btns-row.nm")).toHaveText(
+    "Only allow sign-in via social login",
+  );
   await expect(page.locator("#loginId")).toHaveCount(0);
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -487,6 +537,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "title",
         "data-toggle",
         "data-placement",
+        "data-login",
         "for",
         "checked",
       ];
@@ -546,6 +597,7 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
         "tabindex",
         "data-toggle",
         "data-placement",
+        "data-login",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
@@ -757,6 +809,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "tabindex",
           "data-toggle",
           "data-placement",
+          "data-login",
           "for",
           "checked",
         ];

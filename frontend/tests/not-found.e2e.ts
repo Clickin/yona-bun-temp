@@ -13,13 +13,13 @@ const EXPECTED_NOT_FOUND_SCREEN = `
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap">
           <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
-          <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account settings</a></span>
-          <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Logout</span></a>
+          <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
+          <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorites</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Projects</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recently visited issues</a></li>
+          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
+          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
+          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -28,7 +28,7 @@ const EXPECTED_NOT_FOUND_SCREEN = `
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Login</a>
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
       </li>
       <li class="divider"></li>
       <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>

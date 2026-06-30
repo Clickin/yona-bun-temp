@@ -413,28 +413,26 @@ function RootAliasNotFound() {
                   <a href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}>Profile</a>
                 </span>
                 <span className="user-menu">
-                  <a href={prefixBasePath(runtimeConfig.basePath, "/user/editform")}>
-                    Account settings
-                  </a>
+                  <a href={prefixBasePath(runtimeConfig.basePath, "/user/editform")}>Account</a>
                 </span>
                 <a href={prefixBasePath(runtimeConfig.basePath, "/logout")}>
-                  <span className="user-menu logout label">Logout</span>
+                  <span className="user-menu logout label">Log out</span>
                 </a>
               </div>
               <ul className="nav nav-tabs nm">
                 <li className="myOrganizationList active">
                   <a href="#myOrganizationList" data-toggle="tab">
-                    Favorites
+                    Favorite
                   </a>
                 </li>
                 <li className="myProjectList">
                   <a href="#myProjectList" data-toggle="tab">
-                    Projects
+                    Project
                   </a>
                 </li>
                 <li className="myRecentIssueList">
                   <a href="#myRecentIssueList" data-toggle="tab">
-                    Recently visited issues
+                    Recent History
                   </a>
                 </li>
               </ul>
@@ -452,7 +450,7 @@ function RootAliasNotFound() {
                 className="user-item-btn"
                 data-login="required"
               >
-                Login
+                Log in
               </a>
             </li>
             <li className="divider"></li>
