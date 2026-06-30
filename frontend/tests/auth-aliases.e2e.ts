@@ -3,21 +3,42 @@ import { expect, test, type Page } from "@playwright/test";
 test("auth aliases redirect to canonical legacy public routes", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
+  await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
+  await expect(page.locator(".login-form-wrap form[action='/users/login']")).toBeVisible();
+  const loginRoots = await canonicalizeAuthPublicRoots(page);
+
   await page.goto(`${basePath}/login?redirectUrl=/me`);
   await expect(page).toHaveURL(/\/users\/loginform\?redirectUrl=/u);
   expect(new URL(page.url()).pathname).toBe(`${basePath}/users/loginform`);
   expect(new URL(page.url()).searchParams.get("redirectUrl")).toBe("/me");
   await expect(page.locator(".login-form-wrap form[action='/users/login']")).toBeVisible();
+  expect(await canonicalizeAuthPublicRoots(page)).toEqual(loginRoots);
+
+  await page.goto(`${basePath}/users/signupform`);
+  await expect(page.locator(".signup-form-wrap form[name='signup']")).toBeVisible();
+  const signupRoots = await canonicalizeAuthPublicRoots(page);
 
   await page.goto(`${basePath}/register`);
   await expect(page).toHaveURL(new RegExp(`${basePath}/users/signupform$`, "u"));
   await expect(page.locator(".signup-form-wrap form[name='signup']")).toBeVisible();
+  expect(await canonicalizeAuthPublicRoots(page)).toEqual(signupRoots);
+
+  await page.goto(`${basePath}/lostPassword?requested=1`);
+  await expect(page.locator(".alert.alert-success")).toBeVisible();
+  const lostPasswordRoots = await canonicalizeAuthPublicRoots(page);
 
   await page.goto(`${basePath}/forgot-password?requested=1`);
   await expect(page).toHaveURL(/\/lostPassword/u);
   expect(new URL(page.url()).pathname).toBe(`${basePath}/lostPassword`);
   await expect(page.locator(".alert.alert-success")).toBeVisible();
   await expect(page.locator(".login-form-wrap form[action='/lostPassword']")).toBeVisible();
+  expect(await canonicalizeAuthPublicRoots(page)).toEqual(lostPasswordRoots);
+
+  await page.goto(`${basePath}/resetPassword?s=reset-token`);
+  await expect(page.locator("form[name='passwordReset'] input[name='hashString']")).toHaveValue(
+    "reset-token",
+  );
+  const resetPasswordRoots = await canonicalizeAuthPublicRoots(page);
 
   await page.goto(`${basePath}/reset-password?s=reset-token`);
   await expect(page).toHaveURL(/\/resetPassword/u);
@@ -25,6 +46,7 @@ test("auth aliases redirect to canonical legacy public routes", async ({ page })
   await expect(page.locator("form[name='passwordReset'] input[name='hashString']")).toHaveValue(
     "reset-token",
   );
+  expect(await canonicalizeAuthPublicRoots(page)).toEqual(resetPasswordRoots);
 });
 
 test("legacy GET /users/login renders the index screen at the original URL", async ({ page }) => {
@@ -49,10 +71,16 @@ test("legacy GET /users/login renders the index screen at the original URL", asy
 });
 
 async function canonicalizeIndexRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(".unsupported, .gnb-outer, .siteintro-bg, .page-footer-outer"),
-    );
+  return canonicalizeRoots(page, ".unsupported, .gnb-outer, .siteintro-bg, .page-footer-outer");
+}
+
+async function canonicalizeAuthPublicRoots(page: Page) {
+  return canonicalizeRoots(page, ".unsupported, .gnb-outer, .page.full, .page-footer-outer");
+}
+
+async function canonicalizeRoots(page: Page, selector: string) {
+  return page.evaluate((rootSelector) => {
+    const roots = Array.from(document.querySelectorAll(rootSelector));
     return roots.map((root) => visit(root)).join("");
 
     function visit(current: Element): string {
@@ -65,11 +93,16 @@ async function canonicalizeIndexRoots(page: Page) {
         "action",
         "value",
         "autocomplete",
+        "placeholder",
         "href",
         "target",
         "title",
         "data-toggle",
         "data-placement",
+        "data-dismiss",
+        "for",
+        "checked",
+        "required",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
@@ -93,7 +126,7 @@ async function canonicalizeIndexRoots(page: Page) {
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
-  });
+  }, selector);
 }
 
 async function readDesktopIndexMetrics(page: Page) {
