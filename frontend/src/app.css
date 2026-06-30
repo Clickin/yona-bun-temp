@@ -4151,9 +4151,9 @@ div.markdown-preview {
 
 .site-breadcrumb-inner h3 {
   margin: 0;
-  padding: 12px 0;
-  font-size: 22px;
+  padding: 10px 10px 5px;
   font-weight: 400;
+  line-height: 30px;
 }
 
 .qas {

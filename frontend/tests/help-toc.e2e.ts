@@ -168,12 +168,95 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopHelpMetrics(page)).toEqual({
+    answerDisplayClosed: "none",
+    answerPaddingTopOpen: "15px",
+    answerRightPaddingOpen: "112.5px",
+    breadcrumbHeadingLineHeight: "30px",
+    breadcrumbHeadingPaddingBottom: "5px",
+    breadcrumbHeadingPaddingLeft: "10px",
+    breadcrumbHeadingPaddingTop: "10px",
+    firstQaBorderBottomWidth: "1px",
+    firstQaMarginBottom: "14px",
+    iconMarginOpen: "17px",
+    pageWrapOuterMarginTop: "10px",
+    pageWrapOuterMinHeight: "450px",
+    qasMarginTop: "30px",
+    questionFontSize: "14px",
+    questionMarginBottomClosed: "14px",
+    questionMarginBottomOpen: "16px",
+    questionWidth: "1062.5px",
+  });
   await expect(page.locator(".qas > .qa").first()).not.toHaveClass(/open/);
   await page.locator(".qas > .qa").first().click();
   await expect(page.locator(".qas > .qa").first()).toHaveClass(/open/);
   await page.locator(".qas > .qa").first().click();
   await expect(page.locator(".qas > .qa").first()).not.toHaveClass(/open/);
 });
+
+async function readDesktopHelpMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const breadcrumbHeading = document.querySelector<HTMLElement>(".site-breadcrumb-inner h3");
+    const qas = document.querySelector<HTMLElement>(".qas");
+    const firstQa = document.querySelector<HTMLElement>(".qas > .qa");
+    const questionWrap = document.querySelector<HTMLElement>(".qas > .qa .question-wrap");
+    const question = document.querySelector<HTMLElement>(".qas > .qa .question");
+    const answerWrap = document.querySelector<HTMLElement>(".qas > .qa .answer-wrap");
+    const answer = document.querySelector<HTMLElement>(".qas > .qa .answer");
+    const icon = document.querySelector<HTMLElement>(".qas > .qa .question-wrap .icor");
+    if (
+      !pageWrapOuter ||
+      !breadcrumbHeading ||
+      !qas ||
+      !firstQa ||
+      !questionWrap ||
+      !question ||
+      !answerWrap ||
+      !answer ||
+      !icon
+    ) {
+      throw new Error("Expected help metric targets are missing.");
+    }
+
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const breadcrumbHeadingStyle = getComputedStyle(breadcrumbHeading);
+    const qasStyle = getComputedStyle(qas);
+    const firstQaStyle = getComputedStyle(firstQa);
+    const questionWrapStyle = getComputedStyle(questionWrap);
+    const questionStyle = getComputedStyle(question);
+    const answerWrapClosedStyle = getComputedStyle(answerWrap);
+    const closedAnswerDisplay = answerWrapClosedStyle.display;
+    const closedQuestionMarginBottom = questionWrapStyle.marginBottom;
+
+    firstQa.classList.add("open");
+    const questionWrapOpenStyle = getComputedStyle(questionWrap);
+    const answerWrapOpenStyle = getComputedStyle(answerWrap);
+    const answerOpenStyle = getComputedStyle(answer);
+    const iconOpenStyle = getComputedStyle(icon);
+    const metrics = {
+      answerDisplayClosed: closedAnswerDisplay,
+      answerPaddingTopOpen: answerWrapOpenStyle.paddingTop,
+      answerRightPaddingOpen: answerOpenStyle.paddingRight,
+      breadcrumbHeadingLineHeight: breadcrumbHeadingStyle.lineHeight,
+      breadcrumbHeadingPaddingBottom: breadcrumbHeadingStyle.paddingBottom,
+      breadcrumbHeadingPaddingLeft: breadcrumbHeadingStyle.paddingLeft,
+      breadcrumbHeadingPaddingTop: breadcrumbHeadingStyle.paddingTop,
+      firstQaBorderBottomWidth: firstQaStyle.borderBottomWidth,
+      firstQaMarginBottom: firstQaStyle.marginBottom,
+      iconMarginOpen: iconOpenStyle.marginTop,
+      pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
+      pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
+      qasMarginTop: qasStyle.marginTop,
+      questionFontSize: questionStyle.fontSize,
+      questionMarginBottomClosed: closedQuestionMarginBottom,
+      questionMarginBottomOpen: questionWrapOpenStyle.marginBottom,
+      questionWidth: questionStyle.width,
+    };
+    firstQa.classList.remove("open");
+    return metrics;
+  });
+}
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
