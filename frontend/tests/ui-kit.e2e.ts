@@ -263,6 +263,23 @@ test("standalone UI kit root shell mounts legacy anonymous login dialog", async 
   );
 });
 
+test("standalone UI kit root shell dismisses legacy modal buttons", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/_UIKit`);
+  const dialog = page.locator("#loginDialog");
+  await dialog.evaluate((element) => {
+    element.classList.remove("hide");
+    element.classList.add("in");
+    (element as HTMLElement).style.display = "block";
+  });
+
+  await expect(dialog).toHaveClass("modal loginDialog in");
+  await dialog.locator('[data-dismiss="modal"]').click();
+  await expect(dialog).toHaveClass("modal loginDialog hide");
+  await expect(dialog).toHaveAttribute("aria-hidden", "true");
+});
+
 test("standalone UI kit root shell hides legacy data-via-email original message", async ({
   page,
 }) => {

@@ -59,6 +59,19 @@ function RootResetShell() {
 
     function handleDocumentClick(event: MouseEvent) {
       const target = event.target instanceof Element ? event.target : null;
+      const dismissModal = target?.closest<HTMLElement>('[data-dismiss="modal"]');
+      if (dismissModal) {
+        const modal = dismissModal.closest<HTMLElement>(".modal");
+        if (modal) {
+          modal.classList.add("hide");
+          modal.classList.remove("in");
+          modal.style.display = "none";
+          modal.setAttribute("aria-hidden", "true");
+        }
+        event.preventDefault();
+        return;
+      }
+
       const markdownHelp = target?.closest<HTMLElement>('[data-toggle="markdown-help"]');
       if (markdownHelp) {
         const markdownHelpRoot = markdownHelp.closest(".markdown-help");
