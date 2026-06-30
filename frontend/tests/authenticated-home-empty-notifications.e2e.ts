@@ -109,7 +109,7 @@ const EXPECTED_DIRECT_NOTIFICATIONS_WITH_NOTIFICATION = EXPECTED_DIRECT_NOTIFICA
   </li>`,
 );
 
-const EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS = {
+const EXPECTED_AUTHENTICATED_NOTIFICATION_SHELL_METRICS = {
   activityStreamsMarginTop: "0px",
   gnbInnerHeight: "40px",
   gnbInnerWidth: 1254,
@@ -132,6 +132,10 @@ const EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS = {
   providerColor: "rgb(51, 51, 51)",
   providerFontSize: "9px",
   providerMarginLeft: "4px",
+};
+
+const EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS = {
+  ...EXPECTED_AUTHENTICATED_NOTIFICATION_SHELL_METRICS,
   warningBackground: "rgb(139, 139, 139)",
   warningBorderRadius: "6px",
   warningColor: "rgb(255, 255, 255)",
@@ -218,6 +222,9 @@ test("direct notifications route matches legacy populated notification row DOM",
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopAuthenticatedNotificationShellMetrics(page)).toEqual(
+    EXPECTED_AUTHENTICATED_NOTIFICATION_SHELL_METRICS,
+  );
   expect(await readDesktopNotificationStreamMetrics(page)).toEqual({
     agoMarginLeft: "0px",
     avatarMarginTop: "3px",
@@ -246,6 +253,73 @@ test("direct notifications route matches legacy populated notification row DOM",
     titleFontWeight: "700",
   });
 });
+
+async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const logo = document.querySelector<HTMLElement>(".logo-letter");
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const mainStream = document.querySelector<HTMLElement>(".main-stream");
+    const activityStreams = document.querySelector<HTMLElement>(".activity-streams");
+    const guideToggleButton = document.querySelector<HTMLElement>(".guide-toggle button");
+    const navLink = document.querySelector<HTMLElement>(".nav-tabs > li > a");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (
+      !gnbOuter ||
+      !gnbInner ||
+      !logo ||
+      !pageWrapOuter ||
+      !mainStream ||
+      !activityStreams ||
+      !guideToggleButton ||
+      !navLink ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
+    ) {
+      throw new Error("Expected authenticated notification shell metric targets are missing.");
+    }
+
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const gnbInnerStyle = getComputedStyle(gnbInner);
+    const logoStyle = getComputedStyle(logo);
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const mainStreamStyle = getComputedStyle(mainStream);
+    const activityStreamsStyle = getComputedStyle(activityStreams);
+    const guideToggleButtonStyle = getComputedStyle(guideToggleButton);
+    const navLinkStyle = getComputedStyle(navLink);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
+
+    return {
+      activityStreamsMarginTop: activityStreamsStyle.marginTop,
+      gnbInnerHeight: gnbInnerStyle.height,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterBackground: gnbOuterStyle.backgroundColor,
+      gnbOuterHeight: gnbOuterStyle.height,
+      guideToggleButtonBorderBottomLeftRadius: guideToggleButtonStyle.borderBottomLeftRadius,
+      guideToggleButtonBorderBottomRightRadius: guideToggleButtonStyle.borderBottomRightRadius,
+      guideToggleButtonPaddingLeft: guideToggleButtonStyle.paddingLeft,
+      logoBackground: logoStyle.backgroundColor,
+      logoLineHeight: logoStyle.lineHeight,
+      logoPadding: logoStyle.padding,
+      mainStreamMarginBottom: mainStreamStyle.marginBottom,
+      navLinkColor: navLinkStyle.color,
+      navLinkFontWeight: navLinkStyle.fontWeight,
+      navLinkPaddingLeft: navLinkStyle.paddingLeft,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
+      pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
+    };
+  });
+}
 
 async function readDesktopAuthenticatedHomeMetrics(page: Page) {
   return page.evaluate(() => {
