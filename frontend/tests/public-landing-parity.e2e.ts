@@ -105,6 +105,7 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
   await expect(page.locator(".gnb-outer")).toBeVisible();
   await expect(page.locator(".siteintro-bg")).toBeVisible();
   await expect(page.locator(".page-footer-outer")).toBeVisible();
+  await expect(page.locator("body#html-body > #root > #main.main")).toHaveCount(1);
   await expect(page.locator(".signup-btn a")).toHaveAttribute(
     "href",
     `${basePath}/users/signupform`,
@@ -117,6 +118,31 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
   );
 
   expect(actual).toEqual(expected);
+  expect(await readLegacyLayoutShell(page)).toEqual({
+    contentType: "text/html; charset=UTF-8",
+    faviconHref: "/legacy-assets/images/favicon.ico",
+    ogDescription: "Yona",
+    ogTitle: "Yona",
+    ogType: "website",
+    ogUrl: "/",
+    stylesheetHrefs: [
+      "/legacy-assets/bootstrap/css/bootstrap.css",
+      "/legacy-assets/stylesheets/yobicon/style.css",
+      "/legacy-assets/javascripts/lib/select2/select2.css",
+      "/legacy-assets/javascripts/lib/pikaday/pikaday.css",
+      "/legacy-assets/stylesheets/usermenu.css",
+      "/legacy-assets/stylesheets/yobi.css",
+      "/legacy-assets/javascripts/lib/nprogress/nprogress.css",
+      "/legacy-assets/javascripts/lib/viewerjs/viewer.css",
+      "/legacy-assets/javascripts/lib/magnific-popup/magnific-popup.css",
+    ],
+    twitterCard: "summary",
+    twitterDescription: "Yona",
+    twitterTitle: "Yona",
+    twitterUrl: "/",
+    viewport: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
+    xUaCompatible: "IE=edge,chrome=1",
+  });
   expect(await readDesktopLandingMetrics(page)).toEqual({
     featureIconFontSize: "40px",
     featureIconLeft: "0px",
@@ -171,6 +197,40 @@ test("anonymous public landing keeps legacy mobile intro proportions", async ({ 
     siteIntroCoverWidth: 390,
   });
 });
+
+async function readLegacyLayoutShell(page: Page) {
+  return page.evaluate(() => {
+    const meta = (selector: string) =>
+      document.querySelector<HTMLMetaElement>(selector)?.content ?? "";
+    const httpEquiv = (value: string) =>
+      document.querySelector<HTMLMetaElement>(`meta[http-equiv="${value}"]`)?.content ?? "";
+    const legacyAssetPath = (href: string) => {
+      const pathname = new URL(href, location.href).pathname;
+      const legacyAssetStart = pathname.indexOf("/legacy-assets/");
+      return legacyAssetStart === -1 ? pathname : pathname.slice(legacyAssetStart);
+    };
+    const href = (selector: string) =>
+      legacyAssetPath(document.querySelector<HTMLLinkElement>(selector)?.href ?? "");
+
+    return {
+      contentType: httpEquiv("Content-Type"),
+      faviconHref: href('link[rel="shortcut icon"]'),
+      ogDescription: meta('meta[property="og:description"]'),
+      ogTitle: meta('meta[property="og:title"]'),
+      ogType: meta('meta[property="og:type"]'),
+      ogUrl: meta('meta[property="og:url"]'),
+      stylesheetHrefs: Array.from(
+        document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'),
+      ).map((link) => legacyAssetPath(link.href)),
+      twitterCard: meta('meta[name="twitter:card"]'),
+      twitterDescription: meta('meta[name="twitter:description"]'),
+      twitterTitle: meta('meta[name="twitter:title"]'),
+      twitterUrl: meta('meta[name="twitter:url"]'),
+      viewport: meta('meta[name="viewport"]'),
+      xUaCompatible: httpEquiv("X-UA-Compatible"),
+    };
+  });
+}
 
 async function readDesktopLandingMetrics(page: Page) {
   return page.evaluate(() => {

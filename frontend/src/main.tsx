@@ -78,7 +78,11 @@ export function mountApp(container: Element, options: CreateAppOptions = {}) {
   }
 
   const { router } = createApp(options);
-  return createRoot(container).render(<RouterProvider router={router} />);
+  return createRoot(container).render(
+    <div id="main" className="main">
+      <RouterProvider router={router} />
+    </div>,
+  );
 }
 
 if (typeof document !== "undefined") {
