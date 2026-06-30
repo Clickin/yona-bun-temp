@@ -113,8 +113,13 @@ test("anonymous lost-password form matches legacy site/lostPassword.scala.html s
   expect(await readMobileLostPasswordMetrics(page)).toEqual({
     emailInputFontSize: "16px",
     formWidth: "370.5px",
+    gnbInnerWidth: 363,
+    gnbOuterMinWidth: "10px",
+    gnbOuterPadding: "0px 10px",
     loginInputFontSize: "16px",
     loginInputWidth: "351.969px",
+    pageFooterOuterMinWidth: "10px",
+    pageFooterOuterPadding: "10px",
   });
 });
 
@@ -304,19 +309,29 @@ async function readDesktopLostPasswordMetrics(page: Page) {
 
 async function readMobileLostPasswordMetrics(page: Page) {
   return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
     const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
     const loginInput = document.querySelector<HTMLElement>("#loginId");
     const emailInput = document.querySelector<HTMLElement>("#emailAddress");
-    if (!formWrap || !loginInput || !emailInput) {
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    if (!gnbOuter || !gnbInner || !formWrap || !loginInput || !emailInput || !pageFooterOuter) {
       throw new Error("Expected mobile lost-password metric targets are missing.");
     }
 
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
     const loginInputStyle = getComputedStyle(loginInput);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
     return {
       emailInputFontSize: getComputedStyle(emailInput).fontSize,
       formWidth: getComputedStyle(formWrap).width,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterMinWidth: gnbOuterStyle.minWidth,
+      gnbOuterPadding: gnbOuterStyle.padding,
       loginInputFontSize: loginInputStyle.fontSize,
       loginInputWidth: loginInputStyle.width,
+      pageFooterOuterMinWidth: pageFooterOuterStyle.minWidth,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
     };
   });
 }
