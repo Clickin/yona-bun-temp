@@ -26,6 +26,42 @@ test("organization members matches legacy organization/members.scala.html DOM", 
       EXPECTED_ORGANIZATION_MEMBERS.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  expect(await organizationMemberMetrics(page)).toEqual({
+    addButtonOffsetLeft: 384,
+    addInputWidth: 384,
+    avatarHeight: 40,
+    avatarWidth: 40,
+    deleteHrefSuffix: "/organizations/weblabs/members/1",
+    enrollmentButtonDataLoginid: "pending",
+    enrollmentImageHeight: 65,
+    firstMemberBorderBottom: "rgb(221, 221, 221)",
+    firstMemberPaddingBlock: 20,
+    memberListMarginLeft: 0,
+    memberListStyle: "none",
+    memberNameFontWeight: "700",
+    memberRoleDataName: "roleof-admin",
+    memberRowWidthRatio: 0.47,
+    memberSettingOffsetTop: 15,
+    roleApplyLoginId: "admin",
+  });
+});
+
+test("organization members mutation controls preserve legacy data hooks", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const requests = await mockOrganizationMembers(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+  await page.locator("#loginId").fill("jane");
+  await page.locator("#addNewMember").evaluate((form: HTMLFormElement) => form.requestSubmit());
+  await expect.poll(() => requests.addedLoginIds).toEqual(["jane"]);
+
+  await page
+    .locator('[data-name="roleof-dev"] [data-value="org_admin"] [data-action="apply"]')
+    .evaluate((anchor: HTMLAnchorElement) => anchor.click());
+  await expect.poll(() => requests.roleUpdates).toEqual([{ role: "org_admin", userId: "2" }]);
+
+  await page.locator(".enrollAcceptBtn").click();
+  await expect.poll(() => requests.acceptedUserIds).toEqual(["3"]);
 });
 
 test("organization members delete waits for legacy confirmation modal", async ({ page }) => {
@@ -50,7 +86,10 @@ test("organization members delete waits for legacy confirmation modal", async ({
 
 async function mockOrganizationMembers(page: Page) {
   const requests = {
+    acceptedUserIds: [] as string[],
+    addedLoginIds: [] as string[],
     deletedUserIds: [] as string[],
+    roleUpdates: [] as Array<{ role: string; userId: string }>,
   };
 
   await page.route("**/api/v1/session", async (route) => {
@@ -72,41 +111,17 @@ async function mockOrganizationMembers(page: Page) {
   await page.route("**/api/v1/organizations/weblabs/admin", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        deleteAllowed: true,
-        enrollmentRequests: [
-          {
-            avatarUrl: "/assets/images/default-avatar-64.png",
-            loginId: "pending",
-            userId: 3,
-            userLabel: "Pending User",
-          },
-        ],
-        id: 42,
-        logoUrl: "/assets/images/organization_default_logo.png",
-        members: [
-          {
-            avatarUrl: "/assets/images/default-avatar-64.png",
-            loginId: "admin",
-            role: "org_admin",
-            userId: 1,
-            userLabel: "Site Admin",
-          },
-          {
-            avatarUrl: "/assets/images/default-avatar-64.png",
-            loginId: "dev",
-            role: "org_member",
-            userId: 2,
-            userLabel: "Dev Member",
-          },
-        ],
-        organizationName: "weblabs",
-        roleOptions: [
-          { label: "Group Manager", role: "org_admin" },
-          { label: "Group Member", role: "org_member" },
-        ],
-        viewerCanUpdate: true,
-      }),
+      body: JSON.stringify(organizationAdminPayload()),
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs/members", async (route) => {
+    if (route.request().method() === "POST") {
+      const body = route.request().postDataJSON() as { loginId?: string };
+      requests.addedLoginIds.push(body.loginId ?? "");
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(organizationAdminPayload()),
     });
   });
   await page.route("**/api/v1/organizations/weblabs/members/*", async (route) => {
@@ -114,13 +129,129 @@ async function mockOrganizationMembers(page: Page) {
     if (request.method() === "DELETE") {
       requests.deletedUserIds.push(new URL(request.url()).pathname.split("/").pop() ?? "");
     }
+    if (request.method() === "PATCH") {
+      const body = request.postDataJSON() as { role?: string };
+      requests.roleUpdates.push({
+        role: body.role ?? "",
+        userId: new URL(request.url()).pathname.split("/").pop() ?? "",
+      });
+    }
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({ ok: true }),
+      body: JSON.stringify(organizationAdminPayload()),
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs/enrollments/*/accept", async (route) => {
+    if (route.request().method() === "POST") {
+      const parts = new URL(route.request().url()).pathname.split("/");
+      requests.acceptedUserIds.push(parts.at(-2) ?? "");
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(organizationAdminPayload()),
     });
   });
 
   return requests;
+}
+
+function organizationAdminPayload() {
+  return {
+    deleteAllowed: true,
+    enrollmentRequests: [
+      {
+        avatarUrl: "/assets/images/default-avatar-64.png",
+        loginId: "pending",
+        userId: 3,
+        userLabel: "Pending User",
+      },
+    ],
+    id: 42,
+    logoUrl: "/assets/images/organization_default_logo.png",
+    members: [
+      {
+        avatarUrl: "/assets/images/default-avatar-64.png",
+        loginId: "admin",
+        role: "org_admin",
+        userId: 1,
+        userLabel: "Site Admin",
+      },
+      {
+        avatarUrl: "/assets/images/default-avatar-64.png",
+        loginId: "dev",
+        role: "org_member",
+        userId: 2,
+        userLabel: "Dev Member",
+      },
+    ],
+    organizationName: "weblabs",
+    roleOptions: [
+      { label: "Group Manager", role: "org_admin" },
+      { label: "Group Member", role: "org_member" },
+    ],
+    viewerCanUpdate: true,
+  };
+}
+
+async function organizationMemberMetrics(page: Page) {
+  return page.evaluate(() => {
+    const addButton = requireElement("#addNewMember button");
+    const addInput = requireElement("#loginId");
+    const deleteAnchor = requireElement('.members.project [data-action="delete"]');
+    const enrollmentButton = requireElement(".enrollAcceptBtn");
+    const enrollmentImage = requireElement(".row-fluid .span2 .img-circle");
+    const memberList = requireElement(".members.project");
+    const firstMember = requireElement(".members.project .member");
+    const memberName = requireElement(".members.project .member .member-name");
+    const avatar = requireElement(".members.project .member .avatar-wrap.mlarge");
+    const memberSetting = requireElement(".members.project .member .member-setting");
+    const roleControl = requireElement('.members.project .btn-group[data-name="roleof-admin"]');
+    const roleApply = requireElement(
+      '.members.project .btn-group[data-name="roleof-admin"] [data-action="apply"]',
+    );
+    const addButtonRect = addButton.getBoundingClientRect();
+    const addInputRect = addInput.getBoundingClientRect();
+    const addInputStyle = getComputedStyle(addInput);
+    const avatarRect = avatar.getBoundingClientRect();
+    const enrollmentImageRect = enrollmentImage.getBoundingClientRect();
+    const firstMemberRect = firstMember.getBoundingClientRect();
+    const firstMemberStyle = getComputedStyle(firstMember);
+    const memberListRect = memberList.getBoundingClientRect();
+    const memberListStyle = getComputedStyle(memberList);
+    const memberNameStyle = getComputedStyle(memberName);
+    const memberSettingRect = memberSetting.getBoundingClientRect();
+
+    return {
+      addButtonOffsetLeft: Math.round(addButtonRect.left - addInputRect.left),
+      addInputWidth: Math.round(parseFloat(addInputStyle.width)),
+      avatarHeight: Math.round(avatarRect.height),
+      avatarWidth: Math.round(avatarRect.width),
+      deleteHrefSuffix: deleteAnchor
+        .getAttribute("data-href")
+        ?.replace(/^.*\/organizations/u, "/organizations"),
+      enrollmentButtonDataLoginid: enrollmentButton.getAttribute("data-loginid"),
+      enrollmentImageHeight: Math.round(enrollmentImageRect.height),
+      firstMemberBorderBottom: firstMemberStyle.borderBottomColor,
+      firstMemberPaddingBlock:
+        Math.round(parseFloat(firstMemberStyle.paddingTop)) +
+        Math.round(parseFloat(firstMemberStyle.paddingBottom)),
+      memberListMarginLeft: Math.round(parseFloat(memberListStyle.marginLeft)),
+      memberListStyle: memberListStyle.listStyleType,
+      memberNameFontWeight: memberNameStyle.fontWeight,
+      memberRoleDataName: roleControl.getAttribute("data-name"),
+      memberRowWidthRatio: Number((firstMemberRect.width / memberListRect.width).toFixed(2)),
+      memberSettingOffsetTop: Math.round(memberSettingRect.top - firstMemberRect.top),
+      roleApplyLoginId: roleApply.getAttribute("data-loginid"),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
 }
 
 async function canonicalizeScreenRoots(page: Page) {
