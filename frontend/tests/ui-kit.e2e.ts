@@ -194,6 +194,9 @@ test("standalone UI kit root shell applies legacy markdown help tab selection", 
     container.insertAdjacentHTML("beforeend", markup);
   }, LEGACY_MARKDOWN_HELP_BODY);
 
+  expect(await normalizedOuterHtml(page, ".markdown-help")).toEqual(
+    await normalizedFragmentOuterHtml(page, LEGACY_MARKDOWN_HELP_BODY, ".markdown-help"),
+  );
   await expect(page.locator(".markdown-help-nav .help-nav")).toHaveCount(expectedTargets.length);
   expect(
     await page.locator(".markdown-help-nav .help-nav").evaluateAll((items) =>
@@ -429,6 +432,7 @@ async function canonicalizeUIKitRoots(page: Page) {
         "checked",
         "style",
         "data-toggle",
+        "data-target",
         "data-name",
         "data-value",
         "data-selected",
@@ -481,6 +485,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "checked",
           "style",
           "data-toggle",
+          "data-target",
           "data-name",
           "data-value",
           "data-selected",
@@ -518,6 +523,25 @@ async function canonicalizeHtml(page: Page, html: string) {
         .join("");
     },
     { markup: html },
+  );
+}
+
+async function normalizedOuterHtml(page: Page, selector: string) {
+  return page.locator(selector).evaluate((root) => root.outerHTML);
+}
+
+async function normalizedFragmentOuterHtml(page: Page, html: string, selector: string) {
+  return page.evaluate(
+    ({ markup, rootSelector }) => {
+      const template = document.createElement("template");
+      template.innerHTML = markup.trim();
+      const root = template.content.querySelector(rootSelector);
+      if (!root) {
+        throw new Error(`Expected legacy root is missing: ${rootSelector}`);
+      }
+      return root.outerHTML;
+    },
+    { markup: html, rootSelector: selector },
   );
 }
 
