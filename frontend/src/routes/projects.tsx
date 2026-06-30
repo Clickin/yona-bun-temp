@@ -64,7 +64,7 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 </a>
               </li>
               <li>
-                <a href={prefixBasePath(runtimeConfig.basePath, "/organizations")}>
+                <a href={prefixBasePath(runtimeConfig.basePath, "/orgs")}>
                   {t("title.organization.list")}
                 </a>
               </li>

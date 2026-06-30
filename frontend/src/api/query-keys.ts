@@ -142,6 +142,7 @@ export const apiQueryKeys = {
       ] as const,
   },
   organization: {
+    list: () => [...apiQueryKeys.v1(), "organizations"] as const,
     base: (organizationName: string) =>
       [...apiQueryKeys.v1(), "organizations", organizationName] as const,
     pullRequestList: (

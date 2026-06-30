@@ -313,6 +313,13 @@ export function listOrganizationsRest(
   });
 }
 
+export function listOrganizationsQueryOptions(runtimeConfig: RuntimeConfig) {
+  return queryOptions({
+    queryFn: () => listOrganizationsRest(runtimeConfig),
+    queryKey: apiQueryKeys.organization.list(),
+  });
+}
+
 export function readProjectCreateFormOptionsRest(
   runtimeConfig: RuntimeConfig,
   input: { owner?: string } = {},

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const EXPECTED_PROJECTS_LIST = `
+const EXPECTED_ORGANIZATIONS_LIST = `
 <div class="unsupported hidden">
   <div class="unsupported-inner">
     <p id="unsupported-content"></p>
@@ -78,8 +78,8 @@ const EXPECTED_PROJECTS_LIST = `
   <div class="site-breadcrumb-inner">
     <div class="title_area">
       <ul class="nav nav-tabs">
-        <li class="active"><a href="__BASE_PATH__/projects">PUBLICProject list</a></li>
-        <li><a href="__BASE_PATH__/orgs">Group List</a></li>
+        <li><a href="__BASE_PATH__/projects">PUBLICProject list</a></li>
+        <li class="active"><a href="__BASE_PATH__/orgs">Group List</a></li>
       </ul>
     </div>
   </div>
@@ -88,9 +88,9 @@ const EXPECTED_PROJECTS_LIST = `
   <div class="project-page-wrap">
     <div class="search-wrap">
       <div id="search" class="pull-left">
-        <form action="__BASE_PATH__/projects" method="get">
+        <form action="__BASE_PATH__/orgs" method="get">
           <div class="search-bar">
-            <input name="filter" class="textbox" type="text" placeholder="Search by keyword" value="sample" autofocus>
+            <input name="filter" class="textbox" type="text" placeholder="Find organization by name" value="weblabs" autofocus>
             <button type="submit" class="search-btn"><i class="yobicon-search"></i></button>
           </div>
         </form>
@@ -100,20 +100,14 @@ const EXPECTED_PROJECTS_LIST = `
       <li class="project">
         <div class="info-wrap">
           <div class="owner-avatar-wrap">
-            <a href="__BASE_PATH__/admin/sample"><img src="/assets/images/project_default_logo.png" alt="sample"></a>
+            <a href="__BASE_PATH__/organizations/weblabs"><img src="/assets/images/organization_default_logo.png" alt="weblabs"></a>
           </div>
           <div style="float:left">
             <div class="header">
-              <a href="__BASE_PATH__/admin/sample" class="black">sample</a>
+              <a href="__BASE_PATH__/organizations/weblabs" class="black">weblabs</a>
             </div>
-            <div class="desc">Sample project</div>
-            <p class="name-tag">by<a href="__BASE_PATH__/admin" class="owner-name-small">admin</a>at<strong title="2026-06-30">just now</strong><span class="small-font">,Latest code update<strong>just now</strong></span></p>
-          </div>
-        </div>
-        <div class="stats-wrap pull-right">
-          <div class="members">
-            <ul class="unstyled"></ul>
-            <p><i class="yobicon-friends yobicon-middle"></i><strong>2</strong> <i class="yobicon-eye yobicon-middle"></i> <strong>3</strong></p>
+            <div class="desc">Web labs group</div>
+            <p class="name-tag">created<strong title="2026-06-30">just now</strong></p>
           </div>
         </div>
       </li>
@@ -131,23 +125,23 @@ const EXPECTED_PROJECTS_LIST = `
 </footer>
 `;
 
-test("projects list matches legacy project/list.scala.html DOM", async ({ page }) => {
+test("organizations list matches legacy organization/list.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockAuthenticatedProjects(page);
+  await mockAuthenticatedOrganizations(page);
 
-  await page.goto(`${basePath}/projects?filter=sample`);
+  await page.goto(`${basePath}/orgs?filter=weblabs`);
   await expect(page.locator(".all-projects .project")).toBeVisible();
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_PROJECTS_LIST.replaceAll("__BASE_PATH__", basePath),
+    EXPECTED_ORGANIZATIONS_LIST.replaceAll("__BASE_PATH__", basePath),
   );
 
   expect(actual).toEqual(expected);
 });
 
-async function mockAuthenticatedProjects(page: Page) {
+async function mockAuthenticatedOrganizations(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -163,7 +157,7 @@ async function mockAuthenticatedProjects(page: Page) {
       }),
     });
   });
-  await page.route("**/api/v1/projects", async (route) => {
+  await page.route("**/api/v1/organizations", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -171,14 +165,9 @@ async function mockAuthenticatedProjects(page: Page) {
           {
             createdLabel: "just now",
             createdTitle: "2026-06-30",
-            lastPushedLabel: "just now",
-            logoUrl: "/assets/images/project_default_logo.png",
-            memberCount: 2,
-            overview: "Sample project",
-            ownerName: "admin",
-            projectName: "sample",
-            projectScope: "public",
-            watchCount: 3,
+            description: "Web labs group",
+            logoUrl: "/assets/images/organization_default_logo.png",
+            organizationName: "weblabs",
           },
         ],
       }),

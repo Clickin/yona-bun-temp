@@ -95,6 +95,7 @@ const PARITY_SLICES = [
     label: "Public project directory",
     status: "parity",
     implementationPatterns: [
+      /^frontend\/src\/routes\/projects\.tsx$/i,
       /^frontend\/src\/routes\/projects\/route\.tsx$/i,
       /^frontend\/src\/app\.css$/i,
     ],
@@ -106,6 +107,7 @@ const PARITY_SLICES = [
     label: "Public organization directory",
     status: "parity",
     implementationPatterns: [
+      /^frontend\/src\/routes\/orgs\.tsx$/i,
       /^frontend\/src\/routes\/orgs\/route\.tsx$/i,
       /^frontend\/src\/app\.css$/i,
     ],
