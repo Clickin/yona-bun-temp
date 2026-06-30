@@ -33,8 +33,24 @@ const EXPECTED_SIGNUP_SCREEN = `
     </h1>
     <p class="tag-line">Web-based platform for collaborative software development</p>
   </div>
+  __CONFIRM__
   <div class="signup-form-wrap frm-wrap">
     <form action="/users/signup" method="post" name="signup">
+      __FORM_BODY__
+    </form>
+  </div>
+</div>
+<footer class="page-footer-outer">
+  <div class="page-footer">
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+  </div>
+</footer>
+`;
+
+const DEFAULT_FORM_BODY = `
       <dl>
         <dt>
           <label for="loginId">User ID (lower case)</label>
@@ -73,17 +89,19 @@ const EXPECTED_SIGNUP_SCREEN = `
       <div class="act-row">
         Already signed up? <a href="__BASE_PATH__/users/loginform" class="go-login">Log in</a>
       </div>
-    </form>
+`;
+
+const SIGNUP_CONFIRM = `
+  <div class="center-txt">
+    <p>Administrator admission is required for activation.</p>
+    <p>If needed, please contact <span class="obfuscate">moc.elpmaxe@nimda</span></p>
   </div>
-</div>
-<footer class="page-footer-outer">
-  <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
-  </div>
-</footer>
+`;
+
+const SOCIAL_ONLY_FORM_BODY = `
+      <div class="btns-row nm">
+        Only allow sign-in via social login
+      </div>
 `;
 
 test("anonymous signup form matches legacy user/signup.scala.html screen DOM", async ({ page }) => {
@@ -94,12 +112,80 @@ test("anonymous signup form matches legacy user/signup.scala.html screen DOM", a
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_SIGNUP_SCREEN.replaceAll("__BASE_PATH__", basePath),
+    expectedSignupScreen(basePath, "", DEFAULT_FORM_BODY),
   );
 
   expect(actual).toEqual(expected);
   await expect(page.locator(".go-login")).toHaveAttribute("href", `${basePath}/users/loginform`);
 });
+
+test("signup confirmation contact matches legacy user/signup.scala.html screen DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {
+    defaultAdminContact: "moc.elpmaxe@nimda",
+    signupRequireConfirm: true,
+  });
+  await page.goto(`${basePath}/users/signupform`);
+
+  await expect(page.locator(".center-txt .obfuscate")).toHaveText("moc.elpmaxe@nimda");
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    expectedSignupScreen(basePath, SIGNUP_CONFIRM, DEFAULT_FORM_BODY),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
+test("social-login-only signup matches legacy user/signup.scala.html screen DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, { socialLoginOnly: true });
+  await page.goto(`${basePath}/users/signupform`);
+
+  await expect(page.locator(".btns-row.nm")).toHaveText("Only allow sign-in via social login");
+  await expect(page.locator("#loginId")).toHaveCount(0);
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    expectedSignupScreen(basePath, "", SOCIAL_ONLY_FORM_BODY),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
+async function mockCapabilities(
+  page: Page,
+  overrides: {
+    defaultAdminContact?: string;
+    signupRequireConfirm?: boolean;
+    socialLoginOnly?: boolean;
+  },
+) {
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        defaultAdminContact: overrides.defaultAdminContact ?? "",
+        emailVerificationEnabled: false,
+        enabledSocialProviders: [],
+        loginIdPlaceholder: "",
+        passwordPlaceholder: "",
+        signupRequireConfirm: overrides.signupRequireConfirm ?? false,
+        socialLoginOnly: overrides.socialLoginOnly ?? false,
+      },
+    });
+  });
+}
+
+function expectedSignupScreen(basePath: string, confirmHtml: string, formBody: string) {
+  return EXPECTED_SIGNUP_SCREEN.replaceAll("__BASE_PATH__", basePath)
+    .replace("__CONFIRM__", confirmHtml)
+    .replace("__FORM_BODY__", formBody.replaceAll("__BASE_PATH__", basePath));
+}
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
