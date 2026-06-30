@@ -160,6 +160,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   await page.goto(`${basePath}/_help`);
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
+  await expect(page.locator("#experimentalHelp, #helpKeys")).toHaveCount(0);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
