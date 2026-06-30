@@ -162,6 +162,7 @@ function ProjectMembersBody({
                 <EnrollmentRequest
                   basePath={runtimeConfig.basePath}
                   key={stringField(user.userId, user.loginId)}
+                  onAccept={(loginId) => addMutation.mutate(loginId)}
                   user={user}
                 />
               ))}
@@ -299,9 +300,11 @@ function ProjectMemberListItem({
 
 function EnrollmentRequest({
   basePath,
+  onAccept,
   user,
 }: {
   basePath: string;
+  onAccept: (loginId: string) => void;
   user: ProjectEnrollmentRequestEntry;
 }) {
   const { t } = useLegacyMessages();
@@ -331,6 +334,7 @@ function EnrollmentRequest({
           type="button"
           className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
           data-loginid={loginId}
+          onClick={() => onAccept(loginId)}
         >
           <i className="yobicon-addfriend"></i>
           {t("button.add")}

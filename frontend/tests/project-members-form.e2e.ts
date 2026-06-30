@@ -38,7 +38,23 @@ test("project members matches legacy project/members.scala.html DOM", async ({ p
   );
 });
 
+test("project members enrollment Add posts selected login like legacy member module", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const requests = await mockProjectMembers(page);
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  await page.locator(".enrollAcceptBtn").click();
+
+  await expect.poll(() => requests.addedLoginIds).toEqual(["bob"]);
+});
+
 async function mockProjectMembers(page: Page) {
+  const requests = {
+    addedLoginIds: [] as string[],
+  };
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -62,6 +78,10 @@ async function mockProjectMembers(page: Page) {
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/members", async (route) => {
+    if (route.request().method() === "POST") {
+      const body = route.request().postDataJSON() as { loginId?: string };
+      requests.addedLoginIds.push(body.loginId ?? "");
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -101,6 +121,8 @@ async function mockProjectMembers(page: Page) {
       }),
     });
   });
+
+  return requests;
 }
 
 function projectContainer() {
