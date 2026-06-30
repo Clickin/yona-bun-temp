@@ -5,7 +5,8 @@ Date: 2026-06-26
 
 ## Sources
 
-- Legacy routes: `yona-original/conf/routes` `GET /users/loginform`,
+- Legacy routes: `yona-original/conf/routes` `GET /`,
+  `GET /users/loginform`,
   `GET /users/signupform`, `POST /users/signup`, `GET/POST /lostPassword`,
   `GET/POST /resetPassword`, `GET /verify/:loginId/:verificationCode`,
   `GET /_help`
@@ -15,10 +16,13 @@ Date: 2026-06-26
 - Legacy templates: `yona-original/app/views/user/login.scala.html`,
   `signup.scala.html`, `resetPassword.scala.html`, `verified.scala.html`,
   `yona-original/app/views/site/lostPassword.scala.html`,
+  `yona-original/app/views/index/notifications.scala.html`,
+  `yona-original/app/views/index/partial_intro.scala.html`,
   `yona-original/app/views/help/toc.scala.html`,
   `yona-original/app/views/error/badrequest_default.scala.html`,
   `yona-original/app/views/common/scripts.scala.html`
 - Current React/API: `frontend/src/routes/-auth-views.tsx`,
+  `frontend/src/routes/index.tsx`,
   `frontend/src/routes/users/loginform.tsx`,
   `frontend/src/routes/users/signupform.tsx`,
   `frontend/src/routes/lostPassword.tsx`,
@@ -38,6 +42,7 @@ Date: 2026-06-26
   `frontend/src/wave1-auth-workspace-parity.spec.tsx`,
   `frontend/src/help-route-parity.spec.tsx`,
   `frontend/tests/auth-public-entry-parity.e2e.ts`,
+  `frontend/tests/public-landing-parity.e2e.ts`,
   `frontend/tests/help-toc.e2e.ts`,
   `frontend/tests/loginform.e2e.ts`, `frontend/tests/signupform.e2e.ts`,
   `frontend/tests/lost-password.e2e.ts`, `frontend/tests/reset-password.e2e.ts`,
@@ -47,11 +52,11 @@ Date: 2026-06-26
 
 ## Route Inventory Summary
 
-Total rows: 10
+Total rows: 11
 
 | Status | Count |
 | --- | ---: |
-| covered | 10 |
+| covered | 11 |
 | weak evidence | 0 |
 | gap | 0 |
 | deviation | 0 |
@@ -80,6 +85,7 @@ Total rows: 10
 | --- | --- | --- | --- | --- | --- | --- |
 | `/restart` | restart notice after first-run setup | `welcome/restart.scala.html` standalone page/footer shell, logo, welcome heading, restart notice, footer provider | active flat route `frontend/src/routes/restart.tsx` preserves `.page-wrap-outer`, `.container.page-wrap`, `.secret-wrap`, `.logo`, `p.secret-box.txt-center`, and footer provider; `frontend/tests/restart.e2e.ts` whole-screen browser proof added on 2026-06-30 | direct route render | anonymous React page, no REST mutation | covered |
 | `/restricted` | authenticated restricted sample | `restricted.scala.html` in `siteLayout.scala.html`, global nav/search wrapper, fixed YouTube iframe, local user name/email, verification state, provider/user ID, session expiry text | active flat route `frontend/src/routes/restricted.tsx` preserves `.unsupported`, `.gnb-outer`, `.gnb-nav`, `.page-wrap-outer`, `.page-wrap`, fixed iframe, session-bound identity/auth copy, and footer provider; `frontend/tests/restricted.e2e.ts` whole-screen browser proof added on 2026-06-30 | direct route render with mocked current session | React reads `/api/v1/session`; server auth guard remains backend-owned | covered |
+| `/` | anonymous public landing | `index/notifications.scala.html` anonymous branch renders `partial_intro.scala.html` inside `siteLayout`: hero heading, signup CTA, six feature rows, footer links | active flat route `frontend/src/routes/index.tsx` preserves `.unsupported`, `.gnb-outer`, `.siteintro-bg`, `.siteintro`, `.signup-btn`, `.feature-wrap`, all feature rows, and the global footer; `frontend/tests/public-landing-parity.e2e.ts` whole-screen browser proof added on 2026-06-30 | direct route render; signup anchor href asserted | anonymous React page; authenticated notifications branch remains a separate screen state | covered |
 | `/secret` | first-run/no-admin setup | `welcome/secret.scala.html` standalone page/footer shell, read-only `loginId=admin`, admin name/password/email fields, restart redirect after setup | active flat route `frontend/src/routes/secret.tsx` preserves the page/footer roots, `.secret-wrap`, warning alert, `.signup-form-wrap.frm-wrap`, legacy form attributes, read-only admin id, field order, submit button, footer provider, and base-path restart redirect; `frontend/tests/secret-setup.e2e.ts` whole-screen browser proof added on 2026-06-30 | fill admin fields, submit, assert restart redirect | React bootstraps CSRF through `/api/auth/session` and submits `/api/v1/auth/secret` REST JSON | covered |
 | `/users/loginform` | anonymous login | login form fields, `rememberMe`, `redirectUrl`, forgot-password link | active template-first reset route `frontend/src/routes/users/loginform.tsx` preserves the rendered `.page.full` DOM and legacy link shape; `frontend/tests/loginform.e2e.ts` whole-container browser proof added on 2026-06-30 | direct route render; focused submit wiring stays on existing React mutation boundary | React reads `/api/v1/auth/capabilities`, bootstraps CSRF through `/api/auth/session`, and submits `/api/v1/auth/sign-in` REST JSON | covered |
 | `/users/signupform` | anonymous signup | signup form fields, `form[name=signup]`, login link, confirmation/admin-contact states | active template-first reset route `frontend/src/routes/users/signupform.tsx` preserves the rendered `.page.full` DOM and legacy link shape; `frontend/tests/signupform.e2e.ts` whole-container browser proof added on 2026-06-30 | direct route render; focused submit wiring stays on existing React mutation boundary | React reads `/api/v1/auth/capabilities`, bootstraps CSRF through `/api/auth/session`, and submits `/api/v1/auth/register` REST JSON | covered |

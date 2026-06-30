@@ -22,7 +22,7 @@ JavaScript or Play form handlers.
 
 | Legacy source | Role | Required anchors |
 | --- | --- | --- |
-| `yona-original/app/views/index/partial_intro.scala.html` | Anonymous public landing hero/features/signup CTA. | `.siteintro-bg`, `.siteintro`, `.site-heading`, `.site-features`, `.signup-btn`, `.feature`, `.feature-wrap`, `.feature-image`, `.feature-info`. |
+| `yona-original/app/views/index/notifications.scala.html`, `index/partial_intro.scala.html`, `siteLayout.scala.html`, `common/navbar.scala.html`, `common/footer.scala.html` | Anonymous public landing hero/features/signup CTA. | `.unsupported`, `.gnb-outer`, `.siteintro-bg`, `.siteintro`, `.site-heading`, `.site-features`, `.signup-btn`, `.feature`, `.feature-wrap`, `.feature-image`, `.feature-info`, `.page-footer-outer`. |
 | `yona-original/app/views/index/index.scala.html`, `index/notifications.scala.html` | Authenticated default landing delegates to notifications/workspace home. | notification/workspace shell; owned jointly with P6 for authenticated workspace surfaces. |
 | `yona-original/app/views/user/login.scala.html` | Login form, redirect, social-login-only warning, OAuth buttons, remember me, forgot password link. | `.page.full`, `.tag-line-wrap.login`, `.login-form-wrap.frm-wrap`, `input[name=redirectUrl]`, `#loginIdOrEmailD`, `#password`, `.oauth-login-btn`, `#remember-me`, `.links-wrap a[href*=lostPassword]`. |
 | `yona-original/app/views/user/signup.scala.html` | Signup form, signup-confirm admin contact, social-login-only warning, login link. | `.tag-line-wrap.signup`, `.signup-form-wrap.frm-wrap`, `form[name=signup]`, `#loginId`, `#uname`, `#email`, `#password`, `#retypedPassword`, `.go-login`, obfuscated admin contact text. |
@@ -43,6 +43,7 @@ JavaScript or Play form handlers.
 | `frontend/src/routes/restart.tsx` | Active template-first reset implementation for the `/restart` notice screen, copied from `welcome/restart.scala.html`. |
 | `frontend/src/routes/secret.tsx` | Active template-first reset implementation for the first-run `/secret` setup screen, copied from `welcome/secret.scala.html` and bound to the secret-admin REST helper through TanStack Query. |
 | `frontend/src/routes/restricted.tsx` | Active template-first reset implementation for the authenticated `/restricted` sample screen, copied from `restricted.scala.html` under `siteLayout.scala.html` and bound to current session REST through TanStack Query. |
+| `frontend/src/routes/index.tsx` | Active template-first reset implementation for the anonymous `/` public landing screen, copied from the anonymous branch of `index/notifications.scala.html` and `index/partial_intro.scala.html`. |
 | `frontend/src/routes/-auth-views.tsx` | Login, signup, lost/reset password, verify, first-run setup, OAuth/social-login-only public auth surfaces. |
 | `frontend/src/routes/-home-view.tsx`, `frontend/src/routes/index.tsx` | Anonymous home intro and authenticated/default landing notification states. |
 | `frontend/src/routes/users/loginform.tsx`, `users/signupform.tsx`, `lostPassword.tsx`, `resetPassword.tsx`, `(legacy-auth)/reset-password/route.tsx`, `login/route.tsx`, `forgot-password/route.tsx` | Canonical public auth route entrypoints and aliases; login, signup, lost-password, and reset-password form are now active 2026-06-30 template-first reset routes. |
@@ -57,6 +58,7 @@ JavaScript or Play form handlers.
 | `frontend/tests/restart.e2e.ts` | Whole rendered DOM parity proof for `/restart`; compares the page/footer roots from `welcome/restart.scala.html`. |
 | `frontend/tests/secret-setup.e2e.ts` | Whole rendered DOM parity proof for `/secret`; compares the page/footer roots and proves CSRF-backed secret-admin REST submit plus base-path restart redirect. |
 | `frontend/tests/restricted.e2e.ts` | Whole rendered DOM parity proof for `/restricted`; compares unsupported/nav/page/footer roots and session-bound identity/provider/expiry content from `restricted.scala.html`. |
+| `frontend/tests/public-landing-parity.e2e.ts` | Whole rendered DOM parity proof for anonymous `/`; compares unsupported/nav/intro/footer roots, signup CTA, feature rows, and legacy footer links. |
 | `frontend/tests/verify-user.e2e.ts` | Whole `.page.full` rendered DOM parity proof for `/verify/:loginId/:verificationCode` success; mocks only the verify REST result and preserves the legacy verified-user shell. |
 | `frontend/src/auth-workspace-shell.spec.tsx`, `wave1-auth-workspace-parity.spec.tsx`, `help-route-parity.spec.tsx` | Static selector/source proof. |
 | `frontend/tests/auth-public-entry-parity.e2e.ts`, `root-shell-parity.e2e.ts` | Browser-visible public auth/help/root-shell proof. |
@@ -68,7 +70,7 @@ JavaScript or Play form handlers.
 | gap | 0 |
 | deviation | 0 |
 | weak evidence | 0 |
-| covered | 12 |
+| covered | 13 |
 | not-applicable | 1 |
 | needs-parent-decision | 0 |
 
@@ -76,7 +78,7 @@ JavaScript or Play form handlers.
 
 | legacy template | legacy route/state | current file | defect class | status | owner packet | proposed write scope | verification evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `index/partial_intro.scala.html` | Anonymous `/` public intro with signup CTA and feature grid. | `frontend/src/routes/-home-view.tsx`, `frontend/src/routes/index.tsx` | layout | covered in current follow-up | P1 | none | Auth/workspace render specs and public entry e2e cover the anonymous home shell, signup CTA routing, flash notification target, and absence of visible raw message keys. |
+| `index/notifications.scala.html`, `index/partial_intro.scala.html` | Anonymous `/` public intro with signup CTA and feature grid. | `frontend/src/routes/index.tsx` | layout | covered in 2026-06-30 template-first reset slice | P1 | none; single component kept because the anonymous branch is one legacy partial plus site shell | `frontend/tests/public-landing-parity.e2e.ts` compares the stable `.unsupported`, `.gnb-outer`, `.siteintro-bg`, and `.page-footer-outer` roots, including global logo/search shell, hero heading/tagline, signup CTA rendered with the mounted base path, all six feature icon/title/description rows, and legacy copyright/footer links. Verification: `pnpm --dir frontend check`; `pnpm --dir frontend test:e2e -- public-landing-parity.e2e.ts`. |
 | `user/login.scala.html` | `/users/loginform` login form with `redirectUrl`, username/password, remember me, forgot-password link. | `frontend/src/routes/users/loginform.tsx`, `frontend/src/api/auth.ts`, `frontend/src/auth-workspace-client.ts` | interaction | covered in 2026-06-30 template-first reset slice | P1 | none; single component kept because splitting this one-template screen would add indirection without reducing duplication | `frontend/tests/loginform.e2e.ts` was RED against the reset route tree, then GREEN after the Scala HTML skeleton was ported. It compares the whole stable `.page.full` container, including `.tag-line-wrap.login`, `.login-form-wrap.frm-wrap`, hidden `redirectUrl`, `#loginIdOrEmailD`, `#password`, submit button classes, `#remember-me`, and lost-password link. Allowed normalization: mounted `/yona` base path on the internal TanStack Router `Link` href. Verification: `pnpm --dir frontend check`; `pnpm --dir frontend test:e2e -- loginform.e2e.ts`. |
 | `user/login.scala.html` | Social-login-only and OAuth provider controls. | `frontend/src/routes/-auth-views.tsx`, auth capabilities API | interaction | covered in current follow-up | P1 | none | Public entry e2e covers social-login-only mode, GitHub/Google provider buttons, OAuth unsupported/denied alerts, and absence of password fields in social-only state. This ports the user-visible UX without importing legacy Play Authenticate helpers. |
 | `user/signup.scala.html` | `/users/signupform` default signup form. | `frontend/src/routes/users/signupform.tsx`, `frontend/src/api/auth.ts`, `frontend/src/auth-workspace-client.ts` | interaction | covered in 2026-06-30 template-first reset slice | P1 | none; single component kept because splitting this one-template screen would add indirection without reducing duplication | `frontend/tests/signupform.e2e.ts` was RED against the reset route tree, then GREEN after the Scala HTML skeleton was ported. It compares the whole stable `.page.full` container, including `.tag-line-wrap.signup`, `.signup-form-wrap.frm-wrap`, `form[name=signup]`, `#loginId`, `#uname`, `#email`, `#password`, `#retypedPassword`, submit button classes, and login link. Allowed normalization: mounted `/yona` base path on the internal TanStack Router `Link` href. Verification: `pnpm --dir frontend check`; `pnpm --dir frontend test:e2e -- signupform.e2e.ts`. |
@@ -105,6 +107,7 @@ Browser proof:
 - `frontend/tests/loginform.e2e.ts`
 - `frontend/tests/help-toc.e2e.ts`
 - `frontend/tests/lost-password.e2e.ts`
+- `frontend/tests/public-landing-parity.e2e.ts`
 - `frontend/tests/restart.e2e.ts`
 - `frontend/tests/reset-password.e2e.ts`
 - `frontend/tests/root-shell-parity.e2e.ts`
