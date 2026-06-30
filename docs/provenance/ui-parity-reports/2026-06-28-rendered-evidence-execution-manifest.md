@@ -6,6 +6,8 @@ Sources: P0/P1/P2/P3 source-pass reports, `output/playwright/visual-sweep/latest
 
 This manifest maps all 242 source-pass rows to concrete rendered evidence collection units. Existing visual sweep data can prove that a route opened without screenshot diff failure, but it does not by itself close template parity. Each row still needs selector/copy/form/data-hook assertions plus size/position/alignment evidence, or a precise `gap`, `deviation`, or `deferred` record.
 
+2026-07-01 current-state correction: rows that cite deleted detail-route guards such as `frontend/tests/issue-detail-parity.e2e.ts` or `frontend/tests/board-posting-parity.e2e.ts` are historical evidence only unless the current tree contains the named route and test. The active React route tree currently has project issue/board list routes and label settings, but no `/:owner/:projectName/issue/:issueNumber` or `/:owner/:projectName/post/:postNumber` route. Issue/post detail template rows therefore remain deferred route gaps until those owning routes and Scala-template-derived rendered guards are restored.
+
 Source-pass rows mapped: 242
 Existing sweep: 2026-06-28T07:48:07.381Z; local 174/174; compared 96; diffFailures 0; localFailures 0
 Framed absence guard: `pnpm --dir frontend test src/auth-workspace-shell.spec.tsx` passed with 67 tests after asserting `layout_framed.scala.html` and `siteLayout_framed.scala.html` legacy iframe anchors are intentionally absent from active React/CSS.

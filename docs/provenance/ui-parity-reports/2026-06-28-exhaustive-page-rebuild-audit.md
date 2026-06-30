@@ -19,6 +19,8 @@ The immediate rule from the current parent decision is:
 - Tests must be rewritten from legacy Scala template anchors, not from previous
   React behavior.
 
+2026-07-01 current-state correction: entries below that cite deleted detail-route tests such as `issue-detail-parity.e2e.ts` or `board-posting-parity.e2e.ts` are historical audit notes, not active current-tree closure. The current React route tree contains project issue/board list routes and label settings, but no issue detail `/:owner/:projectName/issue/:issueNumber` or board detail `/:owner/:projectName/post/:postNumber` owner route. Those detail templates remain deferred route gaps until the routes and Scala-template-derived rendered guards are restored.
+
 ## Inventory Counts
 
 Legacy Scala templates under `yona-original/app/views/**`:
