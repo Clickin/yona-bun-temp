@@ -651,7 +651,14 @@ function ProjectIssueItem({
                 {label.name}
               </a>
             ))}
-            <div className="child-issue-list hide"></div>
+            <div className="child-issue-list hide">
+              <IssueChildRows
+                basePath={basePath}
+                issues={issue.childIssues ?? []}
+                ownerName={ownerName}
+                projectName={projectName}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -693,6 +700,75 @@ function ProjectIssueItem({
         ) : null}
       </div>
     </li>
+  );
+}
+
+type RestIssueChildItem = NonNullable<RestIssueListItem["childIssues"]>[number];
+
+function IssueChildRows({
+  basePath,
+  issues,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  issues: RestIssueChildItem[];
+  ownerName: string;
+  projectName: string;
+}) {
+  const openIssues = issues.filter((issue) => issue.state !== "closed");
+  const closedIssues = issues.filter((issue) => issue.state === "closed");
+  const orderedIssues = [...openIssues, ...closedIssues];
+
+  return orderedIssues.length ? (
+    <div className="child-issues">
+      {orderedIssues.map((issue) => (
+        <IssueChildRow
+          basePath={basePath}
+          issue={issue}
+          key={`${issue.state}-${issue.issueNumber}`}
+          ownerName={ownerName}
+          projectName={projectName}
+        />
+      ))}
+    </div>
+  ) : null;
+}
+
+function IssueChildRow({
+  basePath,
+  issue,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  issue: RestIssueChildItem;
+  ownerName: string;
+  projectName: string;
+}) {
+  const issueNumber = stringField(issue.issueNumber, "");
+  const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
+  const isClosed = issue.state === "closed";
+
+  return (
+    <div className="issue-item  child-issue">
+      <span className={`state-label ${isClosed ? "closed" : "open"}`}>
+        {isClosed ? <i className=" yobicon-checkmark"></i> : null}
+      </span>
+      <a className="twoColumeModeTarget" href={issueHref}>
+        <span className="item-name">
+          <span className="subtask-number">
+            {issue.isDraft ? <span className="draft-number">#Draft</span> : `#${issueNumber}`}
+          </span>
+          <span>{issue.title}</span>
+          <span>{issue.assigneeLabel ? ` - ${issue.assigneeLabel}` : ""}</span>
+        </span>
+      </a>
+      <span className="font12 no-border-at-child"></span>
+      <span className="child-issue-date" title={issue.createdLabel}>
+        {issue.createdLabel}
+      </span>
+    </div>
   );
 }
 
