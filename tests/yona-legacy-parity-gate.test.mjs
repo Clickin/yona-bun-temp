@@ -98,6 +98,14 @@ test("active template-first UI parity surfaces are closed in the gate", () => {
       ],
     ],
     [
+      "auth-account-lifecycle",
+      [
+        "frontend/src/routes/[_]UIKit.tsx",
+        "frontend/tests/ui-kit.e2e.ts",
+        "docs/provenance/ui-parity-reports/template-first-p1-auth-public-home.md",
+      ],
+    ],
+    [
       "public-user-profile",
       [
         "frontend/src/routes/$user/route.tsx",

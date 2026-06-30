@@ -9,10 +9,11 @@ Date: 2026-06-26
   `GET /users/loginform`,
   `GET /users/signupform`, `POST /users/signup`, `GET/POST /lostPassword`,
   `GET/POST /resetPassword`, `GET /verify/:loginId/:verificationCode`,
-  `GET /_help`
+  `GET /_help`, `GET /_UIKit`
 - Legacy controllers: `yona-original/app/controllers/UserApp.java`,
   `yona-original/app/controllers/PasswordResetApp.java`,
-  `yona-original/app/controllers/HelpApp.java`
+  `yona-original/app/controllers/HelpApp.java`,
+  `yona-original/app/controllers/Application.java`
 - Legacy templates: `yona-original/app/views/user/login.scala.html`,
   `signup.scala.html`, `resetPassword.scala.html`, `verified.scala.html`,
   `yona-original/app/views/site/lostPassword.scala.html`,
@@ -21,6 +22,7 @@ Date: 2026-06-26
   `yona-original/app/views/index/partial_notifications.scala.html`,
   `yona-original/app/views/common/mySeriesMenuTab.scala.html`,
   `yona-original/app/views/help/toc.scala.html`,
+  `yona-original/app/views/help/UIKit.scala.html`,
   `yona-original/app/views/error/badrequest_default.scala.html`,
   `yona-original/app/views/common/scripts.scala.html`
 - Current React/API: `frontend/src/routes/-auth-views.tsx`,
@@ -39,6 +41,7 @@ Date: 2026-06-26
   `frontend/src/routes/forgot-password/route.tsx`,
   `frontend/src/routes/verify/$loginId/$verificationCode.tsx`,
   `frontend/src/routes/[_]help.tsx`,
+  `frontend/src/routes/[_]UIKit.tsx`,
   `frontend/src/api/auth.ts`, `frontend/src/auth-workspace-client.ts`,
   `frontend/vite.config.ts`
 - Focused specs: `frontend/src/auth-workspace-shell.spec.tsx`,
@@ -47,6 +50,7 @@ Date: 2026-06-26
   `frontend/tests/auth-public-entry-parity.e2e.ts`,
   `frontend/tests/authenticated-home-empty-notifications.e2e.ts`,
   `frontend/tests/public-landing-parity.e2e.ts`,
+  `frontend/tests/ui-kit.e2e.ts`,
   `frontend/tests/help-toc.e2e.ts`,
   `frontend/tests/loginform.e2e.ts`, `frontend/tests/signupform.e2e.ts`,
   `frontend/tests/lost-password.e2e.ts`, `frontend/tests/reset-password.e2e.ts`,
@@ -56,11 +60,11 @@ Date: 2026-06-26
 
 ## Route Inventory Summary
 
-Total rows: 12
+Total rows: 13
 
 | Status | Count |
 | --- | ---: |
-| covered | 12 |
+| covered | 13 |
 | weak evidence | 0 |
 | gap | 0 |
 | deviation | 0 |
@@ -82,6 +86,7 @@ Total rows: 12
 | Public auth browser-proof checklist depth | Legacy public entry includes `/`, first-run `/secret` admin setup, `/restart`, login form with `rememberMe` and `redirectUrl`, signup, lost/reset password valid/invalid states, verify success/invalid states, auth aliases, `/_help`, and optional OAuth/social-login-only variants. | `frontend/tests/secret-setup.e2e.ts` gives `/secret` its own whole-screen template-first proof from `welcome/secret.scala.html`, including page/footer roots, form shell, CSRF-backed REST JSON submit, and base-path restart redirect. `frontend/tests/restart.e2e.ts` gives `/restart` its own whole-screen proof from `welcome/restart.scala.html`. `frontend/tests/auth-public-entry-parity.e2e.ts` remains broader smoke evidence for public auth flows, aliases, anonymous `/_help`, OAuth/social states, lost/reset states, and verify states. | covered | none |
 | `/login`, `/register`, `/forgot-password`, `/reset-password` auth aliases | Legacy canonical public routes are `/users/loginform`, `/users/signupform`, `/lostPassword`, and `/resetPassword`; aliases are app-runtime convenience routes and must not introduce a divergent UI shell. | `frontend/src/routes/login/route.tsx`, `register/route.tsx`, `forgot-password/route.tsx`, and `(legacy-auth)/reset-password/route.tsx` redirect to the canonical legacy paths through `RedirectPage`, preserving base path and query where required. `frontend/tests/auth-public-entry-parity.e2e.ts` proves alias navigation including `/reset-password?s=...` query preservation. | covered | none |
 | `/_help` anonymous help/FAQ page | `conf/routes` maps `GET /_help` to anonymous `HelpApp.help()` and `help/toc.scala.html` under `siteLayout.scala.html`; FAQ rows toggle by clicking `.qas > .qa`. | `frontend/src/routes/[_]help.tsx` is the active template-first reset route copied from `help/toc.scala.html` and wrapped in the shared legacy site shell. `frontend/tests/help-toc.e2e.ts` compares the stable `.unsupported`, `.gnb-outer`, `.site-breadcrumb-outer`, `.page-wrap-outer`, and `.page-footer-outer` roots, all six `.qas > .qa` rows, anchors, runtime `app.name` substitution, exact `style="width:100%"`, and first-row open/closed toggle after a RED baseline against the reset route tree. `frontend/tests/auth-public-entry-parity.e2e.ts` remains broader smoke evidence for anonymous access and raw-key absence. | covered | none |
+| `/_UIKit` standalone UI kit page | `conf/routes` maps `GET /_UIKit` to `Application.UIKit()`, which returns `help/UIKit.scala.html` as a standalone document with its own header, page body samples, and NAVER footer. | `frontend/src/routes/[_]UIKit.tsx` is the active template-first reset route for the standalone body roots. `frontend/tests/ui-kit.e2e.ts` reads the legacy Scala HTML file, extracts `<body>`, and compares `.gnb-outer`, `.page-wrap-outer`, and `.page-footer-outer`, including button/upload/dropdown/search/label/avatar/tab/switch samples and stable data/style attributes. | covered | none |
 
 ## Playwright Scenario Matrix
 
@@ -98,3 +103,4 @@ Total rows: 12
 | `/verify/:loginId/:verificationCode` | success/invalid verification | `user/verified.scala.html` success shell or plain `Invalid verification` | active flat route `frontend/src/routes/verify/$loginId/$verificationCode.tsx` preserves the `.page.full` verified-user shell with login id, divider, and detail copy; `frontend/tests/verify-user.e2e.ts` whole-screen browser proof added on 2026-06-30 | direct deep link | REST verify owns status; React renders result | covered |
 | `/login`, `/register`, `/forgot-password`, `/reset-password` | auth aliases | canonical legacy public forms remain `/users/loginform`, `/users/signupform`, `/lostPassword`, `/resetPassword` | aliases redirect to canonical legacy route shells with base-path/query preservation | direct alias navigation | React `RedirectPage`; canonical screens keep REST JSON submit boundaries | covered |
 | `/_help` | anonymous help page | `HelpApp.help()`, `help/toc.scala.html`, and `siteLayout.scala.html`, `.qas > .qa` FAQ toggle | active flat route `frontend/src/routes/[_]help.tsx` preserves the global site shell, breadcrumb/page/FAQ roots, six legacy FAQ rows, anchors, runtime app-name copy, footer, and item-wide toggle; `frontend/tests/help-toc.e2e.ts` whole-screen browser proof added on 2026-06-30 and extended to global shell/footer roots | render help and click FAQ row | anonymous React page, no REST mutation | covered |
+| `/_UIKit` | standalone UI kit page | `Application.UIKit()` and `help/UIKit.scala.html`, standalone `.gnb-outer`, sample `.page-wrap-outer`, and NAVER footer | active flat route `frontend/src/routes/[_]UIKit.tsx` preserves the standalone body roots and sample controls; `frontend/tests/ui-kit.e2e.ts` compares the rendered body roots against the legacy template body | direct route render | anonymous React page, no REST mutation | covered |
