@@ -188,7 +188,7 @@ function SearchResultList({
     );
   }
 
-  if (result.searchType === "issue") {
+  if (result.searchType === "issue" || result.searchType === "post") {
     return (
       <>
         <ul className="search-list-wrap">
