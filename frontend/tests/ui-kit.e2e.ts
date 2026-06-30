@@ -21,7 +21,68 @@ test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({
   const expected = await canonicalizeHtml(page, EXPECTED_UIKIT_BODY);
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopUIKitMetrics(page)).toEqual({
+    bodyColor: "rgb(204, 204, 204)",
+    cssBadgeBackground: "rgb(201, 235, 181)",
+    cssBadgeBorderRadius: "3px",
+    cssBadgeBorderWidth: "1px",
+    cssBadgePaddingTop: "3px",
+    ddMarginLeft: "0px",
+    dlDisplay: "inline-block",
+    dlMarginTop: "18px",
+    gnbTextAlign: "center",
+    pageWrapOuterMarginTop: "10px",
+    pageWrapOuterMinHeight: "450px",
+    pageWrapOuterMinWidth: "1100px",
+    subtitleFontSize: "24px",
+    subtitleFontWeight: "700",
+    subtitleHeight: "55px",
+    subtitleLineHeight: "55px",
+    subtitleVerticalAlign: "bottom",
+  });
 });
+
+async function readDesktopUIKitMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const subtitle = document.querySelector<HTMLElement>(".subtitle");
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const dl = document.querySelector<HTMLElement>("dl");
+    const dd = document.querySelector<HTMLElement>("dd");
+    const cssBadge = document.querySelector<HTMLElement>(".css");
+    if (!gnbOuter || !subtitle || !pageWrapOuter || !dl || !dd || !cssBadge) {
+      throw new Error("Expected UI kit metric targets are missing.");
+    }
+
+    const bodyStyle = getComputedStyle(document.body);
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const subtitleStyle = getComputedStyle(subtitle);
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const dlStyle = getComputedStyle(dl);
+    const ddStyle = getComputedStyle(dd);
+    const cssBadgeStyle = getComputedStyle(cssBadge);
+
+    return {
+      bodyColor: bodyStyle.color,
+      cssBadgeBackground: cssBadgeStyle.backgroundColor,
+      cssBadgeBorderRadius: cssBadgeStyle.borderTopLeftRadius,
+      cssBadgeBorderWidth: cssBadgeStyle.borderTopWidth,
+      cssBadgePaddingTop: cssBadgeStyle.paddingTop,
+      ddMarginLeft: ddStyle.marginLeft,
+      dlDisplay: dlStyle.display,
+      dlMarginTop: dlStyle.marginTop,
+      gnbTextAlign: gnbOuterStyle.textAlign,
+      pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
+      pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
+      pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      subtitleFontSize: subtitleStyle.fontSize,
+      subtitleFontWeight: subtitleStyle.fontWeight,
+      subtitleHeight: subtitleStyle.height,
+      subtitleLineHeight: subtitleStyle.lineHeight,
+      subtitleVerticalAlign: subtitleStyle.verticalAlign,
+    };
+  });
+}
 
 async function canonicalizeUIKitRoots(page: Page) {
   return page.evaluate(() => {
