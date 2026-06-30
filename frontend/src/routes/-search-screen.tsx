@@ -188,6 +188,66 @@ function SearchResultList({
     );
   }
 
+  if (result.searchType === "issue") {
+    return (
+      <>
+        <ul className="search-list-wrap">
+          {result.items.map((item) => (
+            <li className="search-list-item" key={item.id}>
+              <div className="title-wrap">
+                <span className="post-id">#{item.number}</span>
+                <a href={item.href} className="title">
+                  {item.title}
+                </a>
+              </div>
+              <div className="search-content">
+                {item.snippets.map((snippet) => (
+                  <p
+                    className="search-content-body"
+                    key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
+                  >
+                    {snippet.text}
+                    {snippet.truncated ? " ..... " : null}
+                  </p>
+                ))}
+              </div>
+              <div className="search-meta-info">
+                {result.scope !== "project" ? (
+                  <a
+                    href={prefixBasePath(
+                      runtimeConfig.basePath,
+                      `/${item.ownerName}/${item.projectName}`,
+                    )}
+                    className="project-link meta-item"
+                  >
+                    {item.ownerName}/{item.projectName}
+                  </a>
+                ) : null}
+                {item.authorLabel ? (
+                  <a
+                    href={prefixBasePath(runtimeConfig.basePath, `/${item.authorLoginId}`)}
+                    className="meta-item"
+                    data-toggle="tooltip"
+                    data-placement="top"
+                    title={item.authorLoginId}
+                  >
+                    {item.authorLabel}
+                  </a>
+                ) : (
+                  <span className="meta-item">{t("issue.noAuthor")}</span>
+                )}
+                <span className="meta-item" title={item.createdLabel}>
+                  {item.createdLabel}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div id="pagination"></div>
+      </>
+    );
+  }
+
   return <div className="empty-result"></div>;
 }
 
