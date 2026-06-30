@@ -80,6 +80,28 @@ const EXPECTED_AUTHENTICATED_HOME = `
 </footer>
 `;
 
+const EXPECTED_AUTHENTICATED_HOME_WITH_NOTIFICATION = EXPECTED_AUTHENTICATED_HOME.replace(
+  `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
+  `<li class="notification-stream">
+    <div class="stream-type comment2"><i class="yobicon-comment2"></i></div>
+    <div class="stream-desc" data-target="message-42" data-toggle="learnmore">
+      <div class="stream-info">
+        <div class="title"><a href="__BASE_PATH__/admin/sample/issue/1">Issue #1 updated</a></div>
+        <div class="message-wrap nowrap" id="message-42">
+          <div class="message">A new comment was added.</div>
+        </div>
+        <div class="meta">
+          <a class="avatar-wrap smaller" href="__BASE_PATH__/admin">
+            <img src="/assets/images/default-avatar-64.png">
+          </a>
+          <a href="__BASE_PATH__/admin" class="author">Site Admin</a>@admin
+          <span class="ago pull-right" title="2026-06-30T12:00:00Z">just now</span>
+        </div>
+      </div>
+    </div>
+  </li>`,
+);
+
 test("authenticated home empty notifications matches legacy index notifications screen DOM", async ({
   page,
 }) => {
@@ -120,7 +142,46 @@ test("direct notifications route matches legacy Application.notifications empty 
   expect(actual).toEqual(expected);
 });
 
+test("direct notifications route matches legacy populated notification row DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedNotifications(page, [
+    {
+      actor: {
+        avatarUrl: "/assets/images/default-avatar-64.png",
+        displayName: "Site Admin",
+        loginId: "admin",
+      },
+      createdAt: "2026-06-30T12:00:00Z",
+      createdLabel: "just now",
+      eventType: "NEW_COMMENT",
+      id: "42",
+      message: "A new comment was added.",
+      targetHref: "/admin/sample/issue/1",
+      targetTitle: "Issue #1 updated",
+      typeIcon: "comment2",
+    },
+  ]);
+
+  await page.goto(`${basePath}/notifications`);
+  await expect(page.locator(".notification-stream")).toHaveCount(1);
+  await expect(page.locator(".warning-none")).toHaveCount(0);
+
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    EXPECTED_AUTHENTICATED_HOME_WITH_NOTIFICATION.replaceAll("__BASE_PATH__", basePath),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
 async function mockAuthenticatedEmptyNotifications(page: Page) {
+  await mockAuthenticatedNotifications(page, []);
+}
+
+async function mockAuthenticatedNotifications(page: Page, items: unknown[]) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -139,7 +200,7 @@ async function mockAuthenticatedEmptyNotifications(page: Page) {
   await page.route("**/api/v1/notifications?*", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({ hasMore: false, items: [], total: 0 }),
+      body: JSON.stringify({ hasMore: false, items, total: items.length }),
     });
   });
 }
@@ -166,6 +227,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "title",
         "data-toggle",
         "data-placement",
+        "data-target",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
@@ -216,6 +278,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "title",
           "data-toggle",
           "data-placement",
+          "data-target",
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { listNotificationsQueryOptions } from "../api/notifications";
+import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
 import { currentSessionQueryOptions } from "../api/session";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
@@ -113,7 +113,15 @@ function HomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         <i className="yobicon-danger" />
                         {t("notification.none")}
                       </div>
-                    ) : null}
+                    ) : (
+                      notificationsQuery.data?.items.map((notification) => (
+                        <NotificationStreamItem
+                          key={notification.id}
+                          notification={notification}
+                          runtimeConfig={runtimeConfig}
+                        />
+                      ))
+                    )}
                   </ul>
                 </div>
                 <div className="span4 index-menu right-menu span-hard-wrap" />
@@ -167,6 +175,55 @@ function HomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         </div>
       </div>
     </SiteLayoutShell>
+  );
+}
+
+function NotificationStreamItem({
+  notification,
+  runtimeConfig,
+}: {
+  notification: NotificationItem;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const userHref = prefixBasePath(runtimeConfig.basePath, `/${notification.actor.loginId}`);
+  return (
+    <li className="notification-stream">
+      <div className={`stream-type ${notification.typeIcon}`}>
+        <i className={`yobicon-${notification.typeIcon}`} />
+      </div>
+      <div
+        className="stream-desc"
+        data-target={`message-${notification.id}`}
+        data-toggle="learnmore"
+      >
+        <div className="stream-info">
+          <div className="title">
+            {notification.targetHref ? (
+              <a href={prefixBasePath(runtimeConfig.basePath, notification.targetHref)}>
+                {notification.targetTitle}
+              </a>
+            ) : (
+              notification.targetTitle
+            )}
+          </div>
+          <div className="message-wrap nowrap" id={`message-${notification.id}`}>
+            <div className="message">{notification.message}</div>
+          </div>
+          <div className="meta">
+            <a className="avatar-wrap smaller" href={userHref}>
+              <img src={notification.actor.avatarUrl} alt="" />
+            </a>
+            <a href={userHref} className="author">
+              {notification.actor.displayName}
+            </a>
+            @{notification.actor.loginId}
+            <span className="ago pull-right" title={notification.createdAt}>
+              {notification.createdLabel}
+            </span>
+          </div>
+        </div>
+      </div>
+    </li>
   );
 }
 
