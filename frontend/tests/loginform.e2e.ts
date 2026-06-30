@@ -34,6 +34,7 @@ const EXPECTED_LOGIN_SCREEN = `
     <p class="tag-line">Web-based platform for collaborative software development</p>
   </div>
   <div class="login-form-wrap frm-wrap">
+    __EMAIL_VERIFICATION_HELP__
     <form action="/users/login" method="POST">
       <input type="hidden" name="redirectUrl" value="__REDIRECT_URL__">
       __FORM_BODY__
@@ -84,6 +85,10 @@ const SOCIAL_ONLY_FORM_BODY = `
       </div>
 `;
 
+const EMAIL_VERIFICATION_HELP = `
+    <div class="email-verification-help">If you are trying to login for the first time, a confirmation mail will be sent.</div>
+`;
+
 test("anonymous login form matches legacy user/login.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
@@ -98,18 +103,9 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
 
 test("social-login-only form matches legacy user/login.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await page.route("**/api/v1/auth/capabilities", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      json: {
-        emailVerificationEnabled: false,
-        enabledSocialProviders: ["github", "google"],
-        loginIdPlaceholder: "",
-        passwordPlaceholder: "",
-        signupRequireConfirm: false,
-        socialLoginOnly: true,
-      },
-    });
+  await mockCapabilities(page, {
+    enabledSocialProviders: ["github", "google"],
+    socialLoginOnly: true,
   });
   await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
 
@@ -119,6 +115,25 @@ test("social-login-only form matches legacy user/login.scala.html screen DOM", a
   const expected = await canonicalizeHtml(
     page,
     expectedLoginScreen(basePath, SOCIAL_ONLY_FORM_BODY),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
+test("email-verification login help matches legacy user/login.scala.html screen DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, { emailVerificationEnabled: true });
+  await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
+
+  await expect(page.locator(".email-verification-help")).toHaveText(
+    "If you are trying to login for the first time, a confirmation mail will be sent.",
+  );
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    expectedLoginScreen(basePath, DEFAULT_FORM_BODY, "/me", EMAIL_VERIFICATION_HELP),
   );
 
   expect(actual).toEqual(expected);
@@ -148,10 +163,42 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
   expect(actual).toEqual(expected);
 });
 
-function expectedLoginScreen(basePath: string, formBody: string, redirectUrl = "/me") {
+function expectedLoginScreen(
+  basePath: string,
+  formBody: string,
+  redirectUrl = "/me",
+  emailVerificationHelp = "",
+) {
   return EXPECTED_LOGIN_SCREEN.replaceAll("__BASE_PATH__", basePath)
+    .replace("__EMAIL_VERIFICATION_HELP__", emailVerificationHelp)
     .replace("__REDIRECT_URL__", redirectUrl)
     .replace("__FORM_BODY__", formBody.replaceAll("__BASE_PATH__", basePath));
+}
+
+async function mockCapabilities(
+  page: Page,
+  overrides: {
+    emailVerificationEnabled?: boolean;
+    enabledSocialProviders?: string[];
+    loginIdPlaceholder?: string;
+    passwordPlaceholder?: string;
+    signupRequireConfirm?: boolean;
+    socialLoginOnly?: boolean;
+  },
+) {
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        emailVerificationEnabled: overrides.emailVerificationEnabled ?? false,
+        enabledSocialProviders: overrides.enabledSocialProviders ?? [],
+        loginIdPlaceholder: overrides.loginIdPlaceholder ?? "",
+        passwordPlaceholder: overrides.passwordPlaceholder ?? "",
+        signupRequireConfirm: overrides.signupRequireConfirm ?? false,
+        socialLoginOnly: overrides.socialLoginOnly ?? false,
+      },
+    });
+  });
 }
 
 async function canonicalizeScreenRoots(page: Page) {
