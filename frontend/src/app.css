@@ -318,6 +318,10 @@ button[type="submit"]:focus {
   padding: 50px 0;
 }
 
+.page-wrap-outer:has(.secret-box.txt-center) .secret-wrap {
+  padding: 50px 0;
+}
+
 .secret-wrap .logo,
 .secret-page .logo {
   display: block;
