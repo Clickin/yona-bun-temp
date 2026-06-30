@@ -85,6 +85,34 @@ const SOCIAL_ONLY_FORM_BODY = `
       </div>
 `;
 
+const SOCIAL_PROVIDERS_FORM_BODY = `
+      <dl>
+        <dd>
+          <input id="loginIdOrEmailD" name="loginIdOrEmail" type="text" class="text email" autocomplete="off" placeholder="__LOGIN_PLACEHOLDER__">
+        </dd>
+        <dd>
+          <input id="password" name="password" type="password" class="text password" autocomplete="off" placeholder="__PASSWORD_PLACEHOLDER__">
+        </dd>
+      </dl>
+      <div class="btns-row">
+        <button type="submit" class="ybtn ybtn-primary ybtn-large ybtn-fullsize">Log in</button>
+      </div>
+      <div class="btns-row nm">
+        <div class="social-login-title-line"> or </div>
+        <a href="__BASE_PATH__/authenticate/github" class="ybtn oauth-login-btn"><span class="auth-provider-logo"><span class="github"><svg aria-hidden="true" height="24" version="1.1" viewBox="0 0 16 16" width="19"><path></path></svg></span> <span class="provider-name">Sign in with github</span></span></a>
+        <a href="__BASE_PATH__/authenticate/google" class="ybtn oauth-login-btn"><span class="auth-provider-logo"><img src="__BASE_PATH__/assets/images/provider-logo/btn_google_light_normal_ios.svg" alt="login with Google"> Sign in with Google</span></a>
+      </div>
+      <div class="act-row mt5">
+        <div class="remember-me-wrap pull-left">
+          <input id="remember-me" type="checkbox" name="rememberMe" class="checkbox" checked>
+          <label for="remember-me" class="bg-checkbox">Stay logged in</label>
+        </div>
+        <div class="links-wrap pull-right">
+          <a href="__BASE_PATH__/lostPassword">Password forgotten?</a>
+        </div>
+      </div>
+`;
+
 const EMAIL_VERIFICATION_HELP = `
     <div class="email-verification-help">If you are trying to login for the first time, a confirmation mail will be sent.</div>
 `;
@@ -128,7 +156,8 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileLoginMetrics(page)).toEqual({
     formWidth: "370.5px",
-    gnbInnerWidth: 382,
+    gnbInnerWidth: 363,
+    gnbOuterPadding: "0px 10px",
     loginInputWidth: "351.969px",
     passwordInputWidth: "351.969px",
   });
@@ -152,6 +181,40 @@ test("social-login-only form matches legacy user/login.scala.html screen DOM", a
   );
 
   expect(actual).toEqual(expected);
+});
+
+test("configured social provider login form matches legacy user/login.scala.html screen DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {
+    enabledSocialProviders: ["github", "google"],
+    socialLoginOnly: false,
+  });
+  await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
+
+  await expect(page.locator(".oauth-login-btn")).toHaveCount(2);
+  await expect(page.locator(".social-login-title-line")).toHaveText("or");
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    expectedLoginScreen(basePath, socialProvidersFormBody()),
+  );
+
+  expect(actual).toEqual(expected);
+  expect(await readSocialLoginMetrics(page)).toEqual({
+    authProviderFontFamily: "Roboto, sans-serif",
+    githubDisplay: "inline-block",
+    githubMarginBottom: "3px",
+    githubMarginLeft: "-4px",
+    githubMarginTop: "3px",
+    githubWidth: "30px",
+    oauthButtonDisplay: "block",
+    oauthButtonMargin: "10px 0px",
+    socialTitleMarginBottom: "10px",
+    socialTitleMarginTop: "12px",
+    svgVerticalAlign: "middle",
+  });
 });
 
 test("email-verification login help matches legacy user/login.scala.html screen DOM", async ({
@@ -223,6 +286,16 @@ function defaultFormBody(
   passwordPlaceholder = "Password",
 ) {
   return DEFAULT_FORM_BODY.replace("__LOGIN_PLACEHOLDER__", loginPlaceholder).replace(
+    "__PASSWORD_PLACEHOLDER__",
+    passwordPlaceholder,
+  );
+}
+
+function socialProvidersFormBody(
+  loginPlaceholder = "Login ID or E-mail",
+  passwordPlaceholder = "Password",
+) {
+  return SOCIAL_PROVIDERS_FORM_BODY.replace("__LOGIN_PLACEHOLDER__", loginPlaceholder).replace(
     "__PASSWORD_PLACEHOLDER__",
     passwordPlaceholder,
   );
@@ -379,6 +452,39 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
   });
 }
 
+async function readSocialLoginMetrics(page: Page) {
+  return page.evaluate(() => {
+    const title = document.querySelector<HTMLElement>(".social-login-title-line");
+    const button = document.querySelector<HTMLElement>(".oauth-login-btn");
+    const providerLogo = document.querySelector<HTMLElement>(".auth-provider-logo");
+    const github = document.querySelector<HTMLElement>(".auth-provider-logo .github");
+    const svg = document.querySelector<SVGElement>(".auth-provider-logo .github svg");
+    if (!title || !button || !providerLogo || !github || !svg) {
+      throw new Error("Expected social login metric targets are missing.");
+    }
+
+    const titleStyle = getComputedStyle(title);
+    const buttonStyle = getComputedStyle(button);
+    const providerLogoStyle = getComputedStyle(providerLogo);
+    const githubStyle = getComputedStyle(github);
+    const svgStyle = getComputedStyle(svg);
+
+    return {
+      authProviderFontFamily: providerLogoStyle.fontFamily,
+      githubDisplay: githubStyle.display,
+      githubMarginBottom: githubStyle.marginBottom,
+      githubMarginLeft: githubStyle.marginLeft,
+      githubMarginTop: githubStyle.marginTop,
+      githubWidth: githubStyle.width,
+      oauthButtonDisplay: buttonStyle.display,
+      oauthButtonMargin: buttonStyle.margin,
+      socialTitleMarginBottom: titleStyle.marginBottom,
+      socialTitleMarginTop: titleStyle.marginTop,
+      svgVerticalAlign: svgStyle.verticalAlign,
+    };
+  });
+}
+
 async function readDesktopLoginMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
@@ -459,16 +565,18 @@ async function readDesktopLoginMetrics(page: Page) {
 async function readMobileLoginMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
     const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
     const loginInput = document.querySelector<HTMLElement>("#loginIdOrEmailD");
     const passwordInput = document.querySelector<HTMLElement>("#password");
-    if (!gnbInner || !formWrap || !loginInput || !passwordInput) {
+    if (!gnbInner || !gnbOuter || !formWrap || !loginInput || !passwordInput) {
       throw new Error("Expected mobile login metric targets are missing.");
     }
 
     return {
       formWidth: getComputedStyle(formWrap).width,
       gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterPadding: getComputedStyle(gnbOuter).padding,
       loginInputWidth: getComputedStyle(loginInput).width,
       passwordInputWidth: getComputedStyle(passwordInput).width,
     };
