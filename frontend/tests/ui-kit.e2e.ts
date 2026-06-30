@@ -16,6 +16,10 @@ test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".page-footer-outer")).toBeVisible();
   await expect(page.locator('input[name="viewport"]')).toHaveCount(0);
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
+    "content",
+    "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
+  );
 
   const actual = await canonicalizeUIKitRoots(page);
   const expected = await canonicalizeHtml(page, EXPECTED_UIKIT_BODY);
