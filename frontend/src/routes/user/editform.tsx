@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
   readWorkspaceOverviewRest,
@@ -17,6 +17,11 @@ export const Route = createFileRoute("/user/editform")({
 
 function UserProfileSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  if (!pathname.endsWith("/user/editform")) {
+    return <Outlet />;
+  }
 
   return (
     <YonaQueryProvider>
