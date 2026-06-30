@@ -220,6 +220,7 @@ function ProjectIssuesBody({
                       issues={issues.items}
                       ownerName={ownerName}
                       projectName={projectName}
+                      showMilestone={showMilestone}
                     />
                   ) : null}
                   {issues.items.length > 1 ? (
@@ -323,12 +324,14 @@ function MassUpdateToolbar({
   issues,
   ownerName,
   projectName,
+  showMilestone,
 }: {
   basePath: string;
   currentUserId: string;
   issues: RestIssueListItem[];
   ownerName: string;
   projectName: string;
+  showMilestone: boolean;
 }) {
   const { t } = useLegacyMessages();
   const milestones = uniqueMilestones(issues);
@@ -393,7 +396,7 @@ function MassUpdateToolbar({
             ))}
           </ul>
         </div>
-        {milestones.length ? (
+        {showMilestone && milestones.length ? (
           <MassUpdateDropdown
             id="milestone"
             label={t("issue.update.milestone.id")}

@@ -61,9 +61,9 @@ Mode: read-only audit, no files edited by the explorer
 
 ## 2026-07-01 Project Issue Milestone Menu Gate Follow-Up
 
-- Restored the `issue/partial_list.scala.html` milestone tag gate so row milestones render only when the project milestone menu is enabled and the issue has a milestone.
-- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now threads the loaded project container menu setting into issue rows and applies the same condition as the legacy template.
-- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=no-milestone-menu` whole-screen DOM comparison proving both the hidden project Milestone menu item and omitted row `.mileston-tag`.
+- Restored the `issue/partial_list.scala.html` milestone tag gate and the `issue/partial_massupdate.scala.html` milestone dropdown gate so milestone controls render only when the project milestone menu is enabled.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now threads the loaded project container menu setting into issue rows and the mass-update toolbar, applying the same condition as the legacy templates.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=no-milestone-menu` whole-screen DOM comparison proving the hidden project Milestone menu item, omitted row `.mileston-tag`, and omitted mass-update `#milestone` dropdown.
 
 ## 2026-07-01 Project Issue Title Prefix Follow-Up
 
