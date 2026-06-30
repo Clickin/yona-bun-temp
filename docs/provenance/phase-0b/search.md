@@ -22,6 +22,12 @@
 - canonical implementation path: `repo root`
 - canonical owner path: `frontend`, `crates/server`, `crates/search`, `crates/persistence`
 
+## Current Frontend Gap
+
+- 2026-07-01 current tree check: the flat route set has no active `/search`, `/:owner/:project/search`, or `/organizations/:organizationName/search` TSX route, and `frontend/tests/search-parity.e2e.ts` is not present.
+- The backend/search-domain notes below remain useful for the REST/search engine boundary, but the visible `search/result.scala.html` and `search/partial_search.scala.html` frontend screen parity must be rebuilt from the legacy templates before rendered UI parity can be claimed.
+- Required frontend follow-up: add global, project-scoped, and organization-scoped search routes with whole-screen Playwright evidence for the correct `siteLayout`, `projectLayout`, and `organizationLayout` branches plus result category structure.
+
 ## Deferred Index Evidence Note
 
 - `SPEC.md` FG-12 records global, project, and organization search as implemented for Phase 5C app runtime parity, with fixed `pageSize=20`, required `keyword`/`searchType`, legacy `auto` type order, legacy pagination shell, ACL-aware filtering, snippet behavior, and lightweight relevance ordering.
