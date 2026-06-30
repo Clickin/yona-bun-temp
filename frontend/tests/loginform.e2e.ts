@@ -153,6 +153,34 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
     textWidth: "386px",
     titleLineHeight: "42px",
   });
+  expect(await readDialogMetrics(page)).toEqual({
+    borderColor: "rgb(190, 190, 190)",
+    borderRadius: "0px",
+    borderWidth: "10px",
+    descColor: "rgb(85, 85, 85)",
+    descFontSize: "14px",
+    descFontWeight: "400",
+    descLineHeight: "21px",
+    descMargin: "20px 0px 25px",
+    descTextAlign: "center",
+    dismissButtonBackground: "rgba(0, 0, 0, 0)",
+    dismissButtonBorder: "0px none rgb(137, 137, 137)",
+    dismissButtonColor: "rgb(137, 137, 137)",
+    dismissButtonFontSize: "24px",
+    dismissButtonFontWeight: "700",
+    dismissClear: "both",
+    dismissDisplay: "block",
+    dismissPadding: "0px",
+    dismissTextAlign: "right",
+    dismissWidth: "100%",
+    messageFontSize: "18px",
+    messageFontWeight: "700",
+    messageLineHeight: "27px",
+    messageMarginBottom: "20px",
+    messageTextAlign: "center",
+    padding: "16px 20px",
+    width: "500px",
+  });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileLoginMetrics(page)).toEqual({
     formWidth: "370.5px",
@@ -160,6 +188,10 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
     gnbOuterPadding: "0px 10px",
     loginInputWidth: "351.969px",
     passwordInputWidth: "351.969px",
+  });
+  expect(await readDialogMetrics(page)).toMatchObject({
+    padding: "5px",
+    width: "85%",
   });
   await expect(page.locator(".links-wrap a")).toHaveAttribute("href", `${basePath}/lostPassword`);
 });
@@ -663,6 +695,54 @@ async function readToastMetrics(page: Page) {
       verticalSpacerDisplay: verticalSpacerStyle.display,
       verticalSpacerHeight: verticalSpacerStyle.height,
       verticalSpacerWidth: verticalSpacerStyle.width,
+    };
+  });
+}
+
+async function readDialogMetrics(page: Page) {
+  return page.evaluate(() => {
+    const dialog = document.querySelector<HTMLElement>("#yobiDialog");
+    const dismiss = document.querySelector<HTMLElement>("#yobiDialog .btn-dismiss");
+    const dismissButton = document.querySelector<HTMLElement>("#yobiDialog .btn-dismiss button");
+    const message = document.querySelector<HTMLElement>("#yobiDialog .message .msg");
+    const desc = document.querySelector<HTMLElement>("#yobiDialog .message .desc");
+    if (!dialog || !dismiss || !dismissButton || !message || !desc) {
+      throw new Error("Expected dialog metric targets are missing.");
+    }
+
+    const dialogStyle = getComputedStyle(dialog);
+    const dismissStyle = getComputedStyle(dismiss);
+    const dismissButtonStyle = getComputedStyle(dismissButton);
+    const messageStyle = getComputedStyle(message);
+    const descStyle = getComputedStyle(desc);
+
+    return {
+      borderColor: dialogStyle.borderTopColor,
+      borderRadius: dialogStyle.borderTopLeftRadius,
+      borderWidth: dialogStyle.borderTopWidth,
+      descColor: descStyle.color,
+      descFontSize: descStyle.fontSize,
+      descFontWeight: descStyle.fontWeight,
+      descLineHeight: descStyle.lineHeight,
+      descMargin: descStyle.margin,
+      descTextAlign: descStyle.textAlign,
+      dismissButtonBackground: dismissButtonStyle.backgroundColor,
+      dismissButtonBorder: dismissButtonStyle.border,
+      dismissButtonColor: dismissButtonStyle.color,
+      dismissButtonFontSize: dismissButtonStyle.fontSize,
+      dismissButtonFontWeight: dismissButtonStyle.fontWeight,
+      dismissClear: dismissStyle.clear,
+      dismissDisplay: dismissStyle.display,
+      dismissPadding: dismissStyle.padding,
+      dismissTextAlign: dismissStyle.textAlign,
+      dismissWidth: dismissStyle.width,
+      messageFontSize: messageStyle.fontSize,
+      messageFontWeight: messageStyle.fontWeight,
+      messageLineHeight: messageStyle.lineHeight,
+      messageMarginBottom: messageStyle.marginBottom,
+      messageTextAlign: messageStyle.textAlign,
+      padding: dialogStyle.padding,
+      width: dialogStyle.width,
     };
   });
 }

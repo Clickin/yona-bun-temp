@@ -843,6 +843,47 @@ button[type="submit"]:focus {
   display: none;
 }
 
+.yobiDialog {
+  width: 500px;
+  padding: 16px 20px;
+  border: 10px solid #bebebe;
+  border-radius: 0;
+}
+
+.yobiDialog .btn-dismiss {
+  display: block;
+  clear: both;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  text-align: right;
+}
+
+.yobiDialog .btn-dismiss button {
+  color: #898989;
+  font-size: 24px;
+  font-weight: bold;
+  background: transparent;
+  border: none;
+}
+
+.yobiDialog .message .msg {
+  margin-bottom: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1.5em;
+  text-align: center;
+}
+
+.yobiDialog .message .desc {
+  margin: 20px 0 25px;
+  color: #555;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 150%;
+  text-align: center;
+}
+
 #experimentalHelp .actrow {
   display: block;
 }
@@ -1163,8 +1204,14 @@ button[type="submit"]:focus {
 
 @media (width <= 767px) {
   .modal {
-    left: inherit;
+    left: inherit !important;
+    margin-left: inherit !important;
     margin-right: 0 !important;
+  }
+
+  .yobiDialog {
+    width: 85% !important;
+    padding: 5px !important;
   }
 
   .loginDialog {
