@@ -30,6 +30,28 @@ const EXPECTED_PROJECT_ISSUES_POPULATED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceA
     `${POPULATED_SPAN10_WITH_TOOLBAR}</div></div></div></div>\n<footer`,
   );
 
+const NO_MILESTONE_MENU_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
+  '<span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span>',
+  "",
+).replace("filter=bug&amp;format=xls", "filter=no-milestone-menu&amp;format=xls");
+
+const EXPECTED_PROJECT_ISSUES_NO_MILESTONE_MENU = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
+  'value="empty"',
+  'value="no-milestone-menu"',
+)
+  .replaceAll(
+    '>Open<span class="num-badge pull-right">0</span>',
+    '>Open<span class="num-badge pull-right">1</span>',
+  )
+  .replace(
+    '<li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li>',
+    "",
+  )
+  .replace(
+    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
+    `${NO_MILESTONE_MENU_SPAN10}</div></div></div></div>\n<footer`,
+  );
+
 const PREFIX_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   'data-value="dev 11 Fix flaky issue"',
   'data-value="dev 11 [P1] Fix flaky issue"',
@@ -241,6 +263,27 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
   );
 });
 
+test("project issue list hides row milestone when project milestone menu is disabled", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "no-milestone-menu");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=no-milestone-menu`);
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(
+    page.locator(".project-menu-gruop .menu-name", { hasText: "Milestone" }),
+  ).toHaveCount(0);
+  await expect(page.locator(".mileston-tag")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_ISSUES_NO_MILESTONE_MENU.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 test("project issue list bracketed title prefix matches legacy title helpers", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "prefix");
@@ -401,6 +444,7 @@ async function mockProjectIssues(
     | "children"
     | "draft"
     | "empty"
+    | "no-milestone-menu"
     | "populated"
     | "prefix"
     | "sharer"
@@ -440,7 +484,7 @@ async function mockProjectIssues(
           board: true,
           code: true,
           issue: true,
-          milestone: true,
+          milestone: state !== "no-milestone-menu",
           pullRequest: true,
           review: true,
         },
@@ -455,7 +499,7 @@ async function mockProjectIssues(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(
-        state === "populated"
+        state === "populated" || state === "no-milestone-menu"
           ? populatedIssueResponse()
           : state === "prefix"
             ? {

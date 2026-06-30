@@ -47,6 +47,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now maps existing REST issue item fields directly into the legacy row DOM. The sort filter container remains legacy-conditional and is empty for a single visible issue, matching `partial_list_wrap.scala.html`.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` now includes the RED-to-GREEN populated `/admin/sample/issues?filter=bug` whole-screen DOM comparison alongside the empty-state proof.
 
+## 2026-07-01 Project Issue Milestone Menu Gate Follow-Up
+
+- Restored the `issue/partial_list.scala.html` milestone tag gate so row milestones render only when the project milestone menu is enabled and the issue has a milestone.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now threads the loaded project container menu setting into issue rows and applies the same condition as the legacy template.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=no-milestone-menu` whole-screen DOM comparison proving both the hidden project Milestone menu item and omitted row `.mileston-tag`.
+
 ## 2026-07-01 Project Issue Title Prefix Follow-Up
 
 - Restored the `issue/partial_list.scala.html` title helper branch for leading bracketed title words, matching legacy `TemplateHelper.showHeaderWordsInBracketsIfExist` and `removeHeaderWords`.

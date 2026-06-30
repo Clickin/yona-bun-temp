@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, type HTMLAttributes, type LiHTMLAttributes } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
+import type { ProjectContainer } from "../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
@@ -114,6 +115,7 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
         issues={issuesQuery.data}
         ownerName={ownerName}
+        project={projectQuery.data}
         projectName={projectName}
         runtimeConfig={runtimeConfig}
         search={search}
@@ -126,6 +128,7 @@ function ProjectIssuesBody({
   currentUserId,
   issues,
   ownerName,
+  project,
   projectName,
   runtimeConfig,
   search,
@@ -133,6 +136,7 @@ function ProjectIssuesBody({
   currentUserId: string;
   issues: ProjectIssueListRestResponse;
   ownerName: string;
+  project: ProjectContainer;
   projectName: string;
   runtimeConfig: RuntimeConfig;
   search: ProjectIssuesSearch;
@@ -141,6 +145,7 @@ function ProjectIssuesBody({
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const hasIssues = issues.items.length > 0;
   const draftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
+  const showMilestone = projectMilestoneMenuEnabled(project);
 
   return (
     <div className="page-wrap-outer">
@@ -225,6 +230,7 @@ function ProjectIssuesBody({
                       key={`draft-${issue.id || issue.issueNumber}`}
                       ownerName={ownerName}
                       projectName={projectName}
+                      showMilestone={showMilestone}
                     />
                   ))}
                   {issues.items.map((issue) => (
@@ -234,6 +240,7 @@ function ProjectIssuesBody({
                       key={issue.id || issue.issueNumber}
                       ownerName={ownerName}
                       projectName={projectName}
+                      showMilestone={showMilestone}
                     />
                   ))}
                 </ul>
@@ -522,11 +529,13 @@ function ProjectIssueItem({
   issue,
   ownerName,
   projectName,
+  showMilestone,
 }: {
   basePath: string;
   issue: RestIssueListItem;
   ownerName: string;
   projectName: string;
+  showMilestone: boolean;
 }) {
   const { t } = useLegacyMessages();
   const issueId = stringField(issue.id, String(issue.issueNumber));
@@ -639,7 +648,7 @@ function ProjectIssueItem({
               ownerName={ownerName}
               projectName={projectName}
             />
-            {issue.milestoneId ? (
+            {showMilestone && issue.milestoneId ? (
               <span className="mileston-tag">
                 <a
                   href={prefixBasePath(
@@ -1328,6 +1337,19 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
+}
+
+function projectMilestoneMenuEnabled(project: ProjectContainer) {
+  const record = project as Record<string, unknown>;
+  const menuSetting =
+    record.menuSetting && typeof record.menuSetting === "object"
+      ? (record.menuSetting as Record<string, unknown>)
+      : {};
+  return booleanField(menuSetting.milestone ?? record.showMilestone);
+}
+
+function booleanField(value: unknown) {
+  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 function LegacyTitlePrefixAnchor({ children }: { children: string }) {
