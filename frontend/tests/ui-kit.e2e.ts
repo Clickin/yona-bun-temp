@@ -10,10 +10,23 @@ const LEGACY_MARKDOWN_HELP_TEMPLATE = readFileSync(
   fileURLToPath(new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url)),
   "utf8",
 );
+const LEGACY_SELECT2_TEMPLATE = readFileSync(
+  fileURLToPath(
+    new URL("../../yona-original/app/views/common/select2.scala.html", import.meta.url),
+  ),
+  "utf8",
+);
 const EXPECTED_UIKIT_BODY = extractBetween(LEGACY_UIKIT_TEMPLATE, "<body>", "</body>");
 const LEGACY_MARKDOWN_HELP_BODY = LEGACY_MARKDOWN_HELP_TEMPLATE.split(
   '<script type="text/javascript">',
 )[0].replace('@Messages("title.markdown.help")', "Markdown Help");
+const SELECT2_TEMPLATE_IDS = [
+  "tplSelect2FormatUser",
+  "tplSelect2FormatMilestone",
+  "tplSelect2Projects",
+  "tplSelect2ProjectsWithoutAvatar",
+  "tplSelect2FormatIssues",
+];
 
 test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -264,6 +277,18 @@ test("standalone UI kit root shell mounts legacy anonymous login dialog", async 
     "href",
     `${basePath}/users/signupform`,
   );
+});
+
+test("standalone UI kit root shell mounts legacy select2 formatter templates", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const expectedTemplates = extractLegacyScriptTemplates(
+    LEGACY_SELECT2_TEMPLATE,
+    SELECT2_TEMPLATE_IDS,
+  );
+
+  await page.goto(`${basePath}/_UIKit`);
+
+  expect(await readRenderedScriptTemplates(page, SELECT2_TEMPLATE_IDS)).toEqual(expectedTemplates);
 });
 
 test("standalone UI kit root shell dismisses legacy modal buttons", async ({ page }) => {
@@ -543,6 +568,43 @@ async function normalizedFragmentOuterHtml(page: Page, html: string, selector: s
     },
     { markup: html, rootSelector: selector },
   );
+}
+
+function extractLegacyScriptTemplates(markup: string, ids: string[]) {
+  return Object.fromEntries(
+    ids.map((id) => {
+      const pattern = new RegExp(
+        `<script\\s+id="${id}"\\s+type="text/x-jquery-tmpl">([\\s\\S]*?)</script>`,
+        "u",
+      );
+      const match = pattern.exec(markup);
+      if (!match) {
+        throw new Error(`Expected legacy select2 template is missing: ${id}`);
+      }
+      return [id, normalizeTemplateText(match[1] ?? "")];
+    }),
+  );
+}
+
+async function readRenderedScriptTemplates(page: Page, ids: string[]) {
+  return page.evaluate((templateIds) => {
+    const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
+    return Object.fromEntries(
+      templateIds.map((id) => {
+        const template = document.querySelector<HTMLScriptElement>(
+          `script#${CSS.escape(id)}[type="text/x-jquery-tmpl"]`,
+        );
+        if (!template) {
+          throw new Error(`Expected rendered select2 template is missing: ${id}`);
+        }
+        return [id, normalize(template.textContent ?? "")];
+      }),
+    );
+  }, ids);
+}
+
+function normalizeTemplateText(value: string) {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function extractBetween(source: string, start: string, end: string) {

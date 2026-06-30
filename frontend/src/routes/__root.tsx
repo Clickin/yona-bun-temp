@@ -290,6 +290,7 @@ function RootResetShell() {
               '<div class="toast" tabindex="-1"><div class="btn-dismiss"><button type="button" class="btn-transparent">&times;</button></div><div class="center-text"><span class="v"></span><div class="msg"></div></div></div>'
             }
           </script>
+          <LegacySelect2Templates />
           {rendersStandaloneLoginState ? null : (
             <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
               <RootLoginDialog basePath={runtimeConfig.basePath} />
@@ -301,6 +302,51 @@ function RootResetShell() {
   );
 }
 
+function LegacySelect2Templates() {
+  return (
+    <>
+      <script
+        id="tplSelect2FormatUser"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html:
+            '<div class="usf-group" title="${name} ${loginId}">\n    <span class="avatar-wrap smaller"><img src="${avatarURL}" width="20" height="20"></span>\n    <strong class="name">${name}</strong>\n    <span class="loginid">${loginId}</span>\n</div>',
+        }}
+      />
+      <script
+        id="tplSelect2FormatMilestone"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html: '<div title="[${stateLabel}] ${name}">\n    ${name}\n</div>',
+        }}
+      />
+      <script
+        id="tplSelect2Projects"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html:
+            '<div class="usf-group" title="${name}">\n    <span class="avatar-wrap smaller"><img src="${avatarURL}" width="16" height="16"></span>\n    <span class="loginid">${owner}</span>\n    <span class="name">${name}</span>\n</div>',
+        }}
+      />
+      <script
+        id="tplSelect2ProjectsWithoutAvatar"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html:
+            '<div class="usf-group" title="${name}">\n    <span class="width25px"></span>\n    <span class="loginid">${owner}</span>\n    <span class="name">${name}</span>\n</div>',
+        }}
+      />
+      <script
+        id="tplSelect2FormatIssues"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html: '<div title="${name}">\n    ${name}\n</div>',
+        }}
+      />
+    </>
+  );
+}
+
 function RootLoginDialog({ basePath }: { basePath: string }) {
   const { t } = useLegacyMessages();
 
@@ -308,7 +354,7 @@ function RootLoginDialog({ basePath }: { basePath: string }) {
     <div id="loginDialog" className="modal hide loginDialog" tabIndex={-1} role="dialog">
       <div className="modal-body">
         <div className="pull-right">
-          <button type="button" className="close" data-dismiss="modal" aria-hidden="true">
+          <button type="button" className="close" data-dismiss="modal">
             &times;
           </button>
         </div>
