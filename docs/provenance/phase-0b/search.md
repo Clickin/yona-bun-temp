@@ -22,11 +22,13 @@
 - canonical implementation path: `repo root`
 - canonical owner path: `frontend`, `crates/server`, `crates/search`, `crates/persistence`
 
-## Current Frontend Gap
+## Current Frontend Status
 
-- 2026-07-01 current tree check: the flat route set has no active `/search`, `/:owner/:project/search`, or `/organizations/:organizationName/search` TSX route, and `frontend/tests/search-parity.e2e.ts` is not present.
-- The backend/search-domain notes below remain useful for the REST/search engine boundary, but the visible `search/result.scala.html` and `search/partial_search.scala.html` frontend screen parity must be rebuilt from the legacy templates before rendered UI parity can be claimed.
-- Required frontend follow-up: add global, project-scoped, and organization-scoped search routes with whole-screen Playwright evidence for the correct `siteLayout`, `projectLayout`, and `organizationLayout` branches plus result category structure.
+- 2026-07-01 flat route rebuild started with the global `/search` branch from `search/result.scala.html` and `search/partial_search.scala.html`.
+- Covered rendered state: anonymous global `/search?keyword=missing&searchType=project` site-layout branch with the legacy breadcrumb, category list, `#searchInnerForm`, result title HTML, and `<div class="empty-result"></div>` from `partial_projects.scala.html`.
+- React target: `frontend/src/routes/search.tsx`.
+- Whole-screen evidence: `frontend/tests/search-global.e2e.ts`.
+- Remaining frontend gap: project-scoped `/:owner/:project/search` and organization-scoped `/organizations/:organizationName/search` routes still need their own template-first rebuilds with `projectLayout` and `organizationLayout` shell evidence, plus populated result-row coverage for each legacy `search/partial_*.scala.html` branch.
 
 ## Deferred Index Evidence Note
 
@@ -55,7 +57,7 @@
 | `SearchResultTests.makeSnipet`, `merge_overlap` | snippet generation preserves keyword-centered excerpt behavior and overlap merge behavior | snippet helper test in `crates/search` |
 | `Search.findUsers`, `findProjects`, `findIssues`, `findPosts`, `findMilestones`, `findIssueComments`, `findPostComments`, `findReviews` | legacy result lists use type-specific baseline order: users/projects by name ascending, milestones by due date descending, issues/posts/comments/reviews by created date descending | `crates/search` relevance score/rank helpers preserve lightweight relevance first and the legacy baseline order for ties; persistence/server wiring remains outside this slice |
 | `AccessControlTest.*` | result inclusion must respect the same read boundary as project and issue visibility | ACL-backed filter reuse in `crates/search` and `crates/domain` |
-| `search/partial_search.scala.html`, `SearchApp` invalid-query/project-type branches, `error/badrequest_default.scala.html` | legacy classes, tabs, badges, form ids, result title, empty result, pagination anchors, and common `error.badrequest` shell for invalid/missing query parameters, project-scoped `searchType=project`, and non-forbidden/non-not-found REST query failures stay visible without temporary `Search failed.` copy | `frontend/src/routes/-search-views.tsx`, `frontend/src/routes/-shared.tsx`, `frontend/tests/search-parity.e2e.ts` |
+| `search/partial_search.scala.html`, `SearchApp` invalid-query/project-type branches, `error/badrequest_default.scala.html` | legacy classes, tabs, badges, form ids, result title, empty result, pagination anchors, and common `error.badrequest` shell for invalid/missing query parameters, project-scoped `searchType=project`, and non-forbidden/non-not-found REST query failures stay visible without temporary `Search failed.` copy | Current flat-route global start: `frontend/src/routes/search.tsx`, `frontend/tests/search-global.e2e.ts`; remaining scoped routes need follow-up evidence. |
 
 ## Explicit Deferrals
 
