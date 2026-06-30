@@ -4,6 +4,7 @@ import { verifyUser } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import type { RuntimeConfig } from "../../../runtime-config";
+import { SiteLayoutShell } from "../../-home-route-screen";
 
 export const Route = createFileRoute("/verify/$loginId/$verificationCode")({
   component: VerifyUserRoute,
@@ -46,13 +47,15 @@ function VerifyUserScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     typeof verificationQuery.data.loginId === "string" ? verificationQuery.data.loginId : loginId;
 
   return (
-    <div className="page full">
-      <div className="center-wrap tag-line-wrap reset-password">
-        <h1 className="title">{t("user.verified")}</h1>
-        <p>{verifiedLoginId}</p>
-        <hr />
-        <p className="tag-line">{t("user.verified.detail")}</p>
+    <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <div className="page full">
+        <div className="center-wrap tag-line-wrap reset-password">
+          <h1 className="title">{t("user.verified")}</h1>
+          <p>{verifiedLoginId}</p>
+          <hr />
+          <p className="tag-line">{t("user.verified.detail")}</p>
+        </div>
       </div>
-    </div>
+    </SiteLayoutShell>
   );
 }
