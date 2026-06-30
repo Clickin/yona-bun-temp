@@ -11,6 +11,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectMembersPage`; the members leaf route passes that flag while retaining its existing member REST mutation/query boundaries.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/project-members-parity.spec.tsx src/project-settings-parity.spec.tsx`.
 
+## 2026-07-01 Project Home README Template-First Rebuild
+
+- Rebuilt the concrete flat route `frontend/src/routes/$ownerName/$projectName.tsx` from `project/home.scala.html`, `project/partial_readme.scala.html`, `project/header.scala.html`, and `projectMenu.scala.html`.
+- Scope: the default README tab state keeps a single local component tree because the legacy screen is one project home body plus shell; the route reads the existing project container REST data for shell, clone URL, README fallback, member pane, and leave/overview mutation boundaries.
+- Verification: `pnpm --dir frontend test:e2e -- project-home-readme.e2e.ts`.
+
 ## 2026-07-01 Project Settings Template-First Rebuild
 
 - Rebuilt the concrete flat route `frontend/src/routes/$ownerName/$projectName/setting.tsx` from `project/setting.scala.html`, `project/header.scala.html`, `projectMenu.scala.html`, and `project/partial_settingmenu.scala.html`.
@@ -142,6 +148,7 @@ Mode: read-only audit, no files edited by the explorer
 - `frontend/src/routes/$owner/$projectName/index.tsx`
 - `frontend/src/routes/$owner/$projectName/route.tsx`
 - `frontend/src/routes/$owner/$projectName/settingform/route.tsx`
+- `frontend/src/routes/$ownerName/$projectName.tsx`
 - `frontend/src/routes/$ownerName/$projectName/setting.tsx`
 - `frontend/src/routes/$owner/$projectName/members/route.tsx`
 - `frontend/src/routes/$ownerName/$projectName/members.tsx`
@@ -157,6 +164,7 @@ Mode: read-only audit, no files edited by the explorer
 - `frontend/src/project-home-tabs.spec.tsx`
 - `frontend/src/project-settings-parity.spec.tsx`
 - `frontend/src/route-parity.spec.tsx`
+- `frontend/tests/project-home-readme.e2e.ts`
 - `frontend/tests/project-fork-form.e2e.ts`
 - `frontend/tests/project-members-form.e2e.ts`
 - `frontend/tests/project-labels-form.e2e.ts`
@@ -192,7 +200,7 @@ Total rows: 18
 
 | path | legacy evidence | current evidence | status | proposed owner |
 | --- | --- | --- | --- | --- |
-| `/:owner/:project?tabId=readme` | `home.scala.html` selects `partial_readme(project)` for default/readme tab. | `ProjectDetailPage` normalizes `tabId`, renders DB README post, Git `readmeFile`, or legacy empty README fallback; `project-home-tabs.spec.tsx` covers DB/Git/empty/SVN README states. `frontend/tests/project-home-parity.e2e.ts` now opens `/yona/owner/projectYobi`, asserts the README tab, legacy empty README fallback, create README link, project shell, and REST-backed posts/container boundary. | covered | none |
+| `/:owner/:project?tabId=readme` | `home.scala.html` selects `partial_readme(project)` for default/readme tab and wraps it with project header/menu, description editor, clone URL, side member pane, and leave modal. | `frontend/src/routes/$ownerName/$projectName.tsx` renders the flat legacy site shell, project header/menu with Home active, mobile breadcrumb, `#project-description`, hidden description edit form, `#cloneURL`, README empty fallback/create link from `partial_readme.scala.html`, right action/member pane, `#projectLeaveBtn`, `#alertLeave`, and existing project container REST plus leave/overview mutation boundaries. `frontend/tests/project-home-readme.e2e.ts` was RED against the missing flat route, then GREEN after the template-first rebuild. | covered in 2026-07-01 template-first reset slice | `frontend/tests/project-home-readme.e2e.ts` |
 | `/:owner/:project?tabId=history` | `partial_history.scala.html` renders `.activity-streams`, actor avatar/link, type text, target links, date. | `ProjectHomeHistoryPane` renders matching stream shell from `detail.history.items`; unit coverage exists. `frontend/tests/project-home-parity.e2e.ts` clicks the History tab in browser, verifies the `tabId=history` URL, active tab, activity stream actor, type copy, title, and raw-key absence. | covered | none |
 | `/:owner/:project?tabId=dashboard` | Dashboard includes assignee rows, milestone rows, label rows, and recent PR rows with “more” link. | Wave 4 projects and renders all open milestone rows with legacy success progress bars, the no-open-milestone empty/new action, the no-milestone count row, and recent open PR contributor avatar/title/date rows plus `project.dashboard.more`; focused frontend and REST contract tests cover the projection/rendering. `frontend/tests/project-home-parity.e2e.ts` clicks the Dashboard tab and asserts assignee, milestone, label, and PR rows from REST container data. | covered in Wave 4 | none |
 | `/:owner/:project` project menu | `projectMenu.scala.html` shows home/code/issue/PR/review/milestone/board by menu settings, VCS, and code-access membership; admin cog only for update permission. | `ProjectMenu` renders same shell; backend `build_project_container_response` gates `showCode`, `showPullRequest`, and `showReview` with menu/code-access state. | covered | none |
@@ -218,7 +226,7 @@ Total rows: 18
 | --- | --- | --- | --- | --- | --- | --- |
 | `/:owner/:project` | default README, DB README exists | `.nav-tabs li.active a` `README`; README post body | `.board-view.project-readme-post`, `.readme-body.markdown-wrap` | load page | React route reads REST container plus posts JSON | covered |
 | `/:owner/:project` | no DB README, Git README exists | README tab displays repository README markdown | `.project-git-readme`, README filename/body | load page | React route reads REST container `readmeFile` | covered |
-| `/:owner/:project` | no README, Git project, updater | `.bubble-wrap.gray.readme`, `project.readme`, create README link | `.bubble-wrap.gray.readme`, `postform?readme=true` | load page and assert create README link | Direct link opens React board post form; submit remains REST | covered by `project-home-parity.e2e.ts` |
+| `/:owner/:project` | no README, Git project, updater | `.bubble-wrap.gray.readme`, `project.readme`, create README link | `.bubble-wrap.gray.readme`, `postform?readme=true` | load page and assert create README link | React route reads project container REST; direct link opens React board post form; submit remains REST | covered by `project-home-readme.e2e.ts` |
 | `/:owner/:project?tabId=history` | history tab | `.activity-streams .activity-stream`, `.actor`, `.where`, `.title`, `.date` | same shell/classes from `ProjectHomeHistoryPane` | click History tab | REST container history data | covered by `project-home-parity.e2e.ts` |
 | `/:owner/:project?tabId=dashboard` | open issues with assignees/labels/milestones and recent PRs | `.overview-assignee`, `.overview-milestone`, `.overview-label`, `.overview-pullrequest` with row lists | assignee/label rows present; Wave 4 adds all open milestone rows, empty/new milestone state, no-milestone count row, and recent PR contributor/title/date rows plus “more” link | click Dashboard tab | REST container dashboard data includes assignee, label, milestone, no-milestone, and PR row projections | covered by `project-home-parity.e2e.ts` |
 | `/:owner/:project` | project member side block | `.project-members .member img`, member profile links, `#member-add-link` | `.member-wrap`, `.project-members .member`, avatar/profile/name links, and updater add link rendered | load page as updater | REST container members available | covered by `project-home-parity.e2e.ts` |
