@@ -18,7 +18,7 @@ const EXPECTED_SIGNUP_SCREEN = `
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
           <div class="search-box">
-            <input type="text" name="keyword" autocomplete="off">
+            <input type="text" name="keyword" autocomplete="off" accesskey="S">
             <button type="submit"><i class="yobicon-search"></i></button>
           </div>
         </form>
@@ -122,7 +122,7 @@ const EXPECTED_PUBLIC_LANDING = `
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
           <div class="search-box">
-            <input type="text" name="keyword" autocomplete="off">
+            <input type="text" name="keyword" autocomplete="off" accesskey="S">
             <button type="submit"><i class="yobicon-search"></i></button>
           </div>
         </form>
@@ -480,6 +480,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "action",
         "value",
         "autocomplete",
+        "accesskey",
         "placeholder",
         "href",
         "target",
@@ -538,6 +539,7 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
         "action",
         "value",
         "autocomplete",
+        "accesskey",
         "href",
         "target",
         "title",
@@ -747,6 +749,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "action",
           "value",
           "autocomplete",
+          "accesskey",
           "placeholder",
           "href",
           "target",

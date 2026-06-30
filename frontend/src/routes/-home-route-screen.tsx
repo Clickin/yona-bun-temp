@@ -325,7 +325,7 @@ export function SiteLayoutShell({
               >
                 <input type="hidden" name="searchType" value="auto" />
                 <div className="search-box">
-                  <input type="text" name="keyword" autoComplete="off" />
+                  <input type="text" name="keyword" autoComplete="off" accessKey="S" />
                   <button type="submit">
                     <i className="yobicon-search" />
                   </button>
