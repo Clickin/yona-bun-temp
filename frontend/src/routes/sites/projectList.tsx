@@ -1,10 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { siteProjectsQueryOptions, type SiteProject } from "../../api/site-admin";
+import {
+  deleteSiteProjectRest,
+  siteProjectsQueryOptions,
+  type SiteProject,
+} from "../../api/site-admin";
+import { apiQueryKeys } from "../../api/query-keys";
+import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { useState } from "react";
 
 type ProjectListSearch = {
   filter: string;
@@ -36,7 +43,19 @@ function SiteProjectListRoute() {
 function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { filter, pageNum } = Route.useSearch();
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
+  const [deleteProject, setDeleteProject] = useState<SiteProject | null>(null);
+  const [deleteModalClosed, setDeleteModalClosed] = useState(false);
   const query = useQuery(siteProjectsQueryOptions(runtimeConfig, { filter, page: pageNum }));
+  const deleteMutation = useMutation({
+    mutationFn: async (projectId: number) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return deleteSiteProjectRest(runtimeConfig, csrfToken, projectId);
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.projectsBase() });
+    },
+  });
 
   return (
     <>
@@ -100,6 +119,10 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                 {(query.data?.projects ?? []).map((project) => (
                   <ProjectListItem
                     key={project.id}
+                    onDelete={(selectedProject) => {
+                      setDeleteModalClosed(false);
+                      setDeleteProject(selectedProject);
+                    }}
                     project={project}
                     runtimeConfig={runtimeConfig}
                   />
@@ -108,12 +131,32 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
 
               <div id="pagination"></div>
 
-              <div id="alertDeletionWrap" className="modal fade">
+              <div
+                id="alertDeletionWrap"
+                className={
+                  deleteProject
+                    ? "modal fade in"
+                    : deleteModalClosed
+                      ? "modal fade hide"
+                      : "modal fade"
+                }
+                style={deleteProject ? { display: "block" } : undefined}
+              >
                 <div className="modal-header">
-                  <button type="button" className="close" data-dismiss="modal">
+                  <button
+                    type="button"
+                    className="close"
+                    data-dismiss="modal"
+                    onClick={() => {
+                      setDeleteModalClosed(true);
+                      setDeleteProject(null);
+                    }}
+                  >
                     ×
                   </button>
-                  <span id="project-name"></span>
+                  <span id="project-name">
+                    {deleteProject ? `${deleteProject.ownerName}/${deleteProject.projectName}` : ""}
+                  </span>
                   <LegacyMessage messageKey="site.project.delete" />
                 </div>
                 <div className="modal-body">
@@ -122,10 +165,29 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                   </p>
                 </div>
                 <div className="modal-footer">
-                  <button type="button" id="projectDeleteBtn" className="ybtn ybtn-danger">
+                  <button
+                    type="button"
+                    id="projectDeleteBtn"
+                    className="ybtn ybtn-danger"
+                    onClick={() => {
+                      if (deleteProject) {
+                        deleteMutation.mutate(deleteProject.id);
+                      }
+                      setDeleteModalClosed(true);
+                      setDeleteProject(null);
+                    }}
+                  >
                     <LegacyMessage messageKey="button.yes" />
                   </button>
-                  <button type="button" className="ybtn" data-dismiss="modal">
+                  <button
+                    type="button"
+                    className="ybtn"
+                    data-dismiss="modal"
+                    onClick={() => {
+                      setDeleteModalClosed(true);
+                      setDeleteProject(null);
+                    }}
+                  >
                     <LegacyMessage messageKey="button.no" />
                   </button>
                 </div>
@@ -164,9 +226,11 @@ function SiteAdminSidebar({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 }
 
 function ProjectListItem({
+  onDelete,
   project,
   runtimeConfig,
 }: {
+  onDelete: (project: SiteProject) => void;
   project: SiteProject;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -194,6 +258,7 @@ function ProjectListItem({
           data-project-name={`${project.ownerName}/${project.projectName}`}
           data-toggle="delete-project"
           data-href={prefixBasePath(runtimeConfig.basePath, `/sites/project/delete/${project.id}`)}
+          onClick={() => onDelete(project)}
         >
           <LegacyMessage messageKey="button.delete" />
         </button>

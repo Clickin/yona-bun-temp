@@ -167,6 +167,27 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   expect(actual).toEqual(expected);
 });
 
+test("site admin project delete waits for legacy confirmation modal", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  const requests = await mockProjects(page);
+
+  await page.goto(`${basePath}/sites/projectList?filter=road`);
+  await page.locator('[data-toggle="delete-project"]').click();
+
+  await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
+  await expect(page.locator("#alertDeletionWrap")).not.toHaveClass(/hide/);
+  expect(requests.deletedProjectIds).toEqual([]);
+
+  await page.locator('#alertDeletionWrap [data-dismiss="modal"]').last().click();
+  await expect(page.locator("#alertDeletionWrap")).toHaveClass(/hide/);
+  expect(requests.deletedProjectIds).toEqual([]);
+
+  await page.locator('[data-toggle="delete-project"]').click();
+  await page.locator("#projectDeleteBtn").click();
+  await expect.poll(() => requests.deletedProjectIds).toEqual(["77"]);
+});
+
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -188,6 +209,10 @@ async function mockSiteAdminSession(page: Page) {
 }
 
 async function mockProjects(page: Page) {
+  const requests = {
+    deletedProjectIds: [] as string[],
+  };
+
   await page.route("**/api/v1/site/projects?*", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -210,6 +235,19 @@ async function mockProjects(page: Page) {
       }),
     });
   });
+  await page.route("**/api/v1/site/projects/*", async (route) => {
+    if (route.request().method() === "DELETE") {
+      requests.deletedProjectIds.push(
+        new URL(route.request().url()).pathname.split("/").pop() ?? "",
+      );
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, redirectPath: "/sites/projectList" }),
+    });
+  });
+
+  return requests;
 }
 
 async function canonicalizeScreenRoots(page: Page) {
