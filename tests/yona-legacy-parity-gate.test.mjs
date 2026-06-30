@@ -329,6 +329,8 @@ test("maps auth runtime context changes to the account lifecycle slice", () => {
     "frontend/src/routes/users/signupform/route.tsx",
     "frontend/src/routes/lostPassword/route.tsx",
     "frontend/src/routes/resetPassword/route.tsx",
+    "frontend/src/routes/verify/$loginId/$verificationCode.tsx",
+    "frontend/tests/verify-user.e2e.ts",
     "frontend/src/auth-workspace-shell.spec.tsx",
     "docs/provenance/ui-parity-reports/template-first-p1-auth-public-home.md",
   ]);
