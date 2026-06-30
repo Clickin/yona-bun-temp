@@ -92,9 +92,10 @@ test("verification success matches legacy user/verified.scala.html screen DOM", 
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileVerifiedMetrics(page)).toEqual({
     footerMinWidth: "10px",
-    gnbInnerWidth: 382,
+    gnbInnerWidth: 363,
     gnbOuterMinWidth: "10px",
-    pageFooterPadding: "10px 0px",
+    gnbOuterPadding: "0px 10px",
+    pageFooterPadding: "10px",
     tagLinePaddingTop: "80px",
     titleLineHeight: "42px",
   });
@@ -204,6 +205,7 @@ async function readMobileVerifiedMetrics(page: Page) {
       footerMinWidth: pageFooterOuterStyle.minWidth,
       gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
       gnbOuterMinWidth: gnbOuterStyle.minWidth,
+      gnbOuterPadding: gnbOuterStyle.padding,
       pageFooterPadding: pageFooterOuterStyle.padding,
       tagLinePaddingTop: tagLineWrapStyle.paddingTop,
       titleLineHeight: getComputedStyle(title).lineHeight,
