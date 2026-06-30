@@ -303,11 +303,13 @@ button[type="submit"]:focus {
   font-weight: normal;
 }
 
+.secret-box,
 .secret-page .secret-box {
   width: 50%;
   margin: 20px auto;
 }
 
+.secret-wrap,
 .secret-page .secret-wrap {
   text-align: center;
 }
@@ -316,6 +318,7 @@ button[type="submit"]:focus {
   padding: 50px 0;
 }
 
+.secret-wrap .logo,
 .secret-page .logo {
   display: block;
   width: 123px;
@@ -329,6 +332,7 @@ button[type="submit"]:focus {
   background-color: #f36c22;
 }
 
+.secret-wrap .logo:hover,
 .secret-page .logo:hover {
   color: #fff;
 }

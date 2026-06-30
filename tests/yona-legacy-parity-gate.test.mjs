@@ -329,6 +329,8 @@ test("maps auth runtime context changes to the account lifecycle slice", () => {
     "frontend/src/routes/users/signupform/route.tsx",
     "frontend/src/routes/lostPassword/route.tsx",
     "frontend/src/routes/resetPassword/route.tsx",
+    "frontend/src/routes/secret.tsx",
+    "frontend/tests/secret-setup.e2e.ts",
     "frontend/src/routes/verify/$loginId/$verificationCode.tsx",
     "frontend/tests/verify-user.e2e.ts",
     "frontend/src/auth-workspace-shell.spec.tsx",
