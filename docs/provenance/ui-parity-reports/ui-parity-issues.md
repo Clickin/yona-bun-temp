@@ -47,6 +47,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now maps existing REST issue item fields directly into the legacy row DOM. The sort filter container remains legacy-conditional and is empty for a single visible issue, matching `partial_list_wrap.scala.html`.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` now includes the RED-to-GREEN populated `/admin/sample/issues?filter=bug` whole-screen DOM comparison alongside the empty-state proof.
 
+## 2026-07-01 Project Issue Label Sort Follow-Up
+
+- Restored the `issue/partial_list.scala.html` label order from `issue.labels.toList.sortBy(r => (r.category.name, r.name))`.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now sorts issue labels before rendering row label anchors, serializing `data-issue-labels`, and collecting label options for the mass-update dropdowns.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=labels-unsorted` whole-screen DOM comparison proving sorted visible labels, checkbox metadata, mass-update label groups, toolbar, Excel action, keymap trigger, and pagination.
+
 ## 2026-07-01 Project Issue Non-Member Controls Follow-Up
 
 - Restored the legacy `ProjectUser.isMember` gates from `issue/partial_list_wrap.scala.html` and `issue/partial_list.scala.html`, plus the issue-label creation gate from `issue/partial_searchform.scala.html`, for project issue lists.

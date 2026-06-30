@@ -554,6 +554,7 @@ function ProjectIssueItem({
   const assigneeLoginId = stringField(issue.assigneeLoginId, "");
   const createdLabel = stringField(issue.createdLabel, stringField(issue.updatedLabel, ""));
   const issueWeight = issue.weight ?? 0;
+  const issueLabels = sortedIssueLabels(issue);
   const titleParts = splitHeaderWordsInBrackets(issue.title);
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
   const legacyFor = {
@@ -586,7 +587,7 @@ function ProjectIssueItem({
               name="checked-issue"
               data-toggle="issue-checkbox"
               data-issue-id={issueId}
-              data-issue-labels={issueLabelData(issue)}
+              data-issue-labels={issueLabelData(issueLabels)}
             />
           </label>
         ) : null}
@@ -707,7 +708,7 @@ function ProjectIssueItem({
                 ) : null}
               </span>
             ) : null}
-            {issue.labels.map((label) => (
+            {issueLabels.map((label) => (
               /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy issue labels use href="#" and JS filter behavior. */
               <a
                 href="#"
@@ -1209,8 +1210,22 @@ function excelHref(
   return `${prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}?${params.toString()}`;
 }
 
-function issueLabelData(issue: RestIssueListItem) {
-  return issue.labels
+function sortedIssueLabels(issue: RestIssueListItem) {
+  return issue.labels.slice().sort(compareIssueLabels);
+}
+
+function compareIssueLabels(
+  left: { categoryName?: unknown; name: string },
+  right: { categoryName?: unknown; name: string },
+) {
+  const categoryOrder = stringField(left.categoryName, "").localeCompare(
+    stringField(right.categoryName, ""),
+  );
+  return categoryOrder || left.name.localeCompare(right.name);
+}
+
+function issueLabelData(labels: RestIssueListItem["labels"]) {
+  return labels
     .map((label) =>
       [
         label.categoryName ?? "",
@@ -1221,7 +1236,7 @@ function issueLabelData(issue: RestIssueListItem) {
       ].join(","),
     )
     .join("|")
-    .concat(issue.labels.length ? "|" : "");
+    .concat(labels.length ? "|" : "");
 }
 
 function uniqueMilestones(issues: RestIssueListItem[]) {
@@ -1254,7 +1269,7 @@ function uniqueLabels(issues: RestIssueListItem[]) {
       }
     }
   }
-  return Array.from(labels.values());
+  return Array.from(labels.values()).sort(compareIssueLabels);
 }
 
 function groupLabels(
