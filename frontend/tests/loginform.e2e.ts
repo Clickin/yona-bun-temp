@@ -36,6 +36,21 @@ const EXPECTED_LOGIN_SCREEN = `
   <div class="login-form-wrap frm-wrap">
     <form action="/users/login" method="POST">
       <input type="hidden" name="redirectUrl" value="/me">
+      __FORM_BODY__
+    </form>
+  </div>
+</div>
+<footer class="page-footer-outer">
+  <div class="page-footer">
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+  </div>
+</footer>
+`;
+
+const DEFAULT_FORM_BODY = `
       <dl>
         <dd>
           <input id="loginIdOrEmailD" name="loginIdOrEmail" type="text" class="text email" autocomplete="off" placeholder="Login ID or E-mail">
@@ -57,17 +72,16 @@ const EXPECTED_LOGIN_SCREEN = `
           <a href="__BASE_PATH__/lostPassword">Password forgotten?</a>
         </div>
       </div>
-    </form>
-  </div>
-</div>
-<footer class="page-footer-outer">
-  <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
-  </div>
-</footer>
+`;
+
+const SOCIAL_ONLY_FORM_BODY = `
+      <div class="btns-row nm">
+        Only allow sign-in via social login
+      </div>
+      <div class="btns-row nm">
+        <a href="__BASE_PATH__/authenticate/github" class="ybtn oauth-login-btn"><span class="auth-provider-logo"><span class="github"><svg aria-hidden="true" height="24" version="1.1" viewBox="0 0 16 16" width="19"><path></path></svg></span> <span class="provider-name">Sign in with github</span></span></a>
+        <a href="__BASE_PATH__/authenticate/google" class="ybtn oauth-login-btn"><span class="auth-provider-logo"><img src="__BASE_PATH__/assets/images/provider-logo/btn_google_light_normal_ios.svg" alt="login with Google"> Sign in with Google</span></a>
+      </div>
 `;
 
 test("anonymous login form matches legacy user/login.scala.html screen DOM", async ({ page }) => {
@@ -76,14 +90,46 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
 
   await expect(page.locator(".page.full")).toBeVisible();
   const actual = await canonicalizeScreenRoots(page);
-  const expected = await canonicalizeHtml(
-    page,
-    EXPECTED_LOGIN_SCREEN.replaceAll("__BASE_PATH__", basePath),
-  );
+  const expected = await canonicalizeHtml(page, expectedLoginScreen(basePath, DEFAULT_FORM_BODY));
 
   expect(actual).toEqual(expected);
   await expect(page.locator(".links-wrap a")).toHaveAttribute("href", `${basePath}/lostPassword`);
 });
+
+test("social-login-only form matches legacy user/login.scala.html screen DOM", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        emailVerificationEnabled: false,
+        enabledSocialProviders: ["github", "google"],
+        loginIdPlaceholder: "",
+        passwordPlaceholder: "",
+        signupRequireConfirm: false,
+        socialLoginOnly: true,
+      },
+    });
+  });
+  await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
+
+  await expect(page.locator(".oauth-login-btn")).toHaveCount(2);
+  await expect(page.locator("#loginIdOrEmailD")).toHaveCount(0);
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    expectedLoginScreen(basePath, SOCIAL_ONLY_FORM_BODY),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
+function expectedLoginScreen(basePath: string, formBody: string) {
+  return EXPECTED_LOGIN_SCREEN.replaceAll("__BASE_PATH__", basePath).replace(
+    "__FORM_BODY__",
+    formBody.replaceAll("__BASE_PATH__", basePath),
+  );
+}
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
@@ -99,8 +145,12 @@ async function canonicalizeScreenRoots(page: Page) {
         "autocomplete",
         "placeholder",
         "href",
+        "src",
+        "alt",
         "target",
         "title",
+        "aria-hidden",
+        "version",
         "data-toggle",
         "data-placement",
         "for",
@@ -157,8 +207,12 @@ async function canonicalizeHtml(page: Page, html: string) {
           "autocomplete",
           "placeholder",
           "href",
+          "src",
+          "alt",
           "target",
           "title",
+          "aria-hidden",
+          "version",
           "data-toggle",
           "data-placement",
           "for",
