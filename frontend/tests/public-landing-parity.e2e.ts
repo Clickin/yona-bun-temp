@@ -146,6 +146,32 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
   });
 });
 
+test("anonymous public landing keeps legacy mobile intro proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(`${basePath}/`);
+  await expect(page.locator(".siteintro-bg")).toBeVisible();
+
+  expect(await readMobileLandingMetrics(page)).toEqual({
+    featureItemMarginLeft: "10px",
+    featureItemMarginTop: "10px",
+    featureItemWidth: 333,
+    featureWrapWidth: 350,
+    gnbOuterMinWidth: "10px",
+    gnbOuterPadding: "0px 10px",
+    headingFontSize: "22px",
+    headingPaddingLeft: "20px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterMinWidth: "10px",
+    pageFooterOuterPadding: "10px",
+    pageFooterWidth: 370,
+    providerFontSize: "9px",
+    siteIntroCoverOverflow: "visible",
+    siteIntroCoverWidth: 390,
+  });
+});
+
 async function readDesktopLandingMetrics(page: Page) {
   return page.evaluate(() => {
     const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
@@ -215,6 +241,55 @@ async function readDesktopLandingMetrics(page: Page) {
       signupMarginTop: getComputedStyle(signup).marginTop,
       siteIntroCoverPaddingBottom: siteIntroCoverStyle.paddingBottom,
       siteIntroCoverPaddingTop: siteIntroCoverStyle.paddingTop,
+      siteIntroCoverWidth: Math.round(siteIntroCover.getBoundingClientRect().width),
+    };
+  });
+}
+
+async function readMobileLandingMetrics(page: Page) {
+  return page.evaluate(() => {
+    const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const heading = document.querySelector<HTMLElement>(".site-heading");
+    const featureWrap = document.querySelector<HTMLElement>(".feature-wrap");
+    const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (
+      !siteIntroCover ||
+      !gnbOuter ||
+      !heading ||
+      !featureWrap ||
+      !featureItem ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
+    ) {
+      throw new Error("Expected public landing mobile metrics targets are missing.");
+    }
+
+    const siteIntroCoverStyle = getComputedStyle(siteIntroCover);
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const headingStyle = getComputedStyle(heading);
+    const featureItemStyle = getComputedStyle(featureItem);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+
+    return {
+      featureItemMarginLeft: featureItemStyle.marginLeft,
+      featureItemMarginTop: featureItemStyle.marginTop,
+      featureItemWidth: Math.round(featureItem.getBoundingClientRect().width),
+      featureWrapWidth: Math.round(featureWrap.getBoundingClientRect().width),
+      gnbOuterMinWidth: gnbOuterStyle.minWidth,
+      gnbOuterPadding: gnbOuterStyle.padding,
+      headingFontSize: headingStyle.fontSize,
+      headingPaddingLeft: headingStyle.paddingLeft,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterMinWidth: pageFooterOuterStyle.minWidth,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      pageFooterWidth: Math.round(pageFooter.getBoundingClientRect().width),
+      providerFontSize: getComputedStyle(provider).fontSize,
+      siteIntroCoverOverflow: siteIntroCoverStyle.overflow,
       siteIntroCoverWidth: Math.round(siteIntroCover.getBoundingClientRect().width),
     };
   });

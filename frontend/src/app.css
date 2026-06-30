@@ -2544,10 +2544,43 @@ h1 {
     min-width: 10px !important;
   }
 
+  .gnb-outer {
+    box-sizing: border-box;
+    padding: 0 10px;
+  }
+
   .page-wrap-outer {
     box-sizing: border-box;
     width: 100%;
     padding: 0 !important;
+  }
+
+  .siteintro .siteintro-cover {
+    width: inherit;
+    overflow: inherit;
+  }
+
+  .siteintro .site-heading {
+    padding-left: 20px;
+    font-size: 22px;
+  }
+
+  .feature .feature-wrap {
+    width: inherit !important;
+  }
+
+  .feature .feature-wrap li {
+    width: 95% !important;
+    margin-top: 10px !important;
+    margin-left: 10px !important;
+  }
+
+  .page-footer-outer {
+    padding: 10px;
+  }
+
+  .page-footer-outer .page-footer {
+    width: 100%;
   }
 
   .project-page-wrap {
