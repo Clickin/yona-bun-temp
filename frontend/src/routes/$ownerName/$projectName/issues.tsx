@@ -536,10 +536,19 @@ function ProjectIssueItem({
   const authorHref = prefixBasePath(basePath, `/${authorLoginId}`);
   const assigneeLoginId = stringField(issue.assigneeLoginId, "");
   const createdLabel = stringField(issue.createdLabel, stringField(issue.updatedLabel, ""));
+  const issueWeight = issue.weight ?? 0;
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
   const legacyFor = {
     htmlFor: `issue-${issueId}`,
   } as unknown as HTMLAttributes<HTMLDivElement>;
+  const dueDateAttrs =
+    issue.state === "open"
+      ? {
+          "data-placement": "top",
+          "data-toggle": "tooltip",
+          title: issue.dueDateLabel,
+        }
+      : {};
 
   return (
     <li
@@ -572,6 +581,26 @@ function ProjectIssueItem({
                 )}
               </span>
             </a>
+            {issueWeight > 0 ? (
+              <span
+                className="weight-up-arrow"
+                data-toggle="tooltip"
+                data-placement="right"
+                title={`${t("issue.weight")} ${issueWeight}`}
+              >
+                <i className="yobicon-angle-circled-up"></i>
+              </span>
+            ) : null}
+            {issueWeight < 0 ? (
+              <span
+                className="weight-down-arrow"
+                data-toggle="tooltip"
+                data-placement="right"
+                title={`${t("issue.weight")} ${issueWeight}`}
+              >
+                <i className="yobicon-angle-circled-down"></i>
+              </span>
+            ) : null}
             <a href={issueHref} className="title">
               {issue.title}
             </a>
@@ -685,10 +714,10 @@ function ProjectIssueItem({
         </div>
         {issue.dueDateLabel ? (
           <div
-            className={`mr20 mt10 pull-right${issue.dueDateOverdue ? " overdue" : ""}`}
-            data-toggle="tooltip"
-            data-placement="top"
-            title={issue.dueDateLabel}
+            className={`mr20 mt10 pull-right${
+              issue.state === "closed" ? " darkgray-txt" : issue.dueDateOverdue ? " overdue" : ""
+            }`}
+            {...dueDateAttrs}
           >
             <i className="yobicon-clock2 mr3 vmiddle"></i>
             <span className="vmiddle">
@@ -843,6 +872,7 @@ function QuickSearch({
   const { t } = useLegacyMessages();
   const pjaxFilter = { "pjax-filter": "" } as unknown as HTMLAttributes<HTMLAnchorElement>;
   const allLabel = state === "closed" ? t("issue.list.all.closed") : t("issue.list.all.open");
+  const allCount = countField(issues, state === "closed" ? "closedIssueCount" : "openIssueCount");
 
   return (
     <ul className="lst-stacked unstyled">
@@ -861,7 +891,7 @@ function QuickSearch({
           data-milestone-id={search.milestoneId}
         >
           {allLabel}
-          <span className="num-badge pull-right">{countField(issues, "openIssueCount")}</span>
+          <span className="num-badge pull-right">{allCount}</span>
         </a>
       </li>
       <li className={search.assigneeId === currentUserId ? "active" : undefined}>
@@ -1126,6 +1156,9 @@ function excelHref(
   const params = new URLSearchParams();
   if (search.filter) {
     params.set("filter", search.filter);
+  }
+  if (search.state === "closed") {
+    params.set("state", "closed");
   }
   params.set("format", "xls");
   return `${prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}?${params.toString()}`;
