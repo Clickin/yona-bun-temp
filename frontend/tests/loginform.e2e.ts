@@ -54,10 +54,10 @@ const EXPECTED_LOGIN_SCREEN = `
 const DEFAULT_FORM_BODY = `
       <dl>
         <dd>
-          <input id="loginIdOrEmailD" name="loginIdOrEmail" type="text" class="text email" autocomplete="off" placeholder="Login ID or E-mail">
+          <input id="loginIdOrEmailD" name="loginIdOrEmail" type="text" class="text email" autocomplete="off" placeholder="__LOGIN_PLACEHOLDER__">
         </dd>
         <dd>
-          <input id="password" name="password" type="password" class="text password" autocomplete="off" placeholder="Password">
+          <input id="password" name="password" type="password" class="text password" autocomplete="off" placeholder="__PASSWORD_PLACEHOLDER__">
         </dd>
       </dl>
       <div class="btns-row">
@@ -95,7 +95,7 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
 
   await expect(page.locator(".page.full")).toBeVisible();
   const actual = await canonicalizeScreenRoots(page);
-  const expected = await canonicalizeHtml(page, expectedLoginScreen(basePath, DEFAULT_FORM_BODY));
+  const expected = await canonicalizeHtml(page, expectedLoginScreen(basePath, defaultFormBody()));
 
   expect(actual).toEqual(expected);
   await expect(page.locator(".links-wrap a")).toHaveAttribute("href", `${basePath}/lostPassword`);
@@ -133,7 +133,28 @@ test("email-verification login help matches legacy user/login.scala.html screen 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    expectedLoginScreen(basePath, DEFAULT_FORM_BODY, "/me", EMAIL_VERIFICATION_HELP),
+    expectedLoginScreen(basePath, defaultFormBody(), "/me", EMAIL_VERIFICATION_HELP),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
+test("configured login placeholders match legacy user/login.scala.html screen DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {
+    loginIdPlaceholder: "Corporate ID",
+    passwordPlaceholder: "Directory password",
+  });
+  await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
+
+  await expect(page.locator("#loginIdOrEmailD")).toHaveAttribute("placeholder", "Corporate ID");
+  await expect(page.locator("#password")).toHaveAttribute("placeholder", "Directory password");
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    expectedLoginScreen(basePath, defaultFormBody("Corporate ID", "Directory password")),
   );
 
   expect(actual).toEqual(expected);
@@ -151,7 +172,7 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
   const actual = await canonicalizeScreenAndToastRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    `${expectedLoginScreen(basePath, DEFAULT_FORM_BODY, "")}
+    `${expectedLoginScreen(basePath, defaultFormBody(), "")}
     <div id="yobiToasts" class="yobiToasts">
       <div class="toast" tabindex="-1">
         <div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div>
@@ -162,6 +183,16 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
 
   expect(actual).toEqual(expected);
 });
+
+function defaultFormBody(
+  loginPlaceholder = "Login ID or E-mail",
+  passwordPlaceholder = "Password",
+) {
+  return DEFAULT_FORM_BODY.replace("__LOGIN_PLACEHOLDER__", loginPlaceholder).replace(
+    "__PASSWORD_PLACEHOLDER__",
+    passwordPlaceholder,
+  );
+}
 
 function expectedLoginScreen(
   basePath: string,
