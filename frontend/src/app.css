@@ -989,6 +989,18 @@ button[type="submit"]:focus {
     width: 95% !important;
   }
 
+  .signup-form-wrap {
+    width: 95% !important;
+  }
+
+  .signup-form-wrap .text {
+    width: 40% !important;
+  }
+
+  .signup-form-wrap dl {
+    text-align: right;
+  }
+
   .dl-horizontal dt {
     float: none;
     width: auto;
