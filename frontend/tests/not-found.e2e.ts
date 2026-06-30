@@ -75,6 +75,30 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
   });
 });
 
+test("unmatched route keeps legacy mobile error shell proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(`${basePath}/missing-legacy-route`);
+  await expect(page.locator(".error-wrap")).toBeVisible();
+
+  expect(await readMobileNotFoundMetrics(page)).toEqual({
+    errorPaddingTop: "100px",
+    errorTextFontSize: "16px",
+    gnbInnerWidth: 363,
+    gnbOuterMinWidth: "10px",
+    gnbOuterPadding: "0px 10px",
+    pageFooterOuterMinWidth: "10px",
+    pageFooterOuterPadding: "10px",
+    pageFooterWidth: 370,
+    pageWrapOuterMinWidth: "10px",
+    pageWrapOuterPadding: "0px",
+    pageWrapOuterWidth: 390,
+    projectPageWrapMarginTop: "5px",
+    projectPageWrapWidth: 390,
+  });
+});
+
 async function readDesktopNotFoundMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
@@ -140,6 +164,52 @@ async function readDesktopNotFoundMetrics(page: Page) {
       pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
       projectPageWrapMarginTop: getComputedStyle(projectPageWrap).marginTop,
       providerFontSize: getComputedStyle(provider).fontSize,
+    };
+  });
+}
+
+async function readMobileNotFoundMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const projectPageWrap = document.querySelector<HTMLElement>(".project-page-wrap");
+    const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
+    const errorText = document.querySelector<HTMLElement>(".error-wrap p");
+    const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const footer = document.querySelector<HTMLElement>(".page-footer");
+    if (
+      !gnbOuter ||
+      !gnbInner ||
+      !pageWrapOuter ||
+      !projectPageWrap ||
+      !errorWrap ||
+      !errorText ||
+      !footerOuter ||
+      !footer
+    ) {
+      throw new Error("Expected not-found mobile metric targets are missing.");
+    }
+
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const projectPageWrapStyle = getComputedStyle(projectPageWrap);
+    const footerOuterStyle = getComputedStyle(footerOuter);
+
+    return {
+      errorPaddingTop: getComputedStyle(errorWrap).paddingTop,
+      errorTextFontSize: getComputedStyle(errorText).fontSize,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterMinWidth: gnbOuterStyle.minWidth,
+      gnbOuterPadding: gnbOuterStyle.padding,
+      pageFooterOuterMinWidth: footerOuterStyle.minWidth,
+      pageFooterOuterPadding: footerOuterStyle.padding,
+      pageFooterWidth: Math.round(footer.getBoundingClientRect().width),
+      pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      pageWrapOuterPadding: pageWrapOuterStyle.padding,
+      pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
+      projectPageWrapMarginTop: projectPageWrapStyle.marginTop,
+      projectPageWrapWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
     };
   });
 }
