@@ -86,6 +86,17 @@ test("anonymous lost-password form matches legacy site/lostPassword.scala.html s
   const expected = await canonicalizeHtml(page, expectedLostPasswordScreen(basePath, ""));
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopLostPasswordMetrics(page)).toEqual({
+    buttonRowMarginBottom: "20px",
+    formMarginTop: "54px",
+    formWidth: "400px",
+    tagLineMarginBottom: "26px",
+    tagLinePaddingTop: "80px",
+    textHeight: "30px",
+    textMarginBottom: "10px",
+    textWidth: "386px",
+    titleLineHeight: "42px",
+  });
 });
 
 test("lost-password requested alert matches legacy site/lostPassword.scala.html screen DOM", async ({
@@ -174,6 +185,36 @@ async function canonicalizeScreenRoots(page: Page) {
       document.querySelectorAll(".unsupported, .gnb-outer, .page.full, .page-footer-outer"),
     );
     return roots.map((root) => visit(root)).join("");
+  });
+}
+
+async function readDesktopLostPasswordMetrics(page: Page) {
+  return page.evaluate(() => {
+    const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.reset-password");
+    const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
+    const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
+    const loginInput = document.querySelector<HTMLElement>("#loginId");
+    const buttonRow = document.querySelector<HTMLElement>(".login-form-wrap .btns-row");
+    if (!tagLineWrap || !title || !formWrap || !loginInput || !buttonRow) {
+      throw new Error("Expected lost-password metric targets are missing.");
+    }
+
+    const tagLineWrapStyle = getComputedStyle(tagLineWrap);
+    const formWrapStyle = getComputedStyle(formWrap);
+    const loginInputStyle = getComputedStyle(loginInput);
+    const buttonRowStyle = getComputedStyle(buttonRow);
+
+    return {
+      buttonRowMarginBottom: buttonRowStyle.marginBottom,
+      formMarginTop: formWrapStyle.marginTop,
+      formWidth: formWrapStyle.width,
+      tagLineMarginBottom: tagLineWrapStyle.marginBottom,
+      tagLinePaddingTop: tagLineWrapStyle.paddingTop,
+      textHeight: loginInputStyle.height,
+      textMarginBottom: loginInputStyle.marginBottom,
+      textWidth: loginInputStyle.width,
+      titleLineHeight: getComputedStyle(title).lineHeight,
+    };
   });
 }
 
