@@ -92,11 +92,19 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
     footerLineHeight: "34px",
     footerPaddingBottom: "10px",
     footerPaddingTop: "10px",
+    gnbInnerHeight: "40px",
+    gnbInnerWidth: 1254,
+    gnbOuterBackground: "rgb(27, 27, 27)",
+    gnbOuterHeight: "40px",
     iframeHeight: "315px",
     iframeWidth: "560px",
+    logoBackground: "rgb(255, 87, 34)",
+    logoLineHeight: "40px",
+    logoPadding: "6px 10px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
     pageWrapOuterMinWidth: "1100px",
+    providerColor: "rgb(51, 51, 51)",
     providerFontSize: "9px",
     providerMarginLeft: "4px",
   });
@@ -104,15 +112,30 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
 
 async function readDesktopRestrictedMetrics(page: Page) {
   return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const logo = document.querySelector<HTMLElement>(".logo-letter");
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const iframe = document.querySelector<HTMLElement>("iframe");
     const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");
     const footer = document.querySelector<HTMLElement>(".page-footer");
     const provider = document.querySelector<HTMLElement>(".page-footer .provider");
-    if (!pageWrapOuter || !iframe || !footerOuter || !footer || !provider) {
+    if (
+      !gnbOuter ||
+      !gnbInner ||
+      !logo ||
+      !pageWrapOuter ||
+      !iframe ||
+      !footerOuter ||
+      !footer ||
+      !provider
+    ) {
       throw new Error("Expected restricted metric targets are missing.");
     }
 
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const gnbInnerStyle = getComputedStyle(gnbInner);
+    const logoStyle = getComputedStyle(logo);
     const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
     const iframeStyle = getComputedStyle(iframe);
     const footerOuterStyle = getComputedStyle(footerOuter);
@@ -123,11 +146,19 @@ async function readDesktopRestrictedMetrics(page: Page) {
       footerLineHeight: footerStyle.lineHeight,
       footerPaddingBottom: footerOuterStyle.paddingBottom,
       footerPaddingTop: footerOuterStyle.paddingTop,
+      gnbInnerHeight: gnbInnerStyle.height,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterBackground: gnbOuterStyle.backgroundColor,
+      gnbOuterHeight: gnbOuterStyle.height,
       iframeHeight: iframeStyle.height,
       iframeWidth: iframeStyle.width,
+      logoBackground: logoStyle.backgroundColor,
+      logoLineHeight: logoStyle.lineHeight,
+      logoPadding: logoStyle.padding,
       pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
       pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
       pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      providerColor: providerStyle.color,
       providerFontSize: providerStyle.fontSize,
       providerMarginLeft: providerStyle.marginLeft,
     };
