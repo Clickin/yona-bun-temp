@@ -132,6 +132,21 @@ test("lost-password requested alert matches legacy site/lostPassword.scala.html 
   );
 
   expect(actual).toEqual(expected);
+  expect(await readLostPasswordAlertMetrics(page, ".alert-success")).toEqual({
+    alertBackgroundColor: "rgb(223, 240, 216)",
+    alertBorderColor: "rgb(214, 233, 198)",
+    alertBorderRadius: "4px",
+    alertColor: "rgb(70, 136, 71)",
+    alertMarginBottom: "20px",
+    alertPadding: "8px 35px 8px 14px",
+    alertWidth: 400,
+    closeLineHeight: "20px",
+    closeRight: "-21px",
+    closeTop: "-2px",
+    headingColor: "rgb(70, 136, 71)",
+    headingFontSize: "15px",
+    headingMargin: "0px",
+  });
 });
 
 test("lost-password invalid-request alert matches legacy site/lostPassword.scala.html screen DOM", async ({
@@ -145,6 +160,21 @@ test("lost-password invalid-request alert matches legacy site/lostPassword.scala
   const expected = await canonicalizeHtml(page, expectedLostPasswordScreen(basePath, ERROR_ALERT));
 
   expect(actual).toEqual(expected);
+  expect(await readLostPasswordAlertMetrics(page, ".alert-error")).toEqual({
+    alertBackgroundColor: "rgb(242, 222, 222)",
+    alertBorderColor: "rgb(238, 211, 215)",
+    alertBorderRadius: "4px",
+    alertColor: "rgb(185, 74, 72)",
+    alertMarginBottom: "20px",
+    alertPadding: "8px 35px 8px 14px",
+    alertWidth: 400,
+    closeLineHeight: "20px",
+    closeRight: "-21px",
+    closeTop: "-2px",
+    headingColor: "rgb(185, 74, 72)",
+    headingFontSize: "15px",
+    headingMargin: "0px",
+  });
 });
 
 function expectedLostPasswordScreen(basePath: string, alertHtml: string) {
@@ -289,6 +319,37 @@ async function readMobileLostPasswordMetrics(page: Page) {
       loginInputWidth: loginInputStyle.width,
     };
   });
+}
+
+async function readLostPasswordAlertMetrics(page: Page, selector: string) {
+  return page.evaluate((alertSelector) => {
+    const alert = document.querySelector<HTMLElement>(alertSelector);
+    const close = alert?.querySelector<HTMLElement>(".close");
+    const heading = alert?.querySelector<HTMLElement>("h4");
+    if (!alert || !close || !heading) {
+      throw new Error(`Expected lost-password alert metric targets for ${alertSelector}.`);
+    }
+
+    const alertStyle = getComputedStyle(alert);
+    const closeStyle = getComputedStyle(close);
+    const headingStyle = getComputedStyle(heading);
+
+    return {
+      alertBackgroundColor: alertStyle.backgroundColor,
+      alertBorderColor: alertStyle.borderTopColor,
+      alertBorderRadius: alertStyle.borderTopLeftRadius,
+      alertColor: alertStyle.color,
+      alertMarginBottom: alertStyle.marginBottom,
+      alertPadding: alertStyle.padding,
+      alertWidth: Math.round(alert.getBoundingClientRect().width),
+      closeLineHeight: closeStyle.lineHeight,
+      closeRight: closeStyle.right,
+      closeTop: closeStyle.top,
+      headingColor: headingStyle.color,
+      headingFontSize: headingStyle.fontSize,
+      headingMargin: headingStyle.margin,
+    };
+  }, selector);
 }
 
 async function canonicalizeHtml(page: Page, html: string) {
