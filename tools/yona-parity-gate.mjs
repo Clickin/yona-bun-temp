@@ -325,6 +325,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/\[_\]UIKit\/route\.tsx$/i,
       /^frontend\/src\/routes\/restricted\/route\.tsx$/i,
       /^frontend\/src\/routes\/(?:secret|restart)\/route\.tsx$/i,
+      /^frontend\/src\/routes\/(?:lostPassword|resetPassword)\.tsx$/i,
       /^frontend\/src\/routes\/(?:lostPassword|resetPassword|forgot-password)\/route\.tsx$/i,
       /^frontend\/src\/routes\/\(legacy-auth\)\/reset-password\/route\.tsx$/i,
       /^frontend\/src\/routes\/users\/(?:loginform|signupform)\.tsx$/i,
