@@ -375,6 +375,16 @@ export function readOrganizationDetailRest(
   });
 }
 
+export function organizationDetailQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  organizationName: string,
+) {
+  return queryOptions({
+    queryFn: () => readOrganizationDetailRest(runtimeConfig, organizationName),
+    queryKey: apiQueryKeys.organization.base(organizationName),
+  });
+}
+
 export function readOrganizationAdminRest(
   runtimeConfig: RuntimeConfig,
   organizationName: string,
