@@ -71,6 +71,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectStatisticsPage`; the statistics leaf route passes that flag while retaining the legacy `Under Construction` body.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/route-parity.spec.tsx -- --testNamePattern "project statistics"`.
 
+## 2026-06-30 Project Statistics Template-First Rebuild
+
+- Rebuilt the concrete flat route `frontend/src/routes/$ownerName/$projectName/statistics.tsx` from `project/statistics.scala.html` plus `project/header.scala.html` and `projectMenu.scala.html`.
+- Scope: the screen keeps a single local component tree because the legacy body is only the project shell with the Issue menu active and `<h1>Under Construction</h1>`.
+- Verification: `pnpm --dir frontend test:e2e -- project-statistics.e2e.ts`.
+
 ## Legacy Evidence Checked
 
 - `yona-original/app/views/project/home.scala.html`
@@ -103,11 +109,12 @@ Mode: read-only audit, no files edited by the explorer
 - `frontend/src/routes/$owner/$projectName/changeVCS/route.tsx`
 - `frontend/src/routes/$owner/$projectName/deleteform/route.tsx`
 - `frontend/src/routes/$owner/$projectName/newFork/route.tsx`
-- `frontend/src/routes/$owner/$projectName/statistics/route.tsx`
+- `frontend/src/routes/$ownerName/$projectName/statistics.tsx`
 - `frontend/src/app-view-models.ts`
 - `frontend/src/project-home-tabs.spec.tsx`
 - `frontend/src/project-settings-parity.spec.tsx`
 - `frontend/src/route-parity.spec.tsx`
+- `frontend/tests/project-statistics.e2e.ts`
 - `frontend/tests/project-transfer-form.e2e.ts`
 - `crates/server/src/routes/projects.rs`
 - `crates/server/src/routes/projects/home.rs`
@@ -152,7 +159,7 @@ Total rows: 18
 | `/:owner/:project/transfer` | `transfer.scala.html` renders the new-owner input row, transfer warning list, checkbox, danger button, and Yes/No confirmation modal. | `frontend/src/routes/$ownerName/$projectName/transfer.tsx` renders the legacy site shell, project header/menu, project settings tab menu, `#owner`, warning bubble, `#accept`, `#btnTransfer`, non-fade `#alertTransfer`, and REST transfer request boundary. | covered in 2026-06-30 template-first reset slice | `frontend/tests/project-transfer-form.e2e.ts` |
 | `/:owner/:project/changeVCS` | `change_vcs.scala.html` checkbox-gates change-VCS modal and confirmation. | `frontend/src/routes/$ownerName/$projectName/changeVCS.tsx` renders the legacy site shell, project header/menu, project settings tab menu, VCS warning bubble, `#acceptChangeVCS`, `#btnChangeVCS`, non-fade `#alertChangeVCS`, and REST change-VCS redirect boundary. | covered in 2026-06-30 template-first reset slice | `frontend/tests/project-change-vcs-form.e2e.ts` |
 | `/:owner/:project/deleteform` | `delete.scala.html` checkbox-gates delete modal and confirmation. | `frontend/src/routes/$ownerName/$projectName/deleteform.tsx` renders the legacy site shell, project header/menu, project settings tab menu, delete warning bubble, `#accept`, `#btnDelete`, non-fade `#alertDeletion`, and REST delete redirect boundary. | covered in 2026-06-30 template-first reset slice | `frontend/tests/project-delete-form.e2e.ts` |
-| `/:owner/:project/statistics` | `statistics.scala.html` renders only `<h1>Under Construction</h1>`. | Project layout owns the header/menu/page-wrap shell with active issue menu; `ProjectStatisticsPage` renders the same under-construction body under the outlet. | covered | `frontend/src/routes/$owner/$projectName/route.tsx`, `frontend/src/routes/$owner/$projectName/statistics/route.tsx`, `frontend/src/routes/-project-views.tsx`, `frontend/src/route-parity.spec.tsx` |
+| `/:owner/:project/statistics` | `statistics.scala.html` renders the project shell with Issue menu active and `<h1>Under Construction</h1>`. | `frontend/src/routes/$ownerName/$projectName/statistics.tsx` renders the legacy site shell, project header/menu, Issue-active project menu, page wrapper, and under-construction heading from the project container REST boundary. | covered in 2026-06-30 template-first reset slice | `frontend/tests/project-statistics.e2e.ts` |
 | project admin/settings browser raw-key absence | Legacy project admin/settings pages resolve `project.*`, `button.*`, `fork.*`, and validation message keys through Play messages before rendering. | The scoped project admin Playwright suites now assert browser-visible body text does not contain bounded raw project-admin message key patterns across settings, members, fork, webhooks, delete, transfer, and changeVCS positive and forbidden/disabled states. `pnpm --dir frontend test:e2e -- project-settings-parity.e2e.ts project-members-parity.e2e.ts project-fork-parity.e2e.ts project-webhooks-parity.e2e.ts project-delete-parity.e2e.ts project-transfer-parity.e2e.ts project-change-vcs-parity.e2e.ts` passed 12 Playwright tests. | covered in current follow-up | none |
 
 ## Playwright Scenario Matrix
@@ -177,7 +184,7 @@ Total rows: 18
 | `/:owner/:project/changeVCS` | change-VCS form shell | `#acceptChangeVCS`, `#btnChangeVCS`, modal `#alertChangeVCS`, `#btnChangeVCSExec` | same whole-screen DOM, IDs/copy, warning bubble, settings submenu, and non-fade modal class | initial render and hidden modal state; confirm uses REST mutation boundary | REST `POST /change-vcs` on confirm | covered in 2026-06-30 template-first reset slice |
 | `/:owner/:project/deleteform` | delete form shell | `#accept`, `#btnDelete`, modal `#alertDeletion`, `#btnDeleteExec` | same whole-screen DOM, IDs/copy, warning bubble, settings submenu, and non-fade modal class | initial render and hidden modal state; confirm uses REST mutation boundary | REST `DELETE /project` on confirm | covered in 2026-06-30 template-first reset slice |
 | `/:owner/:project/newFork` | fork form | `#helpMessage`, `#project-owner`, `#inputName`, project scope radios, fork button; existing-fork notice/link | same help/form/scope/button shell; existing-fork notice/link and disabled submit when unavailable | empty name no-submit, existing-fork no-submit, fill name, submit | REST `POST /fork` with CSRF and legacy payload only when enabled | covered in current follow-up |
-| `/:owner/:project/statistics` | statistics page | `<h1>Under Construction</h1>` | `<h1>Under Construction</h1>` | load page | REST container read only | covered |
+| `/:owner/:project/statistics` | statistics page shell | Issue-active project menu and `<h1>Under Construction</h1>` | same whole-screen DOM, project shell, and body heading | initial render | REST project container read only | covered in 2026-06-30 template-first reset slice |
 
 ## Nested Layout Follow-Ups
 
