@@ -99,29 +99,46 @@ async function canonicalizeIndexRoots(page: Page) {
 async function readDesktopIndexMetrics(page: Page) {
   return page.evaluate(() => {
     const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const logo = document.querySelector<HTMLElement>(".logo-letter");
     const heading = document.querySelector<HTMLElement>(".site-heading");
     const signup = document.querySelector<HTMLElement>(".signup-btn");
     const feature = document.querySelector<HTMLElement>(".feature");
     const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
     const featureIcon = document.querySelector<HTMLElement>(".feature-image");
     const featureInfo = document.querySelector<HTMLElement>(".feature-info");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
     if (
       !siteIntroCover ||
+      !gnbOuter ||
+      !gnbInner ||
+      !logo ||
       !heading ||
       !signup ||
       !feature ||
       !featureItem ||
       !featureIcon ||
-      !featureInfo
+      !featureInfo ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
     ) {
       throw new Error("Expected legacy index metric targets are missing.");
     }
 
     const siteIntroCoverStyle = getComputedStyle(siteIntroCover);
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const gnbInnerStyle = getComputedStyle(gnbInner);
+    const logoStyle = getComputedStyle(logo);
     const featureStyle = getComputedStyle(feature);
     const featureItemStyle = getComputedStyle(featureItem);
     const featureIconStyle = getComputedStyle(featureIcon);
     const featureInfoStyle = getComputedStyle(featureInfo);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
 
     return {
       featureIconFontSize: featureIconStyle.fontSize,
@@ -133,6 +150,18 @@ async function readDesktopIndexMetrics(page: Page) {
       featureItemWidth: featureItemStyle.width,
       featureMaxWidth: featureStyle.maxWidth,
       headingFontSize: getComputedStyle(heading).fontSize,
+      gnbInnerHeight: gnbInnerStyle.height,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterBackground: gnbOuterStyle.backgroundColor,
+      gnbOuterHeight: gnbOuterStyle.height,
+      logoBackground: logoStyle.backgroundColor,
+      logoLineHeight: logoStyle.lineHeight,
+      logoPadding: logoStyle.padding,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
       signupMarginTop: getComputedStyle(signup).marginTop,
       siteIntroCoverPaddingBottom: siteIntroCoverStyle.paddingBottom,
       siteIntroCoverPaddingTop: siteIntroCoverStyle.paddingTop,

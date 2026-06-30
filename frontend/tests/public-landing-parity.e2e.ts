@@ -127,6 +127,18 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     featureItemWidth: "330px",
     featureMaxWidth: "1200px",
     headingFontSize: "34px",
+    gnbInnerHeight: "40px",
+    gnbInnerWidth: 1254,
+    gnbOuterBackground: "rgb(27, 27, 27)",
+    gnbOuterHeight: "40px",
+    logoBackground: "rgb(255, 87, 34)",
+    logoLineHeight: "40px",
+    logoPadding: "6px 10px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
+    providerColor: "rgb(51, 51, 51)",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
     signupMarginTop: "35px",
     siteIntroCoverPaddingBottom: "65px",
     siteIntroCoverPaddingTop: "55px",
@@ -137,29 +149,46 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
 async function readDesktopLandingMetrics(page: Page) {
   return page.evaluate(() => {
     const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const logo = document.querySelector<HTMLElement>(".logo-letter");
     const heading = document.querySelector<HTMLElement>(".site-heading");
     const signup = document.querySelector<HTMLElement>(".signup-btn");
     const feature = document.querySelector<HTMLElement>(".feature");
     const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
     const featureIcon = document.querySelector<HTMLElement>(".feature-image");
     const featureInfo = document.querySelector<HTMLElement>(".feature-info");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
     if (
       !siteIntroCover ||
+      !gnbOuter ||
+      !gnbInner ||
+      !logo ||
       !heading ||
       !signup ||
       !feature ||
       !featureItem ||
       !featureIcon ||
-      !featureInfo
+      !featureInfo ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
     ) {
       throw new Error("Expected public landing metrics targets are missing.");
     }
 
     const siteIntroCoverStyle = getComputedStyle(siteIntroCover);
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const gnbInnerStyle = getComputedStyle(gnbInner);
+    const logoStyle = getComputedStyle(logo);
     const featureStyle = getComputedStyle(feature);
     const featureItemStyle = getComputedStyle(featureItem);
     const featureIconStyle = getComputedStyle(featureIcon);
     const featureInfoStyle = getComputedStyle(featureInfo);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
 
     return {
       featureIconFontSize: featureIconStyle.fontSize,
@@ -171,6 +200,18 @@ async function readDesktopLandingMetrics(page: Page) {
       featureItemWidth: featureItemStyle.width,
       featureMaxWidth: featureStyle.maxWidth,
       headingFontSize: getComputedStyle(heading).fontSize,
+      gnbInnerHeight: gnbInnerStyle.height,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterBackground: gnbOuterStyle.backgroundColor,
+      gnbOuterHeight: gnbOuterStyle.height,
+      logoBackground: logoStyle.backgroundColor,
+      logoLineHeight: logoStyle.lineHeight,
+      logoPadding: logoStyle.padding,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
       signupMarginTop: getComputedStyle(signup).marginTop,
       siteIntroCoverPaddingBottom: siteIntroCoverStyle.paddingBottom,
       siteIntroCoverPaddingTop: siteIntroCoverStyle.paddingTop,
