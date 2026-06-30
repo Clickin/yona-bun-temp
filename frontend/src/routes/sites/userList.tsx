@@ -5,6 +5,9 @@ import {
   deleteSiteUserRest,
   resetSiteUserPasswordRest,
   siteUsersQueryOptions,
+  toggleSiteUserAccountLockRest,
+  toggleSiteUserAdminRest,
+  toggleSiteUserGuestRest,
   type SiteUser,
   type SiteUserPasswordResetResponse,
   type SiteUserState,
@@ -21,6 +24,8 @@ type UserListSearch = {
   query: string;
   state: SiteUserState;
 };
+
+type UserToggleAction = "account-lock" | "guest" | "site-admin";
 
 const USER_STATES: SiteUserState[] = ["ACTIVE", "LOCKED", "DELETED", "GUEST", "SITE_ADMIN"];
 
@@ -83,6 +88,21 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     },
     onSuccess(data, loginId) {
       setPasswordResetByLoginId((current) => ({ ...current, [loginId]: data }));
+      queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
+    },
+  });
+  const toggleUserMutation = useMutation({
+    mutationFn: async ({ action, loginId }: { action: UserToggleAction; loginId: string }) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      if (action === "guest") {
+        return toggleSiteUserGuestRest(runtimeConfig, csrfToken, loginId);
+      }
+      if (action === "account-lock") {
+        return toggleSiteUserAccountLockRest(runtimeConfig, csrfToken, loginId);
+      }
+      return toggleSiteUserAdminRest(runtimeConfig, csrfToken, loginId);
+    },
+    onSuccess() {
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
     },
   });
@@ -168,6 +188,9 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                       setDeleteModalClosed(false);
                     }}
                     onResetPasswordClick={(loginId) => resetPasswordMutation.mutate(loginId)}
+                    onToggleClick={(loginId, action) =>
+                      toggleUserMutation.mutate({ action, loginId })
+                    }
                     passwordReset={passwordResetByLoginId[user.loginId]}
                     state={search.state}
                     user={user}
@@ -307,6 +330,7 @@ function UserStateTabs({
 function UserListItem({
   onDeleteClick,
   onResetPasswordClick,
+  onToggleClick,
   passwordReset,
   query,
   runtimeConfig,
@@ -315,6 +339,7 @@ function UserListItem({
 }: {
   onDeleteClick: (user: SiteUser) => void;
   onResetPasswordClick: (loginId: string) => void;
+  onToggleClick: (loginId: string, action: UserToggleAction) => void;
   passwordReset?: SiteUserPasswordResetResponse | "pending";
   query: string;
   runtimeConfig: RuntimeConfig;
@@ -345,7 +370,7 @@ function UserListItem({
       </div>
       {state !== "DELETED" ? (
         <div className="span5 listitem-col action-buttons">
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
           <a
             className={user.isGuest ? "ybtn ybtn-small ybtn-success" : "ybtn ybtn-small"}
             data-request-method="post"
@@ -356,10 +381,11 @@ function UserListItem({
               state,
               query,
             )}
+            onClick={() => onToggleClick(user.loginId, "guest")}
           >
             {user.isGuest ? t("button.user.make.normal.mode") : t("button.user.make.guest.mode")}
           </a>
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
           <a
             className="ybtn ybtn-small"
             data-request-method="post"
@@ -370,6 +396,7 @@ function UserListItem({
               state,
               query,
             )}
+            onClick={() => onToggleClick(user.loginId, "account-lock")}
           >
             {t(`button.user.makeAccountUnlock.${user.state === "LOCKED"}`)}
           </a>
@@ -386,7 +413,7 @@ function UserListItem({
           {passwordReset && passwordReset !== "pending" ? (
             <PasswordResetAlert newPassword={passwordReset.newPassword} />
           ) : null}
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
           <a
             className={
               user.isSiteAdmin ? "ybtn ybtn-small ybtn-info" : "ybtn ybtn-small label-info"
@@ -396,6 +423,7 @@ function UserListItem({
               runtimeConfig.basePath,
               `/sites/user/${user.loginId}/site-admin/toggle`,
             )}
+            onClick={() => onToggleClick(user.loginId, "site-admin")}
           >
             {user.isSiteAdmin
               ? t("button.user.revoke.site.admin.role")

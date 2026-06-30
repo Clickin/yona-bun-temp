@@ -205,6 +205,22 @@ test("site admin user actions follow legacy confirmation and alert flow", async 
   expect(requests.resetLoginIds).toEqual(["doortts"]);
 });
 
+test("site admin user role toggles use legacy row action requests", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  const requests = await mockSiteUsers(page);
+
+  await page.goto(`${basePath}/sites/userList`);
+
+  await page.locator('[data-request-uri$="/guest/toggle?state=ACTIVE"]').click();
+  await page.locator('[data-request-uri$="/account-lock/toggle?state=ACTIVE"]').click();
+  await page.locator('[data-request-uri$="/site-admin/toggle"]').click();
+
+  await expect
+    .poll(() => requests.toggledActions)
+    .toEqual(["doortts:guest", "doortts:account-lock", "doortts:site-admin"]);
+});
+
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -237,6 +253,7 @@ async function mockSiteUsers(page: Page) {
   const requests = {
     deletedLoginIds: [] as string[],
     resetLoginIds: [] as string[],
+    toggledActions: [] as string[],
   };
 
   await page.route("**/api/v1/site/users?*", async (route) => {
@@ -282,8 +299,35 @@ async function mockSiteUsers(page: Page) {
     });
   });
 
-  await page.route("**/api/v1/site/users/*", async (route) => {
-    const loginId = new URL(route.request().url()).pathname.split("/").at(-1) ?? "";
+  await page.route("**/api/v1/site/users/**", async (route) => {
+    const pathParts = new URL(route.request().url()).pathname.split("/");
+    const loginId = pathParts.at(-1) ?? "";
+    const action = pathParts.at(-2) ?? "";
+    if (
+      route.request().method() === "POST" &&
+      (action === "guest" || action === "account-lock" || action === "site-admin")
+    ) {
+      const targetLoginId = pathParts.at(-3) ?? "";
+      requests.toggledActions.push(`${targetLoginId}:${action}`);
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            avatarUrl: "/avatars/doortts.png",
+            createdAt: "2026-06-28 12:00:00",
+            displayName: "Door TTS",
+            emailAddress: "doortts@example.com",
+            id: 42,
+            isGuest: action === "guest",
+            isSiteAdmin: action === "site-admin",
+            lastStateModifiedAt: "",
+            loginId: targetLoginId,
+            state: action === "account-lock" ? "LOCKED" : "ACTIVE",
+          },
+        }),
+      });
+      return;
+    }
     if (route.request().method() === "DELETE") {
       requests.deletedLoginIds.push(loginId);
       await route.fulfill({
