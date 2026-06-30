@@ -178,6 +178,33 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(actual).toEqual(expected);
 });
 
+test("site admin user actions follow legacy confirmation and alert flow", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  const requests = await mockSiteUsers(page);
+
+  await page.goto(`${basePath}/sites/userList`);
+
+  await page.locator('[data-toggle="account-delete"]').click();
+  await expect(page.locator("#userInfo")).toHaveText("Door TTS(doortts)");
+  await expect(page.locator("#alertDeletionWrap")).not.toHaveClass(/hide/);
+  expect(requests.deletedLoginIds).toEqual([]);
+
+  await page.locator('#alertDeletionWrap [data-dismiss="modal"]').last().click();
+  await expect(page.locator("#alertDeletionWrap")).toHaveClass(/hide/);
+  expect(requests.deletedLoginIds).toEqual([]);
+
+  await page.locator('[data-toggle="account-delete"]').click();
+  await page.locator("#accountToggleBtn").click();
+  await expect.poll(() => requests.deletedLoginIds).toEqual(["doortts"]);
+
+  await page.locator('[data-toggle="reset-password"]').click();
+  await expect(page.locator(".action-buttons .alert-success h4")).toHaveText(
+    "New password: reset-1234",
+  );
+  expect(requests.resetLoginIds).toEqual(["doortts"]);
+});
+
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -196,9 +223,22 @@ async function mockSiteAdminSession(page: Page) {
       }),
     });
   });
+
+  await page.route("**/api/v1/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "test-csrf-token" },
+      body: JSON.stringify({ user: { loginId: "siteboss" } }),
+    });
+  });
 }
 
 async function mockSiteUsers(page: Page) {
+  const requests = {
+    deletedLoginIds: [] as string[],
+    resetLoginIds: [] as string[],
+  };
+
   await page.route("**/api/v1/site/users?*", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -227,6 +267,48 @@ async function mockSiteUsers(page: Page) {
       }),
     });
   });
+
+  await page.route("**/api/v1/site/users/*/password/reset", async (route) => {
+    const loginId = new URL(route.request().url()).pathname.split("/").at(-3) ?? "";
+    requests.resetLoginIds.push(loginId);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        isSuccess: true,
+        loginId,
+        name: "Door TTS",
+        newPassword: "reset-1234",
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/site/users/*", async (route) => {
+    const loginId = new URL(route.request().url()).pathname.split("/").at(-1) ?? "";
+    if (route.request().method() === "DELETE") {
+      requests.deletedLoginIds.push(loginId);
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            avatarUrl: "/avatars/doortts.png",
+            createdAt: "2026-06-28 12:00:00",
+            displayName: "Door TTS",
+            emailAddress: "doortts@example.com",
+            id: 42,
+            isGuest: false,
+            isSiteAdmin: false,
+            lastStateModifiedAt: "2026-06-30 09:00:00",
+            loginId,
+            state: "DELETED",
+          },
+        }),
+      });
+      return;
+    }
+    await route.fallback();
+  });
+
+  return requests;
 }
 
 async function canonicalizeScreenRoots(page: Page) {

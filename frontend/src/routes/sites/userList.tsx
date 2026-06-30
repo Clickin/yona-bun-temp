@@ -1,6 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { siteUsersQueryOptions, type SiteUser, type SiteUserState } from "../../api/site-admin";
+import { useState } from "react";
+import {
+  deleteSiteUserRest,
+  resetSiteUserPasswordRest,
+  siteUsersQueryOptions,
+  type SiteUser,
+  type SiteUserPasswordResetResponse,
+  type SiteUserState,
+} from "../../api/site-admin";
+import { apiQueryKeys } from "../../api/query-keys";
+import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
@@ -40,6 +50,12 @@ function SiteUserListRoute() {
 function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const search = Route.useSearch();
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
+  const [deleteUser, setDeleteUser] = useState<SiteUser | null>(null);
+  const [deleteModalClosed, setDeleteModalClosed] = useState(false);
+  const [passwordResetByLoginId, setPasswordResetByLoginId] = useState<
+    Record<string, SiteUserPasswordResetResponse | "pending">
+  >({});
   const query = useQuery(
     siteUsersQueryOptions(runtimeConfig, {
       page: search.pageNum,
@@ -48,6 +64,28 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     }),
   );
   const response = query.data;
+  const deleteMutation = useMutation({
+    mutationFn: async (loginId: string) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return deleteSiteUserRest(runtimeConfig, csrfToken, loginId);
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
+    },
+  });
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (loginId: string) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return resetSiteUserPasswordRest(runtimeConfig, csrfToken, loginId);
+    },
+    onMutate(loginId) {
+      setPasswordResetByLoginId((current) => ({ ...current, [loginId]: "pending" }));
+    },
+    onSuccess(data, loginId) {
+      setPasswordResetByLoginId((current) => ({ ...current, [loginId]: data }));
+      queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
+    },
+  });
 
   return (
     <>
@@ -125,6 +163,12 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                     key={user.id}
                     query={search.query}
                     runtimeConfig={runtimeConfig}
+                    onDeleteClick={(target) => {
+                      setDeleteUser(target);
+                      setDeleteModalClosed(false);
+                    }}
+                    onResetPasswordClick={(loginId) => resetPasswordMutation.mutate(loginId)}
+                    passwordReset={passwordResetByLoginId[user.loginId]}
                     state={search.state}
                     user={user}
                   />
@@ -133,12 +177,32 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
 
               <div id="pagination"></div>
 
-              <div id="alertDeletionWrap" className="modal fade">
+              <div
+                id="alertDeletionWrap"
+                className={
+                  deleteUser
+                    ? "modal fade in"
+                    : deleteModalClosed
+                      ? "modal fade hide"
+                      : "modal fade"
+                }
+                style={deleteUser ? { display: "block" } : undefined}
+              >
                 <div className="modal-header">
-                  <button type="button" className="close" data-dismiss="modal">
+                  <button
+                    type="button"
+                    className="close"
+                    data-dismiss="modal"
+                    onClick={() => {
+                      setDeleteUser(null);
+                      setDeleteModalClosed(true);
+                    }}
+                  >
                     ×
                   </button>
-                  <span id="userInfo"></span>
+                  <span id="userInfo">
+                    {deleteUser ? `${deleteUser.displayName}(${deleteUser.loginId})` : ""}
+                  </span>
                   <span>
                     <LegacyMessage messageKey="site.user.delete" />
                   </span>
@@ -149,11 +213,27 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   </p>
                 </div>
                 <div className="modal-footer">
-                  {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                  <a id="accountToggleBtn" className="ybtn ybtn-danger">
+                  {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+                  <a
+                    id="accountToggleBtn"
+                    className="ybtn ybtn-danger"
+                    onClick={() => {
+                      if (deleteUser) {
+                        deleteMutation.mutate(deleteUser.loginId);
+                      }
+                    }}
+                  >
                     <LegacyMessage messageKey="button.yes" />
                   </a>
-                  <button type="button" className="ybtn" data-dismiss="modal">
+                  <button
+                    type="button"
+                    className="ybtn"
+                    data-dismiss="modal"
+                    onClick={() => {
+                      setDeleteUser(null);
+                      setDeleteModalClosed(true);
+                    }}
+                  >
                     <LegacyMessage messageKey="button.no" />
                   </button>
                 </div>
@@ -225,11 +305,17 @@ function UserStateTabs({
 }
 
 function UserListItem({
+  onDeleteClick,
+  onResetPasswordClick,
+  passwordReset,
   query,
   runtimeConfig,
   state,
   user,
 }: {
+  onDeleteClick: (user: SiteUser) => void;
+  onResetPasswordClick: (loginId: string) => void;
+  passwordReset?: SiteUserPasswordResetResponse | "pending";
   query: string;
   runtimeConfig: RuntimeConfig;
   state: SiteUserState;
@@ -292,9 +378,14 @@ function UserListItem({
             className="ybtn ybtn-small"
             data-toggle="reset-password"
             data-href={`${userPath}?action=resetPassword`}
+            onClick={() => onResetPasswordClick(user.loginId)}
           >
             {t("title.resetPassword")}
           </button>
+          {passwordReset === "pending" ? <RequestWaitingAlert /> : null}
+          {passwordReset && passwordReset !== "pending" ? (
+            <PasswordResetAlert newPassword={passwordReset.newPassword} />
+          ) : null}
           {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
           <a
             className={
@@ -316,6 +407,7 @@ function UserListItem({
             data-href={prefixBasePath(runtimeConfig.basePath, `/sites/user/${user.id}`)}
             data-user-id={user.loginId}
             data-user-name={user.displayName}
+            onClick={() => onDeleteClick(user)}
           >
             {t("button.delete")}
           </button>
@@ -324,6 +416,31 @@ function UserListItem({
         <div className="span4 listitem-col">{user.lastStateModifiedAt}</div>
       )}
     </li>
+  );
+}
+
+function PasswordResetAlert({ newPassword }: { newPassword: string }) {
+  const { t } = useLegacyMessages();
+  return (
+    <div className="alert alert-success">
+      <button type="button" className="close" data-dismiss="alert">
+        &times;
+      </button>
+      <h4>
+        {t("user.newPassword")}: {newPassword}
+      </h4>
+    </div>
+  );
+}
+
+function RequestWaitingAlert() {
+  return (
+    <div className="alert alert-fail">
+      <button type="button" className="close" data-dismiss="alert">
+        &times;
+      </button>
+      <h4>{"sending requestHeader" + "..."}</h4>
+    </div>
   );
 }
 
