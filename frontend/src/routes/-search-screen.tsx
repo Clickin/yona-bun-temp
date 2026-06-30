@@ -188,7 +188,12 @@ function SearchResultList({
     );
   }
 
-  if (result.searchType === "issue" || result.searchType === "post") {
+  if (
+    result.searchType === "issue" ||
+    result.searchType === "post" ||
+    result.searchType === "issue_comment"
+  ) {
+    const titleClassName = result.searchType === "issue_comment" ? undefined : "title";
     return (
       <>
         <ul className="search-list-wrap">
@@ -196,7 +201,7 @@ function SearchResultList({
             <li className="search-list-item" key={item.id}>
               <div className="title-wrap">
                 <span className="post-id">#{item.number}</span>
-                <a href={item.href} className="title">
+                <a href={item.href} className={titleClassName}>
                   {item.title}
                 </a>
               </div>
