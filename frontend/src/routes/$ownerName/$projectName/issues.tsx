@@ -598,6 +598,12 @@ function ProjectIssueItem({
             >
               {createdLabel}
             </span>
+            <IssueSubtaskSummary
+              basePath={basePath}
+              issue={issue}
+              ownerName={ownerName}
+              projectName={projectName}
+            />
             {issue.milestoneId ? (
               <span className="mileston-tag">
                 <a
@@ -687,6 +693,63 @@ function ProjectIssueItem({
         ) : null}
       </div>
     </li>
+  );
+}
+
+function IssueSubtaskSummary({
+  basePath,
+  issue,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  issue: RestIssueListItem;
+  ownerName: string;
+  projectName: string;
+}) {
+  const childClosedCount = issue.childClosedCount ?? 0;
+  const childOpenCount = issue.childOpenCount ?? 0;
+  const childTotalCount = childClosedCount + childOpenCount;
+  const percentage = childTotalCount ? Math.trunc((childClosedCount / childTotalCount) * 100) : 0;
+  const parentIssueNumber = stringField(issue.parentIssueNumber, "");
+  const parentIssueTitle = issue.parentIssueTitle ?? "";
+
+  return (
+    <>
+      {childTotalCount ? (
+        <>
+          <div
+            className={`subtask-progress upload-progress ${
+              percentage === 100 ? "done-outline" : "red-outline"
+            }`}
+          >
+            <div
+              className={`bar ${percentage === 100 ? "done" : "red"}`}
+              style={{ width: `${percentage}%` }}
+              title="Subtask"
+            ></div>
+          </div>
+          <span
+            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""}`}
+          >
+            {percentage === 100 ? "" : `${childClosedCount}/`}
+            {childTotalCount}
+          </span>
+        </>
+      ) : null}
+      {parentIssueNumber ? (
+        <span className="infos-item subtask">
+          <a
+            href={prefixBasePath(
+              basePath,
+              `/${ownerName}/${projectName}/issue/${parentIssueNumber}`,
+            )}
+          >
+            {`#${parentIssueNumber} ${truncateParentIssueTitle(parentIssueTitle)}`}
+          </a>
+        </span>
+      ) : null}
+    </>
   );
 }
 
@@ -1134,4 +1197,9 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
+}
+
+function truncateParentIssueTitle(title: string) {
+  const trimmed = title.slice(0, 10).trim();
+  return title.length > 10 ? `${trimmed}...` : trimmed;
 }

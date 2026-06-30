@@ -78,6 +78,24 @@ const EXPECTED_PROJECT_ISSUES_BULK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
     `${BULK_SPAN10}</div></div></div></div>\n<footer`,
   );
 
+const SUBTASK_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
+  '<span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span>',
+  '<div class="subtask-progress upload-progress red-outline"><div class="bar red" style="width: 33%;" title="Subtask"></div></div><span class="subtask-progress completion-ratio">1/3</span><span class="infos-item subtask"><a href="__BASE_PATH__/admin/sample/issue/9">#9 Parent iss...</a></span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span>',
+).replace("filter=bug&amp;format=xls", "filter=subtask&amp;format=xls");
+
+const EXPECTED_PROJECT_ISSUES_SUBTASK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
+  'value="empty"',
+  'value="subtask"',
+)
+  .replaceAll(
+    '>Open<span class="num-badge pull-right">0</span>',
+    '>Open<span class="num-badge pull-right">1</span>',
+  )
+  .replace(
+    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
+    `${SUBTASK_SPAN10}</div></div></div></div>\n<footer`,
+  );
+
 test("empty project issue list matches legacy issue/list.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page);
@@ -149,9 +167,28 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
   );
 });
 
+test("project issue list subtask row matches legacy partial_list_subtask.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "subtask");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=subtask`);
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator(".subtask-progress.completion-ratio")).toHaveText("1/3");
+  await expect(page.locator(".infos-item.subtask")).toContainText("#9 Parent iss...");
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_ISSUES_SUBTASK.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 async function mockProjectIssues(
   page: Page,
-  state: "bulk" | "draft" | "empty" | "populated" = "empty",
+  state: "bulk" | "draft" | "empty" | "populated" | "subtask" = "empty",
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -202,74 +239,87 @@ async function mockProjectIssues(
       body: JSON.stringify(
         state === "populated"
           ? populatedIssueResponse()
-          : state === "draft"
+          : state === "subtask"
             ? {
                 ...populatedIssueResponse(),
-                draftItems: [
+                items: [
                   {
-                    authorAvatarUrl: "/assets/images/default-avatar-32.png",
-                    authorLabel: "Site Admin",
-                    authorLoginId: "admin",
-                    authorUserId: 1,
-                    commentCount: 0,
-                    createdLabel: "Jul 1, 2026",
-                    id: 41,
-                    isDraft: true,
-                    issueNumber: 10,
-                    labels: [],
-                    ownerName: "admin",
-                    projectName: "sample",
-                    state: "open",
-                    title: "Draft issue",
-                    updatedLabel: "Jul 1, 2026",
-                    voterCount: 0,
+                    ...populatedIssueResponse().items[0],
+                    childClosedCount: 1,
+                    childOpenCount: 2,
+                    parentIssueNumber: 9,
+                    parentIssueTitle: "Parent issue title",
                   },
                 ],
-                totalCount: 1,
-                totalPages: 1,
               }
-            : state === "bulk"
+            : state === "draft"
               ? {
-                  closedIssueCount: 2,
-                  draftItems: [],
-                  items: [
-                    populatedIssueResponse().items[0],
+                  ...populatedIssueResponse(),
+                  draftItems: [
                     {
                       authorAvatarUrl: "/assets/images/default-avatar-32.png",
                       authorLabel: "Site Admin",
                       authorLoginId: "admin",
+                      authorUserId: 1,
                       commentCount: 0,
-                      createdLabel: "Jul 2, 2026",
-                      id: 43,
-                      issueNumber: 12,
+                      createdLabel: "Jul 1, 2026",
+                      id: 41,
+                      isDraft: true,
+                      issueNumber: 10,
                       labels: [],
                       ownerName: "admin",
                       projectName: "sample",
                       state: "open",
-                      title: "Follow up issue",
-                      updatedLabel: "Jul 2, 2026",
+                      title: "Draft issue",
+                      updatedLabel: "Jul 1, 2026",
                       voterCount: 0,
                     },
                   ],
-                  openIssueCount: 2,
-                  ownerName: "admin",
-                  pageNum: 1,
-                  pageSize: 15,
-                  projectName: "sample",
-                  totalCount: 2,
+                  totalCount: 1,
                   totalPages: 1,
                 }
-              : {
-                  closedIssueCount: 0,
-                  draftItems: [],
-                  items: [],
-                  openIssueCount: 0,
-                  ownerName: "admin",
-                  pageNum: 1,
-                  pageSize: 15,
-                  projectName: "sample",
-                  totalCount: 0,
-                },
+              : state === "bulk"
+                ? {
+                    closedIssueCount: 2,
+                    draftItems: [],
+                    items: [
+                      populatedIssueResponse().items[0],
+                      {
+                        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                        authorLabel: "Site Admin",
+                        authorLoginId: "admin",
+                        commentCount: 0,
+                        createdLabel: "Jul 2, 2026",
+                        id: 43,
+                        issueNumber: 12,
+                        labels: [],
+                        ownerName: "admin",
+                        projectName: "sample",
+                        state: "open",
+                        title: "Follow up issue",
+                        updatedLabel: "Jul 2, 2026",
+                        voterCount: 0,
+                      },
+                    ],
+                    openIssueCount: 2,
+                    ownerName: "admin",
+                    pageNum: 1,
+                    pageSize: 15,
+                    projectName: "sample",
+                    totalCount: 2,
+                    totalPages: 1,
+                  }
+                : {
+                    closedIssueCount: 0,
+                    draftItems: [],
+                    items: [],
+                    openIssueCount: 0,
+                    ownerName: "admin",
+                    pageNum: 1,
+                    pageSize: 15,
+                    projectName: "sample",
+                    totalCount: 0,
+                  },
       ),
     });
   });
