@@ -406,6 +406,65 @@ function RootAliasNotFound() {
               </a>
             </li>
           </ul>
+          <div id="mySidenav" className="sidenav">
+            <div className="span5 right-menu span-hard-wrap">
+              <div className="row-fluid user-menu-wrap">
+                <span className="user-menu">
+                  <a href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}>Profile</a>
+                </span>
+                <span className="user-menu">
+                  <a href={prefixBasePath(runtimeConfig.basePath, "/user/editform")}>
+                    Account settings
+                  </a>
+                </span>
+                <a href={prefixBasePath(runtimeConfig.basePath, "/logout")}>
+                  <span className="user-menu logout label">Logout</span>
+                </a>
+              </div>
+              <ul className="nav nav-tabs nm">
+                <li className="myOrganizationList active">
+                  <a href="#myOrganizationList" data-toggle="tab">
+                    Favorites
+                  </a>
+                </li>
+                <li className="myProjectList">
+                  <a href="#myProjectList" data-toggle="tab">
+                    Projects
+                  </a>
+                </li>
+                <li className="myRecentIssueList">
+                  <a href="#myRecentIssueList" data-toggle="tab">
+                    Recently visited issues
+                  </a>
+                </li>
+              </ul>
+              <div className="tab-content tab-box">
+                <div id="usermenu-tab-content-list" className="tab-content">
+                  {"Loading..."}
+                </div>
+              </div>
+            </div>
+          </div>
+          <ul className="gnb-usermenu">
+            <li className="gnb-usermenu-item" id="required-logged-in">
+              <a
+                href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}
+                className="user-item-btn"
+                data-login="required"
+              >
+                Login
+              </a>
+            </li>
+            <li className="divider"></li>
+            <li>
+              <a
+                href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}
+                className="ybtn ybtn-success"
+              >
+                Sign up
+              </a>
+            </li>
+          </ul>
         </div>
       </header>
       <div className="page-wrap-outer">

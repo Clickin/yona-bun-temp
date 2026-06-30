@@ -9,6 +9,30 @@ const EXPECTED_NOT_FOUND_SCREEN = `
       <li><a href="__BASE_PATH__/_help">Help</a></li>
       <li><a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">Feedback</a></li>
     </ul>
+    <div id="mySidenav" class="sidenav">
+      <div class="span5 right-menu span-hard-wrap">
+        <div class="row-fluid user-menu-wrap">
+          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
+          <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account settings</a></span>
+          <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Logout</span></a>
+        </div>
+        <ul class="nav nav-tabs nm">
+          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorites</a></li>
+          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Projects</a></li>
+          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recently visited issues</a></li>
+        </ul>
+        <div class="tab-content tab-box">
+          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
+        </div>
+      </div>
+    </div>
+    <ul class="gnb-usermenu">
+      <li class="gnb-usermenu-item" id="required-logged-in">
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Login</a>
+      </li>
+      <li class="divider"></li>
+      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
+    </ul>
   </div>
 </header>
 <div class="page-wrap-outer">
@@ -251,7 +275,7 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function visit(current: Element): string {
-      const stableAttributes = ["id", "class", "href", "target"];
+      const stableAttributes = ["id", "class", "href", "target", "data-toggle", "data-login"];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
         .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
@@ -287,7 +311,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         .join("");
 
       function visit(current: Element): string {
-        const stableAttributes = ["id", "class", "href", "target"];
+        const stableAttributes = ["id", "class", "href", "target", "data-toggle", "data-login"];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
           .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
