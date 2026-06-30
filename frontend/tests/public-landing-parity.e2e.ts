@@ -117,7 +117,67 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopLandingMetrics(page)).toEqual({
+    featureIconFontSize: "40px",
+    featureIconLeft: "0px",
+    featureIconTop: "10px",
+    featureInfoHeight: "100px",
+    featureInfoMarginLeft: "55px",
+    featureItemMarginLeft: "40px",
+    featureItemWidth: "330px",
+    featureMaxWidth: "1200px",
+    headingFontSize: "34px",
+    signupMarginTop: "35px",
+    siteIntroCoverPaddingBottom: "65px",
+    siteIntroCoverPaddingTop: "55px",
+    siteIntroCoverWidth: 750,
+  });
 });
+
+async function readDesktopLandingMetrics(page: Page) {
+  return page.evaluate(() => {
+    const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
+    const heading = document.querySelector<HTMLElement>(".site-heading");
+    const signup = document.querySelector<HTMLElement>(".signup-btn");
+    const feature = document.querySelector<HTMLElement>(".feature");
+    const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
+    const featureIcon = document.querySelector<HTMLElement>(".feature-image");
+    const featureInfo = document.querySelector<HTMLElement>(".feature-info");
+    if (
+      !siteIntroCover ||
+      !heading ||
+      !signup ||
+      !feature ||
+      !featureItem ||
+      !featureIcon ||
+      !featureInfo
+    ) {
+      throw new Error("Expected public landing metrics targets are missing.");
+    }
+
+    const siteIntroCoverStyle = getComputedStyle(siteIntroCover);
+    const featureStyle = getComputedStyle(feature);
+    const featureItemStyle = getComputedStyle(featureItem);
+    const featureIconStyle = getComputedStyle(featureIcon);
+    const featureInfoStyle = getComputedStyle(featureInfo);
+
+    return {
+      featureIconFontSize: featureIconStyle.fontSize,
+      featureIconLeft: featureIconStyle.left,
+      featureIconTop: featureIconStyle.top,
+      featureInfoHeight: featureInfoStyle.height,
+      featureInfoMarginLeft: featureInfoStyle.marginLeft,
+      featureItemMarginLeft: featureItemStyle.marginLeft,
+      featureItemWidth: featureItemStyle.width,
+      featureMaxWidth: featureStyle.maxWidth,
+      headingFontSize: getComputedStyle(heading).fontSize,
+      signupMarginTop: getComputedStyle(signup).marginTop,
+      siteIntroCoverPaddingBottom: siteIntroCoverStyle.paddingBottom,
+      siteIntroCoverPaddingTop: siteIntroCoverStyle.paddingTop,
+      siteIntroCoverWidth: Math.round(siteIntroCover.getBoundingClientRect().width),
+    };
+  });
+}
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
