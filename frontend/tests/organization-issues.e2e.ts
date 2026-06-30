@@ -19,6 +19,24 @@ test("organization issue aggregate matches legacy group_issue_list.scala.html DO
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Issue");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator("#issue-item-42")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/sample/issue/11`,
+  );
+  await expect(page.locator('a.issue-label[data-label-id="8"]')).toHaveText("bug");
+  await expect(page.locator('.lst-stacked [pjax-filter][data-assignee-id="1"]')).toHaveText(
+    "Assigned",
+  );
+  await expect(page.locator('.lst-stacked [pjax-filter][data-assignee-id="1"]')).toHaveAttribute(
+    "data-milestone-id",
+    "",
+  );
+  await expect(page.locator('.lst-stacked [pjax-filter][data-author-id="1"]')).toHaveText(
+    "Created",
+  );
+  await expect(page.locator('.lst-stacked [pjax-filter][data-mention-id="1"]')).toHaveText(
+    "Mentioned",
+  );
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
