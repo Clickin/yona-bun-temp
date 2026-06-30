@@ -8,6 +8,7 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import type { RuntimeConfig } from "../../runtime-config";
+import { SiteLayoutShell } from "../-home-route-screen";
 
 type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   defaultAdminContact?: string;
@@ -70,127 +71,129 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   });
 
   return (
-    <div className="page full">
-      <div className="center-wrap tag-line-wrap signup">
-        <h1 className="title">
-          <HighlightedLegacyMessage message={title} />
-        </h1>
-        <p className="tag-line">{t("app.description")}</p>
-      </div>
-
-      {signupRequireConfirm ? (
-        <div className="center-txt">
-          <p>{t("title.signupConfirmDesc")}</p>
-          <p>
-            <ObfuscatedContactMessage
-              message={lookupLegacyMessage(language, "title.signupConfirmDesc2", {
-                args: [String(capabilities?.defaultAdminContact ?? "")],
-              })}
-            />
-          </p>
+    <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <div className="page full">
+        <div className="center-wrap tag-line-wrap signup">
+          <h1 className="title">
+            <HighlightedLegacyMessage message={title} />
+          </h1>
+          <p className="tag-line">{t("app.description")}</p>
         </div>
-      ) : null}
 
-      <div className="signup-form-wrap frm-wrap">
-        <form action="/users/signup" method="post" name="signup" onSubmit={handleSubmit}>
-          {socialLoginOnly ? (
-            <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
-          ) : (
-            <>
-              <dl>
-                <dt>
-                  <label htmlFor="loginId">{t("user.signupId")}</label>
-                </dt>
-                <dd>
-                  <input
-                    id="loginId"
-                    type="text"
-                    name="loginId"
-                    className="text password"
-                    placeholder=""
-                    autoComplete="off"
-                  />
-                </dd>
+        {signupRequireConfirm ? (
+          <div className="center-txt">
+            <p>{t("title.signupConfirmDesc")}</p>
+            <p>
+              <ObfuscatedContactMessage
+                message={lookupLegacyMessage(language, "title.signupConfirmDesc2", {
+                  args: [String(capabilities?.defaultAdminContact ?? "")],
+                })}
+              />
+            </p>
+          </div>
+        ) : null}
 
-                <dt>
-                  <label htmlFor="uname">{t("user.name")}</label>
-                </dt>
-                <dd>
-                  <input
-                    id="uname"
-                    type="text"
-                    name="name"
-                    className="text password"
-                    placeholder=""
-                    autoComplete="off"
-                  />
-                </dd>
+        <div className="signup-form-wrap frm-wrap">
+          <form action="/users/signup" method="post" name="signup" onSubmit={handleSubmit}>
+            {socialLoginOnly ? (
+              <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
+            ) : (
+              <>
+                <dl>
+                  <dt>
+                    <label htmlFor="loginId">{t("user.signupId")}</label>
+                  </dt>
+                  <dd>
+                    <input
+                      id="loginId"
+                      type="text"
+                      name="loginId"
+                      className="text password"
+                      placeholder=""
+                      autoComplete="off"
+                    />
+                  </dd>
 
-                <dt>
-                  <label htmlFor="email">{t("user.email")}</label>
-                </dt>
-                <dd>
-                  <input
-                    id="email"
-                    type="text"
-                    name="email"
-                    className="text password"
-                    placeholder=""
-                    autoComplete="off"
-                  />
-                </dd>
+                  <dt>
+                    <label htmlFor="uname">{t("user.name")}</label>
+                  </dt>
+                  <dd>
+                    <input
+                      id="uname"
+                      type="text"
+                      name="name"
+                      className="text password"
+                      placeholder=""
+                      autoComplete="off"
+                    />
+                  </dd>
 
-                <dt>
-                  <label htmlFor="password">{t("user.password")}</label>
-                </dt>
-                <dd>
-                  <input
-                    id="password"
-                    type="password"
-                    name="password"
-                    className="text password"
-                    placeholder=""
-                    autoComplete="off"
-                  />
-                </dd>
+                  <dt>
+                    <label htmlFor="email">{t("user.email")}</label>
+                  </dt>
+                  <dd>
+                    <input
+                      id="email"
+                      type="text"
+                      name="email"
+                      className="text password"
+                      placeholder=""
+                      autoComplete="off"
+                    />
+                  </dd>
 
-                <dt>
-                  <label htmlFor="retypedPassword">{t("validation.retypePassword")}</label>
-                </dt>
-                <dd>
-                  <input
-                    id="retypedPassword"
-                    type="password"
-                    name="retypedPassword"
-                    className="text password"
-                    placeholder=""
-                    autoComplete="off"
-                  />
-                </dd>
-              </dl>
+                  <dt>
+                    <label htmlFor="password">{t("user.password")}</label>
+                  </dt>
+                  <dd>
+                    <input
+                      id="password"
+                      type="password"
+                      name="password"
+                      className="text password"
+                      placeholder=""
+                      autoComplete="off"
+                    />
+                  </dd>
 
-              {submitError ? <div className="error-message">{submitError}</div> : null}
-              <div className="btns-row">
-                <button
-                  type="submit"
-                  className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
-                  disabled={registerMutation.isPending}
-                >
-                  {t("user.signupBtn")}
-                </button>
-              </div>
+                  <dt>
+                    <label htmlFor="retypedPassword">{t("validation.retypePassword")}</label>
+                  </dt>
+                  <dd>
+                    <input
+                      id="retypedPassword"
+                      type="password"
+                      name="retypedPassword"
+                      className="text password"
+                      placeholder=""
+                      autoComplete="off"
+                    />
+                  </dd>
+                </dl>
 
-              <div className="act-row">
-                {t("user.isAlreadySignupUser")}{" "}
-                <LegacyInternalLink to="/users/loginform" className="go-login">
-                  {t("title.login")}
-                </LegacyInternalLink>
-              </div>
-            </>
-          )}
-        </form>
+                {submitError ? <div className="error-message">{submitError}</div> : null}
+                <div className="btns-row">
+                  <button
+                    type="submit"
+                    className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
+                    disabled={registerMutation.isPending}
+                  >
+                    {t("user.signupBtn")}
+                  </button>
+                </div>
+
+                <div className="act-row">
+                  {t("user.isAlreadySignupUser")}{" "}
+                  <LegacyInternalLink to="/users/loginform" className="go-login">
+                    {t("title.login")}
+                  </LegacyInternalLink>
+                </div>
+              </>
+            )}
+          </form>
+        </div>
       </div>
-    </div>
+    </SiteLayoutShell>
   );
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
