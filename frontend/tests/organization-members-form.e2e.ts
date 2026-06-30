@@ -28,7 +28,31 @@ test("organization members matches legacy organization/members.scala.html DOM", 
   );
 });
 
+test("organization members delete waits for legacy confirmation modal", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const requests = await mockOrganizationMembers(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+  await page.locator('.members.project [data-action="delete"]').first().click();
+
+  await expect(page.locator("#alertDeletion")).not.toHaveClass(/hide/);
+  expect(requests.deletedUserIds).toEqual([]);
+
+  await page.locator('#alertDeletion .modal-footer [data-dismiss="modal"]').click();
+  await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
+  expect(requests.deletedUserIds).toEqual([]);
+
+  await page.locator('.members.project [data-action="delete"]').first().click();
+  await page.locator("#deleteBtn").click();
+  await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
+  await expect.poll(() => requests.deletedUserIds).toEqual(["1"]);
+});
+
 async function mockOrganizationMembers(page: Page) {
+  const requests = {
+    deletedUserIds: [] as string[],
+  };
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -85,6 +109,18 @@ async function mockOrganizationMembers(page: Page) {
       }),
     });
   });
+  await page.route("**/api/v1/organizations/weblabs/members/*", async (route) => {
+    const request = route.request();
+    if (request.method() === "DELETE") {
+      requests.deletedUserIds.push(new URL(request.url()).pathname.split("/").pop() ?? "");
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+
+  return requests;
 }
 
 async function canonicalizeScreenRoots(page: Page) {

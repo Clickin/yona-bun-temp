@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   acceptOrganizationEnrollmentRest,
   addOrganizationMemberRest,
@@ -57,6 +57,7 @@ function OrganizationMembersBody({
 }) {
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
+  const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
   const organizationName = stringField(organization.organizationName, "organization");
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
@@ -173,15 +174,24 @@ function OrganizationMembersBody({
                 member={member}
                 organization={organization}
                 organizationName={organizationName}
-                onDelete={(userId) => deleteMutation.mutate(userId)}
+                onDelete={setDeleteUserId}
                 onRole={(userId, role) => updateRoleMutation.mutate({ role, userId })}
               />
             ))}
           </ul>
 
-          <div id="alertDeletion" className="modal hide">
+          <div
+            id="alertDeletion"
+            className={deleteUserId === null ? "modal hide" : "modal"}
+            style={deleteUserId === null ? undefined : { display: "block" }}
+          >
             <div className="modal-header">
-              <button type="button" className="close" data-dismiss="modal">
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                onClick={() => setDeleteUserId(null)}
+              >
                 ×
               </button>
               <h3>{t("organization.member.delete")}</h3>
@@ -190,10 +200,25 @@ function OrganizationMembersBody({
               <p>{t("organization.member.deleteConfirm")}</p>
             </div>
             <div className="modal-footer">
-              <button type="button" className="ybtn ybtn-info ybtn-mini" id="deleteBtn">
+              <button
+                type="button"
+                className="ybtn ybtn-info ybtn-mini"
+                id="deleteBtn"
+                onClick={() => {
+                  if (deleteUserId !== null) {
+                    deleteMutation.mutate(deleteUserId);
+                  }
+                  setDeleteUserId(null);
+                }}
+              >
                 {t("button.yes")}
               </button>
-              <button type="button" className="ybtn ybtn-mini" data-dismiss="modal">
+              <button
+                type="button"
+                className="ybtn ybtn-mini"
+                data-dismiss="modal"
+                onClick={() => setDeleteUserId(null)}
+              >
                 {t("button.no")}
               </button>
             </div>
