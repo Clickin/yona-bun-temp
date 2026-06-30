@@ -23,6 +23,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/-project-views.tsx` adds `renderShell={false}` for `ProjectTransferPage`; the transfer leaf route passes that flag while retaining its existing transfer REST request/query boundary.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/project-settings-parity.spec.tsx`.
 
+## 2026-06-30 Project Transfer Form Template-First Rebuild
+
+- Rebuilt the concrete flat route `frontend/src/routes/$ownerName/$projectName/transfer.tsx` from `project/transfer.scala.html` plus `project/header.scala.html`, `projectMenu.scala.html`, and `project/partial_settingmenu.scala.html`.
+- Scope: the screen keeps a single local component tree because it is one destructive settings screen plus legacy header/menu partial shapes; extra extraction would only add indirection.
+- Verification: `pnpm --dir frontend test:e2e -- project-transfer-form.e2e.ts`.
+
 ## 2026-06-27 Delete Layout Follow-Up
 
 - Moved project delete settings shell ownership into `frontend/src/routes/$owner/$projectName/route.tsx` for `/deleteform`, keeping the settings menu active and rendering `ProjectDeletePage` through the TanStack Router `<Outlet />`.
@@ -93,7 +99,7 @@ Mode: read-only audit, no files edited by the explorer
 - `frontend/src/routes/$owner/$projectName/members/route.tsx`
 - `frontend/src/routes/$owner/$projectName/watchers/route.tsx`
 - `frontend/src/routes/$owner/$projectName/webhooks/route.tsx`
-- `frontend/src/routes/$owner/$projectName/transfer/route.tsx`
+- `frontend/src/routes/$ownerName/$projectName/transfer.tsx`
 - `frontend/src/routes/$owner/$projectName/changeVCS/route.tsx`
 - `frontend/src/routes/$owner/$projectName/deleteform/route.tsx`
 - `frontend/src/routes/$owner/$projectName/newFork/route.tsx`
@@ -102,6 +108,7 @@ Mode: read-only audit, no files edited by the explorer
 - `frontend/src/project-home-tabs.spec.tsx`
 - `frontend/src/project-settings-parity.spec.tsx`
 - `frontend/src/route-parity.spec.tsx`
+- `frontend/tests/project-transfer-form.e2e.ts`
 - `crates/server/src/routes/projects.rs`
 - `crates/server/src/routes/projects/home.rs`
 - `crates/server/src/routes/utils.rs`
@@ -142,7 +149,7 @@ Total rows: 18
 | `/:owner/:project/members` | `members.scala.html` provides add-member typeahead form, role dropdown, delete action, owner label, enrollment request accept, and update-gated access to the management route. | `ProjectMembersPage` preserves these controls and routes mutations through REST. `frontend/tests/project-members-parity.e2e.ts` now browser-proves add-member, enrollment accept, role update, and delete visible mutations while asserting POST/PATCH/DELETE methods, CSRF headers, request paths/bodies, and the non-updater 403 legacy forbidden shell with management controls absent. | covered in current follow-up | none |
 | `/:owner/:project/watchers` | `watchers.scala.html` lists watcher title/description and watcher avatar/name/login links. | `ProjectWatchersPage` matches title/description and member-list shell from REST watcher data; backend contract covers watcher list. | covered | none |
 | `/:owner/:project/webhooks` | `webhooks.scala.html` renders create form, payload/secret, type radios, JSON auto gitPush behavior, help, list, delete, and updater-only create controls. | `ProjectWebhooksPage` preserves form/list/delete, legacy payload validation copy, JSON type auto-check/disabled gitPush behavior, and updater-only access through the React route. `frontend/tests/project-webhooks-parity.e2e.ts` now browser-proves empty payload blocks REST POST with resolved legacy validation copy, JSON webhook submit uses CSRF and the legacy payload fields, delete uses CSRF-backed REST DELETE, and non-updater REST 403 renders the legacy forbidden shell with create/delete controls absent. | covered in current follow-up | none |
-| `/:owner/:project/transfer` | `transfer.scala.html` checkbox-gates transfer modal and Yes/No confirmation; owner input is submitted by JS module. | `ProjectTransferPage` preserves checkbox alert, modal IDs/copy, REST mutation, and accept path projection. `frontend/tests/project-transfer-parity.e2e.ts` now clicks transfer while unchecked, asserts the legacy `project.transfer.alert` copy, verifies the modal stays hidden and no REST POST occurs, then checks the box and proves the CSRF-backed transfer POST plus modal confirm path. | covered in current follow-up | none |
+| `/:owner/:project/transfer` | `transfer.scala.html` renders the new-owner input row, transfer warning list, checkbox, danger button, and Yes/No confirmation modal. | `frontend/src/routes/$ownerName/$projectName/transfer.tsx` renders the legacy site shell, project header/menu, project settings tab menu, `#owner`, warning bubble, `#accept`, `#btnTransfer`, non-fade `#alertTransfer`, and REST transfer request boundary. | covered in 2026-06-30 template-first reset slice | `frontend/tests/project-transfer-form.e2e.ts` |
 | `/:owner/:project/changeVCS` | `change_vcs.scala.html` checkbox-gates change-VCS modal and confirmation. | `frontend/src/routes/$ownerName/$projectName/changeVCS.tsx` renders the legacy site shell, project header/menu, project settings tab menu, VCS warning bubble, `#acceptChangeVCS`, `#btnChangeVCS`, non-fade `#alertChangeVCS`, and REST change-VCS redirect boundary. | covered in 2026-06-30 template-first reset slice | `frontend/tests/project-change-vcs-form.e2e.ts` |
 | `/:owner/:project/deleteform` | `delete.scala.html` checkbox-gates delete modal and confirmation. | `frontend/src/routes/$ownerName/$projectName/deleteform.tsx` renders the legacy site shell, project header/menu, project settings tab menu, delete warning bubble, `#accept`, `#btnDelete`, non-fade `#alertDeletion`, and REST delete redirect boundary. | covered in 2026-06-30 template-first reset slice | `frontend/tests/project-delete-form.e2e.ts` |
 | `/:owner/:project/statistics` | `statistics.scala.html` renders only `<h1>Under Construction</h1>`. | Project layout owns the header/menu/page-wrap shell with active issue menu; `ProjectStatisticsPage` renders the same under-construction body under the outlet. | covered | `frontend/src/routes/$owner/$projectName/route.tsx`, `frontend/src/routes/$owner/$projectName/statistics/route.tsx`, `frontend/src/routes/-project-views.tsx`, `frontend/src/route-parity.spec.tsx` |
@@ -166,7 +173,7 @@ Total rows: 18
 | `/:owner/:project/watchers` | watcher list | `project.watcher.title`, `project.watcher.description`, `.members.project .member` | same title/description/member shell | load page | REST `GET /watchers` | covered |
 | `/:owner/:project/webhooks` | create webhook | `#formNewWebhook`, payload/secret, type radios, `#gitPush` | same form/list IDs; JSON type forces gitPush checked/disabled; empty payload renders resolved legacy validation copy | submit empty payload, select JSON, submit payload | REST `POST /webhooks` with CSRF and legacy payload fields; empty payload sends no POST | covered in current follow-up |
 | `/:owner/:project/webhooks` | delete webhook | `#webhooksList`, `data-request-method="delete"` | `data-request-uri`, delete button; non-updater forbidden shell | click delete; load as non-updater | REST `DELETE /webhooks/:id` with CSRF; 403 renders forbidden shell | covered in current follow-up |
-| `/:owner/:project/transfer` | unchecked destructive flow | `#accept`, `#btnTransfer`, alert before modal | inline legacy alert copy, hidden modal while unchecked, then modal only after accept | click Transfer unchecked, assert no POST, then checked | REST `POST /transfer` only on confirm | covered in current follow-up |
+| `/:owner/:project/transfer` | transfer form shell | `#owner`, `#accept`, `#btnTransfer`, modal `#alertTransfer`, `#btnTransferExec` | same whole-screen DOM, IDs/copy, warning bubble, settings submenu, and non-fade modal class | initial render and hidden modal state; confirm uses REST mutation boundary | REST `POST /transfer` on confirm | covered in 2026-06-30 template-first reset slice |
 | `/:owner/:project/changeVCS` | change-VCS form shell | `#acceptChangeVCS`, `#btnChangeVCS`, modal `#alertChangeVCS`, `#btnChangeVCSExec` | same whole-screen DOM, IDs/copy, warning bubble, settings submenu, and non-fade modal class | initial render and hidden modal state; confirm uses REST mutation boundary | REST `POST /change-vcs` on confirm | covered in 2026-06-30 template-first reset slice |
 | `/:owner/:project/deleteform` | delete form shell | `#accept`, `#btnDelete`, modal `#alertDeletion`, `#btnDeleteExec` | same whole-screen DOM, IDs/copy, warning bubble, settings submenu, and non-fade modal class | initial render and hidden modal state; confirm uses REST mutation boundary | REST `DELETE /project` on confirm | covered in 2026-06-30 template-first reset slice |
 | `/:owner/:project/newFork` | fork form | `#helpMessage`, `#project-owner`, `#inputName`, project scope radios, fork button; existing-fork notice/link | same help/form/scope/button shell; existing-fork notice/link and disabled submit when unavailable | empty name no-submit, existing-fork no-submit, fill name, submit | REST `POST /fork` with CSRF and legacy payload only when enabled | covered in current follow-up |
