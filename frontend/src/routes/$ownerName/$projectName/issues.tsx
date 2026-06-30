@@ -1,6 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useEffect, useRef, type HTMLAttributes, type LiHTMLAttributes } from "react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  type CSSProperties,
+  type HTMLAttributes,
+  type LiHTMLAttributes,
+} from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
@@ -483,6 +490,7 @@ function LabelMassUpdateDropdown({
   options: Array<{
     categoryId: string;
     categoryName: string;
+    color?: string;
     id: string;
     name: string;
   }>;
@@ -510,7 +518,7 @@ function LabelMassUpdateGroup({
   group: {
     categoryId: string;
     categoryName: string;
-    labels: Array<{ id: string; name: string }>;
+    labels: Array<{ color?: string; id: string; name: string }>;
   };
 }) {
   return (
@@ -522,7 +530,11 @@ function LabelMassUpdateGroup({
         <li data-value={label.id} data-category={group.categoryId} key={label.id}>
           {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
           <a>
-            <span className="issue-label active list-label" data-label-id={label.id}>
+            <span
+              className="issue-label active list-label"
+              data-label-id={label.id}
+              style={issueLabelStyle(label.color)}
+            >
               {label.name}
             </span>
           </a>
@@ -719,6 +731,7 @@ function ProjectIssueItem({
                 data-category-id={label.categoryId ?? ""}
                 data-label-id={label.id}
                 key={String(label.id)}
+                style={issueLabelStyle(label.color)}
               >
                 {label.name}
               </a>
@@ -1321,7 +1334,7 @@ function uniqueMilestones(issues: RestIssueListItem[]) {
 function uniqueLabels(issues: RestIssueListItem[]) {
   const labels = new Map<
     string,
-    { categoryId: string; categoryName: string; id: string; name: string }
+    { categoryId: string; categoryName: string; color?: string; id: string; name: string }
   >();
   for (const issue of issues) {
     for (const label of issue.labels) {
@@ -1330,6 +1343,7 @@ function uniqueLabels(issues: RestIssueListItem[]) {
         labels.set(id, {
           categoryId: stringField(label.categoryId, ""),
           categoryName: stringField(label.categoryName, ""),
+          color: label.color,
           id,
           name: label.name,
         });
@@ -1340,11 +1354,21 @@ function uniqueLabels(issues: RestIssueListItem[]) {
 }
 
 function groupLabels(
-  labels: Array<{ categoryId: string; categoryName: string; id: string; name: string }>,
+  labels: Array<{
+    categoryId: string;
+    categoryName: string;
+    color?: string;
+    id: string;
+    name: string;
+  }>,
 ) {
   const groups = new Map<
     string,
-    { categoryId: string; categoryName: string; labels: Array<{ id: string; name: string }> }
+    {
+      categoryId: string;
+      categoryName: string;
+      labels: Array<{ color?: string; id: string; name: string }>;
+    }
   >();
   for (const label of labels) {
     const group = groups.get(label.categoryId) ?? {
@@ -1352,10 +1376,50 @@ function groupLabels(
       categoryName: label.categoryName,
       labels: [],
     };
-    group.labels.push({ id: label.id, name: label.name });
+    group.labels.push({ color: label.color, id: label.id, name: label.name });
     groups.set(label.categoryId, group);
   }
   return Array.from(groups.values());
+}
+
+function issueLabelStyle(color?: string): CSSProperties | undefined {
+  if (!color) {
+    return undefined;
+  }
+  return {
+    backgroundColor: color,
+    boxShadow: `inset 2px 0 0px ${color}`,
+    color: issueLabelTextColor(color),
+  };
+}
+
+function issueLabelTextColor(color: string) {
+  const rgb = parseIssueLabelColor(color);
+  const colorSpace = rgb.r * 0.21 + rgb.g * 0.72 + rgb.b * 0.07;
+  return colorSpace > 192 ? "dimgray" : "white";
+}
+
+function parseIssueLabelColor(color: string) {
+  const normalized = color.trim().toLowerCase();
+  const rgbMatch = normalized.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/u);
+  if (rgbMatch) {
+    return {
+      r: Number(rgbMatch[1]),
+      g: Number(rgbMatch[2]),
+      b: Number(rgbMatch[3]),
+    };
+  }
+
+  const hex = normalized.startsWith("#") ? normalized.slice(1) : normalized;
+  if (/^[0-9a-f]{6}$/u.test(hex)) {
+    return {
+      r: Number.parseInt(hex.slice(0, 2), 16),
+      g: Number.parseInt(hex.slice(2, 4), 16),
+      b: Number.parseInt(hex.slice(4, 6), 16),
+    };
+  }
+
+  return { b: 255, g: 255, r: 255 };
 }
 
 function uniqueUsers(issues: RestIssueListItem[], currentUserId: string) {
