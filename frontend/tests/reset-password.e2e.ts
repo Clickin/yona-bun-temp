@@ -165,6 +165,46 @@ test("invalid reset password link matches legacy error/badrequest_default.scala.
   );
 
   expect(actual).toEqual(expected);
+  expect(await readDesktopResetBadRequestMetrics(page)).toEqual({
+    errorIconHeight: "80px",
+    errorIconWidth: "50px",
+    errorPaddingBottom: "100px",
+    errorPaddingTop: "100px",
+    errorTextColor: "rgb(137, 137, 137)",
+    errorTextFontSize: "16px",
+    errorTextFontWeight: "700",
+    errorTextMarginBottom: "30px",
+    errorTextMarginTop: "30px",
+    gnbInnerHeight: "40px",
+    gnbInnerWidth: 1254,
+    gnbOuterBackground: "rgb(27, 27, 27)",
+    gnbOuterHeight: "40px",
+    logoBackground: "rgb(255, 87, 34)",
+    logoLineHeight: "40px",
+    logoPadding: "6px 10px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
+    pageWrapOuterMarginTop: "10px",
+    pageWrapOuterMinHeight: "450px",
+    projectPageWrapMarginTop: "20px",
+    providerFontSize: "9px",
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await readMobileResetBadRequestMetrics(page)).toEqual({
+    errorPaddingTop: "100px",
+    errorTextFontSize: "16px",
+    gnbInnerWidth: 363,
+    gnbOuterMinWidth: "10px",
+    gnbOuterPadding: "0px 10px",
+    pageFooterOuterMinWidth: "10px",
+    pageFooterOuterPadding: "10px",
+    pageFooterWidth: 370,
+    pageWrapOuterMinWidth: "10px",
+    pageWrapOuterPadding: "0px",
+    pageWrapOuterWidth: 390,
+    projectPageWrapMarginTop: "5px",
+    projectPageWrapWidth: 390,
+  });
 });
 
 async function canonicalizeScreenRoots(page: Page) {
@@ -301,6 +341,117 @@ async function readMobileResetPasswordMetrics(page: Page) {
       passwordFontSize: passwordStyle.fontSize,
       passwordInputWidth: passwordStyle.width,
       retypedPasswordFontSize: getComputedStyle(retypedPasswordInput).fontSize,
+    };
+  });
+}
+
+async function readDesktopResetBadRequestMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const logo = document.querySelector<HTMLElement>(".logo-letter");
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const projectPageWrap = document.querySelector<HTMLElement>(".project-page-wrap");
+    const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
+    const errorIcon = document.querySelector<HTMLElement>(".error-wrap .ico-404");
+    const errorText = document.querySelector<HTMLElement>(".error-wrap p");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (
+      !gnbOuter ||
+      !gnbInner ||
+      !logo ||
+      !pageWrapOuter ||
+      !projectPageWrap ||
+      !errorWrap ||
+      !errorIcon ||
+      !errorText ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
+    ) {
+      throw new Error("Expected reset bad-request metric targets are missing.");
+    }
+
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const gnbInnerStyle = getComputedStyle(gnbInner);
+    const logoStyle = getComputedStyle(logo);
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const errorWrapStyle = getComputedStyle(errorWrap);
+    const errorIconStyle = getComputedStyle(errorIcon);
+    const errorTextStyle = getComputedStyle(errorText);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+
+    return {
+      errorIconHeight: errorIconStyle.height,
+      errorIconWidth: errorIconStyle.width,
+      errorPaddingBottom: errorWrapStyle.paddingBottom,
+      errorPaddingTop: errorWrapStyle.paddingTop,
+      errorTextColor: errorTextStyle.color,
+      errorTextFontSize: errorTextStyle.fontSize,
+      errorTextFontWeight: errorTextStyle.fontWeight,
+      errorTextMarginBottom: errorTextStyle.marginBottom,
+      errorTextMarginTop: errorTextStyle.marginTop,
+      gnbInnerHeight: gnbInnerStyle.height,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterBackground: gnbOuterStyle.backgroundColor,
+      gnbOuterHeight: gnbOuterStyle.height,
+      logoBackground: logoStyle.backgroundColor,
+      logoLineHeight: logoStyle.lineHeight,
+      logoPadding: logoStyle.padding,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
+      pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
+      projectPageWrapMarginTop: getComputedStyle(projectPageWrap).marginTop,
+      providerFontSize: getComputedStyle(provider).fontSize,
+    };
+  });
+}
+
+async function readMobileResetBadRequestMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const projectPageWrap = document.querySelector<HTMLElement>(".project-page-wrap");
+    const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
+    const errorText = document.querySelector<HTMLElement>(".error-wrap p");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    if (
+      !gnbOuter ||
+      !gnbInner ||
+      !pageWrapOuter ||
+      !projectPageWrap ||
+      !errorWrap ||
+      !errorText ||
+      !pageFooter ||
+      !pageFooterOuter
+    ) {
+      throw new Error("Expected mobile reset bad-request metric targets are missing.");
+    }
+
+    const gnbOuterStyle = getComputedStyle(gnbOuter);
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const projectPageWrapStyle = getComputedStyle(projectPageWrap);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+
+    return {
+      errorPaddingTop: getComputedStyle(errorWrap).paddingTop,
+      errorTextFontSize: getComputedStyle(errorText).fontSize,
+      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterMinWidth: gnbOuterStyle.minWidth,
+      gnbOuterPadding: gnbOuterStyle.padding,
+      pageFooterOuterMinWidth: pageFooterOuterStyle.minWidth,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      pageFooterWidth: Math.round(pageFooter.getBoundingClientRect().width),
+      pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      pageWrapOuterPadding: pageWrapOuterStyle.padding,
+      pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
+      projectPageWrapMarginTop: projectPageWrapStyle.marginTop,
+      projectPageWrapWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
     };
   });
 }
