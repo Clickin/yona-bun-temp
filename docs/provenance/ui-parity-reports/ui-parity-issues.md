@@ -107,6 +107,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx` now renders the existing issue detail `childIssues`, `childOpenCount`, and `childClosedCount` payload directly into the legacy subtask DOM without adding a new view model.
 - Verification: `frontend/tests/project-issue-detail.e2e.ts` includes a RED-to-GREEN DOM comparison for the child issue list branch under `/admin/sample/issue/11`.
 
+## 2026-07-01 Project Issue Detail Voter Follow-Up
+
+- Restored the `issue/view.scala.html` vote block's login-required disabled state and the `partial_voters.scala.html` overflow branch for issue voters beyond the first three avatars.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx` now keeps the full voter list available to the inline voter renderer, emits the legacy `#voters` modal link with tooltip names, and uses the legacy `user.login.alert` copy for disabled issue voting.
+- Verification: `frontend/tests/project-issue-detail.e2e.ts` includes RED-to-GREEN DOM comparisons for the disabled vote action and the issue voter overflow link.
+
 ## Evidence Checked
 
 Legacy evidence:

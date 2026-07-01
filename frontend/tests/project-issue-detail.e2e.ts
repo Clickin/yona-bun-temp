@@ -249,6 +249,36 @@ test("project issue detail renders legacy disabled delete action", async ({ page
   );
 });
 
+test("project issue detail renders legacy disabled vote action", async ({ page }) => {
+  await mockProjectIssueDetail(page, { viewerCanComment: false });
+
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
+
+  const expected = `<span class="ybtn-disabled" style="color:rgb(119,119,119)" data-toggle="tooltip" title="Please log in." data-login="required"><span class="heart"><i class="yobicon-hearts"></i></span></span>`;
+  expect(await canonicalize(page, "#vote > .ybtn-disabled")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+});
+
+test("project issue detail renders legacy voter overflow link", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    issueVoters: commentVoters(),
+    voterCount: 6,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const expected =
+    `<div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li data-toggle="tooltip" data-html="true" title="QA Two &lt;br&gt;QA Three &lt;br&gt;QA Four &lt;br&gt;"><a href="#voters" data-toggle="modal">and 3 others</a></li></ul></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, "#vote > .voter-list-wrap")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+});
+
 test("project issue detail renders legacy attachment file items", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const issueAttachments = {

@@ -470,7 +470,7 @@ function IssueVote({
             className="ybtn-disabled"
             style={{ color: "#777" }}
             data-toggle="tooltip"
-            title="Login required"
+            title="Please log in."
             data-login="required"
           >
             <span className="heart">
@@ -478,9 +478,7 @@ function IssueVote({
             </span>
           </span>
         )}
-        {voters.length ? (
-          <IssueVoterAvatars basePath={basePath} voters={voters.slice(0, 3)} />
-        ) : null}
+        {voters.length ? <IssueVoterAvatars basePath={basePath} voters={voters} /> : null}
       </div>
       {voters.length ? (
         <IssueVoterListDialog
@@ -497,10 +495,17 @@ function IssueVote({
 }
 
 function IssueVoterAvatars({ basePath, voters }: { basePath: string; voters: VoterLike[] }) {
+  const visibleVoters = voters.slice(0, 3);
+  const overflowVoters = voters.slice(3);
+  const overflowTitle = overflowVoters
+    .slice(0, 5)
+    .map((voter) => `${stringField(voter.userLabel)} <br>`)
+    .join("");
+
   return (
     <div className="voter-list-wrap">
       <ul className="voter-list">
-        {voters.map((voter) => (
+        {visibleVoters.map((voter) => (
           <li key={stringField(voter.loginId)}>
             <a
               href={prefixBasePath(basePath, `/${stringField(voter.loginId)}`)}
@@ -513,6 +518,13 @@ function IssueVoterAvatars({ basePath, voters }: { basePath: string; voters: Vot
             </a>
           </li>
         ))}
+        {overflowVoters.length ? (
+          <li data-toggle="tooltip" data-html="true" title={overflowTitle}>
+            <a href="#voters" data-toggle="modal">
+              {`and ${overflowVoters.length} others`}
+            </a>
+          </li>
+        ) : null}
       </ul>
     </div>
   );
