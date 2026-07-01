@@ -811,6 +811,7 @@ function CodeCommentThreadView({
           <div className="write-comment-box">
             <div className="write-comment-wrap">
               <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
+              <UploadForm resourceType="COMMIT_COMMENT" />
               <div className="right-txt">
                 <button
                   type="button"
@@ -968,6 +969,7 @@ function ReviewForm({ action }: { action: string }) {
               </button>
             </div>
             <Editor editorMode="code-review-body" wrapId="review" />
+            <UploadForm resourceType="COMMIT_COMMENT" />
             <div className="right-txt">
               <button type="submit" className="ybtn ybtn-success ybtn-small">
                 {t("button.comment.new")}
@@ -1058,6 +1060,29 @@ function Editor({
           <span className="notification-receiver-list"></span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function UploadForm({ resourceType }: { resourceType: string }) {
+  const { t } = useLegacyMessages();
+  return (
+    <div className="upload-wrap content-footer" data-resource-type={resourceType}>
+      <div className="attach-wrap">
+        <span className="help help-droppable">{t("common.attach.drophere")}</span>
+        <div className="btn-wrap">
+          <div className="nbtn medium white fake-file-wrap">
+            <i className="yobicon-upload"></i> {t("button.upload")}
+            <input type="file" className="file" name="filePath" multiple />
+          </div>
+        </div>
+        <span className="plain">{t("common.attach.clickbutton")}</span>
+        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
+      </div>
+      <ul className="attached-files unstyled"></ul>
+      <p className="right-txt help">
+        <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
+      </p>
     </div>
   );
 }
