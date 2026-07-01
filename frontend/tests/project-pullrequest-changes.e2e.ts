@@ -15,6 +15,17 @@ const SELECTED_COMMIT = {
   state: "CURRENT",
 };
 
+const PRIOR_COMMIT_ID = "1234567890abcdef";
+
+const PRIOR_COMMIT = {
+  authorDateLabel: "Jul 3, 2026",
+  authorEmail: "old@example.com",
+  commitId: PRIOR_COMMIT_ID,
+  commitMessage: "Old UI\n\nDetails",
+  commitShortId: "1234567",
+  state: "PRIOR",
+};
+
 const EXPECTED_PULL_REQUEST_SELECTED_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
   `<span class="d-label">All commit changes</span>`,
   `<span class="d-label"><strong class="blue-txt mr10 commit-hash">abcdef1</strong><span>Add UI</span></span>`,
@@ -30,6 +41,23 @@ const EXPECTED_PULL_REQUEST_SELECTED_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.repl
   .replaceAll(
     `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
     `action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=abcdef1234567890"`,
+  );
+
+const EXPECTED_PULL_REQUEST_PRIOR_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
+  `<span class="d-label">All commit changes</span>`,
+  `<span class="d-label"><strong class="blue-txt mr10 commit-hash">1234567</strong><span>Old UI (Outdated)</span></span>`,
+)
+  .replace(
+    `<li class="divider"></li></ul>`,
+    `<li class="divider"></li><li data-value="abcdef1234567890"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890"><strong class="blue-txt mr10 commit-hash">abcdef1</strong><span>Add UI</span></a></li></ul>`,
+  )
+  .replace(
+    `<div class="diff-body diffs-wrap-scroll">`,
+    `<p class="commitInfo"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>old@example.com</strong><span class="ago" title="Jul 3, 2026">Jul 3, 2026</span></p><pre class="commitMsg mt5">Old UI\n\nDetails</pre><div class="diff-body diffs-wrap-scroll">`,
+  )
+  .replaceAll(
+    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
+    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=1234567890abcdef"`,
   );
 
 const REVIEW_THREAD = {
@@ -167,6 +195,29 @@ test("project pull request selected commit changes matches legacy git/viewChange
     await canonicalizeHtmlAll(
       page,
       EXPECTED_PULL_REQUEST_SELECTED_CHANGE.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("project pull request prior commit changes matches legacy outdated dropdown DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, {
+    commits: [SELECTED_COMMIT, PRIOR_COMMIT],
+    expectedCommitId: PRIOR_COMMIT_ID,
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes/${PRIOR_COMMIT_ID}`);
+  await expect(page.locator("#commits .d-label")).toContainText("Old UI (Outdated)");
+  await expect(
+    page.locator("#commits .dropdown-menu li[data-value='1234567890abcdef']"),
+  ).toHaveCount(0);
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_PRIOR_CHANGE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });

@@ -449,7 +449,7 @@ function CommitDropdown({
           {selectedCommit ? (
             <>
               <strong className="blue-txt mr10 commit-hash">{selectedCommit.commitShortId}</strong>
-              <span>{commitSummary(selectedCommit)}</span>
+              <span>{selectedCommitLabel(selectedCommit, t("review.outdated"))}</span>
             </>
           ) : (
             t("pullRequest.changes.all")
@@ -466,14 +466,16 @@ function CommitDropdown({
           </a>
         </li>
         <li className="divider"></li>
-        {commits.map((commit) => (
-          <li data-value={commit.commitId} key={commit.commitId}>
-            <a href={prefixBasePath(runtimeConfig.basePath, `${changesPath}/${commit.commitId}`)}>
-              <strong className="blue-txt mr10 commit-hash">{commit.commitShortId}</strong>
-              <span>{commitSummary(commit)}</span>
-            </a>
-          </li>
-        ))}
+        {commits.map((commit) =>
+          commit.state === "CURRENT" ? (
+            <li data-value={commit.commitId} key={commit.commitId}>
+              <a href={prefixBasePath(runtimeConfig.basePath, `${changesPath}/${commit.commitId}`)}>
+                <strong className="blue-txt mr10 commit-hash">{commit.commitShortId}</strong>
+                <span>{commitSummary(commit)}</span>
+              </a>
+            </li>
+          ) : null,
+        )}
       </ul>
     </div>
   );
@@ -653,4 +655,9 @@ function pullRequestCommentHref(
 
 function commitSummary(commit: PullRequestCommit) {
   return commit.commitMessage.split("\n")[0] || commit.commitShortId;
+}
+
+function selectedCommitLabel(commit: PullRequestCommit, outdatedLabel: string) {
+  const summary = commitSummary(commit);
+  return commit.state === "PRIOR" ? `${summary} (${outdatedLabel})` : summary;
 }
