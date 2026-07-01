@@ -270,7 +270,7 @@ function IssueDetailBody({
               </dd>
             </dl>
             <div className="watcher-list"></div>
-            <div className="subtasks"></div>
+            <IssueChildIssues basePath={basePath} issue={issue} />
             {!isDraft ? <IssueMainTimeline basePath={basePath} issue={issue} /> : null}
           </div>
           <div className="span3 span-right-pane mb20">
@@ -697,6 +697,171 @@ function IssueSelectedLabels({
         ))}
       </dd>
     </dl>
+  );
+}
+
+type IssueDetailChildItem = NonNullable<RestIssueDetailResponse["childIssues"]>[number];
+
+function IssueChildIssues({
+  basePath,
+  issue,
+}: {
+  basePath: string;
+  issue: RestIssueDetailResponse;
+}) {
+  const ownerName = stringField(issue.ownerName);
+  const projectName = stringField(issue.projectName);
+  const issueNumber = stringField(issue.issueNumber);
+  const childOpenCount = numberField(issue.childOpenCount);
+  const childClosedCount = numberField(issue.childClosedCount);
+  const totalCount = childOpenCount + childClosedCount;
+  const children = issue.childIssues ?? [];
+  const visibleChildren = [
+    ...(booleanField(issue.isDraft) ? children.filter((child) => booleanField(child.isDraft)) : []),
+    ...children.filter(
+      (child) => !booleanField(child.isDraft) && stringField(child.state) !== "closed",
+    ),
+    ...children.filter((child) => stringField(child.state) === "closed"),
+  ];
+
+  if (!totalCount && visibleChildren.length === 0) {
+    return <div className="subtasks"></div>;
+  }
+
+  const percentage = totalCount ? Math.trunc((childClosedCount / totalCount) * 100) : 0;
+  const parentHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
+  const assigneeLabel = stringField(issue.assigneeLabel);
+
+  return (
+    <div className="subtasks">
+      <div className="child-issues">
+        <div className="issue-item parent-issue">
+          <a href={parentHref} className="bold">
+            {`#${issueNumber} ${stringField(issue.title)}${assigneeLabel ? ` - ${assigneeLabel}` : ""}`}
+          </a>
+          <div className={`upload-progress ${percentage === 100 ? "done-outline" : "red-outline"}`}>
+            <div
+              className={`bar ${percentage === 100 ? "done" : "red"}`}
+              style={{ width: `${percentage}%` }}
+              title="Subtask"
+            ></div>
+          </div>
+          <span className={percentage === 100 ? " txt-green" : " "}>
+            {percentage === 100 ? "" : `${childClosedCount}/`}
+            {totalCount}{" "}
+          </span>
+          <span className={`parent-issue-state ${stringField(issue.state, "open")}`}>
+            {stringField(issue.state, "open") === "closed" ? "Closed" : "Open"}
+          </span>
+        </div>
+        <hr className="parent-issue-delimeter" />
+        <div className="child-issues">
+          {visibleChildren.map((child) => (
+            <IssueChildIssue
+              basePath={basePath}
+              child={child}
+              key={`${stringField(child.state)}-${stringField(child.issueNumber)}`}
+              ownerName={ownerName}
+              projectName={projectName}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IssueChildIssue({
+  basePath,
+  child,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  child: IssueDetailChildItem;
+  ownerName: string;
+  projectName: string;
+}) {
+  const issueNumber = stringField(child.issueNumber);
+  const state = booleanField(child.isDraft) ? "draft" : stringField(child.state, "open");
+  const isClosed = state === "closed";
+  const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
+  const labels = (child.labels ?? []).slice().sort(compareLabels);
+
+  return (
+    <div className="issue-item  child-issue">
+      <span className={`state-label ${state}`}>
+        {isClosed ? <i className=" yobicon-checkmark"></i> : null}
+      </span>
+      <a className="twoColumeModeTarget" href={issueHref}>
+        <span className="item-name">
+          <span className="subtask-number">
+            {booleanField(child.isDraft) ? (
+              <span className="draft-number">#Draft</span>
+            ) : (
+              `#${issueNumber}`
+            )}
+          </span>
+          <span>{stringField(child.title)}</span>
+          <span>
+            {stringField(child.assigneeLabel) ? ` - ${stringField(child.assigneeLabel)}` : ""}
+          </span>
+        </span>
+      </a>
+      <span className="font12 no-border-at-child">
+        <IssueChildCommentAndVotePair child={child} issueHref={issueHref} />
+      </span>
+      {labels.map((label) => (
+        <a
+          href={`${prefixBasePath(basePath, `/${ownerName}/${projectName}`)}/issues?state=open&labelIds=${String(label.id)}`}
+          className="label issue-label list-label active twoColumeModeTarget"
+          data-category-id={String(label.categoryId ?? "")}
+          data-label-id={String(label.id)}
+          key={String(label.id)}
+          style={{ background: stringField(label.color) }}
+        >
+          {label.name}
+        </a>
+      ))}
+      <span className="child-issue-date" title={stringField(child.createdLabel)}>
+        {stringField(child.createdLabel)}
+      </span>
+    </div>
+  );
+}
+
+function IssueChildCommentAndVotePair({
+  child,
+  issueHref,
+}: {
+  child: IssueDetailChildItem;
+  issueHref: string;
+}) {
+  const commentCount = numberField(child.commentCount);
+  const voterCount = numberField(child.voterCount);
+  if (!commentCount && !voterCount) {
+    return null;
+  }
+
+  return (
+    <span className="item-count-groups">
+      {commentCount ? (
+        <a href={`${issueHref}#comments`} className="comments-count comments-count-color">
+          <span className="count-groups item-icon">
+            <i className="yobicon-comment2"></i>
+          </span>
+          <span className="count-groups item-count">{commentCount}</span>
+        </a>
+      ) : null}
+      {voterCount ? (
+        <a href={`${issueHref}#vote`} className="vote-count vote-color">
+          <span className="count-groups item-icon">
+            <i className="yobicon-hearts"></i>
+          </span>
+          <span className="count-groups item-count strong">{voterCount}</span>
+        </a>
+      ) : null}
+    </span>
   );
 }
 

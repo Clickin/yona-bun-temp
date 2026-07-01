@@ -101,6 +101,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `crates/persistence` and `crates/server` now expose `dueDateOverdue` and `dueDateUntilLabel` on the issue detail REST payload, and `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx` uses those fields only for the existing legacy `<dt>Due date...` span.
 - Verification: `frontend/tests/project-issue-detail.e2e.ts` includes RED-to-GREEN DOM comparisons for both overdue and until-text status spans.
 
+## 2026-07-01 Project Issue Detail Subtask Follow-Up
+
+- Restored the `issue/view.scala.html` `partial_view_childIssueList.scala.html` caller branch inside `.subtasks`, including the parent issue summary, progress bar, parent state, open/closed child ordering, child issue rows, and legacy comment/vote count pair anchors.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx` now renders the existing issue detail `childIssues`, `childOpenCount`, and `childClosedCount` payload directly into the legacy subtask DOM without adding a new view model.
+- Verification: `frontend/tests/project-issue-detail.e2e.ts` includes a RED-to-GREEN DOM comparison for the child issue list branch under `/admin/sample/issue/11`.
+
 ## Evidence Checked
 
 Legacy evidence:

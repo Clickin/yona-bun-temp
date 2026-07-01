@@ -317,6 +317,47 @@ test("project issue detail renders legacy attachment file items", async ({ page 
   );
 });
 
+test("project issue detail renders legacy child issue list", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    childClosedCount: 1,
+    childIssues: [
+      {
+        assigneeLabel: "QA One",
+        commentCount: 2,
+        createdLabel: "Jul 3, 2026",
+        issueNumber: 12,
+        labels: [],
+        state: "open",
+        title: "Open child",
+        voterCount: 1,
+      },
+      {
+        assigneeLabel: "",
+        commentCount: 0,
+        createdLabel: "Jul 4, 2026",
+        issueNumber: 13,
+        labels: [],
+        state: "closed",
+        title: "Closed child",
+        voterCount: 0,
+      },
+    ],
+    childOpenCount: 1,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const expected =
+    `<div class="subtasks"><div class="child-issues"><div class="issue-item parent-issue"><a href="__BASE_PATH__/admin/sample/issue/11" class="bold">#11 Fix flaky issue - Site Admin</a><div class="upload-progress red-outline"><div class="bar red" style="width:50%" title="Subtask"></div></div><span class=" ">1/2 </span><span class="parent-issue-state open">Open</span></div><hr class="parent-issue-delimeter"><div class="child-issues"><div class="issue-item  child-issue"><span class="state-label open"></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/12"><span class="item-name"><span class="subtask-number">#12</span><span>Open child</span><span> - QA One</span></span></a><span class="font12 no-border-at-child"><span class="item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/12#comments" class="comments-count comments-count-color"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">2</span></a><a href="__BASE_PATH__/admin/sample/issue/12#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span></span><span class="child-issue-date" title="Jul 3, 2026">Jul 3, 2026</span></div><div class="issue-item  child-issue"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/13"><span class="item-name"><span class="subtask-number">#13</span><span>Closed child</span><span></span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="Jul 4, 2026">Jul 4, 2026</span></div></div></div></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, ".span-left-pane > .subtasks")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+});
+
 test("project issue detail renders legacy unauthorized comment form", async ({ page }) => {
   await mockProjectIssueDetail(page, { viewerCanComment: false });
 
