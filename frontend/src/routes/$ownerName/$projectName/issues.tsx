@@ -687,16 +687,16 @@ function ProjectIssueItem({
             {issue.commentCount > 0 || issue.voterCount > 0 || (issue.sharerCount ?? 0) > 0 ? (
               <span className="infos-item item-count-groups">
                 {issue.commentCount > 0 ? (
-                  <a href={`${issueHref}#comments`}>
-                    <span className="count-groups item-icon ">
-                      <i className="yobicon-comments"></i>
+                  <a href={`${issueHref}#comments`} className="comments-count comments-count-color">
+                    <span className="count-groups item-icon">
+                      <i className="yobicon-comment2"></i>
                     </span>
-                    <span className="count-groups item-count ">{issue.commentCount}</span>
+                    <span className="count-groups item-count">{issue.commentCount}</span>
                   </a>
                 ) : null}
                 {issue.voterCount > 0 ? (
-                  <a href={`${issueHref}#vote`}>
-                    <span className="count-groups item-icon strong">
+                  <a href={`${issueHref}#vote`} className="vote-count vote-color">
+                    <span className="count-groups item-icon">
                       <i className="yobicon-hearts"></i>
                     </span>
                     <span className="count-groups item-count strong">{issue.voterCount}</span>
