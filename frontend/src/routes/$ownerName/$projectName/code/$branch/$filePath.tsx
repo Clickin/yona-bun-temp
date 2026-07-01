@@ -15,22 +15,46 @@ export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$fil
 
 type CodeFile = Record<string, unknown>;
 
+export type ProjectCodeFileRouteParams = {
+  branch: string;
+  filePath: string;
+  ownerName: string;
+  projectName: string;
+};
+
 function ProjectCodeFileRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const routeParams = Route.useParams();
 
+  return <ProjectCodeFileRouteFrame routeParams={routeParams} runtimeConfig={runtimeConfig} />;
+}
+
+export function ProjectCodeFileRouteFrame({
+  routeParams,
+  runtimeConfig,
+}: {
+  routeParams: ProjectCodeFileRouteParams;
+  runtimeConfig: RuntimeConfig;
+}) {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectCodeFileScreen runtimeConfig={runtimeConfig} />
+          <ProjectCodeFileScreen routeParams={routeParams} runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectCodeFileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { branch, filePath, ownerName, projectName } = Route.useParams();
+function ProjectCodeFileScreen({
+  routeParams,
+  runtimeConfig,
+}: {
+  routeParams: ProjectCodeFileRouteParams;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { branch, filePath, ownerName, projectName } = routeParams;
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -49,6 +73,7 @@ function ProjectCodeFileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
       <ProjectCodeFileBody
         code={codeQuery.data}
         project={projectQuery.data}
+        routeParams={routeParams}
         runtimeConfig={runtimeConfig}
       />
     </>
@@ -58,16 +83,19 @@ function ProjectCodeFileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
 function ProjectCodeFileBody({
   code,
   project,
+  routeParams,
   runtimeConfig,
 }: {
   code: CodeBrowserResponse;
   project: ProjectContainer;
+  routeParams: ProjectCodeFileRouteParams;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
-  const { branch, filePath, ownerName, projectName } = Route.useParams();
+  const { branch, filePath, ownerName, projectName } = routeParams;
   const selectedBranch = code.selectedBranch || branch;
   const encodedBranch = encodeURIComponent(selectedBranch);
+  const newFilePath = directoryPath(filePath);
 
   return (
     <div className="page-wrap-outer">
@@ -151,7 +179,7 @@ function ProjectCodeFileBody({
               <div className="pull-right">
                 <a
                   id="new-file-link"
-                  href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=&branch=${encodedBranch}`}
+                  href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=${newFilePath}&branch=${encodedBranch}`}
                   className="ybtn"
                 >
                   {t("code.new.file")}
@@ -165,7 +193,9 @@ function ProjectCodeFileBody({
             <FileView
               file={recordField(code.file)}
               filePath={filePath}
+              ownerName={ownerName}
               project={project}
+              projectName={projectName}
               runtimeConfig={runtimeConfig}
               selectedBranch={selectedBranch}
             />
@@ -179,18 +209,21 @@ function ProjectCodeFileBody({
 function FileView({
   file,
   filePath,
+  ownerName,
   project,
+  projectName,
   runtimeConfig,
   selectedBranch,
 }: {
   file: CodeFile;
   filePath: string;
+  ownerName: string;
   project: ProjectContainer;
+  projectName: string;
   runtimeConfig: RuntimeConfig;
   selectedBranch: string;
 }) {
   const { t } = useLegacyMessages();
-  const { ownerName, projectName } = Route.useParams();
   const commitId = stringField(file.commitId, "");
   const shortCommitId = commitId.slice(0, 7);
   const authorLoginId = stringField(file.userLoginId, "");
@@ -262,7 +295,7 @@ function FileView({
           </a>
           {booleanField(project.viewerCanUpdate) ? (
             <a
-              href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=${encodeURIComponent(filePath)}&branch=${encodeURIComponent(selectedBranch)}&edit=true`}
+              href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=${filePath}&branch=${encodeURIComponent(selectedBranch)}&edit=true`}
               className="ybtn"
             >
               Edit
@@ -305,6 +338,11 @@ function projectHref(basePath: string, ownerName: string, projectName: string, .
     basePath,
     `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`,
   );
+}
+
+function directoryPath(filePath: string) {
+  const slash = filePath.lastIndexOf("/");
+  return slash > 0 ? `${filePath.slice(0, slash)}/` : "";
 }
 
 function recordField(value: unknown): CodeFile {
