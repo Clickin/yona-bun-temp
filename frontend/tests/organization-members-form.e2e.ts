@@ -143,6 +143,33 @@ test("organization members menu home link preserves legacy href with SPA transit
   await expect(page.locator("#mylist-filter")).toBeVisible();
 });
 
+test("organization members menu board link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationMembers(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+  const boardLink = page.locator(".project-menu-gruop a").filter({ hasText: "Board" });
+  await expect(boardLink).toHaveAttribute("href", `${basePath}/organizations/weblabs/boards`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await boardLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/boards`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Board");
+  await expect(page.locator("#option_form")).toBeVisible();
+});
+
 async function mockOrganizationMembers(page: Page) {
   const requests = {
     acceptedUserIds: [] as string[],
@@ -189,6 +216,23 @@ async function mockOrganizationMembers(page: Page) {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(organizationContainerPayload()),
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs/boards**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [],
+        notices: [],
+        organizationName: "weblabs",
+        pageNum: 1,
+        pageSize: 20,
+        totalCount: 0,
+        visibleProjects: [
+          { ownerName: "weblabs", projectName: "sample" },
+          { ownerName: "weblabs", projectName: "playground" },
+        ],
+      }),
     });
   });
   await page.route("**/api/v1/organizations/weblabs/members", async (route) => {

@@ -431,7 +431,7 @@ function OrganizationMenu({
   const { t } = useLegacyMessages();
   const router = useRouter();
   const navigate = (to: string) => {
-    router.navigate({ to });
+    router.history.push(prefixBasePath(basePath, to));
   };
 
   return (
