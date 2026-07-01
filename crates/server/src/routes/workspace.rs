@@ -194,6 +194,7 @@ fn workspace_issue_item_from_record(
         comment_count: record.comment_count,
         due_date_label: record.due_date_label.clone(),
         due_date_overdue: record.due_date_overdue,
+        due_date_text: record.due_date_text.clone(),
         issue_number: record.issue_number,
         labels: record
             .labels

@@ -673,6 +673,7 @@ impl AppRepositoryImpl<'_> {
                 due_date_label: format_workspace_date_label(due_date),
                 due_date_overdue: due_date
                     .is_some_and(|value| value < DateTimeUtc::from(SystemTime::now()).naive_utc()),
+                due_date_text: format_legacy_issue_until_label(due_date),
                 issue_number,
                 labels,
                 milestone_id,

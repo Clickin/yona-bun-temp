@@ -901,6 +901,7 @@ function classifyCapability(filePath, changedFiles = [], repoRoot = DEFAULT_REPO
 
 function isPublicUserProfileBackendSurface(filePath) {
   return [
+    "crates/persistence/src/repo/common.rs",
     "crates/persistence/src/repo/project_activity.rs",
     "crates/persistence/src/repo_types.rs",
     "crates/server/src/api_types.rs",

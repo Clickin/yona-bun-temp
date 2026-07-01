@@ -1488,6 +1488,7 @@ pub struct WorkspaceIssueListItemRecord {
     pub labels: Vec<IssueLabelRecord>,
     pub due_date_label: String,
     pub due_date_overdue: bool,
+    pub due_date_text: String,
     pub milestone_id: Option<i64>,
     pub milestone_title: String,
     pub owner_name: String,

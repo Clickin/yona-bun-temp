@@ -578,6 +578,7 @@ test("maps public user profile files to the user workspace provenance slice", ()
     "frontend/src/api/users.ts",
     "frontend/src/routes/$user.tsx",
     "frontend/src/routes/-workspace-views.tsx",
+    "crates/persistence/src/repo/common.rs",
     "crates/persistence/src/repo/project_activity.rs",
     "crates/persistence/src/repo_types.rs",
     "crates/server/src/api_types.rs",

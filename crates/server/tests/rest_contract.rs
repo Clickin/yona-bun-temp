@@ -5,11 +5,13 @@ use http_body_util::BodyExt;
 // Guards workspace route behavior while server root import-bus dependencies are
 // replaced with module-local imports.
 use sea_orm::{
-    entity::prelude::DateTime, ActiveModelTrait, ColumnTrait, Database, DatabaseConnection,
-    EntityTrait, NotSet, QueryFilter, Set,
+    entity::prelude::{DateTime, DateTimeUtc},
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
+    Set,
 };
 use serde_json::json;
 use serde_json::Value;
+use std::time::{Duration, SystemTime};
 use tower::ServiceExt;
 use yoram_migration::Migrator;
 use yoram_persistence::{
@@ -5415,6 +5417,9 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
         .await
         .unwrap()
         .expect("profile issue milestone");
+    let profile_due_date =
+        DateTimeUtc::from(SystemTime::now() + Duration::from_secs(31 * 24 * 60 * 60)).naive_utc();
+    let profile_due_date_label = profile_due_date.format("%Y-%m-%d").to_string();
     repository
         .create_issue(CreateIssueInput {
             actor_display_name: "owner".to_string(),
@@ -5426,7 +5431,7 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
                 assignee_login_id: Some("owner".to_string()),
                 attachment_ids: Vec::new(),
                 body_markdown: "public profile issue body".to_string(),
-                due_date: Some("2026-08-01T00:00:00".parse::<DateTime>().unwrap()),
+                due_date: Some(profile_due_date),
                 is_draft: false,
                 is_publish: false,
                 label_ids: vec![profile_label.id],
@@ -5494,8 +5499,9 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
     assert_eq!(issues[0]["labels"][0]["color"], "#f44336");
     assert_eq!(issues[0]["milestoneId"], profile_milestone.id);
     assert_eq!(issues[0]["milestoneTitle"], "v1.0");
-    assert_eq!(issues[0]["dueDateLabel"], "2026-08-01");
+    assert_eq!(issues[0]["dueDateLabel"], profile_due_date_label);
     assert_eq!(issues[0]["dueDateOverdue"], false);
+    assert_eq!(issues[0]["dueDateText"], "31 days");
     let pull_requests = profile["pullRequestItems"].as_array().unwrap();
     assert_eq!(pull_requests.len(), 1);
     assert_eq!(pull_requests[0]["contributorLoginId"], "owner");

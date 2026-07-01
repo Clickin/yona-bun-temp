@@ -426,6 +426,8 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
   const milestoneTitle = stringField(issue, "milestoneTitle");
   const dueDateLabel = stringField(issue, "dueDateLabel");
   const dueDateOverdue = Boolean(issue.dueDateOverdue);
+  const dueDateText = stringField(issue, "dueDateText");
+  const issueState = stringField(issue, "state");
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
 
   return (
@@ -517,9 +519,11 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
                 title={`${t("issue.dueDate")}: ${dueDateLabel}`}
               >
                 <i className="yobicon-clock2"></i>
-                {stringField(issue, "state") === "open" && dueDateOverdue
+                {issueState === "open" && dueDateOverdue
                   ? t("issue.dueDate.overdue")
-                  : dueDateLabel}
+                  : issueState === "open"
+                    ? dueDateText || dueDateLabel
+                    : dueDateLabel}
               </span>
             ) : null}
           </span>

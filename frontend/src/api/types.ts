@@ -71,6 +71,7 @@ export type WorkspaceProfile = YonaRecord & {
 export type WorkspaceIssueItem = YonaRecord & {
   dueDateLabel?: string;
   dueDateOverdue?: boolean;
+  dueDateText?: string;
   labels?: YonaLabel[];
   milestoneId?: bigint | number | string;
   milestoneTitle?: string;

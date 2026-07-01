@@ -740,6 +740,8 @@ pub struct WorkspaceIssueItem {
     #[serde(default)]
     pub due_date_overdue: bool,
     #[serde(default)]
+    pub due_date_text: String,
+    #[serde(default)]
     pub milestone_id: i64,
     #[serde(default)]
     pub milestone_title: String,

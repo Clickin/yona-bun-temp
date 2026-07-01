@@ -678,6 +678,20 @@ pub(super) fn format_legacy_milestone_until_label(value: Option<DateTime>) -> St
     }
 }
 
+pub(super) fn format_legacy_issue_until_label(value: Option<DateTime>) -> String {
+    let Some(value) = value else {
+        return String::new();
+    };
+    let due_date = value.date();
+    let today = current_datetime().date();
+    let days = due_date.signed_duration_since(today).num_days();
+    if days == 0 {
+        "Today".to_string()
+    } else {
+        format!("{} days", days.saturating_abs())
+    }
+}
+
 pub(super) fn format_legacy_datetime_title(value: Option<DateTime>) -> String {
     value
         .map(|value| value.format("%Y-%m-%d %-I:%M:%S %p").to_string())

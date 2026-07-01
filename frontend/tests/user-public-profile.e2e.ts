@@ -43,7 +43,7 @@ const EXPECTED_PROFILE_SCREEN = `
                       <div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/7" class="title">Open profile issue</a><span class="item-count-groups"><a href="__BASE_PATH__/door/sample/issue/7#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a></span><span class="for-subtask-progressbar"></span><a href="__BASE_PATH__/door/sample/issues?state=open&labelIds=17" class="label issue-label list-label" data-label-id="17" style="background:rgb(244,67,54)">Bug</a><div class="child-issue-list hide"></div></span></div>
                       <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/door" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="door">Door User</a></div>
                       <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="alice">Alice</a></div>
-                      <div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="alice">Alice</a></span><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="2026-07-01">2026-07-01</span></span></div>
+                      <div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="alice">Alice</a></span><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="2026-07-01">2026-07-01</span><span class="pull-right " data-toggle="tooltip" data-placement="top" title="Due date: 2026-08-01"><i class="yobicon-clock2"></i>31 days</span></span></div>
                     </div>
                   </li>
                 </ul>
@@ -285,6 +285,9 @@ async function mockPublicProfile(page: Page, options: MockPublicProfileOptions =
             authorLabel: "Door User",
             authorLoginId: "door",
             commentCount: 3,
+            dueDateLabel: "2026-08-01",
+            dueDateOverdue: false,
+            dueDateText: "31 days",
             id: 11,
             issueNumber: 7,
             labels: [
