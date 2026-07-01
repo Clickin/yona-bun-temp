@@ -343,9 +343,53 @@ function MassUpdateToolbar({
   showMilestone: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const formRef = useRef<HTMLFormElement>(null);
   const milestones = uniqueMilestones(issues);
   const labels = uniqueLabels(issues);
   const users = uniqueUsers(issues, currentUserId);
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) {
+      return;
+    }
+
+    const checkAll = form.querySelector<HTMLInputElement>("#check-all");
+    const buttons = Array.from(form.querySelectorAll<HTMLButtonElement>("button"));
+    const rowCheckboxSelector = 'input[name="checked-issue"][data-toggle="issue-checkbox"]';
+    const rowCheckboxes = () =>
+      Array.from(document.querySelectorAll<HTMLInputElement>(rowCheckboxSelector));
+    const updateButtons = () => {
+      const checkboxes = rowCheckboxes();
+      const checkedCount = checkboxes.filter((checkbox) => checkbox.checked).length;
+      buttons.forEach((button) => {
+        button.disabled = checkedCount === 0;
+      });
+      if (checkAll) {
+        checkAll.checked = checkedCount > 0 && checkedCount === checkboxes.length;
+      }
+    };
+    const onCheckAll = () => {
+      rowCheckboxes().forEach((checkbox) => {
+        checkbox.checked = checkAll?.checked ?? false;
+      });
+      updateButtons();
+    };
+    const onRowCheckboxChange = (event: Event) => {
+      if (event.target instanceof HTMLInputElement && event.target.matches(rowCheckboxSelector)) {
+        updateButtons();
+      }
+    };
+
+    checkAll?.addEventListener("change", onCheckAll);
+    document.addEventListener("change", onRowCheckboxChange);
+    updateButtons();
+
+    return () => {
+      checkAll?.removeEventListener("change", onCheckAll);
+      document.removeEventListener("change", onRowCheckboxChange);
+    };
+  }, [issues]);
 
   return (
     <div className="mass-update-wrap hide-in-mobile">
@@ -354,6 +398,7 @@ function MassUpdateToolbar({
         className="mass-update-form pull-left"
         action={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
         method="post"
+        ref={formRef}
       >
         <div className="btn-group check-all">
           {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update wraps this checkbox in a label. */}
