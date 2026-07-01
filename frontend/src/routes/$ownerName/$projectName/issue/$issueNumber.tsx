@@ -8,6 +8,7 @@ import type { ProjectContainer } from "../../../../api/types";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import {
+  deleteIssueComment,
   deleteIssue,
   readIssueDetail,
   readSessionBootstrap,
@@ -77,6 +78,7 @@ function IssueDetailBody({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useLegacyMessages();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
@@ -120,6 +122,30 @@ function IssueDetailBody({
       });
       queryClient.invalidateQueries({ queryKey: ["project", ownerName, projectName, "issues"] });
       router.history.push(prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`));
+    },
+  });
+  const commentDeleteMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return deleteIssueComment(runtimeConfig, csrfToken, {
+        commentId,
+        issueNumber,
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+      });
+      const modal = document.getElementById("comment-delete-modal");
+      if (modal) {
+        modal.classList.add("hide");
+        modal.classList.remove("in");
+        modal.style.display = "none";
+        modal.setAttribute("aria-hidden", "true");
+      }
+      document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
     },
   });
 
@@ -466,6 +492,18 @@ function IssueDetailBody({
         open={deleteModalOpen}
         onCancel={() => setDeleteModalOpen(false)}
         onConfirm={() => deleteMutation.mutate()}
+      />
+      <CommentDeleteConfirm
+        confirmLabel={t("button.yes")}
+        message={t("common.comment.delete.confirm")}
+        onConfirm={(requestUri) => {
+          const commentId = requestUri.match(/\/comment\/(\d+)(?:\/delete)?(?:[?#].*)?$/u)?.[1];
+          if (commentId) {
+            commentDeleteMutation.mutate(commentId);
+          }
+        }}
+        title={t("common.comment.delete")}
+        cancelLabel={t("button.no")}
       />
     </div>
   );
@@ -2110,6 +2148,52 @@ function DeleteConfirm({
         </button>
         <button type="button" className="ybtn" data-dismiss="modal" onClick={onCancel}>
           No
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CommentDeleteConfirm({
+  cancelLabel,
+  confirmLabel,
+  message,
+  onConfirm,
+  title,
+}: {
+  cancelLabel: string;
+  confirmLabel: string;
+  message: string;
+  onConfirm: (requestUri: string) => void;
+  title: string;
+}) {
+  return (
+    <div id="comment-delete-modal" className="modal hide fade">
+      <div className="modal-header">
+        <button type="button" className="close" data-dismiss="modal">
+          ×
+        </button>
+        <h3>{title}</h3>
+      </div>
+      <div className="modal-body">
+        <p>{message}</p>
+      </div>
+      <div className="modal-footer">
+        <button
+          id="comment-delete-confirm"
+          type="button"
+          className="ybtn ybtn-danger"
+          onClick={(event) => {
+            const requestUri = event.currentTarget.dataset.requestUri;
+            if (requestUri) {
+              onConfirm(requestUri);
+            }
+          }}
+        >
+          {confirmLabel}
+        </button>
+        <button type="button" className="ybtn" data-dismiss="modal">
+          {cancelLabel}
         </button>
       </div>
     </div>
