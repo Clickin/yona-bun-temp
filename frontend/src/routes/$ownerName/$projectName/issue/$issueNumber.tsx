@@ -224,7 +224,14 @@ function IssueDetailBody({
                 issueHref={issueHref}
                 voters={voters}
               />
-              {canUpdate ? <IssueActionButtons canDelete={canDelete} /> : null}
+              <IssueActionButtons
+                canDelete={canDelete}
+                canUpdate={canUpdate}
+                editHref={prefixBasePath(
+                  basePath,
+                  `/${ownerName}/${projectName}/issue/${issueNumber}/editform`,
+                )}
+              />
             </div>
             <dl className={sharers.length ? "sharer-list" : "sharer-list hideFromDisplayOnly"}>
               <dt className="issue-share-title mb10">
@@ -350,7 +357,15 @@ function IssueDetailBody({
                   />
                 )}
                 <div className="act-row right-menu-icons">
-                  {canUpdate ? <IssueActionButtons canDelete={canDelete} wrap={false} /> : null}
+                  <IssueActionButtons
+                    canDelete={canDelete}
+                    canUpdate={canUpdate}
+                    editHref={prefixBasePath(
+                      basePath,
+                      `/${ownerName}/${projectName}/issue/${issueNumber}/editform`,
+                    )}
+                    wrap={false}
+                  />
                 </div>
               </form>
               <IssueIndexTimeline basePath={basePath} issue={issue} />
@@ -639,17 +654,40 @@ function IssueSelectedLabels({
   );
 }
 
-function IssueActionButtons({ canDelete, wrap = true }: { canDelete: boolean; wrap?: boolean }) {
+function IssueActionButtons({
+  canDelete,
+  canUpdate,
+  editHref,
+  wrap = true,
+}: {
+  canDelete: boolean;
+  canUpdate: boolean;
+  editHref: string;
+  wrap?: boolean;
+}) {
   const buttons = (
     <span className="act-row">
-      <button
-        type="button"
-        className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
-        data-toggle="tooltip"
-        title="Edit"
-      >
-        <i className="yobicon-edit-2"></i>
-      </button>
+      {canUpdate ? (
+        <button
+          type="button"
+          className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+          data-toggle="tooltip"
+          title="Edit"
+        >
+          <i className="yobicon-edit-2"></i>
+        </button>
+      ) : (
+        <a href={editHref}>
+          <button
+            type="button"
+            className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+            data-toggle="tooltip"
+            title="See text"
+          >
+            <i className="yobicon-edit-2"></i>
+          </button>
+        </a>
+      )}
       {canDelete ? (
         <a href="#deleteConfirm" data-toggle="modal">
           <button

@@ -130,6 +130,31 @@ test("project issue detail renders legacy read-only sharer list", async ({ page 
   );
 });
 
+test("project issue detail renders legacy read-only action buttons", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, { viewerCanUpdate: false });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const expected =
+    `<span class="act-row"><a href="__BASE_PATH__/admin/sample/issue/11/editform"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="See text"><i class="yobicon-edit-2"></i></button></a><a href="#deleteConfirm" data-toggle="modal"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="tooltip" title="Delete"><i class="yobicon-trash"></i></button></a></span>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, ".span-left-pane > .board-actrow > .act-row")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+
+  const expectedRight =
+    `<div class="act-row right-menu-icons"><a href="__BASE_PATH__/admin/sample/issue/11/editform"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="See text"><i class="yobicon-edit-2"></i></button></a><a href="#deleteConfirm" data-toggle="modal"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="tooltip" title="Delete"><i class="yobicon-trash"></i></button></a></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, ".issue-info .act-row.right-menu-icons")).toEqual(
+    await canonicalizeHtml(page, expectedRight),
+  );
+});
+
 test("project issue detail renders legacy attachment file items", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const issueAttachments = {
