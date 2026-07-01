@@ -51,6 +51,13 @@ function withThreadReplyAuthorInfo(html: string, threadId: number) {
   );
 }
 
+function withThreadTextareaStyle(html: string, threadId: number) {
+  return html.replace(
+    `<textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-${threadId}" markdown="true">`,
+    `<textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-${threadId}" style="height:100px" markdown="true">`,
+  );
+}
+
 function withCodeReviewUploadForm(html: string) {
   return html.replace(
     `<div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">`,
@@ -243,12 +250,16 @@ index 1234567..abcdef1 100644
   await expect(
     page.locator("#thread-77 .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),
   ).toBeVisible();
+  await expect(page.locator("#editor-contents-thread-77")).toHaveAttribute(
+    "style",
+    /height:\s*100px/,
+  );
   await expect(page.locator("#comment-501 .comment-avatar img")).toHaveAttribute("alt", "dev");
   expect(detailRequests).toEqual(["branch=main"]);
   expect(await canonicalize(page, ".diff-body")).toEqual(
     await canonicalizeHtml(
       page,
-      `<div class="diff-body">${EXPECTED_FILE_DIFF.replace('</tr><tr class="add" data-line="3"', `</tr>${withCommentUpdateForm(withThreadUploadForm(withThreadReplyAuthorInfo(EXPECTED_INLINE_THREAD_ROW, 77)), basePath, 501, "Line **note**")}<tr class="add" data-line="3"`).replaceAll("__BASE_PATH__", basePath)}<div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div>`,
+      `<div class="diff-body">${EXPECTED_FILE_DIFF.replace('</tr><tr class="add" data-line="3"', `</tr>${withCommentUpdateForm(withThreadUploadForm(withThreadTextareaStyle(withThreadReplyAuthorInfo(EXPECTED_INLINE_THREAD_ROW, 77), 77)), basePath, 501, "Line **note**")}<tr class="add" data-line="3"`).replaceAll("__BASE_PATH__", basePath)}<div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div>`,
     ),
   );
 });
@@ -308,12 +319,16 @@ index 1234567..abcdef1 100644
 
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator("#thread-78[data-range-startside='A']")).toBeVisible();
+  await expect(page.locator("#editor-contents-thread-78")).toHaveAttribute(
+    "style",
+    /height:\s*100px/,
+  );
   await expect(page.locator("#comment-502 .comment-avatar img")).toHaveAttribute("alt", "dev");
   expect(detailRequests).toEqual(["branch=main"]);
   expect(await canonicalize(page, ".diff-body")).toEqual(
     await canonicalizeHtml(
       page,
-      `<div class="diff-body">${EXPECTED_FILE_DIFF.replace('</tr><tr class="add" data-line="2"', `</tr>${withCommentUpdateForm(withThreadUploadForm(withThreadReplyAuthorInfo(EXPECTED_A_SIDE_INLINE_THREAD_ROW, 78)), basePath, 502, "Old line **note**")}<tr class="add" data-line="2"`).replaceAll("__BASE_PATH__", basePath)}<div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div>`,
+      `<div class="diff-body">${EXPECTED_FILE_DIFF.replace('</tr><tr class="add" data-line="2"', `</tr>${withCommentUpdateForm(withThreadUploadForm(withThreadTextareaStyle(withThreadReplyAuthorInfo(EXPECTED_A_SIDE_INLINE_THREAD_ROW, 78), 78)), basePath, 502, "Old line **note**")}<tr class="add" data-line="2"`).replaceAll("__BASE_PATH__", basePath)}<div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div>`,
     ),
   );
 });
@@ -363,12 +378,16 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   await expect(
     page.locator("#thread-88 .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),
   ).toBeVisible();
+  await expect(page.locator("#editor-contents-thread-88")).toHaveAttribute(
+    "style",
+    /height:\s*100px/,
+  );
   await expect(page.locator("#comment-601 .comment-avatar img")).toHaveAttribute("alt", "dev");
   expect(detailRequests).toEqual(["branch=main"]);
   expect(await canonicalize(page, ".board-comment-wrap")).toEqual(
     await canonicalizeHtml(
       page,
-      `<div class="board-comment-wrap"><div class="non-ranged-threads-wrap">${withCommentUpdateForm(withThreadUploadForm(withThreadReplyAuthorInfo(EXPECTED_NON_RANGED_THREAD, 88)), basePath, 601, "General **note**", [COMMENT_601_ATTACHMENT]).replaceAll("__BASE_PATH__", basePath)}</div>${withCommentUploadForm(`<form id="comment-form" action="${basePath}/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`)}</div>`,
+      `<div class="board-comment-wrap"><div class="non-ranged-threads-wrap">${withCommentUpdateForm(withThreadUploadForm(withThreadTextareaStyle(withThreadReplyAuthorInfo(EXPECTED_NON_RANGED_THREAD, 88), 88)), basePath, 601, "General **note**", [COMMENT_601_ATTACHMENT]).replaceAll("__BASE_PATH__", basePath)}</div>${withCommentUploadForm(`<form id="comment-form" action="${basePath}/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`)}</div>`,
     ),
   );
   await page.locator('[data-toggle="comment-edit"][data-comment-id="601"]').click();

@@ -312,7 +312,11 @@ function NonRangedThread({
           </div>
           <div className="write-comment-box">
             <div className="write-comment-wrap">
-              <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
+              <Editor
+                editorMode="code-review-body"
+                textareaStyle={{ height: "100px" }}
+                wrapId={`thread-${thread.id}`}
+              />
               <UploadForm />
               <div className="right-txt">
                 <button
@@ -684,7 +688,15 @@ function stringField(value: unknown, fallback: string) {
   return typeof value === "string" ? value : fallback;
 }
 
-function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) {
+function Editor({
+  editorMode,
+  textareaStyle,
+  wrapId,
+}: {
+  editorMode: string;
+  textareaStyle?: { height: string };
+  wrapId: string;
+}) {
   const { t } = useLegacyMessages();
   return (
     <div data-toggle="markdown-editor" className="mt10">
@@ -734,6 +746,7 @@ function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) 
               className="editorSeries content comment nm"
               data-editor-mode={editorMode}
               id={`editor-contents-${wrapId}`}
+              style={textareaStyle}
               {...legacyMarkdownTextareaAttr}
             ></textarea>
           </div>

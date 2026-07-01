@@ -84,6 +84,11 @@ below as implemented boundaries or non-comparable sample-data states.
 | Direct legacy PR/review form/fragment routes | App runtime replacement boundary. | REST JSON plus React render | data-boundary | not-applicable | P5 | none unless parent reclassifies | Legacy create/edit/comment/review routes are server form/fragment endpoints. Current app runtime uses REST JSON/API-return plus React render; direct legacy HTML fragments are compatibility evidence, not a new frontend data source. |
 | PR delete action | Legacy PR behavior. | PR detail route | route | not-applicable | P5 | none unless parent reclassifies | Legacy exposes source-branch delete/restore, not a pull-request delete route. Current UI preserves source-branch actions only. |
 
+Follow-up evidence: commit detail and PR changes thread reply forms now pin the
+`partial_comment_form_on_thread.scala.html` `common.editor("contents", "",
+"style=height:100px", "code-review-body")` output by asserting
+`code-review-body` textareas keep inline `style="height:100px"`.
+
 ## Integrated Status Delta Findings
 
 These rows come from `output/playwright/visual-sweep/latest.json` checked at

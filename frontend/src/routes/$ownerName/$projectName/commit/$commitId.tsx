@@ -864,7 +864,11 @@ function CodeCommentThreadView({
           </div>
           <div className="write-comment-box">
             <div className="write-comment-wrap">
-              <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
+              <Editor
+                editorMode="code-review-body"
+                textareaStyle={{ height: "100px" }}
+                wrapId={`thread-${thread.id}`}
+              />
               <UploadForm resourceType="COMMIT_COMMENT" />
               <div className="right-txt">
                 <button
@@ -1066,11 +1070,13 @@ function stringField(value: unknown, fallback: string) {
 function Editor({
   editorMode,
   textareaName = "contents",
+  textareaStyle,
   value = "",
   wrapId,
 }: {
   editorMode: string;
   textareaName?: string;
+  textareaStyle?: { height: string };
   value?: string;
   wrapId: string;
 }) {
@@ -1124,6 +1130,7 @@ function Editor({
               data-editor-mode={editorMode}
               id={`editor-${textareaName}-${wrapId}`}
               defaultValue={value}
+              style={textareaStyle}
               {...legacyMarkdownTextareaAttr}
             ></textarea>
           </div>
