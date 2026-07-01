@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, Navigate } from "@tanstack/react-router";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
 import { currentSessionQueryOptions } from "../api/session";
 import { readWorkspaceOverviewRest } from "../api/workspace";
@@ -63,6 +63,7 @@ function HomeScreen({
       : "";
   const routePathWithoutSlash = routePath.replace(/^\/+/u, "");
   const defaultLandingWithoutSlash = defaultLandingPath.replace(/^\/+/u, "");
+  const defaultLandingTarget = safeDefaultLandingPath(defaultLandingPath);
   const shouldShowDefaultLandingButton =
     routePath !== "/" &&
     routePathWithoutSlash !== "" &&
@@ -127,6 +128,15 @@ function HomeScreen({
     }
     event.preventDefault();
     void loadMoreNotifications();
+  }
+
+  if (
+    isAuthenticated &&
+    routePath === "/" &&
+    defaultLandingTarget &&
+    defaultLandingTarget !== "/"
+  ) {
+    return <Navigate to={defaultLandingTarget} />;
   }
 
   if (isAuthenticated) {
@@ -1272,6 +1282,10 @@ function SidebarRecentIssueItem({ basePath, issue }: { basePath: string; issue: 
 function stringField(record: YonaRecord, key: string, fallback: string): string {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+function safeDefaultLandingPath(path: string) {
+  return path.startsWith("/") && !path.startsWith("//") ? path : "";
 }
 
 function valueString(value: unknown, fallback: string) {

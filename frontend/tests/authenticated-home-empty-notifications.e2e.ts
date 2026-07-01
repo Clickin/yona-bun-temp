@@ -366,6 +366,16 @@ const EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS = {
   warningPaddingTop: "15px",
 };
 
+test("authenticated index redirects to the configured non-root default landing", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedNotifications(page, [], { defaultLandingPath: "/me" });
+
+  await page.goto(`${basePath}/`);
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/me`);
+});
+
 test("authenticated home empty notifications matches legacy index notifications screen DOM", async ({
   page,
 }) => {
@@ -1224,17 +1234,26 @@ async function mockWorkspaceSidebarProjects(page: Page) {
   });
 }
 
-async function mockAuthenticatedNotifications(page: Page, items: unknown[]) {
-  await mockAuthenticatedNotificationsByPage(page, () => ({
-    hasMore: false,
-    items,
-    total: items.length,
-  }));
+async function mockAuthenticatedNotifications(
+  page: Page,
+  items: unknown[],
+  sessionOverrides: Record<string, unknown> = {},
+) {
+  await mockAuthenticatedNotificationsByPage(
+    page,
+    () => ({
+      hasMore: false,
+      items,
+      total: items.length,
+    }),
+    sessionOverrides,
+  );
 }
 
 async function mockAuthenticatedNotificationsByPage(
   page: Page,
   resolveResponse: (url: URL) => { hasMore: boolean; items: unknown[]; total: number },
+  sessionOverrides: Record<string, unknown> = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -1248,6 +1267,7 @@ async function mockAuthenticatedNotificationsByPage(
         isSiteAdmin: true,
         loginId: "admin",
         userLabel: "Site Admin",
+        ...sessionOverrides,
       }),
     });
   });
