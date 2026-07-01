@@ -997,6 +997,7 @@ function CommentForm({ action }: { action: string }) {
     <form id="comment-form" action={action} method="post" encType="multipart/form-data">
       <div className="write-comment-box">
         <Editor editorMode="comment-body" wrapId="comment" />
+        <UploadForm resourceType="COMMIT_COMMENT" />
         <div className="write-comment-wrap">
           <div className="right-txt">
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
