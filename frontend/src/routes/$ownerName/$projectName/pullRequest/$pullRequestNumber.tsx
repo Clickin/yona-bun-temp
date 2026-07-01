@@ -314,6 +314,7 @@ function PullRequestEventItem({
         {event.commits.map((commit) => (
           <PullRequestEventCommit
             commit={commit}
+            event={event}
             key={commit.commitId}
             pullRequest={pullRequest}
             runtimeConfig={runtimeConfig}
@@ -429,14 +430,17 @@ function PullRequestEventDate({ event }: { event: PullRequestEvent }) {
 
 function PullRequestEventCommit({
   commit,
+  event,
   pullRequest,
   runtimeConfig,
 }: {
   commit: PullRequestCommit;
+  event: PullRequestEvent;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
   const commitPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}/changes/${commit.commitId}`;
+  const authorPath = prefixBasePath(runtimeConfig.basePath, `/${event.senderLoginId}`);
 
   return (
     <li
@@ -447,11 +451,16 @@ function PullRequestEventCommit({
       <a href={prefixBasePath(runtimeConfig.basePath, commitPath)} className="commit-id">
         {commit.commitShortId}
       </a>
-      <img
-        src="/assets/images/default-avatar-32.png"
+      <a
+        href={authorPath}
         className="avatar-wrap small hide-in-mobile"
-        alt=""
-      />
+        data-toggle="tooltip"
+        data-placement="top"
+        title={event.senderLabel || event.senderLoginId}
+      >
+        <img src={event.senderAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />{" "}
+        {commit.authorEmail}
+      </a>
       <div className="date hide-in-mobile" title={commit.authorDateLabel}>
         {commit.authorDateLabel}
       </div>
