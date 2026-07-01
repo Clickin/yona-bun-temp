@@ -315,12 +315,22 @@ function IssueDetailBody({
                     </div>
                   </dd>
                 </dl>
-                <IssueLabelSelect
-                  basePath={basePath}
-                  labels={labels}
-                  ownerName={ownerName}
-                  projectName={projectName}
-                />
+                {canUpdate ? (
+                  <IssueLabelSelect
+                    basePath={basePath}
+                    labels={labels}
+                    ownerName={ownerName}
+                    projectName={projectName}
+                  />
+                ) : (
+                  <IssueSelectedLabels
+                    basePath={basePath}
+                    issueState={issueState}
+                    labels={labels}
+                    ownerName={ownerName}
+                    projectName={projectName}
+                  />
+                )}
                 <div className="act-row right-menu-icons">
                   {canUpdate ? <IssueActionButtons canDelete={canDelete} wrap={false} /> : null}
                 </div>
@@ -570,6 +580,48 @@ function IssueLabelSelect({
           className="hide"
           dangerouslySetInnerHTML={{ __html: optionsHtml }}
         />
+      </dd>
+    </dl>
+  );
+}
+
+function IssueSelectedLabels({
+  basePath,
+  issueState,
+  labels,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  issueState: string;
+  labels: RestIssueDetailResponse["labels"];
+  ownerName: string;
+  projectName: string;
+}) {
+  if (!labels?.length) {
+    return null;
+  }
+
+  const listLink = prefixBasePath(
+    basePath,
+    `/${ownerName}/${projectName}/issues?state=${encodeURIComponent(issueState)}`,
+  );
+
+  return (
+    <dl>
+      <dt>Label</dt>
+      <dd>
+        {labels.map((label) => (
+          <a
+            href={`${listLink}&labelIds=${encodeURIComponent(String(label.id))}`}
+            className="label issue-label active static"
+            data-label-id={String(label.id)}
+            key={String(label.id)}
+            style={{ background: stringField(label.color) }}
+          >
+            {label.name}
+          </a>
+        ))}
       </dd>
     </dl>
   );

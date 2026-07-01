@@ -33,7 +33,28 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   );
 });
 
-async function mockProjectIssueDetail(page: Page) {
+test("project issue detail renders legacy read-only selected labels", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, { viewerCanUpdate: false });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#labelIds")).toHaveCount(0);
+  await expect(page.locator(".issue-info .label.issue-label.active.static")).toHaveAttribute(
+    "data-label-id",
+    "8",
+  );
+
+  const expected =
+    `<dl><dt>Label</dt><dd><a href="__BASE_PATH__/admin/sample/issues?state=open&labelIds=8" class="label issue-label active static" data-label-id="8" style="background:rgb(81, 170, 204)">bug</a></dd></dl>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(
+    await canonicalize(page, ".issue-info form dl:has(a.label.issue-label.active.static)"),
+  ).toEqual(await canonicalizeHtml(page, expected));
+});
+
+async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string, unknown> = {}) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -95,91 +116,93 @@ async function mockProjectIssueDetail(page: Page) {
     });
   });
   await page.route("**/api/v1/projects/admin/sample/issues/11", async (route) => {
+    const issue = {
+      assigneeLoginId: "admin",
+      assigneeLabel: "Site Admin",
+      attachments: [],
+      authorAvatarUrl: "/assets/images/default-avatar-32.png",
+      authorLabel: "Dev Member",
+      authorLoginId: "dev",
+      bodyChecksum: "body-sha1",
+      bodyHtml: "<p>Body <strong>markdown</strong></p>",
+      bodyMarkdown: "Body **markdown**",
+      childClosedCount: 0,
+      childIssues: [],
+      childOpenCount: 0,
+      commentCount: 1,
+      comments: [
+        {
+          attachments: [],
+          authorAvatarUrl: "/assets/images/default-avatar-32.png",
+          authorLabel: "Dev Member",
+          authorLoginId: "dev",
+          contentsHtml: "<p>Comment <strong>markdown</strong></p>",
+          contentsMarkdown: "Comment **markdown**",
+          createdLabel: "Jul 2, 2026",
+          id: 77,
+          viewerCanDelete: true,
+          viewerCanUpdate: true,
+          viaEmail: false,
+          voterCount: 0,
+          voters: [],
+        },
+      ],
+      createdLabel: "Jul 1, 2026",
+      dueDateLabel: "Jul 5, 2026",
+      hasVoted: false,
+      issueId: 42,
+      issueNumber: 11,
+      issueUpdateMillis: 1782892800000,
+      issueVoters: [
+        {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          emailAddress: "admin@example.com",
+          loginId: "admin",
+          userId: 1,
+          userLabel: "Site Admin",
+        },
+        {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          emailAddress: "dev@example.com",
+          loginId: "dev",
+          userId: 2,
+          userLabel: "Dev Member",
+        },
+      ],
+      isDraft: false,
+      isFavorited: false,
+      isWatching: false,
+      labels: [
+        {
+          categoryId: "3",
+          categoryIsExclusive: false,
+          categoryName: "type",
+          color: "#51aacc",
+          id: "8",
+          name: "bug",
+        },
+      ],
+      milestoneId: 5,
+      milestoneTitle: "v1.0",
+      ownerName: "admin",
+      parentIssueId: null,
+      projectName: "sample",
+      sharers: [],
+      state: "open",
+      timeline: [],
+      title: "Fix flaky issue",
+      viewerCanComment: true,
+      viewerCanDelete: true,
+      viewerCanUpdate: true,
+      viewerUserId: 1,
+      voterCount: 2,
+      watcherCount: 0,
+      weight: 2,
+      ...issueOverrides,
+    };
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        assigneeLoginId: "admin",
-        assigneeLabel: "Site Admin",
-        attachments: [],
-        authorAvatarUrl: "/assets/images/default-avatar-32.png",
-        authorLabel: "Dev Member",
-        authorLoginId: "dev",
-        bodyChecksum: "body-sha1",
-        bodyHtml: "<p>Body <strong>markdown</strong></p>",
-        bodyMarkdown: "Body **markdown**",
-        childClosedCount: 0,
-        childIssues: [],
-        childOpenCount: 0,
-        commentCount: 1,
-        comments: [
-          {
-            attachments: [],
-            authorAvatarUrl: "/assets/images/default-avatar-32.png",
-            authorLabel: "Dev Member",
-            authorLoginId: "dev",
-            contentsHtml: "<p>Comment <strong>markdown</strong></p>",
-            contentsMarkdown: "Comment **markdown**",
-            createdLabel: "Jul 2, 2026",
-            id: 77,
-            viewerCanDelete: true,
-            viewerCanUpdate: true,
-            viaEmail: false,
-            voterCount: 0,
-            voters: [],
-          },
-        ],
-        createdLabel: "Jul 1, 2026",
-        dueDateLabel: "Jul 5, 2026",
-        hasVoted: false,
-        issueId: 42,
-        issueNumber: 11,
-        issueUpdateMillis: 1782892800000,
-        issueVoters: [
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            emailAddress: "admin@example.com",
-            loginId: "admin",
-            userId: 1,
-            userLabel: "Site Admin",
-          },
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            emailAddress: "dev@example.com",
-            loginId: "dev",
-            userId: 2,
-            userLabel: "Dev Member",
-          },
-        ],
-        isDraft: false,
-        isFavorited: false,
-        isWatching: false,
-        labels: [
-          {
-            categoryId: "3",
-            categoryIsExclusive: false,
-            categoryName: "type",
-            color: "#51aacc",
-            id: "8",
-            name: "bug",
-          },
-        ],
-        milestoneId: 5,
-        milestoneTitle: "v1.0",
-        ownerName: "admin",
-        parentIssueId: null,
-        projectName: "sample",
-        sharers: [],
-        state: "open",
-        timeline: [],
-        title: "Fix flaky issue",
-        viewerCanComment: true,
-        viewerCanDelete: true,
-        viewerCanUpdate: true,
-        viewerUserId: 1,
-        voterCount: 2,
-        watcherCount: 0,
-        weight: 2,
-      }),
+      body: JSON.stringify(issue),
     });
   });
 }
