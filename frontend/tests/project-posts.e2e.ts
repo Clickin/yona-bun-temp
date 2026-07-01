@@ -174,6 +174,24 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
       EXPECTED_PROJECT_POST_DETAIL.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  expect(await boardDetailMetrics(page)).toEqual({
+    actionRowTextAlign: "right",
+    attachmentTemplateId: "tplAttachedFile",
+    bodyDisplay: "block",
+    bodyWidth: 1260,
+    contentAllowedUpdate: "true",
+    contentLineHeight: "22.165px",
+    deleteUri: `${basePath}/admin/sample/post/3`,
+    footerKeyboardHref: "#helpKeys",
+    headerMarginBottom: "15px",
+    leftPaneWidth: 938,
+    newPostHref: `${basePath}/admin/sample/postform`,
+    postBodyId: "post-body-3",
+    postEditorId: "post-3",
+    rightPaneWidth: 295,
+    titleFontSize: "18px",
+    watchButtonHeight: 30,
+  });
 });
 
 test("project board detail toggles legacy watch state through REST", async ({ page }) => {
@@ -850,6 +868,47 @@ async function boardTwoColumnMetrics(page: Page) {
       textPadding: textStyle.padding,
       title: element.getAttribute("title"),
       wrapperClass: element.getAttribute("class"),
+    };
+  });
+}
+
+async function boardDetailMetrics(page: Page) {
+  return page.locator(".project-page-wrap.board-view").evaluate((element) => {
+    const header = element.querySelector(".board-header.issue") as HTMLElement;
+    const title = header.querySelector(".title") as HTMLElement;
+    const body = element.querySelector(".board-body") as HTMLElement;
+    const leftPane = element.querySelector(".span-left-pane") as HTMLElement;
+    const rightPane = element.querySelector(".span-right-pane") as HTMLElement;
+    const actionRow = element.querySelector(".board-actrow") as HTMLElement;
+    const content = element.querySelector("#post-body-3 .content.markdown-wrap") as HTMLElement;
+    const watchButton = element.querySelector("#watch-button") as HTMLButtonElement;
+    const newPost = element.querySelector(".issue-info.board-labels .project-btn-item a");
+    const deleteButton = document.querySelector("#deleteConfirm [data-request-uri]");
+    const template = document.querySelector("#tplAttachedFile");
+    const keymap = element.querySelector(".board-footer a");
+    const headerStyle = window.getComputedStyle(header);
+    const titleStyle = window.getComputedStyle(title);
+    const bodyStyle = window.getComputedStyle(body);
+    const actionStyle = window.getComputedStyle(actionRow);
+    const contentStyle = window.getComputedStyle(content);
+
+    return {
+      actionRowTextAlign: actionStyle.textAlign,
+      attachmentTemplateId: template?.id ?? null,
+      bodyDisplay: bodyStyle.display,
+      bodyWidth: Math.round(body.getBoundingClientRect().width),
+      contentAllowedUpdate: content.getAttribute("data-allowed-update"),
+      contentLineHeight: contentStyle.lineHeight,
+      deleteUri: deleteButton?.getAttribute("data-request-uri") ?? null,
+      footerKeyboardHref: keymap?.getAttribute("href") ?? null,
+      headerMarginBottom: headerStyle.marginBottom,
+      leftPaneWidth: Math.round(leftPane.getBoundingClientRect().width),
+      newPostHref: newPost?.getAttribute("href") ?? null,
+      postBodyId: element.querySelector("#post-body-3")?.id ?? null,
+      postEditorId: element.querySelector("#post-3")?.id ?? null,
+      rightPaneWidth: Math.round(rightPane.getBoundingClientRect().width),
+      titleFontSize: titleStyle.fontSize,
+      watchButtonHeight: Math.round(watchButton.getBoundingClientRect().height),
     };
   });
 }
