@@ -794,6 +794,7 @@ export function readProjectPostFormOptionsQueryOptions(
     ownerName: string;
     path?: string;
     projectName: string;
+    readme?: boolean;
   },
 ) {
   return queryOptions({
@@ -805,6 +806,7 @@ export function readProjectPostFormOptionsQueryOptions(
         edit: input.edit ?? false,
         issueTemplate: input.issueTemplate ?? false,
         path: input.path ?? "",
+        readme: input.readme ?? false,
       },
     ],
   });
