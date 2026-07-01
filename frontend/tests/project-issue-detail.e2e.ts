@@ -612,6 +612,17 @@ test("project issue detail renders legacy state-change timeline event", async ({
   expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
     await canonicalizeHtml(page, LEFT_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await eventTimelineMetrics(page, "#event-88")).toEqual({
+    avatarHeight: 24,
+    avatarWidth: 24,
+    dateFontSize: "11px",
+    eventDisplay: "list-item",
+    lineHeight: "30px",
+    paddingLeft: "55px",
+    stateBackground: "rgb(253, 105, 86)",
+    stateMarginRight: "10px",
+    stateWidth: 90,
+  });
 });
 
 test("project issue detail renders legacy assignee timeline event", async ({ page }) => {
@@ -1266,6 +1277,28 @@ async function indexCommentMetrics(page: Page) {
       rowLeft: Math.round(rect.left),
       rowWidth: Math.round(rect.width),
       shareDisplay: share ? window.getComputedStyle(share).display : null,
+    };
+  });
+}
+
+async function eventTimelineMetrics(page: Page, selector: string) {
+  return page.locator(selector).evaluate((event) => {
+    const eventStyle = window.getComputedStyle(event);
+    const state = event.querySelector<HTMLElement>(".state");
+    const stateStyle = state ? window.getComputedStyle(state) : null;
+    const avatar = event.querySelector<HTMLImageElement>(".avatar-wrap.small");
+    const date = event.querySelector<HTMLElement>(".date");
+
+    return {
+      avatarHeight: avatar ? Math.round(avatar.getBoundingClientRect().height) : null,
+      avatarWidth: avatar ? Math.round(avatar.getBoundingClientRect().width) : null,
+      dateFontSize: date ? window.getComputedStyle(date).fontSize : null,
+      eventDisplay: eventStyle.display,
+      lineHeight: eventStyle.lineHeight,
+      paddingLeft: eventStyle.paddingLeft,
+      stateBackground: stateStyle?.backgroundColor ?? null,
+      stateMarginRight: stateStyle?.marginRight ?? null,
+      stateWidth: state ? Math.round(state.getBoundingClientRect().width) : null,
     };
   });
 }
