@@ -125,6 +125,12 @@ Worker update, 2026-06-26:
   bracketed leading title words as `.title-prefix[href="javascript:void(0)"]`
   before the stripped title link. Verification: `pnpm --dir frontend test:e2e
   -- project-posts.e2e.ts`.
+- Worker update, 2026-07-01 board list keymap follow-up: project board list
+  now restores the `board/list.scala.html` `help.keymap("boardList", project)`
+  caller under `.post-list.project-page-wrap`, including the trigger, `#helpKeys`
+  modal, Posting List shortcuts, project/site shortcut columns, Git pull-request
+  shortcut, manager setting shortcut, and Mac/non-Mac modifier behavior.
+  Verification: `pnpm --dir frontend test:e2e -- project-posts.e2e.ts`.
 
 ## Evidence Checked
 
