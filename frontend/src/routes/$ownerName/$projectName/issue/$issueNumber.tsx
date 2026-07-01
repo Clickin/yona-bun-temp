@@ -940,6 +940,32 @@ function IssueEventRow({
     );
   }
 
+  if (eventType === "ISSUE_REFERRED_FROM_PULL_REQUEST") {
+    const pullRequestNumber = stringField(event.pullRequestNumber, stringField(event.newValue));
+    const pullRequestTitle = stringField(event.pullRequestTitle, pullRequestNumber);
+    return (
+      <li className="event" id={`event-${eventId}`}>
+        <span className="state changed">mentioned</span>
+        {sender} mentioned this issue in{" "}
+        <strong>
+          Pull request -{pullRequestNumber}{" "}
+          <a
+            href={prefixBasePath(
+              basePath,
+              `/${ownerName}/${projectName}/pullRequest/${pullRequestNumber}`,
+            )}
+            className="link"
+          >
+            {pullRequestTitle}
+          </a>
+        </strong>
+        <span className="date">
+          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+        </span>
+      </li>
+    );
+  }
+
   return (
     <li className="event" id={`event-${eventId}`}>
       {stringField(event.newValue)} by {sender}
