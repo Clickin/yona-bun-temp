@@ -150,7 +150,7 @@ const NON_RANGED_THREAD = {
       authorId: 2,
       authorLabel: "Dev Member",
       authorLoginId: "dev",
-      canDelete: false,
+      canDelete: true,
       canUpdate: false,
       contentsHtml: "<p>General note</p>",
       contentsMarkdown: "General note",
@@ -178,6 +178,9 @@ const EXPECTED_PULL_REQUEST_NON_RANGED_THREAD = EXPECTED_PULL_REQUEST_REVIEW_CAR
   `<div class="non-ranged-threads-wrap">${EXPECTED_PULL_REQUEST_NON_RANGED_THREAD_HTML.replace(
     `<div id="comment-body-801"><div class="comment-body markdown-wrap" data-via-email="false"><p>General note</p></div><div class="attachments" data-attachments="[]"></div></div>`,
     `<div class="comment-body markdown-wrap" data-via-email="false"><p>General note</p></div><div class="attachments" data-attachments="[]"></div>`,
+  ).replace(
+    `</span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General note</p></div>`,
+    `</span><span class="edit pull-right"><button class="btn-transparent pull-right close" data-request-method="delete" data-request-uri="__BASE_PATH__/comments/review_comment/801"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General note</p></div>`,
   )}</div>`,
 )
   .replace(

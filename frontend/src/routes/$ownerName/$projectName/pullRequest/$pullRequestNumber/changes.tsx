@@ -375,6 +375,20 @@ function NonRangedThreadComment({
               {comment.createdLabel}
             </a>
           </span>
+          {comment.canDelete ? (
+            <span className="edit pull-right">
+              <button
+                className="btn-transparent pull-right close"
+                data-request-method="delete"
+                data-request-uri={prefixBasePath(
+                  runtimeConfig.basePath,
+                  `/comments/review_comment/${comment.id}`,
+                )}
+              >
+                <i className="yobicon-trash"></i>
+              </button>
+            </span>
+          ) : null}
         </div>
         <div
           className="comment-body markdown-wrap"
