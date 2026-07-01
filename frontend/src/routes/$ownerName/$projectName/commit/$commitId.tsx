@@ -15,6 +15,24 @@ import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
 
+type ParsedDiffLine =
+  | { kind: "range"; text: string }
+  | {
+      kind: "line";
+      lineNumber: number;
+      newLineNumber: number | null;
+      oldLineNumber: number | null;
+      prefix: string;
+      text: string;
+      type: "add" | "context" | "remove";
+    };
+
+type ParsedFileDiff = {
+  lines: ParsedDiffLine[];
+  pathA: string;
+  pathB: string;
+};
+
 export const Route = createFileRoute("/$ownerName/$projectName/commit/$commitId")({
   component: ProjectCommitDetailRoute,
   validateSearch(search) {
@@ -155,9 +173,15 @@ function ProjectCommitDetailBody({
 
               <div className="diff-body">
                 {detail.files.map((file) => (
-                  <pre className="diff-file" key={file.path}>
-                    {file.patch}
-                  </pre>
+                  <FileDiffView
+                    commitA={detail.parentCommit?.commitId ?? ""}
+                    commitB={commit?.commitId ?? commitId}
+                    file={file}
+                    key={file.path}
+                    ownerName={ownerName}
+                    projectName={projectName}
+                    runtimeConfig={runtimeConfig}
+                  />
                 ))}
                 <div className="btnPop">
                   <button type="button" className="ybtn ybtn-info ybtn-small">
@@ -243,6 +267,153 @@ function ProjectCommitDetailBody({
       </div>
     </div>
   );
+}
+
+function FileDiffView({
+  commitA,
+  commitB,
+  file,
+  ownerName,
+  projectName,
+  runtimeConfig,
+}: {
+  commitA: string;
+  commitB: string;
+  file: { path: string; patch: string };
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const parsed = parseUnifiedDiff(file.path, file.patch);
+  const filePath = parsed.pathB || parsed.pathA || file.path;
+  const fileId = filePath.replace(/\//g, "-").replace(/\./g, "-");
+  const commitAShort = shortenCommitId(commitA);
+  const commitBShort = shortenCommitId(commitB);
+
+  return (
+    <div id={fileId} className="diff-partial-outer">
+      <div className="diff-partial-inner">
+        <div className="diff-partial-meta">
+          <div className="diff-partial-commit">
+            <div className="diff-partial-commit-id">
+              {commitA && parsed.pathA ? (
+                <a
+                  href={projectHref(
+                    runtimeConfig.basePath,
+                    ownerName,
+                    projectName,
+                    "code",
+                    commitA,
+                    parsed.pathA,
+                  )}
+                  title={commitA}
+                  target="_blank"
+                >
+                  {commitAShort}
+                </a>
+              ) : (
+                "\u00a0"
+              )}
+            </div>
+            <div className="diff-partial-commit-id">
+              {commitB && parsed.pathB ? (
+                <a
+                  href={projectHref(
+                    runtimeConfig.basePath,
+                    ownerName,
+                    projectName,
+                    "code",
+                    commitB,
+                    parsed.pathB,
+                  )}
+                  title={commitB}
+                  target="_blank"
+                >
+                  {commitBShort}
+                </a>
+              ) : (
+                "\u00a0"
+              )}
+            </div>
+          </div>
+          <div className="diff-partial-file">
+            <span className="filename">{filePath}</span>
+          </div>
+        </div>
+        <div className="diff-partial-code" data-hashcode={filePath}>
+          <div className="patch-header">
+            {parsed.pathA ? <div className="path">{`--- ${parsed.pathA}`}</div> : null}
+            {parsed.pathB ? <div className="path">{`+++ ${parsed.pathB}`}</div> : null}
+          </div>
+          <table
+            className="diff-container show-comments"
+            data-path-a={parsed.pathA}
+            data-path-b={parsed.pathB}
+            data-commit-a={commitA}
+            data-commit-b={commitB}
+            data-file-path={filePath}
+          >
+            <tbody>
+              {parsed.lines.map((line) =>
+                line.kind === "range" ? (
+                  <tr className="range" key={diffLineKey(line)}>
+                    <td className="linenum">
+                      <div className="line-number" data-line-num="...">
+                        <span className="hidden">...</span>
+                      </div>
+                    </td>
+                    <td className="linenum">
+                      <div className="line-number" data-line-num="...">
+                        <span className="hidden">...</span>
+                      </div>
+                    </td>
+                    <td className="hunk">{line.text}</td>
+                  </tr>
+                ) : (
+                  <DiffLineView key={diffLineKey(line)} line={line} />
+                ),
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }> }) {
+  const oldLine = line.oldLineNumber === null ? "" : String(line.oldLineNumber);
+  const newLine = line.newLineNumber === null ? "" : String(line.newLineNumber);
+
+  return (
+    <tr
+      className={line.type}
+      data-line={line.lineNumber}
+      data-type={line.type}
+      data-side={line.type === "remove" ? "A" : "B"}
+    >
+      <td className="linenum">
+        <i className="yobicon-comments"></i>
+        <div className="line-number" data-line-num={oldLine}></div>
+        <span className="hidden">{oldLine}</span>
+      </td>
+      <td className="linenum">
+        <div className="line-number" data-line-num={newLine}></div>
+        <span className="hidden">{newLine}</span>
+      </td>
+      <td className="code">
+        <pre className="diff-partial-codeline">{`${line.prefix}${line.text}`}</pre>
+      </td>
+    </tr>
+  );
+}
+
+function diffLineKey(line: ParsedDiffLine) {
+  if (line.kind === "range") {
+    return `range-${line.text}`;
+  }
+
+  return `line-${line.oldLineNumber ?? ""}-${line.newLineNumber ?? ""}-${line.prefix}${line.text}`;
 }
 
 function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
@@ -460,4 +631,80 @@ function commitCommentsHref(
   commitId: string,
 ) {
   return projectHref(basePath, ownerName, projectName, "commit", commitId, "comments");
+}
+
+function parseUnifiedDiff(path: string, patch: string): ParsedFileDiff {
+  let pathA = path;
+  let pathB = path;
+  let oldLineNumber = 0;
+  let newLineNumber = 0;
+  const lines: ParsedDiffLine[] = [];
+
+  for (const rawLine of patch.split(/\r?\n/u)) {
+    if (rawLine.startsWith("--- ")) {
+      pathA = normalizeDiffPath(rawLine.slice(4));
+      continue;
+    }
+    if (rawLine.startsWith("+++ ")) {
+      pathB = normalizeDiffPath(rawLine.slice(4));
+      continue;
+    }
+    if (rawLine.startsWith("@@")) {
+      const hunkMatch = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/u.exec(rawLine);
+      oldLineNumber = hunkMatch ? Number(hunkMatch[1]) : oldLineNumber;
+      newLineNumber = hunkMatch ? Number(hunkMatch[2]) : newLineNumber;
+      lines.push({ kind: "range", text: rawLine });
+      continue;
+    }
+    if (rawLine.startsWith("+") && !rawLine.startsWith("+++")) {
+      lines.push({
+        kind: "line",
+        lineNumber: newLineNumber,
+        newLineNumber,
+        oldLineNumber: null,
+        prefix: "+",
+        text: rawLine.slice(1),
+        type: "add",
+      });
+      newLineNumber += 1;
+      continue;
+    }
+    if (rawLine.startsWith("-") && !rawLine.startsWith("---")) {
+      lines.push({
+        kind: "line",
+        lineNumber: oldLineNumber,
+        newLineNumber: null,
+        oldLineNumber,
+        prefix: "-",
+        text: rawLine.slice(1),
+        type: "remove",
+      });
+      oldLineNumber += 1;
+      continue;
+    }
+    if (rawLine.startsWith(" ")) {
+      lines.push({
+        kind: "line",
+        lineNumber: newLineNumber,
+        newLineNumber,
+        oldLineNumber,
+        prefix: " ",
+        text: rawLine.slice(1),
+        type: "context",
+      });
+      oldLineNumber += 1;
+      newLineNumber += 1;
+    }
+  }
+
+  return { lines, pathA, pathB };
+}
+
+function normalizeDiffPath(input: string) {
+  const path = input.trim().split(/\s+/u)[0] ?? "";
+  return path.replace(/^[ab]\//u, "");
+}
+
+function shortenCommitId(commitId: string) {
+  return commitId.length < 7 ? commitId : commitId.slice(0, 7);
 }
