@@ -114,7 +114,6 @@ async function readDesktopTransferMetrics(page: Page) {
     const activeTabStyle = getComputedStyle(activeTab);
     const bubbleStyle = getComputedStyle(bubble);
     const rowStyle = getComputedStyle(firstRow);
-    const labelStyle = getComputedStyle(firstLabel);
     const descStyle = getComputedStyle(firstDesc);
     const ownerStyle = getComputedStyle(ownerInput);
     const acceptStyle = getComputedStyle(accept);
