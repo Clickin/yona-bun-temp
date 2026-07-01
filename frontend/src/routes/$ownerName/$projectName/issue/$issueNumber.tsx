@@ -153,6 +153,7 @@ function IssueDetailBody({
                   </form>
                 </div>
                 <div id={`issue-body-${issueNumber}`}>
+                  <TasklistBar />
                   <div
                     className="content markdown-wrap"
                     data-allowed-update={String(canUpdate)}
@@ -898,6 +899,7 @@ function IssueCommentRow({
           </span>
         </div>
         <div id={`comment-body-${commentId}`}>
+          <TasklistBar />
           <div
             className="comment-body markdown-wrap"
             data-allowed-update={String(canUpdate)}
@@ -911,6 +913,19 @@ function IssueCommentRow({
         </div>
       </div>
     </li>
+  );
+}
+
+function TasklistBar() {
+  return (
+    <div className="tasklist">
+      <div className="task-title">
+        Tasks<span className="done-counter"></span>
+      </div>
+      <div className="task-progress">
+        <div className="bar red" style={{ width: 0 }} title="Tasklist"></div>
+      </div>
+    </div>
   );
 }
 
