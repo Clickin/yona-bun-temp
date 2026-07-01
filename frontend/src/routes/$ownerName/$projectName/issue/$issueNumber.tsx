@@ -226,7 +226,7 @@ function IssueDetailBody({
               />
               {canUpdate ? <IssueActionButtons canDelete={canDelete} /> : null}
             </div>
-            <dl className={`sharer-list ${sharers.length ? "" : "hideFromDisplayOnly"}`}>
+            <dl className={sharers.length ? "sharer-list" : "sharer-list hideFromDisplayOnly"}>
               <dt className="issue-share-title mb10">
                 Issue Sharer{" "}
                 <span className="num issue-sharer-count">
@@ -244,7 +244,18 @@ function IssueDetailBody({
                     defaultValue={sharerValue}
                     title=""
                   />
-                ) : null}
+                ) : (
+                  sharers.map((sharer) => {
+                    const loginId = stringField(sharer.loginId);
+                    return (
+                      <div className="text-ellipsis sharer-item" key={loginId}>
+                        <a href={prefixBasePath(basePath, `/${loginId}`)} className="usf-group">
+                          <strong className="name">{stringField(sharer.userLabel)}</strong>
+                        </a>
+                      </div>
+                    );
+                  })
+                )}
               </dd>
             </dl>
             <div className="watcher-list"></div>

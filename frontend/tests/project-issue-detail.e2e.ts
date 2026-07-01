@@ -95,6 +95,41 @@ test("project issue detail renders legacy read-only selected labels", async ({ p
   ).toEqual(await canonicalizeHtml(page, expected));
 });
 
+test("project issue detail renders legacy read-only sharer list", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    sharers: [
+      {
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        loginId: "qa1",
+        role: "member",
+        userId: 31,
+        userLabel: "QA One",
+      },
+      {
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        loginId: "qa2",
+        role: "member",
+        userId: 32,
+        userLabel: "QA Two",
+      },
+    ],
+    viewerCanUpdate: false,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#issueSharer")).toHaveCount(0);
+
+  const expected =
+    `<dl class="sharer-list"><dt class="issue-share-title mb10">Issue Sharer <span class="num issue-sharer-count">2</span></dt><dd id="sharer-list" class=""><div class="text-ellipsis sharer-item"><a href="__BASE_PATH__/qa1" class="usf-group"><strong class="name">QA One</strong></a></div><div class="text-ellipsis sharer-item"><a href="__BASE_PATH__/qa2" class="usf-group"><strong class="name">QA Two</strong></a></div></dd></dl>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, ".span-left-pane > .sharer-list")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+});
+
 test("project issue detail renders legacy attachment file items", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const issueAttachments = {
