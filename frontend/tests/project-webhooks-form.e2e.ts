@@ -115,6 +115,33 @@ test("project webhooks renders legacy project/partial_webhooks_list.scala.html p
   });
 });
 
+test("project webhooks menu settings link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  const settingsLink = page.locator("#subMenuProjectSetting a");
+  await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await settingsLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/setting`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
+  await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
 test("project webhooks JSON type forces git push checkbox like legacy script", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectAdmin(page);
@@ -155,27 +182,28 @@ async function mockProjectAdmin(page: Page, webhooks: unknown[] = []) {
   await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
     await route.fulfill({
       contentType: "application/json",
+      body: JSON.stringify(projectContainer()),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(projectSettings()),
+    });
+  });
+  await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
       body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        enrollmentRequestCount: 0,
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
+        branches: [
+          { isDefault: true, name: "main", shortName: "main" },
+          { isDefault: false, name: "develop", shortName: "develop" },
+        ],
+        defaultBranch: "main",
+        noHead: false,
         ownerName: "admin",
+        permissions: { canDelete: true, canUpdate: true },
         projectName: "sample",
-        vcs: "GIT",
-        viewerCanUpdate: true,
       }),
     });
   });
@@ -192,6 +220,54 @@ async function mockProjectAdmin(page: Page, webhooks: unknown[] = []) {
       }),
     });
   });
+}
+
+function projectContainer() {
+  return {
+    backgroundImageUrl: "/assets/images/bg-default-project.png",
+    enrollmentRequestCount: 0,
+    id: 7,
+    isFavorite: false,
+    isForkedFromOrigin: false,
+    isPrivate: false,
+    isProtected: false,
+    logoUrl: "/assets/images/project_default_logo.png",
+    menuSetting: {
+      board: true,
+      code: true,
+      issue: true,
+      milestone: true,
+      pullRequest: true,
+      review: true,
+    },
+    ownerName: "admin",
+    projectName: "sample",
+    vcs: "GIT",
+    viewerCanUpdate: true,
+  };
+}
+
+function projectSettings() {
+  return {
+    ...projectContainer(),
+    backgroundUrl: "/assets/images/bg-default-project.png",
+    codeMemberOnly: false,
+    defaultReviewerCount: 2,
+    isFavorited: false,
+    isUsingReviewerCount: true,
+    maxReviewerCount: 3,
+    organizationName: "",
+    overview: "Sample overview",
+    projectId: 7,
+    projectScope: "PUBLIC",
+    showBoard: true,
+    showCode: true,
+    showIssue: true,
+    showMilestone: true,
+    showPullRequest: true,
+    showReview: true,
+    watchCount: 5,
+  };
 }
 
 async function webhookListMetrics(page: Page) {

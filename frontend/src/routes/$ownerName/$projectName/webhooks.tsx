@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import type { FormEvent } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import type { AnchorHTMLAttributes, ComponentType, FormEvent } from "react";
 import { useState } from "react";
 import {
   createProjectWebhookRest,
@@ -20,6 +20,10 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
+>;
 
 export const Route = createFileRoute("/$ownerName/$projectName/webhooks")({
   component: ProjectWebhooksRoute,
@@ -120,12 +124,7 @@ function ProjectWebhooksBody({
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap webhook-editor-wrap">
-        <ProjectSettingMenu
-          basePath={runtimeConfig.basePath}
-          ownerName={ownerName}
-          project={project}
-          projectName={projectName}
-        />
+        <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
         {booleanField(webhooks.viewerCanUpdate) ? (
           <form
             id="formNewWebhook"
@@ -507,12 +506,10 @@ function ProjectMenuItem({
 }
 
 function ProjectSettingMenu({
-  basePath,
   ownerName,
   project,
   projectName,
 }: {
-  basePath: string;
   ownerName: string;
   project: ProjectContainer;
   projectName: string;
@@ -523,44 +520,44 @@ function ProjectSettingMenu({
   return (
     <ul className="nav nav-tabs">
       <li id="subMenuProjectSetting" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/setting`}>
           {t("project.setting")}
-        </a>
+        </LegacyInternalLink>
       </li>
       <li id="subMenuProjectMember" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/members`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/members`}>
           {t("project.member")}
           <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
-        </a>
+        </LegacyInternalLink>
       </li>
       <li id="subMenuIssueLabel" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/labels`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/labels`}>
           {t("issue.label")}
-        </a>
+        </LegacyInternalLink>
       </li>
       <li id="subMenuWebhook" className="active">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/webhooks`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/webhooks`}>
           {t("project.webhook")}
-        </a>
+        </LegacyInternalLink>
       </li>
       <li id="subMenuProjectTransfer" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/transfer`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/transfer`}>
           {t("project.transfer")}
-        </a>
+        </LegacyInternalLink>
       </li>
       <li id="subMenuProjectDelete" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/deleteform`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/deleteform`}>
           {t("project.delete")}
-        </a>
+        </LegacyInternalLink>
       </li>
       <li
         id="subMenuProjectChangeVCS"
         className=""
         style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
       >
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/changeVCS`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/changeVCS`}>
           {t("project.changeVCS")}
-        </a>
+        </LegacyInternalLink>
       </li>
     </ul>
   );
