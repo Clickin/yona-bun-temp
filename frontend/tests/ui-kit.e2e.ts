@@ -279,6 +279,62 @@ test("standalone UI kit root shell mounts legacy anonymous login dialog", async 
   );
 });
 
+test("standalone UI kit root shell opens legacy login dialog from data-login required", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/_UIKit`);
+  await page.locator(".page-wrap-outer").evaluate((container, href) => {
+    container.insertAdjacentHTML(
+      "beforeend",
+      `<a id="login-required-fixture" href="${href}" data-login="required">Log in</a>`,
+    );
+  }, `${basePath}/users/loginform`);
+  const dialog = page.locator("#loginDialog");
+  await dialog.evaluate((element) => {
+    const loginId = element.querySelector<HTMLInputElement>("#loginIdOrEmailD");
+    const password = element.querySelector<HTMLInputElement>("#passwordD");
+    const error = element.querySelector<HTMLElement>(".error");
+    if (loginId) {
+      loginId.value = "stale-user";
+    }
+    if (password) {
+      password.value = "stale-password";
+    }
+    if (error) {
+      error.style.display = "block";
+    }
+  });
+
+  await page.locator("#login-required-fixture").click();
+
+  await expect(dialog).toHaveClass("modal loginDialog in");
+  await expect(dialog).toHaveAttribute("aria-hidden", "false");
+  await expect(dialog).toHaveCSS("display", "block");
+  await expect(dialog.locator("#loginIdOrEmailD")).toBeFocused();
+  await expect(dialog.locator("#loginIdOrEmailD")).toHaveValue("");
+  await expect(dialog.locator("#passwordD")).toHaveValue("");
+  await expect(dialog.locator(".error")).toBeHidden();
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  expect(await readLoginDialogOpenMetrics(page)).toEqual({
+    bodyPadding: "15px",
+    closeButtonFloat: "right",
+    dialogLeft: "640px",
+    dialogMarginLeft: "-230px",
+    dialogWidth: "460px",
+    formMarginBottom: "20px",
+    formMarginTop: "20px",
+    inputBoxShadow: "none",
+    loginButtonWidth: "400px",
+    rememberLabelDisplay: "inline-block",
+  });
+
+  await dialog.locator('[data-dismiss="modal"]').click();
+  await expect(dialog).toHaveClass("modal loginDialog hide");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+});
+
 test("standalone UI kit root shell mounts legacy select2 formatter templates", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const expectedTemplates = extractLegacyScriptTemplates(
@@ -438,6 +494,35 @@ async function readMobileUIKitMetrics(page: Page) {
       subtitleFontSize: subtitleStyle.fontSize,
       subtitleHeight: subtitleStyle.height,
       subtitleLineHeight: subtitleStyle.lineHeight,
+    };
+  });
+}
+
+async function readLoginDialogOpenMetrics(page: Page) {
+  return page.evaluate(() => {
+    const dialog = document.querySelector<HTMLElement>("#loginDialog");
+    const modalBody = document.querySelector<HTMLElement>("#loginDialog .modal-body");
+    const close = document.querySelector<HTMLElement>("#loginDialog .close");
+    const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");
+    const input = document.querySelector<HTMLElement>("#loginIdOrEmailD");
+    const loginButton = document.querySelector<HTMLElement>("#loginDialog .fullsize");
+    const rememberLabel = document.querySelector<HTMLElement>("#loginDialog .bg-checkbox");
+    if (!dialog || !modalBody || !close || !form || !input || !loginButton || !rememberLabel) {
+      throw new Error("Expected login dialog metric targets are missing.");
+    }
+    const dialogStyle = getComputedStyle(dialog);
+    const formStyle = getComputedStyle(form);
+    return {
+      bodyPadding: getComputedStyle(modalBody).padding,
+      closeButtonFloat: getComputedStyle(close).float,
+      dialogLeft: dialogStyle.left,
+      dialogMarginLeft: dialogStyle.marginLeft,
+      dialogWidth: dialogStyle.width,
+      formMarginBottom: formStyle.marginBottom,
+      formMarginTop: formStyle.marginTop,
+      inputBoxShadow: getComputedStyle(input).boxShadow,
+      loginButtonWidth: getComputedStyle(loginButton).width,
+      rememberLabelDisplay: getComputedStyle(rememberLabel).display,
     };
   });
 }

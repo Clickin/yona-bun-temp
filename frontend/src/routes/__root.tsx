@@ -68,7 +68,41 @@ function RootResetShell() {
           modal.style.display = "none";
           modal.setAttribute("aria-hidden", "true");
         }
+        document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
         event.preventDefault();
+        return;
+      }
+
+      const requiredLogin = target?.closest<HTMLElement>('[data-login="required"]');
+      if (requiredLogin) {
+        const dialog = document.querySelector<HTMLElement>("#loginDialog");
+        if (dialog) {
+          dialog
+            .querySelectorAll<HTMLInputElement>(
+              'input[name="loginIdOrEmail"], input[name="password"]',
+            )
+            .forEach((input) => {
+              input.value = "";
+            });
+          const error = dialog.querySelector<HTMLElement>(".error");
+          if (error) {
+            error.style.display = "none";
+          }
+          dialog.classList.remove("hide");
+          dialog.classList.add("in");
+          dialog.style.display = "block";
+          dialog.setAttribute("aria-hidden", "false");
+          if (!document.querySelector(".modal-backdrop")) {
+            const backdrop = document.createElement("div");
+            backdrop.className = "modal-backdrop in";
+            document.body.append(backdrop);
+          }
+          window.setTimeout(() => {
+            dialog.querySelector<HTMLInputElement>('input[name="loginIdOrEmail"]')?.focus();
+          }, 0);
+        }
+        event.preventDefault();
+        event.stopPropagation();
         return;
       }
 
