@@ -82,6 +82,33 @@ test("project issue detail switches legacy comment editor tabs through data-togg
   await expect(page.locator("#edit-contents")).not.toHaveClass(/active/);
 });
 
+test("project issue detail toggles legacy comment update form through comment-edit", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const comment = page.locator(".span-left-pane #comment-77");
+  await expect(comment.locator("#comment-editform-77")).toBeHidden();
+  await expect(comment.locator("#comment-body-77")).toBeVisible();
+
+  await comment.locator('[data-toggle="comment-edit"][data-comment-id="77"]').click();
+  await expect(comment.locator("#comment-editform-77")).toBeVisible();
+  await expect(comment.locator("#comment-body-77")).toBeHidden();
+  await expect(comment.locator(".add-a-comment")).toBeHidden();
+  expect(await commentUpdateFormMetrics(page)).toEqual({
+    bodyDisplay: "none",
+    formDisplay: "block",
+    replyDisplay: "none",
+    textareaValue: "Comment **markdown**",
+  });
+
+  await comment.locator("#comment-editform-77 .ybtn-cancel").click();
+  await expect(comment.locator("#comment-editform-77")).toBeHidden();
+  await expect(comment.locator("#comment-body-77")).toBeVisible();
+});
+
 test("project issue detail renders legacy draft header state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {
@@ -1037,6 +1064,21 @@ function commentVoters() {
       userLabel: "QA Four",
     },
   ];
+}
+
+async function commentUpdateFormMetrics(page: Page) {
+  return page.locator(".span-left-pane #comment-77").evaluate((comment) => {
+    const form = comment.querySelector<HTMLElement>("#comment-editform-77");
+    const body = comment.querySelector<HTMLElement>("#comment-body-77");
+    const reply = document.querySelector<HTMLElement>(".add-a-comment");
+    const textarea = comment.querySelector<HTMLTextAreaElement>("#editor-contents-77");
+    return {
+      bodyDisplay: body ? window.getComputedStyle(body).display : null,
+      formDisplay: form ? window.getComputedStyle(form).display : null,
+      replyDisplay: reply ? window.getComputedStyle(reply).display : null,
+      textareaValue: textarea?.value,
+    };
+  });
 }
 
 async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string, unknown> = {}) {

@@ -157,6 +157,31 @@ function RootResetShell() {
         return;
       }
 
+      const commentEdit = target?.closest<HTMLElement>(
+        '[data-toggle="comment-edit"], .comment-update-form .ybtn-cancel[data-comment-id]',
+      );
+      if (commentEdit) {
+        const commentId = commentEdit.dataset.commentId;
+        const editForm = commentId
+          ? document.getElementById(`comment-editform-${commentId}`)
+          : null;
+        const commentBody = commentId ? document.getElementById(`comment-body-${commentId}`) : null;
+        if (editForm && commentBody) {
+          const willShowForm = window.getComputedStyle(editForm).display === "none";
+          editForm.setAttribute("style", `display: ${willShowForm ? "block" : "none"};`);
+          if (willShowForm) {
+            commentBody.setAttribute("style", "display: none;");
+          } else {
+            commentBody.removeAttribute("style");
+          }
+          document.querySelectorAll<HTMLElement>(".add-a-comment").forEach((reply) => {
+            reply.setAttribute("style", "display: none;");
+          });
+        }
+        event.preventDefault();
+        return;
+      }
+
       const dismissAlert = target?.closest<HTMLElement>('[data-dismiss="alert"]');
       if (dismissAlert) {
         dismissAlert.closest<HTMLElement>(".alert")?.remove();
