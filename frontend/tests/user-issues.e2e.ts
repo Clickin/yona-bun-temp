@@ -217,7 +217,9 @@ test("current-user issues page matches legacy issue/my_list.scala.html shell", a
   );
   await page.click("form#search button[type=submit]");
   await searchResponse;
-  await expect(page).toHaveURL(/query=needle/);
+  await expect(page).toHaveURL(
+    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&query=needle&state=open`,
+  );
 });
 
 test("current-user issues page matches legacy filtered empty search state", async ({ page }) => {

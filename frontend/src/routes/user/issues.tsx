@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import type { FormEvent, HTMLAttributes, LiHTMLAttributes, MouseEvent } from "react";
 import { apiQueryKeys } from "../../api/query-keys";
 import { currentSessionQueryOptions } from "../../api/session";
@@ -106,30 +106,24 @@ function UserIssuesBody({
   const basePath = runtimeConfig.basePath;
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const activeFilterIds = quickFilterIds(search.filter, currentUserId);
-  const navigate = useNavigate({ from: Route.fullPath });
   const router = useRouter();
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const query = String(formData.get("filter") ?? "");
-    void navigate({
-      search: (current) => ({
-        ...current,
-        pageNum: 1,
-        query,
-      }),
-    });
+    router.history.push(userIssuesHref({ query }));
   };
   const userIssuesHref = (
-    next: Partial<Pick<UserIssuesSearch, "filter" | "orderBy" | "orderDir" | "state">>,
+    next: Partial<Pick<UserIssuesSearch, "filter" | "orderBy" | "orderDir" | "query" | "state">>,
   ) => {
     const params = new URLSearchParams();
     params.set("filter", next.filter ?? search.filter);
     params.set("orderBy", next.orderBy ?? search.orderBy);
     params.set("orderDir", next.orderDir ?? search.orderDir);
-    if (search.query) {
-      params.set("query", search.query);
+    const query = next.query ?? search.query;
+    if (query) {
+      params.set("query", query);
     }
     params.set("state", next.state ?? search.state);
     return `${prefixBasePath(basePath, "/user/issues")}?${params.toString()}`;
