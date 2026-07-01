@@ -261,7 +261,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `board/create.scala.html` | P4 board/milestone | /:owner/:projectName/postform | 13 |
 | `board/edit.scala.html` | P4 board/milestone | /:owner/:projectName/post/:postNumber/editform | 13 |
 | `board/list.scala.html` | P4 board/milestone | /:owner/:projectName/posts | 13 |
-| `milestone/create.scala.html` | P4 board/milestone | /:owner/:projectName/newMilestoneForm | 13 |
+| `milestone/create.scala.html` | P4 board/milestone | covered by `frontend/tests/project-milestone-create-form.e2e.ts`: `/admin/sample/newMilestoneForm` renders the legacy create form body, active Milestone project menu, title/content/state/due-date/uploader/action shells, and REST POST/redirect boundary | 13 |
 | `milestone/partial_status.scala.html` | P4 board/milestone | included partial caller route; inspect Play route and React owner | 13 |
 | `milestone/view.scala.html` | P4 board/milestone | /:owner/:projectName/milestone/:milestoneId | 13 |
 | `code/branches.scala.html` | P5 code/pr/review | /:owner/:projectName/branches | 30 |
