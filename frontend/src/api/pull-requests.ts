@@ -97,6 +97,7 @@ export type PullRequestPermissions = {
   canRestoreSourceBranch: boolean;
   canUpdate: boolean;
   canUpdateState: boolean;
+  canWatch: boolean;
 };
 
 export type PullRequestEvent = {
@@ -535,6 +536,7 @@ function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequ
       canRestoreSourceBranch: response.permissions?.canRestoreSourceBranch ?? false,
       canUpdate: response.permissions?.canUpdate ?? false,
       canUpdateState: response.permissions?.canUpdateState ?? false,
+      canWatch: response.permissions?.canWatch ?? false,
     },
     projectName: response.projectName ?? "",
     pullRequestNumber: response.pullRequestNumber ?? 0,

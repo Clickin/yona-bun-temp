@@ -41,6 +41,11 @@ const EXPECTED_PULL_REQUEST_ATTACHMENTS_DATA = EXPECTED_PULL_REQUEST_OVERVIEW.re
   `<div class="attachments" data-attachments='[{"id":11,"mimeType":"image/png","name":"review-note.png","size":1234,"sizeLabel":"1.2 KB","url":"__BASE_PATH__/files/11"}]'></div>`,
 );
 
+const EXPECTED_PULL_REQUEST_NO_WATCH_BUTTON = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
+  `<div class="pull-left"><button id="watch-button" type="button" class="ybtn" data-toggle="button" data-watching="false">Watch</button></div>`,
+  `<div class="pull-left"></div>`,
+);
+
 const EXPECTED_PULL_REQUEST_REVIEWER_CONTROLS = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right"><a id="btnAccept" href="__BASE_PATH__/admin/sample/pullRequest/9/accept" data-request-method="post" class="ybtn ybtn-success">Merge</a></div>`,
   `<div class="pull-right"><div id="reviewers" style="display:inline-block; margin-right:5px;"><span style="font-size: 13px; vertical-align: middle; margin: 0px 10px;"><strong>2</strong> participants</span><a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a></div><a data-request-method="post" class="ybtn ybtn-default" href="__BASE_PATH__/admin/sample/pullRequest/9/unreview">Cancel review</a><a id="btnAccept" href="__BASE_PATH__/admin/sample/pullRequest/9/accept" data-request-method="post" class="ybtn ybtn-success">Merge</a></div>`,
@@ -394,6 +399,38 @@ test("project pull request overview preserves legacy attachments data", async ({
   );
 });
 
+test("project pull request overview hides legacy watch button without WATCH permission", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    detail: {
+      permissions: {
+        canComment: true,
+        canDeleteSourceBranch: false,
+        canRead: true,
+        canReadChanges: true,
+        canReview: true,
+        canRestoreSourceBranch: false,
+        canUpdate: true,
+        canUpdateState: true,
+        canWatch: false,
+      },
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
+  await expect(page.locator("#watch-button")).toHaveCount(0);
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_NO_WATCH_BUTTON.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 test("project pull request overview renders legacy reviewer controls DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPullRequestOverview(page, {
@@ -559,6 +596,7 @@ test("project pull request overview renders legacy merged source-branch delete s
         canRestoreSourceBranch: false,
         canUpdate: true,
         canUpdateState: false,
+        canWatch: true,
       },
       state: "merged",
     },
@@ -590,6 +628,7 @@ test("project pull request overview renders legacy merged source-branch restore 
         canRestoreSourceBranch: true,
         canUpdate: true,
         canUpdateState: false,
+        canWatch: true,
       },
       sourceBranchExists: false,
       state: "merged",
@@ -696,6 +735,7 @@ async function mockPullRequestOverview(
         canRestoreSourceBranch: false,
         canUpdate: true,
         canUpdateState: true,
+        canWatch: true,
       },
       projectName: "sample",
       pullRequestNumber: 9,

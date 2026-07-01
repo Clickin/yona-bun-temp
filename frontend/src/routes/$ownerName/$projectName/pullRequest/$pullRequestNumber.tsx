@@ -146,15 +146,17 @@ function PullRequestOverviewBody({
 
           <div className="board-footer board-actrow">
             <div className="pull-left">
-              <button
-                id="watch-button"
-                type="button"
-                className={pullRequest.isWatching ? "ybtn ybtn-watching" : "ybtn"}
-                data-toggle="button"
-                data-watching={pullRequest.isWatching ? "true" : "false"}
-              >
-                {pullRequest.isWatching ? t("project.unwatch") : t("project.watch")}
-              </button>
+              {pullRequest.permissions.canWatch ? (
+                <button
+                  id="watch-button"
+                  type="button"
+                  className={pullRequest.isWatching ? "ybtn ybtn-watching" : "ybtn"}
+                  data-toggle="button"
+                  data-watching={pullRequest.isWatching ? "true" : "false"}
+                >
+                  {pullRequest.isWatching ? t("project.unwatch") : t("project.watch")}
+                </button>
+              ) : null}
             </div>
 
             <div className="mr5" style={{ display: "inline-block" }}>

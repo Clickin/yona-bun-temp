@@ -427,6 +427,7 @@ struct RestPullRequestPermissions {
     can_restore_source_branch: bool,
     can_update: bool,
     can_update_state: bool,
+    can_watch: bool,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -1743,6 +1744,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
             can_restore_source_branch: source_branch_state.can_restore,
             can_update,
             can_update_state: can_update,
+            can_watch: actor_id.is_some(),
         },
         project_name: project_name.clone(),
         pull_request_number: record.pull_request_number,
