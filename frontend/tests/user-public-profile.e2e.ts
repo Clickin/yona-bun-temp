@@ -117,14 +117,59 @@ test("public user profile matches legacy selected projects tab and click switchi
   await expect(page.locator("#issues")).toHaveClass(/active/u);
 });
 
-async function mockPublicProfile(page: Page) {
+test("current user profile projects tab renders legacy leave-project branch", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPublicProfile(page, {
+    currentUser: true,
+    memberProjectOwnerName: "alice",
+    viewerCanLeave: true,
+    viewerCanWatch: false,
+  });
+
+  await page.goto(`${basePath}/door?daysAgo=7&selected=projects`);
+  await expect(page.locator(".user-box")).toBeVisible();
+  await expect(page.locator("#projects")).toHaveClass(/active/u);
+
+  const leaveProject = page.locator("#projects .leaveProject");
+  await expect(leaveProject).toHaveAttribute("href", `${basePath}/info/leave/alice/sample`);
+  await expect(leaveProject).toHaveAttribute("data-projectname", "sample");
+
+  expect(await canonicalizeProfileRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedProfileScreen({
+        basePath,
+        currentUser: true,
+        daysAgo: 7,
+        memberProjectOwnerName: "alice",
+        selected: "projects",
+        viewerCanLeave: true,
+        viewerCanWatch: false,
+      }),
+    ),
+  );
+});
+
+type MockPublicProfileOptions = {
+  currentUser?: boolean;
+  memberProjectOwnerName?: string;
+  viewerCanLeave?: boolean;
+  viewerCanWatch?: boolean;
+};
+
+async function mockPublicProfile(page: Page, options: MockPublicProfileOptions = {}) {
+  const currentUser = options.currentUser ?? false;
+  const memberProjectOwnerName = options.memberProjectOwnerName ?? "door";
+  const viewerCanLeave = options.viewerCanLeave ?? false;
+  const viewerCanWatch = options.viewerCanWatch ?? true;
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         avatarUrl: "/assets/images/default-avatar-32.png",
-        isAnonymous: true,
-        loginId: "anonymous",
+        isAnonymous: !currentUser,
+        loginId: currentUser ? "door" : "anonymous",
       }),
     });
   });
@@ -176,11 +221,11 @@ async function mockPublicProfile(page: Page) {
             originOwnerName: "",
             originProjectName: "",
             overview: "Profile project",
-            ownerName: "door",
+            ownerName: memberProjectOwnerName,
             projectName: "sample",
             projectScope: "public",
-            viewerCanLeave: false,
-            viewerCanWatch: true,
+            viewerCanLeave,
+            viewerCanWatch,
             watchCount: 5,
           },
         ],
@@ -213,7 +258,7 @@ async function mockPublicProfile(page: Page) {
           },
         ],
         selected,
-        viewerCanEditProfile: false,
+        viewerCanEditProfile: currentUser,
       }),
     });
   });
@@ -320,13 +365,49 @@ function expectedProfileScreen({
   basePath,
   daysAgo,
   selected,
+  currentUser = false,
+  memberProjectOwnerName = "door",
+  viewerCanLeave = false,
+  viewerCanWatch = true,
 }: {
   basePath: string;
+  currentUser?: boolean;
   daysAgo: number;
+  memberProjectOwnerName?: string;
   selected: "issues" | "projects" | "pullRequests";
+  viewerCanLeave?: boolean;
+  viewerCanWatch?: boolean;
 }) {
+  const projectHref = `${basePath}/${memberProjectOwnerName}/sample`;
+  const stats = viewerCanLeave
+    ? `<a href="${basePath}/info/leave/${memberProjectOwnerName}/sample" class="nbtn black medium last leaveProject" data-projectname="sample"><i class="yobicon-trash"></i> Leave</a>`
+    : viewerCanWatch
+      ? `<a href="${projectHref}/watch" class="ybtn watchBtn"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span class="num-badge">5</span></a>`
+      : "";
   return EXPECTED_PROFILE_SCREEN.replaceAll("__BASE_PATH__", basePath)
     .replace('value="14"', `value="${daysAgo}"`)
+    .replace(
+      '<span class="email">door@example.com</span>',
+      currentUser
+        ? `<span class="email">door@example.com</span><div class="edit"><a href="${basePath}/user/editform" class="ybtn ybtn-default ybtn-mini"><i class="yobicon-edit"></i> Edit profile</a></div>`
+        : '<span class="email">door@example.com</span>',
+    )
+    .replace(
+      `<a href="${basePath}/door/sample" class="avatar-wrap small"><img src="/assets/images/project_default_logo.png"></a>`,
+      `<a href="${projectHref}" class="avatar-wrap small"><img src="/assets/images/project_default_logo.png"></a>`,
+    )
+    .replace(
+      `<a href="${basePath}/door/sample" class="project-name">sample</a>`,
+      `<a href="${projectHref}" class="project-name">sample</a>`,
+    )
+    .replace(
+      `<a href="${basePath}/door" class="owner-name-small">door</a>`,
+      `<a href="${basePath}/${memberProjectOwnerName}" class="owner-name-small">${memberProjectOwnerName}</a>`,
+    )
+    .replace(
+      `<a href="${basePath}/door/sample/watch" class="ybtn watchBtn"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span class="num-badge">5</span></a>`,
+      stats,
+    )
     .replace(
       '<li class="active"><a href="#issues" data-toggle="tab">Issue',
       `<li class="${selected === "issues" ? "active" : ""}"><a href="#issues" data-toggle="tab">Issue`,

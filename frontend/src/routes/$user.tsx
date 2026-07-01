@@ -605,7 +605,7 @@ function ProfileProjectRow({
                 basePath,
                 `/info/leave/${project.ownerName}/${project.projectName}`,
               )}
-              data-projectName={project.projectName}
+              data-projectname={project.projectName}
               className="nbtn black medium last leaveProject"
             >
               <i className="yobicon-trash"></i> {t("userinfo.leaveProject")}
