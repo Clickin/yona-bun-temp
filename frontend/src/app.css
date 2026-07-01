@@ -15,6 +15,16 @@ body {
   text-rendering: auto;
 }
 
+#root {
+  display: block;
+  width: 100%;
+}
+
+.main {
+  width: 100%;
+  background-color: #fff;
+}
+
 .blind {
   position: absolute;
   top: 0;
@@ -933,6 +943,7 @@ button[type="submit"]:focus {
 
 .page .tag-line-wrap .tag-line {
   margin-top: 10px;
+  margin-bottom: 1em;
   color: #7c7c7c;
   font-size: 1.2em;
 }

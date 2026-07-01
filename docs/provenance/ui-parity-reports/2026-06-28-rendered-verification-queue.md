@@ -228,20 +228,20 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `user/login.scala.html` | P1 auth/public/home/help | /login or /users/loginform | 21 |
 | `user/resetPassword.scala.html` | P1 auth/public/home/help | /resetPassword or /reset-password | 21 |
 | `user/signup.scala.html` | P1 auth/public/home/help | /register or /users/signupform | 21 |
-| `user/verified.scala.html` | P1 auth/public/home/help | included partial caller route; inspect Play route and React owner | 21 |
+| `user/verified.scala.html` | P1 auth/public/home/help | covered by `frontend/tests/verify-user.e2e.ts`: `/verify/door/ok-code` renders the legacy `.page.full > .center-wrap.tag-line-wrap.reset-password` success branch and invalid verification branch | 21 |
 | `project/change_vcs.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `project/delete.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `project/home.scala.html` | P2 project | /:owner/:projectName | 57 |
 | `project/issuelabels.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `project/list.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
-| `project/partial_dashboard_issuesbyassignee.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
-| `project/partial_dashboard_issuesbymilestone.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
-| `project/partial_dashboard_pullrequests.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
-| `project/partial_dashboard.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
-| `project/partial_history.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
+| `project/partial_dashboard_issuesbyassignee.scala.html` | P2 project | covered by `frontend/tests/project-home-dashboard.e2e.ts`: `/admin/sample?tabId=dashboard` renders `.overview-assignee` assignee and unassigned issue rows with legacy links/count/progress columns | 57 |
+| `project/partial_dashboard_issuesbymilestone.scala.html` | P2 project | covered by `frontend/tests/project-home-dashboard.e2e.ts`: `/admin/sample?tabId=dashboard` renders `.overview-milestone` milestone and no-milestone rows with legacy links/count/progress columns | 57 |
+| `project/partial_dashboard_pullrequests.scala.html` | P2 project | covered by `frontend/tests/project-home-dashboard.e2e.ts`: `/admin/sample?tabId=dashboard` renders the `.overview-pullrequest` empty branch with legacy new pull-request link | 57 |
+| `project/partial_dashboard.scala.html` | P2 project | covered by `frontend/tests/project-home-dashboard.e2e.ts`: `/admin/sample?tabId=dashboard` renders `.content-container.nm > .project-overview-home.row-fluid` and dashboard section ordering | 57 |
+| `project/partial_history.scala.html` | P2 project | covered by `frontend/tests/project-home-history.e2e.ts`: `/admin/sample?tabId=history` renders `.main-stream[style*=width:100%] > .activity-streams.unstyled` history rows | 57 |
 | `project/partial_issuelabels_editcategory.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `project/partial_issuelabels_editlabel.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
-| `project/partial_readme.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
+| `project/partial_readme.scala.html` | P2 project | covered by `frontend/tests/project-home-readme.e2e.ts`: `/admin/sample` renders the legacy `.bubble-wrap.gray.readme` empty README branch with create README link | 57 |
 | `project/partial_settingmenu.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `project/statistics.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `project/transfer.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |

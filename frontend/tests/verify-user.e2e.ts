@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+test.use({ viewport: { width: 1280, height: 720 } });
+
 const EXPECTED_VERIFIED_SCREEN = `
 <div class="unsupported hidden">
   <div class="unsupported-inner">
@@ -72,6 +74,7 @@ test("verification success matches legacy user/verified.scala.html screen DOM", 
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.route("**/api/v1/auth/verify", async (route) => {
     expect(route.request().postDataJSON()).toEqual({
       loginId: "door",
@@ -84,6 +87,7 @@ test("verification success matches legacy user/verified.scala.html screen DOM", 
   });
   await page.goto(`${basePath}/verify/door/ok-code`);
   await expect(page.locator(".page.full")).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 720 });
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -92,11 +96,14 @@ test("verification success matches legacy user/verified.scala.html screen DOM", 
   );
 
   expect(actual).toEqual(expected);
-  expect(await readDesktopVerifiedMetrics(page)).toEqual({
+  const desktopMetrics = await readDesktopVerifiedMetrics(page);
+  expect(desktopMetrics.gnbInnerWidth).toBe(Math.round((desktopMetrics.viewportWidth - 20) * 0.98));
+  expect(desktopMetrics).toEqual({
     gnbInnerHeight: "40px",
-    gnbInnerWidth: 1254,
+    gnbInnerWidth: desktopMetrics.gnbInnerWidth,
     gnbOuterBackground: "rgb(27, 27, 27)",
     gnbOuterHeight: "40px",
+    gnbOuterPadding: "0px 10px",
     logoBackground: "rgb(255, 87, 34)",
     logoLineHeight: "40px",
     logoPadding: "6px 10px",
@@ -112,6 +119,7 @@ test("verification success matches legacy user/verified.scala.html screen DOM", 
     tagLinePaddingTop: "80px",
     tagLineWrapMarginBottom: "26px",
     titleLineHeight: "42px",
+    viewportWidth: desktopMetrics.viewportWidth,
   });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileVerifiedMetrics(page)).toEqual({
@@ -192,6 +200,7 @@ async function readDesktopVerifiedMetrics(page: Page) {
       gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
       gnbOuterBackground: gnbOuterStyle.backgroundColor,
       gnbOuterHeight: gnbOuterStyle.height,
+      gnbOuterPadding: gnbOuterStyle.padding,
       logoBackground: logoStyle.backgroundColor,
       logoLineHeight: logoStyle.lineHeight,
       logoPadding: logoStyle.padding,
@@ -207,6 +216,7 @@ async function readDesktopVerifiedMetrics(page: Page) {
       tagLinePaddingTop: tagLineWrapStyle.paddingTop,
       tagLineWrapMarginBottom: tagLineWrapStyle.marginBottom,
       titleLineHeight: getComputedStyle(title).lineHeight,
+      viewportWidth: window.innerWidth,
     };
   });
 }

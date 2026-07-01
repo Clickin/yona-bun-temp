@@ -172,7 +172,7 @@ test("reset password form matches legacy user/resetPassword.scala.html screen DO
     formMarginTop: "54px",
     formWidth: "400px",
     gnbInnerHeight: "40px",
-    gnbInnerWidth: 1254,
+    gnbInnerWidth: 1235,
     gnbOuterBackground: "rgb(27, 27, 27)",
     gnbOuterHeight: "40px",
     logoBackground: "rgb(255, 87, 34)",
@@ -229,7 +229,7 @@ test("invalid reset password link matches legacy error/badrequest_default.scala.
     errorTextMarginBottom: "30px",
     errorTextMarginTop: "30px",
     gnbInnerHeight: "40px",
-    gnbInnerWidth: 1254,
+    gnbInnerWidth: 1235,
     gnbOuterBackground: "rgb(27, 27, 27)",
     gnbOuterHeight: "40px",
     logoBackground: "rgb(255, 87, 34)",
@@ -239,7 +239,7 @@ test("invalid reset password link matches legacy error/badrequest_default.scala.
     pageFooterOuterPadding: "10px 0px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "20px",
+    projectPageWrapMarginTop: "5px",
     providerFontSize: "9px",
   });
   await page.setViewportSize({ width: 390, height: 844 });

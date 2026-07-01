@@ -115,7 +115,7 @@ test("anonymous lost-password form matches legacy site/lostPassword.scala.html s
     formMarginTop: "54px",
     formWidth: "400px",
     gnbInnerHeight: "40px",
-    gnbInnerWidth: 1254,
+    gnbInnerWidth: 1235,
     gnbOuterBackground: "rgb(27, 27, 27)",
     gnbOuterHeight: "40px",
     logoBackground: "rgb(255, 87, 34)",

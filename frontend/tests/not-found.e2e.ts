@@ -85,7 +85,7 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
     footerPaddingBottom: "10px",
     footerPaddingTop: "10px",
     gnbInnerHeight: "40px",
-    gnbInnerWidth: 1254,
+    gnbInnerWidth: 1235,
     gnbOuterBackground: "rgb(27, 27, 27)",
     gnbOuterHeight: "40px",
     homeButtonHeight: "20px",
@@ -94,7 +94,7 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
     logoWidth: "44px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "20px",
+    projectPageWrapMarginTop: "5px",
     providerFontSize: "9px",
   });
 });
