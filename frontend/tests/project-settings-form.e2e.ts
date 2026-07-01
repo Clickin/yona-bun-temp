@@ -2,12 +2,12 @@ import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_PROJECT_SETTINGS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer">
+<header class="gnb-outer project-header">
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+      <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><a href="#" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</a></li><li><a href="#" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</a></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
@@ -40,7 +40,7 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
       .evaluateAll((roots) => roots.map((root) => root.className)),
   ).toEqual([
     "unsupported hidden",
-    "gnb-outer",
+    "gnb-outer project-header",
     "project-header-outer",
     "project-menu-outer",
     "page-wrap-outer",
@@ -103,6 +103,39 @@ test("project settings menu member link preserves legacy href with SPA transitio
     .toBe("kept");
   await expect(page.locator("#subMenuProjectMember")).toHaveClass("active");
   await expect(page.locator(".members.project .member")).toHaveCount(2);
+});
+
+test("project settings navbar search scope matches legacy projectLayout common navbar", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+
+  await page.goto(`${basePath}/admin/sample/setting`);
+
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  const searchForm = page.locator('form[name="gnb-search-form"]');
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/admin/sample/search`);
+  await expect(searchForm.locator('input[name="searchType"]')).toHaveValue("auto");
+  await expect(searchForm.locator(".search-box")).toHaveClass("search-box select");
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator('[data-toggle="search-scope"]')).toHaveCount(2);
+  await expect(page.locator('[data-toggle="search-scope"]').nth(0)).toHaveAttribute(
+    "data-action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator('[data-toggle="search-scope"]').nth(1)).toHaveAttribute(
+    "data-action",
+    `${basePath}/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await expect(page.locator(".gnb-search-form .btn-group")).toHaveClass("btn-group open");
+  await expect(page.locator(".gnb-search-form .dropdown-menu")).toBeVisible();
+
+  await page.locator('[data-toggle="search-scope"]').nth(1).click();
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
 });
 
 test("project settings reviewer count radios mirror legacy show/hide behavior", async ({
@@ -312,7 +345,13 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -425,7 +464,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");

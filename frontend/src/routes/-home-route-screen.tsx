@@ -428,16 +428,24 @@ function NotificationStreamItem({
 export function SiteLayoutShell({
   activeMenu,
   children,
+  projectSearchScope,
   runtimeConfig,
 }: {
   activeMenu?: "projects";
   children: React.ReactNode;
+  projectSearchScope?: { ownerName: string; projectName: string };
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const session = sessionQuery.data;
   const shouldRenderAnonymousUserMenu = sessionQuery.data?.isAnonymous !== false;
+  const projectSearchAction = projectSearchScope
+    ? prefixBasePath(
+        runtimeConfig.basePath,
+        `/${projectSearchScope.ownerName}/${projectSearchScope.projectName}/search`,
+      )
+    : null;
 
   return (
     <>
@@ -446,7 +454,7 @@ export function SiteLayoutShell({
           <p id="unsupported-content" />
         </div>
       </div>
-      <header className="gnb-outer">
+      <header className={projectSearchScope ? "gnb-outer project-header" : "gnb-outer"}>
         <div className="gnb-inner">
           <div className="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
             <i className="yobicon-arrow-left" />
@@ -473,12 +481,43 @@ export function SiteLayoutShell({
             ) : null}
             <li>
               <form
-                action={prefixBasePath(runtimeConfig.basePath, "/search")}
+                action={projectSearchAction ?? prefixBasePath(runtimeConfig.basePath, "/search")}
                 className="input-prepend gnb-search-form"
                 name="gnb-search-form"
               >
                 <input type="hidden" name="searchType" value="auto" />
-                <div className="search-box">
+                {projectSearchAction ? (
+                  <div className="btn-group">
+                    <button
+                      className="ybtn dropdown-toggle"
+                      data-toggle="dropdown"
+                      type="button"
+                      id="gnb-search-scope-title"
+                    >
+                      {t("search.scope.project")}
+                    </button>
+                    <ul className="dropdown-menu flat right">
+                      <li>
+                        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy search scope options use href="#" plus data-action. */}
+                        <a href="#" data-toggle="search-scope" data-action={projectSearchAction}>
+                          {t("search.scope.project")}
+                        </a>
+                      </li>
+                      <li>
+                        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy search scope options use href="#" plus data-action. */}
+                        <a
+                          href="#"
+                          data-toggle="search-scope"
+                          data-action={prefixBasePath(runtimeConfig.basePath, "/search")}
+                        >
+                          {t("search.scope.all")}
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                ) : null}
+                <div className={projectSearchScope ? "search-box select" : "search-box"}>
+                  {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
                   <input type="text" name="keyword" autoComplete="off" accessKey="S" />
                   <button type="submit">
                     <i className="yobicon-search" />

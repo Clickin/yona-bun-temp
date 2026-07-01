@@ -20,7 +20,10 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
 const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeProps?: { className?: string | undefined };
+    to: string;
+  }
 >;
 
 export const Route = createFileRoute("/$ownerName/$projectName/setting")({
@@ -29,11 +32,15 @@ export const Route = createFileRoute("/$ownerName/$projectName/setting")({
 
 function ProjectSettingRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { ownerName, projectName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell
+          projectSearchScope={{ ownerName, projectName }}
+          runtimeConfig={runtimeConfig}
+        >
           <ProjectSettingScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -754,7 +761,10 @@ function ProjectSettingMenu({
   return (
     <ul className="nav nav-tabs">
       <li id="subMenuProjectSetting" className={active === "setting" ? "active" : ""}>
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/setting`}>
+        <LegacyInternalLink
+          activeProps={{ className: undefined }}
+          to={`/${ownerName}/${projectName}/setting`}
+        >
           {t("project.setting")}
         </LegacyInternalLink>
       </li>
