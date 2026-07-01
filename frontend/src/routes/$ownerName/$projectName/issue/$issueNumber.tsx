@@ -918,6 +918,28 @@ function IssueEventRow({
     );
   }
 
+  if (eventType === "ISSUE_REFERRED_FROM_COMMIT") {
+    const commitId = stringField(event.newValue);
+    return (
+      <li className="event" id={`event-${eventId}`}>
+        <span className="state changed">mentioned</span>
+        {sender} mentioned this issue in{" "}
+        <strong>
+          Commit{" "}
+          <a
+            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/commit/${commitId}`)}
+            className="link"
+          >
+            @{commitId}
+          </a>
+        </strong>
+        <span className="date">
+          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+        </span>
+      </li>
+    );
+  }
+
   return (
     <li className="event" id={`event-${eventId}`}>
       {stringField(event.newValue)} by {sender}
