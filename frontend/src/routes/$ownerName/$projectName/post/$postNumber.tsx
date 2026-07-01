@@ -235,7 +235,7 @@ function ProjectPostDetailBody({
                   <strong className="name">{t("common.noAuthor")}</strong>
                 )}
               </a>
-              <PostingHistory historyHtml={post.historyHtml} />
+              <PostingHistory historyMarkdown={post.historyMarkdown} />
             </div>
             {post.bodyMarkdown ? (
               <>
@@ -403,10 +403,10 @@ function ProjectPostDetailBody({
   );
 }
 
-function PostingHistory({ historyHtml }: { historyHtml: string }) {
+function PostingHistory({ historyMarkdown }: { historyMarkdown: string }) {
   const { t } = useLegacyMessages();
 
-  if (!historyHtml) {
+  if (!historyMarkdown) {
     return null;
   }
 
@@ -422,7 +422,9 @@ function PostingHistory({ historyHtml }: { historyHtml: string }) {
           </button>
           <h5 className="nm">{t("change.history")}</h5>
         </div>
-        <div className="modal-body" dangerouslySetInnerHTML={{ __html: `<p>${historyHtml}</p>` }} />
+        <div className="modal-body">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{historyMarkdown}</ReactMarkdown>
+        </div>
         <div className="modal-footer">
           <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
             {t("button.confirm")}

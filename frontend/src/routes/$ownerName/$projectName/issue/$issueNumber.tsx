@@ -107,7 +107,7 @@ function IssueDetailBody({
   const sharerValue = sharers.map((sharer) => stringField(sharer.loginId)).join(",");
   const bodyMarkdown = stringField(issue.bodyMarkdown);
   const bodyChecksum = stringField(issue.bodyChecksum, "body-sha1");
-  const historyHtml = stringField(issue.historyHtml);
+  const historyMarkdown = stringField(issue.historyMarkdown);
   const issueUpdateMillis = stringField(issue.issueUpdateMillis, "0");
   const dueDateLabel = stringField(issue.dueDateLabel);
   const dueDateStatusLabel = booleanField(issue.dueDateOverdue)
@@ -225,7 +225,7 @@ function IssueDetailBody({
                 )}
               </a>
               <IssuePostingHistory
-                historyHtml={historyHtml}
+                historyMarkdown={historyMarkdown}
                 updatedByAuthorLabel={stringField(issue.updatedByAuthorLabel)}
                 updatedLabel={stringField(issue.updatedLabel)}
               />
@@ -539,17 +539,17 @@ function IssueDetailBody({
 }
 
 function IssuePostingHistory({
-  historyHtml,
+  historyMarkdown,
   updatedByAuthorLabel,
   updatedLabel,
 }: {
-  historyHtml: string;
+  historyMarkdown: string;
   updatedByAuthorLabel: string;
   updatedLabel: string;
 }) {
   const { t } = useLegacyMessages();
 
-  if (!historyHtml) {
+  if (!historyMarkdown) {
     return null;
   }
 
@@ -571,7 +571,9 @@ function IssuePostingHistory({
           </button>
           <h5 className="nm">{t("change.history")}</h5>
         </div>
-        <div className="modal-body" dangerouslySetInnerHTML={{ __html: `<p>${historyHtml}</p>` }} />
+        <div className="modal-body">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{historyMarkdown}</ReactMarkdown>
+        </div>
         <div className="modal-footer">
           <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
             {t("button.confirm")}

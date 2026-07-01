@@ -142,6 +142,7 @@ function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIs
     bodyMarkdown: response.bodyMarkdown ?? "",
     commentCount: response.commentCount ?? 0,
     hasVoted: response.hasVoted ?? false,
+    historyMarkdown: response.historyMarkdown ?? "",
     isFavorited: response.isFavorited ?? false,
     isWatching: response.isWatching ?? false,
     issueNumber: response.issueNumber ?? "0",
