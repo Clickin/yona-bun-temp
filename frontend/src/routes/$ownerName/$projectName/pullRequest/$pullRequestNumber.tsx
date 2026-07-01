@@ -130,7 +130,10 @@ function PullRequestOverviewBody({
             <div className="content markdown-wrap">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{pullRequest.bodyMarkdown}</ReactMarkdown>
             </div>
-            <div className="attachments" data-attachments="[]"></div>
+            <div
+              className="attachments"
+              data-attachments={JSON.stringify(pullRequest.attachments ?? [])}
+            ></div>
           </div>
 
           <div id="state" className="pullRequest-stateInfo">

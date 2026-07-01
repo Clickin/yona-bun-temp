@@ -439,6 +439,7 @@ struct RestPullRequestSourceBranchState {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RestPullRequestDetailResponse {
+    attachments: Vec<IssueAttachment>,
     body_html: String,
     body_markdown: String,
     commits: Vec<RestPullRequestCommit>,
@@ -1681,6 +1682,11 @@ fn rest_pull_request_detail_from_record_with_issue_references(
     let owner_name = record.owner_name.clone();
     let project_name = record.project_name.clone();
     Ok(RestPullRequestDetailResponse {
+        attachments: record
+            .attachments
+            .iter()
+            .map(|attachment| issue_attachment_from_record(attachment, base_path))
+            .collect(),
         body_html: String::new(),
         body_markdown: record.body_markdown,
         commits: record

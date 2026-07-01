@@ -4,6 +4,7 @@ import type { IssueReferenceMetadata, MentionReferenceMetadata } from "./issue-m
 import { normalizeIssueReferences, normalizeMentionReferences } from "./issue-meta";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
+import type { YonaAttachment } from "./types";
 
 export type PullRequestListCategory = "closed" | "open" | "sent";
 export type PullRequestState = "closed" | "conflict" | "merged" | "open" | string;
@@ -163,6 +164,7 @@ export type PullRequestCommit = {
 };
 
 export type PullRequestDetailResponse = {
+  attachments: YonaAttachment[];
   bodyHtml: string;
   bodyMarkdown: string;
   commits: PullRequestCommit[];
@@ -504,6 +506,7 @@ function normalizeEvent(event: Partial<PullRequestEvent>): PullRequestEvent {
 
 function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequestDetailResponse {
   return {
+    attachments: response.attachments ?? [],
     bodyHtml: response.bodyHtml ?? "",
     bodyMarkdown: response.bodyMarkdown ?? "",
     commits: (response.commits ?? []).map(normalizeCommit),

@@ -1880,6 +1880,7 @@ pub struct PullRequestCommitRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestDetailRecord {
+    pub attachments: Vec<IssueAttachmentRecord>,
     pub body_markdown: String,
     pub commits: Vec<PullRequestCommitRecord>,
     pub conflict: bool,

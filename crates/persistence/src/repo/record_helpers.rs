@@ -411,6 +411,9 @@ impl AppRepositoryImpl<'_> {
         let threads = self.list_pull_request_review_threads(row.id).await?;
         let commits = self.list_pull_request_commits(row.id).await?;
         let events = self.list_pull_request_events(row.id).await?;
+        let attachments = self
+            .list_issue_attachments(PULL_REQUEST_ATTACHMENT_CONTAINER, row.id)
+            .await?;
         let watcher_count = self
             .count_pull_request_watchers(project, row.id, row.contributor_id)
             .await?;
@@ -423,6 +426,7 @@ impl AppRepositoryImpl<'_> {
         };
 
         Ok(PullRequestDetailRecord {
+            attachments,
             body_markdown: self
                 .read_text_column("pull_request", "body", row.id)
                 .await?,
