@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
@@ -19,6 +19,14 @@ export const Route = createFileRoute("/$ownerName/$projectName/commits/$branch")
 
 function ProjectCodeHistoryRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { branch, ownerName, projectName } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isProjectCodeHistoryRoot =
+    pathname === `/${ownerName}/${projectName}/commits/${encodeURIComponent(branch)}`;
+
+  if (!isProjectCodeHistoryRoot) {
+    return <Outlet />;
+  }
 
   return (
     <YonaQueryProvider>
