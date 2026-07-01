@@ -31,7 +31,7 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
         <ul class="nav nav-tabs nm">
           <li class="active"><a href="#" state="open">Open<span class="num-badge">2</span></a></li><li class=""><a href="#" state="closed">Closed<span class="num-badge">1</span></a></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
-          <li><div class="show-subtask-icon mr10 hide-in-mobile" id="show-subtasks-checkbox" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><input id="show-subtasks" type="checkbox"></label></div></li>
+          <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
         <div class="filter-wrap small-heights"><div class="filters pull-right"><a href="#" orderBy="dueDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Due Date</a><a href="#" orderBy="updatedDate" orderDir="asc" class="filter active"><i class="ico btn-gray-arrow down"></i>Updated</a><a href="#" orderBy="createdDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Created</a><a href="#" orderBy="numOfComments" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Comments</a></div></div>
         <ul class="post-list-wrap my-issues">
@@ -83,7 +83,7 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
         <ul class="nav nav-tabs nm">
           <li class=""><a href="#" state="open">Open<span class="num-badge">0</span></a></li><li class="active"><a href="#" state="closed">Closed<span class="num-badge">0</span></a></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
-          <li><div class="show-subtask-icon mr10 hide-in-mobile" id="show-subtasks-checkbox" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><input id="show-subtasks" type="checkbox"></label></div></li>
+          <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
         <div class="error-wrap"><i class="ico ico-err1"></i><p>No issue found</p></div>
       </div>

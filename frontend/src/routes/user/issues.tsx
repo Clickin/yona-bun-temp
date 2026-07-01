@@ -216,7 +216,7 @@ function UserIssuesBody({
               <li>
                 <TwoColumnModeCheckbox />
               </li>
-              <li>
+              <li className="show-subtasks-li">
                 <ShowSubtasksCheckbox />
               </li>
             </ul>
@@ -620,14 +620,20 @@ function ShowSubtasksCheckbox() {
 
   return (
     <div
-      className="show-subtask-icon mr10 hide-in-mobile"
-      id="show-subtasks-checkbox"
+      className="show-subtasks mr10"
+      id="two-column-mode-checkbox"
+      data-toggle="popover"
+      data-trigger="hover"
+      data-placement="top"
       title={t("common.show.subtasks")}
       data-content={t("common.show.subtasks.desc")}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
       <label className="checkbox">
-        <input id="show-subtasks" type="checkbox" />
+        <div className="show-subtasks-button-border">
+          <input id="toggle-show-subtasks" type="checkbox" />
+          <span className="show-subtasks-text">{t("common.show.subtasks")}</span>
+        </div>
       </label>
     </div>
   );

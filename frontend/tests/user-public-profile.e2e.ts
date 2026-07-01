@@ -32,7 +32,7 @@ const EXPECTED_PROFILE_SCREEN = `
             <ul class="nav nav-tabs nm">
               <li class="active"><a href="#openIssues" data-toggle="tab">Open<span class="num-badge">1</span></a></li>
               <li><a href="#closedIssues" data-toggle="tab">Closed<span class="num-badge">1</span></a></li>
-              <li><div class="show-subtask-icon mr10 hide-in-mobile" id="show-subtasks-checkbox" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><input id="show-subtasks" type="checkbox"></label></div></li>
+              <li><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
             </ul>
             <div class="tab-content">
               <div id="openIssues" class="tab-pane active">
