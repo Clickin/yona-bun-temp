@@ -335,6 +335,32 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
   await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator('.lst-stacked a[pjax-filter][data-assignee-id="1"]')).toContainText(
+    "Assigned",
+  );
+  await expect(page.locator('.lst-stacked a[pjax-filter][data-author-id="1"]')).toContainText(
+    "Created",
+  );
+  await expect(page.locator('.lst-stacked a[pjax-filter][data-commenter-id="1"]')).toContainText(
+    "Commented",
+  );
+  await expect(page.locator("#issue-item-42")).toHaveAttribute(
+    "data-value",
+    "dev 11 Fix flaky issue",
+  );
+  await expect(page.locator("#issue-42")).toHaveAttribute("data-issue-id", "42");
+  await expect(page.locator("#issue-42")).toHaveAttribute(
+    "data-issue-labels",
+    "bug,8,bug,3,false|",
+  );
+  await expect(page.locator("#mass-update-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/issues`,
+  );
+  await expect(page.locator("#attach-label-list [data-value='8']")).toHaveAttribute(
+    "data-category",
+    "3",
+  );
   await expect(page.locator('.issue-label[data-label-id="8"]')).toHaveCount(3);
   await expect(page.locator('#authorId option[data-login-id="dev"]')).toHaveAttribute(
     "data-avatar-url",
