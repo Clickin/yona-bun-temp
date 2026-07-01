@@ -961,7 +961,7 @@ export function ProjectMenu({
   basePath,
   project,
 }: {
-  active?: "board" | "home" | "issue";
+  active?: "board" | "home" | "issue" | "milestone";
   basePath: string;
   project: ProjectContainer;
 }) {
@@ -1012,6 +1012,7 @@ export function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.milestone) ? (
             <ProjectMenuItem
+              active={active === "milestone"}
               href={prefixBasePath(basePath, `/${ownerName}/${projectName}/milestones`)}
               label={t("milestone")}
               short="M"
