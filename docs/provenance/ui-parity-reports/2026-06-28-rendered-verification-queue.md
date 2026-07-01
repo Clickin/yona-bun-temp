@@ -230,7 +230,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `user/signup.scala.html` | P1 auth/public/home/help | /register or /users/signupform | 21 |
 | `user/verified.scala.html` | P1 auth/public/home/help | covered by `frontend/tests/verify-user.e2e.ts`: `/verify/door/ok-code` renders the legacy `.page.full > .center-wrap.tag-line-wrap.reset-password` success branch and invalid verification branch | 21 |
 | `project/change_vcs.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
-| `project/delete.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
+| `project/delete.scala.html` | P2 project | covered by `frontend/tests/project-delete-form.e2e.ts`: `/admin/sample/deleteform` renders the legacy settings shell, active delete submenu, warning bubble, agreement checkbox, delete button, and hidden confirmation modal layout metrics | 57 |
 | `project/home.scala.html` | P2 project | /:owner/:projectName | 57 |
 | `project/issuelabels.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `project/list.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
