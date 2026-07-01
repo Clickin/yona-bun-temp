@@ -533,6 +533,7 @@ function CommentForm({ action }: { action: string }) {
     <form id="comment-form" action={action} method="post" encType="multipart/form-data">
       <div className="write-comment-box">
         <Editor editorMode="comment-body" wrapId="comment" />
+        <UploadForm formId="upload" />
         <div className="write-comment-wrap">
           <div className="right-txt">
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
@@ -669,10 +670,10 @@ function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) 
   );
 }
 
-function UploadForm() {
+function UploadForm({ formId }: { formId?: string }) {
   const { t } = useLegacyMessages();
   return (
-    <div className="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT">
+    <div className="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT" id={formId}>
       <div className="attach-wrap">
         <span className="help help-droppable">{t("common.attach.drophere")}</span>
         <div className="btn-wrap">
