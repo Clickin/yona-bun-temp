@@ -59,6 +59,29 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   );
 });
 
+test("project issue detail switches legacy comment editor tabs through data-toggle tab", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator('#comment-form a[href="#edit-contents"]')).toHaveAttribute(
+    "data-toggle",
+    "tab",
+  );
+  await expect(page.locator("#comment-form li:has(> a[href='#edit-contents'])")).toHaveClass(
+    /active/,
+  );
+  await expect(page.locator("#edit-contents")).toHaveClass(/active/);
+  await page.locator('#comment-form a[href="#preview-contents"][data-toggle="tab"]').click();
+  await expect(page.locator("#comment-form li:has(> a[href='#preview-contents'])")).toHaveClass(
+    /active/,
+  );
+  await expect(page.locator("#preview-contents")).toHaveClass(/active/);
+  await expect(page.locator("#edit-contents")).not.toHaveClass(/active/);
+});
+
 test("project issue detail renders legacy draft header state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {

@@ -129,6 +129,34 @@ function RootResetShell() {
         return;
       }
 
+      const tabToggle = target?.closest<HTMLElement>('[data-toggle="tab"], [data-toggle="pill"]');
+      if (tabToggle) {
+        const selector =
+          tabToggle.dataset.target ?? tabToggle.getAttribute("href")?.match(/#[^\s]*$/u)?.[0];
+        const pane = selector?.startsWith("#") ? document.getElementById(selector.slice(1)) : null;
+        const nav = tabToggle.closest<HTMLElement>("ul:not(.dropdown-menu)");
+        const item = tabToggle.closest<HTMLElement>("li");
+        if (nav && item && pane) {
+          nav.querySelectorAll(":scope > .active").forEach((active) => {
+            active.classList.remove("active");
+            active.querySelectorAll(":scope > .dropdown-menu > .active").forEach((dropdownItem) => {
+              dropdownItem.classList.remove("active");
+            });
+          });
+          item.classList.add("active");
+
+          pane.parentElement?.querySelectorAll(":scope > .active").forEach((activePane) => {
+            activePane.classList.remove("active", "in");
+          });
+          pane.classList.add("active");
+          if (pane.classList.contains("fade")) {
+            pane.classList.add("in");
+          }
+        }
+        event.preventDefault();
+        return;
+      }
+
       const dismissAlert = target?.closest<HTMLElement>('[data-dismiss="alert"]');
       if (dismissAlert) {
         dismissAlert.closest<HTMLElement>(".alert")?.remove();
