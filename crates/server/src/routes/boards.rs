@@ -350,6 +350,7 @@ struct RestOrganizationBoardProjectOption {
 #[serde(rename_all = "camelCase")]
 struct RestOrganizationBoardsResponse {
     items: Vec<RestPostListItem>,
+    notices: Vec<RestPostListItem>,
     organization_name: String,
     page_num: u32,
     page_size: u32,
@@ -1447,6 +1448,11 @@ async fn rest_list_organization_boards(
     Ok(Json(RestOrganizationBoardsResponse {
         items: record
             .items
+            .iter()
+            .map(rest_post_list_item_from_record)
+            .collect(),
+        notices: record
+            .notices
             .iter()
             .map(rest_post_list_item_from_record)
             .collect(),

@@ -152,7 +152,8 @@ impl AppRepositoryImpl<'_> {
             .filter(posting::Column::ProjectId.is_in(project_by_id.keys().copied().map(Some)))
             .all(&self.db)
             .await?;
-        let mut matches = Vec::new();
+        let mut normal_matches = Vec::new();
+        let mut notice_matches = Vec::new();
         for row in rows {
             let Some(project_id) = row.project_id else {
                 continue;
@@ -165,6 +166,10 @@ impl AppRepositoryImpl<'_> {
             {
                 continue;
             }
+            if row.notice.unwrap_or_default() != 0 {
+                notice_matches.push((row, project.clone()));
+                continue;
+            }
             if let Some(text_filter) = filter.filter.as_deref() {
                 if !self
                     .posting_model_matches_text_filter(&row, text_filter)
@@ -173,13 +178,14 @@ impl AppRepositoryImpl<'_> {
                     continue;
                 }
             }
-            matches.push((row, project.clone()));
+            normal_matches.push((row, project.clone()));
         }
 
-        sort_posting_models(&mut matches, &filter.order_by, &filter.order_dir);
-        let total_count = matches.len() as u32;
+        sort_posting_models(&mut normal_matches, &filter.order_by, &filter.order_dir);
+        sort_posting_models(&mut notice_matches, "updatedDate", "desc");
+        let total_count = normal_matches.len() as u32;
         let offset = ((page_num - 1) * PAGE_SIZE) as usize;
-        let page_models = matches
+        let page_models = normal_matches
             .into_iter()
             .skip(offset)
             .take(PAGE_SIZE as usize)
@@ -191,10 +197,17 @@ impl AppRepositoryImpl<'_> {
                     .await?,
             );
         }
+        let mut notices = Vec::new();
+        for (row, project) in notice_matches {
+            notices.push(
+                self.project_posting_list_item_from_model(row, &project)
+                    .await?,
+            );
+        }
 
         Ok(OrganizationPostingListRecord {
             items,
-            notices: Vec::new(),
+            notices,
             organization_name: organization_name.to_string(),
             page_num,
             page_size: PAGE_SIZE,

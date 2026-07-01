@@ -150,6 +150,7 @@ export type ProjectPostsResponse = {
 
 export type OrganizationBoardsResponse = {
   items: BoardPostListItem[];
+  notices: BoardPostListItem[];
   organizationName: string;
   pageNum: number;
   pageSize: number;
@@ -427,6 +428,7 @@ function normalizeProjectPostsResponse(
 function normalizeOrganizationBoardsResponse(
   response: Partial<OrganizationBoardsResponse> & {
     items?: BoardPostListItem[];
+    notices?: BoardPostListItem[];
     page?: BoardPage;
     pageNum?: number;
     pageSize?: number;
@@ -445,6 +447,7 @@ function normalizeOrganizationBoardsResponse(
   );
   return {
     items: (response.items ?? response.posts ?? []).map(normalizePostListItem),
+    notices: (response.notices ?? []).map(normalizePostListItem),
     organizationName: response.organizationName ?? "",
     pageNum: page.pageNum,
     pageSize: page.pageSize,

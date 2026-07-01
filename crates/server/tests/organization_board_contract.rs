@@ -262,12 +262,13 @@ async fn organization_board_contract_lists_visible_cross_project_posts_without_n
     assert_eq!(all["organizationName"], "weblabs");
     assert_eq!(all["pageNum"], 1);
     assert_eq!(all["pageSize"], 15);
-    assert_eq!(all["totalCount"], 2);
-    assert_eq!(all["items"].as_array().unwrap().len(), 2);
-    assert_eq!(all["items"][0]["notice"], true);
-    assert_eq!(all["items"][0]["projectName"], "alpha");
-    assert_eq!(all["items"][1]["projectName"], "beta");
-    assert!(all.get("notices").is_none());
+    assert_eq!(all["totalCount"], 1);
+    assert_eq!(all["items"].as_array().unwrap().len(), 1);
+    assert_eq!(all["items"][0]["notice"], false);
+    assert_eq!(all["items"][0]["projectName"], "beta");
+    assert_eq!(all["notices"].as_array().unwrap().len(), 1);
+    assert_eq!(all["notices"][0]["notice"], true);
+    assert_eq!(all["notices"][0]["projectName"], "alpha");
     assert_eq!(all["visibleProjects"].as_array().unwrap().len(), 2);
 
     let filtered = ok_json(

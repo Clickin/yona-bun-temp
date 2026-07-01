@@ -89,7 +89,8 @@ function OrganizationBoardsBody({
   const organizationName = stringField(organization.organizationName, boards.organizationName);
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
-  const hasPosts = boards.items.length > 0;
+  const hasNotices = boards.notices.length > 0 && search.pageNum === 1;
+  const hasPosts = hasNotices || boards.items.length > 0;
 
   return (
     <>
@@ -164,6 +165,17 @@ function OrganizationBoardsBody({
                   organizationName={organizationName}
                   search={search}
                 />
+              ) : null}
+              {hasNotices ? (
+                <ul className="post-list-wrap notice-wrap">
+                  {boards.notices.map((post) => (
+                    <OrganizationBoardPost
+                      basePath={runtimeConfig.basePath}
+                      key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
+                      post={post}
+                    />
+                  ))}
+                </ul>
               ) : null}
               <ul className="post-list-wrap">
                 {boards.items.map((post) => (
