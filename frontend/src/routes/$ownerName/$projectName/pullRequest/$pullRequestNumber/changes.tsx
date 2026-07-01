@@ -220,6 +220,7 @@ function ProjectPullRequestChangesBody({
                 <div className="non-ranged-threads-wrap">
                   {changes.nonRangedThreads.map((thread) => (
                     <NonRangedThread
+                      currentUser={currentUser}
                       key={thread.id}
                       pullRequest={pullRequest}
                       runtimeConfig={runtimeConfig}
@@ -251,10 +252,12 @@ function ProjectPullRequestChangesBody({
 }
 
 function NonRangedThread({
+  currentUser,
   pullRequest,
   runtimeConfig,
   thread,
 }: {
+  currentUser: CurrentUserSummary;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
   thread: ReviewThread;
@@ -288,6 +291,19 @@ function NonRangedThread({
           style={{ display: "block" }}
         >
           <input type="hidden" name="thread.id" value={thread.id} />
+          <div className="author-info-wrap pull-left hide-in-mobile">
+            <div className="author-info">
+              <a
+                href={prefixBasePath(runtimeConfig.basePath, `/${currentUser.loginId}`)}
+                className="avatar-wrap medium"
+                title={currentUser.userLabel}
+                data-toggle="tooltip"
+                data-placement="top"
+              >
+                <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
+              </a>
+            </div>
+          </div>
           <div className="write-comment-box">
             <div className="write-comment-wrap">
               <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
