@@ -333,6 +333,15 @@ function PullRequestStateEventMessage({
 }) {
   const { t } = useLegacyMessages();
   const user = <PullRequestEventUser event={event} runtimeConfig={runtimeConfig} />;
+  if (event.eventType === "PULL_REQUEST_MERGED") {
+    return (
+      <>
+        {messageWithNodes(t("pullRequest.event.message.merged", { args: ["__USER__"] }), {
+          __USER__: user,
+        })}
+      </>
+    );
+  }
   if (event.newValue === "merged") {
     const commitId = pullRequest.mergedCommitIdTo;
     const commit = commitId ? (
