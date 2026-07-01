@@ -73,12 +73,21 @@ function ProjectSettingBody({
   const menuSetting = projectMenuSetting(project);
   const projectScope = stringField(project.projectScope, "PUBLIC").toUpperCase();
   const isGit = stringField(project.vcs, "GIT") === "GIT";
-  const showCode = booleanField(menuSetting.code);
+  const [menuCodeChecked, setMenuCodeChecked] = useState(() => booleanField(menuSetting.code));
+  const [menuPullRequestChecked, setMenuPullRequestChecked] = useState(() =>
+    booleanField(menuSetting.pullRequest),
+  );
+  const [menuReviewChecked, setMenuReviewChecked] = useState(() =>
+    booleanField(menuSetting.review),
+  );
+  const [reviewerCountPanelVisible, setReviewerCountPanelVisible] = useState(() =>
+    booleanField(menuSetting.code),
+  );
   const defaultReviewerCount = numberField(recordField(project).defaultReviewerCount) || 1;
   const maxReviewerCount =
     numberField(recordField(project).maxReviewerCount) || defaultReviewerCount;
   const reviewerPoints = Array.from({ length: maxReviewerCount }, (_value, index) => index + 1);
-  const [reviewerCountVisible, setReviewerCountVisible] = useState(() =>
+  const [reviewerCountEnabled, setReviewerCountEnabled] = useState(() =>
     booleanField(recordField(project).isUsingReviewerCount),
   );
   const mutation = useMutation({
@@ -138,6 +147,7 @@ function ProjectSettingBody({
         <ProjectSettingMenu
           active="setting"
           basePath={runtimeConfig.basePath}
+          showCode={menuCodeChecked}
           ownerName={ownerName}
           project={project}
           projectName={projectName}
@@ -320,7 +330,7 @@ function ProjectSettingBody({
                 <div
                   className="box-wrap middle reviewer-count-wrap"
                   id="reviewerCountSettingPanel"
-                  style={showCode ? undefined : { display: "none" }}
+                  style={reviewerCountPanelVisible ? undefined : { display: "none" }}
                 >
                   <div className="cu-label vmiddle">{t("project.reviewer.count")}</div>
                   <div className="cu-desc">
@@ -332,8 +342,8 @@ function ProjectSettingBody({
                       className="radio-btn"
                       id="reviewerCountEnable"
                       value="true"
-                      defaultChecked={booleanField(recordField(project).isUsingReviewerCount)}
-                      onChange={() => setReviewerCountVisible(true)}
+                      checked={reviewerCountEnabled}
+                      onChange={() => setReviewerCountEnabled(true)}
                     />
                     <label htmlFor="reviewerCountEnable" className="bg-radiobtn label-public">
                       {t("project.reviewer.count.enable")}
@@ -346,8 +356,8 @@ function ProjectSettingBody({
                       className="radio-btn"
                       id="reviewerCountDisable"
                       value="false"
-                      defaultChecked={!booleanField(recordField(project).isUsingReviewerCount)}
-                      onChange={() => setReviewerCountVisible(false)}
+                      checked={!reviewerCountEnabled}
+                      onChange={() => setReviewerCountEnabled(false)}
                     />
                     <label htmlFor="reviewerCountDisable" className="bg-radiobtn label-private">
                       {t("project.reviewer.count.disable")}
@@ -357,7 +367,7 @@ function ProjectSettingBody({
                       id="welReviewerCount"
                       data-value={String(booleanField(recordField(project).isUsingReviewerCount))}
                       className="hide"
-                      style={{ display: reviewerCountVisible ? "block" : "none" }}
+                      style={{ display: reviewerCountEnabled ? "block" : "none" }}
                     >
                       <div
                         className="btn-group branches"
@@ -386,7 +396,7 @@ function ProjectSettingBody({
                 <div
                   className="box-wrap middle"
                   id="defaultBranceSettingPanel"
-                  style={showCode ? undefined : { display: "none" }}
+                  style={menuCodeChecked ? undefined : { display: "none" }}
                 >
                   <div className="cu-label vmiddle">{t("code.branches.defaultBranch")}</div>
                   <div className="cu-desc">
@@ -416,8 +426,17 @@ function ProjectSettingBody({
                 <MenuCheckbox
                   id="menuSettingCode"
                   name="code"
-                  defaultChecked={booleanField(menuSetting.code)}
+                  checked={menuCodeChecked}
                   label={t("menu.code")}
+                  onChange={(checked) => {
+                    setMenuCodeChecked(checked);
+                    if (!checked) {
+                      setMenuPullRequestChecked(false);
+                      setMenuReviewChecked(false);
+                      setReviewerCountEnabled(false);
+                      setReviewerCountPanelVisible(false);
+                    }
+                  }}
                 />
                 <MenuCheckbox
                   id="menuSettingIssue"
@@ -429,15 +448,31 @@ function ProjectSettingBody({
                   <MenuCheckbox
                     id="menuSettingPullRequest"
                     name="pullRequest"
-                    defaultChecked={booleanField(menuSetting.pullRequest)}
+                    checked={menuPullRequestChecked}
                     label={t("menu.pullRequest")}
+                    onChange={(checked) => {
+                      setMenuPullRequestChecked(checked);
+                      if (checked) {
+                        setMenuCodeChecked(true);
+                        setReviewerCountPanelVisible(true);
+                      } else {
+                        setReviewerCountEnabled(false);
+                        setReviewerCountPanelVisible(false);
+                      }
+                    }}
                   />
                 ) : null}
                 <MenuCheckbox
                   id="menuSettingReview"
                   name="review"
-                  defaultChecked={booleanField(menuSetting.review)}
+                  checked={menuReviewChecked}
                   label={t("menu.review")}
+                  onChange={(checked) => {
+                    setMenuReviewChecked(checked);
+                    if (checked) {
+                      setMenuCodeChecked(true);
+                    }
+                  }}
                 />
                 <MenuCheckbox
                   id="menuSettingMilestone"
@@ -467,15 +502,19 @@ function ProjectSettingBody({
 }
 
 function MenuCheckbox({
+  checked,
   defaultChecked,
   id,
   label,
   name,
+  onChange,
 }: {
-  defaultChecked: boolean;
+  checked?: boolean;
+  defaultChecked?: boolean;
   id: string;
   label: string;
   name: string;
+  onChange?: (checked: boolean) => void;
 }) {
   return (
     <label htmlFor={id} className="bg-radiobtn label-public inline-list">
@@ -485,7 +524,9 @@ function MenuCheckbox({
         id={id}
         name={name}
         value="true"
+        checked={checked}
         defaultChecked={defaultChecked}
+        onChange={(event) => onChange?.(event.currentTarget.checked)}
       />
       {label}
     </label>
@@ -690,15 +731,16 @@ function ProjectSettingMenu({
   ownerName,
   project,
   projectName,
+  showCode,
 }: {
   active: "setting";
   basePath: string;
   ownerName: string;
   project: ProjectContainer;
   projectName: string;
+  showCode: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const menuSetting = projectMenuSetting(project);
 
   return (
     <ul className="nav nav-tabs">
@@ -736,7 +778,7 @@ function ProjectSettingMenu({
       <li
         id="subMenuProjectChangeVCS"
         className=""
-        style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
+        style={showCode ? undefined : { display: "none" }}
       >
         <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/changeVCS`)}>
           {t("project.changeVCS")}

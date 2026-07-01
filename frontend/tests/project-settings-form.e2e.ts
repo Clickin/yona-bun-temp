@@ -93,6 +93,34 @@ test("project settings reviewer count radios mirror legacy show/hide behavior", 
   await expect(page.locator("#welReviewerCount")).toBeVisible();
 });
 
+test("project settings menu checkboxes mirror legacy dependency behavior", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+
+  await page.goto(`${basePath}/admin/sample/setting`);
+
+  await page.locator("#menuSettingCode").uncheck();
+  await expect(page.locator("#menuSettingCode")).not.toBeChecked();
+  await expect(page.locator("#menuSettingPullRequest")).not.toBeChecked();
+  await expect(page.locator("#menuSettingReview")).not.toBeChecked();
+  await expect(page.locator("#reviewerCountSettingPanel")).toBeHidden();
+  await expect(page.locator("#defaultBranceSettingPanel")).toBeHidden();
+  await expect(page.locator("#subMenuProjectChangeVCS")).toBeHidden();
+  await expect(page.locator("#reviewerCountDisable")).toBeChecked();
+  await expect(page.locator("#welReviewerCount")).toBeHidden();
+
+  await page.locator("#menuSettingPullRequest").check();
+  await expect(page.locator("#menuSettingCode")).toBeChecked();
+  await expect(page.locator("#reviewerCountSettingPanel")).toBeVisible();
+
+  await page.locator("#menuSettingPullRequest").uncheck();
+  await expect(page.locator("#reviewerCountSettingPanel")).toBeHidden();
+  await expect(page.locator("#reviewerCountDisable")).toBeChecked();
+
+  await page.locator("#menuSettingReview").check();
+  await expect(page.locator("#menuSettingCode")).toBeChecked();
+});
+
 async function mockProjectSettings(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
