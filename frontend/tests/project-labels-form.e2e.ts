@@ -120,6 +120,33 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
   });
 });
 
+test("project labels menu settings link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectLabels(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+  const settingsLink = page.locator("#subMenuProjectSetting a");
+  await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await settingsLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/setting`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
+  await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
 test("project labels renders legacy project/partial_issuelabels_list.scala.html populated list", async ({
   page,
 }) => {
@@ -203,6 +230,22 @@ async function mockProjectLabels(page: Page, labels: unknown[] = []) {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ labels, ownerName: "admin", projectName: "sample" }),
+    });
+  });
+  await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        branches: [
+          { isDefault: true, name: "main", shortName: "main" },
+          { isDefault: false, name: "develop", shortName: "develop" },
+        ],
+        defaultBranch: "main",
+        noHead: false,
+        ownerName: "admin",
+        permissions: { canDelete: true, canUpdate: true },
+        projectName: "sample",
+      }),
     });
   });
 }
