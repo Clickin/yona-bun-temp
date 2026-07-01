@@ -11,6 +11,13 @@ const EXPECTED_PULL_REQUEST_OVERVIEW_WITH_COMMIT_EVENT = EXPECTED_PULL_REQUEST_O
   EXPECTED_PULL_REQUEST_COMMIT_EVENT,
 );
 
+const EXPECTED_PULL_REQUEST_STATE_EVENTS = `<div class="board-comment-wrap"><ul class="comments" id="comments"><li class="event" id="comment-101"><span class="state changed">Approve</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> completed a pull request review.<span class="date"><a href="#event-101" title="Jul 5, 2026">Jul 5, 2026</a></span></li><li class="event" id="comment-102"><span class="state changed">Cancel review</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> withdrew a pull request review.<span class="date"><a href="#event-102" title="Jul 6, 2026">Jul 6, 2026</a></span></li><li class="event" id="comment-103"><span class="state closed">Closed</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> closed this pull request.<span class="date"><a href="#event-103" title="Jul 7, 2026">Jul 7, 2026</a></span></li><li class="event" id="comment-104"><span class="state merged">Merged</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> merged commit (<a class="link" href="__BASE_PATH__/admin/sample/commit/mergedcommit123456" title="View commit">mergedc</a>)<span class="date"><a href="#event-104" title="Jul 8, 2026">Jul 8, 2026</a></span></li><li class="event" id="comment-105"><span class="state merged">Merged</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> merged commit (<a class="link" href="__BASE_PATH__/admin/sample/commit/mergedcommit123456" title="View commit">mergedc</a>)<span class="date"><a href="#event-105" title="Jul 9, 2026">Jul 9, 2026</a></span></li></ul></div>`;
+
+const EXPECTED_PULL_REQUEST_OVERVIEW_WITH_STATE_EVENTS = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
+  `<div class="board-comment-wrap"></div>`,
+  EXPECTED_PULL_REQUEST_STATE_EVENTS,
+);
+
 test("project pull request overview matches legacy git/view.scala.html empty-event DOM", async ({
   page,
 }) => {
@@ -74,6 +81,7 @@ test("project pull request overview renders legacy commit-changed event DOM", as
   });
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator("#comment-94")).toContainText("Committed");
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
     await canonicalizeHtmlAll(
@@ -83,7 +91,86 @@ test("project pull request overview renders legacy commit-changed event DOM", as
   );
 });
 
-async function mockPullRequestOverview(page: Page, options: { events?: unknown[] } = {}) {
+test("project pull request overview renders legacy review and state event DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    events: [
+      {
+        commits: [],
+        createdLabel: "Jul 5, 2026",
+        eventType: "PULL_REQUEST_REVIEW_STATE_CHANGED",
+        id: 101,
+        newValue: "DONE",
+        oldValue: "",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+      {
+        commits: [],
+        createdLabel: "Jul 6, 2026",
+        eventType: "PULL_REQUEST_REVIEW_STATE_CHANGED",
+        id: 102,
+        newValue: "CANCEL",
+        oldValue: "DONE",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+      {
+        commits: [],
+        createdLabel: "Jul 7, 2026",
+        eventType: "PULL_REQUEST_STATE_CHANGED",
+        id: 103,
+        newValue: "closed",
+        oldValue: "open",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+      {
+        commits: [],
+        createdLabel: "Jul 8, 2026",
+        eventType: "PULL_REQUEST_STATE_CHANGED",
+        id: 104,
+        newValue: "merged",
+        oldValue: "closed",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+      {
+        commits: [],
+        createdLabel: "Jul 9, 2026",
+        eventType: "PULL_REQUEST_MERGED",
+        id: 105,
+        newValue: "merged",
+        oldValue: "closed",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+    ],
+    mergedCommitIdTo: "mergedcommit123456",
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator("#comment-105")).toContainText("Merged");
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_OVERVIEW_WITH_STATE_EVENTS.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+async function mockPullRequestOverview(
+  page: Page,
+  options: { events?: unknown[]; mergedCommitIdTo?: string } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -150,7 +237,7 @@ async function mockPullRequestOverview(page: Page, options: { events?: unknown[]
         isWatching: false,
         lackingReviewerCount: 0,
         mergedCommitIdFrom: "",
-        mergedCommitIdTo: "",
+        mergedCommitIdTo: options.mergedCommitIdTo ?? "",
         ownerName: "admin",
         permissions: {
           canComment: true,

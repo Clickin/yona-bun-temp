@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
+import { Fragment, type ReactNode } from "react";
 import {
   pullRequestDetailQueryOptions,
   type PullRequestCommit,
@@ -176,7 +177,7 @@ function PullRequestEvents({
   runtimeConfig: RuntimeConfig;
 }) {
   const renderedEvents = pullRequest.events.flatMap((event) =>
-    event.eventType === "PULL_REQUEST_COMMIT_CHANGED"
+    isRenderableEvent(event)
       ? [
           <PullRequestEventItem
             event={event}
@@ -206,6 +207,46 @@ function PullRequestEventItem({
 }) {
   const { t } = useLegacyMessages();
 
+  if (event.eventType === "PULL_REQUEST_REVIEW_STATE_CHANGED") {
+    const isReviewDone = event.newValue === "DONE";
+    return (
+      <li className="event" id={`comment-${event.id}`}>
+        <span className="state changed">
+          {t(isReviewDone ? "pullRequest.review" : "pullRequest.unreview")}
+        </span>
+        {messageWithNodes(
+          t(
+            isReviewDone
+              ? "notification.pullrequest.reviewed"
+              : "notification.pullrequest.unreviewed",
+            { args: ["__USER__"] },
+          ),
+          { __USER__: <PullRequestEventUser event={event} runtimeConfig={runtimeConfig} /> },
+        )}
+        <PullRequestEventDate event={event} />
+      </li>
+    );
+  }
+
+  if (
+    event.eventType === "PULL_REQUEST_STATE_CHANGED" ||
+    event.eventType === "PULL_REQUEST_MERGED"
+  ) {
+    return (
+      <li className="event" id={`comment-${event.id}`}>
+        <span className={`state ${event.newValue}`}>
+          {t(`pullRequest.event.${event.newValue}`)}
+        </span>
+        <PullRequestStateEventMessage
+          event={event}
+          pullRequest={pullRequest}
+          runtimeConfig={runtimeConfig}
+        />
+        <PullRequestEventDate event={event} />
+      </li>
+    );
+  }
+
   if (event.eventType !== "PULL_REQUEST_COMMIT_CHANGED") {
     return null;
   }
@@ -213,12 +254,10 @@ function PullRequestEventItem({
   return (
     <li className="event" id={`comment-${event.id}`}>
       <span className="state changed">{t("pullRequest.event.commit")}</span>
-      <PullRequestEventUser event={event} runtimeConfig={runtimeConfig} /> has committed.
-      <span className="date">
-        <a href={`#event-${event.id}`} title={event.createdLabel}>
-          {event.createdLabel}
-        </a>
-      </span>
+      {messageWithNodes(t("pullRequest.event.message.commit", { args: ["__USER__"] }), {
+        __USER__: <PullRequestEventUser event={event} runtimeConfig={runtimeConfig} />,
+      })}
+      <PullRequestEventDate event={event} />
       {event.oldValue ? (
         <a
           href={prefixBasePath(
@@ -241,6 +280,55 @@ function PullRequestEventItem({
         ))}
       </ul>
     </li>
+  );
+}
+
+function PullRequestStateEventMessage({
+  event,
+  pullRequest,
+  runtimeConfig,
+}: {
+  event: PullRequestEvent;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { t } = useLegacyMessages();
+  const user = <PullRequestEventUser event={event} runtimeConfig={runtimeConfig} />;
+  if (event.newValue === "merged") {
+    const commitId = pullRequest.mergedCommitIdTo;
+    const commit = commitId ? (
+      <a
+        className="link"
+        href={prefixBasePath(
+          runtimeConfig.basePath,
+          `/${pullRequest.ownerName}/${pullRequest.projectName}/commit/${commitId}`,
+        )}
+        title={t("code.showCommit")}
+      >
+        {commitId.slice(0, 7)}
+      </a>
+    ) : (
+      ""
+    );
+    return (
+      <>
+        {messageWithNodes(
+          t("pullRequest.event.message.merged", { args: ["__USER__", "__COMMIT__"] }),
+          {
+            __COMMIT__: commit,
+            __USER__: user,
+          },
+        )}
+      </>
+    );
+  }
+
+  return (
+    <>
+      {messageWithNodes(t(`pullRequest.event.message.${event.newValue}`, { args: ["__USER__"] }), {
+        __USER__: user,
+      })}
+    </>
   );
 }
 
@@ -276,6 +364,16 @@ function PullRequestEventUser({
         <strong>{label}</strong>
       </a>
     </>
+  );
+}
+
+function PullRequestEventDate({ event }: { event: PullRequestEvent }) {
+  return (
+    <span className="date">
+      <a href={`#event-${event.id}`} title={event.createdLabel}>
+        {event.createdLabel}
+      </a>
+    </span>
   );
 }
 
@@ -514,6 +612,34 @@ function isOpenState(state: PullRequestState) {
 
 function encodeBranch(branch: string) {
   return encodeURIComponent(branch);
+}
+
+function isRenderableEvent(event: PullRequestEvent) {
+  return (
+    event.eventType === "PULL_REQUEST_COMMIT_CHANGED" ||
+    event.eventType === "PULL_REQUEST_REVIEW_STATE_CHANGED" ||
+    event.eventType === "PULL_REQUEST_STATE_CHANGED" ||
+    event.eventType === "PULL_REQUEST_MERGED"
+  );
+}
+
+function messageWithNodes(message: string, nodes: Record<string, ReactNode>) {
+  const tokens = Object.keys(nodes);
+  if (tokens.length === 0) {
+    return message;
+  }
+  const pattern = new RegExp(`(${tokens.map(escapeRegExp).join("|")})`, "gu");
+  let offset = 0;
+  return message.split(pattern).map((part) => {
+    const key = `${part}-${offset}`;
+    offset += part.length;
+    const node = nodes[part];
+    return node === undefined ? part : <Fragment key={key}>{node}</Fragment>;
+  });
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function comparePath(ownerName: string, projectName: string, value: string) {
