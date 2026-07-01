@@ -855,7 +855,36 @@ function IssueEventRow({ basePath, event }: { basePath: string; event: IssueTime
     );
   }
 
-  return null;
+  return (
+    <li className="event" id={`event-${eventId}`}>
+      {stringField(event.newValue)} by{" "}
+      <a
+        href={senderHref}
+        className="usf-group"
+        data-toggle="tooltip"
+        data-placement="top"
+        title={senderLabel}
+      >
+        <img
+          src={stringField(event.senderAvatarUrl, "/assets/images/default-avatar-32.png")}
+          className="avatar-wrap small"
+          alt=""
+        />
+      </a>
+      <a
+        href={senderHref}
+        className="usf-group"
+        data-toggle="tooltip"
+        data-placement="top"
+        title={senderLoginId}
+      >
+        <strong>{senderLabel}</strong>
+      </a>
+      <span className="date">
+        <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+      </span>
+    </li>
+  );
 }
 
 function IssueCommentRow({
