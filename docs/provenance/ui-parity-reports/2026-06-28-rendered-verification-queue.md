@@ -260,10 +260,10 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `issue/partial_voters.scala.html` | P3 issue | covered by issue detail `/admin/sample/issue/11` in `frontend/tests/project-issue-detail.e2e.ts` | 13 |
 | `board/create.scala.html` | P4 board/milestone | covered by `frontend/tests/project-board-create-form.e2e.ts`: `/admin/sample/postform` renders the legacy create form body, active Board project menu, title/body/uploader/notice/hidden/action shells, and REST POST/redirect boundary | 13 |
 | `board/edit.scala.html` | P4 board/milestone | covered by `frontend/tests/project-board-edit-form.e2e.ts`: `/admin/sample/post/3/editform` renders the legacy edit form body, active Board project menu, title/body/uploader/notice/readme/notification/action shells, and REST PATCH/redirect boundary | 13 |
-| `board/list.scala.html` | P4 board/milestone | /:owner/:projectName/posts | 13 |
+| `board/list.scala.html` | P4 board/milestone | covered by `frontend/tests/project-posts.e2e.ts`: `/admin/sample/posts?filter=release&labelIds=8` renders the flat board list caller with `#option_form`, labels select, sort/search controls, notice/normal rows, title-prefix branch, empty state, pagination shell, and board-list keymap | 13 |
 | `milestone/create.scala.html` | P4 board/milestone | covered by `frontend/tests/project-milestone-create-form.e2e.ts`: `/admin/sample/newMilestoneForm` renders the legacy create form body, active Milestone project menu, title/content/state/due-date/uploader/action shells, and REST POST/redirect boundary | 13 |
-| `milestone/partial_status.scala.html` | P4 board/milestone | included partial caller route; inspect Play route and React owner | 13 |
-| `milestone/view.scala.html` | P4 board/milestone | /:owner/:projectName/milestone/:milestoneId | 13 |
+| `milestone/partial_status.scala.html` | P4 board/milestone | covered by `frontend/tests/project-milestones.e2e.ts`: `/admin/sample/milestones?state=all&orderBy=dueDate&orderDir=asc` renders the milestone-list caller with open/closed state spans, due-date branches, completion/progress, and linked issue previews | 13 |
+| `milestone/view.scala.html` | P4 board/milestone | covered by `frontend/tests/project-milestone-detail.e2e.ts`: `/admin/sample/milestone/5?state=open` renders `.milesion-wrap`, markdown/attachments, action row request hooks, delete modal, issue tabs, mass-update shell, search hook, issue list rows, and close/delete REST boundaries | 13 |
 | `code/branches.scala.html` | P5 code/pr/review | /:owner/:projectName/branches | 30 |
 | `code/compare.scala.html` | P5 code/pr/review | /:owner/:projectName/compare/:revisionRange | 30 |
 | `code/diff.scala.html` | P5 code/pr/review | /:owner/:projectName/commit/:commitId | 30 |
