@@ -114,6 +114,7 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectIssuesBody
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
+        currentUserLoginId={stringField(sessionQuery.data.loginId, "")}
         issues={issuesQuery.data}
         ownerName={ownerName}
         project={projectQuery.data}
@@ -127,6 +128,7 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 
 function ProjectIssuesBody({
   currentUserId,
+  currentUserLoginId,
   issues,
   ownerName,
   project,
@@ -135,6 +137,7 @@ function ProjectIssuesBody({
   search,
 }: {
   currentUserId: string;
+  currentUserLoginId: string;
   issues: ProjectIssueListRestResponse;
   ownerName: string;
   project: ProjectContainer;
@@ -145,7 +148,11 @@ function ProjectIssuesBody({
   const { t } = useLegacyMessages();
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const hasIssues = issues.items.length > 0;
-  const draftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
+  const draftItems = shouldShowDraftItems(search)
+    ? (issues.draftItems ?? []).filter(
+        (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
+      )
+    : [];
   const showMilestone = projectMilestoneMenuEnabled(project);
   const showMassUpdateControls = projectMemberControlsEnabled(project);
 

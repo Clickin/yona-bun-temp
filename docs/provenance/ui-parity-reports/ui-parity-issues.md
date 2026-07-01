@@ -90,7 +90,7 @@ Mode: read-only audit, no files edited by the explorer
 
 ## 2026-07-01 Project Issue Draft Row Follow-Up
 
-- Restored the `issue/partial_list_draft.scala.html` caller state in the flat project issue list: unfiltered open page 1 renders `draftItems` before normal issue rows and shows the legacy `.draft-number` `#Draft` marker.
+- Restored the `issue/partial_list_draft.scala.html` caller state in the flat project issue list: unfiltered open page 1 renders the current user's `draftItems` before normal issue rows, shows the legacy `.draft-number` `#Draft` marker, and hides draft rows authored by other users.
 - Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now applies the same visible-condition gate from `partial_list_wrap.scala.html` (`pageNum == 1`, open state, no active filters) before rendering draft rows.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues` whole-screen DOM comparison proving draft-before-normal ordering, row id/data hooks, and the `#Draft` marker.
 
