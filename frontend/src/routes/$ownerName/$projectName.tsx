@@ -17,10 +17,20 @@ export const Route = createFileRoute("/$ownerName/$projectName")({
   component: ProjectHomeRoute,
   validateSearch(search) {
     return {
+      commentId: legacyQueryString(search.commentId),
+      parentIssueId: legacyQueryString(search.parentIssueId),
       tabId: typeof search.tabId === "string" ? search.tabId : "readme",
     };
   },
 });
+
+function legacyQueryString(value: unknown) {
+  return typeof value === "string"
+    ? value
+    : typeof value === "number" || typeof value === "bigint"
+      ? String(value)
+      : "";
+}
 
 function ProjectHomeRoute() {
   const { runtimeConfig } = Route.useRouteContext();

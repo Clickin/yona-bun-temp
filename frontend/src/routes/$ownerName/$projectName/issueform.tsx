@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
@@ -47,6 +47,10 @@ function ProjectIssueFormRoute() {
 function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const legacySearch = legacyUrlSearch(locationHref);
+  const parentIssueId = search.parentIssueId || stringSearch(legacySearch.get("parentIssueId"));
+  const commentId = search.commentId || stringSearch(legacySearch.get("commentId"));
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -68,10 +72,10 @@ function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectIssueFormBody
         labels={labelsQuery.data.labels}
-        parentIssueId={search.parentIssueId}
+        parentIssueId={parentIssueId}
         parentOptions={parentOptionsQuery.data.items}
         project={projectQuery.data}
-        referCommentId={search.commentId}
+        referCommentId={commentId}
         runtimeConfig={runtimeConfig}
       />
     </>
@@ -464,7 +468,22 @@ function stringFormValue(formData: FormData, name: string) {
 }
 
 function stringSearch(value: unknown) {
-  return typeof value === "string" ? value : "";
+  return typeof value === "string"
+    ? value
+    : typeof value === "number" || typeof value === "bigint"
+      ? String(value)
+      : "";
+}
+
+function legacyUrlSearch(locationHref: string) {
+  const queryStart = locationHref.indexOf("?");
+  const hashStart = locationHref.indexOf("#", queryStart);
+  if (queryStart === -1) {
+    return new URLSearchParams();
+  }
+  return new URLSearchParams(
+    locationHref.slice(queryStart + 1, hashStart === -1 ? undefined : hashStart),
+  );
 }
 
 function stringField(value: unknown, fallback: string) {
