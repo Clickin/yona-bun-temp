@@ -12,6 +12,8 @@ const EXPECTED_FILE_DIFF = `<div id="src-main-rs" class="diff-partial-outer"><di
 
 const EXPECTED_INLINE_THREAD_ROW = `<tr class="comments board-comment-wrap" data-commit-id="abcdef1234567890"><td colspan="3"><div id="thread-77" data-state="open" class="comment-thread-wrap open" data-toggle="CodeCommentThread" data-range-path="src/main.rs" data-range-startline="2" data-range-endline="2"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-post2"></i></button></div><div class="thread-header"><span class="badge state open">Open</span><button type="button" class="ybtn ybtn-default ybtn-small btn-thread-minimize"><i class="yobicon-maximize"></i></button></div><ul class="comments"><li id="comment-501" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="Dev User"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="Dev User"><strong>dev </strong></a></span><span class="ago"><a href="#comment-501" title="Jul 1, 2026">Jul 1, 2026</a></span><span class="edit pull-right"><button class="btn-transparent pull-right close" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/comments/501" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>Line <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data" class="review-form" style="display:block"><input type="hidden" name="thread.id" value="77"><div class="write-comment-box"><div class="write-comment-wrap"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-thread-77" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-thread-77" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-thread-77" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-77" markdown="true"></textarea></div></div><div id="preview-thread-77" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="button" data-request-method="post" data-request-uri="__BASE_PATH__/threads/77/close" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div></td></tr>`;
 
+const EXPECTED_NON_RANGED_THREAD = `<div id="thread-88" class="comment-thread-wrap open"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-comments"></i></button></div><ul class="comments"><li id="comment-601" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="Dev User"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="Dev User"><strong>dev </strong></a></span><span class="ago"><a href="#comment-601" title="Jul 1, 2026">Jul 1, 2026</a></span><span class="edit pull-right"><button class="btn-transparent pull-right close" data-request-method="delete" data-request-uri="__BASE_PATH__/comments/601"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data" class="review-form" style="display:block"><input type="hidden" name="thread.id" value="88"><div class="write-comment-box"><div class="write-comment-wrap"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-thread-88" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-thread-88" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-thread-88" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-88" markdown="true"></textarea></div></div><div id="preview-thread-88" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="button" data-request-method="post" data-request-uri="__BASE_PATH__/threads/88/close" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div>`;
+
 test("project commit detail matches legacy code/diff.scala.html empty discussion state", async ({
   page,
 }) => {
@@ -127,6 +129,51 @@ index 1234567..abcdef1 100644
     await canonicalizeHtml(
       page,
       `<div class="diff-body">${EXPECTED_FILE_DIFF.replace('</tr><tr class="add" data-line="3"', `</tr>${EXPECTED_INLINE_THREAD_ROW}<tr class="add" data-line="3"`).replaceAll("__BASE_PATH__", basePath)}<div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div>`,
+    ),
+  );
+});
+
+test("project commit detail renders legacy non-ranged comment thread", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {
+    threads: [
+      {
+        authorId: 2,
+        authorLabel: "Dev User",
+        authorLoginId: "dev",
+        comments: [
+          {
+            authorId: 2,
+            authorLabel: "Dev User",
+            authorLoginId: "dev",
+            canDelete: true,
+            contentsHtml: "<p>General <strong>note</strong></p>",
+            contentsMarkdown: "General **note**",
+            createdLabel: "Jul 1, 2026",
+            id: 601,
+            threadId: 88,
+            viaEmail: false,
+          },
+        ],
+        commitId: "abcdef1234567890",
+        createdLabel: "Jul 1, 2026",
+        id: 88,
+        path: "",
+        prevCommitId: "1234567890abcdef",
+        state: "open",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  await expect(page.locator(".non-ranged-threads-wrap #thread-88")).toBeVisible();
+  await expect(page.locator("#reviewcards-open .review-card.open")).toHaveCount(1);
+  expect(detailRequests).toEqual(["branch=main"]);
+  expect(await canonicalize(page, ".board-comment-wrap")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<div class="board-comment-wrap"><div class="non-ranged-threads-wrap">${EXPECTED_NON_RANGED_THREAD.replaceAll("__BASE_PATH__", basePath)}</div><form id="comment-form" action="${basePath}/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div>`,
     ),
   );
 });

@@ -123,6 +123,7 @@ function ProjectCommitDetailBody({
   const commit = detail.commit;
   const openThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "open");
   const closedThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "closed");
+  const nonRangedThreads = detail.threads.filter((thread) => thread.startLine === undefined);
 
   return (
     <div className="page-wrap-outer">
@@ -192,7 +193,18 @@ function ProjectCommitDetailBody({
               </div>
 
               <div className="board-comment-wrap">
-                <div className="non-ranged-threads-wrap"></div>
+                <div className="non-ranged-threads-wrap">
+                  {nonRangedThreads.map((thread) => (
+                    <CodeCommentThreadView
+                      isNonRanged
+                      key={thread.id}
+                      ownerName={ownerName}
+                      projectName={projectName}
+                      runtimeConfig={runtimeConfig}
+                      thread={thread}
+                    />
+                  ))}
+                </div>
                 {detail.permissions.canComment ? (
                   <CommentForm
                     action={commitCommentsHref(
@@ -504,11 +516,13 @@ function InlineCommentRow({
 }
 
 function CodeCommentThreadView({
+  isNonRanged = false,
   ownerName,
   projectName,
   runtimeConfig,
   thread,
 }: {
+  isNonRanged?: boolean;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -526,25 +540,27 @@ function CodeCommentThreadView({
   return (
     <div
       id={`thread-${thread.id}`}
-      data-state={state}
-      className={`comment-thread-wrap ${state}${state === "closed" ? " fold" : ""}`}
-      data-toggle="CodeCommentThread"
-      data-range-path={thread.path}
-      data-range-startline={thread.startLine}
-      data-range-endline={thread.endLine}
+      data-state={isNonRanged ? undefined : state}
+      className={`comment-thread-wrap ${state}${!isNonRanged && state === "closed" ? " fold" : ""}`}
+      data-toggle={isNonRanged ? undefined : "CodeCommentThread"}
+      data-range-path={isNonRanged ? undefined : thread.path}
+      data-range-startline={isNonRanged ? undefined : thread.startLine}
+      data-range-endline={isNonRanged ? undefined : thread.endLine}
     >
       <div className="btn-thread-here btn-thread-minimize">
         <button type="button" className="ybtn ybtn-default ybtn-small">
-          <i className="yobicon-post2"></i>
+          <i className={isNonRanged ? "yobicon-comments" : "yobicon-post2"}></i>
         </button>
       </div>
 
-      <div className="thread-header">
-        <span className={`badge state ${state}`}>{t(`issue.state.${state}`)}</span>
-        <button type="button" className="ybtn ybtn-default ybtn-small btn-thread-minimize">
-          <i className="yobicon-maximize"></i>
-        </button>
-      </div>
+      {isNonRanged ? null : (
+        <div className="thread-header">
+          <span className={`badge state ${state}`}>{t(`issue.state.${state}`)}</span>
+          <button type="button" className="ybtn ybtn-default ybtn-small btn-thread-minimize">
+            <i className="yobicon-maximize"></i>
+          </button>
+        </div>
+      )}
 
       <ul className="comments">
         {thread.comments.map((comment) => (
@@ -581,12 +597,13 @@ function CodeCommentThreadView({
                   <span className="edit pull-right">
                     <button
                       className="btn-transparent pull-right close"
-                      data-toggle="comment-delete"
+                      data-request-method={isNonRanged ? "delete" : undefined}
+                      data-toggle={isNonRanged ? undefined : "comment-delete"}
                       data-request-uri={prefixBasePath(
                         runtimeConfig.basePath,
                         `/comments/${comment.id}`,
                       )}
-                      title={t("common.comment.delete")}
+                      title={isNonRanged ? undefined : t("common.comment.delete")}
                     >
                       <i className="yobicon-trash"></i>
                     </button>
