@@ -168,6 +168,7 @@ function IssueDetailBody({
               className="attachments"
               id="attachments"
               data-attachments={JSON.stringify(issue.attachments ?? [])}
+              dangerouslySetInnerHTML={{ __html: attachedFilesHtml(issue.attachments) }}
             ></div>
             <div className="board-actrow right-txt">
               <div className="pull-left">
@@ -1220,6 +1221,7 @@ function IssueCommentRow({
           <div
             className="attachments pull-left"
             data-attachments={JSON.stringify(comment.attachments ?? [])}
+            dangerouslySetInnerHTML={{ __html: attachedFilesHtml(comment.attachments) }}
           ></div>
         </div>
       </div>
@@ -1745,6 +1747,26 @@ function labelSelectOptionsHtml(labels: RestIssueDetailResponse["labels"]) {
           .join("")}</optgroup>`,
     ),
   ].join("");
+}
+
+function attachedFilesHtml(
+  attachments?:
+    | RestIssueDetailResponse["attachments"]
+    | { attachments?: RestIssueDetailResponse["attachments"] },
+): string {
+  const files = Array.isArray(attachments) ? attachments : (attachments?.attachments ?? []);
+
+  return files
+    .map((file) => {
+      const name = stringField(file.name);
+      const href = stringField(file.url);
+      const mimeType = stringField(file.mimeType);
+      const size = stringField(file.size);
+      const sizeReadable = stringField(file.sizeLabel, size);
+
+      return `<li class="attached-file" data-name="${escapeHtml(name)}" data-href="${escapeHtml(href)}" data-mime="${escapeHtml(mimeType)}" data-size="${escapeHtml(size)}"><strong>${escapeHtml(name)}(${escapeHtml(sizeReadable)})</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li>`;
+    })
+    .join("");
 }
 
 function escapeHtml(value: string) {

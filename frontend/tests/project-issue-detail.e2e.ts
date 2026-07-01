@@ -78,6 +78,74 @@ test("project issue detail renders legacy read-only selected labels", async ({ p
   ).toEqual(await canonicalizeHtml(page, expected));
 });
 
+test("project issue detail renders legacy attachment file items", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const issueAttachments = {
+    attachments: [
+      {
+        id: 501,
+        mimeType: "text/plain",
+        name: "issue-spec.txt",
+        size: 12345,
+        sizeLabel: "12.3 kB",
+        url: `${basePath}/files/501`,
+      },
+    ],
+  };
+  const commentAttachments = {
+    attachments: [
+      {
+        id: 502,
+        mimeType: "image/png",
+        name: "comment-shot.png",
+        size: 4096,
+        sizeLabel: "4.1 kB",
+        url: `${basePath}/files/502`,
+      },
+    ],
+  };
+  await mockProjectIssueDetail(page, {
+    attachments: issueAttachments,
+    comments: [
+      {
+        attachments: commentAttachments,
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorLabel: "Dev Member",
+        authorLoginId: "dev",
+        contentsHtml: "<p>Comment <strong>markdown</strong></p>",
+        contentsMarkdown: "Comment **markdown**",
+        createdLabel: "Jul 2, 2026",
+        id: 77,
+        viewerCanDelete: true,
+        viewerCanUpdate: true,
+        viaEmail: false,
+        voterCount: 0,
+        voters: [],
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const expectedIssueAttachments =
+    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(issueAttachments)}'><li class="attached-file" data-name="issue-spec.txt" data-href="__BASE_PATH__/files/501" data-mime="text/plain" data-size="12345"><strong>issue-spec.txt(12.3 kB)</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, ".span-left-pane > #attachments")).toEqual(
+    await canonicalizeHtml(page, expectedIssueAttachments),
+  );
+
+  const expectedCommentAttachments =
+    `<div class="attachments pull-left" data-attachments='${JSON.stringify(commentAttachments)}'><li class="attached-file" data-name="comment-shot.png" data-href="__BASE_PATH__/files/502" data-mime="image/png" data-size="4096"><strong>comment-shot.png(4.1 kB)</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, "#comment-body-77 > .attachments")).toEqual(
+    await canonicalizeHtml(page, expectedCommentAttachments),
+  );
+});
+
 test("project issue detail renders legacy unauthorized comment form", async ({ page }) => {
   await mockProjectIssueDetail(page, { viewerCanComment: false });
 
