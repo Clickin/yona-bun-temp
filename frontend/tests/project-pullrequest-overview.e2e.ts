@@ -18,6 +18,14 @@ const EXPECTED_PULL_REQUEST_OVERVIEW_WITH_STATE_EVENTS = EXPECTED_PULL_REQUEST_O
   EXPECTED_PULL_REQUEST_STATE_EVENTS,
 );
 
+const EXPECTED_PULL_REQUEST_CONFLICT_RESOLVED_EVENTS = `<div class="board-comment-wrap"><ul class="comments" id="comments"><li class="event" id="comment-106"><span class="state conflict">Conflicted</span>A conflict has occurred.<span class="date"><a href="#event-106" title="Jul 10, 2026">Jul 10, 2026</a></span></li><li class="event" id="comment-107"><span class="state resolved">Resolved</span>The conflict has been resolved.<span class="date"><a href="#event-107" title="Jul 11, 2026">Jul 11, 2026</a></span></li></ul></div>`;
+
+const EXPECTED_PULL_REQUEST_OVERVIEW_WITH_CONFLICT_RESOLVED_EVENTS =
+  EXPECTED_PULL_REQUEST_OVERVIEW.replace(
+    `<div class="board-comment-wrap"></div>`,
+    EXPECTED_PULL_REQUEST_CONFLICT_RESOLVED_EVENTS,
+  );
+
 const EXPECTED_PULL_REQUEST_CONFLICT_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div>`,
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-conflict">Conflict</span></div>`,
@@ -205,6 +213,52 @@ test("project pull request overview renders legacy review and state event DOM", 
     await canonicalizeHtmlAll(
       page,
       EXPECTED_PULL_REQUEST_OVERVIEW_WITH_STATE_EVENTS.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("project pull request overview renders legacy conflict and resolved event DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    events: [
+      {
+        commits: [],
+        createdLabel: "Jul 10, 2026",
+        eventType: "PULL_REQUEST_STATE_CHANGED",
+        id: 106,
+        newValue: "conflict",
+        oldValue: "open",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+      {
+        commits: [],
+        createdLabel: "Jul 11, 2026",
+        eventType: "PULL_REQUEST_STATE_CHANGED",
+        id: 107,
+        newValue: "resolved",
+        oldValue: "conflict",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator("#comment-106")).toContainText("Conflicted");
+  await expect(page.locator("#comment-107")).toContainText("Resolved");
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_OVERVIEW_WITH_CONFLICT_RESOLVED_EVENTS.replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
     ),
   );
 });
