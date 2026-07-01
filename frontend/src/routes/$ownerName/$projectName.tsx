@@ -971,7 +971,7 @@ export function ProjectMenu({
   basePath,
   project,
 }: {
-  active?: "board" | "home" | "issue" | "milestone" | "pullRequest";
+  active?: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest";
   basePath: string;
   project: ProjectContainer;
 }) {
@@ -992,6 +992,7 @@ export function ProjectMenu({
           />
           {booleanField(menuSetting.code) ? (
             <ProjectMenuItem
+              active={active === "code"}
               className="code-menu "
               href={prefixBasePath(basePath, `/${ownerName}/${projectName}/code`)}
               label={t("menu.code")}
@@ -1072,7 +1073,7 @@ function ProjectMenuItem({
   short: string;
 }) {
   return (
-    <li className={`${active ? "active" : ""}${className}`}>
+    <li className={`${active ? "active " : ""}${className}`}>
       <a href={href}>
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>

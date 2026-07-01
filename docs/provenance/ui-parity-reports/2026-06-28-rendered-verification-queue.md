@@ -264,12 +264,12 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `milestone/create.scala.html` | P4 board/milestone | covered by `frontend/tests/project-milestone-create-form.e2e.ts`: `/admin/sample/newMilestoneForm` renders the legacy create form body, active Milestone project menu, title/content/state/due-date/uploader/action shells, and REST POST/redirect boundary | 13 |
 | `milestone/partial_status.scala.html` | P4 board/milestone | covered by `frontend/tests/project-milestones.e2e.ts`: `/admin/sample/milestones?state=all&orderBy=dueDate&orderDir=asc` renders the milestone-list caller with open/closed state spans, due-date branches, completion/progress, and linked issue previews | 13 |
 | `milestone/view.scala.html` | P4 board/milestone | covered by `frontend/tests/project-milestone-detail.e2e.ts`: `/admin/sample/milestone/5?state=open` renders `.milesion-wrap`, markdown/attachments, action row request hooks, delete modal, issue tabs, mass-update shell, search hook, issue list rows, and close/delete REST boundaries | 13 |
-| `code/branches.scala.html` | P5 code/pr/review | /:owner/:projectName/branches | 30 |
+| `code/branches.scala.html` | P5 code/pr/review | covered by `frontend/tests/project-code-branches.e2e.ts`: `/admin/sample/branches` renders the flat code branch list with code tabs, `.branch-list-wrap`, default row, commit links/dates, PR state link, and action column | 30 |
 | `code/compare.scala.html` | P5 code/pr/review | /:owner/:projectName/compare/:revisionRange | 30 |
 | `code/diff.scala.html` | P5 code/pr/review | /:owner/:projectName/commit/:commitId | 30 |
 | `code/nohead_svn.scala.html` | P5 code/pr/review | included partial caller route; inspect Play route and React owner | 30 |
 | `code/nohead.scala.html` | P5 code/pr/review | included partial caller route; inspect Play route and React owner | 30 |
-| `code/partial_branchrow.scala.html` | P5 code/pr/review | included partial caller route; inspect Play route and React owner | 30 |
+| `code/partial_branchrow.scala.html` | P5 code/pr/review | covered by `frontend/tests/project-code-branches.e2e.ts`: `/admin/sample/branches` renders branch rows with `.head`, `.headBranch`, branch/commit hrefs, PR state tooltip classes, set-default request URI, delete request method, and REST mutation payloads | 30 |
 | `code/view.scala.html` | P5 code/pr/review | /:owner/:projectName/code/:branch/* | 30 |
 | `git/list.scala.html` | P5 code/pr/review | /:owner/:projectName/pullRequest* | 30 |
 | `git/partial_branch.scala.html` | P5 code/pr/review | /:owner/:projectName/pullRequest* | 30 |
