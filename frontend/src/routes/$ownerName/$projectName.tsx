@@ -971,7 +971,7 @@ export function ProjectMenu({
   basePath,
   project,
 }: {
-  active?: "board" | "home" | "issue" | "milestone";
+  active?: "board" | "home" | "issue" | "milestone" | "pullRequest";
   basePath: string;
   project: ProjectContainer;
 }) {
@@ -1008,6 +1008,7 @@ export function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
+              active={active === "pullRequest"}
               href={prefixBasePath(basePath, `/${ownerName}/${projectName}/pullRequests`)}
               label={t("menu.pullRequest")}
               short="P"
