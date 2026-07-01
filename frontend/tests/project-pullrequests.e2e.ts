@@ -30,6 +30,51 @@ test("project pull request empty list matches legacy git/list.scala.html DOM", a
   );
 });
 
+test("project closed pull request empty list matches legacy git/list.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/closedPullRequests?filter=empty`);
+  await expect(page.locator("#search")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
+    "Pull request",
+  );
+  await expect(page.locator(".pullrequeset-tab-menu li.active a")).toContainText("Closed");
+  await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
+  await expect(page.locator(".post-list-wrap #pagination")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(page, expectedClosedPullRequestsEmpty(basePath)),
+  );
+});
+
+function expectedClosedPullRequestsEmpty(basePath: string) {
+  return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+    .replace(
+      `action="${basePath}/admin/sample/pullRequests"`,
+      `action="${basePath}/admin/sample/closedPullRequests"`,
+    )
+    .replace(
+      '<li class="active"><a href="#" data-url="' +
+        basePath +
+        '/admin/sample/pullRequests" data-type="state">Open',
+      '<li class=""><a href="#" data-url="' +
+        basePath +
+        '/admin/sample/pullRequests" data-type="state">Open',
+    )
+    .replace(
+      '<li class=""><a href="#" data-url="' +
+        basePath +
+        '/admin/sample/closedPullRequests" data-type="state">Closed',
+      '<li class="active"><a href="#" data-url="' +
+        basePath +
+        '/admin/sample/closedPullRequests" data-type="state">Closed',
+    );
+}
+
 async function mockProjectPullRequests(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -75,11 +120,13 @@ async function mockProjectPullRequests(page: Page) {
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/pull-requests**", async (route) => {
+    const url = new URL(route.request().url());
+    const category = url.searchParams.get("category") === "closed" ? "closed" : "open";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         acceptedCount: 0,
-        category: "open",
+        category,
         closedCount: 0,
         contributors: [
           {

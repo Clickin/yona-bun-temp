@@ -4,6 +4,7 @@ import type { HTMLAttributes } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
   projectPullRequestListQueryOptions,
+  type PullRequestListCategory,
   type PullRequestListResponse,
 } from "../../../api/pull-requests";
 import type { ProjectContainer } from "../../../api/types";
@@ -13,46 +14,71 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
-type ProjectPullRequestsSearch = {
+export type ProjectPullRequestsSearch = {
   contributorId: number;
   filter: string;
   pageNum: number;
 };
 
+export function validateProjectPullRequestsSearch(
+  search: Record<string, unknown>,
+): ProjectPullRequestsSearch {
+  return {
+    contributorId: Number(search.contributorId) || 0,
+    filter: typeof search.filter === "string" ? search.filter : "",
+    pageNum: Number(search.pageNum) || 1,
+  };
+}
+
 export const Route = createFileRoute("/$ownerName/$projectName/pullRequests")({
   component: ProjectPullRequestsRoute,
-  validateSearch(search: Record<string, unknown>): ProjectPullRequestsSearch {
-    return {
-      contributorId: Number(search.contributorId) || 0,
-      filter: typeof search.filter === "string" ? search.filter : "",
-      pageNum: Number(search.pageNum) || 1,
-    };
-  },
+  validateSearch: validateProjectPullRequestsSearch,
 });
 
 function ProjectPullRequestsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { ownerName, projectName } = Route.useParams();
+  const search = Route.useSearch();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectPullRequestsScreen runtimeConfig={runtimeConfig} />
+          <ProjectPullRequestsScreen
+            category="open"
+            ownerName={ownerName}
+            projectName={projectName}
+            requestType="open"
+            runtimeConfig={runtimeConfig}
+            search={search}
+          />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectPullRequestsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { ownerName, projectName } = Route.useParams();
-  const search = Route.useSearch();
+export function ProjectPullRequestsScreen({
+  category,
+  ownerName,
+  projectName,
+  requestType,
+  runtimeConfig,
+  search,
+}: {
+  category: PullRequestListCategory;
+  ownerName: string;
+  projectName: string;
+  requestType: "closed" | "open";
+  runtimeConfig: RuntimeConfig;
+  search: ProjectPullRequestsSearch;
+}) {
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
   const pullRequestsQuery = useQuery(
     projectPullRequestListQueryOptions(runtimeConfig, {
-      category: "open",
+      category,
       contributorId: search.contributorId,
       filter: search.filter,
       ownerName,
@@ -76,6 +102,7 @@ function ProjectPullRequestsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       <ProjectPullRequestsBody
         project={projectQuery.data}
         pullRequests={pullRequestsQuery.data}
+        requestType={requestType}
         runtimeConfig={runtimeConfig}
         search={search}
       />
@@ -86,11 +113,13 @@ function ProjectPullRequestsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
 function ProjectPullRequestsBody({
   project,
   pullRequests,
+  requestType,
   runtimeConfig,
   search,
 }: {
   project: ProjectContainer;
   pullRequests: PullRequestListResponse;
+  requestType: "closed" | "open";
   runtimeConfig: RuntimeConfig;
   search: ProjectPullRequestsSearch;
 }) {
@@ -103,13 +132,14 @@ function ProjectPullRequestsBody({
     runtimeConfig.basePath,
     `/${ownerName}/${projectName}/closedPullRequests`,
   );
+  const searchAction = requestType === "closed" ? closedAction : openAction;
 
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
         <div {...pjaxContainer} className="row-fluid cb">
           <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
-            <form id="search" name="search" action={openAction} method="get">
+            <form id="search" name="search" action={searchAction} method="get">
               <div className="search">
                 <div className="search-bar">
                   <input
@@ -170,14 +200,14 @@ function ProjectPullRequestsBody({
               </a>
             </div>
             <ul className="nav nav-tabs nm pullrequeset-tab-menu">
-              <li className="active">
+              <li className={requestType === "open" ? "active" : ""}>
                 {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
                 <a href="#" data-url={openAction} data-type="state">
                   {t("pullRequest.state.open")}
                   <span className="num-badge">{pullRequests.openCount}</span>
                 </a>
               </li>
-              <li className="">
+              <li className={requestType === "closed" ? "active" : ""}>
                 {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
                 <a href="#" data-url={closedAction} data-type="state">
                   {t("pullRequest.state.closed")}
