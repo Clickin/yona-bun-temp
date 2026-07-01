@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import {
   pullRequestChangesQueryOptions,
   type PullRequestChangesResponse,
@@ -30,19 +30,43 @@ export const Route = createFileRoute(
 
 function ProjectPullRequestChangesRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { ownerName, projectName, pullRequestNumber } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const commitPathMarker = `/${ownerName}/${projectName}/pullRequest/${pullRequestNumber}/changes/`;
+  const markerIndex = pathname.indexOf(commitPathMarker);
+  const commitId =
+    markerIndex === -1
+      ? ""
+      : decodeURIComponent(pathname.slice(markerIndex + commitPathMarker.length));
 
+  return <ProjectPullRequestChangesPage commitId={commitId} runtimeConfig={runtimeConfig} />;
+}
+
+export function ProjectPullRequestChangesPage({
+  commitId = "",
+  runtimeConfig,
+}: {
+  commitId?: string;
+  runtimeConfig: RuntimeConfig;
+}) {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectPullRequestChangesScreen runtimeConfig={runtimeConfig} />
+          <ProjectPullRequestChangesScreen commitId={commitId} runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectPullRequestChangesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectPullRequestChangesScreen({
+  commitId,
+  runtimeConfig,
+}: {
+  commitId: string;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName, pullRequestNumber } = Route.useParams();
   const prNumber = Number(pullRequestNumber) || 0;
   const projectQuery = useQuery(
@@ -53,6 +77,7 @@ function ProjectPullRequestChangesScreen({ runtimeConfig }: { runtimeConfig: Run
       ownerName,
       projectName,
       pullRequestNumber: prNumber,
+      commitId,
     }),
   );
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
@@ -71,6 +96,7 @@ function ProjectPullRequestChangesScreen({ runtimeConfig }: { runtimeConfig: Run
       />
       <ProjectPullRequestChangesBody
         changes={changesQuery.data}
+        commitId={commitId}
         currentUserLoginId={String(sessionQuery.data.loginId ?? "")}
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
@@ -81,16 +107,21 @@ function ProjectPullRequestChangesScreen({ runtimeConfig }: { runtimeConfig: Run
 
 function ProjectPullRequestChangesBody({
   changes,
+  commitId,
   currentUserLoginId,
   project,
   runtimeConfig,
 }: {
   changes: PullRequestChangesResponse;
+  commitId: string;
   currentUserLoginId: string;
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
   const pullRequest = changes.pullRequest;
+  const selectedCommit = commitId
+    ? changes.commits.find((commit) => commit.commitId === commitId)
+    : undefined;
   const hasReviewCards = changes.cardThreads.length > 0;
   const codediffClassName = `codediff-wrap mt10${hasReviewCards ? "" : " diffs-only"}`;
 
@@ -136,7 +167,9 @@ function ProjectPullRequestChangesBody({
                 commits={changes.commits}
                 pullRequest={pullRequest}
                 runtimeConfig={runtimeConfig}
+                selectedCommit={selectedCommit}
               />
+              {selectedCommit ? <SelectedCommitInfo commit={selectedCommit} /> : null}
               <div className="diff-body diffs-wrap-scroll">
                 <div id="state" className="pullRequest-stateInfo">
                   <PullRequestStateInfo
@@ -168,13 +201,15 @@ function ProjectPullRequestChangesBody({
                 <div className="non-ranged-threads-wrap"></div>
                 {pullRequest.permissions.canComment ? (
                   <CommentForm
-                    action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest)}
+                    action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
                   />
                 ) : null}
               </div>
 
               {pullRequest.permissions.canComment ? (
-                <ReviewForm action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest)} />
+                <ReviewForm
+                  action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
+                />
               ) : null}
             </div>
           </div>
@@ -188,10 +223,12 @@ function CommitDropdown({
   commits,
   pullRequest,
   runtimeConfig,
+  selectedCommit,
 }: {
   commits: PullRequestCommit[];
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
+  selectedCommit?: PullRequestCommit;
 }) {
   const { t } = useLegacyMessages();
   const changesPath = pullRequestChangesPath(pullRequest);
@@ -199,7 +236,16 @@ function CommitDropdown({
   return (
     <div id="commits" className="btn-group auto mb10">
       <button className="btn dropdown-toggle auto" data-toggle="dropdown">
-        <span className="d-label">{t("pullRequest.changes.all")}</span>
+        <span className="d-label">
+          {selectedCommit ? (
+            <>
+              <strong className="blue-txt mr10 commit-hash">{selectedCommit.commitShortId}</strong>
+              <span>{commitSummary(selectedCommit)}</span>
+            </>
+          ) : (
+            t("pullRequest.changes.all")
+          )}
+        </span>
         <span className="d-caret">
           <span className="caret"></span>
         </span>
@@ -221,6 +267,23 @@ function CommitDropdown({
         ))}
       </ul>
     </div>
+  );
+}
+
+function SelectedCommitInfo({ commit }: { commit: PullRequestCommit }) {
+  return (
+    <>
+      <p className="commitInfo">
+        <span className="avatar-wrap smaller">
+          <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+        </span>
+        <strong>{commit.authorEmail || "Anonymous"}</strong>
+        <span className="ago" title={commit.authorDateLabel}>
+          {commit.authorDateLabel}
+        </span>
+      </p>
+      <pre className="commitMsg mt5">{commit.commitMessage}</pre>
+    </>
   );
 }
 
@@ -367,11 +430,16 @@ function pullRequestChangesPath(pullRequest: PullRequestDetailResponse) {
   return `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}/changes`;
 }
 
-function pullRequestCommentHref(basePath: string, pullRequest: PullRequestDetailResponse) {
-  return prefixBasePath(
+function pullRequestCommentHref(
+  basePath: string,
+  pullRequest: PullRequestDetailResponse,
+  commitId: string,
+) {
+  const path = prefixBasePath(
     basePath,
     `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.id}/comments`,
   );
+  return commitId ? `${path}?commitId=${encodeURIComponent(commitId)}` : path;
 }
 
 function commitSummary(commit: PullRequestCommit) {
