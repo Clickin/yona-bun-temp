@@ -1131,7 +1131,7 @@ async function mockProjectPosts(
         authorId: "2",
         authorLabel: "Dev Member",
         authorLoginId: "dev",
-        bodyHtml: "<p>Post <strong>markdown</strong></p>",
+        bodyHtml: "<p>Server HTML should not render</p>",
         bodyMarkdown: "Post **markdown**",
         commentCount:
           state === "comment" || state === "commentUpdate" || state === "attachments"
@@ -1160,7 +1160,7 @@ async function mockProjectPosts(
                   authorId: "2",
                   authorLabel: "Dev Member",
                   authorLoginId: "dev",
-                  contentsHtml: "<p>First <strong>comment</strong></p>",
+                  contentsHtml: "<p>Server HTML should not render</p>",
                   contentsMarkdown: "First **comment**",
                   createdLabel: "Jul 3, 2026",
                   id: "21",
@@ -1174,7 +1174,7 @@ async function mockProjectPosts(
                         authorId: "1",
                         authorLabel: "Site Admin",
                         authorLoginId: "admin",
-                        contentsHtml: "<p>Nested <strong>reply</strong></p>",
+                        contentsHtml: "<p>Server HTML should not render</p>",
                         contentsMarkdown: "Nested **reply**",
                         createdLabel: "Jul 4, 2026",
                         id: "22",

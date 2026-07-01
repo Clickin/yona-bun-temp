@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { Fragment, type FormEvent, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   createPostCommentRest,
   deleteProjectPostRest,
@@ -249,11 +251,9 @@ function ProjectPostDetailBody({
                 </div>
                 <div id={`post-body-${postNumber}`}>
                   <TasklistBar />
-                  <div
-                    className="content markdown-wrap"
-                    data-allowed-update={String(canUpdate)}
-                    dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
-                  />
+                  <div className="content markdown-wrap" data-allowed-update={String(canUpdate)}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.bodyMarkdown}</ReactMarkdown>
+                  </div>
                 </div>
               </>
             ) : (
@@ -843,8 +843,9 @@ function PostCommentRow({
             className="comment-body markdown-wrap"
             data-via-email={String(booleanField(comment.viaEmail))}
             data-allowed-update={String(canUpdate)}
-            dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
-          />
+          >
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{comment.contentsMarkdown}</ReactMarkdown>
+          </div>
           <div
             className="attachments"
             data-attachments={JSON.stringify(comment.attachments ?? [])}
@@ -1078,7 +1079,7 @@ function PostChildComment({
         ),
       )}" title="${escapeHtml(t("common.comment.delete"))}">x</a>`
     : "";
-  const contents = `${comment.contentsHtml}<span class="subcomment-author hide">- <a href="${escapeHtml(
+  const childMetaHtml = `- <a href="${escapeHtml(
     prefixBasePath(basePath, `/${authorLoginId}`),
   )}" class="usf-group" data-toggle="tooltip" data-placement="top" title="${escapeHtml(
     authorLoginId,
@@ -1086,11 +1087,17 @@ function PostChildComment({
     commentId,
   )}" class="ago" title="${escapeHtml(comment.createdLabel)}">${escapeHtml(
     comment.createdLabel,
-  )}</a>${deleteLink}</span>`;
+  )}</a>${deleteLink}`;
 
   return (
     <div className="one-line-comment">
-      <div className="contents" dangerouslySetInnerHTML={{ __html: contents }} />
+      <div className="contents">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{comment.contentsMarkdown}</ReactMarkdown>
+        <span
+          className="subcomment-author hide"
+          dangerouslySetInnerHTML={{ __html: childMetaHtml }}
+        ></span>
+      </div>
     </div>
   );
 }
