@@ -137,6 +137,38 @@ test("organization delete form matches legacy organization/deleteForm.scala.html
   );
 });
 
+test("organization delete menu settings link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationAdmin(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/deleteForm`);
+  const settingsLink = page.locator(".project-page-wrap > .nav.nav-tabs a").filter({
+    hasText: "Setting",
+  });
+  await expect(settingsLink).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/settingform`,
+  );
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await settingsLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/settingform`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs li").first()).toHaveClass("active");
+  await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
 async function mockOrganizationAdmin(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -159,6 +191,18 @@ async function mockOrganizationAdmin(page: Page) {
       contentType: "application/json",
       body: JSON.stringify({
         description: "Web labs group",
+        logoUrl: "/assets/images/organization_default_logo.png",
+        organizationName: "weblabs",
+        viewerCanUpdate: true,
+      }),
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs/settings", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        description: "Web labs group",
+        id: 42,
         logoUrl: "/assets/images/organization_default_logo.png",
         organizationName: "weblabs",
         viewerCanUpdate: true,
