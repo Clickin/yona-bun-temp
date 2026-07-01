@@ -149,6 +149,27 @@ test("public user profile matches legacy selected projects tab and click switchi
   await expect(page.locator("#issues")).toHaveClass(/active/u);
 });
 
+test("public user profile matches legacy selected pull-request tab", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPublicProfile(page);
+
+  await page.goto(`${basePath}/door?daysAgo=7&selected=pullRequests`);
+  await expect(page.locator(".user-box")).toBeVisible();
+  await expect(page.locator(".user-stream-box > .nav-tabs > li").nth(1)).toHaveClass("active");
+  await expect(page.locator("#pullRequests")).toHaveClass(/active/u);
+
+  expect(await canonicalizeProfileRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedProfileScreen({
+        basePath,
+        daysAgo: 7,
+        selected: "pullRequests",
+      }),
+    ),
+  );
+});
+
 test("current user profile projects tab renders legacy leave-project branch", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPublicProfile(page, {
