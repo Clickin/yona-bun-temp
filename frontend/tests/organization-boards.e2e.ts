@@ -9,6 +9,19 @@ const EXPECTED_ORGANIZATION_BOARDS = `
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
+function expectedOrganizationBoardsEmpty() {
+  const listStart = EXPECTED_ORGANIZATION_BOARDS.indexOf('<div class="filter-wrap board">');
+  const listEnd = EXPECTED_ORGANIZATION_BOARDS.indexOf(
+    '<div class="write-btn-wrap"></div><div id="pagination"></div>',
+  );
+  return `${EXPECTED_ORGANIZATION_BOARDS.slice(0, listStart).replace(
+    'value="release"',
+    'value="empty"',
+  )}<div class="error-wrap"><i class="ico ico-err1"></i><p>No post has been added.</p></div>${EXPECTED_ORGANIZATION_BOARDS.slice(
+    listEnd,
+  )}`;
+}
+
 test("organization board aggregate matches legacy group_board_list.scala.html DOM", async ({
   page,
 }) => {
@@ -37,7 +50,29 @@ test("organization board aggregate matches legacy group_board_list.scala.html DO
   );
 });
 
-async function mockOrganizationBoards(page: Page) {
+test("organization board aggregate empty state matches legacy group_board_list.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationBoards(page, "empty");
+
+  await page.goto(
+    `${basePath}/organizations/weblabs/boards?filter=empty&projectNames%5B%5D=sample&orderBy=numOfComments&orderDir=desc`,
+  );
+  await expect(page.locator("#option_form")).toBeVisible();
+  await expect(page.locator(".error-wrap")).toHaveText("No post has been added.");
+  await expect(page.locator(".filter-wrap.board")).toHaveCount(0);
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedOrganizationBoardsEmpty().replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+async function mockOrganizationBoards(page: Page, state: "default" | "empty" = "default") {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -69,47 +104,52 @@ async function mockOrganizationBoards(page: Page) {
     });
   });
   await page.route("**/api/v1/organizations/weblabs/boards**", async (route) => {
+    const isEmpty = state === "empty";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        items: [
-          {
-            authorAvatarUrl: "/assets/images/default-avatar-32.png",
-            authorLabel: "Dev Member",
-            authorLoginId: "dev",
-            commentCount: 2,
-            createdLabel: "Jul 1, 2026",
-            labels: [],
-            notice: false,
-            ownerName: "weblabs",
-            postNumber: "7",
-            projectName: "sample",
-            readme: false,
-            title: "Release note",
-            updatedLabel: "Jul 1, 2026",
-          },
-        ],
-        notices: [
-          {
-            authorAvatarUrl: "/assets/images/default-avatar-32.png",
-            authorLabel: "Site Admin",
-            authorLoginId: "admin",
-            commentCount: 1,
-            createdLabel: "Jul 1, 2026",
-            labels: [],
-            notice: true,
-            ownerName: "weblabs",
-            postNumber: "9",
-            projectName: "sample",
-            readme: false,
-            title: "Pinned release notice",
-            updatedLabel: "Jul 1, 2026",
-          },
-        ],
+        items: isEmpty
+          ? []
+          : [
+              {
+                authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                authorLabel: "Dev Member",
+                authorLoginId: "dev",
+                commentCount: 2,
+                createdLabel: "Jul 1, 2026",
+                labels: [],
+                notice: false,
+                ownerName: "weblabs",
+                postNumber: "7",
+                projectName: "sample",
+                readme: false,
+                title: "Release note",
+                updatedLabel: "Jul 1, 2026",
+              },
+            ],
+        notices: isEmpty
+          ? []
+          : [
+              {
+                authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                authorLabel: "Site Admin",
+                authorLoginId: "admin",
+                commentCount: 1,
+                createdLabel: "Jul 1, 2026",
+                labels: [],
+                notice: true,
+                ownerName: "weblabs",
+                postNumber: "9",
+                projectName: "sample",
+                readme: false,
+                title: "Pinned release notice",
+                updatedLabel: "Jul 1, 2026",
+              },
+            ],
         organizationName: "weblabs",
         pageNum: 1,
         pageSize: 20,
-        totalCount: 2,
+        totalCount: isEmpty ? 0 : 2,
         visibleProjects: [
           { ownerName: "weblabs", projectName: "sample" },
           { ownerName: "weblabs", projectName: "playground" },
