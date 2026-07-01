@@ -84,6 +84,39 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
   });
 });
 
+test("public user profile matches legacy selected projects tab and click switching", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPublicProfile(page);
+
+  await page.goto(`${basePath}/door?daysAgo=7&selected=projects`);
+  await expect(page.locator(".user-box")).toBeVisible();
+  await expect(page.locator(".user-stream-box > .nav-tabs > li").nth(2)).toHaveClass("active");
+
+  expect(await canonicalizeProfileRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedProfileScreen({
+        basePath,
+        daysAgo: 7,
+        selected: "projects",
+      }),
+    ),
+  );
+
+  await page.locator('.user-stream-box > .nav-tabs a[href="#pullRequests"]').click();
+  await expect(page.locator(".user-stream-box > .nav-tabs > li").nth(1)).toHaveClass("active");
+  await expect(page.locator("#pullRequests")).toHaveClass(/active/u);
+  await expect(page.locator("#projects")).not.toHaveClass(/active/u);
+  expect(new URL(page.url()).searchParams.get("daysAgo")).toBe("7");
+  expect(new URL(page.url()).searchParams.get("selected")).toBe("projects");
+
+  await page.locator('.user-stream-box > .nav-tabs a[href="#issues"]').click();
+  await expect(page.locator(".user-stream-box > .nav-tabs > li").first()).toHaveClass("active");
+  await expect(page.locator("#issues")).toHaveClass(/active/u);
+});
+
 async function mockPublicProfile(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -95,11 +128,14 @@ async function mockPublicProfile(page: Page) {
       }),
     });
   });
-  await page.route("**/api/v1/users/door/profile?daysAgo=14&selected=issues", async (route) => {
+  await page.route("**/api/v1/users/door/profile**", async (route) => {
+    const url = new URL(route.request().url());
+    const daysAgo = Number(url.searchParams.get("daysAgo") ?? "14");
+    const selected = url.searchParams.get("selected") ?? "issues";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        daysAgo: 14,
+        daysAgo,
         issueItems: [
           {
             assigneeLabel: "Alice",
@@ -176,7 +212,7 @@ async function mockPublicProfile(page: Page) {
             updatedLabel: "2026-07-02",
           },
         ],
-        selected: "issues",
+        selected,
         viewerCanEditProfile: false,
       }),
     });
@@ -278,4 +314,41 @@ async function canonicalizeHtml(page: Page, html: string) {
         : attr.value;
     }
   }, html);
+}
+
+function expectedProfileScreen({
+  basePath,
+  daysAgo,
+  selected,
+}: {
+  basePath: string;
+  daysAgo: number;
+  selected: "issues" | "projects" | "pullRequests";
+}) {
+  return EXPECTED_PROFILE_SCREEN.replaceAll("__BASE_PATH__", basePath)
+    .replace('value="14"', `value="${daysAgo}"`)
+    .replace(
+      '<li class="active"><a href="#issues" data-toggle="tab">Issue',
+      `<li class="${selected === "issues" ? "active" : ""}"><a href="#issues" data-toggle="tab">Issue`,
+    )
+    .replace(
+      '<li class=""><a href="#pullRequests" data-toggle="tab">Pull request',
+      `<li class="${selected === "pullRequests" ? "active" : ""}"><a href="#pullRequests" data-toggle="tab">Pull request`,
+    )
+    .replace(
+      '<li class=""><a href="#projects" data-toggle="tab">projects',
+      `<li class="${selected === "projects" ? "active" : ""}"><a href="#projects" data-toggle="tab">projects`,
+    )
+    .replace(
+      '<div id="issues" class="tab-pane active">',
+      `<div id="issues" class="tab-pane ${selected === "issues" ? "active" : ""}">`,
+    )
+    .replace(
+      '<div id="pullRequests" class="tab-pane ">',
+      `<div id="pullRequests" class="tab-pane ${selected === "pullRequests" ? "active" : ""}">`,
+    )
+    .replace(
+      '<div id="projects" class="tab-pane ">',
+      `<div id="projects" class="tab-pane ${selected === "projects" ? "active" : ""}">`,
+    );
 }

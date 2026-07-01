@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import type { LiHTMLAttributes } from "react";
@@ -87,6 +88,7 @@ function PublicProfileBody({
   selected: PublicProfileSearch["selected"];
 }) {
   const { t } = useLegacyMessages();
+  const [activeTab, setActiveTab] = useState(selected);
   const profile = profileResponse.profile;
   if (!profile) {
     return null;
@@ -173,22 +175,25 @@ function PublicProfileBody({
 
                 <ul className="nav nav-tabs">
                   <ProfileTab
-                    active={selected === "issues"}
+                    active={activeTab === "issues"}
                     badge={issues.length}
                     href="#issues"
                     label={t("menu.issue")}
+                    onSelect={() => setActiveTab("issues")}
                   />
                   <ProfileTab
-                    active={selected === "pullRequests"}
+                    active={activeTab === "pullRequests"}
                     badge={profileResponse.pullRequestItems.length}
                     href="#pullRequests"
                     label={t("menu.pullRequest")}
+                    onSelect={() => setActiveTab("pullRequests")}
                   />
                   <ProfileTab
-                    active={selected === "projects"}
+                    active={activeTab === "projects"}
                     badge={profileResponse.memberProjects.length}
                     href="#projects"
                     label={t("project.projects")}
+                    onSelect={() => setActiveTab("projects")}
                   />
                   <li>
                     <TwoColumnModeCheckbox />
@@ -196,7 +201,7 @@ function PublicProfileBody({
                 </ul>
 
                 <div className="tab-content">
-                  <div id="issues" className={`tab-pane ${selected === "issues" ? "active" : ""}`}>
+                  <div id="issues" className={`tab-pane ${activeTab === "issues" ? "active" : ""}`}>
                     <ul className="nav nav-tabs nm">
                       <li className="active">
                         <a href="#openIssues" data-toggle="tab">
@@ -255,7 +260,7 @@ function PublicProfileBody({
                   </div>
                   <div
                     id="pullRequests"
-                    className={`tab-pane ${selected === "pullRequests" ? "active" : ""}`}
+                    className={`tab-pane ${activeTab === "pullRequests" ? "active" : ""}`}
                   >
                     {profileResponse.pullRequestItems.length === 0 ? (
                       <div className="error-wrap">
@@ -276,7 +281,7 @@ function PublicProfileBody({
                   </div>
                   <div
                     id="projects"
-                    className={`tab-pane ${selected === "projects" ? "active" : ""}`}
+                    className={`tab-pane ${activeTab === "projects" ? "active" : ""}`}
                   >
                     {profileResponse.memberProjects.length === 0 ? (
                       <div className="error-wrap">
@@ -309,15 +314,24 @@ function ProfileTab({
   badge,
   href,
   label,
+  onSelect,
 }: {
   active: boolean;
   badge: number;
   href: string;
   label: string;
+  onSelect: () => void;
 }) {
   return (
     <li className={active ? "active" : ""}>
-      <a href={href} data-toggle="tab">
+      <a
+        href={href}
+        data-toggle="tab"
+        onClick={(event) => {
+          event.preventDefault();
+          onSelect();
+        }}
+      >
         {label} {badge > 0 ? <span className="num-badge">{badge}</span> : null}
       </a>
     </li>
