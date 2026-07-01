@@ -190,7 +190,88 @@ index 1234567..abcdef1 100644
       `<div class="diff-body">${EXPECTED_FILE_DIFF.replaceAll("__BASE_PATH__", basePath)}<div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div>`,
     ),
   );
+  expect(await readPartialDiffMetrics(page)).toEqual({
+    codeLineBackground: "rgba(0, 0, 0, 0)",
+    codeLineBorderTopWidth: "0px",
+    codeLineFontFamily: 'Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace',
+    codeLineFontSize: "12px",
+    codeLineMargin: "0px",
+    codeLinePadding: "0px",
+    diffBodyMinHeight: "30px",
+    diffBodyPosition: "relative",
+    diffOuterBorderColor: "rgb(187, 187, 187)",
+    diffOuterMarginBottom: "20px",
+    fileFontSize: "13px",
+    fileFontWeight: "700",
+    fileMarginRight: "115px",
+    filePadding: "5px 10px",
+    firstLineNumberWidth: "50px",
+    lineNumberCellBorderRightColor: "rgb(229, 229, 229)",
+    lineNumberCellPadding: "0px 3px",
+    lineNumberCellWidth: 78,
+    metaBackground: "rgb(238, 238, 238)",
+    metaBorderBottomColor: "rgb(187, 187, 187)",
+    metaHeight: "30px",
+  });
 });
+
+async function readPartialDiffMetrics(page: Page) {
+  return page.evaluate(() => {
+    const diffBody = document.querySelector<HTMLElement>(".diff-body");
+    const diffOuter = document.querySelector<HTMLElement>(".diff-partial-outer");
+    const meta = document.querySelector<HTMLElement>(".diff-partial-meta");
+    const file = document.querySelector<HTMLElement>(".diff-partial-file");
+    const filename = document.querySelector<HTMLElement>(".diff-partial-file .filename");
+    const lineNumberCell = document.querySelector<HTMLElement>(".diff-container .linenum");
+    const firstLineNumber = document.querySelector<HTMLElement>(".diff-container .line-number");
+    const codeLine = document.querySelector<HTMLElement>(".diff-partial-codeline");
+    const missing = Object.entries({
+      codeLine,
+      diffBody,
+      diffOuter,
+      file,
+      filename,
+      firstLineNumber,
+      lineNumberCell,
+      meta,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected partial diff metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const codeLineStyle = getComputedStyle(codeLine);
+    const diffBodyStyle = getComputedStyle(diffBody);
+    const diffOuterStyle = getComputedStyle(diffOuter);
+    const fileStyle = getComputedStyle(file);
+    const lineNumberCellStyle = getComputedStyle(lineNumberCell);
+    const metaStyle = getComputedStyle(meta);
+    return {
+      codeLineBackground: codeLineStyle.backgroundColor,
+      codeLineBorderTopWidth: codeLineStyle.borderTopWidth,
+      codeLineFontFamily: codeLineStyle.fontFamily,
+      codeLineFontSize: codeLineStyle.fontSize,
+      codeLineMargin: codeLineStyle.margin,
+      codeLinePadding: codeLineStyle.padding,
+      diffBodyMinHeight: diffBodyStyle.minHeight,
+      diffBodyPosition: diffBodyStyle.position,
+      diffOuterBorderColor: diffOuterStyle.borderTopColor,
+      diffOuterMarginBottom: diffOuterStyle.marginBottom,
+      fileFontSize: getComputedStyle(filename).fontSize,
+      fileFontWeight: fileStyle.fontWeight,
+      fileMarginRight: fileStyle.marginRight,
+      filePadding: fileStyle.padding,
+      firstLineNumberWidth: getComputedStyle(firstLineNumber).width,
+      lineNumberCellBorderRightColor: lineNumberCellStyle.borderRightColor,
+      lineNumberCellPadding: lineNumberCellStyle.padding,
+      lineNumberCellWidth: Math.round(lineNumberCell.getBoundingClientRect().width),
+      metaBackground: metaStyle.backgroundColor,
+      metaBorderBottomColor: metaStyle.borderBottomColor,
+      metaHeight: metaStyle.height,
+    };
+  });
+}
 
 test("project commit detail renders legacy inline diff comment row", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
