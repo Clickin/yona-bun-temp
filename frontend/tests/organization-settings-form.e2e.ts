@@ -163,6 +163,35 @@ test("organization settings form matches legacy organization/setting.scala.html 
   );
 });
 
+test("organization settings menu members link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationSettings(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/settingform`);
+  const membersLink = page.locator(".project-page-wrap > .nav.nav-tabs a").filter({
+    hasText: "Group member",
+  });
+  await expect(membersLink).toHaveAttribute("href", `${basePath}/organizations/weblabs/members`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await membersLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/members`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs li").nth(1)).toHaveClass("active");
+  await expect(page.locator("#addNewMember")).toBeVisible();
+});
+
 async function mockOrganizationSettings(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -192,6 +221,36 @@ async function mockOrganizationSettings(page: Page) {
       }),
     });
   });
+  await page.route("**/api/v1/organizations/weblabs/admin", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(organizationAdminPayload()),
+    });
+  });
+}
+
+function organizationAdminPayload() {
+  return {
+    deleteAllowed: true,
+    enrollmentRequests: [],
+    id: 42,
+    logoUrl: "/assets/images/organization_default_logo.png",
+    members: [
+      {
+        avatarUrl: "/assets/images/default-avatar-64.png",
+        loginId: "admin",
+        role: "org_admin",
+        userId: 1,
+        userLabel: "Site Admin",
+      },
+    ],
+    organizationName: "weblabs",
+    roleOptions: [
+      { label: "Group Manager", role: "org_admin" },
+      { label: "Group Member", role: "org_member" },
+    ],
+    viewerCanUpdate: true,
+  };
 }
 
 async function canonicalizeScreenRoots(page: Page) {
