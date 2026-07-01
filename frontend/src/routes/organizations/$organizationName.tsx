@@ -1,3 +1,4 @@
+import type { MouseEvent, ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { leaveOrganizationRest, readOrganizationContainerRest } from "../../api/org-project";
@@ -367,46 +368,104 @@ export function OrganizationMenu({
   viewerCanUpdate: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
+  const navigate = (to: string) => {
+    router.navigate({ to });
+  };
 
   return (
     <div className="project-menu-outer">
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className={active === "home" ? "active" : ""}>
-            <a href={organizationHref(basePath, organizationName)}>{t("title.organizationHome")}</a>
+            <OrganizationRouteLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}`}
+            >
+              {t("title.organizationHome")}
+            </OrganizationRouteLink>
           </li>
           <li className="">
-            <a href={prefixBasePath(basePath, `/organizations/${organizationName}/issues`)}>
+            <OrganizationRouteLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}/issues`}
+            >
               {t("menu.issue")}
-            </a>
+            </OrganizationRouteLink>
           </li>
           <li className="">
-            <a href={prefixBasePath(basePath, `/organizations/${organizationName}/boards`)}>
+            <OrganizationRouteLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}/boards`}
+            >
               {t("menu.board")}
-            </a>
+            </OrganizationRouteLink>
           </li>
           <li className="">
-            <a href={prefixBasePath(basePath, `/organizations/${organizationName}/pullrequests`)}>
+            <OrganizationRouteLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}/pullrequests`}
+            >
               {t("menu.pullRequest")}
-            </a>
+            </OrganizationRouteLink>
           </li>
         </ul>
         <div className="project-setting">
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">
-                <a
-                  href={prefixBasePath(basePath, `/organizations/${organizationName}/settingform`)}
+                <OrganizationRouteLink
+                  basePath={basePath}
+                  onNavigate={navigate}
+                  to={`/organizations/${organizationName}/settingform`}
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
-                </a>
+                </OrganizationRouteLink>
               </li>
             ) : null}
           </ul>
         </div>
       </div>
     </div>
+  );
+}
+
+function OrganizationRouteLink({
+  basePath,
+  children,
+  onNavigate,
+  to,
+}: {
+  basePath: string;
+  children: ReactNode;
+  onNavigate: (to: string) => void;
+  to: string;
+}) {
+  const navigateWithinOrganization = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    onNavigate(to);
+  };
+
+  return (
+    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinOrganization}>
+      {children}
+    </a>
   );
 }
 

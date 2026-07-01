@@ -24,6 +24,36 @@ test("organization home matches legacy organization/view.scala.html DOM", async 
   );
 });
 
+test("organization home menu settings link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationHome(page);
+
+  await page.goto(`${basePath}/organizations/weblabs`);
+  const settingsLink = page.locator(".project-setting a");
+  await expect(settingsLink).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/settingform`,
+  );
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await settingsLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/settingform`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs li").first()).toHaveClass("active");
+  await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
 async function mockOrganizationHome(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -82,6 +112,18 @@ async function mockOrganizationHome(page: Page) {
             watchCount: 5,
           },
         ],
+      }),
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs/settings", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        description: "Web labs group",
+        id: 42,
+        logoUrl: "/assets/images/organization_default_logo.png",
+        organizationName: "weblabs",
+        viewerCanUpdate: true,
       }),
     });
   });
