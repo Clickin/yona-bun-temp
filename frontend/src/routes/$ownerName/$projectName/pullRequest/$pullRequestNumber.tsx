@@ -613,6 +613,8 @@ function PullRequestBranchInfo({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const fromBranchName = branchItemName(pullRequest.fromBranch);
+  const toBranchName = branchItemName(pullRequest.toBranch);
   return (
     <div className="pullRequest-branchInfo">
       <i className="yobicon-branch ml0"></i>
@@ -634,12 +636,12 @@ function PullRequestBranchInfo({
           href={prefixBasePath(
             runtimeConfig.basePath,
             `/${pullRequest.fromOwnerName}/${pullRequest.fromProjectName}/code/${encodeBranch(
-              pullRequest.fromBranch,
+              fromBranchName,
             )}`,
           )}
           className="branchName"
         >
-          {pullRequest.fromBranch}
+          {fromBranchName}
         </a>
       </code>
       <i className="yobicon-right-2 ml10"></i>
@@ -661,12 +663,12 @@ function PullRequestBranchInfo({
           href={prefixBasePath(
             runtimeConfig.basePath,
             `/${pullRequest.ownerName}/${pullRequest.projectName}/code/${encodeBranch(
-              pullRequest.toBranch,
+              toBranchName,
             )}`,
           )}
           className="branchName"
         >
-          {pullRequest.toBranch}
+          {toBranchName}
         </a>
       </code>
     </div>
@@ -773,6 +775,8 @@ function PullRequestConflictGuide({
 }) {
   const { t } = useLegacyMessages();
   const prPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
+  const fromBranchName = branchItemName(pullRequest.fromBranch);
+  const toBranchName = branchItemName(pullRequest.toBranch);
   const upstreamUrl = projectCodeUrlWithLogin(
     runtimeConfig.basePath,
     pullRequest.ownerName,
@@ -786,8 +790,7 @@ function PullRequestConflictGuide({
       <div className="help">
         <ol>
           <li>
-            {t("pullRequest.resolver.step1")}{" "}
-            <code>{`git checkout ${pullRequest.fromBranch}`}</code>
+            {t("pullRequest.resolver.step1")} <code>{`git checkout ${fromBranchName}`}</code>
           </li>
           <li>
             {t("pullRequest.resolver.step2")}{" "}
@@ -797,8 +800,7 @@ function PullRequestConflictGuide({
             {t("pullRequest.resolver.step3")} <code>git fetch upstream</code>
           </li>
           <li>
-            {t("pullRequest.resolver.step4")}{" "}
-            <code>{`git rebase upstream/${pullRequest.toBranch}`}</code>
+            {t("pullRequest.resolver.step4")} <code>{`git rebase upstream/${toBranchName}`}</code>
           </li>
           <li>{t("pullRequest.resolver.step5")}</li>
           <li>
@@ -809,8 +811,7 @@ function PullRequestConflictGuide({
           </li>
           <li>{t("pullRequest.resolver.step8")}</li>
           <li>
-            {t("pullRequest.resolver.step9")}{" "}
-            <code>{`git push -f origin ${pullRequest.fromBranch}`}</code>
+            {t("pullRequest.resolver.step9")} <code>{`git push -f origin ${fromBranchName}`}</code>
           </li>
           <li>
             {t("pullRequest.resolver.step10")}
@@ -896,6 +897,15 @@ function projectCodeUrlWithLogin(
 
 function encodeBranch(branch: string) {
   return encodeURIComponent(branch);
+}
+
+function branchItemName(branch: string) {
+  const refsPrefix = "refs/";
+  if (!branch.startsWith(refsPrefix)) {
+    return branch;
+  }
+  const branchTypeEnd = branch.indexOf("/", refsPrefix.length);
+  return branchTypeEnd === -1 ? branch : branch.slice(branchTypeEnd + 1);
 }
 
 function isRenderableEvent(event: PullRequestEvent) {

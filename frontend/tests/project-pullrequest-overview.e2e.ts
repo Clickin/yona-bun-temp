@@ -70,6 +70,11 @@ const EXPECTED_PULL_REQUEST_CONFLICT_CONTRIBUTOR_STATE =
     `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-error"><i class="yobicon-error mr5"></i><span>A conflict occurred when merging. This pull request cannot be merged safely.</span><div class="howto-resolve-conflict"><h6>Resolving conflicts</h6><div class="help"><ol><li>Move from local to the branch that sent the code. <code>git checkout feature/ui</code></li><li>Add upstream repository URL as new remote. But if you did it already, skip it. <code>git remote add upstream __UPSTREAM_URL__</code></li><li>Get the latest upstream code. <code>git fetch upstream</code></li><li>Rebase branch that will receive the code. <code>git rebase upstream/main</code></li><li>There must be some conflicted files. Open the files and edit them.</li><li>Once you fix it, notify Git. <code>git add resolved_file</code></li><li>After resolving all conflicts, continue rebasing. <code>git rebase --continue</code></li><li>You may need to repeat steps 5 to 7 several times.</li><li>After rebasing, push it to origin. <code>git push -f origin feature/ui</code></li><li>The End!<a href="__BASE_PATH__/admin/sample/pullRequest/9" class="ybtn ybtn-mini ybtn-primary">Refresh page</a>Double check whether your pull request can be merged safely or not.</li></ol></div></div></div></div>`,
   );
 
+const EXPECTED_PULL_REQUEST_REFS_HEADS_BRANCH_NAMES =
+  EXPECTED_PULL_REQUEST_CONFLICT_CONTRIBUTOR_STATE.replaceAll("feature/ui", "release/hotfix")
+    .replaceAll("main", "production")
+    .replaceAll("feature%2Fui", "release%2Fhotfix");
+
 const EXPECTED_PULL_REQUEST_CLOSED_REOPEN = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div>`,
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-closed">Closed</span></div>`,
@@ -531,6 +536,48 @@ test("project pull request overview renders legacy contributor conflict guide DO
         "__BASE_PATH__",
         basePath,
       ).replace("__UPSTREAM_URL__", upstreamUrl),
+    ),
+  );
+});
+
+test("project pull request overview renders legacy refs heads branch names", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    detail: {
+      conflict: true,
+      fromBranch: "refs/heads/release/hotfix",
+      toBranch: "refs/heads/production",
+    },
+    session: {
+      actorId: 2,
+      emailAddress: "dev@example.com",
+      loginId: "dev",
+      userLabel: "Dev Member",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  const upstreamUrl = await page.evaluate((mountedBasePath) => {
+    const url = new URL(`${mountedBasePath}/admin/sample`, window.location.origin);
+    url.username = "dev";
+    return url.toString();
+  }, basePath);
+  await expect(page.locator(".pullRequest-branchInfo .from .branchName")).toHaveText(
+    "release/hotfix",
+  );
+  await expect(page.locator(".pullRequest-branchInfo .to .branchName")).toHaveText("production");
+  await expect(page.locator(".pullRequest-branchInfo .from .branchName")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/release%2Fhotfix`,
+  );
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_REFS_HEADS_BRANCH_NAMES.replaceAll("__BASE_PATH__", basePath).replace(
+        "__UPSTREAM_URL__",
+        upstreamUrl,
+      ),
     ),
   );
 });
