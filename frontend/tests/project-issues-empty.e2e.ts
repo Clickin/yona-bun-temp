@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const ISSUE_LIST_KEYMAP = `<div id="helpKeys" class="modal hide fade keymap-help" tabindex="-1" role="dialog"><div class="row-fluid"><div class="span3"><h5>projects</h5><span class="ybtn ybtn-small">H</span><span class="help-inline">Home</span><br><span class="ybtn ybtn-small">B</span><span class="help-inline">Board</span><br><span class="ybtn ybtn-small">I</span><span class="help-inline">Issue</span><br><span class="ybtn ybtn-small">C</span><span class="help-inline">Code</span><br><span class="ybtn ybtn-small">M</span><span class="help-inline">Milestone</span><br><span class="ybtn ybtn-small">P</span><span class="help-inline">Pull request</span><br><span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br></div><div class="span9"><div class="row-fluid"><div class="span5"><h5>Issue list</h5><span class="ybtn ybtn-small">N</span><span class="help-inline">New issue</span><br><span class="ybtn ybtn-small">←</span><span class="help-inline">Previous page</span><br><span class="ybtn ybtn-small">→</span><span class="help-inline">Next page</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">A</span><span class="help-inline">Select all</span><br></div><div class="span7"><h5>Site</h5><span class="ybtn ybtn-small">A</span><span class="help-inline">My Issues</span><br><span class="ybtn ybtn-small">U</span><span class="help-inline">Profile</span><br><span class="ybtn ybtn-small">F</span><span class="help-inline">User menu</span><br>__SITE_SEARCH_KEYS__<span class="help-inline">Site search</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Submit form</span><br></div></div><div class="row-fluid mt20"><div class="span12"></div></div></div></div><p class="actrow"><button type="button" class="ybtn ybtn-info" data-dismiss="modal">Confirm</button></p></div>`;
 const ISSUE_LIST_KEYMAP_NON_MANAGER = ISSUE_LIST_KEYMAP.replace(
@@ -679,6 +679,31 @@ test("project issue list mass update state posts selected issues through REST", 
   });
 });
 
+test("project issue list mass update label lists follow checked issue labels", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "bulk");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bulk`);
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+
+  const attachBug = page.locator('#attach-label-list li[data-value="8"]');
+  const detachButton = page.locator("#detaching-label > button");
+  expect(await displayValue(attachBug)).not.toBe("none");
+  await expect(detachButton).toBeDisabled();
+
+  await page.locator("#issue-42").check();
+  expect(await displayValue(attachBug)).toBe("none");
+  await expect(detachButton).toBeEnabled();
+
+  await page.locator("#issue-42").uncheck();
+  expect(await displayValue(attachBug)).not.toBe("none");
+  await expect(detachButton).toBeDisabled();
+
+  await page.locator("#issue-43").check();
+  expect(await displayValue(attachBug)).not.toBe("none");
+  await expect(detachButton).toBeDisabled();
+});
+
 test("project issue list subtask row matches legacy partial_list_subtask.scala.html DOM", async ({
   page,
 }) => {
@@ -798,6 +823,10 @@ async function massUpdateButtonsDisabled(page: Page) {
       return button.disabled;
     }),
   );
+}
+
+async function displayValue(locator: Locator) {
+  return locator.evaluate((element) => getComputedStyle(element).display);
 }
 
 async function issueCommentCountMetrics(page: Page) {

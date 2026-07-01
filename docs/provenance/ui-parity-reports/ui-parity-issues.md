@@ -85,8 +85,8 @@ Mode: read-only audit, no files edited by the explorer
 ## 2026-07-01 Project Issue Mass Update Toolbar Follow-Up
 
 - Restored the visible `issue/partial_massupdate.scala.html` toolbar in the flat project issue list for non-empty member-visible issue lists, including `#mass-update-form`, `#check-all`, state/assignee/milestone/attach-label/detach-label dropdown shells, disabled buttons, label category/divider rows, and the multi-row sort filter branch from `partial_list_wrap.scala.html`.
-- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` derives the toolbar's visible options from the loaded issue list REST items for this screen, enables bulk buttons from checked row state, and posts dropdown changes through the existing REST/TanStack mass-update boundary.
-- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=bulk` interaction guard proving row/check-all checkbox enablement and the legacy state dropdown path posting selected issue numbers to `POST /api/v1/projects/:owner/:project/issues/mass-update`.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` derives the toolbar's visible options from the loaded issue list REST items for this screen, enables bulk buttons from checked row state, filters attach/detach label lists from checked row label metadata, and posts dropdown changes through the existing REST/TanStack mass-update boundary.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues?filter=bulk` interaction guard proving row/check-all checkbox enablement, checked-label attach/detach filtering, and the legacy state dropdown path posting selected issue numbers to `POST /api/v1/projects/:owner/:project/issues/mass-update`.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` now includes the RED-to-GREEN `/admin/sample/issues?filter=bulk` whole-screen DOM comparison for the multi-row toolbar/filter state.
 
 ## 2026-07-01 Project Issue Draft Row Follow-Up

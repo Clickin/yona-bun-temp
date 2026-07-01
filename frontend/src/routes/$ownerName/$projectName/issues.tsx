@@ -370,6 +370,7 @@ function MassUpdateToolbar({
 
     const checkAll = form.querySelector<HTMLInputElement>("#check-all");
     const buttons = Array.from(form.querySelectorAll<HTMLButtonElement>("button"));
+    const detachButton = form.querySelector<HTMLButtonElement>("#detaching-label > button");
     const rowCheckboxSelector = 'input[name="checked-issue"][data-toggle="issue-checkbox"]';
     const rowCheckboxes = () =>
       Array.from(document.querySelectorAll<HTMLInputElement>(rowCheckboxSelector));
@@ -382,12 +383,38 @@ function MassUpdateToolbar({
     const userLoginById = new Map(users.map((user) => [user.id, user.loginId]));
     const updateButtons = () => {
       const checkboxes = rowCheckboxes();
-      const checkedCount = checkboxes.filter((checkbox) => checkbox.checked).length;
+      const labelCounts = new Map<string, number>();
+      let checkedCount = 0;
+      for (const checkbox of checkboxes) {
+        if (!checkbox.checked) {
+          continue;
+        }
+        checkedCount += 1;
+        for (const labelId of issueLabelIds(checkbox.dataset.issueLabels ?? "")) {
+          labelCounts.set(labelId, (labelCounts.get(labelId) ?? 0) + 1);
+        }
+      }
       buttons.forEach((button) => {
         button.disabled = checkedCount === 0;
       });
       if (checkAll) {
         checkAll.checked = checkedCount > 0 && checkedCount === checkboxes.length;
+      }
+      form
+        .querySelectorAll<HTMLElement>("#attach-label-list li, #delete-label-list li")
+        .forEach((item) => {
+          item.style.display = "";
+        });
+      if (checkedCount === 0) {
+        return;
+      }
+      form.querySelectorAll<HTMLElement>("#attach-label-list li[data-value]").forEach((item) => {
+        if (labelCounts.get(item.dataset.value ?? "") === checkedCount) {
+          item.style.display = "none";
+        }
+      });
+      if (detachButton && labelCounts.size === 0) {
+        detachButton.disabled = true;
       }
     };
     const onCheckAll = () => {
@@ -1471,6 +1498,20 @@ function issueLabelData(labels: RestIssueListItem["labels"]) {
     )
     .join("|")
     .concat(labels.length ? "|" : "");
+}
+
+function issueLabelIds(value: string) {
+  const labelIds: string[] = [];
+  for (const label of value.split("|")) {
+    if (!label) {
+      continue;
+    }
+    const [, labelId] = label.split(",");
+    if (labelId) {
+      labelIds.push(labelId);
+    }
+  }
+  return labelIds;
 }
 
 function uniqueMilestones(issues: RestIssueListItem[]) {
