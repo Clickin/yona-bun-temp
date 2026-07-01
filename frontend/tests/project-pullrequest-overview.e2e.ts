@@ -26,6 +26,11 @@ const EXPECTED_PULL_REQUEST_OVERVIEW_WITH_CONFLICT_RESOLVED_EVENTS =
     EXPECTED_PULL_REQUEST_CONFLICT_RESOLVED_EVENTS,
   );
 
+const EXPECTED_PULL_REQUEST_OPEN_THREAD_BADGE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
+  `<li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes</a></li>`,
+  `<li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes<span class="num-badge">1</span></a></li>`,
+);
+
 const EXPECTED_PULL_REQUEST_CONFLICT_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div>`,
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-conflict">Conflict</span></div>`,
@@ -259,6 +264,30 @@ test("project pull request overview renders legacy conflict and resolved event D
         "__BASE_PATH__",
         basePath,
       ),
+    ),
+  );
+});
+
+test("project pull request overview renders legacy changes tab open-thread badge", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    detail: {
+      threads: [
+        { id: 77, state: "open" },
+        { id: 78, state: "closed" },
+      ],
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator(".nav-tabs .num-badge")).toHaveText("1");
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_OPEN_THREAD_BADGE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });

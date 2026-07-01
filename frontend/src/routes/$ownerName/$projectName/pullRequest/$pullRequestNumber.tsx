@@ -460,6 +460,9 @@ function PullRequestHeader({
   const prPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
   const isOpen = isOpenState(pullRequest.state);
   const isAcceptable = isOpen && !pullRequest.conflict && pullRequest.lackingReviewerCount <= 0;
+  const openThreadCount = pullRequest.threads.filter(
+    (thread) => thread.state.toLowerCase() === "open",
+  ).length;
   return (
     <>
       <div className="board-header issue">
@@ -509,6 +512,7 @@ function PullRequestHeader({
         <li>
           <a href={prefixBasePath(runtimeConfig.basePath, `${prPath}/changes`)}>
             {t("pullRequest.menu.changes")}
+            {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
           </a>
         </li>
       </ul>
