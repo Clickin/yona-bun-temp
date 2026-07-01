@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   codeCommitDetailQueryOptions,
   type CodeCommitDetailResponse,
@@ -828,8 +830,11 @@ function CodeCommentThreadView({
                 <div
                   className="comment-body markdown-wrap"
                   data-via-email={String(comment.viaEmail)}
-                  dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
-                ></div>
+                >
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {comment.contentsMarkdown}
+                  </ReactMarkdown>
+                </div>
                 <div
                   className="attachments"
                   data-attachments={JSON.stringify(comment.attachments ?? [])}

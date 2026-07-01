@@ -91,6 +91,9 @@ Follow-up evidence: commit detail and PR changes thread reply forms now pin the
 Commit detail also covers the `common/commentDeleteModal.scala.html` code caller
 through the inline review-comment delete button, including the opened modal
 layout metrics, backdrop, copied delete URI/method, and footer button order.
+Commit detail review comment fixtures now make `contentsHtml` deliberately
+wrong and prove inline/non-ranged `.comment-body.markdown-wrap` output renders
+from `contentsMarkdown` while preserving the legacy body wrapper.
 
 ## Integrated Status Delta Findings
 
