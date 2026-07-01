@@ -215,6 +215,18 @@ test("project issue detail renders legacy read-only selected labels", async ({ p
   expect(
     await canonicalize(page, ".issue-info form dl:has(a.label.issue-label.active.static)"),
   ).toEqual(await canonicalizeHtml(page, expected));
+  expect(await selectedLabelMetrics(page)).toEqual({
+    ddPadding: "5px 0px",
+    dlMarginBottom: "20px",
+    dtText: "Label",
+    labelBackground: "rgb(81, 170, 204)",
+    labelBorderRadius: "1px",
+    labelDisplay: "inline-block",
+    labelFontSize: "11px",
+    labelLineHeight: "12px",
+    labelMargin: "0px",
+    labelPadding: "2px 4px",
+  });
 });
 
 test("project issue detail renders legacy read-only metadata fields", async ({ page }) => {
@@ -1339,6 +1351,31 @@ async function childIssueMetrics(page: Page) {
         rowDisplay: rowStyle.display,
         rowPadding: `${rowStyle.paddingTop} ${rowStyle.paddingRight}`,
         voteLinkMarginLeft: voteLink ? window.getComputedStyle(voteLink).marginLeft : null,
+      };
+    });
+}
+
+async function selectedLabelMetrics(page: Page) {
+  return page
+    .locator(".issue-info form dl:has(a.label.issue-label.active.static)")
+    .evaluate((dl) => {
+      const dd = dl.querySelector<HTMLElement>("dd");
+      const label = dl.querySelector<HTMLElement>("a.label.issue-label.active.static");
+      const dlStyle = window.getComputedStyle(dl);
+      const ddStyle = dd ? window.getComputedStyle(dd) : null;
+      const labelStyle = label ? window.getComputedStyle(label) : null;
+
+      return {
+        ddPadding: ddStyle ? `${ddStyle.paddingTop} ${ddStyle.paddingRight}` : null,
+        dlMarginBottom: dlStyle.marginBottom,
+        dtText: dl.querySelector("dt")?.textContent?.trim() ?? null,
+        labelBackground: labelStyle?.backgroundColor ?? null,
+        labelBorderRadius: labelStyle?.borderRadius ?? null,
+        labelDisplay: labelStyle?.display ?? null,
+        labelFontSize: labelStyle?.fontSize ?? null,
+        labelLineHeight: labelStyle?.lineHeight ?? null,
+        labelMargin: labelStyle?.margin ?? null,
+        labelPadding: labelStyle ? `${labelStyle.paddingTop} ${labelStyle.paddingRight}` : null,
       };
     });
 }
