@@ -1827,6 +1827,7 @@ pub struct PullRequestEventRecord {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReviewCommentRecord {
     pub attachments: Vec<IssueAttachmentRecord>,
+    pub author_email_address: String,
     pub author_id: Option<i64>,
     pub author_label: String,
     pub author_login_id: String,

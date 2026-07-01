@@ -223,9 +223,8 @@ impl AppRepositoryImpl<'_> {
         match event_type {
             "ISSUE_ASSIGNEE_CHANGED" => {
                 if let Ok(user_id) = value.parse::<i64>() {
-                    if let Some(assignee) = assignee::Entity::find_by_id(user_id)
-                        .one(&self.db)
-                        .await?
+                    if let Some(assignee) =
+                        assignee::Entity::find_by_id(user_id).one(&self.db).await?
                     {
                         if let Some(user_id) = assignee.user_id {
                             if let Some(user) = self.find_user_by_id(user_id).await? {

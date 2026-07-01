@@ -114,6 +114,7 @@ export type PullRequestEvent = {
 
 export type ReviewComment = {
   attachments?: ReviewCommentAttachment[];
+  authorAvatarUrl: string;
   authorId: number;
   authorLabel: string;
   authorLoginId: string;
@@ -454,6 +455,7 @@ function normalizeThread(thread: Partial<ReviewThread>): ReviewThread {
         size: attachment.size ?? 0,
         url: attachment.url ?? "",
       })),
+      authorAvatarUrl: comment.authorAvatarUrl ?? "",
       authorId: comment.authorId ?? 0,
       authorLabel: comment.authorLabel ?? "",
       authorLoginId: comment.authorLoginId ?? "",

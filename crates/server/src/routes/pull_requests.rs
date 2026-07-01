@@ -263,6 +263,7 @@ struct RestPullRequestUser {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RestReviewComment {
     attachments: Vec<IssueAttachment>,
+    author_avatar_url: String,
     pub(crate) author_id: i64,
     author_label: String,
     author_login_id: String,
@@ -1394,6 +1395,7 @@ fn rest_review_comment_from_record_with_permissions(
             .iter()
             .map(|attachment| issue_attachment_from_record(attachment, base_path))
             .collect(),
+        author_avatar_url: gravatar_url(&record.author_email_address),
         author_id: record.author_id.unwrap_or_default(),
         author_label: record.author_label,
         author_login_id: record.author_login_id,

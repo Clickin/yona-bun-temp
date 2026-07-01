@@ -60,10 +60,7 @@ pub(crate) async fn rest_debug_method(
             response.secret_setup_required = secret_admin_setup_required(&service)
                 .await
                 .map_err(RestRouteError::from_connect_error)?;
-            Ok(rest_json_response(
-                response,
-                Context::new(headers),
-            ))
+            Ok(rest_json_response(response, Context::new(headers)))
         }
         "SignInWithPassword" => call!(
             sign_in_with_password,

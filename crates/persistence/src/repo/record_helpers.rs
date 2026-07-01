@@ -518,6 +518,11 @@ impl AppRepositoryImpl<'_> {
         let latest_comment_created = rows.iter().filter_map(|row| row.created_date).max();
         let mut comments = Vec::new();
         for row in rows {
+            let author_id = row.author_id;
+            let author_login_id = row.author_login_id.unwrap_or_default();
+            let author_email_address = self
+                .user_email_for_id_or_login(author_id, &author_login_id)
+                .await?;
             let via_email = original_email::Entity::find()
                 .filter(
                     original_email::Column::ResourceType
@@ -531,9 +536,10 @@ impl AppRepositoryImpl<'_> {
                 attachments: self
                     .list_issue_attachments(REVIEW_COMMENT_ATTACHMENT_CONTAINER, row.id)
                     .await?,
-                author_id: row.author_id,
+                author_email_address,
+                author_id,
                 author_label: row.author_name.unwrap_or_default(),
-                author_login_id: row.author_login_id.unwrap_or_default(),
+                author_login_id,
                 contents_markdown: self
                     .read_text_column("review_comment", "contents", row.id)
                     .await?,

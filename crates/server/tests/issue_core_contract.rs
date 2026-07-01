@@ -869,8 +869,7 @@ async fn issue_core_contract_enqueues_legacy_mass_update_state_assignee_mileston
         .unwrap()
         .iter()
         .find(|item| {
-            item["eventType"] == "ISSUE_ASSIGNEE_CHANGED"
-                && item["targetLoginId"] == "assigned"
+            item["eventType"] == "ISSUE_ASSIGNEE_CHANGED" && item["targetLoginId"] == "assigned"
         })
         .expect("assignee changed timeline event");
     assert_eq!(assignee_event["senderLoginId"], "owner");
