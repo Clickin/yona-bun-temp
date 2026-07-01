@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import type { FormEvent, HTMLAttributes, LiHTMLAttributes } from "react";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import type { FormEvent, HTMLAttributes, LiHTMLAttributes, MouseEvent } from "react";
 import { apiQueryKeys } from "../../api/query-keys";
 import { currentSessionQueryOptions } from "../../api/session";
 import {
@@ -107,6 +107,7 @@ function UserIssuesBody({
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const activeFilterIds = quickFilterIds(search.filter, currentUserId);
   const navigate = useNavigate({ from: Route.fullPath });
+  const router = useRouter();
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -119,6 +120,35 @@ function UserIssuesBody({
         query,
       }),
     });
+  };
+  const userIssuesHref = (state: UserIssuesSearch["state"]) => {
+    const params = new URLSearchParams();
+    params.set("filter", search.filter);
+    params.set("orderBy", search.orderBy);
+    params.set("orderDir", search.orderDir);
+    if (search.query) {
+      params.set("query", search.query);
+    }
+    params.set("state", state);
+    return `${prefixBasePath(basePath, "/user/issues")}?${params.toString()}`;
+  };
+  const navigateState = (
+    event: MouseEvent<HTMLAnchorElement>,
+    state: UserIssuesSearch["state"],
+  ) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    router.history.push(userIssuesHref(state));
   };
 
   return (
@@ -205,12 +235,14 @@ function UserIssuesBody({
                 active={search.state === "open"}
                 count={issues.openIssueCount}
                 label={t("issue.state.open")}
+                onNavigate={navigateState}
                 state="open"
               />
               <StateTab
                 active={search.state === "closed"}
                 count={issues.closedIssueCount}
                 label={t("issue.state.closed")}
+                onNavigate={navigateState}
                 state="closed"
               />
               <li>
@@ -373,11 +405,13 @@ function StateTab({
   active,
   count,
   label,
+  onNavigate,
   state,
 }: {
   active: boolean;
   count: number;
   label: string;
+  onNavigate: (event: MouseEvent<HTMLAnchorElement>, state: "closed" | "open") => void;
   state: "closed" | "open";
 }) {
   const legacyState = { state } as unknown as HTMLAttributes<HTMLAnchorElement>;
@@ -385,7 +419,7 @@ function StateTab({
   return (
     <li className={active ? "active" : ""}>
       {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus state attr. */}
-      <a href="#" {...legacyState}>
+      <a href="#" {...legacyState} onClick={(event) => onNavigate(event, state)}>
         {label}
         <span className="num-badge">{count}</span>
       </a>

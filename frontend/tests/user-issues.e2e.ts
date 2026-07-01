@@ -270,6 +270,74 @@ test("current-user issues page matches legacy filtered empty search state", asyn
   expect(actual).toEqual(expected);
 });
 
+test("current-user issues state tab preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForStateTabs(page);
+
+  await page.goto(`${basePath}/user/issues`);
+  const closedTab = page.locator('#span10 .nav.nav-tabs a[state="closed"]');
+  await expect(closedTab).toHaveAttribute("href", "#");
+  await expect(closedTab).toHaveAttribute("state", "closed");
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await closedTab.click();
+
+  await expect(page).toHaveURL(
+    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&state=closed`,
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator('input[name="state"]')).toHaveValue("closed");
+  await expect(page.locator('#span10 .nav.nav-tabs li.active a[state="closed"]')).toHaveText(
+    "Closed1",
+  );
+});
+
+async function mockUserIssuesForStateTabs(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        isAnonymous: false,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/user/issues?**", async (route) => {
+    const url = new URL(route.request().url());
+    const state = url.searchParams.get("state") === "closed" ? "closed" : "open";
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        closedIssueCount: 1,
+        filter: "assigned",
+        items: [],
+        openIssueCount: 2,
+        pageNum: 1,
+        pageSize: 20,
+        sideFilterCounts: { favorite: 1, mentioned: 2, shared: 1 },
+        state,
+        totalCount: 0,
+        totalPages: 1,
+        viewerUserId: 1,
+      }),
+    });
+  });
+}
+
 async function readUserIssuesMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
