@@ -185,6 +185,41 @@ test("project create form matches legacy project/create.scala.html DOM", async (
   });
 });
 
+test("project create form mirrors legacy owner, VCS, and menu dependencies", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCreate(page);
+
+  await page.goto(`${basePath}/projectform`);
+
+  await page.locator("#project-owner").selectOption("weblabs");
+  await expect(page.locator("#opt-protected")).toBeVisible();
+  await page.locator("#protected").check();
+  await page.locator("#project-owner").selectOption("admin");
+  await expect(page.locator("#opt-protected")).toBeHidden();
+  await expect(page.locator("#public")).toBeChecked();
+
+  await page.locator("#vcs").selectOption("SUBVERSION");
+  await expect(page.locator("#svn")).toBeVisible();
+  await expect(page.locator("label[for='menuSettingPullRequest']")).toBeHidden();
+  await expect(page.locator("#menuSettingPullRequest")).toBeChecked();
+
+  await page.locator("#vcs").selectOption("GIT");
+  await expect(page.locator("#svn")).toBeHidden();
+  await expect(page.locator("label[for='menuSettingPullRequest']")).toBeVisible();
+  await expect(page.locator("#menuSettingPullRequest")).toBeChecked();
+
+  await page.locator("#menuSettingCode").uncheck();
+  await expect(page.locator("#menuSettingCode")).not.toBeChecked();
+  await expect(page.locator("#menuSettingPullRequest")).not.toBeChecked();
+  await expect(page.locator("#menuSettingReview")).not.toBeChecked();
+
+  await page.locator("#menuSettingPullRequest").check();
+  await expect(page.locator("#menuSettingCode")).toBeChecked();
+
+  await page.locator("#menuSettingReview").check();
+  await expect(page.locator("#menuSettingCode")).toBeChecked();
+});
+
 async function mockProjectCreate(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({

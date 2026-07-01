@@ -56,7 +56,22 @@ function ProjectCreateScreen({
     optionsQuery.data?.selectedOwnerName ??
     ownerOptions[0]?.ownerName ??
     "";
+  const selectedOwnerOption = ownerOptions.find((option) => option.ownerName === selectedOwner);
+  const [ownerName, setOwnerName] = React.useState(selectedOwner);
+  const isSelectedOwnerGroup =
+    ownerOptions.find((option) => option.ownerName === ownerName)?.organization ??
+    selectedOwnerOption?.organization ??
+    false;
   const [vcs, setVcs] = React.useState("GIT");
+  const [projectScope, setProjectScope] = React.useState("PUBLIC");
+  const [menuCodeChecked, setMenuCodeChecked] = React.useState(true);
+  const [menuPullRequestChecked, setMenuPullRequestChecked] = React.useState(true);
+  const [menuReviewChecked, setMenuReviewChecked] = React.useState(true);
+  React.useEffect(() => {
+    if (!ownerName && selectedOwner) {
+      setOwnerName(selectedOwner);
+    }
+  }, [ownerName, selectedOwner]);
   const createMutation = useMutation({
     mutationFn: async (input: {
       board: boolean;
@@ -120,7 +135,7 @@ function ProjectCreateScreen({
                   <a
                     href={prefixBasePath(
                       runtimeConfig.basePath,
-                      `/_import?owner=${encodeURIComponent(selectedOwner)}`,
+                      `/_import?owner=${encodeURIComponent(ownerName || selectedOwner)}`,
                     )}
                     className="ybtn ybtn-small nm"
                   >
@@ -144,7 +159,17 @@ function ProjectCreateScreen({
                     data-format="user"
                     className="mb10"
                     style={{ minWidth: "220px" }}
-                    defaultValue={selectedOwner}
+                    value={ownerName}
+                    onChange={(event) => {
+                      const nextOwner = event.currentTarget.value;
+                      setOwnerName(nextOwner);
+                      const nextOwnerIsGroup = ownerOptions.find(
+                        (option) => option.ownerName === nextOwner,
+                      )?.organization;
+                      if (!nextOwnerIsGroup && projectScope === "PROTECTED") {
+                        setProjectScope("PUBLIC");
+                      }
+                    }}
                   >
                     {ownerOptions.map((option) => (
                       <OwnerOption key={option.ownerName} option={option} />
@@ -195,7 +220,8 @@ function ProjectCreateScreen({
                           name="projectScope"
                           value="PUBLIC"
                           className="radio-btn pull-left"
-                          defaultChecked
+                          checked={projectScope === "PUBLIC"}
+                          onChange={() => setProjectScope("PUBLIC")}
                         />
                         <label htmlFor="public">
                           <strong className="ml5">{t("project.public")}</strong>
@@ -203,13 +229,19 @@ function ProjectCreateScreen({
                         </label>
                       </li>
 
-                      <li id="opt-protected" className="mt10" style={{ display: "none" }}>
+                      <li
+                        id="opt-protected"
+                        className="mt10"
+                        style={isSelectedOwnerGroup ? undefined : { display: "none" }}
+                      >
                         <input
                           type="radio"
                           id="protected"
                           name="projectScope"
                           value="PROTECTED"
                           className="radio-btn pull-left"
+                          checked={projectScope === "PROTECTED"}
+                          onChange={() => setProjectScope("PROTECTED")}
                         />
                         <label htmlFor="protected">
                           <strong className="ml5">{t("project.protected")}</strong>
@@ -224,6 +256,8 @@ function ProjectCreateScreen({
                           name="projectScope"
                           value="PRIVATE"
                           className="radio-btn pull-left"
+                          checked={projectScope === "PRIVATE"}
+                          onChange={() => setProjectScope("PRIVATE")}
                         />
                         <label htmlFor="private">
                           <strong className="ml5">{t("project.private")}</strong>
@@ -249,7 +283,11 @@ function ProjectCreateScreen({
                       className="mb10 mt5"
                       style={{ minWidth: "220px" }}
                       value={vcs}
-                      onChange={(event) => setVcs(event.currentTarget.value)}
+                      onChange={(event) => {
+                        const nextVcs = event.currentTarget.value;
+                        setVcs(nextVcs);
+                        setMenuPullRequestChecked(true);
+                      }}
                     >
                       <option value="GIT">{t("project.new.vcsType.git")}</option>
                       <option value="SUBVERSION">{t("project.new.vcsType.subversion")}</option>
@@ -270,14 +308,45 @@ function ProjectCreateScreen({
                 <div className="row-fluid">
                   <div className="span2 right-txt">{t("project.menu.setting")}</div>
                   <div className="span10">
-                    <MenuCheckbox id="menuSettingCode" name="code" label={t("menu.code")} />
+                    <MenuCheckbox
+                      id="menuSettingCode"
+                      name="code"
+                      label={t("menu.code")}
+                      checked={menuCodeChecked}
+                      onChange={(checked) => {
+                        setMenuCodeChecked(checked);
+                        if (!checked) {
+                          setMenuPullRequestChecked(false);
+                          setMenuReviewChecked(false);
+                        }
+                      }}
+                    />
                     <MenuCheckbox id="menuSettingIssue" name="issue" label={t("menu.issue")} />
                     <MenuCheckbox
                       id="menuSettingPullRequest"
                       name="pullRequest"
                       label={t("menu.pullRequest")}
+                      checked={menuPullRequestChecked}
+                      hidden={vcs === "SUBVERSION"}
+                      onChange={(checked) => {
+                        setMenuPullRequestChecked(checked);
+                        if (checked) {
+                          setMenuCodeChecked(true);
+                        }
+                      }}
                     />
-                    <MenuCheckbox id="menuSettingReview" name="review" label={t("menu.review")} />
+                    <MenuCheckbox
+                      id="menuSettingReview"
+                      name="review"
+                      label={t("menu.review")}
+                      checked={menuReviewChecked}
+                      onChange={(checked) => {
+                        setMenuReviewChecked(checked);
+                        if (checked) {
+                          setMenuCodeChecked(true);
+                        }
+                      }}
+                    />
                     <MenuCheckbox
                       id="menuSettingMilestone"
                       name="milestone"
@@ -316,16 +385,36 @@ function OwnerOption({ option }: { option: ProjectCreateOwnerOption }) {
   );
 }
 
-function MenuCheckbox({ id, label, name }: { id: string; label: string; name: string }) {
+function MenuCheckbox({
+  checked,
+  hidden,
+  id,
+  label,
+  name,
+  onChange,
+}: {
+  checked?: boolean;
+  hidden?: boolean;
+  id: string;
+  label: string;
+  name: string;
+  onChange?: (checked: boolean) => void;
+}) {
   return (
-    <label htmlFor={id} className="bg-radiobtn label-public inline-list">
+    <label
+      htmlFor={id}
+      className="bg-radiobtn label-public inline-list"
+      style={hidden ? { display: "none" } : undefined}
+    >
       <input
         type="checkbox"
         className="radio-btn"
         id={id}
         name={name}
         value="true"
-        defaultChecked
+        checked={checked}
+        defaultChecked={checked === undefined ? true : undefined}
+        onChange={(event) => onChange?.(event.currentTarget.checked)}
       />
       {label}
     </label>
