@@ -673,6 +673,7 @@ function EmptyTimeline() {
 
 type IssueComment = RestIssueDetailResponse["comments"][number];
 type IssueTimelineItem = RestIssueDetailResponse["timeline"][number];
+type IssueChildComment = IssueComment;
 type VoterLike = {
   avatarUrl?: unknown;
   emailAddress?: unknown;
@@ -799,9 +800,13 @@ function IssueCommentRow({
   const contentsHtml = stringField(comment.contentsHtml);
   const contentsMarkdown = stringField(comment.contentsMarkdown);
   const voters = comment.voters ?? [];
+  const childComments = Array.isArray(comment.childComments)
+    ? (comment.childComments as IssueChildComment[])
+    : [];
 
   return (
     <li className="comment " id={`comment-${commentId}`}>
+      <ChildCommentAnchors childComments={childComments} />
       <div className="comment-avatar">
         <a
           href={authorHref}
@@ -920,7 +925,129 @@ function IssueCommentRow({
           ></div>
         </div>
       </div>
+      <ChildComments
+        basePath={basePath}
+        childComments={childComments}
+        issue={issue}
+        parentCommentId={commentId}
+      />
     </li>
+  );
+}
+
+function ChildCommentAnchors({ childComments }: { childComments: IssueChildComment[] }) {
+  return (
+    <>
+      {childComments.map((comment) => (
+        <div id={`comment-${stringField(comment.id)}`} key={stringField(comment.id)}></div>
+      ))}
+    </>
+  );
+}
+
+function ChildComments({
+  basePath,
+  childComments,
+  issue,
+  parentCommentId,
+}: {
+  basePath: string;
+  childComments: IssueChildComment[];
+  issue: RestIssueDetailResponse;
+  parentCommentId: string;
+}) {
+  const ownerName = stringField(issue.ownerName);
+  const projectName = stringField(issue.projectName);
+  const issueNumber = stringField(issue.issueNumber);
+  const newCommentAction = prefixBasePath(
+    basePath,
+    `/${ownerName}/${projectName}/issue/${issueNumber}/comments`,
+  );
+
+  return (
+    <>
+      <div className="add-a-comment pull-right">Reply</div>
+      <div className="subcomment-media-body">
+        <div className="child-comments">
+          {childComments.map((comment) => (
+            <ChildComment
+              basePath={basePath}
+              comment={comment}
+              issue={issue}
+              key={stringField(comment.id)}
+            />
+          ))}
+        </div>
+        {booleanField(issue.viewerCanComment) ? (
+          <div className="child-comment-input-form">
+            <form action={newCommentAction} method="post" encType="multipart/form-data">
+              <input
+                className="parentCommentId"
+                type="hidden"
+                name="parentCommentId"
+                value={parentCommentId}
+              />
+              <div className="oneline-comment-box">
+                <textarea
+                  className="editorSeries"
+                  name="contents"
+                  rows={1}
+                  placeholder="Reply (CTRL + ENTER)"
+                  {...{ markdown: "true" }}
+                ></textarea>
+                <button type="submit" className="ybtn ybtn-success">
+                  OK
+                </button>
+              </div>
+              <div className="notification-receiver">
+                <span className="notification-receiver-title">Notification receivers </span>
+                <span className="notification-receiver-list"></span>
+              </div>
+            </form>
+          </div>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+function ChildComment({
+  basePath,
+  comment,
+  issue,
+}: {
+  basePath: string;
+  comment: IssueChildComment;
+  issue: RestIssueDetailResponse;
+}) {
+  const commentId = stringField(comment.id);
+  const authorLoginId = stringField(comment.authorLoginId);
+  const authorLabel = stringField(comment.authorLabel, authorLoginId);
+  const ownerName = stringField(issue.ownerName);
+  const projectName = stringField(issue.projectName);
+  const issueNumber = stringField(issue.issueNumber);
+  const deleteLink = booleanField(comment.viewerCanDelete)
+    ? `<a href="javascript:void(0)" type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="${escapeHtml(
+        prefixBasePath(
+          basePath,
+          `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}`,
+        ),
+      )}" title="Delete comment">x</a>`
+    : "";
+  const contents = `${stringField(comment.contentsHtml)}<span class="subcomment-author hide">- <a href="${escapeHtml(
+    prefixBasePath(basePath, `/${authorLoginId}`),
+  )}" class="usf-group" data-toggle="tooltip" data-placement="top" title="${escapeHtml(
+    authorLoginId,
+  )}"><strong>${escapeHtml(authorLabel)}</strong></a> <a href="#comment-${escapeHtml(
+    commentId,
+  )}" class="ago" title="${escapeHtml(stringField(comment.createdLabel))}">${escapeHtml(
+    stringField(comment.createdLabel),
+  )}</a>${deleteLink}</span>`;
+
+  return (
+    <div className="one-line-comment">
+      <div className="contents" dangerouslySetInnerHTML={{ __html: contents }} />
+    </div>
   );
 }
 
