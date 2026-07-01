@@ -59,6 +59,43 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   );
 });
 
+test("project issue detail renders legacy posting history modal", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    historyHtml: "Previous <strong>body</strong>",
+    updatedByAuthorLabel: "Site Admin",
+    updatedLabel: "Jul 3, 2026",
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const history =
+    '<div class="posting-history"><a href="#-yona-posting-history" data-toggle="modal"><span class="lastUpdatedBy"><span>Site Admin</span><span>Jul 3, 2026</span></span><span>edited</span></a><div id="-yona-posting-history" class="modal hide"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Previous <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal">Confirm</button></div></div></div>';
+  const expected = EXPECTED_ISSUE_DETAIL.replace(
+    '</span></a></div><div id="issue-11"',
+    `</span></a>${history}</div><div id="issue-11"`,
+  )
+    .replace(
+      '<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div>',
+      LEFT_COMMENT_TIMELINE,
+    )
+    .replace(
+      '<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div>',
+      RIGHT_INDEX_COMMENT_TIMELINE,
+    )
+    .replace(
+      '<div id="issue-body-11"><div class="content markdown-wrap"',
+      `<div id="issue-body-11">${TASKLIST}<div class="content markdown-wrap"`,
+    )
+    .replace('id="numOfComments" value="0"', 'id="numOfComments" value="1"')
+    .replaceAll("__BASE_PATH__", basePath)
+    .replaceAll(' aria-hidden="true"', "");
+
+  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+});
+
 test("project issue detail switches legacy comment editor tabs through data-toggle tab", async ({
   page,
 }) => {

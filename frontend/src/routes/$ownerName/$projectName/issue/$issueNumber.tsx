@@ -104,6 +104,7 @@ function IssueDetailBody({
   const bodyMarkdown = stringField(issue.bodyMarkdown);
   const bodyHtml = stringField(issue.bodyHtml);
   const bodyChecksum = stringField(issue.bodyChecksum, "body-sha1");
+  const historyHtml = stringField(issue.historyHtml);
   const issueUpdateMillis = stringField(issue.issueUpdateMillis, "0");
   const dueDateLabel = stringField(issue.dueDateLabel);
   const dueDateStatusLabel = booleanField(issue.dueDateOverdue)
@@ -206,6 +207,11 @@ function IssueDetailBody({
                   <strong className="name">No author</strong>
                 )}
               </a>
+              <IssuePostingHistory
+                historyHtml={historyHtml}
+                updatedByAuthorLabel={stringField(issue.updatedByAuthorLabel)}
+                updatedLabel={stringField(issue.updatedLabel)}
+              />
             </div>
             {bodyMarkdown ? (
               <>
@@ -505,6 +511,50 @@ function IssueDetailBody({
         title={t("common.comment.delete")}
         cancelLabel={t("button.no")}
       />
+    </div>
+  );
+}
+
+function IssuePostingHistory({
+  historyHtml,
+  updatedByAuthorLabel,
+  updatedLabel,
+}: {
+  historyHtml: string;
+  updatedByAuthorLabel: string;
+  updatedLabel: string;
+}) {
+  const { t } = useLegacyMessages();
+
+  if (!historyHtml) {
+    return null;
+  }
+
+  return (
+    <div className="posting-history">
+      <a href="#-yona-posting-history" data-toggle="modal">
+        {updatedByAuthorLabel || updatedLabel ? (
+          <span className="lastUpdatedBy">
+            <span>{updatedByAuthorLabel}</span>
+            <span>{updatedLabel}</span>
+          </span>
+        ) : null}
+        <span>{t("change.edited")}</span>
+      </a>
+      <div id="-yona-posting-history" className="modal hide">
+        <div className="modal-header">
+          <button type="button" className="close" data-dismiss="modal">
+            ×
+          </button>
+          <h5 className="nm">{t("change.history")}</h5>
+        </div>
+        <div className="modal-body" dangerouslySetInnerHTML={{ __html: `<p>${historyHtml}</p>` }} />
+        <div className="modal-footer">
+          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
+            {t("button.confirm")}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
