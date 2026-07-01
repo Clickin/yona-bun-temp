@@ -28,6 +28,10 @@ const EXPECTED_PROJECT_FORK_CLONE_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><legend>Forking admin / sample project into admin / sample-fork project</legend><p>Please wait. This process may take a long time depending on the number of files and the history of the original project.</p><p>You will be moved automatically to the new project after this process ends.</p></div></div></div>
 `;
 
+const EXPECTED_PROJECT_FORK_EXISTING_BODY = `
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><form method="post" class="form-horizontal nm"><input type="hidden" name="owner" value="devs"><fieldset><legend><h4 style="padding-top:10px">admin / sample Fork</h4></legend><div id="helpMessage" class="well"><div class="row-fluid"><div class="help-messages center-txt"><i class="ico ico-err2"></i><p>Same forked project already exists.</p><p><strong class="vmiddle">admin / sample</strong><i class="yobicon-right vmiddle"></i><a href="__BASE_PATH__/devs/sample" class="vmiddle primary-txt">devs / sample</a></p></div></div></div><div class="control-group"><label class="control-label" for="inputOwner">Owner Name</label><div class="controls"><select id="project-owner" name="owner"><option data-url="__BASE_PATH__/admin/sample/newFork/admin" value="admin">admin</option><option data-url="__BASE_PATH__/admin/sample/newFork/devs" value="devs" selected="">devs</option></select></div></div><div class="control-group"><label class="control-label" for="inputName">Project name</label><div class="controls"><input type="text" id="inputName" name="name" value="sample"><span class="help-inline">Enter name in alphabetnumerical or symbol characters(_-.)</span></div></div><div class="control-group"><label class="control-label">Share Options</label><div class="controls"><input name="projectScope" type="radio" id="public" value="PUBLIC" class="radio-btn" checked=""><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" id="protected" value="PROTECTED" class="radio-btn"><label for="protected" class="bg-radiobtn label-protected">GROUP PUBLIC</label><input name="projectScope" type="radio" id="private" value="PRIVATE" class="radio-btn"><label for="private" class="bg-radiobtn label-private">PRIVATE</label></div></div><div class="control-group"><div class="controls"><button type="submit" class="ybtn ybtn-info">Fork</button><a href="__BASE_PATH__/admin/sample/pullRequests" class="ybtn">Cancel</a></div></div></fieldset></form></div></div></div>
+`;
+
 test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectAdmin(page);
@@ -37,6 +41,21 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_FORK_FORM.replaceAll("__BASE_PATH__", basePath)),
+  );
+});
+
+test("project fork owner route renders legacy existing-fork state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdminWithExistingFork(page);
+
+  await page.goto(`${basePath}/admin/sample/newFork/devs`);
+
+  await expect(page.locator("#project-owner")).toHaveValue("devs");
+  expect(await canonicalizePageWrap(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_FORK_EXISTING_BODY.replaceAll("__BASE_PATH__", basePath),
+    ),
   );
 });
 
@@ -87,6 +106,66 @@ async function mockForkSubmit(page: Page) {
         project: {
           ownerName: "admin",
           projectName: "sample-fork",
+        },
+      }),
+    });
+  });
+}
+
+async function mockProjectAdminWithExistingFork(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/fork-options", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        canFork: true,
+        existingForks: [{ ownerName: "devs", projectName: "sample" }],
+        ownerOptions: [
+          { organization: false, ownerName: "admin", selected: false },
+          { organization: true, ownerName: "devs", selected: true },
+        ],
+        selected: {
+          ownerName: "devs",
+          projectName: "sample",
+          projectScope: "PUBLIC",
+        },
+        source: {
+          backgroundImageUrl: "/assets/images/bg-default-project.png",
+          enrollmentRequestCount: 0,
+          id: 7,
+          isFavorite: false,
+          isForkedFromOrigin: false,
+          isPrivate: false,
+          isProtected: false,
+          logoUrl: "/assets/images/project_default_logo.png",
+          menuSetting: {
+            board: true,
+            code: true,
+            issue: true,
+            milestone: true,
+            pullRequest: true,
+            review: true,
+          },
+          ownerName: "admin",
+          projectName: "sample",
+          projectScope: "PUBLIC",
+          vcs: "GIT",
+          viewerCanUpdate: true,
         },
       }),
     });

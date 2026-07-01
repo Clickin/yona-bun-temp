@@ -25,20 +25,55 @@ export const Route = createFileRoute("/$ownerName/$projectName/newFork")({
 
 function ProjectForkRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { ownerName, projectName } = Route.useParams();
 
+  return (
+    <ProjectForkRouteContent
+      ownerName={ownerName}
+      projectName={projectName}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+}
+
+export function ProjectForkRouteContent({
+  forkOwnerName,
+  ownerName,
+  projectName,
+  runtimeConfig,
+}: {
+  forkOwnerName?: string;
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectForkScreen runtimeConfig={runtimeConfig} />
+          <ProjectForkScreen
+            forkOwnerName={forkOwnerName}
+            ownerName={ownerName}
+            projectName={projectName}
+            runtimeConfig={runtimeConfig}
+          />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectForkScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { ownerName, projectName } = Route.useParams();
+function ProjectForkScreen({
+  forkOwnerName,
+  ownerName,
+  projectName,
+  runtimeConfig,
+}: {
+  forkOwnerName?: string;
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
   const query = useQuery(
     readProjectForkOptionsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -53,24 +88,43 @@ function ProjectForkScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu basePath={runtimeConfig.basePath} project={project} />
-      <ProjectForkBody options={query.data} runtimeConfig={runtimeConfig} />
+      <ProjectForkBody
+        forkOwnerName={forkOwnerName}
+        ownerName={ownerName}
+        options={query.data}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+      />
     </>
   );
 }
 
 function ProjectForkBody({
+  forkOwnerName,
+  ownerName,
   options,
+  projectName,
   runtimeConfig,
 }: {
+  forkOwnerName?: string;
+  ownerName: string;
   options: ProjectForkOptionsResponse;
+  projectName: string;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [cloneProgress, setCloneProgress] = useState<ForkCloneProgress | null>(null);
-  const selectedOwner = stringField(options.selected?.ownerName, ownerName);
+  const requestedOwner = options.ownerOptions.some(
+    (ownerOption) => stringField(ownerOption.ownerName, "") === forkOwnerName,
+  )
+    ? forkOwnerName
+    : undefined;
+  const selectedOwner = requestedOwner ?? stringField(options.selected?.ownerName, ownerName);
+  const firstOwner = stringField(options.ownerOptions[0]?.ownerName, "");
+  const selectedOwnerProps =
+    selectedOwner === firstOwner ? {} : ({ defaultValue: selectedOwner } as const);
   const selectedName = stringField(options.selected?.projectName, projectName);
   const sourceOwnerName = stringField(options.source?.ownerName, ownerName);
   const sourceProjectName = stringField(options.source?.projectName, projectName);
@@ -164,9 +218,7 @@ function ProjectForkBody({
                         const forkProjectName = stringField(forkedProject.projectName, "");
                         return (
                           <p key={`${forkOwnerName}/${forkProjectName}`}>
-                            <strong className="vmiddle">
-                              {ownerName} / {projectName}
-                            </strong>
+                            <strong className="vmiddle">{`${ownerName} / ${projectName}`}</strong>
                             <i className="yobicon-right vmiddle"></i>
                             <a
                               href={projectHref(
@@ -176,7 +228,7 @@ function ProjectForkBody({
                               )}
                               className="vmiddle primary-txt"
                             >
-                              {forkOwnerName} / {forkProjectName}
+                              {`${forkOwnerName} / ${forkProjectName}`}
                             </a>
                           </p>
                         );
@@ -190,7 +242,7 @@ function ProjectForkBody({
                   {t("project.owner")}
                 </label>
                 <div className="controls">
-                  <select id="project-owner" name="owner">
+                  <select id="project-owner" name="owner" {...selectedOwnerProps}>
                     {options.ownerOptions.map((ownerOption) => {
                       const optionOwnerName = stringField(ownerOption.ownerName, "");
                       return (
