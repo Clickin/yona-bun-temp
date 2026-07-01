@@ -167,6 +167,17 @@ Focused interaction verifier runs:
   mass-update dropdown categories, compact/full comments, child comments,
   event timeline rows, editor/upload shells, and sidebar issue metadata.
 
+- Command:
+  `pnpm --dir frontend test:e2e project-issue-detail.e2e.ts`
+- Checked at: `2026-07-02`
+- Result: `40 passed`.
+- Coverage: issue detail `bodyHtml` and parent/child comment `contentsHtml`
+  fixtures are deliberately wrong, proving the visible issue body, full and
+  one-line comment bodies, and right-pane compact comment text render from
+  `bodyMarkdown` / `contentsMarkdown` while preserving the legacy
+  `issue/view.scala.html`, `partial_comment`, and `partial_index_comment`
+  wrappers.
+
 Remaining verifier work:
 
 - Interaction proof is now recorded for filter/search, pagination, mass update,

@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Fragment, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
@@ -104,7 +106,6 @@ function IssueDetailBody({
   const sharers = issue.sharers ?? [];
   const sharerValue = sharers.map((sharer) => stringField(sharer.loginId)).join(",");
   const bodyMarkdown = stringField(issue.bodyMarkdown);
-  const bodyHtml = stringField(issue.bodyHtml);
   const bodyChecksum = stringField(issue.bodyChecksum, "body-sha1");
   const historyHtml = stringField(issue.historyHtml);
   const issueUpdateMillis = stringField(issue.issueUpdateMillis, "0");
@@ -243,11 +244,9 @@ function IssueDetailBody({
                 </div>
                 <div id={`issue-body-${issueNumber}`}>
                   <TasklistBar />
-                  <div
-                    className="content markdown-wrap"
-                    data-allowed-update={String(canUpdate)}
-                    dangerouslySetInnerHTML={{ __html: bodyHtml }}
-                  />
+                  <div className="content markdown-wrap" data-allowed-update={String(canUpdate)}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{bodyMarkdown}</ReactMarkdown>
+                  </div>
                 </div>
               </>
             ) : (
@@ -1615,7 +1614,6 @@ function IssueCommentRow({
   const canUpdate = booleanField(comment.viewerCanUpdate);
   const canDelete = booleanField(comment.viewerCanDelete);
   const hasVoted = booleanField(comment.viewerHasVoted);
-  const contentsHtml = stringField(comment.contentsHtml);
   const contentsMarkdown = stringField(comment.contentsMarkdown);
   const voters = comment.voters ?? [];
   const childComments = Array.isArray(comment.childComments)
@@ -1739,8 +1737,9 @@ function IssueCommentRow({
             className="comment-body markdown-wrap"
             data-allowed-update={String(canUpdate)}
             data-via-email={String(booleanField(comment.viaEmail))}
-            dangerouslySetInnerHTML={{ __html: contentsHtml }}
-          />
+          >
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentsMarkdown}</ReactMarkdown>
+          </div>
           <div
             className="attachments pull-left"
             data-attachments={JSON.stringify(comment.attachments ?? [])}
@@ -1849,15 +1848,16 @@ function ChildComment({
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
+  const deleteUri = prefixBasePath(
+    basePath,
+    `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}`,
+  );
   const deleteLink = booleanField(comment.viewerCanDelete)
     ? `<a href="javascript:void(0)" type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="${escapeHtml(
-        prefixBasePath(
-          basePath,
-          `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}`,
-        ),
+        deleteUri,
       )}" title="Delete comment">x</a>`
     : "";
-  const contents = `${stringField(comment.contentsHtml)}<span class="subcomment-author hide">- <a href="${escapeHtml(
+  const childMetaHtml = `- <a href="${escapeHtml(
     prefixBasePath(basePath, `/${authorLoginId}`),
   )}" class="usf-group" data-toggle="tooltip" data-placement="top" title="${escapeHtml(
     authorLoginId,
@@ -1865,11 +1865,19 @@ function ChildComment({
     commentId,
   )}" class="ago" title="${escapeHtml(stringField(comment.createdLabel))}">${escapeHtml(
     stringField(comment.createdLabel),
-  )}</a>${deleteLink}</span>`;
+  )}</a>${deleteLink}`;
 
   return (
     <div className="one-line-comment">
-      <div className="contents" dangerouslySetInnerHTML={{ __html: contents }} />
+      <div className="contents">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {stringField(comment.contentsMarkdown)}
+        </ReactMarkdown>
+        <span
+          className="subcomment-author hide"
+          dangerouslySetInnerHTML={{ __html: childMetaHtml }}
+        ></span>
+      </div>
     </div>
   );
 }
@@ -2165,7 +2173,9 @@ function IssueIndexComment({ basePath, comment }: { basePath: string; comment: I
       <div>
         <div id={`comment-body-${commentId}`}>
           <div className="comment-body">
-            <a href={`#comment-${commentId}`}>{ellipsisText(stringField(comment.contentsHtml))}</a>
+            <a href={`#comment-${commentId}`}>
+              {ellipsisMarkdown(stringField(comment.contentsMarkdown))}
+            </a>
           </div>
         </div>
         <div className="index-comment-author">
@@ -2357,9 +2367,10 @@ function escapeHtml(value: string) {
     .replaceAll(">", "&gt;");
 }
 
-function ellipsisText(html: string) {
-  const text = html
-    .replace(/<[^>]*>/gu, "")
+function ellipsisMarkdown(markdown: string) {
+  const text = markdown
+    .replace(/!?\[([^\]]*)\]\([^)]+\)/gu, "$1")
+    .replace(/[*_`>#-]/gu, "")
     .replace(/\s+/gu, " ")
     .trim();
   return text.length > 60 ? `${text.slice(0, 60)}...` : text;
