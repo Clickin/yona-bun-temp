@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import type { HTMLAttributes } from "react";
+import { useEffect, useRef, type HTMLAttributes, type LiHTMLAttributes } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
   projectPullRequestListQueryOptions,
   type PullRequestListCategory,
+  type PullRequestListItem,
   type PullRequestListResponse,
 } from "../../../api/pull-requests";
 import type { ProjectContainer } from "../../../api/types";
@@ -239,18 +240,171 @@ function ProjectPullRequestsBody({
             </ul>
             <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
               <div id="list" className="row-fluid tab-pane active">
-                <ul className="post-list-wrap">
-                  <div className="error-wrap">
-                    <i className="ico ico-err1"></i>
-                    <p>{t("pullRequest.is.empty")}</p>
-                  </div>
-                </ul>
+                <ProjectPullRequestRows
+                  basePath={runtimeConfig.basePath}
+                  defaultBranch={stringField(recordField(project).defaultBranch, "main")}
+                  pullRequests={pullRequests}
+                />
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function ProjectPullRequestRows({
+  basePath,
+  defaultBranch,
+  pullRequests,
+}: {
+  basePath: string;
+  defaultBranch: string;
+  pullRequests: PullRequestListResponse;
+}) {
+  const { t } = useLegacyMessages();
+
+  if (pullRequests.items.length === 0) {
+    return (
+      <ul className="post-list-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err1"></i>
+          <p>{t("pullRequest.is.empty")}</p>
+        </div>
+      </ul>
+    );
+  }
+
+  return (
+    <ul className="post-list-wrap">
+      {pullRequests.items.map((pullRequest) => (
+        <ProjectPullRequestRow
+          basePath={basePath}
+          defaultBranch={defaultBranch}
+          key={pullRequest.id || pullRequest.pullRequestNumber}
+          pullRequest={pullRequest}
+        />
+      ))}
+      <div id="pagination"></div>
+    </ul>
+  );
+}
+
+function ProjectPullRequestRow({
+  basePath,
+  defaultBranch,
+  pullRequest,
+}: {
+  basePath: string;
+  defaultBranch: string;
+  pullRequest: PullRequestListItem;
+}) {
+  const { t } = useLegacyMessages();
+  const projectHref = prefixBasePath(
+    basePath,
+    `/${pullRequest.ownerName}/${pullRequest.projectName}`,
+  );
+  const pullRequestHref = `${projectHref}/pullRequest/${pullRequest.pullRequestNumber}`;
+  const changesHref = `${pullRequestHref}/changes`;
+  const contributorHref = prefixBasePath(basePath, `/${pullRequest.contributorLoginId}`);
+  const receiverHref = prefixBasePath(basePath, `/${pullRequest.receiverLoginId}`);
+  const percent = percentOf(pullRequest.closedCommentThreadCount, pullRequest.commentThreadCount);
+  const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
+  const legacyHref = { href: pullRequestHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
+  const toBranchClass = pullRequest.toBranch === defaultBranch ? "to-default-branch" : "to-branch";
+  const titleParts = splitHeaderWordsInBrackets(pullRequest.title);
+
+  return (
+    <li className="post-item title" {...legacyHref}>
+      <div className="span10 span-hard-wrap">
+        <a
+          href={contributorHref}
+          className="avatar-wrap mlarge"
+          data-toggle="tooltip"
+          data-placement="top"
+          title={pullRequest.contributorLoginId}
+        >
+          <img src="/assets/images/default-avatar-32.png" alt="" />
+        </a>
+        <div className="title-wrap">
+          <span className="post-id">{pullRequest.pullRequestNumber}</span>
+          {titleParts.prefixes.map((prefix) => (
+            <LegacyTitlePrefixAnchor key={prefix}>{prefix}</LegacyTitlePrefixAnchor>
+          ))}
+          <a href={pullRequestHref} className={`title ${pullRequest.conflict ? "conflict" : ""}`}>
+            {titleParts.title}
+          </a>
+        </div>
+        <div className="infos">
+          {pullRequest.contributorLabel ? (
+            <a
+              href={contributorHref}
+              className="infos-item infos-link-item"
+              data-toggle="tooltip"
+              data-placement="top"
+              title={pullRequest.contributorLoginId}
+            >
+              {pullRequest.contributorLabel}
+            </a>
+          ) : (
+            <span className="infos-item">{t("issue.noAuthor")}</span>
+          )}
+          <span className="infos-item" title={pullRequest.createdLabel}>
+            {pullRequest.createdLabel}
+          </span>
+          {pullRequest.commentThreadCount > 0 ? (
+            <div className="infos-item" style={{ marginRight: 10 }}>
+              <i className="infos-icon yobicon-post2 vmiddle"></i>
+              <div className="upload-progress">
+                <div className="bar orange" style={{ width: `${percent}%` }}></div>
+              </div>
+              <a
+                href={changesHref}
+                data-toggle="tooltip"
+                title={`${t("pullRequest.review.closed")} / ${t("pullRequest.review.total")}`}
+              >
+                <span>{pullRequest.closedCommentThreadCount}</span>
+                <span className="gray-txt">/</span>
+                <span className="size total">{pullRequest.commentThreadCount}</span>
+              </a>
+            </div>
+          ) : null}
+          <span className={toBranchClass}>{pullRequest.toBranch}</span>
+        </div>
+      </div>
+      <div className="span2 hide-in-mobile">
+        <div className="mt5 pull-right hide-in-mobile">
+          {pullRequest.receiverLoginId ? (
+            <a
+              href={receiverHref}
+              className="avatar-wrap assinee"
+              data-toggle="tooltip"
+              data-placement="top"
+              title=""
+              data-original-title={pullRequest.receiverLabel}
+            >
+              <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+            </a>
+          ) : (
+            <div className="empty-avatar-wrap">&nbsp;</div>
+          )}
+        </div>
+        <div className={`state ${stateKey} pull-right`}>{t(`pullRequest.state.${stateKey}`)}</div>
+      </div>
+    </li>
+  );
+}
+
+function LegacyTitlePrefixAnchor({ children }: { children: string }) {
+  const anchorRef = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    anchorRef.current?.setAttribute("href", "javascript:void(0)");
+  }, []);
+  return (
+    <a ref={anchorRef} href="/" className="title-prefix">
+      {children}
+    </a>
   );
 }
 
@@ -282,4 +436,31 @@ function stringField(value: unknown, fallback = "") {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function recordField(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function percentOf(count: number, total: number) {
+  return total > 0 ? Math.round((count / total) * 100) : 0;
+}
+
+function splitHeaderWordsInBrackets(title: string) {
+  const prefixes: string[] = [];
+  const pattern = /^\s*(\[[^\]]+\])/u;
+  let rest = title;
+  while (true) {
+    const match = pattern.exec(rest);
+    if (!match) {
+      break;
+    }
+    prefixes.push(match[1].trim());
+    rest = rest.slice(match[0].length);
+  }
+  const onlyPrefixes = rest.trim() === "";
+  return {
+    prefixes: onlyPrefixes ? [] : prefixes,
+    title: onlyPrefixes ? title : rest.trimStart(),
+  };
 }

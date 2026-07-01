@@ -73,6 +73,25 @@ test("project sent pull request empty list matches legacy git/list.scala.html DO
   );
 });
 
+test("project pull request populated list matches legacy git/partial_list.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=row`);
+  await expect(page.locator("#search")).toBeVisible();
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator(".post-list-wrap #pagination")).toHaveCount(1);
+  await expect(page.locator(".post-list-wrap .title-wrap .title-prefix")).toHaveText("[API]");
+  await expect(page.locator(".post-list-wrap .title-wrap .title")).toHaveText("Restore PR rows");
+  await expect(page.locator(".post-list-wrap .state.open")).toHaveText("Open");
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(page, expectedPopulatedPullRequests(basePath)),
+  );
+});
+
 function expectedClosedPullRequestsEmpty(basePath: string) {
   return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
     .replace(
@@ -138,6 +157,28 @@ function expectedSentPullRequestsEmpty(basePath: string) {
   return withSentTab;
 }
 
+function expectedPopulatedPullRequests(basePath: string) {
+  return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+    .replace('value="empty"', 'value="row"')
+    .replace('<span class="num-badge">0</span>', '<span class="num-badge">1</span>')
+    .replace(
+      '<ul class="post-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No pull requests have been received</p></div></ul>',
+      '<ul class="post-list-wrap"><li class="post-item title" href="' +
+        basePath +
+        '/admin/sample/pullRequest/7"><div class="span10 span-hard-wrap"><a href="' +
+        basePath +
+        '/dev" class="avatar-wrap mlarge" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><span class="post-id">7</span><a href="javascript:void(0)" class="title-prefix">[API]</a><a href="' +
+        basePath +
+        '/admin/sample/pullRequest/7" class="title ">Restore PR rows</a></div><div class="infos"><a href="' +
+        basePath +
+        '/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><div class="infos-item" style="margin-right:10px"><i class="infos-icon yobicon-post2 vmiddle"></i><div class="upload-progress"><div class="bar orange" style="width:50%"></div></div><a href="' +
+        basePath +
+        '/admin/sample/pullRequest/7/changes" data-toggle="tooltip" title="Closed review / Total review"><span>1</span><span class="gray-txt">/</span><span class="size total">2</span></a></div><span class="to-default-branch">main</span></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right hide-in-mobile"><a href="' +
+        basePath +
+        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li><div id="pagination"></div></ul>',
+    );
+}
+
 async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin?: boolean } = {}) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -189,6 +230,34 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
     const queryCategory = url.searchParams.get("category");
     const category =
       queryCategory === "closed" || queryCategory === "sent" ? queryCategory : "open";
+    const filter = url.searchParams.get("filter") ?? "";
+    const items =
+      filter === "row" && category === "open"
+        ? [
+            {
+              closedCommentThreadCount: 1,
+              commentThreadCount: 2,
+              conflict: false,
+              contributorLabel: "Dev Member",
+              contributorLoginId: "dev",
+              createdLabel: "Jul 1, 2026",
+              fromBranch: "feature/api",
+              fromOwnerName: "dev",
+              fromProjectName: "sample",
+              id: 77,
+              ownerName: "admin",
+              projectName: "sample",
+              pullRequestNumber: 7,
+              receiverLabel: "Site Admin",
+              receiverLoginId: "admin",
+              reviewerCount: 0,
+              state: "open",
+              title: "[API] Restore PR rows",
+              toBranch: "main",
+              updatedLabel: "Jul 1, 2026",
+            },
+          ]
+        : [];
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -210,13 +279,13 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
           },
         ],
         currentUserId: 1,
-        items: [],
-        openCount: 0,
+        items,
+        openCount: items.length,
         pageNum: 1,
         pageSize: 15,
         recentlyPushedBranches: [],
         sentCount: 0,
-        totalCount: 0,
+        totalCount: items.length,
       }),
     });
   });
