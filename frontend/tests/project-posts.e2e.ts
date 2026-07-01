@@ -151,6 +151,21 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
   );
 });
 
+test("project board detail toggles legacy watch state through REST", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { watchRequests } = await mockProjectPosts(page);
+
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator("#watch-button")).toHaveText("Watch");
+  await page.locator("#watch-button").click();
+  await expect(page.locator("#watch-button")).toHaveText("Stop watching");
+  await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "true");
+  await page.locator("#watch-button").click();
+  await expect(page.locator("#watch-button")).toHaveText("Watch");
+  await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "false");
+  expect(watchRequests).toEqual(["POST", "DELETE"]);
+});
+
 test("project board detail renders legacy read-only selected labels", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page, "readonlyLabel");
@@ -295,9 +310,27 @@ async function mockProjectPosts(
     | "attachments"
     | "childComment" = "default",
 ) {
+  const watchRequests: string[] = [];
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "test-csrf-token" },
       body: JSON.stringify({
         actorId: 1,
         avatarUrl: "/assets/images/default-avatar-32.png",
@@ -545,6 +578,47 @@ async function mockProjectPosts(
       }),
     });
   });
+  await page.route("**/api/v1/projects/admin/sample/posts/3/watch", async (route) => {
+    const isWatching = route.request().method() === "POST";
+    watchRequests.push(route.request().method());
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorId: "2",
+        authorLabel: "Dev Member",
+        authorLoginId: "dev",
+        bodyHtml: "<p>Post <strong>markdown</strong></p>",
+        bodyMarkdown: "Post **markdown**",
+        commentCount: 0,
+        comments: [],
+        createdLabel: "Jul 2, 2026",
+        historyHtml: "",
+        historyMarkdown: "",
+        id: "33",
+        isWatching,
+        labels: [],
+        notice: false,
+        ownerName: "admin",
+        permissions: {
+          canComment: false,
+          canCreate: true,
+          canDelete: true,
+          canRead: true,
+          canSetNotice: true,
+          canWatch: true,
+          canUpdate: true,
+        },
+        postNumber: "3",
+        projectName: "sample",
+        readme: false,
+        title: "Release note",
+        updatedLabel: "Jul 2, 2026",
+        watcherCount: isWatching ? 1 : 0,
+      }),
+    });
+  });
+  return { watchRequests };
 }
 
 async function canonicalize(page: Page, selector: string) {

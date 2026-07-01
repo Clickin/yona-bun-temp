@@ -1,13 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Fragment } from "react";
 import {
   readProjectPostQueryOptions,
+  unwatchPostRest,
+  watchPostRest,
   type BoardAttachment,
   type BoardLabel,
   type BoardPostComment,
   type BoardPostDetail,
 } from "../../../../api/boards";
+import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
@@ -70,9 +73,15 @@ function ProjectPostDetailBody({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
   const ownerName = stringField(project.ownerName, post.ownerName);
   const projectName = stringField(project.projectName, post.projectName);
   const postNumber = stringField(post.postNumber);
+  const postQueryOptions = readProjectPostQueryOptions(runtimeConfig, {
+    ownerName,
+    postNumber,
+    projectName,
+  });
   const basePath = runtimeConfig.basePath;
   const postHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/post/${postNumber}`);
   const editHref = `${postHref}/editform`;
@@ -80,6 +89,18 @@ function ProjectPostDetailBody({
   const canDelete = booleanField(post.permissions.canDelete);
   const canWatch = booleanField(post.permissions.canWatch);
   const canCreate = booleanField(post.permissions.canCreate);
+  const watchMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const input = { ownerName, postNumber, projectName };
+      return post.isWatching
+        ? unwatchPostRest(runtimeConfig, csrfToken, input)
+        : watchPostRest(runtimeConfig, csrfToken, input);
+    },
+    onSuccess(updatedPost) {
+      queryClient.setQueryData(postQueryOptions.queryKey, updatedPost);
+    },
+  });
 
   return (
     <div className="page-wrap-outer">
@@ -170,6 +191,7 @@ function ProjectPostDetailBody({
                       data-placement="top"
                       title={t("issue.watch.description")}
                       data-watching={String(post.isWatching)}
+                      onClick={() => watchMutation.mutate()}
                     >
                       {post.isWatching ? t("post.unwatch") : t("post.watch")}
                     </button>
