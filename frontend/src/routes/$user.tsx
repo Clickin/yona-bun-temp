@@ -303,9 +303,7 @@ function PublicProfileBody({
                       <div id="openIssues" className="tab-pane active">
                         {issues.length === 0 ? (
                           <div className="error-wrap">
-                            <p>
-                              {t("userinfo.daysAgo.prefix")} {t("issue.is.empty")}
-                            </p>
+                            <p>{`${t("userinfo.daysAgo.prefix")} ${t("issue.is.empty")}`}</p>
                           </div>
                         ) : null}
                         <ul className="post-list-wrap my-issues row-fluid">
@@ -321,9 +319,7 @@ function PublicProfileBody({
                       <div id="closedIssues" className="tab-pane">
                         {issues.length === 0 ? (
                           <div className="error-wrap">
-                            <p>
-                              {t("userinfo.daysAgo.prefix")} {t("issue.is.empty")}
-                            </p>
+                            <p>{`${t("userinfo.daysAgo.prefix")} ${t("issue.is.empty")}`}</p>
                           </div>
                         ) : null}
                         <ul className="post-list-wrap my-issues row-fluid">
@@ -344,9 +340,7 @@ function PublicProfileBody({
                   >
                     {profileResponse.pullRequestItems.length === 0 ? (
                       <div className="error-wrap">
-                        <p>
-                          {t("userinfo.daysAgo.prefix")} {t("pullRequest.is.empty")}
-                        </p>
+                        <p>{`${t("userinfo.daysAgo.prefix")} ${t("pullRequest.is.empty")}`}</p>
                       </div>
                     ) : null}
                     <ul className="post-list-wrap  row-fluid">

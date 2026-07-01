@@ -170,6 +170,30 @@ test("public user profile matches legacy selected pull-request tab", async ({ pa
   );
 });
 
+test("public user profile matches legacy empty pull-request tab", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPublicProfile(page, { pullRequestsEmpty: true });
+
+  await page.goto(`${basePath}/door?daysAgo=7&selected=pullRequests`);
+  await expect(page.locator(".user-box")).toBeVisible();
+  await expect(page.locator("#pullRequests .error-wrap p")).toHaveText(
+    "recently No pull requests have been received",
+  );
+  await expect(page.locator("#pullRequests .post-list-wrap .post-item")).toHaveCount(0);
+
+  expect(await canonicalizeProfileRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedProfileScreen({
+        basePath,
+        daysAgo: 7,
+        pullRequestsEmpty: true,
+        selected: "pullRequests",
+      }),
+    ),
+  );
+});
+
 test("current user profile projects tab renders legacy leave-project branch", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPublicProfile(page, {
@@ -224,6 +248,7 @@ test("missing public user renders legacy user.notExists.name not-found screen", 
 type MockPublicProfileOptions = {
   currentUser?: boolean;
   memberProjectOwnerName?: string;
+  pullRequestsEmpty?: boolean;
   viewerCanLeave?: boolean;
   viewerCanWatch?: boolean;
 };
@@ -231,6 +256,7 @@ type MockPublicProfileOptions = {
 async function mockPublicProfile(page: Page, options: MockPublicProfileOptions = {}) {
   const currentUser = options.currentUser ?? false;
   const memberProjectOwnerName = options.memberProjectOwnerName ?? "door";
+  const pullRequestsEmpty = options.pullRequestsEmpty ?? false;
   const viewerCanLeave = options.viewerCanLeave ?? false;
   const viewerCanWatch = options.viewerCanWatch ?? true;
 
@@ -312,22 +338,24 @@ async function mockPublicProfile(page: Page, options: MockPublicProfileOptions =
           primaryEmailAddress: "door@example.com",
           sinceLabel: "2026-06-30",
         },
-        pullRequestItems: [
-          {
-            commentCount: 2,
-            contributorLabel: "Door User",
-            contributorLoginId: "door",
-            ownerName: "door",
-            projectName: "sample",
-            pullRequestNumber: 4,
-            receiverAvatarUrl: "/assets/images/default-avatar-32.png",
-            receiverLabel: "Alice",
-            receiverLoginId: "alice",
-            state: "open",
-            title: "Profile pull request",
-            updatedLabel: "2026-07-02",
-          },
-        ],
+        pullRequestItems: pullRequestsEmpty
+          ? []
+          : [
+              {
+                commentCount: 2,
+                contributorLabel: "Door User",
+                contributorLoginId: "door",
+                ownerName: "door",
+                projectName: "sample",
+                pullRequestNumber: 4,
+                receiverAvatarUrl: "/assets/images/default-avatar-32.png",
+                receiverLabel: "Alice",
+                receiverLoginId: "alice",
+                state: "open",
+                title: "Profile pull request",
+                updatedLabel: "2026-07-02",
+              },
+            ],
         selected,
         viewerCanEditProfile: currentUser,
       }),
@@ -503,6 +531,7 @@ function expectedProfileScreen({
   selected,
   currentUser = false,
   memberProjectOwnerName = "door",
+  pullRequestsEmpty = false,
   viewerCanLeave = false,
   viewerCanWatch = true,
 }: {
@@ -510,6 +539,7 @@ function expectedProfileScreen({
   currentUser?: boolean;
   daysAgo: number;
   memberProjectOwnerName?: string;
+  pullRequestsEmpty?: boolean;
   selected: "issues" | "projects" | "pullRequests";
   viewerCanLeave?: boolean;
   viewerCanWatch?: boolean;
@@ -553,6 +583,10 @@ function expectedProfileScreen({
       `<li class="${selected === "pullRequests" ? "active" : ""}"><a href="#pullRequests" data-toggle="tab">Pull request`,
     )
     .replace(
+      'Pull request <span class="num-badge">1</span></a>',
+      pullRequestsEmpty ? "Pull request </a>" : 'Pull request <span class="num-badge">1</span></a>',
+    )
+    .replace(
       '<li class=""><a href="#projects" data-toggle="tab">projects',
       `<li class="${selected === "projects" ? "active" : ""}"><a href="#projects" data-toggle="tab">projects`,
     )
@@ -563,6 +597,12 @@ function expectedProfileScreen({
     .replace(
       '<div id="pullRequests" class="tab-pane ">',
       `<div id="pullRequests" class="tab-pane ${selected === "pullRequests" ? "active" : ""}">`,
+    )
+    .replace(
+      `<ul class="post-list-wrap  row-fluid"><li class="post-item"><div class="span10"><a href="${basePath}/door/sample" class="avatar-wrap mlarge"><img src="/assets/images/project_default_logo.png"></a><div class="title-wrap"><a href="${basePath}/door/sample" class="title project">sample</a><span class="post-id">4</span><a href="${basePath}/door/sample/pullRequest/4" class="title ">Profile pull request</a></div><div class="infos"><a href="${basePath}/door" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="door">Door User</a><span class="infos-item" title="2026-07-02">2026-07-02</span><a href="${basePath}/door/sample/pullRequest/4#comments" class="infos-item infos-icon-link"><i class="yobicon-comments"></i><span class="size">2</span></a></div></div><div class="span2"><div class="mt5 pull-right"><a href="${basePath}/alice" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Alice"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li></ul>`,
+      pullRequestsEmpty
+        ? `<div class="error-wrap"><p>recently No pull requests have been received</p></div><ul class="post-list-wrap  row-fluid"></ul>`
+        : `<ul class="post-list-wrap  row-fluid"><li class="post-item"><div class="span10"><a href="${basePath}/door/sample" class="avatar-wrap mlarge"><img src="/assets/images/project_default_logo.png"></a><div class="title-wrap"><a href="${basePath}/door/sample" class="title project">sample</a><span class="post-id">4</span><a href="${basePath}/door/sample/pullRequest/4" class="title ">Profile pull request</a></div><div class="infos"><a href="${basePath}/door" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="door">Door User</a><span class="infos-item" title="2026-07-02">2026-07-02</span><a href="${basePath}/door/sample/pullRequest/4#comments" class="infos-item infos-icon-link"><i class="yobicon-comments"></i><span class="size">2</span></a></div></div><div class="span2"><div class="mt5 pull-right"><a href="${basePath}/alice" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Alice"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li></ul>`,
     )
     .replace(
       '<div id="projects" class="tab-pane ">',
