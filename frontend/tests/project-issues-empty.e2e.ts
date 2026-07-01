@@ -531,7 +531,20 @@ test("project issue draft row renders before normal list like legacy partial_lis
 
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(2);
-  await expect(page.locator(".post-list-wrap .post-item").first()).toContainText("#Draft");
+  const draftRow = page.locator("#issue-item-41");
+  await expect(draftRow).toHaveAttribute("data-item", "issue-item");
+  await expect(draftRow).toHaveAttribute("data-value", "admin 10 Draft issue");
+  await expect(draftRow).toHaveAttribute("href", `${basePath}/admin/sample/issue/10`);
+  await expect(draftRow.locator(".draft-number")).toHaveText("#Draft");
+  await expect(draftRow.locator('input#issue-41[name="checked-issue"]')).toHaveAttribute(
+    "data-issue-id",
+    "41",
+  );
+  await expect(draftRow.locator('input#issue-41[name="checked-issue"]')).toHaveAttribute(
+    "data-issue-labels",
+    "",
+  );
+  await expect(draftRow.locator(".empty-avatar-wrap")).toHaveText("\u00a0");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
