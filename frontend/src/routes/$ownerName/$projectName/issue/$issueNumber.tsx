@@ -12,6 +12,8 @@ import {
   deleteIssue,
   readIssueDetail,
   readSessionBootstrap,
+  unvoteIssueComment,
+  voteIssueComment,
   type RestIssueDetailResponse,
 } from "../../../../auth-workspace-client";
 import { SiteLayoutShell } from "../../../-home-route-screen";
@@ -147,6 +149,20 @@ function IssueDetailBody({
         modal.setAttribute("aria-hidden", "true");
       }
       document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
+    },
+  });
+  const commentVoteMutation = useMutation({
+    mutationFn: async ({ commentId, hasVoted }: { commentId: string; hasVoted: boolean }) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const input = { commentId, issueNumber, ownerName, projectName };
+      return hasVoted
+        ? unvoteIssueComment(runtimeConfig, csrfToken, input)
+        : voteIssueComment(runtimeConfig, csrfToken, input);
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+      });
     },
   });
 
@@ -336,7 +352,15 @@ function IssueDetailBody({
             </dl>
             <div className="watcher-list"></div>
             <IssueChildIssues basePath={basePath} issue={issue} />
-            {!isDraft ? <IssueMainTimeline basePath={basePath} issue={issue} /> : null}
+            {!isDraft ? (
+              <IssueMainTimeline
+                basePath={basePath}
+                issue={issue}
+                onCommentVote={(commentId, voted) =>
+                  commentVoteMutation.mutate({ commentId, hasVoted: voted })
+                }
+              />
+            ) : null}
           </div>
           <div className="span3 span-right-pane mb20">
             <div className="issue-info">
@@ -1175,9 +1199,11 @@ type VoterLike = {
 function IssueMainTimeline({
   basePath,
   issue,
+  onCommentVote,
 }: {
   basePath: string;
   issue: RestIssueDetailResponse;
+  onCommentVote: (commentId: string, hasVoted: boolean) => void;
 }) {
   const comments = issue.comments ?? [];
   const timeline: IssueTimelineItem[] = issue.timeline?.length
@@ -1203,6 +1229,7 @@ function IssueMainTimeline({
                     comment={item.comment}
                     issue={issue}
                     key={`comment-${stringField(item.comment.id)}`}
+                    onCommentVote={onCommentVote}
                   />
                 ) : (
                   <IssueEventRow
@@ -1571,10 +1598,12 @@ function IssueCommentRow({
   basePath,
   comment,
   issue,
+  onCommentVote,
 }: {
   basePath: string;
   comment: IssueComment;
   issue: RestIssueDetailResponse;
+  onCommentVote: (commentId: string, hasVoted: boolean) => void;
 }) {
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
@@ -1663,6 +1692,10 @@ function IssueCommentRow({
                 basePath,
                 `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}/${hasVoted ? "unvote" : "vote"}`,
               )}
+              onClick={(event) => {
+                event.preventDefault();
+                onCommentVote(commentId, hasVoted);
+              }}
             >
               <i className={`yobicon-hearts ${hasVoted ? "vote-heart-on" : "vote-heart-off"}`}></i>
             </button>

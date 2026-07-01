@@ -455,6 +455,64 @@ test("project issue detail deletes comments through legacy confirmation modal", 
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
 });
 
+test("project issue detail votes comments through legacy agree action", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { commentVoteRequests } = await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await page.locator('#comment-77 [data-request-type="comment-vote"]').click();
+
+  await expect
+    .poll(() =>
+      commentVoteRequests.map((request) => ({
+        hasCsrfToken: Boolean(request.csrfToken),
+        method: request.method,
+      })),
+    )
+    .toEqual([{ hasCsrfToken: true, method: "POST" }]);
+});
+
+test("project issue detail unvotes comments through legacy agree action", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { commentVoteRequests } = await mockProjectIssueDetail(page, {
+    comments: [
+      {
+        attachments: [],
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorLabel: "Dev Member",
+        authorLoginId: "dev",
+        childComments: [],
+        contentsHtml: "<p>Comment <strong>markdown</strong></p>",
+        contentsMarkdown: "Comment **markdown**",
+        createdLabel: "Jul 2, 2026",
+        id: 77,
+        viewerCanDelete: true,
+        viewerCanUpdate: true,
+        viewerHasVoted: true,
+        viaEmail: false,
+        voterCount: 1,
+        voters: [commentVoters()[0]],
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator('#comment-77 [data-request-type="comment-vote"]')).toHaveAttribute(
+    "data-request-uri",
+    `${basePath}/admin/sample/issue/11/comment/77/unvote`,
+  );
+  await page.locator('#comment-77 [data-request-type="comment-vote"]').click();
+
+  await expect
+    .poll(() =>
+      commentVoteRequests.map((request) => ({
+        hasCsrfToken: Boolean(request.csrfToken),
+        method: request.method,
+      })),
+    )
+    .toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+});
+
 test("project issue detail renders legacy disabled delete action", async ({ page }) => {
   await mockProjectIssueDetail(page, { viewerCanDelete: false });
 
@@ -1422,6 +1480,7 @@ async function keymapModalMetrics(page: Page) {
 async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string, unknown> = {}) {
   const deleteRequests: string[] = [];
   const commentDeleteRequests: string[] = [];
+  const commentVoteRequests: { csrfToken: string | null; method: string }[] = [];
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -1612,7 +1671,20 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
     }
     await route.fallback();
   });
-  return { commentDeleteRequests, deleteRequests };
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/issues/11/comments/77/vote",
+    async (route) => {
+      commentVoteRequests.push({
+        csrfToken: route.request().headers()["x-csrf-token"] ?? null,
+        method: route.request().method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({}),
+      });
+    },
+  );
+  return { commentDeleteRequests, commentVoteRequests, deleteRequests };
 }
 
 async function canonicalize(page: Page, selector: string) {
