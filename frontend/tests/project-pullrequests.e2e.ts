@@ -51,6 +51,28 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
   );
 });
 
+test("project sent pull request empty list matches legacy git/list.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page, { isForkedFromOrigin: true });
+
+  await page.goto(`${basePath}/admin/sample/sentPullRequests?filter=empty`);
+  await expect(page.locator("#search")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
+    "Pull request",
+  );
+  await expect(page.locator("#advanced-search-form")).toHaveCount(0);
+  await expect(page.locator(".pullrequeset-tab-menu li.active a")).toContainText("Sent code");
+  await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
+  await expect(page.locator(".post-list-wrap #pagination")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(page, expectedSentPullRequestsEmpty(basePath)),
+  );
+});
+
 function expectedClosedPullRequestsEmpty(basePath: string) {
   return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
     .replace(
@@ -75,7 +97,48 @@ function expectedClosedPullRequestsEmpty(basePath: string) {
     );
 }
 
-async function mockProjectPullRequests(page: Page) {
+function expectedSentPullRequestsEmpty(basePath: string) {
+  const withSentTab = EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+    .replace(
+      '<div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="' +
+        basePath +
+        '/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="' +
+        basePath +
+        '/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div>',
+      '<div class="project-breadcrumb-wrap fork"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="' +
+        basePath +
+        '/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="' +
+        basePath +
+        '/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div><div class="project-origin"><span class="project-origin-title">Forked from</span><a href="' +
+        basePath +
+        '/origin/upstream" class="project-origin-name">origin/upstream</a></div></div>',
+    )
+    .replace(
+      '<div id="advanced-search-form" class="srch-advanced"><dl class="issue-option"><dt>Sender</dt><dd><select id="contributors" name="contributorId" data-format="user"><option value="" selected="">All</option><option value="1">Sent by me</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option><option value="2" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="dev">Dev Member</option></select></dd></dl></div>',
+      "",
+    )
+    .replace(
+      `action="${basePath}/admin/sample/pullRequests"`,
+      `action="${basePath}/admin/sample/sentPullRequests"`,
+    )
+    .replace(
+      '<li class="active"><a href="#" data-url="' +
+        basePath +
+        '/admin/sample/pullRequests" data-type="state">Open',
+      '<li class=""><a href="#" data-url="' +
+        basePath +
+        '/admin/sample/pullRequests" data-type="state">Open',
+    )
+    .replace(
+      '</a></li><li><div class="two-column-icon mr10 hide-in-mobile"',
+      '</a></li><li class="active"><a href="#" data-url="' +
+        basePath +
+        '/admin/sample/sentPullRequests" data-type="state">Sent code<span class="num-badge">0/0</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile"',
+    );
+  return withSentTab;
+}
+
+async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin?: boolean } = {}) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -100,9 +163,11 @@ async function mockProjectPullRequests(page: Page) {
         enrollmentRequestCount: 0,
         id: 7,
         isFavorite: false,
-        isForkedFromOrigin: false,
+        isForkedFromOrigin: Boolean(options.isForkedFromOrigin),
         isPrivate: false,
         isProtected: false,
+        originalOwnerName: "origin",
+        originalProjectName: "upstream",
         logoUrl: "/assets/images/project_default_logo.png",
         menuSetting: {
           board: true,
@@ -121,7 +186,9 @@ async function mockProjectPullRequests(page: Page) {
   });
   await page.route("**/api/v1/owners/admin/projects/sample/pull-requests**", async (route) => {
     const url = new URL(route.request().url());
-    const category = url.searchParams.get("category") === "closed" ? "closed" : "open";
+    const queryCategory = url.searchParams.get("category");
+    const category =
+      queryCategory === "closed" || queryCategory === "sent" ? queryCategory : "open";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

@@ -69,7 +69,7 @@ export function ProjectPullRequestsScreen({
   category: PullRequestListCategory;
   ownerName: string;
   projectName: string;
-  requestType: "closed" | "open";
+  requestType: "closed" | "open" | "sent";
   runtimeConfig: RuntimeConfig;
   search: ProjectPullRequestsSearch;
 }) {
@@ -119,7 +119,7 @@ function ProjectPullRequestsBody({
 }: {
   project: ProjectContainer;
   pullRequests: PullRequestListResponse;
-  requestType: "closed" | "open";
+  requestType: "closed" | "open" | "sent";
   runtimeConfig: RuntimeConfig;
   search: ProjectPullRequestsSearch;
 }) {
@@ -132,7 +132,13 @@ function ProjectPullRequestsBody({
     runtimeConfig.basePath,
     `/${ownerName}/${projectName}/closedPullRequests`,
   );
-  const searchAction = requestType === "closed" ? closedAction : openAction;
+  const sentAction = prefixBasePath(
+    runtimeConfig.basePath,
+    `/${ownerName}/${projectName}/sentPullRequests`,
+  );
+  const isForked = booleanField(project.isForkedFromOrigin);
+  const searchAction =
+    requestType === "closed" ? closedAction : requestType === "sent" ? sentAction : openAction;
 
   return (
     <div className="page-wrap-outer">
@@ -153,38 +159,40 @@ function ProjectPullRequestsBody({
                   </button>
                 </div>
               </div>
-              <div id="advanced-search-form" className="srch-advanced">
-                <dl className="issue-option">
-                  <dt>{t("pullRequest.sender")}</dt>
-                  <dd>
-                    <select
-                      id="contributors"
-                      name="contributorId"
-                      data-format="user"
-                      defaultValue={search.contributorId ? String(search.contributorId) : ""}
-                    >
-                      <option value="">{t("common.order.all")}</option>
-                      {pullRequests.contributors.some(
-                        (contributor) => contributor.userId === pullRequests.currentUserId,
-                      ) ? (
-                        <option value={pullRequests.currentUserId}>
-                          {t("pullRequest.sentByMe")}
-                        </option>
-                      ) : null}
-                      {pullRequests.contributors.map((contributor) => (
-                        <option
-                          value={contributor.userId}
-                          data-avatar-url={contributor.avatarUrl}
-                          data-login-id={contributor.loginId}
-                          key={contributor.userId}
-                        >
-                          {contributor.userLabel}
-                        </option>
-                      ))}
-                    </select>
-                  </dd>
-                </dl>
-              </div>
+              {requestType === "sent" ? null : (
+                <div id="advanced-search-form" className="srch-advanced">
+                  <dl className="issue-option">
+                    <dt>{t("pullRequest.sender")}</dt>
+                    <dd>
+                      <select
+                        id="contributors"
+                        name="contributorId"
+                        data-format="user"
+                        defaultValue={search.contributorId ? String(search.contributorId) : ""}
+                      >
+                        <option value="">{t("common.order.all")}</option>
+                        {pullRequests.contributors.some(
+                          (contributor) => contributor.userId === pullRequests.currentUserId,
+                        ) ? (
+                          <option value={pullRequests.currentUserId}>
+                            {t("pullRequest.sentByMe")}
+                          </option>
+                        ) : null}
+                        {pullRequests.contributors.map((contributor) => (
+                          <option
+                            value={contributor.userId}
+                            data-avatar-url={contributor.avatarUrl}
+                            data-login-id={contributor.loginId}
+                            key={contributor.userId}
+                          >
+                            {contributor.userLabel}
+                          </option>
+                        ))}
+                      </select>
+                    </dd>
+                  </dl>
+                </div>
+              )}
             </form>
           </div>
           <div className="span10 span-hard-wrap" id="span10">
@@ -214,6 +222,17 @@ function ProjectPullRequestsBody({
                   <span className="num-badge">{pullRequests.closedCount}</span>
                 </a>
               </li>
+              {isForked ? (
+                <li className={requestType === "sent" ? "active" : ""}>
+                  {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
+                  <a href="#" data-url={sentAction} data-type="state">
+                    {t("pullRequest.sent")}
+                    <span className="num-badge">
+                      {pullRequests.acceptedCount} / {pullRequests.sentCount}
+                    </span>
+                  </a>
+                </li>
+              ) : null}
               <li>
                 <TwoColumnModeCheckbox />
               </li>
@@ -259,4 +278,8 @@ function projectPullRequestsHref(basePath: string, ownerName: string, projectNam
 
 function stringField(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
+}
+
+function booleanField(value: unknown) {
+  return value === true;
 }
