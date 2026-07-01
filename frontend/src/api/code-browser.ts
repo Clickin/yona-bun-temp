@@ -9,9 +9,9 @@ type ProjectScopeInput = {
 };
 
 export type CodeBrowserResponse = {
-  branches: unknown[];
-  breadcrumbs: unknown[];
-  entries: unknown[];
+  branches: CodeBrowserBranch[];
+  breadcrumbs: CodeBrowserBreadcrumb[];
+  entries: CodeBrowserEntry[];
   file: unknown | null;
   noHead: boolean;
   ownerName: string;
@@ -20,17 +20,59 @@ export type CodeBrowserResponse = {
   selectedBranch: string;
 };
 
+export type CodeBrowserBranch = {
+  name: string;
+};
+
+export type CodeBrowserBreadcrumb = {
+  name: string;
+  path: string;
+};
+
+export type CodeBrowserEntry = {
+  commitDate: string;
+  commitMessage: string;
+  commitShortId: string;
+  kind: string;
+  name: string;
+  path: string;
+};
+
 function projectPath(input: ProjectScopeInput, suffix = ""): string {
   return `/projects/${encodeURIComponent(input.ownerName)}/${encodeURIComponent(
     input.projectName,
   )}${suffix}`;
 }
 
+function normalizeBranch(branch: Partial<CodeBrowserBranch>): CodeBrowserBranch {
+  return {
+    name: branch.name ?? "",
+  };
+}
+
+function normalizeBreadcrumb(breadcrumb: Partial<CodeBrowserBreadcrumb>): CodeBrowserBreadcrumb {
+  return {
+    name: breadcrumb.name ?? "",
+    path: breadcrumb.path ?? "",
+  };
+}
+
+function normalizeEntry(entry: Partial<CodeBrowserEntry>): CodeBrowserEntry {
+  return {
+    commitDate: entry.commitDate ?? "",
+    commitMessage: entry.commitMessage ?? "",
+    commitShortId: entry.commitShortId ?? "",
+    kind: entry.kind ?? "",
+    name: entry.name ?? "",
+    path: entry.path ?? "",
+  };
+}
+
 function normalizeCodeBrowserResponse(response: Partial<CodeBrowserResponse>): CodeBrowserResponse {
   return {
-    branches: response.branches ?? [],
-    breadcrumbs: response.breadcrumbs ?? [],
-    entries: response.entries ?? [],
+    branches: (response.branches ?? []).map(normalizeBranch),
+    breadcrumbs: (response.breadcrumbs ?? []).map(normalizeBreadcrumb),
+    entries: (response.entries ?? []).map(normalizeEntry),
     file: response.file ?? null,
     noHead: response.noHead ?? false,
     ownerName: response.ownerName ?? "",
