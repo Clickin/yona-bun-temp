@@ -5,6 +5,7 @@ import {
   type PullRequestChangesResponse,
   type PullRequestCommit,
   type PullRequestDetailResponse,
+  type ReviewThread,
 } from "../../../../../api/pull-requests";
 import { currentSessionQueryOptions } from "../../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
@@ -212,10 +213,88 @@ function ProjectPullRequestChangesBody({
                 />
               ) : null}
             </div>
+            {hasReviewCards ? <ReviewWrap threads={changes.cardThreads} /> : null}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function ReviewWrap({ threads }: { threads: ReviewThread[] }) {
+  const { t } = useLegacyMessages();
+  const openThreads = threads.filter((thread) => thread.state.toLowerCase() === "open");
+  const closedThreads = threads.filter((thread) => thread.state.toLowerCase() === "closed");
+
+  return (
+    <div className="review-wrap">
+      <div className="review-container">
+        <button type="button" className="ybtn ybtn-default btn-hide-reviewcards">
+          <i className="yobicon-maximize"></i>
+        </button>
+
+        <ul className="nav nav-tabs" style={{ marginBottom: "10px" }}>
+          <li className="active">
+            <a href="#reviewcards-open" data-toggle="tab">
+              {t("issue.state.open")} {openThreads.length}
+            </a>
+          </li>
+          <li>
+            <a href="#reviewcards-closed" data-toggle="tab">
+              {t("issue.state.closed")} {closedThreads.length}
+            </a>
+          </li>
+        </ul>
+
+        <div className="tab-content review-list">
+          <ReviewCards id="reviewcards-open" isActive threads={openThreads} />
+          <ReviewCards id="reviewcards-closed" threads={closedThreads} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReviewCards({
+  id,
+  isActive = false,
+  threads,
+}: {
+  id: string;
+  isActive?: boolean;
+  threads: ReviewThread[];
+}) {
+  return (
+    <div id={id} className={`tab-pane${isActive ? " active" : ""}`}>
+      {threads.map((thread) => (
+        <ReviewCard key={thread.id} thread={thread} />
+      ))}
+    </div>
+  );
+}
+
+function ReviewCard({ thread }: { thread: ReviewThread }) {
+  const { t } = useLegacyMessages();
+  const remainingCommentCount = Math.max(0, thread.comments.length - 1);
+
+  return (
+    <a href={`#thread-${thread.id}`} className={`review-card ${thread.state.toLowerCase()}`}>
+      <p className="content">{thread.comments[0]?.contentsMarkdown ?? ""}</p>
+      <p className="info">
+        {remainingCommentCount > 0 ? (
+          <span className="comments pull-left">
+            <i className="yobicon-comments"></i> {remainingCommentCount}
+          </span>
+        ) : null}
+        <span className="outdated-label">{t("review.outdated")}</span>
+        <span className="date" title={thread.createdLabel}>
+          {thread.createdLabel}
+        </span>
+        <span className="avatar-wrap smaller ml5">
+          <img src={thread.authorAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />
+        </span>
+      </p>
+    </a>
   );
 }
 

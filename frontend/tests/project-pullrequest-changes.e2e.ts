@@ -32,6 +32,67 @@ const EXPECTED_PULL_REQUEST_SELECTED_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.repl
     `action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=abcdef1234567890"`,
   );
 
+const REVIEW_THREAD = {
+  authorAvatarUrl: "/assets/images/default-avatar-32.png",
+  authorId: 2,
+  authorLabel: "Dev Member",
+  authorLoginId: "dev",
+  comments: [
+    {
+      attachments: [],
+      authorId: 2,
+      authorLabel: "Dev Member",
+      authorLoginId: "dev",
+      canDelete: false,
+      canUpdate: false,
+      contentsHtml: "<p>Review note</p>",
+      contentsMarkdown: "Review note",
+      createdLabel: "Jul 5, 2026",
+      id: 701,
+      threadId: 91,
+      viaEmail: false,
+    },
+    {
+      attachments: [],
+      authorId: 1,
+      authorLabel: "Site Admin",
+      authorLoginId: "admin",
+      canDelete: false,
+      canUpdate: false,
+      contentsHtml: "<p>Follow up</p>",
+      contentsMarkdown: "Follow up",
+      createdLabel: "Jul 6, 2026",
+      id: 702,
+      threadId: 91,
+      viaEmail: false,
+    },
+  ],
+  commitId: "abcdef1234567890",
+  createdLabel: "Jul 5, 2026",
+  endLine: 2,
+  endSide: "B",
+  id: 91,
+  path: "src/main.rs",
+  prevCommitId: "1234567890abcdef",
+  pullRequestNumber: 9,
+  startLine: 2,
+  startSide: "B",
+  state: "open",
+};
+
+const EXPECTED_PULL_REQUEST_REVIEW_CARD = EXPECTED_PULL_REQUEST_CHANGES.replace(
+  `class="codediff-wrap mt10 diffs-only"`,
+  `class="codediff-wrap mt10"`,
+)
+  .replace(
+    `<div id="changes" class="diffs-wrap">`,
+    `<button type="button" class="ybtn ybtn-default btn-show-reviewcards"><i class="yobicon-restore"></i></button><div id="changes" class="diffs-wrap">`,
+  )
+  .replace(
+    `</div></div></div></div></div></div>`,
+    `</div></div><div class="review-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs" style="margin-bottom:10px"><li class="active"><a href="#reviewcards-open" data-toggle="tab">Open1</a></li><li><a href="#reviewcards-closed" data-toggle="tab">Closed0</a></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"><a href="#thread-91" class="review-card open"><p class="content">Review note</p><p class="info"><span class="comments pull-left"><i class="yobicon-comments"></i>1</span><span class="outdated-label">Outdated</span><span class="date" title="Jul 5, 2026">Jul 5, 2026</span><span class="avatar-wrap smaller ml5"><img src="/assets/images/default-avatar-32.png"></span></p></a></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div></div></div>`,
+  );
+
 test("project pull request changes matches legacy git/viewChanges.scala.html empty diff DOM", async ({
   page,
 }) => {
@@ -76,11 +137,35 @@ test("project pull request selected commit changes matches legacy git/viewChange
   );
 });
 
+test("project pull request changes renders legacy review cards when threads exist", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, { cardThreads: [REVIEW_THREAD], threads: [REVIEW_THREAD] });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+  await expect(page.locator(".codediff-wrap")).not.toHaveClass(/diffs-only/u);
+  await expect(page.locator(".btn-show-reviewcards")).toHaveCount(1);
+  await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
+    "href",
+    "#thread-91",
+  );
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_REVIEW_CARD.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 async function mockPullRequestChanges(
   page: Page,
   options: {
+    cardThreads?: unknown[];
     commits?: unknown[];
     expectedCommitId?: string;
+    threads?: unknown[];
   } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -134,13 +219,13 @@ async function mockPullRequestChanges(
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
-          cardThreads: [],
+          cardThreads: options.cardThreads ?? [],
           commits: options.commits ?? [],
           files: [],
           inlineThreads: [],
           nonRangedThreads: [],
           pullRequest: pullRequestDetail(),
-          threads: [],
+          threads: options.threads ?? [],
         }),
       });
     },
