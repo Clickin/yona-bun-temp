@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   deleteProjectMemberRest,
   readProjectContainerQueryOptions,
@@ -395,8 +397,7 @@ function ReadmePane({
   const { t } = useLegacyMessages();
   const projectRecord = recordField(project);
   const readmeFile = recordField(projectRecord.readmeFile);
-  const readmeBody =
-    stringField(readmeFile.bodyHtml, "") || stringField(readmeFile.bodyMarkdown, "");
+  const readmeBody = stringField(readmeFile.bodyMarkdown, "");
   const readmeName = stringField(readmeFile.name, "");
   const canCreateReadme =
     booleanField(projectRecord.viewerCanCreateCommitResource) ||
@@ -419,7 +420,9 @@ function ReadmePane({
               </a>
             ) : null}
           </header>
-          <div className="readme-body markdown-wrap">{readmeBody}</div>
+          <div className="readme-body markdown-wrap">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{readmeBody}</ReactMarkdown>
+          </div>
         </div>
       ) : (
         <p className="default">

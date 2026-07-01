@@ -23,7 +23,33 @@ test("project home README tab matches legacy project/home.scala.html DOM", async
   );
 });
 
-async function mockProjectHome(page: Page) {
+test("project home README tab renders README Markdown instead of compatibility HTML", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    readmeFile: {
+      bodyHtml: "<p>Server HTML should not render</p>",
+      bodyMarkdown: "Project **README**",
+      name: "README.md",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample`);
+  await expect(page.locator("#project-description")).toBeVisible();
+  await expect(page.locator(".readme-body")).toBeVisible();
+
+  const expected = EXPECTED_PROJECT_HOME.replace(
+    '<div class="bubble-wrap gray readme"><p class="default"><span>README.md will be shown here if you add it to the code repository\'s root directory.</span><br><br><a href="__BASE_PATH__/admin/sample/postform?readme=true" class="ybtn">create README</a></p></div>',
+    '<div class="bubble-wrap gray readme"><div class="readme-wrap"><header><i class="yobicon-book-open vmiddle"></i><strong class="vmiddle"> README.md</strong><a href="__BASE_PATH__/admin/sample/postform?readme=true" class="ybtn vmiddle ml5">Edit</a></header><div class="readme-body markdown-wrap"><p>Project <strong>README</strong></p></div></div></div>',
+  );
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(page, expected.replaceAll("__BASE_PATH__", basePath)),
+  );
+  await expect(page.locator(".readme-body")).not.toContainText("Server HTML should not render");
+});
+
+async function mockProjectHome(page: Page, overrides: Partial<{ readmeFile: unknown }> = {}) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -81,7 +107,7 @@ async function mockProjectHome(page: Page) {
         overview: "Sample overview",
         ownerName: "admin",
         projectName: "sample",
-        readmeFile: null,
+        readmeFile: overrides.readmeFile ?? null,
         vcs: "GIT",
         viewerCanCreateCommitResource: true,
         viewerCanLeave: true,
