@@ -104,6 +104,7 @@ function OrganizationPullRequestsBody({
   selectedCategory: OrganizationPullRequestsCategory;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const organizationName = stringField(organization.organizationName, "");
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
@@ -117,6 +118,21 @@ function OrganizationPullRequestsBody({
     `/organizations/${organizationName}/closedPullrequests`,
   );
   const searchAction = selectedCategory === "closed" ? closedAction : openAction;
+  const navigateTab = (event: MouseEvent<HTMLAnchorElement>, to: string) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    router.history.push(to);
+  };
 
   return (
     <>
@@ -155,14 +171,24 @@ function OrganizationPullRequestsBody({
               <ul className="nav nav-tabs nm pullrequeset-tab-menu">
                 <li className={selectedCategory === "open" ? "active" : ""}>
                   {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                  <a href="#" data-url={openAction} data-type="state">
+                  <a
+                    href="#"
+                    data-url={openAction}
+                    data-type="state"
+                    onClick={(event) => navigateTab(event, openAction)}
+                  >
                     {t("pullRequest.state.open")}
                     <span className="num-badge">{pullRequests.openCount}</span>
                   </a>
                 </li>
                 <li className={selectedCategory === "closed" ? "active" : ""}>
                   {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                  <a href="#" data-url={closedAction} data-type="state">
+                  <a
+                    href="#"
+                    data-url={closedAction}
+                    data-type="state"
+                    onClick={(event) => navigateTab(event, closedAction)}
+                  >
                     {t("pullRequest.state.closed")}
                     <span className="num-badge">{pullRequests.closedCount}</span>
                   </a>

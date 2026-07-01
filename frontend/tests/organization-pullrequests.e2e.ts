@@ -98,6 +98,40 @@ test("organization closed pull request aggregate matches legacy group_pullreques
   );
 });
 
+test("organization pull request closed tab preserves legacy data-url with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationPullRequests(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=fix`);
+  const closedTab = page.locator(".pullrequeset-tab-menu a").filter({ hasText: "Closed" });
+  await expect(closedTab).toHaveAttribute("href", "#");
+  await expect(closedTab).toHaveAttribute(
+    "data-url",
+    `${basePath}/organizations/weblabs/closedPullrequests`,
+  );
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await closedTab.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/closedPullrequests`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator(".pullrequeset-tab-menu li.active a")).toHaveText("Closed2");
+  await expect(page.locator("#search")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/closedPullrequests`,
+  );
+});
+
 test("organization pullrequests menu board link preserves legacy href with SPA transition", async ({
   page,
 }) => {
