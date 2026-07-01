@@ -191,6 +191,31 @@ test("project board detail deletes through legacy confirmation modal", async ({ 
   await expect.poll(() => deleteRequests).toEqual(["DELETE"]);
 });
 
+test("project board detail opens legacy keymap modal through data-toggle modal", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page);
+
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await page.locator('.board-footer a[href="#helpKeys"][data-toggle="modal"]').click();
+  await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/);
+  await expect(page.locator("#helpKeys")).toHaveClass(/in/);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  expect(await keymapModalMetrics(page)).toEqual({
+    display: "block",
+    firstColumnTitle: "projects",
+    left: 320,
+    top: 72,
+    width: 682,
+  });
+
+  await page.locator('#helpKeys [data-dismiss="modal"]').click();
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+});
+
 test("project board detail renders legacy read-only selected labels", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page, "readonlyLabel");
@@ -321,6 +346,19 @@ async function issueLabelColorMetrics(page: Page) {
         text: element.textContent?.trim(),
       };
     });
+}
+
+async function keymapModalMetrics(page: Page) {
+  return page.locator("#helpKeys").evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      display: window.getComputedStyle(element).display,
+      firstColumnTitle: element.querySelector(".span3 h5")?.textContent?.trim(),
+      left: Math.round(rect.left),
+      top: Math.round(rect.top),
+      width: Math.round(rect.width),
+    };
+  });
 }
 
 async function mockProjectPosts(

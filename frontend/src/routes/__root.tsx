@@ -106,6 +106,29 @@ function RootResetShell() {
         return;
       }
 
+      const modalToggle = target?.closest<HTMLElement>('[data-toggle="modal"]');
+      if (modalToggle) {
+        const selector =
+          modalToggle.dataset.target ?? modalToggle.getAttribute("href")?.match(/#[^\s]+$/u)?.[0];
+        const modal = selector?.startsWith("#") ? document.getElementById(selector.slice(1)) : null;
+        if (modal) {
+          modal.classList.remove("hide");
+          modal.classList.add("in");
+          modal.style.display = "block";
+          modal.setAttribute("aria-hidden", "false");
+          if (!document.querySelector(".modal-backdrop")) {
+            const backdrop = document.createElement("div");
+            backdrop.className = modal.classList.contains("fade")
+              ? "modal-backdrop fade in"
+              : "modal-backdrop in";
+            document.body.append(backdrop);
+          }
+          window.setTimeout(() => modal.focus(), 0);
+        }
+        event.preventDefault();
+        return;
+      }
+
       const dismissAlert = target?.closest<HTMLElement>('[data-dismiss="alert"]');
       if (dismissAlert) {
         dismissAlert.closest<HTMLElement>(".alert")?.remove();
