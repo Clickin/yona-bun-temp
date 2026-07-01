@@ -1,13 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Fragment } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { Fragment, useState } from "react";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import type { ProjectContainer } from "../../../../api/types";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { readIssueDetail, type RestIssueDetailResponse } from "../../../../auth-workspace-client";
+import {
+  deleteIssue,
+  readIssueDetail,
+  readSessionBootstrap,
+  type RestIssueDetailResponse,
+} from "../../../../auth-workspace-client";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
@@ -53,6 +58,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         basePath={runtimeConfig.basePath}
         issue={issueQuery.data}
         project={projectQuery.data}
+        runtimeConfig={runtimeConfig}
       />
     </>
   );
@@ -62,11 +68,16 @@ function IssueDetailBody({
   basePath,
   issue,
   project,
+  runtimeConfig,
 }: {
   basePath: string;
   issue: RestIssueDetailResponse;
   project: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
 }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
@@ -98,6 +109,19 @@ function IssueDetailBody({
     : stringField(issue.dueDateUntilLabel);
   const shouldShowDueDateStatus = dueDateLabel !== "" && issueState === "open";
   const weight = numberField(issue.weight);
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return deleteIssue(runtimeConfig, csrfToken, { issueNumber, ownerName, projectName });
+    },
+    onSuccess() {
+      queryClient.removeQueries({
+        queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+      });
+      queryClient.invalidateQueries({ queryKey: ["project", ownerName, projectName, "issues"] });
+      router.history.push(prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`));
+    },
+  });
 
   return (
     <div className="page-wrap-outer">
@@ -243,6 +267,7 @@ function IssueDetailBody({
                   basePath,
                   `/${ownerName}/${projectName}/issue/${issueNumber}/editform`,
                 )}
+                onDeleteClick={() => setDeleteModalOpen(true)}
               />
             </div>
             <dl className={sharers.length ? "sharer-list" : "sharer-list hideFromDisplayOnly"}>
@@ -418,6 +443,7 @@ function IssueDetailBody({
                       basePath,
                       `/${ownerName}/${projectName}/issue/${issueNumber}/editform`,
                     )}
+                    onDeleteClick={() => setDeleteModalOpen(true)}
                     wrap={false}
                   />
                 </div>
@@ -435,7 +461,12 @@ function IssueDetailBody({
           <IssueDetailKeymap project={project} />
         </div>
       </div>
-      <DeleteConfirm issueHref={issueHref} />
+      <DeleteConfirm
+        issueHref={issueHref}
+        open={deleteModalOpen}
+        onCancel={() => setDeleteModalOpen(false)}
+        onConfirm={() => deleteMutation.mutate()}
+      />
     </div>
   );
 }
@@ -972,11 +1003,13 @@ function IssueActionButtons({
   canDelete,
   canUpdate,
   editHref,
+  onDeleteClick,
   wrap = true,
 }: {
   canDelete: boolean;
   canUpdate: boolean;
   editHref: string;
+  onDeleteClick: () => void;
   wrap?: boolean;
 }) {
   const buttons = (
@@ -1009,6 +1042,7 @@ function IssueActionButtons({
             className="icon btn-transparent-with-fontsize-lineheight ml6"
             data-toggle="tooltip"
             title="Delete"
+            onClick={onDeleteClick}
           >
             <i className="yobicon-trash"></i>
           </button>
@@ -2042,11 +2076,21 @@ function IssueIndexComment({ basePath, comment }: { basePath: string; comment: I
   );
 }
 
-function DeleteConfirm({ issueHref }: { issueHref: string }) {
+function DeleteConfirm({
+  issueHref,
+  onCancel,
+  onConfirm,
+  open,
+}: {
+  issueHref: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  open: boolean;
+}) {
   return (
-    <div id="deleteConfirm" className="modal hide fade">
+    <div id="deleteConfirm" className={`modal ${open ? "" : "hide "}fade`}>
       <div className="modal-header">
-        <button type="button" className="close" data-dismiss="modal">
+        <button type="button" className="close" data-dismiss="modal" onClick={onCancel}>
           ×
         </button>
         <h3>Delete issue</h3>
@@ -2060,10 +2104,11 @@ function DeleteConfirm({ issueHref }: { issueHref: string }) {
           className="ybtn ybtn-danger"
           data-request-method="delete"
           data-request-uri={issueHref}
+          onClick={onConfirm}
         >
           Yes
         </button>
-        <button type="button" className="ybtn" data-dismiss="modal">
+        <button type="button" className="ybtn" data-dismiss="modal" onClick={onCancel}>
           No
         </button>
       </div>

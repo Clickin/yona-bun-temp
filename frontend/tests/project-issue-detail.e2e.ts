@@ -237,6 +237,31 @@ test("project issue detail renders legacy read-only action buttons", async ({ pa
   );
 });
 
+test("project issue detail deletes through legacy confirmation modal", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { deleteRequests } = await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
+  await page.locator('a[href="#deleteConfirm"] button[title="Delete"]').first().click();
+  await expect(page.locator("#deleteConfirm")).not.toHaveClass(/hide/);
+  expect(deleteRequests).toEqual([]);
+
+  await page
+    .locator('#deleteConfirm [data-dismiss="modal"]')
+    .last()
+    .evaluate((button: HTMLButtonElement) => button.click());
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
+  expect(deleteRequests).toEqual([]);
+
+  await page.locator('a[href="#deleteConfirm"] button[title="Delete"]').first().click();
+  await page
+    .locator("#deleteConfirm .ybtn-danger")
+    .evaluate((button: HTMLButtonElement) => button.click());
+  await expect(page).toHaveURL(`${basePath}/admin/sample/issues`);
+  await expect.poll(() => deleteRequests).toEqual(["DELETE"]);
+});
+
 test("project issue detail renders legacy disabled delete action", async ({ page }) => {
   await mockProjectIssueDetail(page, { viewerCanDelete: false });
 
@@ -992,9 +1017,27 @@ function commentVoters() {
 }
 
 async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string, unknown> = {}) {
+  const deleteRequests: string[] = [];
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "test-csrf-token" },
       body: JSON.stringify({
         actorId: 1,
         avatarUrl: "/assets/images/default-avatar-32.png",
@@ -1053,6 +1096,11 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
     });
   });
   await page.route("**/api/v1/projects/admin/sample/issues/11", async (route) => {
+    if (route.request().method() === "DELETE") {
+      deleteRequests.push(route.request().method());
+      await route.fulfill({ status: 204 });
+      return;
+    }
     const issue = {
       assigneeLoginId: "admin",
       assigneeLabel: "Site Admin",
@@ -1152,6 +1200,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       body: JSON.stringify(issue),
     });
   });
+  return { deleteRequests };
 }
 
 async function canonicalize(page: Page, selector: string) {
