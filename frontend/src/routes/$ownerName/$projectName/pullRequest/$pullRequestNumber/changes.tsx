@@ -359,7 +359,7 @@ function NonRangedThreadComment({
             src={comment.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
             width="32"
             height="32"
-            alt=""
+            alt={comment.authorLoginId}
           />
         </a>
       </div>
