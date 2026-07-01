@@ -18,6 +18,29 @@ const EXPECTED_PULL_REQUEST_OVERVIEW_WITH_STATE_EVENTS = EXPECTED_PULL_REQUEST_O
   EXPECTED_PULL_REQUEST_STATE_EVENTS,
 );
 
+const EXPECTED_PULL_REQUEST_MERGED_DELETE_BRANCH = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
+  `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div>`,
+  `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-merged">Merged</span></div>`,
+)
+  .replace(
+    `<div class="pull-right"><a id="btnAccept" href="__BASE_PATH__/admin/sample/pullRequest/9/accept" data-request-method="post" class="ybtn ybtn-success">Merge</a></div>`,
+    `<div class="pull-right"></div>`,
+  )
+  .replace(
+    `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div>`,
+    `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-info"><a href="__BASE_PATH__/admin" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="25" height="25"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a> accepted this pull request.<code>feature/ui</code> You can delete branch.<button class="ybtn ybtn-danger ybtn-mini pull-right" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/deletefrombranch">Delete branch</button></div></div>`,
+  )
+  .replace(
+    `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><a data-request-method="post" href="__BASE_PATH__/admin/sample/pullRequest/9/close" class="ybtn">Close</a></div>`,
+    `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a></div>`,
+  );
+
+const EXPECTED_PULL_REQUEST_MERGED_RESTORE_BRANCH =
+  EXPECTED_PULL_REQUEST_MERGED_DELETE_BRANCH.replace(
+    `<code>feature/ui</code> You can delete branch.<button class="ybtn ybtn-danger ybtn-mini pull-right" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/deletefrombranch">Delete branch</button>`,
+    `<code>feature/ui</code> Branch can be restored.<a href="__BASE_PATH__/admin/sample/pullRequest/9/restorefrombranch" class="ybtn ybtn-info ybtn-mini pull-right" data-request-method="post">Restore branch</a>`,
+  );
+
 test("project pull request overview matches legacy git/view.scala.html empty-event DOM", async ({
   page,
 }) => {
@@ -167,9 +190,72 @@ test("project pull request overview renders legacy review and state event DOM", 
   );
 });
 
+test("project pull request overview renders legacy merged source-branch delete state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    detail: {
+      permissions: {
+        canComment: true,
+        canDeleteSourceBranch: true,
+        canRead: true,
+        canReadChanges: true,
+        canReview: false,
+        canRestoreSourceBranch: false,
+        canUpdate: true,
+        canUpdateState: false,
+      },
+      state: "merged",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator("#state .alert-info")).toContainText("Delete branch");
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_MERGED_DELETE_BRANCH.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("project pull request overview renders legacy merged source-branch restore state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    detail: {
+      permissions: {
+        canComment: true,
+        canDeleteSourceBranch: false,
+        canRead: true,
+        canReadChanges: true,
+        canReview: false,
+        canRestoreSourceBranch: true,
+        canUpdate: true,
+        canUpdateState: false,
+      },
+      sourceBranchExists: false,
+      state: "merged",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator("#state .alert-info")).toContainText("Restore branch");
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_MERGED_RESTORE_BRANCH.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 async function mockPullRequestOverview(
   page: Page,
-  options: { events?: unknown[]; mergedCommitIdTo?: string } = {},
+  options: { detail?: Record<string, unknown>; events?: unknown[]; mergedCommitIdTo?: string } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -215,59 +301,61 @@ async function mockPullRequestOverview(
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/pull-requests/9", async (route) => {
+    const detail = {
+      bodyHtml: "<p>Initial body</p>",
+      bodyMarkdown: "Initial body",
+      commits: [],
+      conflict: false,
+      contributor: {
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        loginId: "dev",
+        userId: 2,
+        userLabel: "Dev Member",
+      },
+      createdLabel: "Jul 2, 2026",
+      events: options.events ?? [],
+      fromBranch: "feature/ui",
+      fromOwnerName: "admin",
+      fromProjectName: "sample",
+      id: 90,
+      isWatching: false,
+      lackingReviewerCount: 0,
+      mergedCommitIdFrom: "",
+      mergedCommitIdTo: options.mergedCommitIdTo ?? "",
+      ownerName: "admin",
+      permissions: {
+        canComment: true,
+        canDeleteSourceBranch: false,
+        canRead: true,
+        canReadChanges: true,
+        canReview: true,
+        canRestoreSourceBranch: false,
+        canUpdate: true,
+        canUpdateState: true,
+      },
+      projectName: "sample",
+      pullRequestNumber: 9,
+      receiver: {
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        loginId: "admin",
+        userId: 1,
+        userLabel: "Site Admin",
+      },
+      requiredReviewerCount: 0,
+      reviewed: false,
+      reviewers: [],
+      sourceBranchExists: true,
+      state: "open",
+      threads: [],
+      title: "Initial title",
+      toBranch: "main",
+      updatedLabel: "Jul 2, 2026",
+      watcherCount: 0,
+      ...options.detail,
+    };
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        bodyHtml: "<p>Initial body</p>",
-        bodyMarkdown: "Initial body",
-        commits: [],
-        conflict: false,
-        contributor: {
-          avatarUrl: "/assets/images/default-avatar-32.png",
-          loginId: "dev",
-          userId: 2,
-          userLabel: "Dev Member",
-        },
-        createdLabel: "Jul 2, 2026",
-        events: options.events ?? [],
-        fromBranch: "feature/ui",
-        fromOwnerName: "admin",
-        fromProjectName: "sample",
-        id: 90,
-        isWatching: false,
-        lackingReviewerCount: 0,
-        mergedCommitIdFrom: "",
-        mergedCommitIdTo: options.mergedCommitIdTo ?? "",
-        ownerName: "admin",
-        permissions: {
-          canComment: true,
-          canDeleteSourceBranch: false,
-          canRead: true,
-          canReadChanges: true,
-          canReview: true,
-          canRestoreSourceBranch: false,
-          canUpdate: true,
-          canUpdateState: true,
-        },
-        projectName: "sample",
-        pullRequestNumber: 9,
-        receiver: {
-          avatarUrl: "/assets/images/default-avatar-32.png",
-          loginId: "admin",
-          userId: 1,
-          userLabel: "Site Admin",
-        },
-        requiredReviewerCount: 0,
-        reviewed: false,
-        reviewers: [],
-        sourceBranchExists: true,
-        state: "open",
-        threads: [],
-        title: "Initial title",
-        toBranch: "main",
-        updatedLabel: "Jul 2, 2026",
-        watcherCount: 0,
-      }),
+      body: JSON.stringify(detail),
     });
   });
 }

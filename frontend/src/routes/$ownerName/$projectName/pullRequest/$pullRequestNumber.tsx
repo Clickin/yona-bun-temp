@@ -114,7 +114,7 @@ function PullRequestOverviewBody({
           </div>
 
           <div id="state" className="pullRequest-stateInfo">
-            <PullRequestStateInfo pullRequest={pullRequest} />
+            <PullRequestStateInfo pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
           </div>
 
           <div className="board-footer board-actrow">
@@ -556,8 +556,65 @@ function PullRequestBranchInfo({
   );
 }
 
-function PullRequestStateInfo({ pullRequest }: { pullRequest: PullRequestDetailResponse }) {
+function PullRequestStateInfo({
+  pullRequest,
+  runtimeConfig,
+}: {
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
+  const prPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
+
+  if (pullRequest.state.toLowerCase() === "merged") {
+    return (
+      <div className="alert alert-info">
+        <a
+          href={prefixBasePath(runtimeConfig.basePath, `/${pullRequest.receiver.loginId}`)}
+          className="usf-group"
+        >
+          <span className="avatar-wrap smaller">
+            <img src={pullRequest.receiver.avatarUrl} width="25" height="25" alt="" />
+          </span>
+          <strong className="name">{pullRequest.receiver.userLabel}</strong>
+          <span className="loginid">
+            {" "}
+            <strong>@</strong>
+            {pullRequest.receiver.loginId}
+          </span>
+        </a>{" "}
+        {t("pullRequest.merged.the.pullrequest")}
+        {pullRequest.permissions.canDeleteSourceBranch ? (
+          <>
+            <code>{pullRequest.fromBranch}</code> {t("pullRequest.delete.frombranch.message")}
+            <button
+              className="ybtn ybtn-danger ybtn-mini pull-right"
+              data-request-method="delete"
+              data-request-uri={prefixBasePath(
+                runtimeConfig.basePath,
+                `${prPath}/deletefrombranch`,
+              )}
+            >
+              {t("pullRequest.delete.branch")}
+            </button>
+          </>
+        ) : null}
+        {pullRequest.permissions.canRestoreSourceBranch ? (
+          <>
+            <code>{pullRequest.fromBranch}</code> {t("pullRequest.restore.frombranch.message")}
+            <a
+              href={prefixBasePath(runtimeConfig.basePath, `${prPath}/restorefrombranch`)}
+              className="ybtn ybtn-info ybtn-mini pull-right"
+              data-request-method="post"
+            >
+              {t("pullRequest.restore.branch")}
+            </a>
+          </>
+        ) : null}
+      </div>
+    );
+  }
+
   if (!isOpenState(pullRequest.state)) {
     return null;
   }
