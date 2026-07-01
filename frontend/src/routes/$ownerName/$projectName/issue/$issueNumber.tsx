@@ -899,6 +899,25 @@ function IssueEventRow({
     );
   }
 
+  if (eventType === "ISSUE_MOVED") {
+    const [fromOwner, fromProject] = stringField(event.oldValue).split("/");
+    const fromProjectName = [fromOwner, fromProject].filter(Boolean).join("/");
+    return (
+      <li className="event" id={`event-${eventId}`}>
+        <span className="state changed">moved</span>
+        {sender} moved this issue from{" "}
+        <strong>
+          <a href={prefixBasePath(basePath, `/${fromProjectName}`)} className="link">
+            {fromProjectName}
+          </a>
+        </strong>
+        <span className="date">
+          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+        </span>
+      </li>
+    );
+  }
+
   return (
     <li className="event" id={`event-${eventId}`}>
       {stringField(event.newValue)} by {sender}
