@@ -78,6 +78,33 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
   });
 });
 
+test("project settings menu member link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+
+  await page.goto(`${basePath}/admin/sample/setting`);
+  const memberLink = page.locator("#subMenuProjectMember a");
+  await expect(memberLink).toHaveAttribute("href", `${basePath}/admin/sample/members`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await memberLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/members`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator("#subMenuProjectMember")).toHaveClass("active");
+  await expect(page.locator(".members.project .member")).toHaveCount(2);
+});
+
 test("project settings reviewer count radios mirror legacy show/hide behavior", async ({
   page,
 }) => {
@@ -144,6 +171,45 @@ async function mockProjectSettings(page: Page) {
       body: JSON.stringify(projectSettings()),
     });
   });
+  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(projectContainer()),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/members", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        enrollmentRequests: [],
+        members: [
+          {
+            avatarUrl: "/assets/images/default-avatar-32.png",
+            isOwner: true,
+            loginId: "admin",
+            role: "manager",
+            userId: 1,
+            userLabel: "Site Admin",
+          },
+          {
+            avatarUrl: "/assets/images/default-avatar-32.png",
+            isOwner: false,
+            loginId: "alice",
+            role: "member",
+            userId: 2,
+            userLabel: "Alice Doe",
+          },
+        ],
+        ownerName: "admin",
+        projectName: "sample",
+        roleOptions: [
+          { label: "Manager", role: "manager" },
+          { label: "Member", role: "member" },
+        ],
+        viewerCanUpdate: true,
+      }),
+    });
+  });
   await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -201,6 +267,31 @@ function projectSettings() {
     vcs: "GIT",
     viewerCanUpdate: true,
     watchCount: 5,
+  };
+}
+
+function projectContainer() {
+  return {
+    backgroundImageUrl: "/assets/images/bg-default-project.png",
+    enrollmentRequestCount: 0,
+    id: 7,
+    isFavorite: false,
+    isForkedFromOrigin: false,
+    isPrivate: false,
+    isProtected: false,
+    logoUrl: "/assets/images/project_default_logo.png",
+    menuSetting: {
+      board: true,
+      code: true,
+      issue: true,
+      milestone: true,
+      pullRequest: true,
+      review: true,
+    },
+    ownerName: "admin",
+    projectName: "sample",
+    vcs: "GIT",
+    viewerCanUpdate: true,
   };
 }
 

@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type AnchorHTMLAttributes,
+  type ComponentType,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { codeBranchesQueryOptions, setDefaultCodeBranchRest } from "../../../api/code-branches";
 import { readProjectSettingsQueryOptions, updateProjectRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -10,6 +18,10 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
+>;
 
 export const Route = createFileRoute("/$ownerName/$projectName/setting")({
   component: ProjectSettingRoute,
@@ -146,7 +158,6 @@ function ProjectSettingBody({
       <div className="project-page-wrap">
         <ProjectSettingMenu
           active="setting"
-          basePath={runtimeConfig.basePath}
           showCode={menuCodeChecked}
           ownerName={ownerName}
           project={project}
@@ -727,14 +738,12 @@ function ProjectMenuItem({
 
 function ProjectSettingMenu({
   active,
-  basePath,
   ownerName,
   project,
   projectName,
   showCode,
 }: {
   active: "setting";
-  basePath: string;
   ownerName: string;
   project: ProjectContainer;
   projectName: string;
@@ -745,44 +754,44 @@ function ProjectSettingMenu({
   return (
     <ul className="nav nav-tabs">
       <li id="subMenuProjectSetting" className={active === "setting" ? "active" : ""}>
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/setting`}>
           {t("project.setting")}
-        </a>
+        </LegacyInternalLink>
       </li>
       <li id="subMenuProjectMember" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/members`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/members`}>
           {t("project.member")}
           <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
-        </a>
+        </LegacyInternalLink>
       </li>
       <li id="subMenuIssueLabel" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/labels`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/labels`}>
           {t("issue.label")}
-        </a>
+        </LegacyInternalLink>
       </li>
       <li id="subMenuWebhook" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/webhooks`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/webhooks`}>
           {t("project.webhook")}
-        </a>
+        </LegacyInternalLink>
       </li>
       <li id="subMenuProjectTransfer" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/transfer`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/transfer`}>
           {t("project.transfer")}
-        </a>
+        </LegacyInternalLink>
       </li>
       <li id="subMenuProjectDelete" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/deleteform`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/deleteform`}>
           {t("project.delete")}
-        </a>
+        </LegacyInternalLink>
       </li>
       <li
         id="subMenuProjectChangeVCS"
         className=""
         style={showCode ? undefined : { display: "none" }}
       >
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/changeVCS`)}>
+        <LegacyInternalLink to={`/${ownerName}/${projectName}/changeVCS`}>
           {t("project.changeVCS")}
-        </a>
+        </LegacyInternalLink>
       </li>
     </ul>
   );
