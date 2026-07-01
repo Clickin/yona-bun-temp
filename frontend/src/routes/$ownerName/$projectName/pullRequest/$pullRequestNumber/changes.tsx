@@ -5,6 +5,7 @@ import {
   type PullRequestChangesResponse,
   type PullRequestCommit,
   type PullRequestDetailResponse,
+  type ReviewComment,
   type ReviewThread,
 } from "../../../../../api/pull-requests";
 import { currentSessionQueryOptions } from "../../../../../api/session";
@@ -199,7 +200,16 @@ function ProjectPullRequestChangesBody({
               </div>
 
               <div className="board-comment-wrap">
-                <div className="non-ranged-threads-wrap"></div>
+                <div className="non-ranged-threads-wrap">
+                  {changes.nonRangedThreads.map((thread) => (
+                    <NonRangedThread
+                      key={thread.id}
+                      pullRequest={pullRequest}
+                      runtimeConfig={runtimeConfig}
+                      thread={thread}
+                    />
+                  ))}
+                </div>
                 {pullRequest.permissions.canComment ? (
                   <CommentForm
                     action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
@@ -218,6 +228,126 @@ function ProjectPullRequestChangesBody({
         </div>
       </div>
     </div>
+  );
+}
+
+function NonRangedThread({
+  pullRequest,
+  runtimeConfig,
+  thread,
+}: {
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+  thread: ReviewThread;
+}) {
+  const { t } = useLegacyMessages();
+  const state = thread.state.toLowerCase();
+  const action = pullRequestCommentHref(runtimeConfig.basePath, pullRequest, thread.commitId);
+
+  return (
+    <div id={`thread-${thread.id}`} className={`comment-thread-wrap ${state}`}>
+      <div className="btn-thread-here btn-thread-minimize">
+        <button type="button" className="ybtn ybtn-default ybtn-small">
+          <i className="yobicon-comments"></i>
+        </button>
+      </div>
+      <ul className="comments">
+        {thread.comments.map((comment) => (
+          <NonRangedThreadComment
+            comment={comment}
+            key={comment.id}
+            runtimeConfig={runtimeConfig}
+          />
+        ))}
+      </ul>
+      <div className="write-comment-form">
+        <form
+          action={action}
+          method="post"
+          encType="multipart/form-data"
+          className="review-form"
+          style={{ display: "block" }}
+        >
+          <input type="hidden" name="thread.id" value={thread.id} />
+          <div className="write-comment-box">
+            <div className="write-comment-wrap">
+              <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
+              <UploadForm />
+              <div className="right-txt">
+                <button
+                  type="button"
+                  data-request-method="post"
+                  data-request-uri={prefixBasePath(
+                    runtimeConfig.basePath,
+                    `/threads/${thread.id}/${state === "open" ? "close" : "open"}`,
+                  )}
+                  className="ybtn ybtn-default ybtn-small"
+                >
+                  {t(state === "open" ? "commentThread.close" : "commentThread.open")}
+                </button>
+                <button type="submit" className="ybtn ybtn-success ybtn-small">
+                  {t("button.comment.new")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function NonRangedThreadComment({
+  comment,
+  runtimeConfig,
+}: {
+  comment: ReviewComment;
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <li id={`comment-${comment.id}`} className="comment">
+      <div className="comment-avatar">
+        <a
+          href={prefixBasePath(runtimeConfig.basePath, `/${comment.authorLoginId}`)}
+          className="avatar-wrap"
+          data-toggle="tooltip"
+          data-placement="top"
+          title={comment.authorLabel}
+        >
+          <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+        </a>
+      </div>
+      <div className="media-body">
+        <div className="meta-info">
+          <span className="comment_author pull-left">
+            <a
+              href={prefixBasePath(runtimeConfig.basePath, `/${comment.authorLoginId}`)}
+              data-toggle="tooltip"
+              data-placement="top"
+              title={comment.authorLabel}
+            >
+              <strong>{`${comment.authorLoginId} `}</strong>
+            </a>
+          </span>
+          <span className="ago">
+            <a href={`#comment-${comment.id}`} title={comment.createdLabel}>
+              {comment.createdLabel}
+            </a>
+          </span>
+        </div>
+        <div id={`comment-body-${comment.id}`}>
+          <div
+            className="comment-body markdown-wrap"
+            data-via-email={String(comment.viaEmail)}
+            dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+          ></div>
+          <div
+            className="attachments"
+            data-attachments={JSON.stringify(comment.attachments ?? [])}
+          ></div>
+        </div>
+      </div>
+    </li>
   );
 }
 

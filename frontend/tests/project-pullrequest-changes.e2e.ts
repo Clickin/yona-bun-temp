@@ -93,6 +93,40 @@ const EXPECTED_PULL_REQUEST_REVIEW_CARD = EXPECTED_PULL_REQUEST_CHANGES.replace(
     `</div></div><div class="review-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs" style="margin-bottom:10px"><li class="active"><a href="#reviewcards-open" data-toggle="tab">Open1</a></li><li><a href="#reviewcards-closed" data-toggle="tab">Closed0</a></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"><a href="#thread-91" class="review-card open"><p class="content">Review note</p><p class="info"><span class="comments pull-left"><i class="yobicon-comments"></i>1</span><span class="outdated-label">Outdated</span><span class="date" title="Jul 5, 2026">Jul 5, 2026</span><span class="avatar-wrap smaller ml5"><img src="/assets/images/default-avatar-32.png"></span></p></a></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div></div></div>`,
   );
 
+const NON_RANGED_THREAD = {
+  ...REVIEW_THREAD,
+  comments: [
+    {
+      attachments: [],
+      authorId: 2,
+      authorLabel: "Dev Member",
+      authorLoginId: "dev",
+      canDelete: false,
+      canUpdate: false,
+      contentsHtml: "<p>General note</p>",
+      contentsMarkdown: "General note",
+      createdLabel: "Jul 7, 2026",
+      id: 801,
+      threadId: 92,
+      viaEmail: false,
+    },
+  ],
+  createdLabel: "Jul 7, 2026",
+  id: 92,
+  path: "",
+};
+
+const EXPECTED_PULL_REQUEST_NON_RANGED_THREAD_HTML = `<div id="thread-92" class="comment-thread-wrap open"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-comments"></i></button></div><ul class="comments"><li id="comment-801" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="Dev Member"><strong>dev </strong></a></span><span class="ago"><a href="#comment-801" title="Jul 7, 2026">Jul 7, 2026</a></span></div><div id="comment-body-801"><div class="comment-body markdown-wrap" data-via-email="false"><p>General note</p></div><div class="attachments" data-attachments="[]"></div></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=abcdef1234567890" method="post" enctype="multipart/form-data" class="review-form" style="display:block"><input type="hidden" name="thread.id" value="92"><div class="write-comment-box"><div class="write-comment-wrap"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-thread-92" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-thread-92" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-thread-92" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-92" markdown="true"></textarea></div></div><div id="preview-thread-92" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="right-txt"><button type="button" data-request-method="post" data-request-uri="__BASE_PATH__/threads/92/close" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div>`;
+
+const EXPECTED_PULL_REQUEST_NON_RANGED_THREAD = EXPECTED_PULL_REQUEST_REVIEW_CARD.replace(
+  `<div class="non-ranged-threads-wrap"></div>`,
+  `<div class="non-ranged-threads-wrap">${EXPECTED_PULL_REQUEST_NON_RANGED_THREAD_HTML}</div>`,
+)
+  .replace(`href="#thread-91"`, `href="#thread-92"`)
+  .replace(`<p class="content">Review note</p>`, `<p class="content">General note</p>`)
+  .replace(`title="Jul 5, 2026">Jul 5, 2026`, `title="Jul 7, 2026">Jul 7, 2026`)
+  .replace(`<span class="comments pull-left"><i class="yobicon-comments"></i>1</span>`, ``);
+
 test("project pull request changes matches legacy git/viewChanges.scala.html empty diff DOM", async ({
   page,
 }) => {
@@ -159,12 +193,33 @@ test("project pull request changes renders legacy review cards when threads exis
   );
 });
 
+test("project pull request changes renders legacy non-ranged thread DOM", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, {
+    cardThreads: [NON_RANGED_THREAD],
+    nonRangedThreads: [NON_RANGED_THREAD],
+    threads: [NON_RANGED_THREAD],
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+  await expect(page.locator(".non-ranged-threads-wrap #thread-92")).toHaveCount(1);
+  await expect(page.locator("#thread-92 .write-comment-form")).toHaveCount(1);
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_NON_RANGED_THREAD.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 async function mockPullRequestChanges(
   page: Page,
   options: {
     cardThreads?: unknown[];
     commits?: unknown[];
     expectedCommitId?: string;
+    nonRangedThreads?: unknown[];
     threads?: unknown[];
   } = {},
 ) {
@@ -223,7 +278,7 @@ async function mockPullRequestChanges(
           commits: options.commits ?? [],
           files: [],
           inlineThreads: [],
-          nonRangedThreads: [],
+          nonRangedThreads: options.nonRangedThreads ?? [],
           pullRequest: pullRequestDetail(),
           threads: options.threads ?? [],
         }),
