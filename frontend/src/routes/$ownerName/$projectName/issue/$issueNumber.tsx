@@ -242,7 +242,7 @@ function IssueDetailBody({
             </dl>
             <div className="watcher-list"></div>
             <div className="subtasks"></div>
-            {!isDraft ? <EmptyTimeline /> : null}
+            {!isDraft ? <IssueMainTimeline basePath={basePath} issue={issue} /> : null}
           </div>
           <div className="span3 span-right-pane mb20">
             <div className="issue-info">
@@ -325,7 +325,7 @@ function IssueDetailBody({
                   {canUpdate ? <IssueActionButtons canDelete={canDelete} wrap={false} /> : null}
                 </div>
               </form>
-              <EmptyTimeline />
+              <IssueIndexTimeline basePath={basePath} issue={issue} />
             </div>
           </div>
         </div>
@@ -624,6 +624,260 @@ function EmptyTimeline() {
   );
 }
 
+type IssueComment = RestIssueDetailResponse["comments"][number];
+
+function IssueMainTimeline({
+  basePath,
+  issue,
+}: {
+  basePath: string;
+  issue: RestIssueDetailResponse;
+}) {
+  const comments = issue.comments ?? [];
+  if (!comments.length) {
+    return <EmptyTimeline />;
+  }
+
+  return (
+    <div id="comments" className="board-comment-wrap">
+      <div id="timeline">
+        <div className="timeline-list">
+          <div className="comment-header">
+            <i></i>
+            <strong>Comment</strong> <strong className="num">{comments.length}</strong>
+          </div>
+          <hr className="nm" />
+          <ul className="comments">
+            {comments.map((comment) => (
+              <IssueCommentRow
+                basePath={basePath}
+                comment={comment}
+                issue={issue}
+                key={stringField(comment.id)}
+              />
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IssueCommentRow({
+  basePath,
+  comment,
+  issue,
+}: {
+  basePath: string;
+  comment: IssueComment;
+  issue: RestIssueDetailResponse;
+}) {
+  const commentId = stringField(comment.id);
+  const authorLoginId = stringField(comment.authorLoginId);
+  const authorLabel = stringField(comment.authorLabel);
+  const authorHref = prefixBasePath(basePath, `/${authorLoginId}`);
+  const issueNumber = stringField(issue.issueNumber);
+  const ownerName = stringField(issue.ownerName);
+  const projectName = stringField(issue.projectName);
+  const canUpdate = booleanField(comment.viewerCanUpdate);
+  const canDelete = booleanField(comment.viewerCanDelete);
+  const contentsHtml = stringField(comment.contentsHtml);
+
+  return (
+    <li className="comment " id={`comment-${commentId}`}>
+      <div className="comment-avatar">
+        <a
+          href={authorHref}
+          className="avatar-wrap"
+          data-toggle="tooltip"
+          data-placement="top"
+          title={authorLoginId}
+        >
+          <img
+            src={stringField(comment.authorAvatarUrl)}
+            width="32"
+            height="32"
+            alt={authorLabel}
+          />
+        </a>
+      </div>
+      <div className="media-body">
+        <div className="meta-info">
+          <span className="comment_author">
+            <span className="resp-comment-avatar">
+              <a
+                href={authorHref}
+                className="avatar-wrap"
+                data-toggle="tooltip"
+                data-placement="top"
+                title={authorLabel}
+              >
+                <img
+                  src={stringField(comment.authorAvatarUrl)}
+                  width="32"
+                  height="32"
+                  alt={authorLoginId}
+                />
+              </a>
+            </span>
+            <a href={authorHref} data-toggle="tooltip" data-placement="top" title={authorLoginId}>
+              <strong>{authorLabel}</strong>
+            </a>
+          </span>
+          <span className="ago-date">
+            <a
+              href={`#comment-${commentId}`}
+              className="ago"
+              title={stringField(comment.createdLabel)}
+            >
+              {stringField(comment.createdLabel)}
+            </a>
+            <a href={`#comment-${commentId}`} className="share-link" style={{ display: "none" }}>
+              [Link]
+            </a>
+          </span>
+          <span className="act-row pull-right">
+            <span className="new-issue-by">
+              <a href={prefixBasePath(basePath, `/user/issues/new?commentId=${commentId}`)}>
+                New issue by this comment
+              </a>
+            </span>
+            <button
+              type="button"
+              className="btn-transparent-with-fontsize-lineheight"
+              title="Vote"
+              data-request-type="comment-vote"
+              data-request-uri={prefixBasePath(
+                basePath,
+                `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}/vote`,
+              )}
+            >
+              <i className="yobicon-hearts vote-heart-off"></i>
+            </button>
+            {canUpdate ? (
+              <button
+                type="button"
+                className="btn-transparent-with-fontsize-lineheight ml10"
+                data-toggle="comment-edit"
+                data-comment-id={commentId}
+                title="Edit comment"
+              >
+                <i className="yobicon-edit-2"></i>
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button
+                type="button"
+                className="btn-transparent-with-fontsize-lineheight ml6"
+                data-toggle="comment-delete"
+                data-request-uri={prefixBasePath(
+                  basePath,
+                  `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}`,
+                )}
+                title="Delete comment"
+              >
+                <i className="yobicon-trash"></i>
+              </button>
+            ) : null}
+          </span>
+        </div>
+        <div id={`comment-body-${commentId}`}>
+          <div
+            className="comment-body markdown-wrap"
+            data-allowed-update={String(canUpdate)}
+            data-via-email={String(booleanField(comment.viaEmail))}
+            dangerouslySetInnerHTML={{ __html: contentsHtml }}
+          />
+          <div
+            className="attachments pull-left"
+            data-attachments={JSON.stringify(comment.attachments ?? [])}
+          ></div>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function IssueIndexTimeline({
+  basePath,
+  issue,
+}: {
+  basePath: string;
+  issue: RestIssueDetailResponse;
+}) {
+  const comments = issue.comments ?? [];
+  if (!comments.length) {
+    return <EmptyTimeline />;
+  }
+
+  return (
+    <div id="comments" className="board-comment-wrap">
+      <div id="timeline">
+        <div className="timeline-list">
+          <div className="comment-header">
+            <strong>Comment</strong> <strong className="num">{comments.length}</strong>
+          </div>
+          <ul className="comments">
+            {comments.map((comment) => (
+              <IssueIndexComment
+                basePath={basePath}
+                comment={comment}
+                key={stringField(comment.id)}
+              />
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IssueIndexComment({ basePath, comment }: { basePath: string; comment: IssueComment }) {
+  const commentId = stringField(comment.id);
+  const authorLoginId = stringField(comment.authorLoginId);
+  const authorLabel = stringField(comment.authorLabel);
+
+  return (
+    <li
+      className="comment index-comment  "
+      id={`comment-${commentId}`}
+      data-location={`#comment-${commentId}`}
+    >
+      <div>
+        <div id={`comment-body-${commentId}`}>
+          <div className="comment-body">
+            <a href={`#comment-${commentId}`}>{ellipsisText(stringField(comment.contentsHtml))}</a>
+          </div>
+        </div>
+        <div className="index-comment-author">
+          <span className="comment_author">
+            <a
+              href={prefixBasePath(basePath, `/${authorLoginId}`)}
+              data-toggle="tooltip"
+              data-placement="top"
+              title={authorLoginId}
+            >
+              <strong>{authorLabel}</strong>
+            </a>
+          </span>
+          <span className="ago-date">
+            <a
+              href={`#comment-${commentId}`}
+              className="ago"
+              title={stringField(comment.createdLabel)}
+            >
+              {stringField(comment.createdLabel)}
+            </a>
+            <a href={`#comment-${commentId}`} className="share-link" style={{ display: "none" }}>
+              [Link]
+            </a>
+          </span>
+        </div>
+      </div>
+    </li>
+  );
+}
+
 function DeleteConfirm({ issueHref }: { issueHref: string }) {
   return (
     <div id="deleteConfirm" className="modal hide fade">
@@ -705,6 +959,14 @@ function escapeHtml(value: string) {
     .replaceAll('"', "&quot;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function ellipsisText(html: string) {
+  const text = html
+    .replace(/<[^>]*>/gu, "")
+    .replace(/\s+/gu, " ")
+    .trim();
+  return text.length > 60 ? `${text.slice(0, 60)}...` : text;
 }
 
 function stringField(value: unknown, fallback = "") {
