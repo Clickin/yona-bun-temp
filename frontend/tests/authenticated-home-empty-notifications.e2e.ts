@@ -431,6 +431,42 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   );
 });
 
+test("authenticated root keeps retired legacy index/sidebar framed shell absent", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+  await mockWorkspaceSidebarProjects(page);
+
+  await page.goto(`${basePath}/`);
+  await expect(page.locator("body#html-body")).not.toHaveClass(/framed-body/);
+  await expect(page.locator("#sidebar, #sidebar-bottom, #mainFrame, #mainFrameId")).toHaveCount(0);
+  await expect(page.locator('iframe[name="mainFrame"]')).toHaveCount(0);
+  await expect(page.locator("#mySidenav")).toHaveCount(1);
+  await expect(page.locator("#sidebar-open-btn a")).toHaveAttribute("href", "javascript:void(0);");
+  expect(await readDesktopClosedSidebarMetrics(page)).toEqual({
+    closedWidth: 0,
+    profileRowTextAlign: "right",
+  });
+  await page.locator("#sidebar-open-btn a").click();
+  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
+  expect(await readDesktopOpenSidebarMetrics(page)).toEqual({
+    openRight: 0,
+    openTop: 40,
+    openWidth: 362,
+    tabContentTop: 167,
+    tabRowTop: 92,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
+  expect(await readMobileOpenSidebarMetrics(page)).toEqual({
+    openRight: 0,
+    openTop: 40,
+    openWidth: 392,
+  });
+});
+
 test("authenticated root sidebar project tab matches legacy index/myProjectList DOM", async ({
   page,
 }) => {
@@ -853,6 +889,57 @@ async function readMobileAuthenticatedHomeMetrics(page: Page) {
       mainStreamWidth: Math.round(mainStream.getBoundingClientRect().width),
       pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
       siteGuideOuterMargin: getComputedStyle(siteGuideOuter).margin,
+    };
+  });
+}
+
+async function readDesktopClosedSidebarMetrics(page: Page) {
+  return page.evaluate(() => {
+    const sideNav = document.querySelector<HTMLElement>("#mySidenav");
+    const userMenuWrap = document.querySelector<HTMLElement>("#mySidenav .user-menu-wrap");
+    if (!sideNav || !userMenuWrap) {
+      throw new Error("Expected closed SPA sidebar metric targets are missing.");
+    }
+
+    return {
+      closedWidth: Math.round(sideNav.getBoundingClientRect().width),
+      profileRowTextAlign: getComputedStyle(userMenuWrap).textAlign,
+    };
+  });
+}
+
+async function readDesktopOpenSidebarMetrics(page: Page) {
+  return page.evaluate(() => {
+    const sideNav = document.querySelector<HTMLElement>("#mySidenav");
+    const tabRow = document.querySelector<HTMLElement>("#mySidenav .nav.nav-tabs.nm");
+    const tabContent = document.querySelector<HTMLElement>("#mySidenav .tab-content.tab-box");
+    if (!sideNav || !tabRow || !tabContent) {
+      throw new Error("Expected open SPA sidebar metric targets are missing.");
+    }
+
+    const openBox = sideNav.getBoundingClientRect();
+    return {
+      openRight: Math.round(window.innerWidth - openBox.right),
+      openTop: Math.round(openBox.top),
+      openWidth: Math.round(openBox.width),
+      tabContentTop: Math.round(tabContent.getBoundingClientRect().top),
+      tabRowTop: Math.round(tabRow.getBoundingClientRect().top),
+    };
+  });
+}
+
+async function readMobileOpenSidebarMetrics(page: Page) {
+  return page.evaluate(() => {
+    const sideNav = document.querySelector<HTMLElement>("#mySidenav");
+    if (!sideNav) {
+      throw new Error("Expected mobile SPA sidebar metric target is missing.");
+    }
+
+    const openBox = sideNav.getBoundingClientRect();
+    return {
+      openRight: Math.round(window.innerWidth - openBox.right),
+      openTop: Math.round(openBox.top),
+      openWidth: Math.round(openBox.width),
     };
   });
 }
