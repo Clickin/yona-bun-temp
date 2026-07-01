@@ -100,6 +100,7 @@ function ProjectCodeFileBody({
   const selectedBranch = code.selectedBranch || branch;
   const encodedBranch = encodeURIComponent(selectedBranch);
   const newFilePath = directoryPath(filePath);
+  const isGit = project.vcs === "GIT";
 
   return (
     <div className="page-wrap-outer">
@@ -165,30 +166,34 @@ function ProjectCodeFileBody({
                 </a>
               ))}
             </div>
-            <div className="pull-right">
-              <a
-                href={projectHref(
-                  runtimeConfig.basePath,
-                  ownerName,
-                  projectName,
-                  "archive",
-                  `${encodedBranch}.zip`,
-                )}
-                className="ybtn"
-              >
-                {t("code.download")}
-              </a>
-            </div>
-            {booleanField(project.viewerCanUpdate) ? (
-              <div className="pull-right">
-                <a
-                  id="new-file-link"
-                  href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=${newFilePath}&branch=${encodedBranch}`}
-                  className="ybtn"
-                >
-                  {t("code.new.file")}
-                </a>
-              </div>
+            {isGit ? (
+              <>
+                <div className="pull-right">
+                  <a
+                    href={projectHref(
+                      runtimeConfig.basePath,
+                      ownerName,
+                      projectName,
+                      "archive",
+                      `${encodedBranch}.zip`,
+                    )}
+                    className="ybtn"
+                  >
+                    {t("code.download")}
+                  </a>
+                </div>
+                {booleanField(project.viewerCanUpdate) ? (
+                  <div className="pull-right">
+                    <a
+                      id="new-file-link"
+                      href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=${newFilePath}&branch=${encodedBranch}`}
+                      className="ybtn"
+                    >
+                      {t("code.new.file")}
+                    </a>
+                  </div>
+                ) : null}
+              </>
             ) : null}
           </div>
 
@@ -230,6 +235,7 @@ function FileView({
   const { t } = useLegacyMessages();
   const commitId = stringField(file.commitId, "");
   const shortCommitId = commitId.slice(0, 7);
+  const isGit = project.vcs === "GIT";
   const authorLoginId = stringField(file.userLoginId, "");
   const authorHref = prefixBasePath(runtimeConfig.basePath, `/${authorLoginId}`);
   const hasViewableText = typeof file.data === "string" || typeof file.text === "string";
@@ -242,7 +248,7 @@ function FileView({
     ownerName,
     projectName,
     "rawcode",
-    encodeURIComponent(selectedBranch),
+    encodeURIComponent(isGit ? selectedBranch : commitId),
     filePath,
   );
   const openHref = projectHref(
@@ -250,7 +256,7 @@ function FileView({
     ownerName,
     projectName,
     "files",
-    encodeURIComponent(selectedBranch),
+    encodeURIComponent(isGit ? selectedBranch : commitId),
     filePath,
   );
 
@@ -285,7 +291,7 @@ function FileView({
                 commitId,
               )}?branch=${encodeURIComponent(selectedBranch)}#${filePath}`}
             >
-              {shortCommitId}
+              {isGit ? shortCommitId : `Revision ${commitId}`}
               {numberField(file.commentCount) > 0 ? (
                 <span className="number-of-comments ml5">
                   <i className="yobicon-comments"></i> {numberField(file.commentCount)}
