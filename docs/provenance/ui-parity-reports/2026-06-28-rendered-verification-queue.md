@@ -246,7 +246,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `project/statistics.scala.html` | P2 project | covered by `frontend/tests/project-statistics.e2e.ts`: `/admin/sample/statistics` renders the legacy project shell with Issue-active menu and `<h1>Under Construction</h1>` layout metrics | 57 |
 | `project/transfer.scala.html` | P2 project | covered by `frontend/tests/project-transfer-form.e2e.ts`: `/admin/sample/transfer` renders the legacy settings shell, active transfer submenu, two-row warning bubble, owner field, agreement checkbox, transfer button, and hidden confirmation modal layout metrics | 57 |
 | `project/watchers.scala.html` | P2 project | covered by `frontend/tests/project-watchers.e2e.ts`: `/admin/sample/watchers` renders the legacy project shell plus watcher title, description, and `.members.project.row-fluid` watcher rows with avatar/name/login layout metrics | 57 |
-| `project/webhooks.scala.html` | P2 project | /:owner/:projectName/webhooks | 57 |
+| `project/webhooks.scala.html` | P2 project | covered by `frontend/tests/project-webhooks-form.e2e.ts`: `/admin/sample/webhooks` renders the legacy settings shell, active webhooks submenu, new webhook form, help copy, empty list state, populated list partial, and form/list layout metrics | 57 |
 | `projectMenu.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `issue/list.scala.html` | P3 issue | /:owner/:projectName/issues | 13 |
 | `issue/my_list.scala.html` | P3 issue | included partial caller route; inspect Play route and React owner | 13 |

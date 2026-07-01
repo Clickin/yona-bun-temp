@@ -44,6 +44,30 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_WEBHOOKS.replaceAll("__BASE_PATH__", basePath)),
   );
+  await expect(webhookFormMetrics(page)).resolves.toEqual({
+    activeTabClass: "active",
+    activeTabHeight: "38px",
+    emptyPadding: "100px 0px",
+    formActionsMarginTop: "20px",
+    formMarginBottom: "30px",
+    formWidth: 1260,
+    gitPushDisplay: "inline-block",
+    helpLineHeight: "20px",
+    helpMarginTop: "0px",
+    legendDisplay: "block",
+    legendMarginBottom: "10px",
+    listMarginTop: "0px",
+    pageWrapMinWidth: "1100px",
+    payloadHeight: "30px",
+    payloadWidth: "355px",
+    projectPageMarginTop: "5px",
+    projectPageWidth: 1260,
+    radioDisplay: "inline-block",
+    secretWidth: "214px",
+    submitHeight: "30px",
+    submitPadding: "4px 12px",
+    tabsMarginBottom: "15px",
+  });
 });
 
 test("project webhooks renders legacy project/partial_webhooks_list.scala.html populated list", async ({
@@ -171,6 +195,73 @@ async function webhookListMetrics(page: Page) {
       webhookId: firstItem?.getAttribute("data-webhook-id"),
       webhookType: cells[2]?.textContent?.trim(),
     };
+  });
+}
+
+async function webhookFormMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = requireElement(".page-wrap-outer");
+    const projectPageWrap = requireElement(".project-page-wrap.webhook-editor-wrap");
+    const tabs = requireElement(".project-page-wrap > .nav.nav-tabs");
+    const activeTab = requireElement("#subMenuWebhook");
+    const form = requireElement("#formNewWebhook");
+    const legend = requireElement("#formNewWebhook .form-legend");
+    const formActions = requireElement("#formNewWebhook .form-actions");
+    const payload = requireElement(".input-webhook-payload");
+    const secret = requireElement(".input-webhook-secret");
+    const submit = requireElement("#formNewWebhook .btn-submit");
+    const radio = requireElement("#formNewWebhook label.radio.inline");
+    const gitPushLabel = requireElement('#formNewWebhook label.checkbox.inline[for="gitPush"]');
+    const help = requireElement("#formNewWebhook > div:last-child");
+    const list = requireElement("#webhooksList");
+    const empty = requireElement("#webhooksList .error-wrap");
+    const pageWrapStyle = getComputedStyle(pageWrapOuter);
+    const projectPageStyle = getComputedStyle(projectPageWrap);
+    const tabsStyle = getComputedStyle(tabs);
+    const activeTabStyle = getComputedStyle(activeTab);
+    const formStyle = getComputedStyle(form);
+    const legendStyle = getComputedStyle(legend);
+    const formActionsStyle = getComputedStyle(formActions);
+    const payloadStyle = getComputedStyle(payload);
+    const secretStyle = getComputedStyle(secret);
+    const submitStyle = getComputedStyle(submit);
+    const radioStyle = getComputedStyle(radio);
+    const gitPushStyle = getComputedStyle(gitPushLabel);
+    const helpStyle = getComputedStyle(help);
+    const listStyle = getComputedStyle(list);
+    const emptyStyle = getComputedStyle(empty);
+    return {
+      activeTabClass: activeTab.className,
+      activeTabHeight: activeTabStyle.height,
+      emptyPadding: emptyStyle.padding,
+      formActionsMarginTop: formActionsStyle.marginTop,
+      formMarginBottom: formStyle.marginBottom,
+      formWidth: Math.round(form.getBoundingClientRect().width),
+      gitPushDisplay: gitPushStyle.display,
+      helpLineHeight: helpStyle.lineHeight,
+      helpMarginTop: helpStyle.marginTop,
+      legendDisplay: legendStyle.display,
+      legendMarginBottom: legendStyle.marginBottom,
+      listMarginTop: listStyle.marginTop,
+      pageWrapMinWidth: pageWrapStyle.minWidth,
+      payloadHeight: payloadStyle.height,
+      payloadWidth: payloadStyle.width,
+      projectPageMarginTop: projectPageStyle.marginTop,
+      projectPageWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
+      radioDisplay: radioStyle.display,
+      secretWidth: secretStyle.width,
+      submitHeight: submitStyle.height,
+      submitPadding: submitStyle.padding,
+      tabsMarginBottom: tabsStyle.marginBottom,
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
   });
 }
 
