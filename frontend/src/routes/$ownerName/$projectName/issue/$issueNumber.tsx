@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { Fragment, useState } from "react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { Fragment, useState, type AnchorHTMLAttributes, type ComponentType } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { currentSessionQueryOptions } from "../../../../api/session";
@@ -20,6 +20,10 @@ import {
 } from "../../../../auth-workspace-client";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
+>;
 
 export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumber")({
   component: ProjectIssueDetailRoute,
@@ -102,6 +106,7 @@ function IssueDetailBody({
   const labels = (issue.labels ?? []).slice().sort(compareLabels);
   const voters = issue.issueVoters ?? [];
   const parentIssueId = stringField(issue.parentIssueId, issueId);
+  const newSubtaskPath = `/${ownerName}/${projectName}/issueform?parentIssueId=${parentIssueId}`;
   const assigneeLoginId = stringField(issue.assigneeLoginId);
   const sharers = issue.sharers ?? [];
   const sharerValue = sharers.map((sharer) => stringField(sharer.loginId)).join(",");
@@ -286,15 +291,9 @@ function IssueDetailBody({
                     </button>
                   ) : null}
                   <span className="project-btn-item hide show-in-mobile-inline ml4">
-                    <a
-                      href={prefixBasePath(
-                        basePath,
-                        `/${ownerName}/${projectName}/issueform?parentIssueId=${parentIssueId}`,
-                      )}
-                      className="ybtn ybtn-success"
-                    >
+                    <LegacyInternalLink to={newSubtaskPath} className="ybtn ybtn-success">
                       New subtask
-                    </a>
+                    </LegacyInternalLink>
                   </span>
                   <IssueWeight weight={weight} />
                 </div>
@@ -371,15 +370,9 @@ function IssueDetailBody({
                 <input type="hidden" name="issues[0].id" value={issueId} />
                 <dl>
                   <dd className="project-btn-item">
-                    <a
-                      href={prefixBasePath(
-                        basePath,
-                        `/${ownerName}/${projectName}/issueform?parentIssueId=${parentIssueId}`,
-                      )}
-                      className="ybtn ybtn-success"
-                    >
+                    <LegacyInternalLink to={newSubtaskPath} className="ybtn ybtn-success">
                       New subtask
-                    </a>
+                    </LegacyInternalLink>
                   </dd>
                   <dt>Assignee</dt>
                   <dd>

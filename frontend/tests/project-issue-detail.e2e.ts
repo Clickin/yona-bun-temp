@@ -71,6 +71,38 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   });
 });
 
+test("project issue detail new subtask link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const newSubtaskLink = page.locator(".span-right-pane .project-btn-item a").filter({
+    hasText: "New subtask",
+  });
+  await expect(newSubtaskLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issueform?parentIssueId=42`,
+  );
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await newSubtaskLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/issueform?parentIssueId=42`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator("#parentId")).toHaveValue("42");
+  await expect(page.locator('#parentId option[selected][value="42"]')).toHaveCount(1);
+});
+
 test("project issue detail renders legacy posting history modal", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {
@@ -1559,6 +1591,14 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
             name: "bug",
           },
         ],
+      }),
+    });
+  });
+  await page.route("**/api/v1/projects/admin/sample/issues/parent-options**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
       }),
     });
   });
