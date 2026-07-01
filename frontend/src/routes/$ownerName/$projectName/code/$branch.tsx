@@ -74,6 +74,7 @@ function ProjectCodeFolderBody({
   const { branch, ownerName, projectName } = Route.useParams();
   const selectedBranch = code.selectedBranch || branch;
   const encodedBranch = encodeBranch(selectedBranch);
+  const isGit = project.vcs === "GIT";
 
   return (
     <div className="page-wrap-outer">
@@ -106,11 +107,13 @@ function ProjectCodeFolderBody({
                 {t("code.commits")}
               </a>
             </li>
-            <li>
-              <a href={projectHref(runtimeConfig.basePath, ownerName, projectName, "branches")}>
-                {t("title.branches")}
-              </a>
-            </li>
+            {isGit ? (
+              <li>
+                <a href={projectHref(runtimeConfig.basePath, ownerName, projectName, "branches")}>
+                  {t("title.branches")}
+                </a>
+              </li>
+            ) : null}
           </ul>
 
           <div className="code-browse-header">
@@ -156,30 +159,34 @@ function ProjectCodeFolderBody({
                 {projectName}
               </a>
             </div>
-            <div className="pull-right">
-              <a
-                href={projectHref(
-                  runtimeConfig.basePath,
-                  ownerName,
-                  projectName,
-                  "archive",
-                  `${encodedBranch}.zip`,
-                )}
-                className="ybtn"
-              >
-                {t("code.download")}
-              </a>
-            </div>
-            {booleanField(project.viewerCanUpdate) ? (
-              <div className="pull-right">
-                <a
-                  id="new-file-link"
-                  href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=&branch=${encodedBranch}`}
-                  className="ybtn"
-                >
-                  {t("code.new.file")}
-                </a>
-              </div>
+            {isGit ? (
+              <>
+                <div className="pull-right">
+                  <a
+                    href={projectHref(
+                      runtimeConfig.basePath,
+                      ownerName,
+                      projectName,
+                      "archive",
+                      `${encodedBranch}.zip`,
+                    )}
+                    className="ybtn"
+                  >
+                    {t("code.download")}
+                  </a>
+                </div>
+                {booleanField(project.viewerCanUpdate) ? (
+                  <div className="pull-right">
+                    <a
+                      id="new-file-link"
+                      href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=&branch=${encodedBranch}`}
+                      className="ybtn"
+                    >
+                      {t("code.new.file")}
+                    </a>
+                  </div>
+                ) : null}
+              </>
             ) : null}
           </div>
 
