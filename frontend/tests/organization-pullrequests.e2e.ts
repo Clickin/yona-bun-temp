@@ -98,6 +98,33 @@ test("organization closed pull request aggregate matches legacy group_pullreques
   );
 });
 
+test("organization pullrequests menu board link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationPullRequests(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=fix`);
+  const boardLink = page.locator(".project-menu-gruop a").filter({ hasText: "Board" });
+  await expect(boardLink).toHaveAttribute("href", `${basePath}/organizations/weblabs/boards`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await boardLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/boards`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Board");
+  await expect(page.locator("#option_form")).toBeVisible();
+});
+
 async function mockOrganizationPullRequests(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -169,6 +196,23 @@ async function mockOrganizationPullRequests(page: Page) {
         pageNum: 1,
         pageSize: 20,
         totalCount: isEmpty ? 0 : 1,
+      }),
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs/boards**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [],
+        notices: [],
+        organizationName: "weblabs",
+        pageNum: 1,
+        pageSize: 20,
+        totalCount: 0,
+        visibleProjects: [
+          { ownerName: "weblabs", projectName: "sample" },
+          { ownerName: "weblabs", projectName: "playground" },
+        ],
       }),
     });
   });
