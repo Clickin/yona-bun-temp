@@ -24,6 +24,12 @@ import {
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
 
+type CurrentUserSummary = {
+  avatarUrl: string;
+  loginId: string;
+  userLabel: string;
+};
+
 export const Route = createFileRoute(
   "/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes",
 )({
@@ -99,7 +105,17 @@ function ProjectPullRequestChangesScreen({
       <ProjectPullRequestChangesBody
         changes={changesQuery.data}
         commitId={commitId}
-        currentUserLoginId={String(sessionQuery.data.loginId ?? "")}
+        currentUser={{
+          avatarUrl: stringField(
+            sessionQuery.data.avatarUrl,
+            "/assets/images/default-avatar-32.png",
+          ),
+          loginId: stringField(sessionQuery.data.loginId, ""),
+          userLabel: stringField(
+            sessionQuery.data.userLabel,
+            stringField(sessionQuery.data.loginId, ""),
+          ),
+        }}
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
       />
@@ -110,13 +126,13 @@ function ProjectPullRequestChangesScreen({
 function ProjectPullRequestChangesBody({
   changes,
   commitId,
-  currentUserLoginId,
+  currentUser,
   project,
   runtimeConfig,
 }: {
   changes: PullRequestChangesResponse;
   commitId: string;
-  currentUserLoginId: string;
+  currentUser: CurrentUserSummary;
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -176,7 +192,7 @@ function ProjectPullRequestChangesBody({
               <div className="diff-body diffs-wrap-scroll">
                 <div id="state" className="pullRequest-stateInfo">
                   <PullRequestStateInfo
-                    currentUserLoginId={currentUserLoginId}
+                    currentUserLoginId={currentUser.loginId}
                     pullRequest={pullRequest}
                     runtimeConfig={runtimeConfig}
                   />
@@ -221,6 +237,8 @@ function ProjectPullRequestChangesBody({
               {pullRequest.permissions.canComment ? (
                 <ReviewForm
                   action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
+                  currentUser={currentUser}
+                  runtimeConfig={runtimeConfig}
                 />
               ) : null}
             </div>
@@ -528,11 +546,33 @@ function CommentForm({ action }: { action: string }) {
   );
 }
 
-function ReviewForm({ action }: { action: string }) {
+function ReviewForm({
+  action,
+  currentUser,
+  runtimeConfig,
+}: {
+  action: string;
+  currentUser: CurrentUserSummary;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
   return (
     <div id="review-form" className="review-form">
       <form action={action} method="post" encType="multipart/form-data">
+        <div className="author-info-wrap pull-left hide-in-mobile">
+          <div className="author-info">
+            <a
+              href={prefixBasePath(runtimeConfig.basePath, `/${currentUser.loginId}`)}
+              className="avatar-wrap medium"
+              data-toggle="tooltip"
+              data-placement="top"
+              title=""
+              data-original-title={currentUser.userLabel}
+            >
+              <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
+            </a>
+          </div>
+        </div>
         <div className="write-comment-box">
           <div className="write-comment-wrap">
             <div className="pull-right">
@@ -552,6 +592,10 @@ function ReviewForm({ action }: { action: string }) {
       </form>
     </div>
   );
+}
+
+function stringField(value: unknown, fallback: string) {
+  return typeof value === "string" ? value : fallback;
 }
 
 function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) {
