@@ -23,6 +23,8 @@ const LEFT_SHARER_ADDED_EVENT_TIMELINE = `<div id="comments" class="board-commen
 const LEFT_SHARER_DELETED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-96"><span class="state sharer-deleted">Cancelled</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> cancelled issue sharing with <a href="__BASE_PATH__/qa1" class="usf-group" data-toggle="tooltip" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/qa1" class="usf-group" data-toggle="tooltip" data-placement="top" title="qa1"><strong>QA One</strong></a><span class="date"><a href="#event-96">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_LABEL_ADDED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-97"><span class="state label-added">Added</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> added <div class="label issue-label" style="background-color: rgb(81, 170, 204)">bug</div> label<span class="date"><a href="#event-97">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_LABEL_DELETED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-98"><span class="state label-deleted">Removed</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> removed <div class="label issue-label" style="background-color: rgb(81, 170, 204)">bug</div> label<span class="date"><a href="#event-98">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
+const LEFT_CONSECUTIVE_SHARER_ADDED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-100"><span class="state sharer-added">Issue Sharer</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> shared current issue to <a href="__BASE_PATH__/qa1" class="usf-group" data-toggle="tooltip" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/qa1" class="usf-group" data-toggle="tooltip" data-placement="top" title="qa1"><strong>QA One</strong></a><span class="date"><a href="#event-100">Jul 4, 2026</a></span></li><li class="event" id="event-101"><span class="state"></span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> shared current issue to <a href="__BASE_PATH__/qa2" class="usf-group" data-toggle="tooltip" data-placement="top" title="QA Two"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/qa2" class="usf-group" data-toggle="tooltip" data-placement="top" title="qa2"><strong>QA Two</strong></a><span class="date"><a href="#event-101">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
+const LEFT_CONSECUTIVE_LABEL_DELETED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-102"><span class="state label-deleted">Removed</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> removed <div class="label issue-label" style="background-color: rgb(81, 170, 204)">bug</div> label<span class="date"><a href="#event-102">Jul 4, 2026</a></span></li><li class="event" id="event-103"><span class="state"></span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> removed <div class="label issue-label" style="background-color: rgb(81, 170, 204)">bug</div> label<span class="date"><a href="#event-103">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_DEFAULT_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-89">fallback noteby <a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a><span class="date"><a href="#event-89">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 
 test("project issue detail matches legacy issue/view.scala.html voter state", async ({ page }) => {
@@ -372,6 +374,55 @@ test("project issue detail renders legacy sharer deleted timeline event", async 
   );
 });
 
+test("project issue detail renders legacy consecutive sharer added timeline events", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    commentCount: 0,
+    comments: [],
+    timeline: [
+      {
+        createdLabel: "Jul 4, 2026",
+        eventType: "ISSUE_SHARER_CHANGED",
+        id: 100,
+        kind: "event",
+        newValue: "qa1",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+        targetAvatarUrl: "/assets/images/default-avatar-32.png",
+        targetLabel: "QA One",
+        targetLoginId: "qa1",
+      },
+      {
+        createdLabel: "Jul 4, 2026",
+        eventType: "ISSUE_SHARER_CHANGED",
+        id: 101,
+        kind: "event",
+        newValue: "qa2",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+        targetAvatarUrl: "/assets/images/default-avatar-32.png",
+        targetLabel: "QA Two",
+        targetLoginId: "qa2",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#event-101 > .state")).toHaveText("");
+  await expect(page.locator("#event-101 > .state")).toHaveAttribute("class", "state");
+
+  expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
+    await canonicalizeHtml(
+      page,
+      LEFT_CONSECUTIVE_SHARER_ADDED_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 test("project issue detail renders legacy label added timeline event", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {
@@ -428,6 +479,49 @@ test("project issue detail renders legacy label deleted timeline event", async (
     await canonicalizeHtml(
       page,
       LEFT_LABEL_DELETED_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("project issue detail renders legacy consecutive label deleted timeline events", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    commentCount: 0,
+    comments: [],
+    timeline: [
+      {
+        createdLabel: "Jul 4, 2026",
+        eventType: "ISSUE_LABEL_CHANGED",
+        id: 102,
+        kind: "event",
+        oldValue: "type - bug #8",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+      {
+        createdLabel: "Jul 4, 2026",
+        eventType: "ISSUE_LABEL_CHANGED",
+        id: 103,
+        kind: "event",
+        oldValue: "type - bug #8",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#event-103 > .state")).toHaveText("");
+  await expect(page.locator("#event-103 > .state")).toHaveAttribute("class", "state");
+
+  expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
+    await canonicalizeHtml(
+      page,
+      LEFT_CONSECUTIVE_LABEL_DELETED_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });

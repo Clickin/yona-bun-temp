@@ -705,7 +705,7 @@ function IssueMainTimeline({
           <hr className="nm" />
           {hasTimelineRows ? (
             <ul className="comments">
-              {timeline.map((item) =>
+              {timeline.map((item, index) =>
                 item.comment ? (
                   <IssueCommentRow
                     basePath={basePath}
@@ -719,6 +719,9 @@ function IssueMainTimeline({
                     event={item}
                     issue={issue}
                     key={`event-${stringField(item.id)}`}
+                    previousEvent={
+                      index > 0 && !timeline[index - 1]?.comment ? timeline[index - 1] : undefined
+                    }
                   />
                 ),
               )}
@@ -814,10 +817,12 @@ function IssueEventRow({
   basePath,
   event,
   issue,
+  previousEvent,
 }: {
   basePath: string;
   event: IssueTimelineItem;
   issue: RestIssueDetailResponse;
+  previousEvent?: IssueTimelineItem;
 }) {
   const eventType = stringField(event.eventType);
   if (eventType === "ISSUE_BODY_CHANGED") {
@@ -973,6 +978,7 @@ function IssueEventRow({
 
   if (eventType === "ISSUE_SHARER_CHANGED") {
     const added = stringField(event.newValue) !== "";
+    const grouped = isSameEventTypeAndSameAction(event, previousEvent);
     const targetLoginId = stringField(
       event.targetLoginId,
       added ? stringField(event.newValue) : stringField(event.oldValue),
@@ -987,9 +993,13 @@ function IssueEventRow({
     );
     return (
       <li className="event" id={`event-${eventId}`}>
-        <span className={`state ${added ? "sharer-added" : "sharer-deleted"}`}>
-          {added ? "Issue Sharer" : "Cancelled"}
-        </span>
+        {grouped ? (
+          <span className="state"></span>
+        ) : (
+          <span className={`state ${added ? "sharer-added" : "sharer-deleted"}`}>
+            {added ? "Issue Sharer" : "Cancelled"}
+          </span>
+        )}
         {sender}
         {added ? " shared current issue to " : " cancelled issue sharing with "}
         {target}
@@ -1002,15 +1012,20 @@ function IssueEventRow({
 
   if (eventType === "ISSUE_LABEL_CHANGED") {
     const added = stringField(event.newValue) !== "";
+    const grouped = isSameEventTypeAndSameAction(event, previousEvent);
     const label = issueEventLabelBox(
       added ? stringField(event.newValue) : stringField(event.oldValue),
       issue.labels,
     );
     return (
       <li className="event" id={`event-${eventId}`}>
-        <span className={`state ${added ? "label-added" : "label-deleted"}`}>
-          {added ? "Added" : "Removed"}
-        </span>
+        {grouped ? (
+          <span className="state"></span>
+        ) : (
+          <span className={`state ${added ? "label-added" : "label-deleted"}`}>
+            {added ? "Added" : "Removed"}
+          </span>
+        )}
         {sender}
         {added ? " added " : " removed "}
         {label} label
@@ -1781,6 +1796,23 @@ function issueEventLabelBox(value: string, labels: RestIssueDetailResponse["labe
       {labelName}
     </div>
   );
+}
+
+function isSameEventTypeAndSameAction(event: IssueTimelineItem, previousEvent?: IssueTimelineItem) {
+  return (
+    previousEvent !== undefined &&
+    stringField(event.eventType) === stringField(previousEvent.eventType) &&
+    ((isAddingEvent(event) && isAddingEvent(previousEvent)) ||
+      (isDeletingEvent(event) && isDeletingEvent(previousEvent)))
+  );
+}
+
+function isAddingEvent(event: IssueTimelineItem) {
+  return stringField(event.oldValue) === "" && stringField(event.newValue) !== "";
+}
+
+function isDeletingEvent(event: IssueTimelineItem) {
+  return stringField(event.newValue) === "" && stringField(event.oldValue) !== "";
 }
 
 function stringField(value: unknown, fallback = "") {
