@@ -268,7 +268,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `code/compare.scala.html` | P5 code/pr/review | covered by `frontend/tests/project-code-compare.e2e.ts`: `/admin/sample/compare/abcdef1234567890..1234567890abcdef` renders the flat compare no-change state with `.project-page-wrap`, `.code-browse-wrap`, `.commitInfo`, `.commitId`, and the `code.noChanges` alert | 30 |
 | `code/diff.scala.html` | P5 code/pr/review | /:owner/:projectName/commit/:commitId | 30 |
 | `code/nohead_svn.scala.html` | P5 code/pr/review | included partial caller route; inspect Play route and React owner | 30 |
-| `code/nohead.scala.html` | P5 code/pr/review | included partial caller route; inspect Play route and React owner | 30 |
+| `code/nohead.scala.html` | P5 code/pr/review | covered by `frontend/tests/project-code-nohead.e2e.ts`: `/admin/sample/code` renders the flat Git no-head state with active Code menu, alert copy, four update-permission Git command blocks, no raw `code.nohead` key, and REST code browser `noHead=true` binding | 30 |
 | `code/partial_branchrow.scala.html` | P5 code/pr/review | covered by `frontend/tests/project-code-branches.e2e.ts`: `/admin/sample/branches` renders branch rows with `.head`, `.headBranch`, branch/commit hrefs, PR state tooltip classes, set-default request URI, delete request method, and REST mutation payloads | 30 |
 | `code/view.scala.html` | P5 code/pr/review | /:owner/:projectName/code/:branch/* | 30 |
 | `git/list.scala.html` | P5 code/pr/review | /:owner/:projectName/pullRequest* | 30 |
