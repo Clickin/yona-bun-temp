@@ -182,6 +182,33 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
   });
 });
 
+test("project delete menu settings link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/deleteform`);
+  const settingsLink = page.locator("#subMenuProjectSetting a");
+  await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await settingsLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/setting`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
+  await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
 async function readDesktopDeleteMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = requireElement(".page-wrap-outer");
@@ -269,36 +296,73 @@ async function mockProjectAdmin(page: Page) {
   await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
     await route.fulfill({
       contentType: "application/json",
+      body: JSON.stringify(projectSettings()),
+    });
+  });
+  await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
       body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        enrollmentRequestCount: 0,
-        id: 7,
-        isCodeAccessibleMemberOnly: false,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        openIssueCount: 0,
-        openPullRequestCount: 0,
+        branches: [
+          { isDefault: true, name: "main", shortName: "main" },
+          { isDefault: false, name: "develop", shortName: "develop" },
+        ],
+        defaultBranch: "main",
+        noHead: false,
         ownerName: "admin",
-        postCount: 0,
+        permissions: { canDelete: true, canUpdate: true },
         projectName: "sample",
-        reviewCount: 0,
-        vcs: "GIT",
-        viewerCanUpdate: true,
-        viewerCanWatch: false,
       }),
     });
   });
+}
+
+function projectSettings() {
+  return {
+    backgroundImageUrl: "/assets/images/bg-default-project.png",
+    backgroundUrl: "/assets/images/bg-default-project.png",
+    codeMemberOnly: false,
+    defaultReviewerCount: 2,
+    enrollmentRequestCount: 0,
+    id: 7,
+    isCodeAccessibleMemberOnly: false,
+    isFavorite: false,
+    isFavorited: false,
+    isForkedFromOrigin: false,
+    isPrivate: false,
+    isProtected: false,
+    isUsingReviewerCount: true,
+    logoUrl: "/assets/images/project_default_logo.png",
+    maxReviewerCount: 3,
+    menuSetting: {
+      board: true,
+      code: true,
+      issue: true,
+      milestone: true,
+      pullRequest: true,
+      review: true,
+    },
+    openIssueCount: 0,
+    openPullRequestCount: 0,
+    organizationName: "",
+    overview: "Sample overview",
+    ownerName: "admin",
+    postCount: 0,
+    projectId: 7,
+    projectName: "sample",
+    projectScope: "PUBLIC",
+    reviewCount: 0,
+    showBoard: true,
+    showCode: true,
+    showIssue: true,
+    showMilestone: true,
+    showPullRequest: true,
+    showReview: true,
+    vcs: "GIT",
+    viewerCanUpdate: true,
+    viewerCanWatch: false,
+    watchCount: 5,
+  };
 }
 
 async function canonicalizeScreenRoots(page: Page) {
