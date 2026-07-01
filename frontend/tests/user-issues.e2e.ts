@@ -302,6 +302,38 @@ test("current-user issues state tab preserves legacy href with SPA transition", 
   );
 });
 
+test("current-user issues sort filter preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForFilterLinks(page);
+
+  await page.goto(`${basePath}/user/issues`);
+  const dueDateFilter = page.locator(".filter-wrap .filter").filter({ hasText: "Due Date" });
+  await expect(dueDateFilter).toHaveAttribute("href", "#");
+  await expect(dueDateFilter).toHaveAttribute("orderBy", "dueDate");
+  await expect(dueDateFilter).toHaveAttribute("orderDir", "desc");
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await dueDateFilter.click();
+
+  await expect(page).toHaveURL(
+    `${basePath}/user/issues?filter=assigned&orderBy=dueDate&orderDir=desc&state=open`,
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator('.filter-wrap .filter.active[orderBy="dueDate"]')).toHaveText(
+    "Due Date",
+  );
+});
+
 async function mockUserIssuesForStateTabs(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -331,6 +363,74 @@ async function mockUserIssuesForStateTabs(page: Page) {
         sideFilterCounts: { favorite: 1, mentioned: 2, shared: 1 },
         state,
         totalCount: 0,
+        totalPages: 1,
+        viewerUserId: 1,
+      }),
+    });
+  });
+}
+
+async function mockUserIssuesForFilterLinks(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        isAnonymous: false,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/user/issues?**", async (route) => {
+    const url = new URL(route.request().url());
+    const orderBy = url.searchParams.get("orderBy") ?? "updatedDate";
+    const orderDir = url.searchParams.get("orderDir") ?? "desc";
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        closedIssueCount: 1,
+        filter: "assigned",
+        items: [
+          {
+            assigneeLoginId: "admin",
+            authorLabel: "Alice",
+            authorLoginId: "alice",
+            commentCount: 0,
+            createdLabel: "2026-06-30",
+            id: 42,
+            issueNumber: 11,
+            labels: [],
+            ownerName: "admin",
+            projectName: "sample",
+            state: "open",
+            title: `First ${orderBy} ${orderDir}`,
+            voterCount: 0,
+          },
+          {
+            assigneeLoginId: "admin",
+            authorLabel: "Bob",
+            authorLoginId: "bob",
+            commentCount: 0,
+            createdLabel: "2026-06-29",
+            id: 43,
+            issueNumber: 12,
+            labels: [],
+            ownerName: "admin",
+            projectName: "sample",
+            state: "open",
+            title: "Second issue",
+            voterCount: 0,
+          },
+        ],
+        openIssueCount: 2,
+        pageNum: 1,
+        pageSize: 20,
+        sideFilterCounts: { favorite: 1, mentioned: 2, shared: 1 },
+        state: "open",
+        totalCount: 2,
         totalPages: 1,
         viewerUserId: 1,
       }),

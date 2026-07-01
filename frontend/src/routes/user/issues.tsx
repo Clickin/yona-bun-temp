@@ -121,15 +121,17 @@ function UserIssuesBody({
       }),
     });
   };
-  const userIssuesHref = (state: UserIssuesSearch["state"]) => {
+  const userIssuesHref = (
+    next: Partial<Pick<UserIssuesSearch, "orderBy" | "orderDir" | "state">>,
+  ) => {
     const params = new URLSearchParams();
     params.set("filter", search.filter);
-    params.set("orderBy", search.orderBy);
-    params.set("orderDir", search.orderDir);
+    params.set("orderBy", next.orderBy ?? search.orderBy);
+    params.set("orderDir", next.orderDir ?? search.orderDir);
     if (search.query) {
       params.set("query", search.query);
     }
-    params.set("state", state);
+    params.set("state", next.state ?? search.state);
     return `${prefixBasePath(basePath, "/user/issues")}?${params.toString()}`;
   };
   const navigateState = (
@@ -148,7 +150,26 @@ function UserIssuesBody({
     }
 
     event.preventDefault();
-    router.history.push(userIssuesHref(state));
+    router.history.push(userIssuesHref({ state }));
+  };
+  const navigateSort = (
+    event: MouseEvent<HTMLAnchorElement>,
+    orderBy: string,
+    orderDir: string,
+  ) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    router.history.push(userIssuesHref({ orderBy, orderDir }));
   };
 
   return (
@@ -255,7 +276,11 @@ function UserIssuesBody({
             {issues.items.length > 0 ? (
               <>
                 {issues.items.length > 1 ? (
-                  <IssueFilters orderBy={search.orderBy} orderDir={search.orderDir} />
+                  <IssueFilters
+                    onNavigate={navigateSort}
+                    orderBy={search.orderBy}
+                    orderDir={search.orderDir}
+                  />
                 ) : null}
                 <ul className="post-list-wrap my-issues">
                   {issues.items.map((issue) => (
@@ -427,7 +452,15 @@ function StateTab({
   );
 }
 
-function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string }) {
+function IssueFilters({
+  onNavigate,
+  orderBy,
+  orderDir,
+}: {
+  onNavigate: (event: MouseEvent<HTMLAnchorElement>, orderBy: string, orderDir: string) => void;
+  orderBy: string;
+  orderDir: string;
+}) {
   const { t } = useLegacyMessages();
   const filters = [
     { field: "dueDate", label: t("common.order.dueDate") },
@@ -453,6 +486,7 @@ function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string
               }}
               className={active ? "filter active" : "filter"}
               key={filter.field}
+              onClick={(event) => onNavigate(event, filter.field, nextOrderDir)}
             >
               <i
                 className={`ico btn-gray-arrow${!active || orderDir === "desc" ? " down" : ""}`}
