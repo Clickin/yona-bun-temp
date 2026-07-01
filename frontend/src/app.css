@@ -4773,6 +4773,40 @@ div.markdown-preview {
   text-align: center;
 }
 
+.content-wrap.frm-wrap .span-left-pane {
+  width: 74.46808510638297% !important;
+}
+
+.content-wrap.frm-wrap .span-hard-wrap {
+  width: 23.404255319148934% !important;
+  min-width: 0 !important;
+  margin-left: 2.127659574468085% !important;
+}
+
+.content-wrap.frm-wrap .issue-option {
+  width: 100%;
+  margin-bottom: 16px !important;
+}
+
+.content-wrap.frm-wrap .issue-option dt {
+  margin-bottom: 5px;
+}
+
+.content-wrap.frm-wrap .issue-option dd {
+  margin: 0;
+}
+
+.content-wrap.frm-wrap .content-footer {
+  padding: 10px 20px !important;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+}
+
+.content-wrap.frm-wrap .actrow {
+  display: block;
+  margin-top: 20px;
+}
+
 .textarea-box {
   position: relative;
   display: block;

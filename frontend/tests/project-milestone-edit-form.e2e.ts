@@ -20,6 +20,26 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
   expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
     await canonicalizeHtml(page, EXPECTED_EDIT_FORM_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await readMilestoneEditFormMetrics(page)).toEqual({
+    actionRowDisplay: "block",
+    actionRowMarginTop: "20px",
+    contentFooterBackground: "rgb(245, 245, 245)",
+    contentFooterPadding: "10px 20px",
+    contentWrapWidth: 1260,
+    dueDateMinHeight: "30px",
+    issueOptionDdMargin: "0px",
+    issueOptionDtMarginBottom: "5px",
+    issueOptionMarginBottom: "16px",
+    issueOptionWidth: 295,
+    leftPaneWidth: 938,
+    rightPaneMarginLeft: 27,
+    rightPaneWidth: 295,
+    titleBorderBottomColor: "rgb(221, 221, 221)",
+    titleFontSize: "18px",
+    titleMarginBottom: "15px",
+    titleMarginTop: "15px",
+    titleWidth: 1222,
+  });
 
   await page.fill("#title", "v1.0 patched");
   await page.check("#milestone-close");
@@ -110,6 +130,66 @@ async function mockProjectMilestoneEditForm(page: Page, patchRequests: unknown[]
         },
       }),
     });
+  });
+}
+
+async function readMilestoneEditFormMetrics(page: Page) {
+  return page.evaluate(() => {
+    const contentWrap = document.querySelector<HTMLElement>(".content-wrap.frm-wrap");
+    const title = contentWrap?.querySelector<HTMLElement>("#title");
+    const leftPane = contentWrap?.querySelector<HTMLElement>(".span-left-pane");
+    const rightPane = contentWrap?.querySelector<HTMLElement>(".span-hard-wrap");
+    const issueOption = contentWrap?.querySelector<HTMLElement>(".issue-option");
+    const issueOptionDt = contentWrap?.querySelector<HTMLElement>(".issue-option dt");
+    const issueOptionDd = contentWrap?.querySelector<HTMLElement>(".issue-option dd");
+    const dueDate = contentWrap?.querySelector<HTMLElement>("#dueDate");
+    const contentFooter = contentWrap?.querySelector<HTMLElement>(".content-footer");
+    const actionRow = contentWrap?.querySelector<HTMLElement>(".span-left-pane > .actrow");
+    const missing = Object.entries({
+      actionRow,
+      contentFooter,
+      contentWrap,
+      dueDate,
+      issueOption,
+      issueOptionDd,
+      issueOptionDt,
+      leftPane,
+      rightPane,
+      title,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected milestone edit form metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const actionRowStyle = getComputedStyle(actionRow);
+    const contentFooterStyle = getComputedStyle(contentFooter);
+    const issueOptionStyle = getComputedStyle(issueOption);
+    const rightPaneStyle = getComputedStyle(rightPane);
+    const titleStyle = getComputedStyle(title);
+    return {
+      actionRowDisplay: actionRowStyle.display,
+      actionRowMarginTop: actionRowStyle.marginTop,
+      contentFooterBackground: contentFooterStyle.backgroundColor,
+      contentFooterPadding: contentFooterStyle.padding,
+      contentWrapWidth: Math.round(contentWrap.getBoundingClientRect().width),
+      dueDateMinHeight: getComputedStyle(dueDate).minHeight,
+      issueOptionDdMargin: getComputedStyle(issueOptionDd).margin,
+      issueOptionDtMarginBottom: getComputedStyle(issueOptionDt).marginBottom,
+      issueOptionMarginBottom: issueOptionStyle.marginBottom,
+      issueOptionWidth: Math.round(issueOption.getBoundingClientRect().width),
+      leftPaneWidth: Math.round(leftPane.getBoundingClientRect().width),
+      rightPaneMarginLeft: Math.round(Number.parseFloat(rightPaneStyle.marginLeft)),
+      rightPaneWidth: Math.round(rightPane.getBoundingClientRect().width),
+      titleBorderBottomColor: titleStyle.borderBottomColor,
+      titleFontSize: titleStyle.fontSize,
+      titleMarginBottom: titleStyle.marginBottom,
+      titleMarginTop: titleStyle.marginTop,
+      titleWidth: Math.round(title.getBoundingClientRect().width),
+    };
   });
 }
 
