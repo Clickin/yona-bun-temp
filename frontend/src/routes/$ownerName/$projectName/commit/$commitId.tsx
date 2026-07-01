@@ -478,11 +478,11 @@ function threadsForDiffLine(
   threads: CodeReviewThread[],
   line: Extract<ParsedDiffLine, { kind: "line" }>,
 ) {
-  if (line.newLineNumber === null) {
-    return [];
-  }
-
-  return threads.filter((thread) => thread.startLine === line.newLineNumber);
+  return threads.filter((thread) => {
+    const side = thread.startSide === "A" ? "A" : "B";
+    const lineNumber = side === "A" ? line.oldLineNumber : line.newLineNumber;
+    return lineNumber !== null && thread.startLine === lineNumber;
+  });
 }
 
 function InlineCommentRow({
@@ -544,8 +544,12 @@ function CodeCommentThreadView({
       className={`comment-thread-wrap ${state}${!isNonRanged && state === "closed" ? " fold" : ""}`}
       data-toggle={isNonRanged ? undefined : "CodeCommentThread"}
       data-range-path={isNonRanged ? undefined : thread.path}
+      data-range-startside={isNonRanged ? undefined : thread.startSide}
       data-range-startline={isNonRanged ? undefined : thread.startLine}
+      data-range-startcolumn={isNonRanged ? undefined : thread.startColumn}
+      data-range-endside={isNonRanged ? undefined : thread.endSide}
       data-range-endline={isNonRanged ? undefined : thread.endLine}
+      data-range-endcolumn={isNonRanged ? undefined : thread.endColumn}
     >
       <div className="btn-thread-here btn-thread-minimize">
         <button type="button" className="ybtn ybtn-default ybtn-small">

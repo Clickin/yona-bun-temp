@@ -26,12 +26,16 @@ export type CodeReviewThread = {
   authorLoginId: string;
   comments: CodeReviewComment[];
   commitId: string;
+  endColumn?: number;
   createdLabel: string;
   endLine?: number;
+  endSide?: string;
   id: number;
   path: string;
   prevCommitId: string;
+  startColumn?: number;
   startLine?: number;
+  startSide?: string;
   state: string;
 };
 
@@ -150,11 +154,15 @@ function normalizeThread(thread: Partial<CodeReviewThread>): CodeReviewThread {
     comments: (thread.comments ?? []).map(normalizeComment),
     commitId: thread.commitId ?? "",
     createdLabel: thread.createdLabel ?? "",
+    endColumn: thread.endColumn,
     endLine: thread.endLine,
+    endSide: thread.endSide,
     id: thread.id ?? 0,
     path: thread.path ?? "",
     prevCommitId: thread.prevCommitId ?? "",
+    startColumn: thread.startColumn,
     startLine: thread.startLine,
+    startSide: thread.startSide,
     state: thread.state ?? "open",
   };
 }
