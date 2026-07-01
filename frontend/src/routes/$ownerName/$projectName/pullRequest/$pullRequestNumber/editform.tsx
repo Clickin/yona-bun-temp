@@ -1,0 +1,301 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import {
+  pullRequestEditFormOptionsQueryOptions,
+  updatePullRequestRest,
+  type PullRequestFormOptionsResponse,
+  type PullRequestFormSelected,
+} from "../../../../../api/pull-requests";
+import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
+import { readSessionBootstrap } from "../../../../../auth-workspace-client";
+import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
+import { YonaQueryProvider } from "../../../../../query-client";
+import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
+import { SiteLayoutShell } from "../../../../-home-route-screen";
+import { ProjectHeader, ProjectMenu } from "../../../$projectName";
+
+export const Route = createFileRoute(
+  "/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform",
+)({
+  component: ProjectPullRequestEditRoute,
+});
+
+function ProjectPullRequestEditRoute() {
+  const { runtimeConfig } = Route.useRouteContext();
+
+  return (
+    <YonaQueryProvider>
+      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+          <ProjectPullRequestEditScreen runtimeConfig={runtimeConfig} />
+        </SiteLayoutShell>
+      </LegacyI18nProvider>
+    </YonaQueryProvider>
+  );
+}
+
+function ProjectPullRequestEditScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName, pullRequestNumber } = Route.useParams();
+  const prNumber = Number(pullRequestNumber) || 0;
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const formOptionsQuery = useQuery(
+    pullRequestEditFormOptionsQueryOptions(runtimeConfig, {
+      ownerName,
+      projectName,
+      pullRequestNumber: prNumber,
+    }),
+  );
+
+  if (!projectQuery.data || !formOptionsQuery.data?.pullRequest) {
+    return null;
+  }
+
+  return (
+    <>
+      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectMenu
+        active="pullRequest"
+        basePath={runtimeConfig.basePath}
+        project={projectQuery.data}
+      />
+      <ProjectPullRequestEditBody
+        formOptions={formOptionsQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
+    </>
+  );
+}
+
+function ProjectPullRequestEditBody({
+  formOptions,
+  runtimeConfig,
+}: {
+  formOptions: PullRequestFormOptionsResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { ownerName, projectName, pullRequestNumber } = Route.useParams();
+  const prNumber = Number(pullRequestNumber) || 0;
+  const { t } = useLegacyMessages();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const pullRequest = formOptions.pullRequest;
+  const mutation = useMutation({
+    mutationFn: async (form: HTMLFormElement) => {
+      const formData = new FormData(form);
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updatePullRequestRest(runtimeConfig, csrfToken, {
+        attachmentIds: [],
+        bodyMarkdown: stringFormValue(formData, "body"),
+        ownerName,
+        projectName,
+        pullRequestNumber: prNumber,
+        title: stringFormValue(formData, "title"),
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: ["api", "v1", "owners", ownerName, "projects", projectName, "pull-requests"],
+      });
+      router.history.push(
+        prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/pullRequests`),
+      );
+    },
+  });
+
+  if (!pullRequest) {
+    return null;
+  }
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="content-wrap frm-wrap">
+          <form
+            action={prefixBasePath(
+              runtimeConfig.basePath,
+              `/${ownerName}/${projectName}/pullRequest/${prNumber}`,
+            )}
+            encType="multipart/form-data"
+            className="nm"
+            onSubmit={(event) => {
+              event.preventDefault();
+              mutation.mutate(event.currentTarget);
+            }}
+          >
+            <PullRequestDisabledBranchSelectors
+              formOptions={formOptions}
+              selected={formOptions.selected}
+            />
+            <span id="pullRequestState" data-value={pullRequest.state}></span>
+            {pullRequest.state === "OPEN" || pullRequest.state === "open" ? (
+              <div id="status" className="alert mt20 mb20">
+                {t("pullRequest.is.merging")}
+              </div>
+            ) : null}
+            <div>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                maxLength={255}
+                className="text"
+                defaultValue={pullRequest.title}
+                placeholder={t("title")}
+                data-is-user-has-typed="true"
+              />
+              <div style={{ position: "relative" }}>
+                <div data-toggle="markdown-editor" className="markdown-editor-wrap">
+                  <textarea
+                    id="editor-body-content-body"
+                    name="body"
+                    data-editor-mode="content-body"
+                    data-is-user-has-typed="true"
+                    defaultValue={pullRequest.bodyMarkdown}
+                  ></textarea>
+                  <div id="preview-content-body" className="preview markdown-wrap"></div>
+                </div>
+              </div>
+              <div
+                className="upload-wrap content-footer"
+                data-resource-type="PULL_REQUEST"
+                data-resource-id={String(pullRequest.id)}
+              >
+                <div className="attach-wrap">
+                  <div className="attachments" id="attachments"></div>
+                </div>
+              </div>
+              <div className="actions">
+                <button type="submit" className="ybtn ybtn-success">
+                  {t("button.save")}
+                </button>
+                <a
+                  href={prefixBasePath(
+                    runtimeConfig.basePath,
+                    `/${ownerName}/${projectName}/pullRequests`,
+                  )}
+                  ref={(node) => {
+                    node?.setAttribute("href", "javascript:history.back();");
+                  }}
+                  className="ybtn"
+                >
+                  {t("button.cancel")}
+                </a>
+              </div>
+            </div>
+            <ul className="nav nav-tabs mt20">
+              <li className="active">
+                <a href="#__commits" data-toggle="tab">
+                  <span className="vmiddle-inline">{t("pullRequest.menu.commit")}</span>
+                  <span id="numOfCommits" className="num-badge vmiddle-inline"></span>
+                </a>
+              </li>
+            </ul>
+            <div className="tab-content">
+              <div id="__commits" className="code-browse-wrap tab-pane active"></div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PullRequestDisabledBranchSelectors({
+  formOptions,
+  selected,
+}: {
+  formOptions: PullRequestFormOptionsResponse;
+  selected: PullRequestFormSelected;
+}) {
+  const { t } = useLegacyMessages();
+  return (
+    <div className="pull-request-wrap">
+      <div className="pull-left">
+        <label htmlFor="fromProjectId" className="field-title">
+          {t("pullRequest.from")}
+        </label>
+        <select
+          id="fromProjectId"
+          name="fromProjectId"
+          data-toggle="select2"
+          className="mr5"
+          defaultValue={String(selected.fromProjectId)}
+          disabled
+        >
+          {formOptions.fromProjects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.ownerName}/{project.projectName}
+            </option>
+          ))}
+        </select>
+        <select
+          id="fromBranch"
+          name="fromBranch"
+          data-toggle="select2"
+          data-format="branch"
+          disabled
+          data-dropdown-css-class="branches"
+          data-placeholder={t("pullRequest.select.branch")}
+          defaultValue={selected.fromBranch}
+        >
+          <option></option>
+          {formOptions.fromBranches.map((branch) => (
+            <option key={branch.name} value={branch.name}>
+              {branch.name}
+            </option>
+          ))}
+        </select>
+        <input type="hidden" name="fromProjectId" value={selected.fromProjectId} />
+        <input type="hidden" name="fromBranch" value={selected.fromBranch} />
+      </div>
+      <div className="arrow">
+        <i className="yobicon-right-2"></i>
+      </div>
+      <div className="pull-right">
+        <label htmlFor="toProjectId" className="field-title">
+          {t("pullRequest.to")}
+        </label>
+        <select
+          id="toProjectId"
+          name="toProjectId"
+          data-toggle="select2"
+          className="mr5"
+          defaultValue={String(selected.toProjectId)}
+          disabled
+        >
+          {formOptions.toProjects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.ownerName}/{project.projectName}
+            </option>
+          ))}
+        </select>
+        <select
+          id="toBranch"
+          name="toBranch"
+          data-toggle="select2"
+          data-format="branch"
+          disabled
+          data-dropdown-css-class="branches"
+          data-placeholder={t("pullRequest.select.branch")}
+          defaultValue={selected.toBranch}
+        >
+          <option></option>
+          {formOptions.toBranches.map((branch) => (
+            <option key={branch.name} value={branch.name}>
+              {branch.name}
+            </option>
+          ))}
+        </select>
+        <input type="hidden" name="toProjectId" value={selected.toProjectId} />
+        <input type="hidden" name="toBranch" value={selected.toBranch} />
+      </div>
+    </div>
+  );
+}
+
+function stringFormValue(formData: FormData, name: string): string {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : "";
+}
