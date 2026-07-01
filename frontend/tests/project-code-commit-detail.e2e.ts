@@ -356,6 +356,9 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator(".non-ranged-threads-wrap #thread-88")).toBeVisible();
   await expect(page.locator("#reviewcards-open .review-card.open")).toHaveCount(1);
+  await expect(
+    page.locator("#reviewcards-open .review-card.open .avatar-wrap.smaller.margin-right-5 img"),
+  ).toHaveAttribute("alt", "Dev User");
   await expect(page.locator("#comment-editform-601")).toBeHidden();
   await expect(
     page.locator("#thread-88 .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),

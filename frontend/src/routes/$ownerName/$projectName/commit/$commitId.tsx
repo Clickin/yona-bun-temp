@@ -1225,6 +1225,12 @@ function ReviewCards({
                 </>
               ) : null}
             </span>
+            <span className="avatar-wrap smaller margin-right-5">
+              <img
+                src={thread.comments[0]?.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+                alt={thread.comments[0]?.authorLabel ?? ""}
+              />
+            </span>
             {thread.createdLabel}
           </span>
         </a>
