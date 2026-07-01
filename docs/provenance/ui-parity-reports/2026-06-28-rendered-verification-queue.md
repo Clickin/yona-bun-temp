@@ -243,7 +243,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `project/partial_issuelabels_editlabel.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `project/partial_readme.scala.html` | P2 project | covered by `frontend/tests/project-home-readme.e2e.ts`: `/admin/sample` renders the legacy `.bubble-wrap.gray.readme` empty README branch with create README link | 57 |
 | `project/partial_settingmenu.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
-| `project/statistics.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
+| `project/statistics.scala.html` | P2 project | covered by `frontend/tests/project-statistics.e2e.ts`: `/admin/sample/statistics` renders the legacy project shell with Issue-active menu and `<h1>Under Construction</h1>` layout metrics | 57 |
 | `project/transfer.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `project/watchers.scala.html` | P2 project | covered by `frontend/tests/project-watchers.e2e.ts`: `/admin/sample/watchers` renders the legacy project shell plus watcher title, description, and `.members.project.row-fluid` watcher rows with avatar/name/login layout metrics | 57 |
 | `project/webhooks.scala.html` | P2 project | /:owner/:projectName/webhooks | 57 |

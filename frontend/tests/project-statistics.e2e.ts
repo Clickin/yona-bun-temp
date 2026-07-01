@@ -34,7 +34,60 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_STATISTICS.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await readDesktopStatisticsMetrics(page)).toEqual({
+    activeMenuBackground: "rgba(0, 0, 0, 0)",
+    activeMenuHeight: "30px",
+    headingFontSize: "26px",
+    headingFontWeight: "400",
+    headingLineHeight: "32.5px",
+    headingMarginBottom: "18px",
+    headingMarginTop: "0px",
+    pageWrapMinWidth: "1100px",
+    projectHeaderHeight: "120px",
+    projectMenuHeight: "39px",
+    projectPageMarginTop: "5px",
+    projectPageWidth: 1260,
+  });
 });
+
+async function readDesktopStatisticsMetrics(page: Page) {
+  return page.evaluate(() => {
+    const projectHeader = requireElement(".project-header-outer");
+    const projectMenu = requireElement(".project-menu-outer");
+    const pageWrapOuter = requireElement(".page-wrap-outer");
+    const projectPageWrap = requireElement(".project-page-wrap");
+    const heading = requireElement(".project-page-wrap h1");
+    const issueMenu = requireElement(".project-menu-nav.project-menu-gruop > li.active > a");
+    const projectHeaderStyle = getComputedStyle(projectHeader);
+    const projectMenuStyle = getComputedStyle(projectMenu);
+    const pageWrapStyle = getComputedStyle(pageWrapOuter);
+    const projectPageStyle = getComputedStyle(projectPageWrap);
+    const headingStyle = getComputedStyle(heading);
+    const issueMenuStyle = getComputedStyle(issueMenu);
+    return {
+      activeMenuBackground: issueMenuStyle.backgroundColor,
+      activeMenuHeight: issueMenuStyle.height,
+      headingFontSize: headingStyle.fontSize,
+      headingFontWeight: headingStyle.fontWeight,
+      headingLineHeight: headingStyle.lineHeight,
+      headingMarginBottom: headingStyle.marginBottom,
+      headingMarginTop: headingStyle.marginTop,
+      pageWrapMinWidth: pageWrapStyle.minWidth,
+      projectHeaderHeight: projectHeaderStyle.height,
+      projectMenuHeight: projectMenuStyle.height,
+      projectPageMarginTop: projectPageStyle.marginTop,
+      projectPageWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
 
 async function mockProjectAdmin(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
