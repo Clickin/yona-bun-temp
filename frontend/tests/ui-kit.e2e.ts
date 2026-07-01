@@ -345,6 +345,20 @@ test("standalone UI kit root shell mounts legacy select2 formatter templates", a
   await page.goto(`${basePath}/_UIKit`);
 
   expect(await readRenderedScriptTemplates(page, SELECT2_TEMPLATE_IDS)).toEqual(expectedTemplates);
+  expect(await readRenderedScriptTemplateMetrics(page, SELECT2_TEMPLATE_IDS)).toEqual({
+    displays: ["none", "none", "none", "none", "none"],
+    heights: [0, 0, 0, 0, 0],
+    ids: SELECT2_TEMPLATE_IDS,
+    textLengths: Object.values(expectedTemplates).map((template) => template.length),
+    types: [
+      "text/x-jquery-tmpl",
+      "text/x-jquery-tmpl",
+      "text/x-jquery-tmpl",
+      "text/x-jquery-tmpl",
+      "text/x-jquery-tmpl",
+    ],
+    widths: [0, 0, 0, 0, 0],
+  });
 });
 
 test("standalone UI kit root shell dismisses legacy modal buttons", async ({ page }) => {
@@ -685,6 +699,30 @@ async function readRenderedScriptTemplates(page: Page, ids: string[]) {
         return [id, normalize(template.textContent ?? "")];
       }),
     );
+  }, ids);
+}
+
+async function readRenderedScriptTemplateMetrics(page: Page, ids: string[]) {
+  return page.evaluate((templateIds) => {
+    const templates = templateIds.map((id) => {
+      const template = document.querySelector<HTMLScriptElement>(
+        `script#${CSS.escape(id)}[type="text/x-jquery-tmpl"]`,
+      );
+      if (!template) {
+        throw new Error(`Expected rendered select2 template is missing: ${id}`);
+      }
+      return template;
+    });
+    return {
+      displays: templates.map((template) => window.getComputedStyle(template).display),
+      heights: templates.map((template) => Math.round(template.getBoundingClientRect().height)),
+      ids: templates.map((template) => template.id),
+      textLengths: templates.map(
+        (template) => (template.textContent ?? "").replace(/\s+/g, " ").trim().length,
+      ),
+      types: templates.map((template) => template.type),
+      widths: templates.map((template) => Math.round(template.getBoundingClientRect().width)),
+    };
   }, ids);
 }
 
