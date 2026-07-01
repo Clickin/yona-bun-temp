@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, type HTMLAttributes, type LiHTMLAttributes } from "react";
+import {
+  useEffect,
+  useRef,
+  type HTMLAttributes,
+  type LiHTMLAttributes,
+  type MouseEvent,
+} from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
   projectPullRequestListQueryOptions,
@@ -148,7 +154,16 @@ function ProjectPullRequestsBody({
       <div className="project-page-wrap">
         <div {...pjaxContainer} className="row-fluid cb">
           <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
-            <form id="search" name="search" action={searchAction} method="get">
+            <form
+              id="search"
+              name="search"
+              action={searchAction}
+              method="get"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitLegacyPullRequestSearch(event.currentTarget);
+              }}
+            >
               <div className="search">
                 <div className="search-bar">
                   <input
@@ -172,6 +187,9 @@ function ProjectPullRequestsBody({
                         name="contributorId"
                         data-format="user"
                         defaultValue={search.contributorId ? String(search.contributorId) : ""}
+                        onChange={(event) =>
+                          submitLegacyPullRequestSearch(event.currentTarget.form)
+                        }
                       >
                         <option value="">{t("common.order.all")}</option>
                         {pullRequests.contributors.some(
@@ -217,14 +235,14 @@ function ProjectPullRequestsBody({
             <ul className="nav nav-tabs nm pullrequeset-tab-menu">
               <li className={requestType === "open" ? "active" : ""}>
                 {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                <a href="#" data-url={openAction} data-type="state">
+                <a href="#" data-url={openAction} data-type="state" onClick={handleStateTabClick}>
                   {t("pullRequest.state.open")}
                   <span className="num-badge">{pullRequests.openCount}</span>
                 </a>
               </li>
               <li className={requestType === "closed" ? "active" : ""}>
                 {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                <a href="#" data-url={closedAction} data-type="state">
+                <a href="#" data-url={closedAction} data-type="state" onClick={handleStateTabClick}>
                   {t("pullRequest.state.closed")}
                   <span className="num-badge">{pullRequests.closedCount}</span>
                 </a>
@@ -232,7 +250,7 @@ function ProjectPullRequestsBody({
               {isForked ? (
                 <li className={requestType === "sent" ? "active" : ""}>
                   {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                  <a href="#" data-url={sentAction} data-type="state">
+                  <a href="#" data-url={sentAction} data-type="state" onClick={handleStateTabClick}>
                     {t("pullRequest.sent")}
                     <span className="num-badge">
                       {pullRequests.acceptedCount} / {pullRequests.sentCount}
@@ -262,6 +280,16 @@ function ProjectPullRequestsBody({
       </div>
     </div>
   );
+}
+
+function handleStateTabClick(event: MouseEvent<HTMLAnchorElement>) {
+  event.preventDefault();
+  const form = document.querySelector<HTMLFormElement>("form#search");
+  const action = event.currentTarget.getAttribute("data-url");
+  if (form && action) {
+    form.action = action;
+    submitLegacyPullRequestSearch(form);
+  }
 }
 
 function ProjectRecentlyPushedBranches({
@@ -526,10 +554,38 @@ function LegacyTitlePrefixAnchor({ children }: { children: string }) {
     anchorRef.current?.setAttribute("href", "javascript:void(0)");
   }, []);
   return (
-    <a ref={anchorRef} href="/" className="title-prefix">
+    <a
+      ref={anchorRef}
+      href="/"
+      className="title-prefix"
+      onClick={(event) => {
+        event.preventDefault();
+        const input = document.querySelector<HTMLInputElement>('form#search input[name="filter"]');
+        if (input?.form) {
+          input.value = children;
+          submitLegacyPullRequestSearch(input.form);
+        }
+      }}
+    >
       {children}
     </a>
   );
+}
+
+function submitLegacyPullRequestSearch(form: HTMLFormElement | null) {
+  if (!form) {
+    return;
+  }
+  const params = new URLSearchParams();
+  const filter = form.elements.namedItem("filter");
+  const contributor = form.elements.namedItem("contributorId");
+  if (filter instanceof HTMLInputElement && filter.value) {
+    params.set("filter", filter.value);
+  }
+  if (contributor instanceof HTMLSelectElement && contributor.value) {
+    params.set("contributorId", contributor.value);
+  }
+  window.location.href = params.size ? `${form.action}?${params.toString()}` : form.action;
 }
 
 function TwoColumnModeCheckbox() {

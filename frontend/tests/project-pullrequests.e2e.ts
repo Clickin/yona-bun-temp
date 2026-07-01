@@ -154,6 +154,32 @@ test("project pull request conflict row uses legacy conflict and branch classes"
   );
 });
 
+test("project pull request search interactions follow legacy form submit behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=row`);
+  await page.locator(".post-list-wrap .title-prefix").click();
+  await expect(page).toHaveURL(
+    new RegExp(`${basePath}/admin/sample/pullRequests\\?filter=%5BAPI%5D`),
+  );
+  await expect(page.locator('#search input[name="filter"]')).toHaveValue("[API]");
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=row`);
+  await page.locator('.pullrequeset-tab-menu a[data-url$="/closedPullRequests"]').click();
+  await expect(page).toHaveURL(
+    new RegExp(`${basePath}/admin/sample/closedPullRequests\\?filter=row`),
+  );
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=empty`);
+  await page.locator("#contributors").selectOption("2");
+  await expect(page).toHaveURL(
+    new RegExp(`${basePath}/admin/sample/pullRequests\\?filter=empty&contributorId=2`),
+  );
+});
+
 test("project pull request multi-page list matches legacy pagination DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPullRequests(page);

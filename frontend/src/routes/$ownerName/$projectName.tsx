@@ -1072,8 +1072,13 @@ function ProjectMenuItem({
   label: string;
   short: string;
 }) {
+  const itemClassName = className
+    ? `${className}${active ? "active" : ""}`
+    : active
+      ? "active"
+      : "";
   return (
-    <li className={`${active ? "active " : ""}${className}`}>
+    <li className={itemClassName}>
       <a href={href}>
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
