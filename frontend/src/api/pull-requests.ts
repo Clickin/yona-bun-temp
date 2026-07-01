@@ -105,6 +105,8 @@ export type PullRequestEvent = {
   id: number;
   newValue: string;
   oldValue: string;
+  senderAvatarUrl: string;
+  senderLabel: string;
   senderLoginId: string;
 };
 
@@ -493,6 +495,8 @@ function normalizeEvent(event: Partial<PullRequestEvent>): PullRequestEvent {
     id: event.id ?? 0,
     newValue: event.newValue ?? "",
     oldValue: event.oldValue ?? "",
+    senderAvatarUrl: event.senderAvatarUrl ?? "",
+    senderLabel: event.senderLabel ?? "",
     senderLoginId: event.senderLoginId ?? "",
   };
 }

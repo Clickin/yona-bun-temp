@@ -318,6 +318,8 @@ struct RestPullRequestEvent {
     id: i64,
     new_value: String,
     old_value: String,
+    sender_avatar_url: String,
+    sender_label: String,
     sender_login_id: String,
 }
 
@@ -1702,6 +1704,8 @@ fn rest_pull_request_detail_from_record_with_issue_references(
                 id: event.id,
                 new_value: event.new_value,
                 old_value: event.old_value,
+                sender_avatar_url: gravatar_url(&event.sender_email_address),
+                sender_label: event.sender_label,
                 sender_login_id: event.sender_login_id,
             })
             .collect(),

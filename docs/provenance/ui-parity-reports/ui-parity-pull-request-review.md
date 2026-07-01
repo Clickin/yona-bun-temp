@@ -5,13 +5,14 @@ Date: 2026-06-26
 Packet: `ui-parity-pull-request-review`
 Write scope: PR review bounded implementation packet
 
-2026-07-01 current-state correction: the active React route tree currently
-contains the flat PR list routes (`pullRequests`, `closedPullRequests`,
-`sentPullRequests`) but no `frontend/src/routes/**/pullRequest/**`
-overview/changes/edit route files and no active
-`frontend/tests/pull-request-review-*.e2e.ts` files. Rows below that cite the
-older nested `$owner/$projectName/pullRequest/...` implementation are
-historical evidence until those routes are reintroduced and reverified.
+2026-07-01 current-state correction: the active React route tree contains the
+flat PR list routes (`pullRequests`, `closedPullRequests`, `sentPullRequests`)
+and the reintroduced PR create/edit/overview route files under
+`frontend/src/routes/$ownerName/$projectName/**`. Active route evidence now
+comes from the `project-pullrequests`, `project-pullrequest-create-form`,
+`project-pullrequest-edit-form`, and `project-pullrequest-overview` E2E files;
+older nested `$owner/$projectName/pullRequest/...` rows remain historical unless
+they are explicitly reverified by those active route tests.
 
 ## Scope And Evidence
 
@@ -50,7 +51,9 @@ Current evidence checked:
 - `frontend/src/routes/$owner/$projectName/reviews/route.tsx`
 - `frontend/src/routes/organizations/$organizationName/pullrequests.tsx`
 - `frontend/src/routes/organizations/$organizationName/closedPullrequests.tsx`
+- `frontend/src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx`
 - `frontend/src/api/pull-requests.ts`
+- `frontend/tests/project-pullrequest-overview.e2e.ts`
 - `frontend/src/route-parity.spec.tsx`
 - `frontend/src/pull-request-list-form-review-i18n.spec.tsx`
 - `frontend/src/pull-request-review-i18n.spec.tsx`
@@ -94,7 +97,7 @@ Total rows: 22
 | PR detail header, branch info, state block, overview/changes tabs | `view.scala.html`, `partial_info.scala.html`, `partial_branch.scala.html`, `partial_state.scala.html` | `ProjectPullRequestDetailPage`, `PullRequestBranchInfo`, `PullRequestStateNotice`, `PullRequestOverviewTabs`, render/e2e specs | covered | none |
 | PR watch/close/reopen/review/unreview/accept/source branch actions | `view.scala.html` has `#watch-button`, edit, close/reopen; `partial_info.scala.html` has `#reviewers`, review/unreview and `#btnAccept`; `partial_state.scala.html` has delete/restore source branch | Detail route mutations plus `PullRequestReviewMergeControls`, `PullRequestActionBar`, `PullRequestStateNotice`; interaction e2e covers watch, review/unreview, close/reopen, accept, delete/restore source branch | covered | none |
 | PR delete action | Legacy routes expose no pull-request delete route; only source-branch delete is present at `DELETE /pullRequest/:id/deletefrombranch` | Current exposes source-branch delete/restore only | not-applicable | none |
-| PR event timeline i18n | `TemplateHelper.renderEventsOnPullRequest` and message keys such as `pullRequest.event.message.open = {0} opened this pull request.` render interpolated user/action text | Wave 3 interpolates sender and merged-commit placeholders through the legacy i18n runtime; render and mocked browser proof reject raw `pullRequest.event.message*` keys. The bounded patch uses the existing `senderLoginId` projection for sender text. | covered | none |
+| PR event timeline i18n | `TemplateHelper.renderEventsOnPullRequest`, `git/partial_pull_request_event.scala.html`, and message keys such as `pullRequest.event.message.commit = {0} has committed.` render interpolated user/action text plus commit rows. | `frontend/tests/project-pullrequest-overview.e2e.ts` covers the active overview empty-event state and a populated `PULL_REQUEST_COMMIT_CHANGED` row, preserving `ul#comments`, `li.event#comment-*`, sender avatar/user links from REST event metadata, date anchor, `Additional changes` compare link, `ul.commit-list`, outdated/current commit row classes, PR-specific change links, author avatar placeholder, author date, and `common.commitMsg` short-link output. REST now projects `senderLabel` and `senderAvatarUrl` for event rows through `frontend/src/api/pull-requests.ts` and `crates/server/src/routes/pull_requests.rs`; review/unreview, state-changed, and merged event variants remain separate route states. | covered in current follow-up | review/unreview, state-changed, and merged event variants |
 | PR merge disabled copy/state | `partial_info.scala.html` disables merge with `pull.getMessageForDisabledAcceptButton`; conflict uses `pullRequest.not.acceptable.because.is.conflict`, reviewer shortage uses `pullRequest.not.acceptable.because.is.not.enough.review.point` | `PullRequestReviewMergeControls` computes conflict/reviewer/open disabled titles; conflict e2e checks disabled merge and guide | covered | none |
 | PR changes commit dropdown | `viewChanges.scala.html` uses `#commits`, `pullRequest.changes.all`, current commit list, selected outdated label | `PullRequestChangesPage` renders `#commits`, selected commit info, current-only dropdown, outdated selected marker; render/e2e specs cover selected outdated path | covered | none |
 | PR changes general comments, inline comments, thread replies, edit/delete | `viewChanges.scala.html` renders `.non-ranged-threads-wrap`, `common.commentForm`, `common.reviewForm`; review thread partials use `.comment-thread-wrap`, delete modal, close/open thread controls | `PullRequestChangesPage`, `ReviewThreadItem`, `PullRequestBlockReviewForm`, route mutations; interaction e2e covers general comment, inline comment, thread reply, edit, delete, close/open | covered | none |

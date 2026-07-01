@@ -1819,6 +1819,8 @@ pub struct PullRequestEventRecord {
     pub id: i64,
     pub new_value: String,
     pub old_value: String,
+    pub sender_email_address: String,
+    pub sender_label: String,
     pub sender_login_id: String,
 }
 

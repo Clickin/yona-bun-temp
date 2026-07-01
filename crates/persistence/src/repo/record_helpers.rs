@@ -655,6 +655,21 @@ impl AppRepositoryImpl<'_> {
         let mut events = Vec::new();
         for row in rows {
             let event_type = row.event_type.unwrap_or_default();
+            let sender_login_id = row.sender_login_id.unwrap_or_default();
+            let sender = if sender_login_id.is_empty() {
+                None
+            } else {
+                n4user::Entity::find()
+                    .filter(n4user::Column::LoginId.eq(Some(sender_login_id.clone())))
+                    .one(&self.db)
+                    .await?
+            };
+            let sender_label = sender
+                .as_ref()
+                .and_then(|user| user.name.clone())
+                .filter(|name| !name.trim().is_empty())
+                .unwrap_or_else(|| sender_login_id.clone());
+            let sender_email_address = sender.and_then(|user| user.email).unwrap_or_default();
             let new_value = self
                 .read_text_column("pull_request_event", "new_value", row.id)
                 .await?;
@@ -670,7 +685,9 @@ impl AppRepositoryImpl<'_> {
                 old_value: self
                     .read_text_column("pull_request_event", "old_value", row.id)
                     .await?,
-                sender_login_id: row.sender_login_id.unwrap_or_default(),
+                sender_email_address,
+                sender_label,
+                sender_login_id,
             });
         }
         Ok(events)

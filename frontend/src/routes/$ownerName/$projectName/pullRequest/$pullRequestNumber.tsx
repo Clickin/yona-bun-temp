@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import {
   pullRequestDetailQueryOptions,
+  type PullRequestCommit,
   type PullRequestDetailResponse,
+  type PullRequestEvent,
   type PullRequestState,
 } from "../../../../api/pull-requests";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -151,18 +153,7 @@ function PullRequestOverviewBody({
           <hr className="nm" />
 
           <div className="board-comment-wrap">
-            {pullRequest.events.length > 0 ? (
-              <ul className="comments" id="comments">
-                {pullRequest.events.map((event) => (
-                  <li className="event" id={`comment-${event.id}`} key={event.id}>
-                    <span className="state changed">{event.eventType}</span>
-                    <span className="date">
-                      <a href={`#event-${event.id}`}>{event.createdLabel}</a>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+            <PullRequestEvents pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
           </div>
 
           <div className="right-txt">
@@ -173,6 +164,173 @@ function PullRequestOverviewBody({
         </div>
       </div>
       <PullRequestHelpModal />
+    </>
+  );
+}
+
+function PullRequestEvents({
+  pullRequest,
+  runtimeConfig,
+}: {
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const renderedEvents = pullRequest.events.flatMap((event) =>
+    event.eventType === "PULL_REQUEST_COMMIT_CHANGED"
+      ? [
+          <PullRequestEventItem
+            event={event}
+            key={event.id}
+            pullRequest={pullRequest}
+            runtimeConfig={runtimeConfig}
+          />,
+        ]
+      : [],
+  );
+
+  return renderedEvents.length > 0 ? (
+    <ul className="comments" id="comments">
+      {renderedEvents}
+    </ul>
+  ) : null;
+}
+
+function PullRequestEventItem({
+  event,
+  pullRequest,
+  runtimeConfig,
+}: {
+  event: PullRequestEvent;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { t } = useLegacyMessages();
+
+  if (event.eventType !== "PULL_REQUEST_COMMIT_CHANGED") {
+    return null;
+  }
+
+  return (
+    <li className="event" id={`comment-${event.id}`}>
+      <span className="state changed">{t("pullRequest.event.commit")}</span>
+      <PullRequestEventUser event={event} runtimeConfig={runtimeConfig} /> has committed.
+      <span className="date">
+        <a href={`#event-${event.id}`} title={event.createdLabel}>
+          {event.createdLabel}
+        </a>
+      </span>
+      {event.oldValue ? (
+        <a
+          href={prefixBasePath(
+            runtimeConfig.basePath,
+            comparePath(pullRequest.ownerName, pullRequest.projectName, event.oldValue),
+          )}
+          className="ybtn ybtn-mini"
+        >
+          {t("pullRequest.additional.changes")}
+        </a>
+      ) : null}
+      <ul className="commit-list">
+        {event.commits.map((commit) => (
+          <PullRequestEventCommit
+            commit={commit}
+            key={commit.commitId}
+            pullRequest={pullRequest}
+            runtimeConfig={runtimeConfig}
+          />
+        ))}
+      </ul>
+    </li>
+  );
+}
+
+function PullRequestEventUser({
+  event,
+  runtimeConfig,
+}: {
+  event: PullRequestEvent;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const userPath = prefixBasePath(runtimeConfig.basePath, `/${event.senderLoginId}`);
+  const label = event.senderLabel || event.senderLoginId;
+  const avatarUrl = event.senderAvatarUrl || "/assets/images/default-avatar-32.png";
+
+  return (
+    <>
+      <a
+        href={userPath}
+        className="usf-group"
+        data-toggle="tooltip"
+        data-placement="top"
+        title={event.senderLoginId}
+      >
+        <img src={avatarUrl} className="avatar-wrap small" alt="" />
+      </a>
+      <a
+        href={userPath}
+        className="usf-group"
+        data-toggle="tooltip"
+        data-placement="top"
+        title={event.senderLoginId}
+      >
+        <strong>{label}</strong>
+      </a>
+    </>
+  );
+}
+
+function PullRequestEventCommit({
+  commit,
+  pullRequest,
+  runtimeConfig,
+}: {
+  commit: PullRequestCommit;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const commitPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}/changes/${commit.commitId}`;
+
+  return (
+    <li
+      className={
+        commit.state === "PRIOR" ? "comment-body commit-info outdated" : "comment-body commit-info"
+      }
+    >
+      <a href={prefixBasePath(runtimeConfig.basePath, commitPath)} className="commit-id">
+        {commit.commitShortId}
+      </a>
+      <img
+        src="/assets/images/default-avatar-32.png"
+        className="avatar-wrap small hide-in-mobile"
+        alt=""
+      />
+      <div className="date hide-in-mobile" title={commit.authorDateLabel}>
+        {commit.authorDateLabel}
+      </div>
+      <CommitMessage commit={commit} href={prefixBasePath(runtimeConfig.basePath, commitPath)} />
+    </li>
+  );
+}
+
+function CommitMessage({ commit, href }: { commit: PullRequestCommit; href: string }) {
+  const { t } = useLegacyMessages();
+  const lines = commit.commitMessage.split("\n");
+  const summary = lines[0] || t("code.commitMsg.empty");
+  const detail = lines.slice(1).join("\n");
+
+  return (
+    <>
+      <a href={href} className="commitMsg short">
+        {summary}
+      </a>
+      {detail ? (
+        <>
+          <button type="button" className="commitMsg moreBtn">
+            <span>&hellip;</span>
+          </button>
+          <pre className="commitMsg desc hidden">{detail}</pre>
+        </>
+      ) : null}
     </>
   );
 }
@@ -356,4 +514,12 @@ function isOpenState(state: PullRequestState) {
 
 function encodeBranch(branch: string) {
   return encodeURIComponent(branch);
+}
+
+function comparePath(ownerName: string, projectName: string, value: string) {
+  const [revA, revB] = value.split(",");
+  if (!revA || !revB) {
+    return `/${ownerName}/${projectName}/compare/${encodeURIComponent(value)}`;
+  }
+  return `/${ownerName}/${projectName}/compare/${encodeURIComponent(revA)}...${encodeURIComponent(revB)}`;
 }
