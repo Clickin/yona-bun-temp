@@ -181,7 +181,7 @@ const EXPECTED_PULL_REQUEST_NON_RANGED_THREAD = EXPECTED_PULL_REQUEST_REVIEW_CAR
     `<div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div>`,
   ).replace(
     `</span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div>`,
-    `</span><span class="edit pull-right"><button class="btn-transparent pull-right close" data-request-method="delete" data-request-uri="__BASE_PATH__/comments/review_comment/801"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div>`,
+    `</span><span class="edit pull-right"><button class="btn-transparent pull-right close" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/comments/review_comment/801" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div>`,
   )}</div>`,
 )
   .replace(
@@ -330,12 +330,29 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
     "style",
     /height:\s*100px/,
   );
-
   expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtmlAll(
       page,
       EXPECTED_PULL_REQUEST_NON_RANGED_THREAD.replaceAll("__BASE_PATH__", basePath),
     ),
+  );
+
+  const deleteButton = page.locator("#comment-801 [data-toggle='comment-delete']");
+  await expect(deleteButton).toHaveAttribute(
+    "data-request-uri",
+    `${basePath}/comments/review_comment/801`,
+  );
+  await deleteButton.click();
+  await expect(page.locator("#comment-delete-modal")).toHaveClass("modal fade in");
+  await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "block");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
+    "data-request-uri",
+    `${basePath}/comments/review_comment/801`,
+  );
+  await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
+    "data-request-method",
+    "delete",
   );
 });
 
@@ -523,7 +540,13 @@ async function canonicalizeAll(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -558,7 +581,13 @@ async function canonicalizeHtmlAll(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");

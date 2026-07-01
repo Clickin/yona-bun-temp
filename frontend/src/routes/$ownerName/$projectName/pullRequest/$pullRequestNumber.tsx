@@ -20,7 +20,11 @@ import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
 const LegacyInternalLink = Link as React.ComponentType<
-  React.AnchorHTMLAttributes<HTMLAnchorElement> & { search?: Record<string, never>; to: string }
+  React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeProps?: { className?: string | undefined };
+    search?: Record<string, never>;
+    to: string;
+  }
 >;
 
 export const Route = createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")({
@@ -612,7 +616,7 @@ export function PullRequestHeader({
               {t("pullRequest.menu.overview")}
             </a>
           ) : (
-            <LegacyInternalLink search={{}} to={prPath}>
+            <LegacyInternalLink activeProps={{ className: undefined }} search={{}} to={prPath}>
               {t("pullRequest.menu.overview")}
             </LegacyInternalLink>
           )}
@@ -624,7 +628,11 @@ export function PullRequestHeader({
               {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
             </a>
           ) : (
-            <LegacyInternalLink search={{}} to={`${prPath}/changes`}>
+            <LegacyInternalLink
+              activeProps={{ className: undefined }}
+              search={{}}
+              to={`${prPath}/changes`}
+            >
               {t("pullRequest.menu.changes")}
               {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
             </LegacyInternalLink>

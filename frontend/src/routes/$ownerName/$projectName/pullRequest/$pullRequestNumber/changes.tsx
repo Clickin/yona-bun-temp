@@ -146,116 +146,122 @@ function ProjectPullRequestChangesBody({
   const codediffClassName = `codediff-wrap mt10${hasReviewCards ? "" : " diffs-only"}`;
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <div className="code-browse-wrap">
-          <PullRequestHeader
-            activeTab="changes"
-            project={project}
-            pullRequest={pullRequest}
-            runtimeConfig={runtimeConfig}
-          />
+    <>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="code-browse-wrap">
+            <PullRequestHeader
+              activeTab="changes"
+              project={project}
+              pullRequest={pullRequest}
+              runtimeConfig={runtimeConfig}
+            />
 
-          <div className="board-body mb20">
-            <div className="author-info right-txt" style={{ marginTop: "20px" }}>
-              <a
-                href={prefixBasePath(runtimeConfig.basePath, `/${pullRequest.contributor.loginId}`)}
-                className="usf-group pull-left"
-              >
-                <span className="avatar-wrap smaller">
-                  <img src={pullRequest.contributor.avatarUrl} width="32" height="32" alt="" />
-                </span>
-                <strong className="name">{pullRequest.contributor.userLabel}</strong>
-                <span className="loginid">
-                  {" "}
-                  <strong>@</strong>
-                  {pullRequest.contributor.loginId}
-                </span>
-              </a>
-              <PullRequestBranchInfo pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
-            </div>
-          </div>
-
-          <div className={codediffClassName}>
-            {hasReviewCards ? (
-              <button type="button" className="ybtn ybtn-default btn-show-reviewcards">
-                <i className="yobicon-restore"></i>
-              </button>
-            ) : null}
-            <div id="changes" className="diffs-wrap">
-              <CommitDropdown
-                commitId={commitId}
-                commits={changes.commits}
-                pullRequest={pullRequest}
-                runtimeConfig={runtimeConfig}
-                selectedCommit={selectedCommit}
-              />
-              {selectedCommit ? <SelectedCommitInfo commit={selectedCommit} /> : null}
-              <div className="diff-body diffs-wrap-scroll">
-                <div id="state" className="pullRequest-stateInfo">
-                  <PullRequestStateInfo
-                    currentUserLoginId={currentUser.loginId}
-                    pullRequest={pullRequest}
-                    runtimeConfig={runtimeConfig}
-                  />
-                </div>
-                {changes.files.map((file) => (
-                  <div className="diff-partial-outer" key={file.path}>
-                    <div className="diff-partial-inner">
-                      <div className="diff-partial-meta">
-                        <div className="diff-partial-file">
-                          <span className="filename">{file.path}</span>
-                        </div>
-                      </div>
-                      <pre className="diff-body">{file.patch}</pre>
-                    </div>
-                  </div>
-                ))}
-                <div className="btnPop">
-                  <button type="button" className="ybtn ybtn-info ybtn-small">
-                    <i className="yobicon-post2"></i>
-                  </button>
-                </div>
+            <div className="board-body mb20">
+              <div className="author-info right-txt" style={{ marginTop: "20px" }}>
+                <a
+                  href={prefixBasePath(
+                    runtimeConfig.basePath,
+                    `/${pullRequest.contributor.loginId}`,
+                  )}
+                  className="usf-group pull-left"
+                >
+                  <span className="avatar-wrap smaller">
+                    <img src={pullRequest.contributor.avatarUrl} width="32" height="32" alt="" />
+                  </span>
+                  <strong className="name">{pullRequest.contributor.userLabel}</strong>
+                  <span className="loginid">
+                    {" "}
+                    <strong>@</strong>
+                    {pullRequest.contributor.loginId}
+                  </span>
+                </a>
+                <PullRequestBranchInfo pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
               </div>
+            </div>
 
-              <div className="board-comment-wrap">
-                <div className="non-ranged-threads-wrap">
-                  {changes.nonRangedThreads.map((thread) => (
-                    <NonRangedThread
-                      currentUser={currentUser}
-                      key={thread.id}
+            <div className={codediffClassName}>
+              {hasReviewCards ? (
+                <button type="button" className="ybtn ybtn-default btn-show-reviewcards">
+                  <i className="yobicon-restore"></i>
+                </button>
+              ) : null}
+              <div id="changes" className="diffs-wrap">
+                <CommitDropdown
+                  commitId={commitId}
+                  commits={changes.commits}
+                  pullRequest={pullRequest}
+                  runtimeConfig={runtimeConfig}
+                  selectedCommit={selectedCommit}
+                />
+                {selectedCommit ? <SelectedCommitInfo commit={selectedCommit} /> : null}
+                <div className="diff-body diffs-wrap-scroll">
+                  <div id="state" className="pullRequest-stateInfo">
+                    <PullRequestStateInfo
+                      currentUserLoginId={currentUser.loginId}
                       pullRequest={pullRequest}
                       runtimeConfig={runtimeConfig}
-                      thread={thread}
                     />
+                  </div>
+                  {changes.files.map((file) => (
+                    <div className="diff-partial-outer" key={file.path}>
+                      <div className="diff-partial-inner">
+                        <div className="diff-partial-meta">
+                          <div className="diff-partial-file">
+                            <span className="filename">{file.path}</span>
+                          </div>
+                        </div>
+                        <pre className="diff-body">{file.patch}</pre>
+                      </div>
+                    </div>
                   ))}
+                  <div className="btnPop">
+                    <button type="button" className="ybtn ybtn-info ybtn-small">
+                      <i className="yobicon-post2"></i>
+                    </button>
+                  </div>
                 </div>
+
+                <div className="board-comment-wrap">
+                  <div className="non-ranged-threads-wrap">
+                    {changes.nonRangedThreads.map((thread) => (
+                      <NonRangedThread
+                        currentUser={currentUser}
+                        key={thread.id}
+                        pullRequest={pullRequest}
+                        runtimeConfig={runtimeConfig}
+                        thread={thread}
+                      />
+                    ))}
+                  </div>
+                  {pullRequest.permissions.canComment ? (
+                    <CommentForm
+                      action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
+                    />
+                  ) : null}
+                </div>
+
                 {pullRequest.permissions.canComment ? (
-                  <CommentForm
+                  <ReviewForm
                     action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
+                    currentUser={currentUser}
+                    runtimeConfig={runtimeConfig}
                   />
                 ) : null}
               </div>
-
-              {pullRequest.permissions.canComment ? (
-                <ReviewForm
-                  action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
-                  currentUser={currentUser}
+              {hasReviewCards ? (
+                <ReviewWrap
+                  pullRequest={pullRequest}
                   runtimeConfig={runtimeConfig}
+                  threads={changes.threads}
                 />
               ) : null}
             </div>
-            {hasReviewCards ? (
-              <ReviewWrap
-                pullRequest={pullRequest}
-                runtimeConfig={runtimeConfig}
-                threads={changes.threads}
-              />
-            ) : null}
           </div>
         </div>
       </div>
-    </div>
+      <CommentDeleteModal />
+    </>
   );
 }
 
@@ -351,6 +357,7 @@ function NonRangedThreadComment({
   comment: ReviewComment;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { t } = useLegacyMessages();
   return (
     <li id={`comment-${comment.id}`} className="comment">
       <div className="comment-avatar">
@@ -390,11 +397,12 @@ function NonRangedThreadComment({
             <span className="edit pull-right">
               <button
                 className="btn-transparent pull-right close"
-                data-request-method="delete"
+                data-toggle="comment-delete"
                 data-request-uri={prefixBasePath(
                   runtimeConfig.basePath,
                   `/comments/review_comment/${comment.id}`,
                 )}
+                title={t("common.comment.delete")}
               >
                 <i className="yobicon-trash"></i>
               </button>
@@ -410,6 +418,31 @@ function NonRangedThreadComment({
         ></div>
       </div>
     </li>
+  );
+}
+
+function CommentDeleteModal() {
+  const { t } = useLegacyMessages();
+  return (
+    <div id="comment-delete-modal" className="modal hide fade">
+      <div className="modal-header">
+        <button type="button" className="close" data-dismiss="modal">
+          ×
+        </button>
+        <h3>{t("common.comment.delete")}</h3>
+      </div>
+      <div className="modal-body">
+        <p>{t("common.comment.delete.confirm")}</p>
+      </div>
+      <div className="modal-footer">
+        <button id="comment-delete-confirm" type="button" className="ybtn ybtn-danger">
+          {t("button.yes")}
+        </button>
+        <button type="button" className="ybtn" data-dismiss="modal">
+          {t("button.no")}
+        </button>
+      </div>
+    </div>
   );
 }
 
