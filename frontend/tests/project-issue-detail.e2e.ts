@@ -657,6 +657,7 @@ test("project issue detail renders legacy state-change timeline event", async ({
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#event-88 .state.closed")).toHaveText("Closed");
+  await expect(page.locator(".span-right-pane #comments li.event-index")).toHaveCount(0);
 
   expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
     await canonicalizeHtml(page, LEFT_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath)),
