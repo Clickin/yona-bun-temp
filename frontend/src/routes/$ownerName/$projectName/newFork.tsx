@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import type { FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { forkProjectRest, readProjectForkOptionsQueryOptions } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectForkOptionsResponse } from "../../../api/org-project";
@@ -10,6 +10,14 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+
+type ForkCloneProgress = {
+  originalOwnerName: string;
+  originalProjectName: string;
+  redirectPath: string;
+  targetOwnerName: string;
+  targetProjectName: string;
+};
 
 export const Route = createFileRoute("/$ownerName/$projectName/newFork")({
   component: ProjectForkRoute,
@@ -61,8 +69,11 @@ function ProjectForkBody({
   const { t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [cloneProgress, setCloneProgress] = useState<ForkCloneProgress | null>(null);
   const selectedOwner = stringField(options.selected?.ownerName, ownerName);
   const selectedName = stringField(options.selected?.projectName, projectName);
+  const sourceOwnerName = stringField(options.source?.ownerName, ownerName);
+  const sourceProjectName = stringField(options.source?.projectName, projectName);
   const submitMutation = useMutation({
     mutationFn: async (input: { name: string; owner: string; projectScope: string }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -72,16 +83,32 @@ function ProjectForkBody({
         projectName,
       });
     },
-    onSuccess(response) {
+    onSuccess(response, input) {
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.forkOptions(ownerName, projectName),
       });
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.base(ownerName, projectName),
       });
-      router.history.push(response.redirectPath);
+      setCloneProgress({
+        originalOwnerName: sourceOwnerName,
+        originalProjectName: sourceProjectName,
+        redirectPath: response.redirectPath,
+        targetOwnerName: input.owner,
+        targetProjectName: input.name,
+      });
     },
   });
+
+  useEffect(() => {
+    if (!cloneProgress) {
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      router.history.push(cloneProgress.redirectPath);
+    }, 3000);
+    return () => window.clearTimeout(timeout);
+  }, [cloneProgress, router.history]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -92,6 +119,10 @@ function ProjectForkBody({
       owner: String(ownerValues.at(-1) ?? selectedOwner),
       projectScope: String(formData.get("projectScope") ?? "PUBLIC"),
     });
+  }
+
+  if (cloneProgress) {
+    return <ProjectForkCloneProgress progress={cloneProgress} />;
   }
 
   return (
@@ -249,6 +280,31 @@ function ProjectForkBody({
               </div>
             </fieldset>
           </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectForkCloneProgress({ progress }: { progress: ForkCloneProgress }) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="content-wrap frm-wrap">
+          <legend>
+            {t("fork.forking", {
+              args: [
+                progress.originalOwnerName,
+                progress.originalProjectName,
+                progress.targetOwnerName,
+                progress.targetProjectName,
+              ],
+            })}
+          </legend>
+          <p>{t("fork.forking.message.1")}</p>
+          <p>{t("fork.forking.message.2")}</p>
         </div>
       </div>
     </div>

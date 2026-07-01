@@ -15,7 +15,7 @@ P3 row count: 134
 | --- | ---: | --- |
 | manual-caller-route-check-needed | 5 | Partial or helper template with no direct page; verify through caller routes. |
 | manual-error-state-check-needed | 1 | Error template needs rendered error-state route evidence. |
-| manual-vcs-flow-check-needed | 1 | VCS flow template needs concrete route/state evidence. |
+| manual-vcs-flow-check-needed | 0 | VCS flow template needs concrete route/state evidence. |
 | manual-render-check-needed | 0 | Manual rendered route evidence is required. |
 
 ## P3 Confirmation Tag Summary
@@ -49,7 +49,7 @@ P3 row count: 134
 | --- | --- | --- | --- | --- | --- |
 | `common/uservoice.scala.html` | P0 global shell | `manual-caller-route-check-needed` | owners 5; ids 0/0; names 0/0; data 0/0; classes 0/0; messages 0/0 | included partial; verify through each caller route | expand caller template graph; render concrete caller route; assert visible DOM/copy and any helper output |
 | `error/requestTextEntityTooLarge.scala.html` | P1 auth/public/home/help | `manual-error-state-check-needed` | owners 21; ids 0/0; names 0/0; data 0/0; classes 5/5; messages 0/3 | error route state | trigger matching error state and assert legacy error DOM/copy/classes |
-| `git/clone.scala.html` | P5 code/pr/review | `manual-vcs-flow-check-needed` | owners 30; ids 0/0; names 0/0; data 0/0; classes 4/4; messages 0/4 | /:owner/:projectName/pullRequest* | render clone/VCS state with legacy fixture and assert clone instructions/copy/classes |
+| `git/clone.scala.html` | P5 code/pr/review | `rendered-interaction-guard-passed`, `copy-i18n-confirmed` | owners 30; ids 0/0; names 0/0; data 0/0; classes 4/4; messages 0/4 | `/admin/sample/newFork` submit success state | `frontend/tests/project-fork-form.e2e.ts` submits the fork form, then asserts the legacy `git/clone.scala.html` progress body: `.page-wrap-outer > .project-page-wrap > .content-wrap.frm-wrap`, `legend` `fork.forking` with original/target owners/projects, both waiting/auto-move paragraphs, form absence, and the REST/TanStack fork mutation boundary before delayed redirect. |
 | `partial_diff.scala.html` | P5 code/pr/review | `manual-caller-route-check-needed` | owners 30; ids 0/0; names 0/0; data 0/0; classes 1/1; messages 0/1 | included PR/diff partial; verify through PR/review routes | expand caller template graph; render concrete caller route; assert visible DOM/copy and any helper output |
 | `common/notificationMail.scala.html` | P6 directory/workspace | `manual-caller-route-check-needed` | owners 39; ids 0/0; names 0/0; data 0/0; classes 0/0; messages 2/4 | included partial; verify through each caller route | expand caller template graph; render concrete caller route; assert visible DOM/copy and any helper output |
 | `common/calendar.scala.html` | shared partials | `manual-caller-route-check-needed` | owners 10; ids 0/0; names 0/0; data 0/0; classes 0/0; messages 0/0 | included partial; verify through each caller route | expand caller template graph; render concrete caller route; assert visible DOM/copy and any helper output |

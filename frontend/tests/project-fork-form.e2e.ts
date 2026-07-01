@@ -24,6 +24,10 @@ const EXPECTED_PROJECT_FORK_FORM = `
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
+const EXPECTED_PROJECT_FORK_CLONE_BODY = `
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><legend>Forking admin / sample project into admin / sample-fork project</legend><p>Please wait. This process may take a long time depending on the number of files and the history of the original project.</p><p>You will be moved automatically to the new project after this process ends.</p></div></div></div>
+`;
+
 test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectAdmin(page);
@@ -35,6 +39,59 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
     await canonicalizeHtml(page, EXPECTED_PROJECT_FORK_FORM.replaceAll("__BASE_PATH__", basePath)),
   );
 });
+
+test("project fork submit renders legacy git/clone.scala.html progress state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page);
+  await mockForkSubmit(page);
+  await page.clock.install();
+
+  await page.goto(`${basePath}/admin/sample/newFork`);
+  await page.fill("#inputName", "sample-fork");
+  await page.click(".content-wrap.frm-wrap button[type=submit]");
+
+  await expect(page.locator(".content-wrap.frm-wrap legend")).toHaveText(
+    "Forking admin / sample project into admin / sample-fork project",
+  );
+  expect(await canonicalizePageWrap(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_FORK_CLONE_BODY.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+async function mockForkSubmit(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/fork", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        redirectPath: "/admin/sample-fork",
+        project: {
+          ownerName: "admin",
+          projectName: "sample-fork",
+        },
+      }),
+    });
+  });
+}
 
 async function mockProjectAdmin(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
@@ -104,6 +161,42 @@ async function canonicalizeScreenRoots(page: Page) {
       ),
     );
     return roots.map((root) => visit(root)).join("");
+
+    function visit(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return normalizeText(node.textContent ?? "");
+      }
+      if (!(node instanceof Element)) {
+        return "";
+      }
+      const attrs = Array.from(node.attributes)
+        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .join(" ");
+      const open = attrs
+        ? `<${node.tagName.toLowerCase()} ${attrs}>`
+        : `<${node.tagName.toLowerCase()}>`;
+      return `${open}${Array.from(node.childNodes)
+        .map((child) => visit(child))
+        .join("")}</${node.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeText(text: string) {
+      return text.replace(/\s+/g, " ").trim();
+    }
+
+    function normalizeAttr(attr: Attr) {
+      return attr.name === "style"
+        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        : attr.value;
+    }
+  });
+}
+
+async function canonicalizePageWrap(page: Page) {
+  return page.locator(".page-wrap-outer").evaluate((root) => {
+    return visit(root);
 
     function visit(node: Node): string {
       if (node.nodeType === Node.TEXT_NODE) {
