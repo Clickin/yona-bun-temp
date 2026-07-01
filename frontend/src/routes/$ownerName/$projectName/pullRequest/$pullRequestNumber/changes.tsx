@@ -124,7 +124,7 @@ function ProjectPullRequestChangesBody({
   const selectedCommit = commitId
     ? changes.commits.find((commit) => commit.commitId === commitId)
     : undefined;
-  const hasReviewCards = changes.cardThreads.length > 0;
+  const hasReviewCards = changes.threads.length > 0;
   const codediffClassName = `codediff-wrap mt10${hasReviewCards ? "" : " diffs-only"}`;
 
   return (
@@ -224,7 +224,7 @@ function ProjectPullRequestChangesBody({
                 />
               ) : null}
             </div>
-            {hasReviewCards ? <ReviewWrap threads={changes.cardThreads} /> : null}
+            {hasReviewCards ? <ReviewWrap threads={changes.threads} /> : null}
           </div>
         </div>
       </div>

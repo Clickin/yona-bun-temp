@@ -302,6 +302,30 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
   );
 });
 
+test("project pull request changes renders review cards for non-ranged-only threads", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, {
+    nonRangedThreads: [NON_RANGED_THREAD],
+    threads: [NON_RANGED_THREAD],
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+  await expect(page.locator(".codediff-wrap")).not.toHaveClass(/diffs-only/u);
+  await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
+    "href",
+    "#thread-92",
+  );
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_NON_RANGED_THREAD.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 async function mockPullRequestChanges(
   page: Page,
   options: {

@@ -98,7 +98,7 @@
   `preventDefault()` before optional React callbacks so missing callbacks cannot
   navigate the SPA into a direct legacy mutation URL. Focused guard:
   `frontend/src/form-submit-boundary.spec.tsx`.
-- PR changes review-card tabs follow `git/viewChanges.scala.html` and `partial_reviewlist.scala.html`: omit the whole `.review-wrap` when there are no card threads, and do not add `review.is.empty` placeholders inside one-sided open/closed panes.
+- PR changes review-card tabs follow `git/viewChanges.scala.html` and `partial_reviewlist.scala.html`: drive `.codediff-wrap`/`.review-wrap` from the full comment-thread list, including non-ranged-only threads, and do not add `review.is.empty` placeholders inside one-sided open/closed panes.
 - PR/review list pagination follows `yobi.Pagination`: numeric `pageNum` input, prev/next icon links, delimiter, and total page count under `#pagination.page-navigation-wrap`.
 - Board project/organization lists follow legacy `board/list.scala.html` and `organization/group_board_list.scala.html`: preserve `project.searchPlaceholder` / `title.searchByKeyword`, organization row `.group-project-name` and `.post-id` `#postNumber`, `common.order.*` sort labels, `yobi.Pagination` `pageNum` controls, and omit the non-legacy organization `Boards` heading.
 - Board detail comment creation follows legacy `common/commentForm.scala.html`: preserve `#comment-form`, `.write-comment-box`, `.write-comment-wrap`, `#dynamic-comment-btn`, `name=contents`, and `button.comment.new`, submit through React REST JSON with unconditional `preventDefault()`, and do not render a temporary `Leave a comment` placeholder.
