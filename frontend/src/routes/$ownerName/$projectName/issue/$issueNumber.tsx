@@ -995,6 +995,27 @@ function IssueEventRow({
     );
   }
 
+  if (eventType === "ISSUE_LABEL_CHANGED") {
+    const added = stringField(event.newValue) !== "";
+    const label = issueEventLabelBox(
+      added ? stringField(event.newValue) : stringField(event.oldValue),
+      issue.labels,
+    );
+    return (
+      <li className="event" id={`event-${eventId}`}>
+        <span className={`state ${added ? "label-added" : "label-deleted"}`}>
+          {added ? "Added" : "Removed"}
+        </span>
+        {sender}
+        {added ? " added " : " removed "}
+        {label} label
+        <span className="date">
+          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+        </span>
+      </li>
+    );
+  }
+
   return (
     <li className="event" id={`event-${eventId}`}>
       {stringField(event.newValue)} by {sender}
@@ -1734,6 +1755,27 @@ function issueStateLabel(state: string) {
 
 function issueStateEventText(state: string) {
   return state === "closed" ? " closed this issue" : " reopened this issue";
+}
+
+function issueEventLabelBox(value: string, labels: RestIssueDetailResponse["labels"]) {
+  const parts = value.split(" - ");
+  if (parts.length !== 2) {
+    return value;
+  }
+  const categoryName = parts[0].trim();
+  const labelName = parts[1].split(" #")[0]?.trim() ?? "";
+  const label = labels?.find(
+    (item) =>
+      stringField(item.categoryName) === categoryName && stringField(item.name) === labelName,
+  );
+  if (!label) {
+    return labelName;
+  }
+  return (
+    <div className="label issue-label" style={{ backgroundColor: stringField(label.color) }}>
+      {labelName}
+    </div>
+  );
 }
 
 function stringField(value: unknown, fallback = "") {
