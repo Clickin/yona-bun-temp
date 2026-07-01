@@ -1,3 +1,4 @@
+import { type MouseEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { changeProjectVcsRest, readProjectChangeVcsQueryOptions } from "../../../api/org-project";
@@ -353,51 +354,117 @@ function ProjectSettingMenu({
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const menuSetting = recordField(project.menuSetting);
+  const navigate = (to: string) => {
+    router.navigate({ to });
+  };
 
   return (
     <ul className="nav nav-tabs">
       <li id="subMenuProjectSetting" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`)}>
+        <ProjectSettingLink
+          basePath={basePath}
+          onNavigate={navigate}
+          to={`/${ownerName}/${projectName}/setting`}
+        >
           {t("project.setting")}
-        </a>
+        </ProjectSettingLink>
       </li>
       <li id="subMenuProjectMember" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/members`)}>
+        <ProjectSettingLink
+          basePath={basePath}
+          onNavigate={navigate}
+          to={`/${ownerName}/${projectName}/members`}
+        >
           {t("project.member")}
           <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
-        </a>
+        </ProjectSettingLink>
       </li>
       <li id="subMenuIssueLabel" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/labels`)}>
+        <ProjectSettingLink
+          basePath={basePath}
+          onNavigate={navigate}
+          to={`/${ownerName}/${projectName}/labels`}
+        >
           {t("issue.label")}
-        </a>
+        </ProjectSettingLink>
       </li>
       <li id="subMenuWebhook" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/webhooks`)}>
+        <ProjectSettingLink
+          basePath={basePath}
+          onNavigate={navigate}
+          to={`/${ownerName}/${projectName}/webhooks`}
+        >
           {t("project.webhook")}
-        </a>
+        </ProjectSettingLink>
       </li>
       <li id="subMenuProjectTransfer" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/transfer`)}>
+        <ProjectSettingLink
+          basePath={basePath}
+          onNavigate={navigate}
+          to={`/${ownerName}/${projectName}/transfer`}
+        >
           {t("project.transfer")}
-        </a>
+        </ProjectSettingLink>
       </li>
       <li id="subMenuProjectDelete" className="">
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/deleteform`)}>
+        <ProjectSettingLink
+          basePath={basePath}
+          onNavigate={navigate}
+          to={`/${ownerName}/${projectName}/deleteform`}
+        >
           {t("project.delete")}
-        </a>
+        </ProjectSettingLink>
       </li>
       <li
         id="subMenuProjectChangeVCS"
         className="active"
         style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
       >
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/changeVCS`)}>
+        <ProjectSettingLink
+          basePath={basePath}
+          onNavigate={navigate}
+          to={`/${ownerName}/${projectName}/changeVCS`}
+        >
           {t("project.changeVCS")}
-        </a>
+        </ProjectSettingLink>
       </li>
     </ul>
+  );
+}
+
+function ProjectSettingLink({
+  basePath,
+  children,
+  onNavigate,
+  to,
+}: {
+  basePath: string;
+  children: ReactNode;
+  onNavigate: (to: string) => void;
+  to: string;
+}) {
+  const navigateWithinProjectSettings = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    onNavigate(to);
+  };
+
+  return (
+    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinProjectSettings}>
+      {children}
+    </a>
   );
 }
 
