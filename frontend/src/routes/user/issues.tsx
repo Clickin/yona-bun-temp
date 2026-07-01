@@ -122,10 +122,10 @@ function UserIssuesBody({
     });
   };
   const userIssuesHref = (
-    next: Partial<Pick<UserIssuesSearch, "orderBy" | "orderDir" | "state">>,
+    next: Partial<Pick<UserIssuesSearch, "filter" | "orderBy" | "orderDir" | "state">>,
   ) => {
     const params = new URLSearchParams();
-    params.set("filter", search.filter);
+    params.set("filter", next.filter ?? search.filter);
     params.set("orderBy", next.orderBy ?? search.orderBy);
     params.set("orderDir", next.orderDir ?? search.orderDir);
     if (search.query) {
@@ -171,6 +171,24 @@ function UserIssuesBody({
     event.preventDefault();
     router.history.push(userIssuesHref({ orderBy, orderDir }));
   };
+  const navigateQuickFilter = (
+    event: MouseEvent<HTMLAnchorElement>,
+    filter: UserIssuesSearch["filter"],
+  ) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    router.history.push(userIssuesHref({ filter }));
+  };
 
   return (
     <div className="page-wrap-outer">
@@ -182,6 +200,7 @@ function UserIssuesBody({
               <QuickSearch
                 counts={issues.sideFilterCounts}
                 currentUserId={currentUserId}
+                onNavigate={navigateQuickFilter}
                 search={search}
               />
               <form
@@ -345,10 +364,12 @@ function MySeriesMenuTabs({ basePath }: { basePath: string }) {
 function QuickSearch({
   counts,
   currentUserId,
+  onNavigate,
   search,
 }: {
   counts: UserIssueListRestResponse["sideFilterCounts"];
   currentUserId: string;
+  onNavigate: (event: MouseEvent<HTMLAnchorElement>, filter: UserIssuesSearch["filter"]) => void;
   search: UserIssuesSearch;
 }) {
   const { t } = useLegacyMessages();
@@ -412,6 +433,7 @@ function QuickSearch({
               data-mention-id={ids.mentionId}
               data-sharer-id={ids.sharerId}
               data-favorite-id={ids.favoriteId}
+              onClick={(event) => onNavigate(event, row.filter)}
             >
               <span className={row.className}>
                 <i className={row.icon}></i>

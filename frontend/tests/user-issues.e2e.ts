@@ -334,6 +334,37 @@ test("current-user issues sort filter preserves legacy href with SPA transition"
   );
 });
 
+test("current-user issues quick filter preserves legacy pjax hooks with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForQuickFilters(page);
+
+  await page.goto(`${basePath}/user/issues`);
+  const favoriteFilter = page.locator(".left-menu .lst-stacked a").filter({ hasText: "Favorite" });
+  await expect(favoriteFilter).toHaveAttribute("href", "#");
+  await expect(favoriteFilter).toHaveAttribute("pjax-filter", "");
+  await expect(favoriteFilter).toHaveAttribute("data-favorite-id", "1");
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await favoriteFilter.click();
+
+  await expect(page).toHaveURL(
+    `${basePath}/user/issues?filter=favorite&orderBy=updatedDate&orderDir=desc&state=open`,
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator(".left-menu .lst-stacked li.active a")).toHaveText("Favorite(1)");
+  await expect(page.locator('input[name="favoriteId"]')).toHaveValue("1");
+});
+
 async function mockUserIssuesForStateTabs(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -362,6 +393,42 @@ async function mockUserIssuesForStateTabs(page: Page) {
         pageSize: 20,
         sideFilterCounts: { favorite: 1, mentioned: 2, shared: 1 },
         state,
+        totalCount: 0,
+        totalPages: 1,
+        viewerUserId: 1,
+      }),
+    });
+  });
+}
+
+async function mockUserIssuesForQuickFilters(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        isAnonymous: false,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/user/issues?**", async (route) => {
+    const url = new URL(route.request().url());
+    const filter = url.searchParams.get("filter") === "favorite" ? "favorite" : "assigned";
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        closedIssueCount: 1,
+        filter,
+        items: [],
+        openIssueCount: 2,
+        pageNum: 1,
+        pageSize: 20,
+        sideFilterCounts: { favorite: 1, mentioned: 2, shared: 1 },
+        state: "open",
         totalCount: 0,
         totalPages: 1,
         viewerUserId: 1,
