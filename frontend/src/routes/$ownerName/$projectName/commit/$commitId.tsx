@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   codeCommitDetailQueryOptions,
   type CodeCommitDetailResponse,
+  type CodeReviewComment,
   type CodeReviewThread,
 } from "../../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -747,6 +748,19 @@ function CodeCommentThreadView({
                     {comment.createdLabel}
                   </a>
                 </span>
+                {comment.canUpdate ? (
+                  <span className="edit pull-right">
+                    <button
+                      type="button"
+                      className="btn-transparent pull-right"
+                      data-toggle="comment-edit"
+                      data-comment-id={comment.id}
+                      title={t("common.comment.edit")}
+                    >
+                      <i className="yobicon-edit-2"></i>
+                    </button>
+                  </span>
+                ) : null}
                 {comment.canDelete ? (
                   <span className="edit pull-right">
                     <button
@@ -764,12 +778,22 @@ function CodeCommentThreadView({
                   </span>
                 ) : null}
               </div>
-              <div
-                className="comment-body markdown-wrap"
-                data-via-email={String(comment.viaEmail)}
-                dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
-              ></div>
-              <div className="attachments" data-attachments="[]"></div>
+              <CodeCommentUpdateForm
+                action={prefixBasePath(runtimeConfig.basePath, `/comments/${comment.id}`)}
+                basePath={runtimeConfig.basePath}
+                comment={comment}
+              />
+              <div id={`comment-body-${comment.id}`}>
+                <div
+                  className="comment-body markdown-wrap"
+                  data-via-email={String(comment.viaEmail)}
+                  dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+                ></div>
+                <div
+                  className="attachments"
+                  data-attachments={JSON.stringify(comment.attachments ?? [])}
+                ></div>
+              </div>
             </div>
           </li>
         ))}
@@ -807,6 +831,80 @@ function CodeCommentThreadView({
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function CodeCommentUpdateForm({
+  action,
+  basePath,
+  comment,
+}: {
+  action: string;
+  basePath: string;
+  comment: CodeReviewComment;
+}) {
+  const { t } = useLegacyMessages();
+  const commentId = String(comment.id);
+
+  return (
+    <div id={`comment-editform-${commentId}`} className="comment-update-form">
+      <form action={action} method="post" encType="multipart/form-data">
+        <input type="hidden" name="id" value={commentId} />
+        <div className="write-comment-box">
+          <div className="write-comment-wrap">
+            <Editor
+              editorMode="update-comment-body"
+              textareaName="contents"
+              value={comment.contentsMarkdown}
+              wrapId={commentId}
+            />
+            <div className="upload-drop-here">
+              <div className="msg-wrap">
+                <div className="msg">{t("common.attach.dropFilesHere")}</div>
+              </div>
+            </div>
+            <div className="right-txt comment-update-button upload-button-line">
+              <span className="file-upload">
+                <label htmlFor={`upload-${commentId}`} className="file-upload__label ybtn">
+                  {t("button.upload")}
+                </label>
+                <input
+                  id={`upload-${commentId}`}
+                  className="file-upload__input"
+                  type="file"
+                  name="filePath"
+                  multiple
+                />
+              </span>
+              <button type="button" className="ybtn ybtn-cancel" data-comment-id={commentId}>
+                {t("button.cancel")}
+              </button>
+              {comment.canUpdate ? (
+                <button type="submit" className="ybtn ybtn-info">
+                  {t("button.save")}
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <input
+            type="hidden"
+            name="temporaryUploadFiles"
+            className="temporaryUploadFiles"
+            value=""
+          />
+          <div className={`preview-${commentId}`}></div>
+          <div
+            className="attachment-files"
+            dangerouslySetInnerHTML={{ __html: attachmentFileHtml(basePath, comment) }}
+          ></div>
+          <div
+            id={`upload-${commentId}`}
+            data-resourcetype="NONISSUE_COMMENT"
+            data-resourceid={commentId}
+          ></div>
+        </div>
+      </form>
     </div>
   );
 }
@@ -882,7 +980,17 @@ function ReviewForm({ action }: { action: string }) {
   );
 }
 
-function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) {
+function Editor({
+  editorMode,
+  textareaName = "contents",
+  value = "",
+  wrapId,
+}: {
+  editorMode: string;
+  textareaName?: string;
+  value?: string;
+  wrapId: string;
+}) {
   const { t } = useLegacyMessages();
   return (
     <div data-toggle="markdown-editor" className="mt10">
@@ -928,10 +1036,11 @@ function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) 
         <div id={`edit-${wrapId}`} className="tab-pane active">
           <div className="textarea-box">
             <textarea
-              name="contents"
+              name={textareaName}
               className="editorSeries content comment nm"
               data-editor-mode={editorMode}
-              id={`editor-contents-${wrapId}`}
+              id={`editor-${textareaName}-${wrapId}`}
+              defaultValue={value}
               {...legacyMarkdownTextareaAttr}
             ></textarea>
           </div>
@@ -951,6 +1060,37 @@ function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) 
       </div>
     </div>
   );
+}
+
+function attachmentFileHtml(basePath: string, comment: CodeReviewComment) {
+  return (comment.attachments ?? [])
+    .map((file) => {
+      const id = String(file.id);
+      const name = String(file.name);
+      const mimeType = String(file.mimeType);
+      const size = String(file.size);
+      const href = prefixBasePath(basePath, `/files/${id}`);
+
+      return `<div class="attached-file attached-file-marker" data-name="${escapeHtml(name)}" data-href="${escapeHtml(href)}" data-mime="${escapeHtml(mimeType)}"><i class="mimetype"></i><strong class="name">${escapeHtml(name)}</strong><span class="size">${escapeHtml(size)}</span><button type="button" class="btn-transparent btn-delete" data-id="${escapeHtml(id)}">×</button></div>`;
+    })
+    .join("");
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/gu, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
+  });
 }
 
 function ReviewCards({

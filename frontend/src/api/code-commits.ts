@@ -6,10 +6,12 @@ import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
 export type CodeReviewComment = {
+  attachments?: CodeReviewAttachment[];
   authorId: number;
   authorLabel: string;
   authorLoginId: string;
   canDelete: boolean;
+  canUpdate?: boolean;
   contentsHtml: string;
   contentsMarkdown: string;
   createdLabel: string;
@@ -18,6 +20,13 @@ export type CodeReviewComment = {
   mentionReferences?: MentionReferenceMetadata[];
   threadId: number;
   viaEmail: boolean;
+};
+
+export type CodeReviewAttachment = {
+  id: number | string;
+  mimeType: string;
+  name: string;
+  size: number | string;
 };
 
 export type CodeReviewThread = {
@@ -131,10 +140,17 @@ export type CommitDiscussionThreadStateInput = CommitDiscussionScopeInput & {
 
 function normalizeComment(comment: Partial<CodeReviewComment>): CodeReviewComment {
   return {
+    attachments: (comment.attachments ?? []).map((attachment) => ({
+      id: attachment.id ?? "",
+      mimeType: attachment.mimeType ?? "",
+      name: attachment.name ?? "",
+      size: attachment.size ?? "",
+    })),
     authorId: comment.authorId ?? 0,
     authorLabel: comment.authorLabel ?? "",
     authorLoginId: comment.authorLoginId ?? "",
     canDelete: comment.canDelete ?? false,
+    canUpdate: comment.canUpdate ?? comment.canDelete ?? false,
     contentsHtml: comment.contentsHtml ?? "",
     contentsMarkdown: comment.contentsMarkdown ?? "",
     createdLabel: comment.createdLabel ?? "",

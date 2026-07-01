@@ -16,6 +16,13 @@ const EXPECTED_A_SIDE_INLINE_THREAD_ROW = `<tr class="comments board-comment-wra
 
 const EXPECTED_NON_RANGED_THREAD = `<div id="thread-88" class="comment-thread-wrap open"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-comments"></i></button></div><ul class="comments"><li id="comment-601" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="Dev User"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="Dev User"><strong>dev </strong></a></span><span class="ago"><a href="#comment-601" title="Jul 1, 2026">Jul 1, 2026</a></span><span class="edit pull-right"><button class="btn-transparent pull-right close" data-request-method="delete" data-request-uri="__BASE_PATH__/comments/601"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data" class="review-form" style="display:block"><input type="hidden" name="thread.id" value="88"><div class="write-comment-box"><div class="write-comment-wrap"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-thread-88" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-thread-88" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-thread-88" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-88" markdown="true"></textarea></div></div><div id="preview-thread-88" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="button" data-request-method="post" data-request-uri="__BASE_PATH__/threads/88/close" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div>`;
 
+const COMMENT_601_ATTACHMENT = {
+  id: 701,
+  mimeType: "text/plain",
+  name: "note.txt",
+  size: "42",
+};
+
 const SVN_PATCH = `Index: README.md
 ===================================================================
 --- README.md\t(revision 1234567890abcdef)
@@ -26,6 +33,48 @@ const SVN_PATCH = `Index: README.md
 
 const EXPECTED_SVN_COMMIT_BODY = `<div class="page-wrap-outer"><div class="project-page-wrap"><div id="code-browse-wrap" class="code-browse-wrap"><div id="branches" class="btn-group branches pull-right" data-name="branch" data-activate="manual"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">trunk</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="trunk" data-selected="true"><a href="__BASE_PATH__/admin/sample/commits/trunk">trunk</a></li><li data-value="branches/release"><a href="__BASE_PATH__/admin/sample/commits/branches%2Frelease">branches/release</a></li></ul></div><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits">Commit</a></li></ul><p class="commitInfo"><span class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>Dev Author</strong><span class="ago" title="Jul 1, 2026">Jul 1, 2026</span><strong class="commitId pull-right">@abcdef1234567890</strong></p><pre class="commitMsg">Initial commit
 Add README</pre><div class="diff-wrap"><div id="commit" data-commit-origin="true" class="diff-body hide">${SVN_PATCH}</div></div><div class="board-comment-wrap"><form id="comment-form" action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" id="editor-contents-comment" markdown="true"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div></div><button id="watch-button" type="button" class="ybtn " data-toggle="button">Watch</button><a href="__BASE_PATH__/admin/sample/commits/trunk" class="ybtn pull-right">List</a><div id="minimap" class="minimap-outer"><div class="minimap-wrap"><div class="minimap-curr"></div><div class="minimap-links"></div></div></div></div></div>`;
+
+function withCommentUpdateForm(
+  html: string,
+  basePath: string,
+  commentId: number,
+  markdown: string,
+  attachments: Array<typeof COMMENT_601_ATTACHMENT> = [],
+) {
+  const id = String(commentId);
+  const editButton = `<span class="edit pull-right"><button type="button" class="btn-transparent pull-right" data-toggle="comment-edit" data-comment-id="${id}" title="Edit comment"><i class="yobicon-edit-2"></i></button></span>`;
+  const bodyStart = `<div class="comment-body markdown-wrap" data-via-email="false">`;
+  const attachmentsJson = JSON.stringify(attachments);
+  return html
+    .replace(
+      `<span class="edit pull-right"><button class="btn-transparent pull-right close"`,
+      `${editButton}<span class="edit pull-right"><button class="btn-transparent pull-right close"`,
+    )
+    .replace(
+      bodyStart,
+      `${commentUpdateForm(basePath, id, markdown, attachments)}<div id="comment-body-${id}">${bodyStart}`,
+    )
+    .replace(
+      `<div class="attachments" data-attachments="[]"></div></div></li>`,
+      `<div class="attachments" data-attachments='${attachmentsJson}'></div></div></div></li>`,
+    );
+}
+
+function commentUpdateForm(
+  basePath: string,
+  commentId: string,
+  markdown: string,
+  attachments: Array<typeof COMMENT_601_ATTACHMENT>,
+) {
+  const attachmentMarkers = attachments
+    .map(
+      (file) =>
+        `<div class="attached-file attached-file-marker" data-name="${file.name}" data-href="${basePath}/files/${file.id}" data-mime="${file.mimeType}"><i class="mimetype"></i><strong class="name">${file.name}</strong><span class="size">${file.size}</span><button type="button" class="btn-transparent btn-delete" data-id="${file.id}">×</button></div>`,
+    )
+    .join("");
+
+  return `<div id="comment-editform-${commentId}" class="comment-update-form"><form action="${basePath}/comments/${commentId}" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="${commentId}"><div class="write-comment-box"><div class="write-comment-wrap"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-${commentId}" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-${commentId}" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-${commentId}" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" id="editor-contents-${commentId}" markdown="true">${markdown}</textarea></div></div><div id="preview-${commentId}" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-${commentId}" class="file-upload__label ybtn">File upload</label><input id="upload-${commentId}" class="file-upload__input" type="file" name="filePath" multiple></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="${commentId}">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-${commentId}"></div><div class="attachment-files">${attachmentMarkers}</div><div id="upload-${commentId}" data-resourcetype="NONISSUE_COMMENT" data-resourceid="${commentId}"></div></div></form></div>`;
+}
 
 test("project commit detail matches legacy code/diff.scala.html empty discussion state", async ({
   page,
@@ -141,7 +190,7 @@ index 1234567..abcdef1 100644
   expect(await canonicalize(page, ".diff-body")).toEqual(
     await canonicalizeHtml(
       page,
-      `<div class="diff-body">${EXPECTED_FILE_DIFF.replace('</tr><tr class="add" data-line="3"', `</tr>${EXPECTED_INLINE_THREAD_ROW}<tr class="add" data-line="3"`).replaceAll("__BASE_PATH__", basePath)}<div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div>`,
+      `<div class="diff-body">${EXPECTED_FILE_DIFF.replace('</tr><tr class="add" data-line="3"', `</tr>${withCommentUpdateForm(EXPECTED_INLINE_THREAD_ROW, basePath, 501, "Line **note**")}<tr class="add" data-line="3"`).replaceAll("__BASE_PATH__", basePath)}<div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div>`,
     ),
   );
 });
@@ -205,7 +254,7 @@ index 1234567..abcdef1 100644
   expect(await canonicalize(page, ".diff-body")).toEqual(
     await canonicalizeHtml(
       page,
-      `<div class="diff-body">${EXPECTED_FILE_DIFF.replace('</tr><tr class="add" data-line="2"', `</tr>${EXPECTED_A_SIDE_INLINE_THREAD_ROW}<tr class="add" data-line="2"`).replaceAll("__BASE_PATH__", basePath)}<div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div>`,
+      `<div class="diff-body">${EXPECTED_FILE_DIFF.replace('</tr><tr class="add" data-line="2"', `</tr>${withCommentUpdateForm(EXPECTED_A_SIDE_INLINE_THREAD_ROW, basePath, 502, "Old line **note**")}<tr class="add" data-line="2"`).replaceAll("__BASE_PATH__", basePath)}<div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div>`,
     ),
   );
 });
@@ -229,6 +278,7 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
             contentsMarkdown: "General **note**",
             createdLabel: "Jul 1, 2026",
             id: 601,
+            attachments: [COMMENT_601_ATTACHMENT],
             threadId: 88,
             viaEmail: false,
           },
@@ -246,13 +296,20 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator(".non-ranged-threads-wrap #thread-88")).toBeVisible();
   await expect(page.locator("#reviewcards-open .review-card.open")).toHaveCount(1);
+  await expect(page.locator("#comment-editform-601")).toBeHidden();
   expect(detailRequests).toEqual(["branch=main"]);
   expect(await canonicalize(page, ".board-comment-wrap")).toEqual(
     await canonicalizeHtml(
       page,
-      `<div class="board-comment-wrap"><div class="non-ranged-threads-wrap">${EXPECTED_NON_RANGED_THREAD.replaceAll("__BASE_PATH__", basePath)}</div><form id="comment-form" action="${basePath}/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div>`,
+      `<div class="board-comment-wrap"><div class="non-ranged-threads-wrap">${withCommentUpdateForm(EXPECTED_NON_RANGED_THREAD, basePath, 601, "General **note**", [COMMENT_601_ATTACHMENT]).replaceAll("__BASE_PATH__", basePath)}</div><form id="comment-form" action="${basePath}/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div>`,
     ),
   );
+  await page.locator('[data-toggle="comment-edit"][data-comment-id="601"]').click();
+  await expect(page.locator("#comment-editform-601")).toBeVisible();
+  await expect(page.locator("#comment-body-601")).toBeHidden();
+  await page.locator("#comment-editform-601 .ybtn-cancel").click();
+  await expect(page.locator("#comment-editform-601")).toBeHidden();
+  await expect(page.locator("#comment-body-601")).toBeVisible();
 });
 
 test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", async ({ page }) => {

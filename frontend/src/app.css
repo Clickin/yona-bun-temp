@@ -4595,11 +4595,13 @@ div.markdown-preview {
 }
 
 .board-view .board-comment-wrap .comment-update-form,
+.code-browse-wrap .board-comment-wrap .comment-update-form,
 .issue-detail-page .board-comment-wrap .comment-update-form {
   display: none;
 }
 
 .board-view .board-comment-wrap .comment-update-form .textarea-box,
+.code-browse-wrap .board-comment-wrap .comment-update-form .textarea-box,
 .issue-detail-page .board-comment-wrap .comment-update-form .textarea-box {
   padding-right: 2px;
   margin-bottom: 10px;
