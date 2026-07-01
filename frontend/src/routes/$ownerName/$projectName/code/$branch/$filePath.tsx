@@ -17,6 +17,8 @@ export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$fil
 
 type CodeFile = Record<string, unknown>;
 
+const MAX_FILE_SIZE_CAN_BE_VIEWED = 1024 * 1024;
+
 export type ProjectCodeFileRouteParams = {
   branch: string;
   filePath: string;
@@ -230,8 +232,10 @@ function FileView({
   const shortCommitId = commitId.slice(0, 7);
   const authorLoginId = stringField(file.userLoginId, "");
   const authorHref = prefixBasePath(runtimeConfig.basePath, `/${authorLoginId}`);
+  const hasViewableText = typeof file.data === "string" || typeof file.text === "string";
   const fileText = stringField(file.data, "") || stringField(file.text, "");
   const isBinary = booleanField(file.isBinary);
+  const isTooLargeText = !isBinary && !hasViewableText && numberField(file.size) > 0;
   const mimeType = stringField(file.mimeType, "");
   const rawHref = projectHref(
     runtimeConfig.basePath,
@@ -353,6 +357,14 @@ function FileView({
             </p>
           </div>
         )
+      ) : isTooLargeText ? (
+        <p>
+          {t("code.tooBigFileForCodeBrowser", { args: [MAX_FILE_SIZE_CAN_BE_VIEWED] })}
+          <br />
+          <a href={rawHref} target="_blank" className="filehref ybtn">
+            {t("code.viewRaw")}
+          </a>
+        </p>
       ) : isMarkdownPath(filePath) ? (
         <div id="codeVal" className="markdown-wrap codebrowser-markdown">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{fileText}</ReactMarkdown>
