@@ -284,7 +284,7 @@ const EXPECTED_PROJECT_ISSUES_WEIGHTED_CLOSED = EXPECTED_PROJECT_ISSUES_EMPTY.re
     `${WEIGHTED_SPAN10}</div></div></div></div>\n<footer`,
   );
 
-const CHILD_ISSUES = `<div class="child-issues"><div class="issue-item  child-issue"><span class="state-label open"></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/13"><span class="item-name"><span class="subtask-number">#13</span><span>Open child issue</span><span> - Dev Member</span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="Jul 3, 2026">Jul 3, 2026</span></div><div class="issue-item  child-issue"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/14"><span class="item-name"><span class="subtask-number">#14</span><span>Closed child issue</span><span></span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="Jul 4, 2026">Jul 4, 2026</span></div></div>`;
+const CHILD_ISSUES = `<div class="child-issues"><div class="issue-item  child-issue"><span class="state-label open"></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/13"><span class="item-name"><span class="subtask-number">#13</span><span>Open child issue</span><span> - Dev Member</span></span></a><span class="font12 no-border-at-child"></span><a href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label active twoColumeModeTarget" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</a><span class="child-issue-date" title="Jul 3, 2026">Jul 3, 2026</span></div><div class="issue-item  child-issue"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/14"><span class="item-name"><span class="subtask-number">#14</span><span>Closed child issue</span><span></span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="Jul 4, 2026">Jul 4, 2026</span></div></div>`;
 const CHILDREN_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<div class="child-issue-list hide"></div>',
   `<div class="child-issue-list hide">${CHILD_ISSUES}</div>`,
@@ -630,6 +630,29 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
   await expect(page.locator(".child-issue-list .issue-item.child-issue").last()).toContainText(
     "#14Closed child issue",
   );
+  const firstChild = page.locator(".child-issue-list .issue-item.child-issue").first();
+  await expect(firstChild.locator(".state-label.open")).toHaveCount(1);
+  await expect(firstChild.locator("a.twoColumeModeTarget").first()).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/13`,
+  );
+  await expect(firstChild.locator(".subtask-number")).toHaveText("#13");
+  await expect(firstChild.locator(".font12.no-border-at-child")).toHaveText("");
+  await expect(firstChild.locator(".child-issue-date")).toHaveAttribute("title", "Jul 3, 2026");
+  const childLabel = firstChild.locator(".label.issue-label.list-label.twoColumeModeTarget");
+  await expect(childLabel).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issues?state=open&labelIds=8`,
+  );
+  await expect(childLabel).toHaveAttribute("data-category-id", "3");
+  await expect(childLabel).toHaveAttribute("data-label-id", "8");
+  await expect(childLabel).toHaveText("bug");
+  await expect(page.locator(".child-issue-list .issue-item.child-issue").last()).toHaveClass(
+    /child-issue/,
+  );
+  await expect(
+    page.locator(".child-issue-list .issue-item.child-issue").last().locator("i"),
+  ).toHaveClass(" yobicon-checkmark");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -826,7 +849,16 @@ async function mockProjectIssues(
                                     assigneeLabel: "Dev Member",
                                     createdLabel: "Jul 3, 2026",
                                     issueNumber: 13,
-                                    labels: [],
+                                    labels: [
+                                      {
+                                        categoryId: 3,
+                                        categoryIsExclusive: false,
+                                        categoryName: "bug",
+                                        color: "#51aacc",
+                                        id: 8,
+                                        name: "bug",
+                                      },
+                                    ],
                                     state: "open",
                                     title: "Open child issue",
                                   },

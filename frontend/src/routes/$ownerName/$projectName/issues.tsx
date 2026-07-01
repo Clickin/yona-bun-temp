@@ -831,6 +831,7 @@ function IssueChildRow({
   const issueNumber = stringField(issue.issueNumber, "");
   const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
   const isClosed = issue.state === "closed";
+  const labels = issue.labels.slice().sort(compareIssueLabels);
 
   return (
     <div className="issue-item  child-issue">
@@ -847,6 +848,18 @@ function IssueChildRow({
         </span>
       </a>
       <span className="font12 no-border-at-child"></span>
+      {labels.map((label) => (
+        <a
+          href={`${prefixBasePath(basePath, `/${ownerName}/${projectName}`)}/issues?state=open&labelIds=${String(label.id)}`}
+          className="label issue-label list-label active twoColumeModeTarget"
+          data-category-id={String(label.categoryId ?? "")}
+          data-label-id={String(label.id)}
+          key={String(label.id)}
+          style={issueLabelStyle(label.color)}
+        >
+          {label.name}
+        </a>
+      ))}
       <span className="child-issue-date" title={issue.createdLabel}>
         {issue.createdLabel}
       </span>
