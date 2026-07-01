@@ -332,14 +332,14 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `common/commentCount.scala.html` | shared partials | issue-list caller metric-covered by `frontend/tests/vote-count-parity.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/commentDeleteModal.scala.html` | shared partials | issue-detail caller interaction-covered by `frontend/tests/project-issue-detail.e2e.ts`; board-detail caller interaction-covered by `frontend/tests/project-posts.e2e.ts`; PR and code comment delete modal callers remain to verify through each caller route | 10 |
 | `common/commentForm.scala.html` | shared partials | issue caller tracked by existing issue-detail guard; board-detail caller interaction-covered by `frontend/tests/project-posts.e2e.ts`; PR/code callers remain to verify when active detail routes exist | 10 |
-| `common/commitMsg.scala.html` | shared partials | included partial; verify through each caller route | 10 |
-| `common/debug.scala.html` | shared partials | included partial; verify through each caller route | 10 |
+| `common/commitMsg.scala.html` | shared partials | commit history caller metric-covered by `frontend/tests/code-parity.e2e.ts`; remaining callers still require per-route verification | 10 |
+| `common/debug.scala.html` | shared partials | targeted absence covered by `frontend/tests/root-shell-parity.e2e.ts`; repository search finds no active Scala caller | 10 |
 | `common/fileUploader.scala.html` | shared partials | issue caller tracked by existing issue-detail metric guard; board-detail caller metric-covered by `frontend/tests/project-posts.e2e.ts`; remaining callers still require per-route verification | 10 |
-| `common/partial_history.scala.html` | shared partials | included partial; verify through each caller route | 10 |
-| `common/reviewForm.scala.html` | shared partials | included partial; verify through each caller route | 10 |
+| `common/partial_history.scala.html` | shared partials | board posting history caller metric-covered by `frontend/tests/board-posting-parity.e2e.ts`; remaining callers still require per-route verification | 10 |
+| `common/reviewForm.scala.html` | shared partials | commit code-review caller metric-covered by `frontend/tests/project-code-comment-upload-parity.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/sharerCount.scala.html` | shared partials | issue-list caller metric-covered by `frontend/tests/vote-count-parity.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/showSubtasksCheckbox.scala.html` | shared partials | issue-list caller metric-covered by `frontend/tests/vote-count-parity.e2e.ts`; remaining callers still require per-route verification | 10 |
-| `common/tasklistBar.scala.html` | shared partials | included partial; verify through each caller route | 10 |
+| `common/tasklistBar.scala.html` | shared partials | issue-detail caller metric-covered by `frontend/tests/issue-detail-parity.e2e.ts`; board-detail caller DOM-covered by `frontend/tests/project-posts.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/twoColumnModeCheckboxArea.scala.html` | shared partials | issue-list caller metric-covered by existing issue-list guard; board-list caller metric-covered by `frontend/tests/project-posts.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/voteCount.scala.html` | shared partials | included partial; verify through each caller route | 10 |
 
