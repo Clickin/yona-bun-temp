@@ -301,6 +301,10 @@ test("project pull request changes renders legacy review cards when threads exis
     "href",
     `${basePath}/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91`,
   );
+  await expect(page.locator("#reviewcards-open .avatar-wrap.smaller.ml5 img")).toHaveAttribute(
+    "alt",
+    "Dev Member",
+  );
 
   expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtmlAll(

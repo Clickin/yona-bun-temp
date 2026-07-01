@@ -522,7 +522,10 @@ function ReviewCard({
           {thread.createdLabel}
         </span>
         <span className="avatar-wrap smaller ml5">
-          <img src={thread.authorAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />
+          <img
+            src={thread.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+            alt={thread.authorLabel}
+          />
         </span>
       </p>
     </a>
