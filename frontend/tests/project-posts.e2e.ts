@@ -20,7 +20,7 @@ const EXPECTED_PROJECT_POSTS_PREFIX = EXPECTED_PROJECT_POSTS.replace(
   '<span class="post-id">3</span><a href="javascript:void(0)" class="title-prefix">[P1]</a><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a>',
 );
 const EXPECTED_PROJECT_POST_DETAIL = `
-<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div></div><div class="title"><strong class="board-id">#3</strong> Release note<div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 2, 2026">Jul 2, 2026</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></div><div id="post-3" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/posts/3/content"><textarea>Post **markdown**</textarea></form></div><div id="post-body-3"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="content markdown-wrap" data-allowed-update="true"><p>Post <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " data-toggle="tooltip" data-placement="top" title="If subscribe, notify all new comments" data-watching="false">Watch</button></div></div><span class=""><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><a href="#deleteConfirm" data-toggle="modal"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="tooltip" title="Delete"><i class="yobicon-trash"></i></button></a></span></div><div class="watcher-list"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul></div></div></div></div><div class="span3 span-right-pane mb20"><div class="issue-info board-labels"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></dd></dl><div class="right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><a href="#deleteConfirm" data-toggle="modal"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="tooltip" title="Delete"><i class="yobicon-trash"></i></button></a></div></div></div></div><div class="board-footer">${BOARD_DETAIL_KEYMAP}</div></div><script type="text/x-jquery-tmpl" id="tplAttachedFile"></script><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/post/3">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div></div><div class="title"><strong class="board-id">#3</strong> Release note<div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 2, 2026">Jul 2, 2026</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></div><div id="post-3" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/posts/3/content"><textarea>Post **markdown**</textarea></form></div><div id="post-body-3"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="content markdown-wrap" data-allowed-update="true"><p>Post <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " data-toggle="tooltip" data-placement="top" title="If subscribe, notify all new comments" data-watching="false">Watch</button></div></div><span class=""><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><a href="#deleteConfirm" data-toggle="modal"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="tooltip" title="Delete"><i class="yobicon-trash"></i></button></a></span></div><div class="watcher-list"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul></div></div></div></div><div class="span3 span-right-pane mb20"><div class="issue-info board-labels"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></dd></dl><div class="right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><a href="#deleteConfirm" data-toggle="modal"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="tooltip" title="Delete"><i class="yobicon-trash"></i></button></a></div></div></div></div><div class="board-footer">${BOARD_DETAIL_KEYMAP}</div></div><script type="text/x-jquery-tmpl" id="tplAttachedFile"></script><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/post/3">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
 `;
 
 const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT = EXPECTED_PROJECT_POST_DETAIL.replace(
@@ -189,6 +189,42 @@ test("project board detail deletes through legacy confirmation modal", async ({ 
     .evaluate((button: HTMLButtonElement) => button.click());
   await expect(page).toHaveURL(`${basePath}/admin/sample/posts`);
   await expect.poll(() => deleteRequests).toEqual(["DELETE"]);
+});
+
+test("project board detail deletes comments through legacy confirmation modal", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { commentDeleteRequests } = await mockProjectPosts(page, "comment");
+
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
+
+  await page.locator('#comment-21 [data-toggle="comment-delete"]').click();
+  await expect(page.locator("#comment-delete-modal")).not.toHaveClass(/hide/);
+  await expect(page.locator("#comment-delete-modal")).toHaveClass(/in/);
+  await expect(page.locator("#comment-delete-modal .modal-header h3")).toHaveText("Delete comment");
+  await expect(page.locator("#comment-delete-modal .modal-body p")).toHaveText(
+    "Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?",
+  );
+  await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
+    "data-request-uri",
+    `${basePath}/admin/sample/post/3/comment/21`,
+  );
+  await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
+    "data-request-method",
+    "delete",
+  );
+  expect(commentDeleteRequests).toEqual([]);
+
+  await page.locator('#comment-delete-modal [data-dismiss="modal"]').last().click();
+  await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
+  expect(commentDeleteRequests).toEqual([]);
+
+  await page.locator('#comment-21 [data-toggle="comment-delete"]').click();
+  await page.locator("#comment-delete-confirm").click();
+  await expect.poll(() => commentDeleteRequests).toEqual(["DELETE"]);
+  await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
 });
 
 test("project board detail opens legacy keymap modal through data-toggle modal", async ({
@@ -374,6 +410,7 @@ async function mockProjectPosts(
     | "childComment" = "default",
 ) {
   const deleteRequests: string[] = [];
+  const commentDeleteRequests: string[] = [];
   const watchRequests: string[] = [];
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -687,7 +724,50 @@ async function mockProjectPosts(
       }),
     });
   });
-  return { deleteRequests, watchRequests };
+  await page.route("**/api/v1/projects/admin/sample/posts/3/comments/21", async (route) => {
+    if (route.request().method() === "DELETE") {
+      commentDeleteRequests.push(route.request().method());
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          authorAvatarUrl: "/assets/images/default-avatar-32.png",
+          authorId: "2",
+          authorLabel: "Dev Member",
+          authorLoginId: "dev",
+          bodyHtml: "<p>Post <strong>markdown</strong></p>",
+          bodyMarkdown: "Post **markdown**",
+          commentCount: 0,
+          comments: [],
+          createdLabel: "Jul 2, 2026",
+          historyHtml: "",
+          historyMarkdown: "",
+          id: "33",
+          isWatching: false,
+          labels: [],
+          notice: false,
+          ownerName: "admin",
+          permissions: {
+            canComment: false,
+            canCreate: true,
+            canDelete: true,
+            canRead: true,
+            canSetNotice: true,
+            canWatch: true,
+            canUpdate: true,
+          },
+          postNumber: "3",
+          projectName: "sample",
+          readme: false,
+          title: "Release note",
+          updatedLabel: "Jul 2, 2026",
+          watcherCount: 0,
+        }),
+      });
+      return;
+    }
+    await route.fallback();
+  });
+  return { commentDeleteRequests, deleteRequests, watchRequests };
 }
 
 async function canonicalize(page: Page, selector: string) {

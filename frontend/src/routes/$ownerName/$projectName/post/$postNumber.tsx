@@ -3,6 +3,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Fragment, useState } from "react";
 import {
   deleteProjectPostRest,
+  deletePostCommentRest,
   readProjectPostQueryOptions,
   unwatchPostRest,
   watchPostRest,
@@ -120,6 +121,28 @@ function ProjectPostDetailBody({
         queryKey: [...apiQueryKeys.project.base(ownerName, projectName), "posts"],
       });
       router.history.push(prefixBasePath(basePath, `/${ownerName}/${projectName}/posts`));
+    },
+  });
+  const commentDeleteMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return deletePostCommentRest(runtimeConfig, csrfToken, {
+        commentId,
+        ownerName,
+        postNumber,
+        projectName,
+      });
+    },
+    onSuccess(updatedPost) {
+      queryClient.setQueryData(postQueryOptions.queryKey, updatedPost);
+      const modal = document.getElementById("comment-delete-modal");
+      if (modal) {
+        modal.classList.add("hide");
+        modal.classList.remove("in");
+        modal.style.display = "none";
+        modal.setAttribute("aria-hidden", "true");
+      }
+      document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
     },
   });
 
@@ -313,6 +336,64 @@ function ProjectPostDetailBody({
             {t("button.no")}
           </button>
         </div>
+      </div>
+      <CommentDeleteConfirm
+        cancelLabel={t("button.no")}
+        confirmLabel={t("button.yes")}
+        message={t("common.comment.delete.confirm")}
+        onConfirm={(requestUri) => {
+          const commentId = requestUri.match(/\/comment\/(\d+)(?:\/delete)?(?:[?#].*)?$/u)?.[1];
+          if (commentId) {
+            commentDeleteMutation.mutate(commentId);
+          }
+        }}
+        title={t("common.comment.delete")}
+      />
+    </div>
+  );
+}
+
+function CommentDeleteConfirm({
+  cancelLabel,
+  confirmLabel,
+  message,
+  onConfirm,
+  title,
+}: {
+  cancelLabel: string;
+  confirmLabel: string;
+  message: string;
+  onConfirm: (requestUri: string) => void;
+  title: string;
+}) {
+  return (
+    <div id="comment-delete-modal" className="modal hide fade">
+      <div className="modal-header">
+        <button type="button" className="close" data-dismiss="modal">
+          ×
+        </button>
+        <h3>{title}</h3>
+      </div>
+      <div className="modal-body">
+        <p>{message}</p>
+      </div>
+      <div className="modal-footer">
+        <button
+          id="comment-delete-confirm"
+          type="button"
+          className="ybtn ybtn-danger"
+          onClick={(event) => {
+            const requestUri = event.currentTarget.dataset.requestUri;
+            if (requestUri) {
+              onConfirm(requestUri);
+            }
+          }}
+        >
+          {confirmLabel}
+        </button>
+        <button type="button" className="ybtn" data-dismiss="modal">
+          {cancelLabel}
+        </button>
       </div>
     </div>
   );
