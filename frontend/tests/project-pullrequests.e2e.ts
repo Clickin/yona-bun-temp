@@ -136,6 +136,24 @@ test("project pull request reviewer-count row matches legacy git/partial_list.sc
   );
 });
 
+test("project pull request conflict row uses legacy conflict and branch classes", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=conflict`);
+  await expect(page.locator("#search")).toBeVisible();
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator(".post-list-wrap .title-wrap .title")).toHaveClass("title conflict");
+  await expect(page.locator(".post-list-wrap .infos .to-branch")).toHaveText("release/1.0");
+  await expect(page.locator(".post-list-wrap .state.conflict")).toHaveText("Conflict");
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(page, expectedConflictPullRequests(basePath)),
+  );
+});
+
 test("project pull request multi-page list matches legacy pagination DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPullRequests(page);
@@ -282,6 +300,26 @@ function expectedReviewerPullRequests(basePath: string) {
     );
 }
 
+function expectedConflictPullRequests(basePath: string) {
+  return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+    .replace('value="empty"', 'value="conflict"')
+    .replace('<span class="num-badge">0</span>', '<span class="num-badge">1</span>')
+    .replace(
+      '<ul class="post-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No pull requests have been received</p></div></ul>',
+      '<ul class="post-list-wrap"><li class="post-item title" href="' +
+        basePath +
+        '/admin/sample/pullRequest/9"><div class="span10 span-hard-wrap"><a href="' +
+        basePath +
+        '/dev" class="avatar-wrap mlarge" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><span class="post-id">9</span><a href="' +
+        basePath +
+        '/admin/sample/pullRequest/9" class="title conflict">Resolve release branch</a></div><div class="infos"><a href="' +
+        basePath +
+        '/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="to-branch">release/1.0</span></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right hide-in-mobile"><a href="' +
+        basePath +
+        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state conflict pull-right">Conflict</div></div></li><div id="pagination"></div></ul>',
+    );
+}
+
 function expectedPagedPullRequests(basePath: string) {
   return expectedPopulatedPullRequests(basePath)
     .replace('value="row"', 'value="pages"')
@@ -399,32 +437,58 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
                 updatedLabel: "Jul 1, 2026",
               },
             ]
-          : filter === "pages" && category === "open"
+          : filter === "conflict" && category === "open"
             ? [
                 {
-                  closedCommentThreadCount: 1,
-                  commentThreadCount: 2,
-                  conflict: false,
+                  closedCommentThreadCount: 0,
+                  commentThreadCount: 0,
+                  conflict: true,
                   contributorLabel: "Dev Member",
                   contributorLoginId: "dev",
                   createdLabel: "Jul 1, 2026",
-                  fromBranch: "feature/api",
+                  fromBranch: "feature/release",
                   fromOwnerName: "dev",
                   fromProjectName: "sample",
-                  id: 77,
+                  id: 79,
                   ownerName: "admin",
                   projectName: "sample",
-                  pullRequestNumber: 7,
+                  pullRequestNumber: 9,
                   receiverLabel: "Site Admin",
                   receiverLoginId: "admin",
                   reviewerCount: 0,
+                  reviewerNames: [],
                   state: "open",
-                  title: "[API] Restore PR rows",
-                  toBranch: "main",
+                  title: "Resolve release branch",
+                  toBranch: "release/1.0",
                   updatedLabel: "Jul 1, 2026",
                 },
               ]
-            : [];
+            : filter === "pages" && category === "open"
+              ? [
+                  {
+                    closedCommentThreadCount: 1,
+                    commentThreadCount: 2,
+                    conflict: false,
+                    contributorLabel: "Dev Member",
+                    contributorLoginId: "dev",
+                    createdLabel: "Jul 1, 2026",
+                    fromBranch: "feature/api",
+                    fromOwnerName: "dev",
+                    fromProjectName: "sample",
+                    id: 77,
+                    ownerName: "admin",
+                    projectName: "sample",
+                    pullRequestNumber: 7,
+                    receiverLabel: "Site Admin",
+                    receiverLoginId: "admin",
+                    reviewerCount: 0,
+                    state: "open",
+                    title: "[API] Restore PR rows",
+                    toBranch: "main",
+                    updatedLabel: "Jul 1, 2026",
+                  },
+                ]
+              : [];
     const recentlyPushedBranches =
       filter === "pushed" && category === "open"
         ? [
