@@ -137,7 +137,7 @@ function ProjectCommitDetailBody({
             <div className="diffs-wrap">
               <div className="commitInfo">
                 <div className="commitAuthor">
-                  <CommitAuthor detail={detail} runtimeConfig={runtimeConfig} />
+                  <CommitAuthor detail={detail} />
                   <span className="ago" title={commit?.authorDate ?? ""}>
                     {commit?.authorDate ?? ""}
                   </span>
@@ -245,13 +245,7 @@ function ProjectCommitDetailBody({
   );
 }
 
-function CommitAuthor({
-  detail,
-  runtimeConfig,
-}: {
-  detail: CodeCommitDetailResponse;
-  runtimeConfig: RuntimeConfig;
-}) {
+function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
   const commit = detail.commit;
   if (!commit) {
     return <strong>Anonymous</strong>;
