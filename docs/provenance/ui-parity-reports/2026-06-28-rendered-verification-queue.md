@@ -245,7 +245,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `project/partial_settingmenu.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `project/statistics.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `project/transfer.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
-| `project/watchers.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
+| `project/watchers.scala.html` | P2 project | covered by `frontend/tests/project-watchers.e2e.ts`: `/admin/sample/watchers` renders the legacy project shell plus watcher title, description, and `.members.project.row-fluid` watcher rows with avatar/name/login layout metrics | 57 |
 | `project/webhooks.scala.html` | P2 project | /:owner/:projectName/webhooks | 57 |
 | `projectMenu.scala.html` | P2 project | included partial caller route; inspect Play route and React owner | 57 |
 | `issue/list.scala.html` | P3 issue | /:owner/:projectName/issues | 13 |

@@ -34,7 +34,78 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_WATCHERS.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await readDesktopWatchersMetrics(page)).toEqual({
+    avatarHeight: "40px",
+    avatarImageHeight: "64",
+    avatarImageWidth: "64",
+    avatarMarginRight: "10px",
+    avatarWidth: "40px",
+    descriptionMarginBottom: "0px",
+    descriptionMarginTop: "0px",
+    firstMemberFloat: "left",
+    firstMemberMinHeight: "30px",
+    firstMemberWidth: 617,
+    memberIdColor: "rgb(204, 204, 204)",
+    memberIdLineHeight: "20px",
+    memberListMarginLeft: "0px",
+    memberNameLineHeight: "20px",
+    pageWrapMinWidth: "1100px",
+    projectPageMarginTop: "5px",
+    titleLineHeight: "30px",
+    titlePadding: "10px 0px",
+  });
 });
+
+async function readDesktopWatchersMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = requireElement(".page-wrap-outer");
+    const projectPageWrap = requireElement(".project-page-wrap");
+    const title = requireElement(".project-page-wrap h4");
+    const description = requireElement(".project-page-wrap > p");
+    const memberList = requireElement(".members.project.row-fluid");
+    const firstMember = requireElement(".members.project .member");
+    const firstAvatar = requireElement(".members.project .avatar-wrap");
+    const firstImage = requireElement(".members.project img");
+    const firstName = requireElement(".members.project .member-name");
+    const firstId = requireElement(".members.project .member-id");
+    const pageWrapStyle = getComputedStyle(pageWrapOuter);
+    const projectPageStyle = getComputedStyle(projectPageWrap);
+    const titleStyle = getComputedStyle(title);
+    const descriptionStyle = getComputedStyle(description);
+    const memberStyle = getComputedStyle(firstMember);
+    const avatarStyle = getComputedStyle(firstAvatar);
+    const nameStyle = getComputedStyle(firstName);
+    const idStyle = getComputedStyle(firstId);
+    return {
+      avatarHeight: avatarStyle.height,
+      avatarImageHeight: firstImage.getAttribute("height"),
+      avatarImageWidth: firstImage.getAttribute("width"),
+      avatarMarginRight: avatarStyle.marginRight,
+      avatarWidth: avatarStyle.width,
+      descriptionMarginBottom: descriptionStyle.marginBottom,
+      descriptionMarginTop: descriptionStyle.marginTop,
+      firstMemberFloat: memberStyle.float,
+      firstMemberMinHeight: memberStyle.minHeight,
+      firstMemberWidth: Math.round(firstMember.getBoundingClientRect().width),
+      memberIdColor: idStyle.color,
+      memberIdLineHeight: idStyle.lineHeight,
+      memberListMarginLeft: getComputedStyle(memberList).marginLeft,
+      memberNameLineHeight: nameStyle.lineHeight,
+      pageWrapMinWidth: pageWrapStyle.minWidth,
+      projectPageMarginTop: projectPageStyle.marginTop,
+      titleLineHeight: titleStyle.lineHeight,
+      titlePadding: titleStyle.padding,
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
 
 async function mockProjectAdmin(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
