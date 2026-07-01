@@ -18,6 +18,8 @@ const LEFT_MILESTONE_EVENT_TIMELINE = `<div id="comments" class="board-comment-w
 const LEFT_MOVED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-92"><span class="state changed">moved</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> moved this issue from <strong><a href="__BASE_PATH__/old-owner/old-project" class="link">old-owner/old-project</a></strong><span class="date"><a href="#event-92">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_COMMIT_REFERRED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-93"><span class="state changed">mentioned</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> mentioned this issue in <strong>Commit <a href="__BASE_PATH__/admin/sample/commit/abcdef0" class="link">@abcdef0</a></strong><span class="date"><a href="#event-93">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_PULL_REQUEST_REFERRED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-94"><span class="state changed">mentioned</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> mentioned this issue in <strong>Pull request -3 <a href="__BASE_PATH__/admin/sample/pullRequest/3" class="link">Fix login redirect</a></strong><span class="date"><a href="#event-94">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
+const LEFT_SHARER_ADDED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-95"><span class="state sharer-added">Issue Sharer</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> shared current issue to <a href="__BASE_PATH__/qa1" class="usf-group" data-toggle="tooltip" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/qa1" class="usf-group" data-toggle="tooltip" data-placement="top" title="qa1"><strong>QA One</strong></a><span class="date"><a href="#event-95">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
+const LEFT_SHARER_DELETED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-96"><span class="state sharer-deleted">Cancelled</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> cancelled issue sharing with <a href="__BASE_PATH__/qa1" class="usf-group" data-toggle="tooltip" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/qa1" class="usf-group" data-toggle="tooltip" data-placement="top" title="qa1"><strong>QA One</strong></a><span class="date"><a href="#event-96">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_DEFAULT_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-89">fallback noteby <a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a><span class="date"><a href="#event-89">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 
 test("project issue detail matches legacy issue/view.scala.html voter state", async ({ page }) => {
@@ -266,6 +268,72 @@ test("project issue detail renders legacy pull request referred timeline event",
     await canonicalizeHtml(
       page,
       LEFT_PULL_REQUEST_REFERRED_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("project issue detail renders legacy sharer added timeline event", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    commentCount: 0,
+    comments: [],
+    timeline: [
+      {
+        createdLabel: "Jul 4, 2026",
+        eventType: "ISSUE_SHARER_CHANGED",
+        id: 95,
+        kind: "event",
+        newValue: "qa1",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+        targetAvatarUrl: "/assets/images/default-avatar-32.png",
+        targetLabel: "QA One",
+        targetLoginId: "qa1",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#event-95 .state.sharer-added")).toHaveText("Issue Sharer");
+
+  expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
+    await canonicalizeHtml(
+      page,
+      LEFT_SHARER_ADDED_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("project issue detail renders legacy sharer deleted timeline event", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    commentCount: 0,
+    comments: [],
+    timeline: [
+      {
+        createdLabel: "Jul 4, 2026",
+        eventType: "ISSUE_SHARER_CHANGED",
+        id: 96,
+        kind: "event",
+        oldValue: "qa1",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+        targetAvatarUrl: "/assets/images/default-avatar-32.png",
+        targetLabel: "QA One",
+        targetLoginId: "qa1",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#event-96 .state.sharer-deleted")).toHaveText("Cancelled");
+
+  expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
+    await canonicalizeHtml(
+      page,
+      LEFT_SHARER_DELETED_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });

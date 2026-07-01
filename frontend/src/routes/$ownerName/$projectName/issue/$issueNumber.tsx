@@ -966,6 +966,35 @@ function IssueEventRow({
     );
   }
 
+  if (eventType === "ISSUE_SHARER_CHANGED") {
+    const added = stringField(event.newValue) !== "";
+    const targetLoginId = stringField(
+      event.targetLoginId,
+      added ? stringField(event.newValue) : stringField(event.oldValue),
+    );
+    const target = (
+      <EventUserLink
+        avatarUrl={stringField(event.targetAvatarUrl, "/assets/images/default-avatar-32.png")}
+        basePath={basePath}
+        label={stringField(event.targetLabel, targetLoginId)}
+        loginId={targetLoginId}
+      />
+    );
+    return (
+      <li className="event" id={`event-${eventId}`}>
+        <span className={`state ${added ? "sharer-added" : "sharer-deleted"}`}>
+          {added ? "Issue Sharer" : "Cancelled"}
+        </span>
+        {sender}
+        {added ? " shared current issue to " : " cancelled issue sharing with "}
+        {target}
+        <span className="date">
+          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+        </span>
+      </li>
+    );
+  }
+
   return (
     <li className="event" id={`event-${eventId}`}>
       {stringField(event.newValue)} by {sender}
