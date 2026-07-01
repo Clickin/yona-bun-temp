@@ -57,6 +57,23 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   );
 });
 
+test("project issue detail renders legacy draft header state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    commentCount: 0,
+    comments: [],
+    isDraft: true,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator(".span-left-pane > #comments")).toHaveCount(0);
+
+  const expectedHeader = `<div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 1, 2026">Jul 1, 2026</div><span class="badge badge-issue-open">Open</span></div><div class="title"><strong class="board-id"><span class="draft-number">#Draft</span></strong>Fix flaky issue<span class="favorite-issue" data-issue-id="42"><i class="star material-icons va-text-top">star</i></span><div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 1, 2026">Jul 1, 2026</span><span class="badge badge-small badge-issue-open">Open</span></div></div><div class="draft">This is an draft issue. Only you can see it until you publish.</div></div>`;
+  expect(await canonicalize(page, ".board-header.issue")).toEqual(
+    await canonicalizeHtml(page, expectedHeader),
+  );
+});
+
 test("project issue detail renders legacy read-only selected labels", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, { viewerCanUpdate: false });

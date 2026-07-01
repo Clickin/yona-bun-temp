@@ -115,6 +115,11 @@ function IssueDetailBody({
               <span className={`badge badge-small badge-issue-${issueState}`}>{stateLabel}</span>
             </div>
           </div>
+          {isDraft ? (
+            <div className="draft">
+              This is an draft issue. Only you can see it until you publish.
+            </div>
+          ) : null}
         </div>
         <div className="board-body row-fluid">
           <div className="span9 span-left-pane">
