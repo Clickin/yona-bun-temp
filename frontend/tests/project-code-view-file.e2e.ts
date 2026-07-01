@@ -14,6 +14,10 @@ const EXPECTED_MARKDOWN_CODE_FILE_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><div class="code-browse-header"><select id="branches" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" class="pull-left mb10"><option value="__BASE_PATH__/admin/sample/code/main/README.md" selected="">main</option><option value="__BASE_PATH__/admin/sample/code/feature%2Frelease/README.md">feature/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/main">sample</a><a href="__BASE_PATH__/admin/sample/code/main/README.md">README.md</a></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/archive/main.zip" class="ybtn">Download as .zip file</a></div><div class="pull-right"><a id="new-file-link" href="__BASE_PATH__/admin/sample/postform?path=&amp;branch=main" class="ybtn">New file</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="file-wrap" data-type="file"><div class="file-header nm"><div id="fileInfo" class="file-info"><span id="commiter" class="commiter"><a href="__BASE_PATH__/admin" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><a href="__BASE_PATH__/admin" class="ml5">Admin</a></span><span id="commitDate" class="commitDate">Jul 2, 2026</span><span id="revisionNo" class="revision"><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main#README.md">1234567<span class="number-of-comments ml5"><i class="yobicon-comments"></i> 2</span></a></span><span id="commitMessage" class="commitMsg">Update README</span><span>LF</span></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/rawcode/main/README.md" class="ybtn" target="_blank"><i class="yobicon-download-alt yobicon-white vmiddle"></i> Raw</a><a href="__BASE_PATH__/admin/sample/postform?path=README.md&amp;branch=main&amp;edit=true" class="ybtn">Edit</a><a id="open-in-browser" href="__BASE_PATH__/admin/sample/files/main/README.md" class="ybtn" target="_blank" data-content="Browser will parse and show this file. It is useful when you want to serve a static content file."><i class="yobicon-download-alt yobicon-white vmiddle"></i> Open in browser</a><a href="__BASE_PATH__/admin/sample/commits/main/README.md" class="ybtn">Change history</a></div></div><div id="codeVal" class="markdown-wrap codebrowser-markdown"><h1>sample</h1><p>Line two</p><p><img src="__BASE_PATH__/admin/sample/files/main/assets/logo.png"></p><p><a href="./docs/guide.md">Guide</a></p></div></div></div></div></div></div>
 `;
 
+const EXPECTED_IMAGE_CODE_FILE_BODY = `
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><div class="code-browse-header"><select id="branches" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" class="pull-left mb10"><option value="__BASE_PATH__/admin/sample/code/main/assets/logo.png" selected="">main</option><option value="__BASE_PATH__/admin/sample/code/feature%2Frelease/assets/logo.png">feature/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/main">sample</a><a href="__BASE_PATH__/admin/sample/code/main/assets">assets</a><a href="__BASE_PATH__/admin/sample/code/main/assets/logo.png">logo.png</a></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/archive/main.zip" class="ybtn">Download as .zip file</a></div><div class="pull-right"><a id="new-file-link" href="__BASE_PATH__/admin/sample/postform?path=assets/&amp;branch=main" class="ybtn">New file</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="file-wrap" data-type="file"><div class="file-header nm"><div id="fileInfo" class="file-info"><span id="commiter" class="commiter"><a href="__BASE_PATH__/admin" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><a href="__BASE_PATH__/admin" class="ml5">Admin</a></span><span id="commitDate" class="commitDate">Jul 2, 2026</span><span id="revisionNo" class="revision"><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main#assets/logo.png">1234567<span class="number-of-comments ml5"><i class="yobicon-comments"></i> 2</span></a></span><span id="commitMessage" class="commitMsg">Update README</span><span></span></div><div class="pull-right"><a id="open-in-browser" href="__BASE_PATH__/admin/sample/files/main/assets/logo.png" class="ybtn" target="_blank" data-content="Browser will parse and show this file. It is useful when you want to serve a static content file."><i class="yobicon-download-alt yobicon-white vmiddle"></i> Open in browser</a><a href="__BASE_PATH__/admin/sample/commits/main/assets/logo.png" class="ybtn">Change history</a></div></div><div id="showImage" class="image-wrap"><img src="__BASE_PATH__/admin/sample/rawcode/main/assets/logo.png"></div></div></div></div></div></div>
+`;
+
 test("project code text file matches legacy code/partial_view_file.scala.html DOM", async ({
   page,
 }) => {
@@ -78,11 +82,39 @@ Line two
   );
 });
 
+test("project code image file matches legacy binary image branch", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const codeRequests: string[] = [];
+  await mockProjectCodeFile(page, codeRequests, "assets/logo.png", "", {
+    isBinary: true,
+    lineEnding: "",
+    mimeType: "image/png",
+  });
+
+  await page.goto(`${basePath}/admin/sample/code/main/assets/logo.png`);
+  await expect(page.locator("#showImage.image-wrap img")).toHaveAttribute(
+    "src",
+    `${basePath}/admin/sample/rawcode/main/assets/logo.png`,
+  );
+  await expect(page.locator("#showCode")).toHaveCount(0);
+  await expect(page.locator("#codeVal")).toHaveCount(0);
+  await expect(page.locator(".file-header .pull-right a", { hasText: "Raw" })).toHaveCount(0);
+  await expect(page.locator(".file-header .pull-right a", { hasText: "Edit" })).toHaveCount(0);
+  expect(codeRequests).toEqual(["branch=main&path=assets%2Flogo.png"]);
+  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_IMAGE_CODE_FILE_BODY.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 async function mockProjectCodeFile(
   page: Page,
   codeRequests: string[],
   filePath: string,
   data = "# sample\nLine two",
+  fileOverrides: Record<string, unknown> = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -149,6 +181,7 @@ async function mockProjectCodeFile(
           mimeType: "text/plain",
           path: filePath,
           userLoginId: "admin",
+          ...fileOverrides,
         },
         noHead: false,
         ownerName: "admin",

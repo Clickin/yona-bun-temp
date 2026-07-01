@@ -231,6 +231,8 @@ function FileView({
   const authorLoginId = stringField(file.userLoginId, "");
   const authorHref = prefixBasePath(runtimeConfig.basePath, `/${authorLoginId}`);
   const fileText = stringField(file.data, "") || stringField(file.text, "");
+  const isBinary = booleanField(file.isBinary);
+  const mimeType = stringField(file.mimeType, "");
   const rawHref = projectHref(
     runtimeConfig.basePath,
     ownerName,
@@ -293,16 +295,20 @@ function FileView({
           <span>{stringField(file.lineEnding, "")}</span>
         </div>
         <div className="pull-right">
-          <a href={rawHref} className="ybtn" target="_blank">
-            <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
-          </a>
-          {booleanField(project.viewerCanUpdate) ? (
-            <a
-              href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=${filePath}&branch=${encodeURIComponent(selectedBranch)}&edit=true`}
-              className="ybtn"
-            >
-              Edit
-            </a>
+          {!isBinary ? (
+            <>
+              <a href={rawHref} className="ybtn" target="_blank">
+                <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
+              </a>
+              {booleanField(project.viewerCanUpdate) ? (
+                <a
+                  href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=${filePath}&branch=${encodeURIComponent(selectedBranch)}&edit=true`}
+                  className="ybtn"
+                >
+                  Edit
+                </a>
+              ) : null}
+            </>
           ) : null}
           <a
             id="open-in-browser"
@@ -328,7 +334,26 @@ function FileView({
           </a>
         </div>
       </div>
-      {isMarkdownPath(filePath) ? (
+      {isBinary ? (
+        mimeType.startsWith("image/") ? (
+          <div id="showImage" className="image-wrap">
+            <img src={rawHref} alt="" />
+          </div>
+        ) : (
+          <div id="showFile" className="file-wrap">
+            <p>
+              <strong className="filename">{filePath.split("/").pop() ?? filePath}</strong>
+              <br />
+              <span className="filesize">{stringField(file.size, "")}</span>
+              <br />
+              <a href={rawHref} className="filehref ybtn">
+                <i className="yobicon-download-alt yobicon-white vmiddle"></i>{" "}
+                {t("button.download")}
+              </a>
+            </p>
+          </div>
+        )
+      ) : isMarkdownPath(filePath) ? (
         <div id="codeVal" className="markdown-wrap codebrowser-markdown">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{fileText}</ReactMarkdown>
         </div>
@@ -337,11 +362,7 @@ function FileView({
           <div id="codeVal" className="hidden">
             {fileText}
           </div>
-          <pre
-            id="showCode"
-            className="code-wrap"
-            data-mimetype={stringField(file.mimeType, "")}
-          ></pre>
+          <pre id="showCode" className="code-wrap" data-mimetype={mimeType}></pre>
         </>
       )}
     </div>
