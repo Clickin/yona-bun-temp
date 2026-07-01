@@ -7,6 +7,7 @@ import { restFetch } from "./rest-client";
 
 export type CodeReviewComment = {
   attachments?: CodeReviewAttachment[];
+  authorAvatarUrl: string;
   authorId: number;
   authorLabel: string;
   authorLoginId: string;
@@ -146,6 +147,7 @@ function normalizeComment(comment: Partial<CodeReviewComment>): CodeReviewCommen
       name: attachment.name ?? "",
       size: attachment.size ?? "",
     })),
+    authorAvatarUrl: comment.authorAvatarUrl ?? "",
     authorId: comment.authorId ?? 0,
     authorLabel: comment.authorLabel ?? "",
     authorLoginId: comment.authorLoginId ?? "",

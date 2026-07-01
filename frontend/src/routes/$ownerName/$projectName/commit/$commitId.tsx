@@ -728,7 +728,12 @@ function CodeCommentThreadView({
                 data-placement="top"
                 title={comment.authorLabel}
               >
-                <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+                <img
+                  src={comment.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+                  width="32"
+                  height="32"
+                  alt=""
+                />
               </a>
             </div>
             <div className="media-body">
