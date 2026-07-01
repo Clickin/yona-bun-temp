@@ -28,6 +28,20 @@ const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT = EXPECTED_PROJECT_POST_DETAIL.r
   '<div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">1</strong></div><hr class="nm"><ul class="comments"><li class="comment" id="comment-21"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author"><span class="resp-comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></span><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="#comment-21" class="ago" title="Jul 3, 2026">Jul 3, 2026</a><a href="#comment-21" class="share-link" style="display:none">[Link]</a></span><span class="act-row pull-right"><button type="button" class="btn-transparent ml10" data-toggle="comment-edit" data-comment-id="21" title="Edit comment"><i class="yobicon-edit-2"></i></button><button type="button" class="btn-transparent ml6" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/post/3/comment/21" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div id="comment-body-21"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="comment-body markdown-wrap" data-allowed-update="true" data-via-email="false"><p>First <strong>comment</strong></p></div><div class="attachments" data-attachments="[]"></div></div></div></li></ul>',
 );
 
+const EXPECTED_PROJECT_POST_DETAIL_WITH_CHILD_COMMENT =
+  EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT.replace(
+    '<strong class="num">1</strong>',
+    '<strong class="num">2</strong>',
+  )
+    .replace(
+      '<li class="comment" id="comment-21"><div class="comment-avatar">',
+      '<li class="comment" id="comment-21"><div id="comment-22"></div><div class="comment-avatar">',
+    )
+    .replace(
+      '<div class="attachments" data-attachments="[]"></div></div></div></li>',
+      '<div class="attachments" data-attachments="[]"></div></div></div><div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Nested <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="admin"><strong>Site Admin</strong></a> <a href="#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><a href="javascript:void(0)" type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/post/3/comment/22" title="Delete comment">x</a></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div></li>',
+    );
+
 function expectedProjectPostsEmpty() {
   const listStart = EXPECTED_PROJECT_POSTS.indexOf('<div class="filter-wrap board">');
   const listEnd = EXPECTED_PROJECT_POSTS.indexOf(
@@ -166,6 +180,25 @@ test("project board detail renders legacy parent comments", async ({ page }) => 
   );
 });
 
+test("project board detail renders legacy child comments", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page, "childComment");
+
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator("#comments .comment-header .num")).toHaveText("2");
+  await expect(page.locator("#comment-22")).toHaveCount(1);
+  await expect(page.locator("#comment-21 .child-comments .one-line-comment")).toContainText(
+    "Nested reply",
+  );
+
+  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_POST_DETAIL_WITH_CHILD_COMMENT.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 async function issueLabelColorMetrics(page: Page) {
   return page
     .locator(".post-list-wrap:not(.notice-wrap) .issue-label")
@@ -186,7 +219,7 @@ async function issueLabelColorMetrics(page: Page) {
 
 async function mockProjectPosts(
   page: Page,
-  state: "default" | "empty" | "prefix" | "readonlyLabel" | "comment" = "default",
+  state: "default" | "empty" | "prefix" | "readonlyLabel" | "comment" | "childComment" = "default",
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -338,9 +371,9 @@ async function mockProjectPosts(
         authorLoginId: "dev",
         bodyHtml: "<p>Post <strong>markdown</strong></p>",
         bodyMarkdown: "Post **markdown**",
-        commentCount: state === "comment" ? 1 : 0,
+        commentCount: state === "comment" ? 1 : state === "childComment" ? 2 : 0,
         comments:
-          state === "comment"
+          state === "comment" || state === "childComment"
             ? [
                 {
                   attachments: [],
@@ -354,6 +387,22 @@ async function mockProjectPosts(
                   parentCommentId: "",
                   viaEmail: false,
                 },
+                ...(state === "childComment"
+                  ? [
+                      {
+                        attachments: [],
+                        authorId: "1",
+                        authorLabel: "Site Admin",
+                        authorLoginId: "admin",
+                        contentsHtml: "<p>Nested <strong>reply</strong></p>",
+                        contentsMarkdown: "Nested **reply**",
+                        createdLabel: "Jul 4, 2026",
+                        id: "22",
+                        parentCommentId: "21",
+                        viaEmail: false,
+                      },
+                    ]
+                  : []),
               ]
             : [],
         createdLabel: "Jul 2, 2026",
@@ -377,7 +426,7 @@ async function mockProjectPosts(
         notice: false,
         ownerName: "admin",
         permissions: {
-          canComment: false,
+          canComment: state === "childComment",
           canCreate: true,
           canDelete: true,
           canRead: true,

@@ -362,6 +362,7 @@ function PostComments({
 }) {
   const { t } = useLegacyMessages();
   const comments = post.comments.filter((comment) => !stringField(comment.parentCommentId));
+  const canComment = booleanField(post.permissions.canComment);
   return (
     <div id="comments" className="board-comment-wrap">
       <div id="timeline">
@@ -376,7 +377,11 @@ function PostComments({
               <PostCommentRow
                 basePath={basePath}
                 canDelete={canDelete}
+                canComment={canComment}
                 canUpdate={canUpdate}
+                childComments={post.comments.filter(
+                  (childComment) => stringField(childComment.parentCommentId) === comment.id,
+                )}
                 comment={comment}
                 key={comment.id}
                 ownerName={ownerName}
@@ -394,7 +399,9 @@ function PostComments({
 function PostCommentRow({
   basePath,
   canDelete,
+  canComment,
   canUpdate,
+  childComments,
   comment,
   ownerName,
   postNumber,
@@ -402,7 +409,9 @@ function PostCommentRow({
 }: {
   basePath: string;
   canDelete: boolean;
+  canComment: boolean;
   canUpdate: boolean;
+  childComments: BoardPostComment[];
   comment: BoardPostComment;
   ownerName: string;
   postNumber: string;
@@ -417,6 +426,12 @@ function PostCommentRow({
 
   return (
     <li className="comment" id={`comment-${commentId}`}>
+      {childComments.map((childComment) => (
+        <div
+          id={`comment-${stringField(childComment.id)}`}
+          key={stringField(childComment.id)}
+        ></div>
+      ))}
       <div className="comment-avatar">
         <a
           href={authorHref}
@@ -497,7 +512,143 @@ function PostCommentRow({
           ></div>
         </div>
       </div>
+      <PostChildComments
+        basePath={basePath}
+        canComment={canComment}
+        canDelete={canDelete}
+        childComments={childComments}
+        ownerName={ownerName}
+        parentCommentId={commentId}
+        postNumber={postNumber}
+        projectName={projectName}
+      />
     </li>
+  );
+}
+
+function PostChildComments({
+  basePath,
+  canComment,
+  canDelete,
+  childComments,
+  ownerName,
+  parentCommentId,
+  postNumber,
+  projectName,
+}: {
+  basePath: string;
+  canComment: boolean;
+  canDelete: boolean;
+  childComments: BoardPostComment[];
+  ownerName: string;
+  parentCommentId: string;
+  postNumber: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+
+  if (!childComments.length && !canComment) {
+    return null;
+  }
+
+  return (
+    <>
+      <div className="add-a-comment pull-right">{t("comment.oneline.comment.placeholder")}</div>
+      <div className="subcomment-media-body">
+        <div className="child-comments">
+          {childComments.map((comment) => (
+            <PostChildComment
+              basePath={basePath}
+              canDelete={canDelete}
+              comment={comment}
+              key={stringField(comment.id)}
+              ownerName={ownerName}
+              postNumber={postNumber}
+              projectName={projectName}
+            />
+          ))}
+        </div>
+        {canComment ? (
+          <div className="child-comment-input-form">
+            <form
+              action={prefixBasePath(
+                basePath,
+                `/${ownerName}/${projectName}/post/${postNumber}/comments`,
+              )}
+              method="post"
+              encType="multipart/form-data"
+            >
+              <input
+                className="parentCommentId"
+                type="hidden"
+                name="parentCommentId"
+                value={parentCommentId}
+              />
+              <div className="oneline-comment-box">
+                <textarea
+                  className="editorSeries"
+                  name="contents"
+                  {...{ markdown: "true" }}
+                  rows={1}
+                  placeholder={`${t("comment.oneline.comment.placeholder")} (${ctrlKey()} + ENTER)`}
+                ></textarea>
+                <button type="submit" className="ybtn ybtn-success">
+                  OK
+                </button>
+              </div>
+              <div className="notification-receiver">
+                <span className="notification-receiver-title">Notification receivers </span>
+                <span className="notification-receiver-list"></span>
+              </div>
+            </form>
+          </div>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+function PostChildComment({
+  basePath,
+  canDelete,
+  comment,
+  ownerName,
+  postNumber,
+  projectName,
+}: {
+  basePath: string;
+  canDelete: boolean;
+  comment: BoardPostComment;
+  ownerName: string;
+  postNumber: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+  const commentId = stringField(comment.id);
+  const authorLoginId = stringField(comment.authorLoginId);
+  const authorLabel = stringField(comment.authorLabel, authorLoginId);
+  const deleteLink = canDelete
+    ? `<a href="javascript:void(0)" type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="${escapeHtml(
+        prefixBasePath(
+          basePath,
+          `/${ownerName}/${projectName}/post/${postNumber}/comment/${commentId}`,
+        ),
+      )}" title="${escapeHtml(t("common.comment.delete"))}">x</a>`
+    : "";
+  const contents = `${comment.contentsHtml}<span class="subcomment-author hide">- <a href="${escapeHtml(
+    prefixBasePath(basePath, `/${authorLoginId}`),
+  )}" class="usf-group" data-toggle="tooltip" data-placement="top" title="${escapeHtml(
+    authorLoginId,
+  )}"><strong>${escapeHtml(authorLabel)}</strong></a> <a href="#comment-${escapeHtml(
+    commentId,
+  )}" class="ago" title="${escapeHtml(comment.createdLabel)}">${escapeHtml(
+    comment.createdLabel,
+  )}</a>${deleteLink}</span>`;
+
+  return (
+    <div className="one-line-comment">
+      <div className="contents" dangerouslySetInnerHTML={{ __html: contents }} />
+    </div>
   );
 }
 
@@ -590,6 +741,14 @@ function siteSearchKeys() {
 
 function stringField(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }
 
 function booleanField(value: unknown) {

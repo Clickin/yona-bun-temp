@@ -27,7 +27,10 @@
         "rules": ["react-doctor/design-no-three-period-ellipsis"]
       },
       {
-        "files": ["src/routes/$ownerName/$projectName/issue/$issueNumber.tsx"],
+        "files": [
+          "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+          "src/routes/$ownerName/$projectName/post/$postNumber.tsx"
+        ],
         "rules": ["react-doctor/design-no-vague-button-label"]
       }
     ]
