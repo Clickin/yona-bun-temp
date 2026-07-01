@@ -124,6 +124,28 @@ test("project issue detail renders legacy read-only metadata fields", async ({ p
   );
 });
 
+test("project issue detail renders legacy empty read-only metadata fields", async ({ page }) => {
+  await mockProjectIssueDetail(page, {
+    assigneeLoginId: null,
+    dueDateLabel: "",
+    milestoneId: null,
+    milestoneTitle: "",
+    viewerCanUpdate: false,
+  });
+
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
+
+  expect(
+    await canonicalize(page, ".issue-info form dl:has(dt:text('Assignee')) > dd:nth-of-type(2)"),
+  ).toEqual(await canonicalizeHtml(page, `<dd><div>No assignee</div></dd>`));
+  expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Milestone')) > dd")).toEqual(
+    await canonicalizeHtml(page, `<dd>No milestone</dd>`),
+  );
+  expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Due date')) > dd")).toEqual(
+    await canonicalizeHtml(page, `<dd>No due date</dd>`),
+  );
+});
+
 test("project issue detail renders legacy read-only sharer list", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {
