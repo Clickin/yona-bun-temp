@@ -166,6 +166,7 @@ function ProjectPullRequestChangesBody({
             ) : null}
             <div id="changes" className="diffs-wrap">
               <CommitDropdown
+                commitId={commitId}
                 commits={changes.commits}
                 pullRequest={pullRequest}
                 runtimeConfig={runtimeConfig}
@@ -429,11 +430,13 @@ function ReviewCard({ thread }: { thread: ReviewThread }) {
 }
 
 function CommitDropdown({
+  commitId,
   commits,
   pullRequest,
   runtimeConfig,
   selectedCommit,
 }: {
+  commitId: string;
   commits: PullRequestCommit[];
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
@@ -450,6 +453,11 @@ function CommitDropdown({
             <>
               <strong className="blue-txt mr10 commit-hash">{selectedCommit.commitShortId}</strong>
               <span>{selectedCommitLabel(selectedCommit, t("review.outdated"))}</span>
+            </>
+          ) : commitId ? (
+            <>
+              {`${t("pullRequest.changes.all")} (${t("review.outdated")} - `}
+              <strong className="blue-txt mr10">{shortId(commitId)}</strong>)
             </>
           ) : (
             t("pullRequest.changes.all")
@@ -660,4 +668,8 @@ function commitSummary(commit: PullRequestCommit) {
 function selectedCommitLabel(commit: PullRequestCommit, outdatedLabel: string) {
   const summary = commitSummary(commit);
   return commit.state === "PRIOR" ? `${summary} (${outdatedLabel})` : summary;
+}
+
+function shortId(commitId: string) {
+  return commitId.slice(0, 7);
 }

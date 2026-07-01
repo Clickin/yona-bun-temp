@@ -16,6 +16,7 @@ const SELECTED_COMMIT = {
 };
 
 const PRIOR_COMMIT_ID = "1234567890abcdef";
+const UNKNOWN_COMMIT_ID = "fedcba9876543210";
 
 const PRIOR_COMMIT = {
   authorDateLabel: "Jul 3, 2026",
@@ -58,6 +59,19 @@ const EXPECTED_PULL_REQUEST_PRIOR_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace
   .replaceAll(
     `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
     `action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=1234567890abcdef"`,
+  );
+
+const EXPECTED_PULL_REQUEST_UNKNOWN_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
+  `<span class="d-label">All commit changes</span>`,
+  `<span class="d-label">All commit changes (Outdated - <strong class="blue-txt mr10">fedcba9</strong>)</span>`,
+)
+  .replace(
+    `<li class="divider"></li></ul>`,
+    `<li class="divider"></li><li data-value="abcdef1234567890"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890"><strong class="blue-txt mr10 commit-hash">abcdef1</strong><span>Add UI</span></a></li></ul>`,
+  )
+  .replaceAll(
+    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
+    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=fedcba9876543210"`,
   );
 
 const REVIEW_THREAD = {
@@ -218,6 +232,30 @@ test("project pull request prior commit changes matches legacy outdated dropdown
     await canonicalizeHtmlAll(
       page,
       EXPECTED_PULL_REQUEST_PRIOR_CHANGE.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("project pull request unknown commit changes matches legacy outdated fallback DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, {
+    commits: [SELECTED_COMMIT],
+    expectedCommitId: UNKNOWN_COMMIT_ID,
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes/${UNKNOWN_COMMIT_ID}`);
+  await expect(page.locator("#commits .d-label")).toContainText(
+    "All commit changes (Outdated - fedcba9)",
+  );
+  await expect(page.locator("#commits .d-label strong")).toHaveText("fedcba9");
+  await expect(page.locator(".commitInfo")).toHaveCount(0);
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_UNKNOWN_CHANGE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
