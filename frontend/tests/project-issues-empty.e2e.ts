@@ -656,6 +656,29 @@ test("project issue list mass update checkboxes enable legacy toolbar controls",
   expect(await massUpdateButtonsDisabled(page)).toEqual([true, true, true, true, true]);
 });
 
+test("project issue list mass update state posts selected issues through REST", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "bulk");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bulk`);
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+
+  await page.locator("#issue-42").check();
+  const massUpdateRequest = page.waitForRequest((request) => {
+    return request.method() === "POST" && request.url().includes("/issues/mass-update");
+  });
+  await page.locator("#state > button").click();
+  await page.locator('#state .mass-update-list li[data-value="CLOSED"]').click();
+
+  const request = await massUpdateRequest;
+  expect(request.postDataJSON()).toMatchObject({
+    issueNumbers: [11],
+    state: "CLOSED",
+  });
+});
+
 test("project issue list subtask row matches legacy partial_list_subtask.scala.html DOM", async ({
   page,
 }) => {
@@ -858,6 +881,9 @@ async function mockProjectIssues(
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
+      headers: {
+        "x-csrf-token": "csrf-token",
+      },
       body: JSON.stringify({
         actorId: 1,
         avatarUrl: "/assets/images/default-avatar-32.png",

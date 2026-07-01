@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Fragment, useEffect, useRef, type HTMLAttributes, type LiHTMLAttributes } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
@@ -10,6 +10,8 @@ import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   listProjectIssues,
+  massUpdateIssues,
+  readSessionBootstrap,
   type ProjectIssueListRestResponse,
   type RestIssueListItem,
 } from "../../../auth-workspace-client";
@@ -224,11 +226,11 @@ function ProjectIssuesBody({
                 <div className="filter-wrap board">
                   {showMassUpdateControls ? (
                     <MassUpdateToolbar
-                      basePath={runtimeConfig.basePath}
                       currentUserId={currentUserId}
                       issues={issues.items}
                       ownerName={ownerName}
                       projectName={projectName}
+                      runtimeConfig={runtimeConfig}
                       showMilestone={showMilestone}
                     />
                   ) : null}
@@ -328,25 +330,37 @@ function shouldShowDraftItems(search: ProjectIssuesSearch) {
 }
 
 function MassUpdateToolbar({
-  basePath,
   currentUserId,
   issues,
   ownerName,
   projectName,
+  runtimeConfig,
   showMilestone,
 }: {
-  basePath: string;
   currentUserId: string;
   issues: RestIssueListItem[];
   ownerName: string;
   projectName: string;
+  runtimeConfig: RuntimeConfig;
   showMilestone: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
   const formRef = useRef<HTMLFormElement>(null);
   const milestones = uniqueMilestones(issues);
   const labels = uniqueLabels(issues);
   const users = uniqueUsers(issues, currentUserId);
+  const { mutate: mutateMassUpdate } = useMutation({
+    mutationFn: async (input: Record<string, unknown>) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return massUpdateIssues(runtimeConfig, csrfToken, input);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["project", ownerName, projectName, "issues"],
+      });
+    },
+  });
 
   useEffect(() => {
     const form = formRef.current;
@@ -359,6 +373,13 @@ function MassUpdateToolbar({
     const rowCheckboxSelector = 'input[name="checked-issue"][data-toggle="issue-checkbox"]';
     const rowCheckboxes = () =>
       Array.from(document.querySelectorAll<HTMLInputElement>(rowCheckboxSelector));
+    const issueNumbersById = new Map(
+      issues.map((issue) => [
+        stringField(issue.id, String(issue.issueNumber)),
+        Number(stringField(issue.issueNumber, "0")),
+      ]),
+    );
+    const userLoginById = new Map(users.map((user) => [user.id, user.loginId]));
     const updateButtons = () => {
       const checkboxes = rowCheckboxes();
       const checkedCount = checkboxes.filter((checkbox) => checkbox.checked).length;
@@ -380,23 +401,72 @@ function MassUpdateToolbar({
         updateButtons();
       }
     };
+    const onDropdownItemClick = (event: Event) => {
+      const item = (event.target as Element | null)?.closest<HTMLElement>(
+        ".btn-group[data-name] li[data-value]",
+      );
+      const group = item?.closest<HTMLElement>(".btn-group[data-name]");
+      if (!item || !group || !form.contains(item)) {
+        return;
+      }
+      const issueNumbers: number[] = [];
+      for (const checkbox of rowCheckboxes()) {
+        if (!checkbox.checked) {
+          continue;
+        }
+        const issueNumber = issueNumbersById.get(checkbox.dataset.issueId ?? "");
+        if (issueNumber) {
+          issueNumbers.push(issueNumber);
+        }
+      }
+      if (issueNumbers.length === 0) {
+        return;
+      }
+
+      const value = item.dataset.value ?? "";
+      const input: Record<string, unknown> = { issueNumbers, ownerName, projectName };
+      switch (group.dataset.name) {
+        case "state":
+          input.state = value;
+          break;
+        case "assignee.id":
+          input.assigneeUpdate = true;
+          input.assigneeLoginId = userLoginById.get(value) ?? "";
+          break;
+        case "milestone.id":
+          input.milestoneUpdate = true;
+          input.milestoneId = value === "-1" ? 0 : Number(value);
+          break;
+        case "attachingLabelIds":
+          input.addLabelIds = [Number(value)];
+          break;
+        case "detachingLabelIds":
+          input.removeLabelIds = [Number(value)];
+          break;
+        default:
+          return;
+      }
+      mutateMassUpdate(input);
+    };
 
     checkAll?.addEventListener("change", onCheckAll);
     document.addEventListener("change", onRowCheckboxChange);
+    form.addEventListener("click", onDropdownItemClick);
     updateButtons();
 
     return () => {
       checkAll?.removeEventListener("change", onCheckAll);
       document.removeEventListener("change", onRowCheckboxChange);
+      form.removeEventListener("click", onDropdownItemClick);
     };
-  }, [issues]);
+  }, [issues, mutateMassUpdate, ownerName, projectName, users]);
 
   return (
     <div className="mass-update-wrap hide-in-mobile">
       <form
         id="mass-update-form"
         className="mass-update-form pull-left"
-        action={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
+        action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/issues`)}
         method="post"
         ref={formRef}
       >
