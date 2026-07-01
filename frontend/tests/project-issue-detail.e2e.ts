@@ -95,6 +95,35 @@ test("project issue detail renders legacy read-only selected labels", async ({ p
   ).toEqual(await canonicalizeHtml(page, expected));
 });
 
+test("project issue detail renders legacy read-only metadata fields", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, { viewerCanUpdate: false });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const expectedAssignee =
+    `<dd><a href="__BASE_PATH__/admin" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></dd>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(
+    await canonicalize(page, ".issue-info form dl:has(dt:text('Assignee')) > dd:nth-of-type(2)"),
+  ).toEqual(await canonicalizeHtml(page, expectedAssignee));
+
+  const expectedMilestone =
+    `<dd><a href="__BASE_PATH__/admin/sample/milestone/5">v1.0</a></dd>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Milestone')) > dd")).toEqual(
+    await canonicalizeHtml(page, expectedMilestone),
+  );
+
+  expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Due date')) > dd")).toEqual(
+    await canonicalizeHtml(page, `<dd>Jul 5, 2026</dd>`),
+  );
+});
+
 test("project issue detail renders legacy read-only sharer list", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {

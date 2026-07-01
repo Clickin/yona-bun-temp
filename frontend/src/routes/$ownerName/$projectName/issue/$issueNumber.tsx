@@ -291,16 +291,43 @@ function IssueDetailBody({
                   </dd>
                   <dt>Assignee</dt>
                   <dd>
-                    <input
-                      type="hidden"
-                      className="bigdrop"
-                      id="assignee"
-                      name="assigneeLoginId"
-                      placeholder="No assignee"
-                      defaultValue={assigneeLoginId}
-                      style={{ width: "100%" }}
-                      title=""
-                    />
+                    {canUpdate ? (
+                      <input
+                        type="hidden"
+                        className="bigdrop"
+                        id="assignee"
+                        name="assigneeLoginId"
+                        placeholder="No assignee"
+                        defaultValue={assigneeLoginId}
+                        style={{ width: "100%" }}
+                        title=""
+                      />
+                    ) : assigneeLoginId ? (
+                      <a
+                        href={prefixBasePath(basePath, `/${assigneeLoginId}`)}
+                        className="usf-group"
+                      >
+                        <span className="avatar-wrap smaller">
+                          <img
+                            src={stringField(
+                              issue.assigneeAvatarUrl,
+                              "/assets/images/default-avatar-32.png",
+                            )}
+                            width="20"
+                            height="20"
+                            alt=""
+                          />
+                        </span>
+                        <strong className="name">{stringField(issue.assigneeLabel)}</strong>
+                        <span className="loginid">
+                          {" "}
+                          <strong>@</strong>
+                          {assigneeLoginId}
+                        </span>
+                      </a>
+                    ) : (
+                      <div>No assignee</div>
+                    )}
                   </dd>
                 </dl>
                 <dl>
@@ -325,19 +352,23 @@ function IssueDetailBody({
                     Due date<span className="duedate-status "></span>
                   </dt>
                   <dd>
-                    <div className="search search-bar">
-                      <input
-                        type="text"
-                        name="dueDate"
-                        defaultValue={dueDateLabel}
-                        className="textbox full"
-                        autoComplete="off"
-                        data-toggle="calendar"
-                      />
-                      <button type="button" className="search-btn btn-calendar">
-                        <i className="yobicon-calendar2"></i>
-                      </button>
-                    </div>
+                    {canUpdate ? (
+                      <div className="search search-bar">
+                        <input
+                          type="text"
+                          name="dueDate"
+                          defaultValue={dueDateLabel}
+                          className="textbox full"
+                          autoComplete="off"
+                          data-toggle="calendar"
+                        />
+                        <button type="button" className="search-btn btn-calendar">
+                          <i className="yobicon-calendar2"></i>
+                        </button>
+                      </div>
+                    ) : (
+                      dueDateLabel || "No due date"
+                    )}
                   </dd>
                 </dl>
                 {canUpdate ? (
