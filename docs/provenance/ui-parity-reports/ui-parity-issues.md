@@ -113,6 +113,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx` now keeps the full voter list available to the inline voter renderer, emits the legacy `#voters` modal link with tooltip names, and uses the legacy `user.login.alert` copy for disabled issue voting.
 - Verification: `frontend/tests/project-issue-detail.e2e.ts` includes RED-to-GREEN DOM comparisons for the disabled vote action and the issue voter overflow link.
 
+## 2026-07-01 Project Issue Detail Keymap Follow-Up
+
+- Restored the `issue/view.scala.html` board-footer `help.keymap("issueDetail", project)` caller branch, including the trigger button, `#helpKeys.modal.hide.fade.keymap-help`, project/site shortcut columns, issue-detail shortcut rows, and Issue Comments close shortcut row.
+- Scope: `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx` now renders the issue-detail keymap from the loaded project container, preserving the legacy Git pull-request shortcut, manager setting shortcut, and Mac/non-Mac modifier behavior without adding a shared abstraction.
+- Verification: `frontend/tests/project-issue-detail.e2e.ts` compares the `/admin/sample/issue/11` whole-screen DOM with the legacy board-footer keymap included.
+
 ## Evidence Checked
 
 Legacy evidence:
