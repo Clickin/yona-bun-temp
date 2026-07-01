@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { Fragment, type ReactNode } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   pullRequestDetailQueryOptions,
   type PullRequestCommit,
@@ -125,10 +127,9 @@ function PullRequestOverviewBody({
               </a>
               <PullRequestBranchInfo pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
             </div>
-            <div
-              className="content markdown-wrap"
-              dangerouslySetInnerHTML={{ __html: pullRequest.bodyHtml }}
-            />
+            <div className="content markdown-wrap">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{pullRequest.bodyMarkdown}</ReactMarkdown>
+            </div>
             <div className="attachments" data-attachments="[]"></div>
           </div>
 
