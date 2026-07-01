@@ -40,11 +40,13 @@ function ProjectPullRequestOverviewRoute() {
 function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName, pullRequestNumber } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isEditChildRoute = pathname.endsWith(`/pullRequest/${pullRequestNumber}/editform`);
+  const isChildRoute = !pathname.endsWith(
+    `/${ownerName}/${projectName}/pullRequest/${pullRequestNumber}`,
+  );
   const prNumber = Number(pullRequestNumber) || 0;
   const projectQuery = useQuery({
     ...readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-    enabled: !isEditChildRoute,
+    enabled: !isChildRoute,
   });
   const pullRequestQuery = useQuery({
     ...pullRequestDetailQueryOptions(runtimeConfig, {
@@ -52,14 +54,14 @@ function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: Ru
       projectName,
       pullRequestNumber: prNumber,
     }),
-    enabled: !isEditChildRoute,
+    enabled: !isChildRoute,
   });
   const sessionQuery = useQuery({
     ...currentSessionQueryOptions(runtimeConfig),
-    enabled: !isEditChildRoute,
+    enabled: !isChildRoute,
   });
 
-  if (isEditChildRoute) {
+  if (isChildRoute) {
     return <Outlet />;
   }
 
@@ -481,11 +483,13 @@ function CommitMessage({ commit, href }: { commit: PullRequestCommit; href: stri
   );
 }
 
-function PullRequestHeader({
+export function PullRequestHeader({
+  activeTab = "overview",
   project,
   pullRequest,
   runtimeConfig,
 }: {
+  activeTab?: "changes" | "overview";
   project: ProjectContainer;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
@@ -589,12 +593,12 @@ function PullRequestHeader({
       </div>
 
       <ul className="nav nav-tabs nm">
-        <li className="active">
+        <li className={activeTab === "overview" ? "active" : undefined}>
           <a href={prefixBasePath(runtimeConfig.basePath, prPath)}>
             {t("pullRequest.menu.overview")}
           </a>
         </li>
-        <li>
+        <li className={activeTab === "changes" ? "active" : undefined}>
           <a href={prefixBasePath(runtimeConfig.basePath, `${prPath}/changes`)}>
             {t("pullRequest.menu.changes")}
             {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
@@ -605,7 +609,7 @@ function PullRequestHeader({
   );
 }
 
-function PullRequestBranchInfo({
+export function PullRequestBranchInfo({
   pullRequest,
   runtimeConfig,
 }: {
@@ -675,7 +679,7 @@ function PullRequestBranchInfo({
   );
 }
 
-function PullRequestStateInfo({
+export function PullRequestStateInfo({
   currentUserLoginId,
   pullRequest,
   runtimeConfig,
