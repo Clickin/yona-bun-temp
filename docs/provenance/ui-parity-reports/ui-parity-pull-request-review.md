@@ -5,6 +5,14 @@ Date: 2026-06-26
 Packet: `ui-parity-pull-request-review`
 Write scope: PR review bounded implementation packet
 
+2026-07-01 current-state correction: the active React route tree currently
+contains the flat PR list routes (`pullRequests`, `closedPullRequests`,
+`sentPullRequests`) but no `frontend/src/routes/**/pullRequest/**`
+overview/changes/edit route files and no active
+`frontend/tests/pull-request-review-*.e2e.ts` files. Rows below that cite the
+older nested `$owner/$projectName/pullRequest/...` implementation are
+historical evidence until those routes are reintroduced and reverified.
+
 ## Scope And Evidence
 
 Phase contract: `docs/plans/2026-06-26-full-ui-parity-subagent-phase.md`.
@@ -177,4 +185,5 @@ Total rows: 22
 
 ## Follow-Up Queue Proposal
 
-1. If exact legacy timeline author labels are required beyond login id text, add a focused sender display-name/avatar projection to the PR event DTO.
+1. Reintroduce the active React PR overview/changes/edit route files from legacy `git/view.scala.html`, `git/viewChanges.scala.html`, and `git/edit.scala.html`, then reverify `partial_pull_request_event.scala.html` through rendered `li.event#comment-*` rows.
+2. If exact legacy timeline author labels are required beyond login id text, add a focused sender display-name/avatar projection to the PR event DTO.
