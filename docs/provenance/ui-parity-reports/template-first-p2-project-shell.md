@@ -34,7 +34,7 @@ equivalent.
 | `frontend/src/routes/$owner/$projectName/**` | Route entrypoints for project pages. |
 | `frontend/src/routes/projects.tsx` | Active template-first reset implementation for `project/list.scala.html` at `/projects`, using REST `/api/v1/projects` through TanStack Query while preserving the legacy site-layout/project-directory DOM. |
 | `frontend/src/app.css` | Project header/menu/settings visual approximation. |
-| `frontend/tests/project-home-parity.e2e.ts`, `project-settings-parity.e2e.ts`, `project-members-parity.e2e.ts`, `project-webhooks-parity.e2e.ts`, `project-delete-parity.e2e.ts`, `project-transfer-parity.e2e.ts`, `project-change-vcs-parity.e2e.ts` | Route/interaction proof. |
+| `frontend/tests/project-home-readme.e2e.ts`, `project-home-history.e2e.ts`, `project-home-dashboard.e2e.ts`, `project-settings-form.e2e.ts`, `project-members-form.e2e.ts`, `project-webhooks-form.e2e.ts`, `project-delete-form.e2e.ts`, `project-transfer-form.e2e.ts`, `project-change-vcs-form.e2e.ts` | Template-first route proof. |
 | `frontend/src/project-home-tabs.spec.tsx`, `frontend/src/project-settings-parity.spec.tsx`, `frontend/src/project-members-parity.spec.tsx`, `frontend/src/project-watchers-parity.spec.tsx` | Static selector proof. |
 
 ## Open Reset Queue Summary
