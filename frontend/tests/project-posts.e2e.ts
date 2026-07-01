@@ -346,7 +346,7 @@ test("project board detail renders legacy parent comments", async ({ page }) => 
 
 test("project board detail renders legacy comment update form", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectPosts(page, "commentUpdate");
+  const { commentUpdateRequests } = await mockProjectPosts(page, "commentUpdate");
 
   await page.goto(`${basePath}/admin/sample/post/3`);
   await expect(page.locator("#comment-editform-21 .comment-update-button")).toHaveCount(1);
@@ -362,6 +362,21 @@ test("project board detail renders legacy comment update form", async ({ page })
       EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT_UPDATE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+
+  await page.locator('#comment-21 [data-toggle="comment-edit"]').click();
+  await expect(page.locator("#comment-editform-21")).toHaveCSS("display", "block");
+  await expect(page.locator("#comment-body-21")).toHaveCSS("display", "none");
+  await page.locator("#editor-contents-21").fill("Updated **board** comment");
+  await page.locator("#comment-editform-21 button[type='submit']").click();
+  await expect
+    .poll(() => commentUpdateRequests)
+    .toEqual([
+      {
+        attachmentIds: [],
+        contentsMarkdown: "Updated **board** comment",
+        parentCommentId: null,
+      },
+    ]);
 });
 
 test("project board detail renders legacy post and comment attachments", async ({ page }) => {
@@ -498,6 +513,11 @@ async function mockProjectPosts(
     | "childComment" = "default",
 ) {
   const commentCreateRequests: Array<{
+    attachmentIds: string[];
+    contentsMarkdown: string;
+    parentCommentId: string | number | null;
+  }> = [];
+  const commentUpdateRequests: Array<{
     attachmentIds: string[];
     contentsMarkdown: string;
     parentCommentId: string | number | null;
@@ -883,6 +903,68 @@ async function mockProjectPosts(
     await route.fallback();
   });
   await page.route("**/api/v1/projects/admin/sample/posts/3/comments/21", async (route) => {
+    if (route.request().method() === "PATCH") {
+      const body = JSON.parse(route.request().postData() ?? "{}") as {
+        attachmentIds?: string[];
+        contentsMarkdown?: string;
+        parentCommentId?: string | number | null;
+      };
+      commentUpdateRequests.push({
+        attachmentIds: body.attachmentIds ?? [],
+        contentsMarkdown: body.contentsMarkdown ?? "",
+        parentCommentId: body.parentCommentId ?? null,
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          authorAvatarUrl: "/assets/images/default-avatar-32.png",
+          authorId: "2",
+          authorLabel: "Dev Member",
+          authorLoginId: "dev",
+          bodyHtml: "<p>Post <strong>markdown</strong></p>",
+          bodyMarkdown: "Post **markdown**",
+          commentCount: 1,
+          comments: [
+            {
+              attachments: [],
+              authorId: "2",
+              authorLabel: "Dev Member",
+              authorLoginId: "dev",
+              contentsHtml: "<p>Updated <strong>board</strong> comment</p>",
+              contentsMarkdown: "Updated **board** comment",
+              createdLabel: "Jul 3, 2026",
+              id: "21",
+              parentCommentId: "",
+              viaEmail: false,
+            },
+          ],
+          createdLabel: "Jul 2, 2026",
+          historyHtml: "",
+          historyMarkdown: "",
+          id: "33",
+          isWatching: false,
+          labels: [],
+          notice: false,
+          ownerName: "admin",
+          permissions: {
+            canComment: true,
+            canCreate: true,
+            canDelete: true,
+            canRead: true,
+            canSetNotice: true,
+            canWatch: true,
+            canUpdate: true,
+          },
+          postNumber: "3",
+          projectName: "sample",
+          readme: false,
+          title: "Release note",
+          updatedLabel: "Jul 2, 2026",
+          watcherCount: 0,
+        }),
+      });
+      return;
+    }
     if (route.request().method() === "DELETE") {
       commentDeleteRequests.push(route.request().method());
       await route.fulfill({
@@ -925,7 +1007,13 @@ async function mockProjectPosts(
     }
     await route.fallback();
   });
-  return { commentCreateRequests, commentDeleteRequests, deleteRequests, watchRequests };
+  return {
+    commentCreateRequests,
+    commentDeleteRequests,
+    commentUpdateRequests,
+    deleteRequests,
+    watchRequests,
+  };
 }
 
 async function canonicalize(page: Page, selector: string) {

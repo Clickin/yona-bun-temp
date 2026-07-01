@@ -7,6 +7,7 @@ import {
   deletePostCommentRest,
   readProjectPostQueryOptions,
   unwatchPostRest,
+  updatePostCommentRest,
   watchPostRest,
   type BoardAttachment,
   type BoardLabel,
@@ -160,6 +161,27 @@ function ProjectPostDetailBody({
       queryClient.setQueryData(postQueryOptions.queryKey, updatedPost);
     },
   });
+  const commentUpdateMutation = useMutation({
+    mutationFn: async ({
+      commentId,
+      contentsMarkdown,
+    }: {
+      commentId: string;
+      contentsMarkdown: string;
+    }) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updatePostCommentRest(runtimeConfig, csrfToken, {
+        commentId,
+        contentsMarkdown,
+        ownerName,
+        postNumber,
+        projectName,
+      });
+    },
+    onSuccess(updatedPost) {
+      queryClient.setQueryData(postQueryOptions.queryKey, updatedPost);
+    },
+  });
 
   return (
     <div className="page-wrap-outer">
@@ -271,6 +293,9 @@ function ProjectPostDetailBody({
               canUpdate={canUpdate}
               onCreateComment={(contentsMarkdown) =>
                 commentCreateMutation.mutateAsync(contentsMarkdown)
+              }
+              onUpdateComment={(commentId, contentsMarkdown) =>
+                commentUpdateMutation.mutateAsync({ commentId, contentsMarkdown })
               }
               ownerName={ownerName}
               post={post}
@@ -514,6 +539,7 @@ function PostComments({
   canDelete,
   canUpdate,
   onCreateComment,
+  onUpdateComment,
   ownerName,
   post,
   postNumber,
@@ -523,6 +549,7 @@ function PostComments({
   canDelete: boolean;
   canUpdate: boolean;
   onCreateComment: (contentsMarkdown: string) => Promise<unknown>;
+  onUpdateComment: (commentId: string, contentsMarkdown: string) => Promise<unknown>;
   ownerName: string;
   post: BoardPostDetail;
   postNumber: string;
@@ -552,6 +579,7 @@ function PostComments({
                 )}
                 comment={comment}
                 key={comment.id}
+                onUpdateComment={onUpdateComment}
                 ownerName={ownerName}
                 postNumber={postNumber}
                 projectName={projectName}
@@ -666,6 +694,7 @@ function PostCommentRow({
   canUpdate,
   childComments,
   comment,
+  onUpdateComment,
   ownerName,
   postNumber,
   projectName,
@@ -676,6 +705,7 @@ function PostCommentRow({
   canUpdate: boolean;
   childComments: BoardPostComment[];
   comment: BoardPostComment;
+  onUpdateComment: (commentId: string, contentsMarkdown: string) => Promise<unknown>;
   ownerName: string;
   postNumber: string;
   projectName: string;
@@ -765,6 +795,7 @@ function PostCommentRow({
           basePath={basePath}
           canUpdate={canUpdate}
           comment={comment}
+          onUpdateComment={onUpdateComment}
           ownerName={ownerName}
           postNumber={postNumber}
           projectName={projectName}
@@ -804,6 +835,7 @@ function PostCommentUpdateForm({
   basePath,
   canUpdate,
   comment,
+  onUpdateComment,
   ownerName,
   postNumber,
   projectName,
@@ -811,11 +843,22 @@ function PostCommentUpdateForm({
   basePath: string;
   canUpdate: boolean;
   comment: BoardPostComment;
+  onUpdateComment: (commentId: string, contentsMarkdown: string) => Promise<unknown>;
   ownerName: string;
   postNumber: string;
   projectName: string;
 }) {
   const commentId = stringField(comment.id);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const contents = new FormData(event.currentTarget).get("contents");
+    await onUpdateComment(commentId, typeof contents === "string" ? contents : "");
+    document
+      .getElementById(`comment-editform-${commentId}`)
+      ?.setAttribute("style", "display: none;");
+    document.getElementById(`comment-body-${commentId}`)?.removeAttribute("style");
+  }
 
   return (
     <div id={`comment-editform-${commentId}`} className="comment-update-form">
@@ -826,6 +869,7 @@ function PostCommentUpdateForm({
         )}
         method="post"
         encType="multipart/form-data"
+        onSubmit={handleSubmit}
       >
         <input type="hidden" name="id" value={commentId} />
         <div className="write-comment-box">
