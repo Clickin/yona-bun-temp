@@ -915,7 +915,12 @@ function PostCommentUpdateForm({
             value=""
           />
           <div className={`preview-${commentId}`}></div>
-          <div className="attachment-files"></div>
+          <div
+            className="attachment-files"
+            dangerouslySetInnerHTML={{
+              __html: attachmentFileHtml(basePath, comment.attachments),
+            }}
+          ></div>
           <div
             id={`upload-${commentId}`}
             data-resourcetype="NONISSUE_COMMENT"
@@ -1165,6 +1170,20 @@ function attachedFilesHtml(basePath: string, attachments: BoardAttachment[]) {
       const href = prefixBasePath(basePath, `/files/${id}`);
 
       return `<li class="attached-file" data-name="${escapeHtml(name)}" data-href="${escapeHtml(href)}" data-mime="${escapeHtml(mimeType)}" data-size="${escapeHtml(size)}"><strong>${escapeHtml(name)}(${escapeHtml(size)})</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li>`;
+    })
+    .join("");
+}
+
+function attachmentFileHtml(basePath: string, attachments: BoardAttachment[]) {
+  return attachments
+    .map((file) => {
+      const id = stringField(file.id);
+      const name = stringField(file.name);
+      const mimeType = stringField(file.mimeType);
+      const size = String(file.size);
+      const href = prefixBasePath(basePath, `/files/${id}`);
+
+      return `<div class="attached-file attached-file-marker" data-name="${escapeHtml(name)}" data-href="${escapeHtml(href)}" data-mime="${escapeHtml(mimeType)}"><i class="mimetype"></i><strong class="name">${escapeHtml(name)}</strong><span class="size">${escapeHtml(size)}</span><button type="button" class="btn-transparent btn-delete" data-id="${escapeHtml(id)}">×</button></div>`;
     })
     .join("");
 }

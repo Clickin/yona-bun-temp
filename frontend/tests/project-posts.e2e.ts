@@ -392,6 +392,9 @@ test("project board detail renders legacy post and comment attachments", async (
     "data-href",
     `${basePath}/files/41`,
   );
+  await expect(
+    page.locator("#comment-editform-21 .attachment-files .attached-file-marker"),
+  ).toHaveAttribute("data-href", `${basePath}/files/41`);
 
   const postAttachments = [{ id: "31", mimeType: "text/plain", name: "post-note.txt", size: 1024 }];
   const expectedPostAttachments =
@@ -413,6 +416,15 @@ test("project board detail renders legacy post and comment attachments", async (
     );
   expect(await canonicalize(page, "#comment-body-21 > .attachments")).toEqual(
     await canonicalizeHtml(page, expectedCommentAttachments),
+  );
+
+  const expectedCommentUpdateAttachment =
+    `<div class="attachment-files"><div class="attached-file attached-file-marker" data-name="comment-shot.png" data-href="__BASE_PATH__/files/41" data-mime="image/png"><i class="mimetype"></i><strong class="name">comment-shot.png</strong><span class="size">2048</span><button type="button" class="btn-transparent btn-delete" data-id="41">×</button></div></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, "#comment-editform-21 .attachment-files")).toEqual(
+    await canonicalizeHtml(page, expectedCommentUpdateAttachment),
   );
 });
 
