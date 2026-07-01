@@ -17,23 +17,61 @@ export const Route = createFileRoute("/$ownerName/$projectName/commits/$branch/$
   },
 });
 
+export type ProjectCodeFileHistoryRouteParams = {
+  branch: string;
+  filePath: string;
+  ownerName: string;
+  projectName: string;
+};
+
 function ProjectCodeFileHistoryRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const routeParams = Route.useParams();
+  const { page } = Route.useSearch();
 
+  return (
+    <ProjectCodeFileHistoryRouteFrame
+      page={page}
+      routeParams={routeParams}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+}
+
+export function ProjectCodeFileHistoryRouteFrame({
+  page,
+  routeParams,
+  runtimeConfig,
+}: {
+  page: number;
+  routeParams: ProjectCodeFileHistoryRouteParams;
+  runtimeConfig: RuntimeConfig;
+}) {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectCodeFileHistoryScreen runtimeConfig={runtimeConfig} />
+          <ProjectCodeFileHistoryScreen
+            page={page}
+            routeParams={routeParams}
+            runtimeConfig={runtimeConfig}
+          />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectCodeFileHistoryScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { branch, filePath, ownerName, projectName } = Route.useParams();
-  const { page } = Route.useSearch();
+function ProjectCodeFileHistoryScreen({
+  page,
+  routeParams,
+  runtimeConfig,
+}: {
+  page: number;
+  routeParams: ProjectCodeFileHistoryRouteParams;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { branch, filePath, ownerName, projectName } = routeParams;
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -55,20 +93,26 @@ function ProjectCodeFileHistoryScreen({ runtimeConfig }: { runtimeConfig: Runtim
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectCodeFileHistoryBody history={historyQuery.data} runtimeConfig={runtimeConfig} />
+      <ProjectCodeFileHistoryBody
+        history={historyQuery.data}
+        routeParams={routeParams}
+        runtimeConfig={runtimeConfig}
+      />
     </>
   );
 }
 
 function ProjectCodeFileHistoryBody({
   history,
+  routeParams,
   runtimeConfig,
 }: {
   history: CodeHistoryResponse;
+  routeParams: ProjectCodeFileHistoryRouteParams;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
-  const { branch, filePath, ownerName, projectName } = Route.useParams();
+  const { branch, filePath, ownerName, projectName } = routeParams;
   const selectedBranch = history.selectedBranch || branch;
   const encodedBranch = encodeURIComponent(selectedBranch);
   const historyHref = projectHref(

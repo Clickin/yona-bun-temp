@@ -4,12 +4,16 @@ const EXPECTED_HISTORY_FILE_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><div id="breadcrumbs" class="code-breadcrumb-wrap"><a href="__BASE_PATH__/admin/sample/commits/main">sample</a><a href="__BASE_PATH__/admin/sample/commits/main/README.md">README.md</a></div><div id="history" class="commit-wrap"><table class="code-table commits mt10"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="browse"></td><td class="date"><strong>Author Date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="abcdef1234567890"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main&amp;path=README.md#README-md" title="View commit">abcdef1</a></td><td class="messages"><span class="number-of-comments"><i class="yobicon-comments"></i> 2</span><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main&amp;path=README.md#README-md" class="commitMsg short">Initial commit</a><button type="button" class="commitMsg moreBtn"><span>...</span></button><pre class="commitMsg desc hidden">Add README</pre></td><td class="browse"><a href="__BASE_PATH__/admin/sample/code/abcdef1/README.md" title="Browse code at this point" class="ybtn">Browse code</a></td><td class="date">Jul 1, 2026</td><td class="author"><a href="__BASE_PATH__/admin" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></td></tr></tbody></table></div></div><div class="actrow margin-top-20"><a href="__BASE_PATH__/admin/sample/commits/main/README.md?page=1" class="ybtn pull-left">Newer</a><a href="__BASE_PATH__/admin/sample/commits/main/README.md?page=3" class="ybtn pull-left">Older</a></div></div></div></div>
 `;
 
+const EXPECTED_HISTORY_NESTED_FILE_BODY = `
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><div id="breadcrumbs" class="code-breadcrumb-wrap"><a href="__BASE_PATH__/admin/sample/commits/main">sample</a><a href="__BASE_PATH__/admin/sample/commits/main/docs">docs</a><a href="__BASE_PATH__/admin/sample/commits/main/docs/guide">guide</a><a href="__BASE_PATH__/admin/sample/commits/main/docs/guide/README.md">README.md</a></div><div id="history" class="commit-wrap"><table class="code-table commits mt10"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="browse"></td><td class="date"><strong>Author Date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="abcdef1234567890"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main&amp;path=docs%2Fguide%2FREADME.md#docs-guide-README-md" title="View commit">abcdef1</a></td><td class="messages"><span class="number-of-comments"><i class="yobicon-comments"></i> 2</span><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main&amp;path=docs%2Fguide%2FREADME.md#docs-guide-README-md" class="commitMsg short">Initial commit</a><button type="button" class="commitMsg moreBtn"><span>...</span></button><pre class="commitMsg desc hidden">Add README</pre></td><td class="browse"><a href="__BASE_PATH__/admin/sample/code/abcdef1/docs/guide/README.md" title="Browse code at this point" class="ybtn">Browse code</a></td><td class="date">Jul 1, 2026</td><td class="author"><a href="__BASE_PATH__/admin" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></td></tr></tbody></table></div></div><div class="actrow margin-top-20"><a href="__BASE_PATH__/admin/sample/commits/main/docs/guide/README.md?page=1" class="ybtn pull-left">Newer</a><a href="__BASE_PATH__/admin/sample/commits/main/docs/guide/README.md?page=3" class="ybtn pull-left">Older</a></div></div></div></div>
+`;
+
 test("project code file history matches legacy code/history.scala.html path DOM", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const historyRequests: string[] = [];
-  await mockProjectCodeFileHistory(page, historyRequests);
+  await mockProjectCodeFileHistory(page, historyRequests, "README.md");
 
   await page.goto(`${basePath}/admin/sample/commits/main/README.md?page=2`);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
@@ -20,7 +24,23 @@ test("project code file history matches legacy code/history.scala.html path DOM"
   );
 });
 
-async function mockProjectCodeFileHistory(page: Page, historyRequests: string[]) {
+test("project code file history keeps nested legacy path segments", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const historyRequests: string[] = [];
+  await mockProjectCodeFileHistory(page, historyRequests, "docs/guide/README.md");
+
+  await page.goto(`${basePath}/admin/sample/commits/main/docs/guide/README.md?page=2`);
+  await expect(page.locator("#history .code-table.commits.mt10 tbody tr")).toHaveCount(1);
+  expect(historyRequests).toEqual(["branch=main&page=2&path=docs%2Fguide%2FREADME.md"]);
+  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_HISTORY_NESTED_FILE_BODY.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+async function mockProjectCodeFileHistory(page: Page, historyRequests: string[], filePath: string) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -71,7 +91,7 @@ async function mockProjectCodeFileHistory(page: Page, historyRequests: string[])
       contentType: "application/json",
       body: JSON.stringify({
         branches: [{ name: "main" }, { name: "feature/release" }],
-        breadcrumbs: [{ name: "README.md", path: "README.md" }],
+        breadcrumbs: breadcrumbsFor(filePath),
         commits: [
           {
             authorAvatarUrl: "/assets/images/default-avatar-32.png",
@@ -91,12 +111,19 @@ async function mockProjectCodeFileHistory(page: Page, historyRequests: string[])
         noHead: false,
         ownerName: "admin",
         page: 2,
-        path: "README.md",
+        path: filePath,
         projectName: "sample",
         selectedBranch: "main",
       }),
     });
   });
+}
+
+function breadcrumbsFor(filePath: string) {
+  return filePath.split("/").map((name, index, parts) => ({
+    name,
+    path: parts.slice(0, index + 1).join("/"),
+  }));
 }
 
 async function canonicalize(page: Page, selector: string) {
