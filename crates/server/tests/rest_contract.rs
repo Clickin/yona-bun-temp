@@ -5,8 +5,8 @@ use http_body_util::BodyExt;
 // Guards workspace route behavior while server root import-bus dependencies are
 // replaced with module-local imports.
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
-    Set,
+    entity::prelude::DateTime, ActiveModelTrait, ColumnTrait, Database, DatabaseConnection,
+    EntityTrait, NotSet, QueryFilter, Set,
 };
 use serde_json::json;
 use serde_json::Value;
@@ -16,7 +16,7 @@ use yoram_persistence::{
     email, issue, title_head, user_project_notification, watch, AppRepository,
     CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput, CreatePostingInput,
     CreateProjectInput, CreateProjectLabelInput, CreatePullRequestInput, CreatePullRequestResult,
-    IssueMutationInput, PostingMutationInput, PullRequestMutationInput,
+    IssueMutationInput, MilestoneMutationInput, PostingMutationInput, PullRequestMutationInput,
 };
 use yoram_server::{
     create_router, create_router_with_app_repository, create_router_with_repository_and_app_config,
@@ -5401,6 +5401,20 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
         .await
         .unwrap()
         .expect("profile issue label");
+    let profile_milestone = repository
+        .create_project_milestone(MilestoneMutationInput {
+            actor_id: Some(owner.id),
+            attachment_ids: Vec::new(),
+            contents_markdown: "profile milestone body".to_string(),
+            due_date: Some("2026-08-01T00:00:00".parse::<DateTime>().unwrap()),
+            owner_name: "owner".to_string(),
+            project_name: "publicYobi".to_string(),
+            state: "open".to_string(),
+            title: "v1.0".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("profile issue milestone");
     repository
         .create_issue(CreateIssueInput {
             actor_display_name: "owner".to_string(),
@@ -5412,11 +5426,11 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
                 assignee_login_id: Some("owner".to_string()),
                 attachment_ids: Vec::new(),
                 body_markdown: "public profile issue body".to_string(),
-                due_date: None,
+                due_date: Some("2026-08-01T00:00:00".parse::<DateTime>().unwrap()),
                 is_draft: false,
                 is_publish: false,
                 label_ids: vec![profile_label.id],
-                milestone_id: None,
+                milestone_id: Some(profile_milestone.id),
                 parent_issue_id: None,
                 title: "public profile issue".to_string(),
             },
@@ -5478,6 +5492,10 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
     assert_eq!(issues[0]["labels"][0]["id"], profile_label.id);
     assert_eq!(issues[0]["labels"][0]["name"], "Bug");
     assert_eq!(issues[0]["labels"][0]["color"], "#f44336");
+    assert_eq!(issues[0]["milestoneId"], profile_milestone.id);
+    assert_eq!(issues[0]["milestoneTitle"], "v1.0");
+    assert_eq!(issues[0]["dueDateLabel"], "2026-08-01");
+    assert_eq!(issues[0]["dueDateOverdue"], false);
     let pull_requests = profile["pullRequestItems"].as_array().unwrap();
     assert_eq!(pull_requests.len(), 1);
     assert_eq!(pull_requests[0]["contributorLoginId"], "owner");

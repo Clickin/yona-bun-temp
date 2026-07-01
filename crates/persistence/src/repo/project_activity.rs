@@ -643,6 +643,9 @@ impl AppRepositoryImpl<'_> {
             let author_login_id = row.author_login_id.unwrap_or_default();
             let author_label = row.author_name.unwrap_or_default();
             let labels = self.list_issue_labels(row.id).await?;
+            let due_date = row.due_date;
+            let (milestone_id, milestone_title) =
+                self.issue_milestone_summary(row.milestone_id).await?;
             let (assignee_login_id, assignee_label) = match row.assignee_id {
                 Some(assignee_id) => {
                     let assignee_user_id = assignee::Entity::find_by_id(assignee_id)
@@ -667,8 +670,13 @@ impl AppRepositoryImpl<'_> {
                 author_label,
                 author_login_id,
                 comment_count: row.num_of_comments.unwrap_or_default() as u32,
+                due_date_label: format_workspace_date_label(due_date),
+                due_date_overdue: due_date
+                    .is_some_and(|value| value < DateTimeUtc::from(SystemTime::now()).naive_utc()),
                 issue_number,
                 labels,
+                milestone_id,
+                milestone_title,
                 owner_name: project_record.owner_name,
                 project_name: project_record.project_name,
                 state: issue_state_from_raw(row.state),

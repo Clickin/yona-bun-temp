@@ -736,6 +736,14 @@ pub struct WorkspaceIssueItem {
     #[serde(default)]
     pub labels: Vec<IssueLabel>,
     #[serde(default)]
+    pub due_date_label: String,
+    #[serde(default)]
+    pub due_date_overdue: bool,
+    #[serde(default)]
+    pub milestone_id: i64,
+    #[serde(default)]
+    pub milestone_title: String,
+    #[serde(default)]
     pub title: String,
     #[serde(default)]
     pub state: String,

@@ -192,12 +192,16 @@ fn workspace_issue_item_from_record(
         author_label: record.author_label.clone(),
         author_login_id: record.author_login_id.clone(),
         comment_count: record.comment_count,
+        due_date_label: record.due_date_label.clone(),
+        due_date_overdue: record.due_date_overdue,
         issue_number: record.issue_number,
         labels: record
             .labels
             .iter()
             .map(super::utils::issue_label_from_record)
             .collect(),
+        milestone_id: record.milestone_id.unwrap_or_default(),
+        milestone_title: record.milestone_title.clone(),
         owner_name: record.owner_name.clone(),
         project_name: record.project_name.clone(),
         state: record.state.clone(),

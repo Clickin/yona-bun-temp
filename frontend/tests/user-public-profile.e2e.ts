@@ -48,7 +48,7 @@ const EXPECTED_PROFILE_SCREEN = `
                   </li>
                 </ul>
               </div>
-              <div id="closedIssues" class="tab-pane"><ul class="post-list-wrap my-issues row-fluid"><li class="post-item title" id="issue-item-12" href="__BASE_PATH__/door/sample/issue/8"><div class="span12 span-hard-wrap"><div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/door/sample" class="title project" data-toggle="tooltip" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#8</span></div><div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/8" class="title">Closed profile issue</a><span class="for-subtask-progressbar"></span><div class="child-issue-list hide"></div></span></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/door" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="door">Door User</a></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item"></span></div><div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><span class="infos-item"></span></span><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="2026-06-29">2026-06-29</span></span></div></div></li></ul></div>
+              <div id="closedIssues" class="tab-pane"><ul class="post-list-wrap my-issues row-fluid"><li class="post-item title" id="issue-item-12" href="__BASE_PATH__/door/sample/issue/8"><div class="span12 span-hard-wrap"><div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/door/sample" class="title project" data-toggle="tooltip" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#8</span></div><div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/8" class="title">Closed profile issue</a><span class="for-subtask-progressbar"></span><div class="child-issue-list hide"></div></span></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/door" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="door">Door User</a></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item"></span></div><div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><span class="infos-item"></span></span><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="2026-06-29">2026-06-29</span><span class="mileston-tag"><a href="__BASE_PATH__/door/sample/milestone/3" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="pull-right " data-toggle="tooltip" data-placement="top" title="Due date: 2026-08-01"><i class="yobicon-clock2"></i>2026-08-01</span></span></div></div></li></ul></div>
             </div>
           </div>
           <div id="pullRequests" class="tab-pane ">
@@ -307,8 +307,12 @@ async function mockPublicProfile(page: Page, options: MockPublicProfileOptions =
             authorLabel: "Door User",
             authorLoginId: "door",
             commentCount: 0,
+            dueDateLabel: "2026-08-01",
+            dueDateOverdue: false,
             id: 12,
             issueNumber: 8,
+            milestoneId: 3,
+            milestoneTitle: "v1.0",
             ownerName: "door",
             projectName: "sample",
             state: "closed",

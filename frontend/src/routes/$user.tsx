@@ -422,6 +422,10 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
   const projectHref = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
   const issueHref = `${projectHref}/issue/${issueNumber}`;
   const labels = sortedWorkspaceIssueLabels(issue.labels ?? []);
+  const milestoneId = numberField(issue, "milestoneId");
+  const milestoneTitle = stringField(issue, "milestoneTitle");
+  const dueDateLabel = stringField(issue, "dueDateLabel");
+  const dueDateOverdue = Boolean(issue.dueDateOverdue);
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
 
   return (
@@ -493,6 +497,31 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
             >
               {stringField(issue, "updatedLabel")}
             </span>
+            {milestoneId > 0 && milestoneTitle ? (
+              <span className="mileston-tag">
+                <a
+                  href={`${projectHref}/milestone/${milestoneId}`}
+                  data-toggle="tooltip"
+                  data-placement="bottom"
+                  title={t("milestone")}
+                >
+                  {milestoneTitle}
+                </a>
+              </span>
+            ) : null}
+            {dueDateLabel ? (
+              <span
+                className={`pull-right ${dueDateOverdue ? "overdue" : ""}`}
+                data-toggle="tooltip"
+                data-placement="top"
+                title={`${t("issue.dueDate")}: ${dueDateLabel}`}
+              >
+                <i className="yobicon-clock2"></i>
+                {stringField(issue, "state") === "open" && dueDateOverdue
+                  ? t("issue.dueDate.overdue")
+                  : dueDateLabel}
+              </span>
+            ) : null}
           </span>
         </div>
       </div>
