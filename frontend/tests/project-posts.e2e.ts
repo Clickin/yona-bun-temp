@@ -602,6 +602,7 @@ test("project board detail renders legacy post and comment attachments", async (
 
 test("project board detail renders legacy child comments", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const submitKey = process.platform === "darwin" ? "⌘" : "CTRL";
   await mockProjectPosts(page, "childComment");
 
   await page.goto(`${basePath}/admin/sample/post/3`);
@@ -610,6 +611,162 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   await expect(page.locator("#comment-21 .child-comments .one-line-comment")).toContainText(
     "Nested reply",
   );
+  const childCommentMetrics = await page.locator("#comment-21").evaluate((comment) => {
+    const reply = comment.querySelector(".add-a-comment") as HTMLElement;
+    const body = comment.querySelector(".subcomment-media-body") as HTMLElement;
+    const childComments = comment.querySelector(".child-comments") as HTMLElement;
+    const row = comment.querySelector(".one-line-comment") as HTMLElement;
+    const contents = comment.querySelector(".one-line-comment .contents") as HTMLElement;
+    const author = comment.querySelector(".subcomment-author") as HTMLElement;
+    const ago = comment.querySelector(".subcomment-author .ago") as HTMLAnchorElement;
+    const deleteButton = comment.querySelector(".deleteButtonX") as HTMLAnchorElement;
+    const formWrap = comment.querySelector(".child-comment-input-form") as HTMLElement;
+    const form = formWrap.querySelector("form") as HTMLFormElement;
+    const parentId = form.querySelector(".parentCommentId") as HTMLInputElement;
+    const oneLineBox = form.querySelector(".oneline-comment-box") as HTMLElement;
+    const textarea = form.querySelector("textarea") as HTMLTextAreaElement;
+    const submitButton = form.querySelector("button[type='submit']") as HTMLButtonElement;
+    const notification = form.querySelector(".notification-receiver") as HTMLElement;
+    const notificationTitle = form.querySelector(".notification-receiver-title") as HTMLElement;
+    const replyStyle = window.getComputedStyle(reply);
+    const bodyStyle = window.getComputedStyle(body);
+    const contentsStyle = window.getComputedStyle(contents);
+    const authorStyle = window.getComputedStyle(author);
+    const deleteStyle = window.getComputedStyle(deleteButton);
+    const formWrapStyle = window.getComputedStyle(formWrap);
+    const oneLineBoxStyle = window.getComputedStyle(oneLineBox);
+    const textareaStyle = window.getComputedStyle(textarea);
+    const notificationStyle = window.getComputedStyle(notification);
+
+    return {
+      replyClassName: reply.className,
+      replyText: reply.textContent?.trim(),
+      replyDisplay: replyStyle.display,
+      replyPosition: replyStyle.position,
+      replyRight: replyStyle.right,
+      replyMarginTop: replyStyle.marginTop,
+      replyPadding: replyStyle.padding,
+      replyColor: replyStyle.color,
+      replyBorder: replyStyle.border,
+      replyBorderRadius: replyStyle.borderRadius,
+      bodyClassName: body.className,
+      bodyMarginLeft: bodyStyle.marginLeft,
+      bodyTextAlign: bodyStyle.textAlign,
+      childCommentsClassName: childComments.className,
+      rowClassName: row.className,
+      contentsText: contents.textContent?.replace(/\s+/g, " ").trim(),
+      contentsMarginLeft: contentsStyle.marginLeft,
+      contentsPadding: contentsStyle.padding,
+      contentsTextAlign: contentsStyle.textAlign,
+      contentsBorderBottom: contentsStyle.borderBottom,
+      authorClassName: author.className,
+      authorDisplay: authorStyle.display,
+      agoHref: ago.getAttribute("href"),
+      agoTitle: ago.getAttribute("title"),
+      deleteHref: deleteButton.getAttribute("href"),
+      deleteToggle: deleteButton.getAttribute("data-toggle"),
+      deleteUri: deleteButton.getAttribute("data-request-uri"),
+      deleteTitle: deleteButton.getAttribute("title"),
+      deleteDisplay: deleteStyle.display,
+      deleteAlignItems: deleteStyle.alignItems,
+      deleteColor: deleteStyle.color,
+      formWrapClassName: formWrap.className,
+      formWrapDisplay: formWrapStyle.display,
+      formAction: form.getAttribute("action"),
+      formMethod: form.getAttribute("method"),
+      formEnctype: form.getAttribute("enctype"),
+      parentClassName: parentId.className,
+      parentName: parentId.name,
+      parentValue: parentId.value,
+      oneLineBoxClassName: oneLineBox.className,
+      oneLineBoxDisplay: oneLineBoxStyle.display,
+      oneLineBoxMarginLeft: oneLineBoxStyle.marginLeft,
+      textareaClassName: textarea.className,
+      textareaName: textarea.name,
+      textareaMarkdown: textarea.getAttribute("markdown"),
+      textareaRows: textarea.rows,
+      textareaPlaceholder: textarea.placeholder,
+      textareaMarginTop: textareaStyle.marginTop,
+      textareaMarginBottom: textareaStyle.marginBottom,
+      textareaPaddingLeft: textareaStyle.paddingLeft,
+      textareaOverflow: textareaStyle.overflow,
+      textareaResize: textareaStyle.resize,
+      textareaBorderBottom: textareaStyle.borderBottom,
+      textareaBorderRadius: textareaStyle.borderRadius,
+      submitText: submitButton.textContent?.trim(),
+      submitClassName: submitButton.className,
+      notificationClassName: notification.className,
+      notificationDisplay: notificationStyle.display,
+      notificationMarginLeft: notificationStyle.marginLeft,
+      notificationPadding: notificationStyle.padding,
+      notificationBackground: notificationStyle.backgroundColor,
+      notificationText: notificationTitle.textContent,
+    };
+  });
+  expect(childCommentMetrics).toEqual({
+    replyClassName: "add-a-comment pull-right",
+    replyText: "Reply",
+    replyDisplay: "none",
+    replyPosition: "relative",
+    replyRight: "10px",
+    replyMarginTop: "-32px",
+    replyPadding: "0px 5px",
+    replyColor: "rgb(0, 176, 232)",
+    replyBorder: "1px solid rgb(0, 176, 232)",
+    replyBorderRadius: "3px",
+    bodyClassName: "subcomment-media-body",
+    bodyMarginLeft: "60px",
+    bodyTextAlign: "right",
+    childCommentsClassName: "child-comments",
+    rowClassName: "one-line-comment",
+    contentsText: "Nested reply- Site Admin Jul 4, 2026x",
+    contentsMarginLeft: "12px",
+    contentsPadding: "5px 0px 4px 10px",
+    contentsTextAlign: "left",
+    contentsBorderBottom: "1px dashed rgb(204, 204, 204)",
+    authorClassName: "subcomment-author hide",
+    authorDisplay: "none",
+    agoHref: "#comment-22",
+    agoTitle: "Jul 4, 2026",
+    deleteHref: "javascript:void(0)",
+    deleteToggle: "comment-delete",
+    deleteUri: `${basePath}/admin/sample/post/3/comment/22`,
+    deleteTitle: "Delete comment",
+    deleteDisplay: "inline-flex",
+    deleteAlignItems: "center",
+    deleteColor: "rgb(255, 0, 0)",
+    formWrapClassName: "child-comment-input-form",
+    formWrapDisplay: "none",
+    formAction: `${basePath}/admin/sample/post/3/comments`,
+    formMethod: "post",
+    formEnctype: "multipart/form-data",
+    parentClassName: "parentCommentId",
+    parentName: "parentCommentId",
+    parentValue: "21",
+    oneLineBoxClassName: "oneline-comment-box",
+    oneLineBoxDisplay: "flex",
+    oneLineBoxMarginLeft: "12px",
+    textareaClassName: "editorSeries",
+    textareaName: "contents",
+    textareaMarkdown: "true",
+    textareaRows: 1,
+    textareaPlaceholder: `Reply (${submitKey} + ENTER)`,
+    textareaMarginTop: "5px",
+    textareaMarginBottom: "0px",
+    textareaPaddingLeft: "10px",
+    textareaOverflow: "hidden",
+    textareaResize: "none",
+    textareaBorderBottom: "1px solid rgb(204, 204, 204)",
+    textareaBorderRadius: "0px",
+    submitText: "OK",
+    submitClassName: "ybtn ybtn-success",
+    notificationClassName: "notification-receiver",
+    notificationDisplay: "none",
+    notificationMarginLeft: "12px",
+    notificationPadding: "5px 5px 5px 10px",
+    notificationBackground: "rgb(247, 247, 247)",
+    notificationText: "Notification receivers ",
+  });
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
