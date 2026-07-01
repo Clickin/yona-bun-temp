@@ -126,6 +126,42 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
   );
 });
 
+test("project issue detail renders legacy inline comment voter avatars", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    comments: [
+      {
+        attachments: [],
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorLabel: "Dev Member",
+        authorLoginId: "dev",
+        contentsHtml: "<p>Comment <strong>markdown</strong></p>",
+        contentsMarkdown: "Comment **markdown**",
+        createdLabel: "Jul 2, 2026",
+        id: 77,
+        viewerCanDelete: true,
+        viewerCanUpdate: true,
+        viaEmail: false,
+        voterCount: 3,
+        voters: commentVoters().slice(0, 3),
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator('#comment-77 a[href="#voters-77"]')).toHaveCount(0);
+  await expect(page.locator("#voters-77")).toHaveCount(0);
+
+  const expected =
+    `<a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(
+    await canonicalizeAll(page, "#comment-77 .act-row.pull-right .avatar-wrap.smaller"),
+  ).toEqual(await canonicalizeHtml(page, expected));
+});
+
 function commentVoters() {
   return [
     {
@@ -329,6 +365,40 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
 async function canonicalize(page: Page, selector: string) {
   return page.locator(selector).evaluate((root) => {
     return visit(root);
+
+    function visit(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return normalizeText(node.textContent ?? "");
+      }
+      if (!(node instanceof Element)) {
+        return "";
+      }
+      const attrs = Array.from(node.attributes)
+        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .join(" ");
+      const open = attrs
+        ? `<${node.tagName.toLowerCase()} ${attrs}>`
+        : `<${node.tagName.toLowerCase()}>`;
+      return `${open}${Array.from(node.childNodes)
+        .map((child) => visit(child))
+        .join("")}</${node.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeText(text: string) {
+      return text.replace(/\s+/g, " ").trim();
+    }
+
+    function normalizeAttr(attr: Attr) {
+      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+    }
+  });
+}
+
+async function canonicalizeAll(page: Page, selector: string) {
+  return page.locator(selector).evaluateAll((roots) => {
+    return roots.map((root) => visit(root)).join("");
 
     function visit(node: Node): string {
       if (node.nodeType === Node.TEXT_NODE) {
