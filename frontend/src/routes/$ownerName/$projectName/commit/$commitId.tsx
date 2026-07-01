@@ -7,6 +7,7 @@ import {
   type CodeReviewThread,
 } from "../../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
+import { currentSessionQueryOptions } from "../../../../api/session";
 import type { ProjectContainer } from "../../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
@@ -15,6 +16,12 @@ import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
+
+type CurrentUserSummary = {
+  avatarUrl: string;
+  loginId: string;
+  userLabel: string;
+};
 
 type ParsedDiffLine =
   | { kind: "range"; text: string }
@@ -88,8 +95,9 @@ function ProjectCommitDetailScreen({
       query: { branch, path },
     }),
   );
+  const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
 
-  if (!projectQuery.data || !detailQuery.data) {
+  if (!projectQuery.data || !detailQuery.data || !sessionQuery.data) {
     return null;
   }
 
@@ -98,6 +106,17 @@ function ProjectCommitDetailScreen({
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectCommitDetailBody
+        currentUser={{
+          avatarUrl: stringField(
+            sessionQuery.data.avatarUrl,
+            "/assets/images/default-avatar-32.png",
+          ),
+          loginId: stringField(sessionQuery.data.loginId, ""),
+          userLabel: stringField(
+            sessionQuery.data.userLabel,
+            stringField(sessionQuery.data.loginId, ""),
+          ),
+        }}
         detail={detailQuery.data}
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
@@ -108,10 +127,12 @@ function ProjectCommitDetailScreen({
 }
 
 function ProjectCommitDetailBody({
+  currentUser,
   detail,
   project,
   runtimeConfig,
 }: {
+  currentUser: CurrentUserSummary;
   detail: CodeCommitDetailResponse;
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
@@ -194,6 +215,7 @@ function ProjectCommitDetailBody({
                     commitB={commit?.commitId ?? commitId}
                     file={file}
                     key={file.path}
+                    currentUser={currentUser}
                     ownerName={ownerName}
                     projectName={projectName}
                     runtimeConfig={runtimeConfig}
@@ -212,6 +234,7 @@ function ProjectCommitDetailBody({
                   {nonRangedThreads.map((thread) => (
                     <CodeCommentThreadView
                       isNonRanged
+                      currentUser={currentUser}
                       key={thread.id}
                       ownerName={ownerName}
                       projectName={projectName}
@@ -240,6 +263,8 @@ function ProjectCommitDetailBody({
                     projectName,
                     commitId,
                   )}
+                  currentUser={currentUser}
+                  runtimeConfig={runtimeConfig}
                 />
               ) : null}
             </div>
@@ -436,6 +461,7 @@ function SvnCommitDetailBody({
 function FileDiffView({
   commitA,
   commitB,
+  currentUser,
   file,
   ownerName,
   projectName,
@@ -444,6 +470,7 @@ function FileDiffView({
 }: {
   commitA: string;
   commitB: string;
+  currentUser: CurrentUserSummary;
   file: { path: string; patch: string };
   ownerName: string;
   projectName: string;
@@ -542,6 +569,7 @@ function FileDiffView({
                 ) : (
                   <FragmentWithInlineComments
                     commitId={commitB}
+                    currentUser={currentUser}
                     key={diffLineKey(line)}
                     line={line}
                     ownerName={ownerName}
@@ -561,6 +589,7 @@ function FileDiffView({
 
 function FragmentWithInlineComments({
   commitId,
+  currentUser,
   line,
   ownerName,
   projectName,
@@ -568,6 +597,7 @@ function FragmentWithInlineComments({
   threads,
 }: {
   commitId: string;
+  currentUser: CurrentUserSummary;
   line: Extract<ParsedDiffLine, { kind: "line" }>;
   ownerName: string;
   projectName: string;
@@ -580,6 +610,7 @@ function FragmentWithInlineComments({
       {threads.length > 0 ? (
         <InlineCommentRow
           commitId={commitId}
+          currentUser={currentUser}
           ownerName={ownerName}
           projectName={projectName}
           runtimeConfig={runtimeConfig}
@@ -638,12 +669,14 @@ function threadsForDiffLine(
 
 function InlineCommentRow({
   commitId,
+  currentUser,
   ownerName,
   projectName,
   runtimeConfig,
   threads,
 }: {
   commitId: string;
+  currentUser: CurrentUserSummary;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -654,6 +687,7 @@ function InlineCommentRow({
       <td colSpan={3}>
         {threads.map((thread) => (
           <CodeCommentThreadView
+            currentUser={currentUser}
             key={thread.id}
             ownerName={ownerName}
             projectName={projectName}
@@ -667,12 +701,14 @@ function InlineCommentRow({
 }
 
 function CodeCommentThreadView({
+  currentUser,
   isNonRanged = false,
   ownerName,
   projectName,
   runtimeConfig,
   thread,
 }: {
+  currentUser: CurrentUserSummary;
   isNonRanged?: boolean;
   ownerName: string;
   projectName: string;
@@ -813,6 +849,19 @@ function CodeCommentThreadView({
           style={{ display: "block" }}
         >
           <input type="hidden" name="thread.id" value={thread.id} />
+          <div className="author-info-wrap pull-left hide-in-mobile">
+            <div className="author-info">
+              <a
+                href={prefixBasePath(runtimeConfig.basePath, `/${currentUser.loginId}`)}
+                className="avatar-wrap medium"
+                title={currentUser.userLabel}
+                data-toggle="tooltip"
+                data-placement="top"
+              >
+                <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
+              </a>
+            </div>
+          </div>
           <div className="write-comment-box">
             <div className="write-comment-wrap">
               <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
@@ -961,11 +1010,33 @@ function CommentForm({ action }: { action: string }) {
   );
 }
 
-function ReviewForm({ action }: { action: string }) {
+function ReviewForm({
+  action,
+  currentUser,
+  runtimeConfig,
+}: {
+  action: string;
+  currentUser: CurrentUserSummary;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
   return (
     <div id="review-form" className="review-form">
       <form action={action} method="post" encType="multipart/form-data">
+        <div className="author-info-wrap pull-left hide-in-mobile">
+          <div className="author-info">
+            <a
+              href={prefixBasePath(runtimeConfig.basePath, `/${currentUser.loginId}`)}
+              className="avatar-wrap medium"
+              data-toggle="tooltip"
+              data-placement="top"
+              title=""
+              data-original-title={currentUser.userLabel}
+            >
+              <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
+            </a>
+          </div>
+        </div>
         <div className="write-comment-box">
           <div className="write-comment-wrap">
             <div className="pull-right">
@@ -985,6 +1056,10 @@ function ReviewForm({ action }: { action: string }) {
       </form>
     </div>
   );
+}
+
+function stringField(value: unknown, fallback: string) {
+  return typeof value === "string" && value.length > 0 ? value : fallback;
 }
 
 function Editor({
