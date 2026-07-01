@@ -878,10 +878,10 @@ function IssueEventRow({
   if (eventType === "ISSUE_MILESTONE_CHANGED") {
     const milestoneId = stringField(event.milestoneId, stringField(event.newValue));
     const milestoneTitle = stringField(event.milestoneTitle, stringField(event.newValue));
-    return (
-      <li className="event" id={`event-${eventId}`}>
-        <span className="state milestone-changed">Update milestone</span>
-        {sender} changed milestone to{" "}
+    const milestone =
+      milestoneId === "0" || milestoneId === "-1" ? (
+        <span className="bold">None</span>
+      ) : (
         <span className="bold font-blue">
           <a
             href={prefixBasePath(basePath, `/${ownerName}/${projectName}/milestone/${milestoneId}`)}
@@ -892,6 +892,11 @@ function IssueEventRow({
             {milestoneTitle}
           </a>
         </span>
+      );
+    return (
+      <li className="event" id={`event-${eventId}`}>
+        <span className="state milestone-changed">Update milestone</span>
+        {sender} changed milestone to {milestone}
         <span className="date">
           <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
         </span>
