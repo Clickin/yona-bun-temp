@@ -1,9 +1,9 @@
 use axum::{
-    Json, Router,
     extract::{Form, Path, Query},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::{delete, get, post},
+    Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,8 +11,6 @@ use yoram_vcs::{CodeCommitFileDiffRecord, VcsError};
 
 use crate::api_types::IssueAttachment;
 use crate::{
-    ConnectError, MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
-    PilotServiceImpl, RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
     code_browser_error, decode_query_component, dispatch_pull_request_webhooks, gravatar_url,
     internal_error, issue_attachment_from_record, markdown_issue_references_for_project,
     markdown_mention_references, normalize_identifier, parse_rest_query_i64, parse_rest_query_u32,
@@ -20,15 +18,17 @@ use crate::{
     redirect_to, require_authenticated_user, require_session, require_valid_csrf, rest_actor_id,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rest_repository, rest_require_project_code_read, visible_code_projects_for_organization,
+    ConnectError, MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
+    PilotServiceImpl, RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
 };
 
 mod review_comments;
 
 use review_comments::{
-    RestPullRequestCommentBody, direct_create_pull_request_comment,
-    direct_update_review_thread_state, rest_create_pull_request_comment,
-    rest_delete_pull_request_comment, rest_update_pull_request_comment,
-    rest_update_pull_request_thread_state,
+    direct_create_pull_request_comment, direct_update_review_thread_state,
+    rest_create_pull_request_comment, rest_delete_pull_request_comment,
+    rest_update_pull_request_comment, rest_update_pull_request_thread_state,
+    RestPullRequestCommentBody,
 };
 
 #[derive(Clone, Copy)]
@@ -290,6 +290,7 @@ pub(crate) struct RestReviewThread {
     end_line: Option<i32>,
     end_side: Option<String>,
     pub(crate) id: i64,
+    is_outdated: bool,
     path: String,
     prev_commit_id: String,
     pull_request_number: Option<i64>,
@@ -1433,6 +1434,7 @@ fn rest_review_thread_from_record(
         end_line: record.end_line,
         end_side: record.end_side,
         id: record.id,
+        is_outdated: false,
         path: record.path,
         prev_commit_id: record.prev_commit_id,
         pull_request_number: record.pull_request_number,
@@ -1474,6 +1476,7 @@ fn rest_pull_request_thread_from_record(
         end_line: record.end_line,
         end_side: record.end_side,
         id: record.id,
+        is_outdated: false,
         path: record.path,
         prev_commit_id: record.prev_commit_id,
         pull_request_number: record.pull_request_number,
@@ -1515,6 +1518,7 @@ pub(crate) fn rest_commit_thread_from_record(
         end_line: record.end_line,
         end_side: record.end_side,
         id: record.id,
+        is_outdated: false,
         path: record.path,
         prev_commit_id: record.prev_commit_id,
         pull_request_number: record.pull_request_number,
@@ -3032,27 +3036,29 @@ pub(crate) async fn rest_read_pull_request_changes(
         };
         (commits, files)
     };
-    let inline_threads = detail
-        .threads
+    let mut threads = detail.threads.clone();
+    for thread in &mut threads {
+        thread.is_outdated = rest_review_thread_is_outdated(thread, &detail);
+    }
+    let inline_threads = threads
         .iter()
         .filter(|thread| {
             rest_review_thread_is_inline_for_changes(thread, &detail, selected_commit_id)
         })
         .cloned()
         .collect();
-    let non_ranged_threads = detail
-        .threads
+    let non_ranged_threads = threads
         .iter()
         .filter(|thread| rest_review_thread_is_non_ranged_for_changes(thread, selected_commit_id))
         .cloned()
         .collect();
     Ok(Json(RestPullRequestChangesResponse {
-        card_threads: detail.threads.clone(),
+        card_threads: threads.clone(),
         commits,
         files,
         inline_threads,
         non_ranged_threads,
-        threads: detail.threads.clone(),
+        threads,
         pull_request: detail,
     }))
 }

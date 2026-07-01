@@ -147,6 +147,7 @@ export type ReviewThread = {
   endLine?: number;
   endSide?: string;
   id: number;
+  isOutdated: boolean;
   path: string;
   prevCommitId: string;
   pullRequestNumber?: number;
@@ -471,6 +472,7 @@ function normalizeThread(thread: Partial<ReviewThread>): ReviewThread {
     endLine: thread.endLine,
     endSide: thread.endSide,
     id: thread.id ?? 0,
+    isOutdated: thread.isOutdated ?? false,
     path: thread.path ?? "",
     prevCommitId: thread.prevCommitId ?? "",
     pullRequestNumber: thread.pullRequestNumber ? Number(thread.pullRequestNumber) : undefined,

@@ -409,7 +409,10 @@ function ReviewCard({ thread }: { thread: ReviewThread }) {
   const remainingCommentCount = Math.max(0, thread.comments.length - 1);
 
   return (
-    <a href={`#thread-${thread.id}`} className={`review-card ${thread.state.toLowerCase()}`}>
+    <a
+      href={`#thread-${thread.id}`}
+      className={`review-card ${thread.state.toLowerCase()}${thread.isOutdated ? " outdated" : ""}`}
+    >
       <p className="content">{thread.comments[0]?.contentsMarkdown ?? ""}</p>
       <p className="info">
         {remainingCommentCount > 0 ? (
