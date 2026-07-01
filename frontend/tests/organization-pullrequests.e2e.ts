@@ -26,6 +26,20 @@ const EXPECTED_ORGANIZATION_CLOSED_PULLREQUESTS = EXPECTED_ORGANIZATION_PULLREQU
   .replace("<span>1</span>", "<span>2</span>")
   .replace('state open pull-right">Open', 'state merged pull-right">Merged');
 
+function expectedOrganizationPullRequestsEmpty() {
+  const listStart = EXPECTED_ORGANIZATION_PULLREQUESTS.indexOf('<li class="post-item title" href=');
+  const listEnd = EXPECTED_ORGANIZATION_PULLREQUESTS.indexOf("</ul>", listStart);
+  return `${EXPECTED_ORGANIZATION_PULLREQUESTS.slice(0, listStart)
+    .replace('value="fix"', 'value="empty"')
+    .replace('<span class="num-badge">1</span>', '<span class="num-badge">0</span>')
+    .replace(
+      '<span class="num-badge">2</span>',
+      '<span class="num-badge">0</span>',
+    )}<div class="error-wrap"><i class="ico ico-err1"></i><p>No pull requests have been received</p></div>${EXPECTED_ORGANIZATION_PULLREQUESTS.slice(
+    listEnd,
+  )}`;
+}
+
 test("organization pull request aggregate matches legacy group_pullrequest_list.scala.html DOM", async ({
   page,
 }) => {
@@ -41,6 +55,26 @@ test("organization pull request aggregate matches legacy group_pullrequest_list.
     await canonicalizeHtml(
       page,
       EXPECTED_ORGANIZATION_PULLREQUESTS.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("organization pull request aggregate empty state matches legacy group_pullrequest_list.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationPullRequests(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=empty`);
+  await expect(page.locator("#search")).toBeVisible();
+  await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
+  await expect(page.locator(".post-list-wrap #pagination")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedOrganizationPullRequestsEmpty().replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
@@ -98,40 +132,43 @@ async function mockOrganizationPullRequests(page: Page) {
   await page.route("**/api/v1/organizations/weblabs/pull-requests**", async (route) => {
     const url = new URL(route.request().url());
     const category = url.searchParams.get("category") === "closed" ? "closed" : "open";
+    const isEmpty = url.searchParams.get("filter") === "empty";
     const isClosed = category === "closed";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         category,
-        closedCount: 2,
-        items: [
-          {
-            closedCommentThreadCount: isClosed ? 2 : 1,
-            commentThreadCount: 2,
-            conflict: false,
-            contributorLabel: "Dev Member",
-            contributorLoginId: "dev",
-            createdLabel: isClosed ? "Jul 2, 2026" : "Jul 1, 2026",
-            fromBranch: "feature/login",
-            fromOwnerName: "weblabs",
-            fromProjectName: "sample",
-            id: isClosed ? 4 : 3,
-            ownerName: "weblabs",
-            projectName: "sample",
-            pullRequestNumber: isClosed ? 4 : 3,
-            receiverLabel: "Site Admin",
-            receiverLoginId: "admin",
-            reviewerCount: 1,
-            state: isClosed ? "merged" : "open",
-            title: isClosed ? "Ship release" : "Fix login redirect",
-            toBranch: "main",
-            updatedLabel: isClosed ? "Jul 2, 2026" : "Jul 1, 2026",
-          },
-        ],
-        openCount: 1,
+        closedCount: isEmpty ? 0 : 2,
+        items: isEmpty
+          ? []
+          : [
+              {
+                closedCommentThreadCount: isClosed ? 2 : 1,
+                commentThreadCount: 2,
+                conflict: false,
+                contributorLabel: "Dev Member",
+                contributorLoginId: "dev",
+                createdLabel: isClosed ? "Jul 2, 2026" : "Jul 1, 2026",
+                fromBranch: "feature/login",
+                fromOwnerName: "weblabs",
+                fromProjectName: "sample",
+                id: isClosed ? 4 : 3,
+                ownerName: "weblabs",
+                projectName: "sample",
+                pullRequestNumber: isClosed ? 4 : 3,
+                receiverLabel: "Site Admin",
+                receiverLoginId: "admin",
+                reviewerCount: 1,
+                state: isClosed ? "merged" : "open",
+                title: isClosed ? "Ship release" : "Fix login redirect",
+                toBranch: "main",
+                updatedLabel: isClosed ? "Jul 2, 2026" : "Jul 1, 2026",
+              },
+            ],
+        openCount: isEmpty ? 0 : 1,
         pageNum: 1,
         pageSize: 20,
-        totalCount: 1,
+        totalCount: isEmpty ? 0 : 1,
       }),
     });
   });
