@@ -466,7 +466,76 @@ test("global search renders legacy request text too large error shell", async ({
       EXPECTED_REQUEST_TEXT_TOO_LARGE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  expect(await readRequestTextTooLargeMetrics(page)).toEqual({
+    errorIconBackgroundPosition: "-80px -160px",
+    errorIconHeight: "80px",
+    errorIconWidth: "50px",
+    errorPaddingBottom: "100px",
+    errorPaddingTop: "100px",
+    errorTextAlign: "center",
+    errorTextColor: "rgb(137, 137, 137)",
+    errorTextFontSize: "16px",
+    errorTextFontWeight: "700",
+    errorTextMarginBottom: "30px",
+    errorTextMarginTop: "30px",
+    footerLineHeight: "34px",
+    footerPaddingBottom: "10px",
+    footerPaddingTop: "10px",
+    pageWrapOuterMinHeight: "450px",
+    projectPageWrapMarginTop: "5px",
+  });
 });
+
+async function readRequestTextTooLargeMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const projectPageWrap = document.querySelector<HTMLElement>(".project-page-wrap");
+    const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
+    const errorIcon = document.querySelector<HTMLElement>(".error-wrap .ico-err2");
+    const errorText = document.querySelector<HTMLElement>(".error-wrap p");
+    const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const footer = document.querySelector<HTMLElement>(".page-footer");
+    const missing = Object.entries({
+      errorIcon,
+      errorText,
+      errorWrap,
+      footer,
+      footerOuter,
+      pageWrapOuter,
+      projectPageWrap,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected request-text-too-large metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const errorWrapStyle = getComputedStyle(errorWrap);
+    const errorIconStyle = getComputedStyle(errorIcon);
+    const errorTextStyle = getComputedStyle(errorText);
+    const footerOuterStyle = getComputedStyle(footerOuter);
+    return {
+      errorIconBackgroundPosition: errorIconStyle.backgroundPosition,
+      errorIconHeight: errorIconStyle.height,
+      errorIconWidth: errorIconStyle.width,
+      errorPaddingBottom: errorWrapStyle.paddingBottom,
+      errorPaddingTop: errorWrapStyle.paddingTop,
+      errorTextAlign: errorWrapStyle.textAlign,
+      errorTextColor: errorTextStyle.color,
+      errorTextFontSize: errorTextStyle.fontSize,
+      errorTextFontWeight: errorTextStyle.fontWeight,
+      errorTextMarginBottom: errorTextStyle.marginBottom,
+      errorTextMarginTop: errorTextStyle.marginTop,
+      footerLineHeight: getComputedStyle(footer).lineHeight,
+      footerPaddingBottom: footerOuterStyle.paddingBottom,
+      footerPaddingTop: footerOuterStyle.paddingTop,
+      pageWrapOuterMinHeight: getComputedStyle(pageWrapOuter).minHeight,
+      projectPageWrapMarginTop: getComputedStyle(projectPageWrap).marginTop,
+    };
+  });
+}
 
 async function mockGlobalSearch(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
