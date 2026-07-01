@@ -72,6 +72,14 @@ const EXPECTED_PULL_REQUEST_CLOSED_REOPEN = EXPECTED_PULL_REQUEST_OVERVIEW.repla
     `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><a data-request-method="post" href="__BASE_PATH__/admin/sample/pullRequest/9/open" class="ybtn">Reopen</a></div>`,
   );
 
+const EXPECTED_PULL_REQUEST_MERGING_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
+  `<div class="pull-right"><a id="btnAccept" href="__BASE_PATH__/admin/sample/pullRequest/9/accept" data-request-method="post" class="ybtn ybtn-success">Merge</a></div>`,
+  `<div class="pull-right"><button class="ybtn ybtn-disabled" data-toggle="tooltip" data-placement="top" title="Now, it's checking the code.">Merge</button></div>`,
+).replace(
+  `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div>`,
+  `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-warnning"><i class="yobicon-supportrequest mr5"></i><span>We are checking if the code is safe. Please wait for a while to complete this process.</span></div></div>`,
+);
+
 const EXPECTED_PULL_REQUEST_MERGED_DELETE_BRANCH = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div>`,
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-merged">Merged</span></div>`,
@@ -439,6 +447,31 @@ test("project pull request overview renders legacy closed reopen footer DOM", as
   );
 });
 
+test("project pull request overview renders legacy merging state DOM", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    detail: {
+      isMerging: true,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator("#state .alert-warnning")).toContainText(
+    "We are checking if the code is safe.",
+  );
+  await expect(page.locator(".ybtn-disabled")).toHaveAttribute(
+    "title",
+    "Now, it's checking the code.",
+  );
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_MERGING_STATE.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 test("project pull request overview renders legacy merged source-branch delete state", async ({
   page,
 }) => {
@@ -575,6 +608,7 @@ async function mockPullRequestOverview(
       fromOwnerName: "admin",
       fromProjectName: "sample",
       id: 90,
+      isMerging: false,
       isWatching: false,
       lackingReviewerCount: 0,
       mergedCommitIdFrom: "",

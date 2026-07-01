@@ -479,7 +479,11 @@ function PullRequestHeader({
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
   const prPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
   const isOpen = isOpenState(pullRequest.state);
-  const isAcceptable = isOpen && !pullRequest.conflict && pullRequest.lackingReviewerCount <= 0;
+  const isAcceptable =
+    isOpen &&
+    !pullRequest.isMerging &&
+    !pullRequest.conflict &&
+    pullRequest.lackingReviewerCount <= 0;
   const showReviewerControls =
     project.isUsingReviewerCount === true && pullRequest.permissions.canReview;
   const openThreadCount = pullRequest.threads.filter(
@@ -717,6 +721,14 @@ function PullRequestStateInfo({
 
   if (!isOpenState(pullRequest.state)) {
     return null;
+  }
+  if (pullRequest.isMerging) {
+    return (
+      <div className="alert alert-warnning">
+        <i className="yobicon-supportrequest mr5"></i>
+        <span>{t("pullRequest.is.merging")}</span>
+      </div>
+    );
   }
   if (!pullRequest.conflict) {
     return (

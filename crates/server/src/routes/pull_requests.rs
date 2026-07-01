@@ -1,9 +1,9 @@
 use axum::{
+    Json, Router,
     extract::{Form, Path, Query},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::{delete, get, post},
-    Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,6 +11,8 @@ use yoram_vcs::{CodeCommitFileDiffRecord, VcsError};
 
 use crate::api_types::IssueAttachment;
 use crate::{
+    ConnectError, MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
+    PilotServiceImpl, RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
     code_browser_error, decode_query_component, dispatch_pull_request_webhooks, gravatar_url,
     internal_error, issue_attachment_from_record, markdown_issue_references_for_project,
     markdown_mention_references, normalize_identifier, parse_rest_query_i64, parse_rest_query_u32,
@@ -18,17 +20,15 @@ use crate::{
     redirect_to, require_authenticated_user, require_session, require_valid_csrf, rest_actor_id,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rest_repository, rest_require_project_code_read, visible_code_projects_for_organization,
-    ConnectError, MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
-    PilotServiceImpl, RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
 };
 
 mod review_comments;
 
 use review_comments::{
-    direct_create_pull_request_comment, direct_update_review_thread_state,
-    rest_create_pull_request_comment, rest_delete_pull_request_comment,
-    rest_update_pull_request_comment, rest_update_pull_request_thread_state,
-    RestPullRequestCommentBody,
+    RestPullRequestCommentBody, direct_create_pull_request_comment,
+    direct_update_review_thread_state, rest_create_pull_request_comment,
+    rest_delete_pull_request_comment, rest_update_pull_request_comment,
+    rest_update_pull_request_thread_state,
 };
 
 #[derive(Clone, Copy)]
@@ -450,6 +450,7 @@ pub(crate) struct RestPullRequestDetailResponse {
     from_owner_name: String,
     from_project_name: String,
     id: i64,
+    is_merging: bool,
     issue_references: Vec<RestIssueReferenceMetadata>,
     is_watching: bool,
     lacking_reviewer_count: u32,
@@ -1713,6 +1714,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
         from_owner_name: record.from_owner_name,
         from_project_name: record.from_project_name,
         id: record.id,
+        is_merging: record.is_merging,
         issue_references: issue_references
             .iter()
             .map(rest_issue_reference_metadata_from_resolved)

@@ -174,6 +174,7 @@ export type PullRequestDetailResponse = {
   fromOwnerName: string;
   fromProjectName: string;
   id: number;
+  isMerging: boolean;
   issueReferences?: IssueReferenceMetadata[];
   isWatching: boolean;
   lackingReviewerCount: number;
@@ -514,6 +515,7 @@ function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequ
     fromOwnerName: response.fromOwnerName ?? "",
     fromProjectName: response.fromProjectName ?? "",
     id: response.id ?? 0,
+    isMerging: response.isMerging ?? false,
     issueReferences: normalizeIssueReferences(response.issueReferences),
     isWatching: response.isWatching ?? false,
     lackingReviewerCount: response.lackingReviewerCount ?? 0,

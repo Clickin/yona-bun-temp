@@ -646,6 +646,17 @@ async fn pull_request_read_contract_serves_direct_state_api_helper() {
     .await
     .expect("mark PR merging");
 
+    let detail_json = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(detail_json["isMerging"], true);
+
     let state_json = response_json(
         rest_get_with_headers(
             app.clone(),
