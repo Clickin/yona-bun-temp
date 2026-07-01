@@ -64,6 +64,38 @@ const EXPECTED_PROFILE_SCREEN = `
 </div>
 `;
 
+const EXPECTED_MISSING_USER_SCREEN = `
+<header class="gnb-outer">
+  <div class="gnb-inner">
+    <a href="__BASE_PATH__/" class="logo"><h1 class="blind">Yona</h1></a>
+    <ul class="gnb-nav">
+      <li><a href="__BASE_PATH__/projects">Project list</a></li>
+      <li><a href="__BASE_PATH__/_help">Help</a></li>
+      <li><a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">Feedback</a></li>
+    </ul>
+    <ul class="gnb-usermenu">
+      <li class="gnb-usermenu-item" id="required-logged-in"><a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a></li>
+      <li class="divider"></li>
+      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
+    </ul>
+  </div>
+</header>
+<div class="page-wrap-outer">
+  <div class="project-page-wrap">
+    <div class="error-wrap">
+      <i class="ico ico-err2"></i>
+      <p>User exists not</p>
+      <a href="__BASE_PATH__/" class="ybtn ybtn-info">Home</a>
+    </div>
+  </div>
+</div>
+<footer class="page-footer-outer">
+  <div class="page-footer">
+    <span class="provider">Copyright © <a href="http://navercorp.com/" target="_blank">NAVER Corp.</a> Supported by <a href="https://developers.naver.com/d2/" target="_blank" class="d2-program"><span class="d2">D2</span><span class="program"> Program</span></a></span>
+  </div>
+</footer>
+`;
+
 test("public user profile matches legacy user/view.scala.html issues screen", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPublicProfile(page);
@@ -146,6 +178,24 @@ test("current user profile projects tab renders legacy leave-project branch", as
         viewerCanLeave: true,
         viewerCanWatch: false,
       }),
+    ),
+  );
+});
+
+test("missing public user renders legacy user.notExists.name not-found screen", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockMissingPublicProfile(page);
+
+  await page.goto(`${basePath}/ghost`);
+  await expect(page.locator(".error-wrap")).toBeVisible();
+  await expect(page.locator(".error-wrap p")).toHaveText("User exists not");
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_MISSING_USER_SCREEN.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
@@ -264,6 +314,32 @@ async function mockPublicProfile(page: Page, options: MockPublicProfileOptions =
   });
 }
 
+async function mockMissingPublicProfile(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        isAnonymous: true,
+        loginId: "anonymous",
+      }),
+    });
+  });
+  await page.route("**/api/v1/users/ghost/profile**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      status: 404,
+      body: JSON.stringify({
+        error: {
+          code: "not_found",
+          message: "User exists not",
+          status: 404,
+        },
+      }),
+    });
+  });
+}
+
 async function readProfileMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
@@ -287,6 +363,45 @@ async function readProfileMetrics(page: Page) {
 async function canonicalizeProfileRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(document.querySelectorAll(".site-breadcrumb-outer, .page-wrap-outer"));
+    return roots.map((root) => visit(root)).join("");
+
+    function visit(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return normalizeText(node.textContent ?? "");
+      }
+      if (!(node instanceof Element)) {
+        return "";
+      }
+      const attrs = Array.from(node.attributes)
+        .filter((attr) => attr.name !== "alt")
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .join(" ");
+      const open = attrs
+        ? `<${node.tagName.toLowerCase()} ${attrs}>`
+        : `<${node.tagName.toLowerCase()}>`;
+      return `${open}${Array.from(node.childNodes)
+        .map((child) => visit(child))
+        .join("")}</${node.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeText(text: string) {
+      return text.replace(/\s+/g, " ").trim();
+    }
+
+    function normalizeAttr(attr: Attr) {
+      return attr.name === "style"
+        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        : attr.value;
+    }
+  });
+}
+
+async function canonicalizeScreenRoots(page: Page) {
+  return page.evaluate(() => {
+    const roots = Array.from(
+      document.querySelectorAll(".gnb-outer, .page-wrap-outer, .page-footer-outer"),
+    );
     return roots.map((root) => visit(root)).join("");
 
     function visit(node: Node): string {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import type { LiHTMLAttributes } from "react";
+import { RestApiError } from "../api/rest-client";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../api/users";
 import type {
   WorkspaceIssueItem,
@@ -38,9 +39,7 @@ function PublicProfileRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <PublicProfileScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <PublicProfileScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -58,21 +57,102 @@ function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   );
   const redirectPath = profileQuery.data?.redirectPath;
 
+  if (profileQuery.error instanceof RestApiError && profileQuery.error.status === 404) {
+    return <PublicProfileNotFoundPage runtimeConfig={runtimeConfig} />;
+  }
+
   if (redirectPath) {
     return <Navigate to={redirectPath} />;
   }
 
   if (!profileQuery.data) {
-    return null;
+    return <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>;
   }
 
   return (
-    <PublicProfileBody
-      daysAgo={search.daysAgo}
-      profileResponse={profileQuery.data}
-      runtimeConfig={runtimeConfig}
-      selected={search.selected}
-    />
+    <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <PublicProfileBody
+        daysAgo={search.daysAgo}
+        profileResponse={profileQuery.data}
+        runtimeConfig={runtimeConfig}
+        selected={search.selected}
+      />
+    </SiteLayoutShell>
+  );
+}
+
+function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { t } = useLegacyMessages();
+  const basePath = runtimeConfig.basePath;
+  const homeHref = basePath === "/" ? "/" : `${basePath}/`;
+  const siteName = runtimeConfig.siteName ?? "Yona";
+
+  return (
+    <>
+      <header className="gnb-outer">
+        <div className="gnb-inner">
+          <a href={homeHref} className="logo">
+            <h1 className="blind">{siteName}</h1>
+          </a>
+          <ul className="gnb-nav">
+            <li>
+              <a href={prefixBasePath(basePath, "/projects")}>{t("title.projectList")}</a>
+            </li>
+            <li>
+              <a href={prefixBasePath(basePath, "/_help")}>{t("title.help")}</a>
+            </li>
+            <li>
+              <a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">
+                {t("title.yobi.feedback")}
+              </a>
+            </li>
+          </ul>
+          <ul className="gnb-usermenu">
+            <li className="gnb-usermenu-item" id="required-logged-in">
+              <a
+                href={prefixBasePath(basePath, "/users/loginform")}
+                className="user-item-btn"
+                data-login="required"
+              >
+                {t("button.login")}
+              </a>
+            </li>
+            <li className="divider"></li>
+            <li>
+              <a href={prefixBasePath(basePath, "/users/signupform")} className="ybtn ybtn-success">
+                {t("title.signup")}
+              </a>
+            </li>
+          </ul>
+        </div>
+      </header>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="error-wrap">
+            <i className="ico ico-err2"></i>
+            <p>{t("user.notExists.name")}</p>
+            <a href={homeHref} className="ybtn ybtn-info">
+              {t("menu.home")}
+            </a>
+          </div>
+        </div>
+      </div>
+      <footer className="page-footer-outer">
+        <div className="page-footer">
+          <span className="provider">
+            {"Copyright © "}
+            <a href="http://navercorp.com/" target="_blank">
+              NAVER Corp.
+            </a>{" "}
+            Supported by{" "}
+            <a href="https://developers.naver.com/d2/" target="_blank" className="d2-program">
+              <span className="d2">D2</span>
+              <span className="program"> Program</span>
+            </a>
+          </span>
+        </div>
+      </footer>
+    </>
   );
 }
 
