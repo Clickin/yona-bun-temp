@@ -1,5 +1,7 @@
 import * as React from "react";
 import { Link, Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
+import { signInWithPasswordRest } from "../api/auth";
+import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
@@ -302,9 +304,50 @@ function RootResetShell() {
       }
     }
 
+    function handleDocumentSubmit(event: SubmitEvent) {
+      const form =
+        event.target instanceof HTMLFormElement &&
+        event.target.closest("#loginDialog .login-form-wrap") === event.target
+          ? event.target
+          : null;
+      if (!form) {
+        return;
+      }
+
+      event.preventDefault();
+      const dialog = form.closest<HTMLElement>("#loginDialog");
+      const error = dialog?.querySelector<HTMLElement>(".error");
+      const errorMessage = error?.querySelector<HTMLElement>(".error-message");
+      if (error) {
+        error.style.display = "none";
+      }
+      if (errorMessage) {
+        errorMessage.textContent = "";
+      }
+
+      const formData = new FormData(form);
+      void submitLoginDialogForm(formData, runtimeConfig)
+        .then(() => {
+          window.location.reload();
+        })
+        .catch((caught) => {
+          if (errorMessage) {
+            errorMessage.textContent =
+              caught instanceof Error ? caught.message : "Failed to authenticate.";
+          }
+          if (error) {
+            error.style.display = "block";
+          }
+        });
+    }
+
     document.addEventListener("click", handleDocumentClick);
-    return () => document.removeEventListener("click", handleDocumentClick);
-  }, [rendersPlainResponseState]);
+    document.addEventListener("submit", handleDocumentSubmit);
+    return () => {
+      document.removeEventListener("click", handleDocumentClick);
+      document.removeEventListener("submit", handleDocumentSubmit);
+    };
+  }, [rendersPlainResponseState, runtimeConfig]);
 
   function scanNotifySources() {
     document.querySelectorAll<HTMLElement>('[data-toggle="yobi-notify"]').forEach((source) => {
@@ -434,6 +477,15 @@ function RootResetShell() {
       )}
     </>
   );
+}
+
+async function submitLoginDialogForm(formData: FormData, runtimeConfig: RuntimeConfig) {
+  const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+  await signInWithPasswordRest(runtimeConfig, csrfToken, {
+    identifier: String(formData.get("loginIdOrEmail") ?? ""),
+    password: String(formData.get("password") ?? ""),
+    rememberMe: formData.get("rememberMe") === "on",
+  });
 }
 
 function LegacySelect2Templates() {

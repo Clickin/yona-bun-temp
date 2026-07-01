@@ -335,6 +335,70 @@ test("standalone UI kit root shell opens legacy login dialog from data-login req
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 });
 
+test("standalone UI kit login dialog shows legacy AJAX failure error", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const signInRequests: Array<{
+    body: unknown;
+    csrfToken: string | undefined;
+    method: string;
+  }> = [];
+
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-login-dialog" },
+      json: { csrfToken: "csrf-login-dialog" },
+    });
+  });
+  await page.route("**/api/v1/auth/sign-in", async (route) => {
+    signInRequests.push({
+      body: route.request().postDataJSON() as unknown,
+      csrfToken: route.request().headers()["x-csrf-token"],
+      method: route.request().method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        error: {
+          code: "auth_invalid_credentials",
+          message: "Invalid ID or password.",
+          status: 403,
+        },
+      },
+      status: 403,
+    });
+  });
+
+  await page.goto(`${basePath}/_UIKit`);
+  await page.locator(".page-wrap-outer").evaluate((container, href) => {
+    container.insertAdjacentHTML(
+      "beforeend",
+      `<a id="login-required-fixture" href="${href}" data-login="required">Log in</a>`,
+    );
+  }, `${basePath}/users/loginform`);
+
+  const dialog = page.locator("#loginDialog");
+  await page.locator("#login-required-fixture").click();
+  await dialog.locator("#loginIdOrEmailD").fill("bad-user");
+  await dialog.locator("#passwordD").fill("bad-password");
+  await dialog.locator("#remember-meD").uncheck();
+  await dialog.locator("button[type=submit]").click();
+
+  await expect(dialog).toHaveClass("modal loginDialog in");
+  await expect(dialog.locator("#loginIdOrEmailD")).toHaveValue("bad-user");
+  await expect(dialog.locator("#passwordD")).toHaveValue("bad-password");
+  await expect(dialog.locator(".error")).toBeVisible();
+  await expect(dialog.locator(".error .error-message")).toHaveText("Invalid ID or password.");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  expect(signInRequests).toEqual([
+    {
+      body: { identifier: "bad-user", password: "bad-password", rememberMe: false },
+      csrfToken: "csrf-login-dialog",
+      method: "POST",
+    },
+  ]);
+});
+
 test("standalone UI kit root shell mounts legacy select2 formatter templates", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const expectedTemplates = extractLegacyScriptTemplates(
