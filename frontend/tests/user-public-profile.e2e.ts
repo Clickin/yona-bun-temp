@@ -112,8 +112,22 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
     pageWrapMarginTop: "10px",
     userBoxDisplay: "block",
     userInfoWidth: 200,
-    userStreamWidth: 880,
+    userStreamWidth: 1060,
   });
+});
+
+test("anonymous public user profile hides legacy activity stream controls", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPublicProfile(page, { anonymousViewer: true });
+
+  await page.goto(`${basePath}/door`);
+  await expect(page.locator(".user-box")).toBeVisible();
+  await expect(page.locator(".user-stream-box")).toHaveCount(1);
+  await expect(page.locator(".user-stream-box > .nav-tabs")).toHaveCount(0);
+  await expect(page.locator("#daysAgoBtn")).toHaveCount(0);
+  await expect(page.locator("#issues")).toHaveCount(0);
+  await expect(page.locator("#pullRequests")).toHaveCount(0);
+  await expect(page.locator("#projects")).toHaveCount(0);
 });
 
 test("public user profile matches legacy selected projects tab and click switching", async ({
@@ -246,6 +260,7 @@ test("missing public user renders legacy user.notExists.name not-found screen", 
 });
 
 type MockPublicProfileOptions = {
+  anonymousViewer?: boolean;
   currentUser?: boolean;
   memberProjectOwnerName?: string;
   pullRequestsEmpty?: boolean;
@@ -254,6 +269,7 @@ type MockPublicProfileOptions = {
 };
 
 async function mockPublicProfile(page: Page, options: MockPublicProfileOptions = {}) {
+  const anonymousViewer = options.anonymousViewer ?? false;
   const currentUser = options.currentUser ?? false;
   const memberProjectOwnerName = options.memberProjectOwnerName ?? "door";
   const pullRequestsEmpty = options.pullRequestsEmpty ?? false;
@@ -265,8 +281,8 @@ async function mockPublicProfile(page: Page, options: MockPublicProfileOptions =
       contentType: "application/json",
       body: JSON.stringify({
         avatarUrl: "/assets/images/default-avatar-32.png",
-        isAnonymous: !currentUser,
-        loginId: currentUser ? "door" : "anonymous",
+        isAnonymous: anonymousViewer,
+        loginId: anonymousViewer ? "anonymous" : currentUser ? "door" : "alice",
       }),
     });
   });

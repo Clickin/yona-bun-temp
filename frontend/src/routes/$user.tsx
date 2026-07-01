@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import type { LiHTMLAttributes } from "react";
+import { currentSessionQueryOptions } from "../api/session";
 import { RestApiError } from "../api/rest-client";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../api/users";
 import type {
@@ -49,6 +50,7 @@ function PublicProfileRoute() {
 function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { user } = Route.useParams();
   const search = Route.useSearch();
+  const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const profileQuery = useQuery(
     readPublicUserProfileQueryOptions(runtimeConfig, {
       daysAgo: search.daysAgo,
@@ -66,7 +68,7 @@ function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     return <Navigate to={redirectPath} />;
   }
 
-  if (!profileQuery.data) {
+  if (!profileQuery.data || !sessionQuery.data) {
     return <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>;
   }
 
@@ -77,6 +79,9 @@ function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         profileResponse={profileQuery.data}
         runtimeConfig={runtimeConfig}
         selected={search.selected}
+        viewerIsGuest={
+          sessionQuery.data.isAnonymous !== false || sessionQuery.data.isGuest === true
+        }
       />
     </SiteLayoutShell>
   );
@@ -162,11 +167,13 @@ function PublicProfileBody({
   profileResponse,
   runtimeConfig,
   selected,
+  viewerIsGuest,
 }: {
   daysAgo: number;
   profileResponse: PublicUserProfileResponse;
   runtimeConfig: RuntimeConfig;
   selected: PublicProfileSearch["selected"];
+  viewerIsGuest: boolean;
 }) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState(selected);
@@ -237,7 +244,7 @@ function PublicProfileBody({
               </div>
             </div>
 
-            {!profile.isGuest ? (
+            {!viewerIsGuest ? (
               <div className="user-stream-box">
                 <div className="pull-right">
                   {t("userinfo.daysAgo.prefix")}
@@ -376,7 +383,9 @@ function PublicProfileBody({
                   </div>
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <div className="user-stream-box"></div>
+            )}
           </section>
         </div>
       </div>
