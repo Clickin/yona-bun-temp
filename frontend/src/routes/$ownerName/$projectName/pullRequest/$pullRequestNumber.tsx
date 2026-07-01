@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { Fragment, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -18,6 +18,10 @@ import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
+
+const LegacyInternalLink = Link as React.ComponentType<
+  React.AnchorHTMLAttributes<HTMLAnchorElement> & { search?: Record<string, never>; to: string }
+>;
 
 export const Route = createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")({
   component: ProjectPullRequestOverviewRoute,
@@ -603,15 +607,28 @@ export function PullRequestHeader({
 
       <ul className="nav nav-tabs nm">
         <li className={activeTab === "overview" ? "active" : undefined}>
-          <a href={prefixBasePath(runtimeConfig.basePath, prPath)}>
-            {t("pullRequest.menu.overview")}
-          </a>
+          {activeTab === "overview" ? (
+            <a href={prefixBasePath(runtimeConfig.basePath, prPath)}>
+              {t("pullRequest.menu.overview")}
+            </a>
+          ) : (
+            <LegacyInternalLink search={{}} to={prPath}>
+              {t("pullRequest.menu.overview")}
+            </LegacyInternalLink>
+          )}
         </li>
         <li className={activeTab === "changes" ? "active" : undefined}>
-          <a href={prefixBasePath(runtimeConfig.basePath, `${prPath}/changes`)}>
-            {t("pullRequest.menu.changes")}
-            {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
-          </a>
+          {activeTab === "changes" ? (
+            <a href={prefixBasePath(runtimeConfig.basePath, `${prPath}/changes`)}>
+              {t("pullRequest.menu.changes")}
+              {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
+            </a>
+          ) : (
+            <LegacyInternalLink search={{}} to={`${prPath}/changes`}>
+              {t("pullRequest.menu.changes")}
+              {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
+            </LegacyInternalLink>
+          )}
         </li>
       </ul>
     </>

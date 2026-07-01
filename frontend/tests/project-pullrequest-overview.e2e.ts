@@ -150,6 +150,29 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
   );
 });
 
+test("project pull request overview changes tab uses legacy href and SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  const changesTab = page.locator('.nav-tabs a[href$="/pullRequest/9/changes"]');
+  await expect(changesTab).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/9/changes`,
+  );
+
+  await changesTab.click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequest/9/changes`);
+  await expect(page.locator(".code-browse-wrap > .nav-tabs li.active a")).toHaveText("Changes");
+  await expect(page.locator("#changes.diffs-wrap")).toHaveCount(1);
+  await expect(page.locator("#comment-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/pullRequest/90/comments`,
+  );
+});
+
 test("project pull request overview renders legacy commit-changed event DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPullRequestOverview(page, {
@@ -703,6 +726,62 @@ async function mockPullRequestOverview(
     session?: Record<string, unknown>;
   } = {},
 ) {
+  const detail = {
+    attachments: [],
+    bodyHtml: "<p>Initial body</p>",
+    bodyMarkdown: "Initial body",
+    commits: [],
+    conflict: false,
+    contributor: {
+      avatarUrl: "/assets/images/default-avatar-32.png",
+      loginId: "dev",
+      userId: 2,
+      userLabel: "Dev Member",
+    },
+    createdLabel: "Jul 2, 2026",
+    events: options.events ?? [],
+    fromBranch: "feature/ui",
+    fromOwnerName: "admin",
+    fromProjectName: "sample",
+    id: 90,
+    isMerging: false,
+    isWatching: false,
+    lackingReviewerCount: 0,
+    mergedCommitIdFrom: "",
+    mergedCommitIdTo: options.mergedCommitIdTo ?? "",
+    ownerName: "admin",
+    permissions: {
+      canComment: true,
+      canDeleteSourceBranch: false,
+      canRead: true,
+      canReadChanges: true,
+      canReview: true,
+      canRestoreSourceBranch: false,
+      canUpdate: true,
+      canUpdateState: true,
+      canWatch: true,
+    },
+    projectName: "sample",
+    pullRequestNumber: 9,
+    receiver: {
+      avatarUrl: "/assets/images/default-avatar-32.png",
+      loginId: "admin",
+      userId: 1,
+      userLabel: "Site Admin",
+    },
+    requiredReviewerCount: 0,
+    reviewed: false,
+    reviewers: [],
+    sourceBranchExists: true,
+    state: "open",
+    threads: [],
+    title: "Initial title",
+    toBranch: "main",
+    updatedLabel: "Jul 2, 2026",
+    watcherCount: 0,
+    ...options.detail,
+  };
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -749,66 +828,30 @@ async function mockPullRequestOverview(
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/pull-requests/9", async (route) => {
-    const detail = {
-      attachments: [],
-      bodyHtml: "<p>Initial body</p>",
-      bodyMarkdown: "Initial body",
-      commits: [],
-      conflict: false,
-      contributor: {
-        avatarUrl: "/assets/images/default-avatar-32.png",
-        loginId: "dev",
-        userId: 2,
-        userLabel: "Dev Member",
-      },
-      createdLabel: "Jul 2, 2026",
-      events: options.events ?? [],
-      fromBranch: "feature/ui",
-      fromOwnerName: "admin",
-      fromProjectName: "sample",
-      id: 90,
-      isMerging: false,
-      isWatching: false,
-      lackingReviewerCount: 0,
-      mergedCommitIdFrom: "",
-      mergedCommitIdTo: options.mergedCommitIdTo ?? "",
-      ownerName: "admin",
-      permissions: {
-        canComment: true,
-        canDeleteSourceBranch: false,
-        canRead: true,
-        canReadChanges: true,
-        canReview: true,
-        canRestoreSourceBranch: false,
-        canUpdate: true,
-        canUpdateState: true,
-        canWatch: true,
-      },
-      projectName: "sample",
-      pullRequestNumber: 9,
-      receiver: {
-        avatarUrl: "/assets/images/default-avatar-32.png",
-        loginId: "admin",
-        userId: 1,
-        userLabel: "Site Admin",
-      },
-      requiredReviewerCount: 0,
-      reviewed: false,
-      reviewers: [],
-      sourceBranchExists: true,
-      state: "open",
-      threads: [],
-      title: "Initial title",
-      toBranch: "main",
-      updatedLabel: "Jul 2, 2026",
-      watcherCount: 0,
-      ...options.detail,
-    };
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(detail),
     });
   });
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/9/changes**",
+    async (route) => {
+      const url = new URL(route.request().url());
+      expect(url.searchParams.get("commitId") ?? "").toBe("");
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          cardThreads: [],
+          commits: [],
+          files: [],
+          inlineThreads: [],
+          nonRangedThreads: [],
+          pullRequest: detail,
+          threads: [],
+        }),
+      });
+    },
+  );
 }
 
 async function canonicalizeAll(page: Page, selector: string) {

@@ -19,9 +19,13 @@ export const Route = createFileRoute("/$ownerName/$projectName")({
   component: ProjectHomeRoute,
   validateSearch(search) {
     return {
-      commentId: legacyQueryString(search.commentId),
-      parentIssueId: legacyQueryString(search.parentIssueId),
-      tabId: typeof search.tabId === "string" ? search.tabId : "readme",
+      ...(legacyQueryString(search.commentId)
+        ? { commentId: legacyQueryString(search.commentId) }
+        : {}),
+      ...(legacyQueryString(search.parentIssueId)
+        ? { parentIssueId: legacyQueryString(search.parentIssueId) }
+        : {}),
+      ...(typeof search.tabId === "string" ? { tabId: search.tabId } : {}),
     };
   },
 });
@@ -70,7 +74,11 @@ function ProjectHomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={query.data} />
       <ProjectMenu active="home" basePath={runtimeConfig.basePath} project={query.data} />
-      <ProjectHomeBody project={query.data} runtimeConfig={runtimeConfig} tabId={tabId} />
+      <ProjectHomeBody
+        project={query.data}
+        runtimeConfig={runtimeConfig}
+        tabId={tabId || "readme"}
+      />
     </>
   );
 }
