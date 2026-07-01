@@ -93,6 +93,24 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
     href: "#",
     text: "bug",
   });
+  expect(await boardTwoColumnMetrics(page)).toEqual({
+    borderColor: "rgb(3, 175, 255)",
+    borderPadding: "3px 3px 0px",
+    borderRadius: "3px",
+    borderTextColor: "rgb(3, 169, 244)",
+    checkboxId: "two-column-mode",
+    checkboxMargin: "4px 4px 0px 2px",
+    dataContent: "Splits list and body into columns respectively",
+    display: "inline-block",
+    followsLabels: true,
+    lineHeight: "37px",
+    marginLeft: "10px",
+    text: "Column View",
+    textLineHeight: "20px",
+    textPadding: "0px 4px 0px 0px",
+    title: "Two Column Mode",
+    wrapperClass: "two-column-icon mr10 hide-in-mobile",
+  });
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_POSTS.replaceAll("__BASE_PATH__", basePath)),
@@ -418,6 +436,40 @@ async function issueLabelColorMetrics(page: Page) {
         text: element.textContent?.trim(),
       };
     });
+}
+
+async function boardTwoColumnMetrics(page: Page) {
+  return page.locator("#option_form #two-column-mode-checkbox").evaluate((element) => {
+    const wrapperStyle = window.getComputedStyle(element);
+    const border = element.querySelector(".two-column-icon-border") as HTMLElement;
+    const borderStyle = window.getComputedStyle(border);
+    const input = element.querySelector("#two-column-mode") as HTMLInputElement;
+    const inputStyle = window.getComputedStyle(input);
+    const text = element.querySelector(".two-column-mode-text") as HTMLElement;
+    const textStyle = window.getComputedStyle(text);
+    const labels = document.querySelector("#option_form .board-labels");
+
+    return {
+      borderColor: borderStyle.borderColor,
+      borderPadding: borderStyle.padding,
+      borderRadius: borderStyle.borderRadius,
+      borderTextColor: borderStyle.color,
+      checkboxId: input.id,
+      checkboxMargin: inputStyle.margin,
+      dataContent: element.getAttribute("data-content"),
+      display: wrapperStyle.display,
+      followsLabels: Boolean(
+        labels && labels.compareDocumentPosition(element) === Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+      lineHeight: wrapperStyle.lineHeight,
+      marginLeft: wrapperStyle.marginLeft,
+      text: text.textContent?.trim(),
+      textLineHeight: textStyle.lineHeight,
+      textPadding: textStyle.padding,
+      title: element.getAttribute("title"),
+      wrapperClass: element.getAttribute("class"),
+    };
+  });
 }
 
 async function keymapModalMetrics(page: Page) {
