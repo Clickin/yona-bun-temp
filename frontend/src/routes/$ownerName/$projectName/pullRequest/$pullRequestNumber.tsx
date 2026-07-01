@@ -171,6 +171,16 @@ function PullRequestOverviewBody({
                   {t("pullRequest.close")}
                 </a>
               ) : null}
+              {pullRequest.state.toLowerCase() === "closed" &&
+              pullRequest.permissions.canUpdateState ? (
+                <a
+                  data-request-method="post"
+                  href={prefixBasePath(runtimeConfig.basePath, `${prPath}/open`)}
+                  className="ybtn"
+                >
+                  {t("pullRequest.reopen")}
+                </a>
+              ) : null}
             </div>
           </div>
 

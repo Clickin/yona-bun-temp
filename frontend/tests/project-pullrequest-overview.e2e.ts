@@ -55,6 +55,23 @@ const EXPECTED_PULL_REQUEST_CONFLICT_CONTRIBUTOR_STATE =
     `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-error"><i class="yobicon-error mr5"></i><span>A conflict occurred when merging. This pull request cannot be merged safely.</span><div class="howto-resolve-conflict"><h6>Resolving conflicts</h6><div class="help"><ol><li>Move from local to the branch that sent the code. <code>git checkout feature/ui</code></li><li>Add upstream repository URL as new remote. But if you did it already, skip it. <code>git remote add upstream __UPSTREAM_URL__</code></li><li>Get the latest upstream code. <code>git fetch upstream</code></li><li>Rebase branch that will receive the code. <code>git rebase upstream/main</code></li><li>There must be some conflicted files. Open the files and edit them.</li><li>Once you fix it, notify Git. <code>git add resolved_file</code></li><li>After resolving all conflicts, continue rebasing. <code>git rebase --continue</code></li><li>You may need to repeat steps 5 to 7 several times.</li><li>After rebasing, push it to origin. <code>git push -f origin feature/ui</code></li><li>The End!<a href="__BASE_PATH__/admin/sample/pullRequest/9" class="ybtn ybtn-mini ybtn-primary">Refresh page</a>Double check whether your pull request can be merged safely or not.</li></ol></div></div></div></div>`,
   );
 
+const EXPECTED_PULL_REQUEST_CLOSED_REOPEN = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
+  `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div>`,
+  `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-closed">Closed</span></div>`,
+)
+  .replace(
+    `<div class="pull-right"><a id="btnAccept" href="__BASE_PATH__/admin/sample/pullRequest/9/accept" data-request-method="post" class="ybtn ybtn-success">Merge</a></div>`,
+    `<div class="pull-right"><button class="ybtn ybtn-disabled" data-toggle="tooltip" data-placement="top" title="This pull request is not open.">Merge</button></div>`,
+  )
+  .replace(
+    `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div>`,
+    `<div id="state" class="pullRequest-stateInfo"></div>`,
+  )
+  .replace(
+    `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><a data-request-method="post" href="__BASE_PATH__/admin/sample/pullRequest/9/close" class="ybtn">Close</a></div>`,
+    `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><a data-request-method="post" href="__BASE_PATH__/admin/sample/pullRequest/9/open" class="ybtn">Reopen</a></div>`,
+  );
+
 const EXPECTED_PULL_REQUEST_MERGED_DELETE_BRANCH = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div>`,
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-merged">Merged</span></div>`,
@@ -397,6 +414,27 @@ test("project pull request overview renders legacy contributor conflict guide DO
         "__BASE_PATH__",
         basePath,
       ).replace("__UPSTREAM_URL__", upstreamUrl),
+    ),
+  );
+});
+
+test("project pull request overview renders legacy closed reopen footer DOM", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    detail: {
+      state: "closed",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator(".badge-issue-closed")).toHaveText("Closed");
+  await expect(page.locator('a[href$="/open"]')).toHaveText("Reopen");
+  await expect(page.locator("#state")).toBeEmpty();
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_CLOSED_REOPEN.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
