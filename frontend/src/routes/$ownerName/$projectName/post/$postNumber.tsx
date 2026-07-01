@@ -319,7 +319,7 @@ function ProjectPostDetailBody({
         </div>
       </div>
 
-      <script type="text/x-jquery-tmpl" id="tplAttachedFile"></script>
+      <FileUploaderTemplates />
       <div id="deleteConfirm" className={`modal ${deleteModalOpen ? "" : "hide "}fade`}>
         <div className="modal-header">
           <button
@@ -1085,6 +1085,29 @@ function MarkdownEditor({
         </div>
       </div>
     </div>
+  );
+}
+
+function FileUploaderTemplates() {
+  return (
+    <>
+      <script
+        type="text/x-jquery-tmpl"
+        id="tplAttachedFile"
+        dangerouslySetInnerHTML={{
+          __html:
+            '<li class="attached-file" data-id="${fileId}" data-name="${fileName}" data-href="${fileHref}" data-mime="${mimeType}" data-size="${fileSize}"><i class="yobicon-supportrequest"></i><i class="mimetype"></i><strong class="name">${fileName}</strong><span class="size">${fileSizeReadable}</span><div class="pull-right"><div class="progress upload-progress"><div class="bar orange"></div></div></div><button type="button" class="btn-transparent btn-delete pull-right">×</button><span class="pull-right nbtn small white btn-insert">Click to post</span></li>',
+        }}
+      ></script>
+      <script
+        type="text/x-jquery-tmpl"
+        id="tplDropFilesHere"
+        dangerouslySetInnerHTML={{
+          __html:
+            '<div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div>',
+        }}
+      ></script>
+    </>
   );
 }
 

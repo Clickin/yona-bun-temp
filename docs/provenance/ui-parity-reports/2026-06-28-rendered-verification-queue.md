@@ -334,7 +334,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `common/commentForm.scala.html` | shared partials | issue caller tracked by existing issue-detail guard; board-detail caller interaction-covered by `frontend/tests/project-posts.e2e.ts`; PR/code callers remain to verify when active detail routes exist | 10 |
 | `common/commitMsg.scala.html` | shared partials | included partial; verify through each caller route | 10 |
 | `common/debug.scala.html` | shared partials | included partial; verify through each caller route | 10 |
-| `common/fileUploader.scala.html` | shared partials | included partial; verify through each caller route | 10 |
+| `common/fileUploader.scala.html` | shared partials | issue caller tracked by existing issue-detail metric guard; board-detail caller whole-screen-covered by `frontend/tests/project-posts.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/partial_history.scala.html` | shared partials | included partial; verify through each caller route | 10 |
 | `common/reviewForm.scala.html` | shared partials | included partial; verify through each caller route | 10 |
 | `common/sharerCount.scala.html` | shared partials | included partial; verify through each caller route | 10 |
