@@ -166,6 +166,31 @@ test("project board detail toggles legacy watch state through REST", async ({ pa
   expect(watchRequests).toEqual(["POST", "DELETE"]);
 });
 
+test("project board detail deletes through legacy confirmation modal", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { deleteRequests } = await mockProjectPosts(page);
+
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
+  await page.locator('a[href="#deleteConfirm"] button[title="Delete"]').first().click();
+  await expect(page.locator("#deleteConfirm")).not.toHaveClass(/hide/);
+  expect(deleteRequests).toEqual([]);
+
+  await page
+    .locator('#deleteConfirm [data-dismiss="modal"]')
+    .last()
+    .evaluate((button: HTMLButtonElement) => button.click());
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
+  expect(deleteRequests).toEqual([]);
+
+  await page.locator('a[href="#deleteConfirm"] button[title="Delete"]').first().click();
+  await page
+    .locator("#deleteConfirm .ybtn-danger")
+    .evaluate((button: HTMLButtonElement) => button.click());
+  await expect(page).toHaveURL(`${basePath}/admin/sample/posts`);
+  await expect.poll(() => deleteRequests).toEqual(["DELETE"]);
+});
+
 test("project board detail renders legacy read-only selected labels", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page, "readonlyLabel");
@@ -310,6 +335,7 @@ async function mockProjectPosts(
     | "attachments"
     | "childComment" = "default",
 ) {
+  const deleteRequests: string[] = [];
   const watchRequests: string[] = [];
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -468,6 +494,11 @@ async function mockProjectPosts(
     });
   });
   await page.route("**/api/v1/projects/admin/sample/posts/3", async (route) => {
+    if (route.request().method() === "DELETE") {
+      deleteRequests.push(route.request().method());
+      await route.fulfill({ status: 204 });
+      return;
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -618,7 +649,7 @@ async function mockProjectPosts(
       }),
     });
   });
-  return { watchRequests };
+  return { deleteRequests, watchRequests };
 }
 
 async function canonicalize(page: Page, selector: string) {

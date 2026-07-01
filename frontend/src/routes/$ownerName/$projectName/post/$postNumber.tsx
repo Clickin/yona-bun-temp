@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Fragment } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { Fragment, useState } from "react";
 import {
+  deleteProjectPostRest,
   readProjectPostQueryOptions,
   unwatchPostRest,
   watchPostRest,
@@ -10,9 +11,10 @@ import {
   type BoardPostComment,
   type BoardPostDetail,
 } from "../../../../api/boards";
-import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
+import { apiQueryKeys } from "../../../../api/query-keys";
 import type { ProjectContainer } from "../../../../api/types";
+import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
@@ -73,7 +75,9 @@ function ProjectPostDetailBody({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const ownerName = stringField(project.ownerName, post.ownerName);
   const projectName = stringField(project.projectName, post.projectName);
   const postNumber = stringField(post.postNumber);
@@ -99,6 +103,23 @@ function ProjectPostDetailBody({
     },
     onSuccess(updatedPost) {
       queryClient.setQueryData(postQueryOptions.queryKey, updatedPost);
+    },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return deleteProjectPostRest(runtimeConfig, csrfToken, {
+        ownerName,
+        postNumber,
+        projectName,
+      });
+    },
+    onSuccess() {
+      queryClient.removeQueries({ queryKey: postQueryOptions.queryKey });
+      queryClient.invalidateQueries({
+        queryKey: [...apiQueryKeys.project.base(ownerName, projectName), "posts"],
+      });
+      router.history.push(prefixBasePath(basePath, `/${ownerName}/${projectName}/posts`));
     },
   });
 
@@ -198,7 +219,12 @@ function ProjectPostDetailBody({
                   ) : null}
                 </div>
               </div>
-              <PostActionButtons canDelete={canDelete} canUpdate={canUpdate} editHref={editHref} />
+              <PostActionButtons
+                canDelete={canDelete}
+                canUpdate={canUpdate}
+                editHref={editHref}
+                onDeleteClick={() => setDeleteModalOpen(true)}
+              />
             </div>
             <div className="watcher-list"></div>
             <PostComments
@@ -239,6 +265,7 @@ function ProjectPostDetailBody({
                   canDelete={canDelete}
                   canUpdate={canUpdate}
                   editHref={editHref}
+                  onDeleteClick={() => setDeleteModalOpen(true)}
                   wrap={false}
                 />
               </div>
@@ -252,9 +279,14 @@ function ProjectPostDetailBody({
       </div>
 
       <script type="text/x-jquery-tmpl" id="tplAttachedFile"></script>
-      <div id="deleteConfirm" className="modal hide fade">
+      <div id="deleteConfirm" className={`modal ${deleteModalOpen ? "" : "hide "}fade`}>
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal">
+          <button
+            type="button"
+            className="close"
+            data-dismiss="modal"
+            onClick={() => setDeleteModalOpen(false)}
+          >
             ×
           </button>
           <h3>{t("issue.delete")}</h3>
@@ -268,10 +300,16 @@ function ProjectPostDetailBody({
             className="ybtn ybtn-danger"
             data-request-method="delete"
             data-request-uri={postHref}
+            onClick={() => deleteMutation.mutate()}
           >
             {t("button.yes")}
           </button>
-          <button type="button" className="ybtn" data-dismiss="modal">
+          <button
+            type="button"
+            className="ybtn"
+            data-dismiss="modal"
+            onClick={() => setDeleteModalOpen(false)}
+          >
             {t("button.no")}
           </button>
         </div>
@@ -321,11 +359,13 @@ function PostActionButtons({
   canDelete,
   canUpdate,
   editHref,
+  onDeleteClick,
   wrap = true,
 }: {
   canDelete: boolean;
   canUpdate: boolean;
   editHref: string;
+  onDeleteClick: () => void;
   wrap?: boolean;
 }) {
   const { t } = useLegacyMessages();
@@ -359,6 +399,7 @@ function PostActionButtons({
             className="icon btn-transparent-with-fontsize-lineheight ml6"
             data-toggle="tooltip"
             title={t("button.delete")}
+            onClick={onDeleteClick}
           >
             <i className="yobicon-trash"></i>
           </button>
