@@ -264,6 +264,77 @@ test("project board detail submits legacy comment form through REST", async ({ p
   await expect(
     page.locator("#comment-form #upload[data-resource-type='NONISSUE_COMMENT']"),
   ).toHaveCount(1);
+  const uploadFormMetrics = await page.locator("#comment-form #upload").evaluate((upload) => {
+    const style = window.getComputedStyle(upload);
+    const droppable = upload.querySelector(".help-droppable") as HTMLElement;
+    const btnWrap = upload.querySelector(".btn-wrap") as HTMLElement;
+    const fileButton = upload.querySelector(".fake-file-wrap") as HTMLElement;
+    const fileInput = upload.querySelector("input.file") as HTMLInputElement;
+    const plain = upload.querySelector(".plain") as HTMLElement;
+    const pastable = upload.querySelector(".help-pastable") as HTMLElement;
+    const attachedFiles = upload.querySelector(".attached-files") as HTMLElement;
+    const help = upload.querySelector(".right-txt.help") as HTMLElement;
+    const droppableStyle = window.getComputedStyle(droppable);
+    const btnWrapStyle = window.getComputedStyle(btnWrap);
+    const plainStyle = window.getComputedStyle(plain);
+    const attachedFilesStyle = window.getComputedStyle(attachedFiles);
+    const helpStyle = window.getComputedStyle(help);
+
+    return {
+      className: upload.className,
+      resourceType: upload.getAttribute("data-resource-type"),
+      resourceId: upload.getAttribute("data-resource-id"),
+      droppableText: droppable.textContent?.trim(),
+      uploadButtonText: fileButton.textContent?.trim(),
+      fileInputName: fileInput.name,
+      fileInputMultiple: fileInput.multiple,
+      plainText: plain.textContent?.trim(),
+      pastableText: pastable.textContent?.trim(),
+      helpText: help.textContent?.trim(),
+      attachedFilesClass: attachedFiles.className,
+      padding: style.padding,
+      marginBottom: style.marginBottom,
+      backgroundColor: style.backgroundColor,
+      borderRadius: style.borderRadius,
+      droppableDisplay: droppableStyle.display,
+      btnWrapDisplay: btnWrapStyle.display,
+      btnWrapMargin: btnWrapStyle.margin,
+      plainDisplay: plainStyle.display,
+      plainLineHeight: plainStyle.lineHeight,
+      attachedFilesDisplay: attachedFilesStyle.display,
+      attachedFilesPadding: attachedFilesStyle.padding,
+      attachedFilesMarginTop: attachedFilesStyle.marginTop,
+      attachedFilesBorderTop: attachedFilesStyle.borderTop,
+      helpDisplay: helpStyle.display,
+    };
+  });
+  expect(uploadFormMetrics).toEqual({
+    className: "upload-wrap content-footer",
+    resourceType: "NONISSUE_COMMENT",
+    resourceId: null,
+    droppableText: "Drag & Drop files to attach here or",
+    uploadButtonText: "File upload",
+    fileInputName: "filePath",
+    fileInputMultiple: true,
+    plainText: "Click upload button",
+    pastableText: "Paste the clipboard image",
+    helpText: "Selected file will be attached when your comment is saved.",
+    attachedFilesClass: "attached-files unstyled",
+    padding: "10px",
+    marginBottom: "10px",
+    backgroundColor: "rgb(239, 239, 239)",
+    borderRadius: "0px 0px 5px 5px",
+    droppableDisplay: "inline",
+    btnWrapDisplay: "inline-block",
+    btnWrapMargin: "0px 5px",
+    plainDisplay: "inline-block",
+    plainLineHeight: "30px",
+    attachedFilesDisplay: "none",
+    attachedFilesPadding: "15px 0px",
+    attachedFilesMarginTop: "15px",
+    attachedFilesBorderTop: "1px solid rgb(224, 224, 224)",
+    helpDisplay: "none",
+  });
   await expect(page.locator("#comment-form #dynamic-comment-btn")).toHaveClass(/hidden/);
 
   await page.locator("#comment-form textarea[name='contents']").fill("New **board** comment");
