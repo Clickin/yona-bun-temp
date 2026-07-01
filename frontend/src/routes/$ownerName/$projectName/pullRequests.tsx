@@ -6,6 +6,7 @@ import {
   projectPullRequestListQueryOptions,
   type PullRequestListCategory,
   type PullRequestListItem,
+  type PullRequestPushedBranch,
   type PullRequestListResponse,
 } from "../../../api/pull-requests";
 import type { ProjectContainer } from "../../../api/types";
@@ -198,6 +199,10 @@ function ProjectPullRequestsBody({
             </form>
           </div>
           <div className="span10 span-hard-wrap" id="span10">
+            <ProjectRecentlyPushedBranches
+              basePath={runtimeConfig.basePath}
+              pushedBranches={pullRequests.recentlyPushedBranches}
+            />
             <div className="pull-right">
               <a
                 href={prefixBasePath(
@@ -256,6 +261,61 @@ function ProjectPullRequestsBody({
         </div>
       </div>
     </div>
+  );
+}
+
+function ProjectRecentlyPushedBranches({
+  basePath,
+  pushedBranches,
+}: {
+  basePath: string;
+  pushedBranches: PullRequestPushedBranch[];
+}) {
+  const { t } = useLegacyMessages();
+  if (pushedBranches.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <h5>{t("pullRequest.pushed.branches.title")}</h5>
+      <div className="alert alert-info">
+        {pushedBranches.map((branch) => {
+          const projectPath = `/${branch.ownerName}/${branch.projectName}`;
+          return (
+            <div key={branch.id || branch.branchName}>
+              <i className="yobicon-split"></i>
+              <span style={{ marginLeft: 5, fontWeight: "bold" }}>
+                {`${branch.ownerName}/${branch.projectName}:${branch.shortName} ( ${branch.pushedLabel} )`}
+              </span>
+              &nbsp;-&nbsp;
+              <a
+                href={prefixBasePath(
+                  basePath,
+                  `${projectPath}/newPullRequestForm?fromBranch=${branch.branchName}&toBranch=${branch.defaultBranch}`,
+                )}
+              >
+                {t("pullRequest")}
+              </a>
+              {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy close hook is an href="#" request anchor. */}
+              <a
+                href="#"
+                className="close"
+                data-dismiss="alert"
+                aria-hidden="true"
+                data-request-method="delete"
+                data-request-uri={prefixBasePath(
+                  basePath,
+                  `${projectPath}/pushedBranch/${branch.id}/delete`,
+                )}
+              >
+                &times;
+              </a>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 

@@ -30,6 +30,29 @@ test("project pull request empty list matches legacy git/list.scala.html DOM", a
   );
 });
 
+test("project pull request recently pushed branch prompt matches legacy partial DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=pushed`);
+  await expect(page.locator("#span10 > h5")).toHaveText("Recently pushed branch");
+  await expect(page.locator(".alert.alert-info .yobicon-split")).toHaveCount(1);
+  await expect(page.locator(".alert.alert-info a").first()).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
+  );
+  await expect(page.locator(".alert.alert-info a.close")).toHaveAttribute(
+    "data-request-uri",
+    `${basePath}/admin/sample/pushedBranch/17/delete`,
+  );
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(page, expectedRecentlyPushedPullRequests(basePath)),
+  );
+});
+
 test("project closed pull request empty list matches legacy git/list.scala.html DOM", async ({
   page,
 }) => {
@@ -196,6 +219,23 @@ function expectedSentPullRequestsEmpty(basePath: string) {
         '/admin/sample/sentPullRequests" data-type="state">Sent code<span class="num-badge">0/0</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile"',
     );
   return withSentTab;
+}
+
+function expectedRecentlyPushedPullRequests(basePath: string) {
+  return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+    .replace('value="empty"', 'value="pushed"')
+    .replace(
+      '<div class="pull-right"><a href="' +
+        basePath +
+        '/admin/sample/newPullRequestForm" class="ybtn ybtn-success">pull request</a></div>',
+      '<h5>Recently pushed branch</h5><div class="alert alert-info"><div><i class="yobicon-split"></i><span style="margin-left:5px;font-weight:bold">admin/sample:feature/ui ( Jul 1, 2026 )</span>&nbsp;-&nbsp;<a href="' +
+        basePath +
+        '/admin/sample/newPullRequestForm?fromBranch=feature/ui&amp;toBranch=main">Pull request</a><a href="#" class="close" data-dismiss="alert" aria-hidden="true" data-request-method="delete" data-request-uri="' +
+        basePath +
+        '/admin/sample/pushedBranch/17/delete">×</a></div></div><div class="pull-right"><a href="' +
+        basePath +
+        '/admin/sample/newPullRequestForm" class="ybtn ybtn-success">pull request</a></div>',
+    );
 }
 
 function expectedPopulatedPullRequests(basePath: string) {
@@ -385,6 +425,20 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
                 },
               ]
             : [];
+    const recentlyPushedBranches =
+      filter === "pushed" && category === "open"
+        ? [
+            {
+              branchName: "feature/ui",
+              defaultBranch: "main",
+              id: 17,
+              ownerName: "admin",
+              projectName: "sample",
+              pushedLabel: "Jul 1, 2026",
+              shortName: "feature/ui",
+            },
+          ]
+        : [];
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -410,7 +464,7 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
         openCount: filter === "pages" ? 2 : items.length,
         pageNum: 1,
         pageSize: filter === "pages" ? 1 : 15,
-        recentlyPushedBranches: [],
+        recentlyPushedBranches,
         sentCount: 0,
         totalCount: filter === "pages" ? 2 : items.length,
       }),
