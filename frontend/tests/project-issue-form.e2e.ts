@@ -22,6 +22,14 @@ test("project issue create form matches legacy issue/create.scala.html core form
     "data-category-is-exclusive",
     "false",
   );
+  await expect(page.locator("input#assignee.bigdrop[name=assigneeLoginId]")).toHaveAttribute(
+    "placeholder",
+    "No assignee",
+  );
+  await expect(page.locator("input#assignee.bigdrop[name=assigneeLoginId]")).toHaveAttribute(
+    "style",
+    "width: 100%;",
+  );
 
   expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
     await canonicalizeHtml(page, EXPECTED_ISSUE_FORM_BODY.replaceAll("__BASE_PATH__", basePath)),
