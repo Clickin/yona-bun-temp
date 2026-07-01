@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { Fragment, useState } from "react";
+import { Fragment, type FormEvent, useState } from "react";
 import {
+  createPostCommentRest,
   deleteProjectPostRest,
   deletePostCommentRest,
   readProjectPostQueryOptions,
@@ -145,6 +146,20 @@ function ProjectPostDetailBody({
       document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
     },
   });
+  const commentCreateMutation = useMutation({
+    mutationFn: async (contentsMarkdown: string) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return createPostCommentRest(runtimeConfig, csrfToken, {
+        contentsMarkdown,
+        ownerName,
+        postNumber,
+        projectName,
+      });
+    },
+    onSuccess(updatedPost) {
+      queryClient.setQueryData(postQueryOptions.queryKey, updatedPost);
+    },
+  });
 
   return (
     <div className="page-wrap-outer">
@@ -254,6 +269,9 @@ function ProjectPostDetailBody({
               basePath={basePath}
               canDelete={canDelete}
               canUpdate={canUpdate}
+              onCreateComment={(contentsMarkdown) =>
+                commentCreateMutation.mutateAsync(contentsMarkdown)
+              }
               ownerName={ownerName}
               post={post}
               postNumber={postNumber}
@@ -495,6 +513,7 @@ function PostComments({
   basePath,
   canDelete,
   canUpdate,
+  onCreateComment,
   ownerName,
   post,
   postNumber,
@@ -503,6 +522,7 @@ function PostComments({
   basePath: string;
   canDelete: boolean;
   canUpdate: boolean;
+  onCreateComment: (contentsMarkdown: string) => Promise<unknown>;
   ownerName: string;
   post: BoardPostDetail;
   postNumber: string;
@@ -540,7 +560,102 @@ function PostComments({
           </ul>
         </div>
       </div>
+      <PostCommentForm
+        basePath={basePath}
+        canComment={canComment}
+        onCreateComment={onCreateComment}
+        ownerName={ownerName}
+        postNumber={postNumber}
+        projectName={projectName}
+      />
     </div>
+  );
+}
+
+function PostCommentForm({
+  basePath,
+  canComment,
+  onCreateComment,
+  ownerName,
+  postNumber,
+  projectName,
+}: {
+  basePath: string;
+  canComment: boolean;
+  onCreateComment: (contentsMarkdown: string) => Promise<unknown>;
+  ownerName: string;
+  postNumber: string;
+  projectName: string;
+}) {
+  if (!canComment) {
+    return (
+      <div
+        className="write-comment-box mt20"
+        title="You need to log in to add comments."
+        data-login="required"
+      >
+        <div className="write-comment-wrap">
+          <div className="textarea-box">
+            <textarea className="comment disabled" disabled style={{ cursor: "text" }}></textarea>
+          </div>
+          <div className="right-txt mt10">
+            <span className="ybtn ybtn-disabled">Add a comment</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const contents = new FormData(form).get("contents");
+    await onCreateComment(typeof contents === "string" ? contents : "");
+    form.reset();
+  }
+
+  return (
+    <form
+      id="comment-form"
+      action={prefixBasePath(basePath, `/${ownerName}/${projectName}/post/${postNumber}/comments`)}
+      method="post"
+      encType="multipart/form-data"
+      onSubmit={handleSubmit}
+    >
+      <div className="write-comment-box">
+        <MarkdownEditor editorMode="comment-body" name="contents" value="" wrapId="contents" />
+        <div
+          className="upload-wrap content-footer"
+          data-resource-type="NONISSUE_COMMENT"
+          id="upload"
+        >
+          <div className="attach-wrap">
+            <span className="help help-droppable">Drag &amp; Drop files to attach here or</span>
+            <div className="btn-wrap">
+              <div className="nbtn medium white fake-file-wrap">
+                <i className="yobicon-upload"></i> File upload
+                <input type="file" className="file" name="filePath" multiple />
+              </div>
+            </div>
+            <span className="plain">Click upload button</span>
+            <span className="help help-pastable">Paste the clipboard image</span>
+          </div>
+          <ul className="attached-files unstyled"></ul>
+          <p className="right-txt help">
+            <i className="yobicon-supportrequest"></i> Selected file will be attached when your
+            comment is saved.
+          </p>
+        </div>
+        <div className="write-comment-wrap">
+          <div className="right-txt">
+            <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
+            <button type="submit" className="ybtn ybtn-success">
+              Add a comment
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
   );
 }
 
