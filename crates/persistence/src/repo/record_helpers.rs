@@ -166,6 +166,10 @@ impl AppRepositoryImpl<'_> {
             comments,
             created_at: model.created_date,
             due_date_label: format_workspace_date_label(model.due_date),
+            due_date_overdue: model
+                .due_date
+                .is_some_and(|value| value < DateTimeUtc::from(SystemTime::now()).naive_utc()),
+            due_date_until_label: format_legacy_issue_until_label(model.due_date),
             has_voted,
             history_markdown: self.read_text_column("issue", "history", model.id).await?,
             id: model.id,

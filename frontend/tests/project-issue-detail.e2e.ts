@@ -124,6 +124,35 @@ test("project issue detail renders legacy read-only metadata fields", async ({ p
   );
 });
 
+test("project issue detail renders legacy due date status", async ({ page }) => {
+  await mockProjectIssueDetail(page, {
+    dueDateOverdue: true,
+    dueDateUntilLabel: "1 days",
+  });
+
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
+
+  expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Due date')) > dt")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<dt>Due date<span class="duedate-status overdue">(Overdue)</span></dt>`,
+    ),
+  );
+});
+
+test("project issue detail renders legacy due date until status", async ({ page }) => {
+  await mockProjectIssueDetail(page, {
+    dueDateOverdue: false,
+    dueDateUntilLabel: "3 days",
+  });
+
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
+
+  expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Due date')) > dt")).toEqual(
+    await canonicalizeHtml(page, `<dt>Due date<span class="duedate-status ">(3 days)</span></dt>`),
+  );
+});
+
 test("project issue detail renders legacy empty read-only metadata fields", async ({ page }) => {
   await mockProjectIssueDetail(page, {
     assigneeLoginId: null,

@@ -85,6 +85,10 @@ function IssueDetailBody({
   const bodyChecksum = stringField(issue.bodyChecksum, "body-sha1");
   const issueUpdateMillis = stringField(issue.issueUpdateMillis, "0");
   const dueDateLabel = stringField(issue.dueDateLabel);
+  const dueDateStatusLabel = booleanField(issue.dueDateOverdue)
+    ? "Overdue"
+    : stringField(issue.dueDateUntilLabel);
+  const shouldShowDueDateStatus = dueDateLabel !== "" && issueState === "open";
   const weight = numberField(issue.weight);
 
   return (
@@ -349,7 +353,18 @@ function IssueDetailBody({
                 </dl>
                 <dl>
                   <dt>
-                    Due date<span className="duedate-status "></span>
+                    Due date
+                    <span
+                      className={
+                        booleanField(issue.dueDateOverdue)
+                          ? "duedate-status overdue"
+                          : "duedate-status "
+                      }
+                    >
+                      {shouldShowDueDateStatus && dueDateStatusLabel
+                        ? `(${dueDateStatusLabel})`
+                        : ""}
+                    </span>
                   </dt>
                   <dd>
                     {canUpdate ? (

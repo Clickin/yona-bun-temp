@@ -91,6 +91,8 @@ pub struct IssueRecord {
     pub comment_count: u32,
     pub created_at: Option<DateTime>,
     pub due_date_label: String,
+    pub due_date_overdue: bool,
+    pub due_date_until_label: String,
     pub id: i64,
     pub issue_number: i64,
     pub is_draft: bool,

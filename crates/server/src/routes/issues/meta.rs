@@ -685,6 +685,8 @@ pub(super) async fn rest_refreshed_issue_detail(
             child_issues: Vec::new(),
             child_open_count: 0,
             due_date_label: String::new(),
+            due_date_overdue: false,
+            due_date_until_label: String::new(),
             detail: fallback,
             history_html: String::new(),
             history_markdown: String::new(),

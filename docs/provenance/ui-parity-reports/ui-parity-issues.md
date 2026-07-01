@@ -95,6 +95,12 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/-issue-views.tsx` adds `renderShell={false}` for `ProjectIssueDetailPage`; the issue detail leaf route passes that flag while retaining the existing REST detail/comment/action/metadata boundaries.
 - Verification: `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run src/issue-detail-shell.spec.tsx`.
 
+## 2026-07-01 Project Issue Detail Due Date Status Follow-Up
+
+- Restored the `issue/view.scala.html` sidebar due-date status branch for open issues: non-overdue due dates render legacy `issue.until` in `.duedate-status`, and overdue due dates render `(Overdue)` with the `overdue` class.
+- Scope: `crates/persistence` and `crates/server` now expose `dueDateOverdue` and `dueDateUntilLabel` on the issue detail REST payload, and `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx` uses those fields only for the existing legacy `<dt>Due date...` span.
+- Verification: `frontend/tests/project-issue-detail.e2e.ts` includes RED-to-GREEN DOM comparisons for both overdue and until-text status spans.
+
 ## Evidence Checked
 
 Legacy evidence:
