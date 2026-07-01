@@ -40,7 +40,7 @@ test("organization members matches legacy organization/members.scala.html DOM", 
     memberListStyle: "none",
     memberNameFontWeight: "700",
     memberRoleDataName: "roleof-admin",
-    memberRowWidthRatio: 0.47,
+    memberRowWidthRatio: 0.49,
     memberSettingOffsetTop: 15,
     roleApplyLoginId: "admin",
   });
@@ -84,6 +84,38 @@ test("organization members delete waits for legacy confirmation modal", async ({
   await expect.poll(() => requests.deletedUserIds).toEqual(["1"]);
 });
 
+test("organization members menu settings link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationMembers(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+  const settingsLink = page.locator(".project-page-wrap > .nav.nav-tabs a").filter({
+    hasText: "Setting",
+  });
+  await expect(settingsLink).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/settingform`,
+  );
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await settingsLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/settingform`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs li").first()).toHaveClass("active");
+  await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
 async function mockOrganizationMembers(page: Page) {
   const requests = {
     acceptedUserIds: [] as string[],
@@ -112,6 +144,18 @@ async function mockOrganizationMembers(page: Page) {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(organizationAdminPayload()),
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs/settings", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        description: "Web labs group",
+        id: 42,
+        logoUrl: "/assets/images/organization_default_logo.png",
+        organizationName: "weblabs",
+        viewerCanUpdate: true,
+      }),
     });
   });
   await page.route("**/api/v1/organizations/weblabs/members", async (route) => {

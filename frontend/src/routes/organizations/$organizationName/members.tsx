@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import {
   acceptOrganizationEnrollmentRest,
   addOrganizationMemberRest,
@@ -475,25 +482,75 @@ function OrganizationSettingMenu({
   organizationName: string;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
+  const navigate = (to: string) => {
+    router.navigate({ to });
+  };
 
   return (
     <ul className="nav nav-tabs">
       <li className="">
-        <a href={prefixBasePath(basePath, `/organizations/${organizationName}/settingform`)}>
+        <OrganizationSettingLink
+          basePath={basePath}
+          onNavigate={navigate}
+          to={`/organizations/${organizationName}/settingform`}
+        >
           {t("organization.settingFrom")}
-        </a>
+        </OrganizationSettingLink>
       </li>
       <li className={active === "members" ? "active" : ""}>
-        <a href={prefixBasePath(basePath, `/organizations/${organizationName}/members`)}>
+        <OrganizationSettingLink
+          basePath={basePath}
+          onNavigate={navigate}
+          to={`/organizations/${organizationName}/members`}
+        >
           {t("organization.member")}
-        </a>
+        </OrganizationSettingLink>
       </li>
       <li className="">
-        <a href={prefixBasePath(basePath, `/organizations/${organizationName}/deleteForm`)}>
+        <OrganizationSettingLink
+          basePath={basePath}
+          onNavigate={navigate}
+          to={`/organizations/${organizationName}/deleteForm`}
+        >
           {t("organization.delete")}
-        </a>
+        </OrganizationSettingLink>
       </li>
     </ul>
+  );
+}
+
+function OrganizationSettingLink({
+  basePath,
+  children,
+  onNavigate,
+  to,
+}: {
+  basePath: string;
+  children: ReactNode;
+  onNavigate: (to: string) => void;
+  to: string;
+}) {
+  const navigateWithinOrganizationSettings = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    onNavigate(to);
+  };
+
+  return (
+    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinOrganizationSettings}>
+      {children}
+    </a>
   );
 }
 
