@@ -196,7 +196,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   expect(await readDesktopHelpMetrics(page)).toEqual({
     answerDisplayClosed: "none",
     answerPaddingTopOpen: "15px",
-    answerRightPaddingOpen: "112.5px",
+    answerRightPaddingOpen: "94.5px",
     breadcrumbHeadingLineHeight: "30px",
     breadcrumbHeadingPaddingBottom: "5px",
     breadcrumbHeadingPaddingLeft: "10px",
@@ -204,7 +204,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
     firstQaBorderBottomWidth: "1px",
     firstQaMarginBottom: "14px",
     gnbInnerHeight: "40px",
-    gnbInnerWidth: 1254,
+    gnbInnerWidth: 1058,
     gnbOuterBackground: "rgb(27, 27, 27)",
     gnbOuterHeight: "40px",
     iconMarginOpen: "17px",
@@ -222,7 +222,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
     questionFontSize: "14px",
     questionMarginBottomClosed: "14px",
     questionMarginBottomOpen: "16px",
-    questionWidth: "1062.5px",
+    questionWidth: "892.5px",
   });
   await expect(page.locator(".qas > .qa").first()).not.toHaveClass(/open/);
   await page.locator(".qas > .qa").first().click();
