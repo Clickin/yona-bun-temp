@@ -248,15 +248,15 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `project/watchers.scala.html` | P2 project | covered by `frontend/tests/project-watchers.e2e.ts`: `/admin/sample/watchers` renders the legacy project shell plus watcher title, description, and `.members.project.row-fluid` watcher rows with avatar/name/login layout metrics | 57 |
 | `project/webhooks.scala.html` | P2 project | covered by `frontend/tests/project-webhooks-form.e2e.ts`: `/admin/sample/webhooks` renders the legacy settings shell, active webhooks submenu, new webhook form, help copy, empty list state, populated list partial, and form/list layout metrics | 57 |
 | `projectMenu.scala.html` | P2 project | covered by `frontend/tests/project-settings-form.e2e.ts` and `frontend/tests/project-labels-form.e2e.ts`: project settings routes render the legacy project menu shell, menu order, short labels, code-menu class, active settings cog, mounted links, and menu stack/height metrics | 57 |
-| `issue/list.scala.html` | P3 issue | /:owner/:projectName/issues | 13 |
-| `issue/my_list.scala.html` | P3 issue | included partial caller route; inspect Play route and React owner | 13 |
-| `issue/my_partial_search.scala.html` | P3 issue | included partial caller route; inspect Play route and React owner | 13 |
+| `issue/list.scala.html` | P3 issue | covered by `frontend/tests/project-issues-empty.e2e.ts`: `/admin/sample/issues?filter=empty` and populated issue-list states compare the whole legacy project issue list shell, active Issue menu, quick-search/search controls, open/closed tabs, row wrapper, keymap trigger, and footer | 13 |
+| `issue/my_list.scala.html` | P3 issue | covered by `frontend/tests/user-issues.e2e.ts`: `/user/issues` and filtered `/user/issues?filter=favorite&query=needle&pageNum=2&state=closed&orderBy=createdDate&orderDir=asc` compare the legacy my-issues shell, tabs, rows, filtered empty state, pagination, and layout metrics | 13 |
+| `issue/my_partial_search.scala.html` | P3 issue | covered by `frontend/tests/user-issues.e2e.ts`: `/user/issues` renders `form#search[name=search][method=get]`, hidden order/state/user fields, search textbox/button, filtered value, and REST query mapping | 13 |
 | `issue/partial_comments.scala.html` | P3 issue | included partial caller route; inspect Play route and React owner | 13 |
 | `issue/partial_index_comments.scala.html` | P3 issue | included partial caller route; inspect Play route and React owner | 13 |
-| `issue/partial_list_subtask.scala.html` | P3 issue | included partial caller route; inspect Play route and React owner | 13 |
-| `issue/partial_list_wrap.scala.html` | P3 issue | included partial caller route; inspect Play route and React owner | 13 |
+| `issue/partial_list_subtask.scala.html` | P3 issue | covered by `frontend/tests/project-issues-empty.e2e.ts`: `/admin/sample/issues?filter=subtask` renders the legacy subtask progress and parent-link branch inside the project issue list row | 13 |
+| `issue/partial_list_wrap.scala.html` | P3 issue | covered by `frontend/tests/project-issues-empty.e2e.ts`: issue-list states render `.row-fluid.issue-list-wrap`, left menu, `#span10`, state tabs, two-column/show-subtasks controls, mass-update slot, sort filter, draft-before-normal ordering, Excel action, and pagination | 13 |
 | `issue/partial_view_childIssueList.scala.html` | P3 issue | covered by issue detail `/admin/sample/issue/11` in `frontend/tests/project-issue-detail.e2e.ts` | 13 |
-| `issue/partial_view_childIssueListOnly.scala.html` | P3 issue | included partial caller route; inspect Play route and React owner | 13 |
+| `issue/partial_view_childIssueListOnly.scala.html` | P3 issue | covered by `frontend/tests/project-issues-empty.e2e.ts`: `/admin/sample/issues?filter=children` renders hidden `.child-issue-list.hide` with open/closed child issue rows, child links, labels, dates, state labels, and checkmark branch | 13 |
 | `issue/partial_voters.scala.html` | P3 issue | covered by issue detail `/admin/sample/issue/11` in `frontend/tests/project-issue-detail.e2e.ts` | 13 |
 | `board/create.scala.html` | P4 board/milestone | /:owner/:projectName/postform | 13 |
 | `board/edit.scala.html` | P4 board/milestone | /:owner/:projectName/post/:postNumber/editform | 13 |

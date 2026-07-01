@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+test.use({ viewport: { width: 1100, height: 720 } });
+
 const EXPECTED_USER_ISSUES_PAGE_WRAP = `
 <div class="page-wrap-outer">
   <div class="page-wrap">
