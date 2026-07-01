@@ -297,6 +297,7 @@ function ProjectRecentlyPushedBranches({
               >
                 {t("pullRequest")}
               </a>
+              {/* oxlint-disable jsx-a11y/no-aria-hidden-on-focusable -- legacy close hook keeps aria-hidden. */}
               {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy close hook is an href="#" request anchor. */}
               <a
                 href="#"
@@ -311,6 +312,7 @@ function ProjectRecentlyPushedBranches({
               >
                 &times;
               </a>
+              {/* oxlint-enable jsx-a11y/no-aria-hidden-on-focusable */}
             </div>
           );
         })}
@@ -538,7 +540,8 @@ function TwoColumnModeCheckbox() {
       title="Two Column Mode"
       data-content="Splits list and body into columns respectively"
     >
-      <label className="checkbox" aria-label="Column View">
+      {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template keeps this checkbox wrapper without aria-label. */}
+      <label className="checkbox">
         <div className="two-column-icon-border">
           <input id="two-column-mode" type="checkbox" />
           <span className="two-column-mode-text">Column View</span>

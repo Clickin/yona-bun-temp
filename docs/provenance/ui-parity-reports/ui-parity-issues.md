@@ -14,6 +14,7 @@ Mode: read-only audit, no files edited by the explorer
 - Continuation: project issue list comment/vote/sharer counts now reuse the legacy `common/commentCount.scala.html`, `voteCount.scala.html`, and `sharerCount.scala.html` class/icon structure.
 - Continuation: user profile issue rows and `/user/issues` rows now reuse the same legacy `common/commentCount.scala.html` and `voteCount.scala.html` class/icon structure instead of the older generic `yobicon-comments` count markup.
 - Continuation: public profile and `/user/issues` show-subtasks controls now render the legacy `common/showSubtasksCheckbox.scala.html` DOM, including `.show-subtasks`, `#toggle-show-subtasks`, text span, and popover hooks.
+- Continuation: project pull-request list two-column control now matches `common/twoColumnModeCheckboxArea.scala.html` without the React-only `aria-label` on the legacy label wrapper.
 - Continuation: project issue list rows now restore the legacy `_page.less` `.post-item`, `.title-wrap`, `.infos`, `.item-count-groups`, `.empty-avatar-wrap`, and `.mileston-tag` geometry under the `issue-list-page` shell.
 - Continuation: editable issue detail labels keep the legacy hidden `#labelIds[data-toggle=select2]` contract while rendering the visible `.issue-labels-fallback` label chips used by the React form path.
 - Continuation: issue voter modal close buttons retain the legacy `.close`, `data-dismiss="modal"`, and footer button classes while dropping invalid `aria-hidden` on focusable buttons.
