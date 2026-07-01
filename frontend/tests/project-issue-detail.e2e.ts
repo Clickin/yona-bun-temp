@@ -1075,6 +1075,25 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
   expect(await canonicalize(page, "#voters-77")).toEqual(
     await canonicalizeHtml(page, expectedModal),
   );
+
+  await page.locator('#comment-77 a[href="#voters-77"][data-toggle="modal"]').click();
+  await expect(page.locator("#voters-77")).toBeVisible();
+  expect(await commentVoterModalMetrics(page)).toEqual({
+    avatarHeight: 40,
+    avatarWidth: 40,
+    bodyDisplay: "block",
+    closeHookCount: 2,
+    display: "block",
+    footerDisplay: "block",
+    headerDisplay: "block",
+    left: 360,
+    rowCount: 6,
+    rowDisplay: "list-item",
+    width: 562,
+  });
+
+  await page.locator('#voters-77 [data-dismiss="modal"]').last().click();
+  await expect(page.locator("#voters-77")).toBeHidden();
 });
 
 test("project issue detail renders legacy inline comment voter avatars", async ({ page }) => {
@@ -1186,6 +1205,31 @@ async function childCommentAnchorMetrics(page: Page) {
       anchorNextClass: anchor?.nextElementSibling?.className ?? null,
       childHref: childAnchor?.getAttribute("href") ?? null,
       inlineChildAnchorCount: comment.querySelectorAll(".one-line-comment #comment-78").length,
+    };
+  });
+}
+
+async function commentVoterModalMetrics(page: Page) {
+  return page.locator("#voters-77").evaluate((modal) => {
+    const rect = modal.getBoundingClientRect();
+    const header = modal.querySelector<HTMLElement>(".modal-header");
+    const body = modal.querySelector<HTMLElement>(".modal-body");
+    const footer = modal.querySelector<HTMLElement>(".modal-footer");
+    const firstRow = modal.querySelector<HTMLElement>(".modal-body li");
+    const firstImage = modal.querySelector<HTMLImageElement>(".avatar-wrap.mlarge img");
+
+    return {
+      avatarHeight: firstImage ? Math.round(firstImage.getBoundingClientRect().height) : null,
+      avatarWidth: firstImage ? Math.round(firstImage.getBoundingClientRect().width) : null,
+      bodyDisplay: body ? window.getComputedStyle(body).display : null,
+      closeHookCount: modal.querySelectorAll('[data-dismiss="modal"]').length,
+      display: window.getComputedStyle(modal).display,
+      footerDisplay: footer ? window.getComputedStyle(footer).display : null,
+      headerDisplay: header ? window.getComputedStyle(header).display : null,
+      left: Math.round(rect.left),
+      rowCount: modal.querySelectorAll(".modal-body li").length,
+      rowDisplay: firstRow ? window.getComputedStyle(firstRow).display : null,
+      width: Math.round(rect.width),
     };
   });
 }
