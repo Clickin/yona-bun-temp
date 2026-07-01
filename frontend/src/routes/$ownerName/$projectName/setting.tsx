@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { codeBranchesQueryOptions, setDefaultCodeBranchRest } from "../../../api/code-branches";
 import { readProjectSettingsQueryOptions, updateProjectRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -78,6 +78,9 @@ function ProjectSettingBody({
   const maxReviewerCount =
     numberField(recordField(project).maxReviewerCount) || defaultReviewerCount;
   const reviewerPoints = Array.from({ length: maxReviewerCount }, (_value, index) => index + 1);
+  const [reviewerCountVisible, setReviewerCountVisible] = useState(() =>
+    booleanField(recordField(project).isUsingReviewerCount),
+  );
   const mutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -330,6 +333,7 @@ function ProjectSettingBody({
                       id="reviewerCountEnable"
                       value="true"
                       defaultChecked={booleanField(recordField(project).isUsingReviewerCount)}
+                      onChange={() => setReviewerCountVisible(true)}
                     />
                     <label htmlFor="reviewerCountEnable" className="bg-radiobtn label-public">
                       {t("project.reviewer.count.enable")}
@@ -343,6 +347,7 @@ function ProjectSettingBody({
                       id="reviewerCountDisable"
                       value="false"
                       defaultChecked={!booleanField(recordField(project).isUsingReviewerCount)}
+                      onChange={() => setReviewerCountVisible(false)}
                     />
                     <label htmlFor="reviewerCountDisable" className="bg-radiobtn label-private">
                       {t("project.reviewer.count.disable")}
@@ -352,6 +357,7 @@ function ProjectSettingBody({
                       id="welReviewerCount"
                       data-value={String(booleanField(recordField(project).isUsingReviewerCount))}
                       className="hide"
+                      style={{ display: reviewerCountVisible ? "block" : "none" }}
                     >
                       <div
                         className="btn-group branches"
