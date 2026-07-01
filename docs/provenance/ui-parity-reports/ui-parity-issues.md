@@ -16,6 +16,7 @@ Mode: read-only audit, no files edited by the explorer
 - Continuation: public profile and `/user/issues` show-subtasks controls now render the legacy `common/showSubtasksCheckbox.scala.html` DOM, including `.show-subtasks`, `#toggle-show-subtasks`, text span, and popover hooks.
 - Continuation: project pull-request list two-column control now matches `common/twoColumnModeCheckboxArea.scala.html` without the React-only `aria-label` on the legacy label wrapper.
 - Continuation: shared partial provenance now points issue-detail caller evidence at active `project-issue-detail.e2e.ts` and marks posting-history modal evidence pending instead of citing deleted parity files.
+- Continuation: board detail now renders the legacy `common/partial_history.scala.html` posting-history modal from `historyHtml`, and `project-posts.e2e.ts` covers the link, modal DOM, and open/close behavior.
 - Continuation: project issue list rows now restore the legacy `_page.less` `.post-item`, `.title-wrap`, `.infos`, `.item-count-groups`, `.empty-avatar-wrap`, and `.mileston-tag` geometry under the `issue-list-page` shell.
 - Continuation: editable issue detail labels keep the legacy hidden `#labelIds[data-toggle=select2]` contract while rendering the visible `.issue-labels-fallback` label chips used by the React form path.
 - Continuation: issue voter modal close buttons retain the legacy `.close`, `data-dismiss="modal"`, and footer button classes while dropping invalid `aria-hidden` on focusable buttons.

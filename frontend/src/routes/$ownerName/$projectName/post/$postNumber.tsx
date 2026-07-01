@@ -227,6 +227,7 @@ function ProjectPostDetailBody({
                   <strong className="name">{t("common.noAuthor")}</strong>
                 )}
               </a>
+              <PostingHistory historyHtml={post.historyHtml} />
             </div>
             {post.bodyMarkdown ? (
               <>
@@ -392,6 +393,36 @@ function ProjectPostDetailBody({
         }}
         title={t("common.comment.delete")}
       />
+    </div>
+  );
+}
+
+function PostingHistory({ historyHtml }: { historyHtml: string }) {
+  const { t } = useLegacyMessages();
+
+  if (!historyHtml) {
+    return null;
+  }
+
+  return (
+    <div className="posting-history">
+      <a href="#-yona-posting-history" data-toggle="modal">
+        {t("change.history")}
+      </a>
+      <div id="-yona-posting-history" className="modal hide">
+        <div className="modal-header">
+          <button type="button" className="close" data-dismiss="modal">
+            ×
+          </button>
+          <h5 className="nm">{t("change.history")}</h5>
+        </div>
+        <div className="modal-body" dangerouslySetInnerHTML={{ __html: `<p>${historyHtml}</p>` }} />
+        <div className="modal-footer">
+          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
+            {t("button.confirm")}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
