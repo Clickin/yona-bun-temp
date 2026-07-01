@@ -1,4 +1,5 @@
 import { type SearchCounts, type SearchResponse, type SearchType } from "../api/search";
+import { RestApiError } from "../api/rest-client";
 import { useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
@@ -26,6 +27,26 @@ export type SearchBodyInput = {
   runtimeConfig: RuntimeConfig;
   searchPath: string;
 };
+
+export function isRequestTextTooLargeError(error: unknown) {
+  return error instanceof RestApiError && error.status === 413;
+}
+
+export function RequestTextTooLargeErrorBody() {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t("error.tooLargeText.title")}</p>
+          <p>{t("error.tooLargeText.limit", { args: [102400] })}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function LegacySearchBody({
   includeProjectCategory,

@@ -7,7 +7,12 @@ import { LegacyI18nProvider } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import type { RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { emptySearchResult, LegacySearchBody } from "../../-search-screen";
+import {
+  emptySearchResult,
+  isRequestTextTooLargeError,
+  LegacySearchBody,
+  RequestTextTooLargeErrorBody,
+} from "../../-search-screen";
 import { OrganizationHeader, OrganizationMenu } from "../$organizationName";
 
 type OrganizationSearchRouteSearch = {
@@ -65,6 +70,10 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       ...search,
       scope: "organization",
     });
+
+  if (isRequestTextTooLargeError(searchQuery.error)) {
+    return <RequestTextTooLargeErrorBody />;
+  }
 
   if (!organizationQuery.data) {
     return null;

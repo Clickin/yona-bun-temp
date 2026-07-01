@@ -98,6 +98,25 @@ const EXPECTED_GLOBAL_SEARCH = `
 </footer>
 `;
 
+const EXPECTED_REQUEST_TEXT_TOO_LARGE = `
+<div class="unsupported hidden">
+  <div class="unsupported-inner"><p id="unsupported-content"></p></div>
+</div>
+<header class="gnb-outer">
+  <div class="gnb-inner">
+    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <ul class="gnb-nav">
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+    </ul>
+    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
+    <ul class="gnb-usermenu"><li class="gnb-usermenu-item" id="required-logged-in"><a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a></li><li class="divider"></li><li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li></ul>
+  </div>
+</header>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico ico-err2"></i><p>Request text entity too large</p><p>Text length exceeds maximum allowed text "102400" bytes.</p></div></div></div>
+<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
+`;
+
 const EXPECTED_GLOBAL_PROJECT_SEARCH = `
 <div class="unsupported hidden">
   <div class="unsupported-inner"><p id="unsupported-content"></p></div>
@@ -402,6 +421,26 @@ test("global review search renders legacy partial_reviews.scala.html populated r
   );
 });
 
+test("global search renders legacy request text too large error shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockGlobalSearch(page);
+
+  await page.goto(`${basePath}/search?keyword=too-large&searchType=issue&pageNum=1`);
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText([
+    "Request text entity too large",
+    'Text length exceeds maximum allowed text "102400" bytes.',
+  ]);
+  await expect(page.locator(".search-box-wrap")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_REQUEST_TEXT_TOO_LARGE.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 async function mockGlobalSearch(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -415,6 +454,20 @@ async function mockGlobalSearch(page: Page) {
   await page.route("**/api/v1/search?**", async (route) => {
     const requestUrl = new URL(route.request().url());
     const keyword = requestUrl.searchParams.get("keyword") ?? "";
+    if (keyword === "too-large") {
+      await route.fulfill({
+        status: 413,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "request_entity_too_large",
+            message: "Request text entity too large",
+            status: 413,
+          },
+        }),
+      });
+      return;
+    }
     if (keyword === "sample") {
       await route.fulfill({
         contentType: "application/json",

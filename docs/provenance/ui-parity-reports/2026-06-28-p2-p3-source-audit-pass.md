@@ -4,7 +4,7 @@ Status: active P2/P3 findings
 Date: 2026-06-28
 Sources: `2026-06-28-rendered-verification-queue.md`, `2026-06-28-static-react-owner-coverage.md`, `yona-original/app/views/**`, `frontend/src/routes/**`
 
-This pass expands the remaining P2 and P3 rendered-verification rows. P2 rows are manual/caller checks with weak or no static anchors. P3 rows have high static anchor overlap, but they still require browser-rendered confirmation before closure. This report does not close any row.
+This pass expands the remaining P2 and P3 rendered-verification rows. P2 rows are manual/caller checks with weak or no static anchors. P3 rows have high static anchor overlap, but they still require browser-rendered confirmation before closure. Rows marked `rendered-interaction-guard-passed` have route-level browser evidence and no longer require the manual follow-up described by their original queue entry.
 
 P2 row count: 7
 P3 row count: 134
@@ -13,10 +13,11 @@ P3 row count: 134
 
 | status | count | meaning |
 | --- | ---: | --- |
-| manual-caller-route-check-needed | 5 | Partial or helper template with no direct page; verify through caller routes. |
-| manual-error-state-check-needed | 1 | Error template needs rendered error-state route evidence. |
+| manual-caller-route-check-needed | 4 | Partial or helper template with no direct page; verify through caller routes. |
+| manual-error-state-check-needed | 0 | Error template needs rendered error-state route evidence. |
 | manual-vcs-flow-check-needed | 0 | VCS flow template needs concrete route/state evidence. |
 | manual-render-check-needed | 0 | Manual rendered route evidence is required. |
+| rendered-interaction-guard-passed | 3 | Route-level browser guard now covers the former manual follow-up. |
 
 ## P3 Confirmation Tag Summary
 
@@ -48,9 +49,9 @@ P3 row count: 134
 | legacy template | packet | source-pass status | static coverage | route/caller hint | required next evidence |
 | --- | --- | --- | --- | --- | --- |
 | `common/uservoice.scala.html` | P0 global shell | `manual-caller-route-check-needed` | owners 5; ids 0/0; names 0/0; data 0/0; classes 0/0; messages 0/0 | included partial; verify through each caller route | expand caller template graph; render concrete caller route; assert visible DOM/copy and any helper output |
-| `error/requestTextEntityTooLarge.scala.html` | P1 auth/public/home/help | `manual-error-state-check-needed` | owners 21; ids 0/0; names 0/0; data 0/0; classes 5/5; messages 0/3 | error route state | trigger matching error state and assert legacy error DOM/copy/classes |
+| `error/requestTextEntityTooLarge.scala.html` | P1 auth/public/home/help | `rendered-interaction-guard-passed` | owners 21; ids 0/0; names 0/0; data 0/0; classes 5/5; messages 0/3 | `/search?keyword=too-large&searchType=issue&pageNum=1` 413 search state | `frontend/tests/search-global.e2e.ts` asserts the legacy site-layout error shell with `.page-wrap-outer > .project-page-wrap > .error-wrap`, `.ico.ico-err2`, resolved title, legacy 102400 byte limit copy, no admin-only paragraph for the non-site-manager viewer, no search-result form, and whole-root DOM parity. |
 | `git/clone.scala.html` | P5 code/pr/review | `rendered-interaction-guard-passed`, `copy-i18n-confirmed` | owners 30; ids 0/0; names 0/0; data 0/0; classes 4/4; messages 0/4 | `/admin/sample/newFork` submit success state | `frontend/tests/project-fork-form.e2e.ts` submits the fork form, then asserts the legacy `git/clone.scala.html` progress body: `.page-wrap-outer > .project-page-wrap > .content-wrap.frm-wrap`, `legend` `fork.forking` with original/target owners/projects, both waiting/auto-move paragraphs, form absence, and the REST/TanStack fork mutation boundary before delayed redirect. |
-| `partial_diff.scala.html` | P5 code/pr/review | `manual-caller-route-check-needed` | owners 30; ids 0/0; names 0/0; data 0/0; classes 1/1; messages 0/1 | included PR/diff partial; verify through PR/review routes | expand caller template graph; render concrete caller route; assert visible DOM/copy and any helper output |
+| `partial_diff.scala.html` | P5 code/pr/review | `rendered-interaction-guard-passed` | owners 30; ids 0/0; names 0/0; data 0/0; classes 1/1; messages 0/1 | `/admin/sample/commit/abcdef1234567890?branch=main` commit detail caller | `frontend/tests/project-code-commit-detail.e2e.ts` asserts the legacy commit detail caller renders the normal no-limit-alert `.diff-body` file-diff list through the `partial_filediff.scala.html` loop, including file headers, `.btnPop`, line rows, placement after `p.commitInfo`, and placement before the commit comment form. |
 | `common/notificationMail.scala.html` | P6 directory/workspace | `manual-caller-route-check-needed` | owners 39; ids 0/0; names 0/0; data 0/0; classes 0/0; messages 2/4 | included partial; verify through each caller route | expand caller template graph; render concrete caller route; assert visible DOM/copy and any helper output |
 | `common/calendar.scala.html` | shared partials | `manual-caller-route-check-needed` | owners 10; ids 0/0; names 0/0; data 0/0; classes 0/0; messages 0/0 | included partial; verify through each caller route | expand caller template graph; render concrete caller route; assert visible DOM/copy and any helper output |
 | `common/markdown.scala.html` | shared partials | `manual-caller-route-check-needed` | owners 10; ids 0/0; names 0/0; data 0/0; classes 0/0; messages 0/0 | included partial; verify through each caller route | expand caller template graph; render concrete caller route; assert visible DOM/copy and any helper output |
