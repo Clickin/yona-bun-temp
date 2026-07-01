@@ -692,9 +692,7 @@ function IssueMainTimeline({
   const timeline: IssueTimelineItem[] = issue.timeline?.length
     ? issue.timeline
     : comments.map((comment) => ({ comment, id: stringField(comment.id) }));
-  if (!comments.length && !timelineHasVisibleEvent(timeline)) {
-    return <EmptyTimeline />;
-  }
+  const hasTimelineRows = comments.length || timelineHasVisibleEvent(timeline);
 
   return (
     <div id="comments" className="board-comment-wrap">
@@ -705,26 +703,108 @@ function IssueMainTimeline({
             <strong>Comment</strong> <strong className="num">{comments.length}</strong>
           </div>
           <hr className="nm" />
-          <ul className="comments">
-            {timeline.map((item) =>
-              item.comment ? (
-                <IssueCommentRow
-                  basePath={basePath}
-                  comment={item.comment}
-                  issue={issue}
-                  key={`comment-${stringField(item.comment.id)}`}
-                />
-              ) : (
-                <IssueEventRow
-                  basePath={basePath}
-                  event={item}
-                  key={`event-${stringField(item.id)}`}
-                />
-              ),
-            )}
-          </ul>
+          {hasTimelineRows ? (
+            <ul className="comments">
+              {timeline.map((item) =>
+                item.comment ? (
+                  <IssueCommentRow
+                    basePath={basePath}
+                    comment={item.comment}
+                    issue={issue}
+                    key={`comment-${stringField(item.comment.id)}`}
+                  />
+                ) : (
+                  <IssueEventRow
+                    basePath={basePath}
+                    event={item}
+                    key={`event-${stringField(item.id)}`}
+                  />
+                ),
+              )}
+            </ul>
+          ) : null}
         </div>
       </div>
+      <IssueCommentForm basePath={basePath} issue={issue} />
+    </div>
+  );
+}
+
+function IssueCommentForm({
+  basePath,
+  issue,
+}: {
+  basePath: string;
+  issue: RestIssueDetailResponse;
+}) {
+  const ownerName = stringField(issue.ownerName);
+  const projectName = stringField(issue.projectName);
+  const issueNumber = stringField(issue.issueNumber);
+
+  if (!booleanField(issue.viewerCanComment)) {
+    return (
+      <div
+        className="write-comment-box mt20"
+        title="You need to log in to add comments."
+        data-login="required"
+      >
+        <div className="write-comment-wrap">
+          <div className="textarea-box">
+            <textarea className="comment disabled" disabled style={{ cursor: "text" }}></textarea>
+          </div>
+          <div className="right-txt mt10">
+            <span className="ybtn ybtn-disabled">Add a comment</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      id="comment-form"
+      action={prefixBasePath(
+        basePath,
+        `/${ownerName}/${projectName}/issue/${issueNumber}/comments`,
+      )}
+      method="post"
+      encType="multipart/form-data"
+    >
+      <div className="write-comment-box">
+        <MarkdownEditor editorMode="comment-body" name="contents" value="" wrapId="contents" />
+        <UploadForm resourceType="ISSUE_COMMENT" />
+        <div className="write-comment-wrap">
+          <div className="right-txt">
+            <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
+            <button type="submit" className="ybtn ybtn-success">
+              Add a comment
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  );
+}
+
+function UploadForm({ resourceType }: { resourceType: string }) {
+  return (
+    <div className="upload-wrap content-footer" data-resource-type={resourceType} id="upload">
+      <div className="attach-wrap">
+        <span className="help help-droppable">Drag &amp; Drop files to attach here or</span>
+        <div className="btn-wrap">
+          <div className="nbtn medium white fake-file-wrap">
+            <i className="yobicon-upload"></i> File upload
+            <input type="file" className="file" name="filePath" multiple />
+          </div>
+        </div>
+        <span className="plain">Click upload button</span>
+        <span className="help help-pastable">Paste the clipboard image</span>
+      </div>
+      <ul className="attached-files unstyled"></ul>
+      <p className="right-txt help">
+        <i className="yobicon-supportrequest"></i> Selected file will be attached when your comment
+        is saved.
+      </p>
     </div>
   );
 }
