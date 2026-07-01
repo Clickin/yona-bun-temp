@@ -442,6 +442,7 @@ test("authenticated root keeps retired legacy index/sidebar framed shell absent"
   await expect(page.locator("body#html-body")).not.toHaveClass(/framed-body/);
   await expect(page.locator("#sidebar, #sidebar-bottom, #mainFrame, #mainFrameId")).toHaveCount(0);
   await expect(page.locator('iframe[name="mainFrame"]')).toHaveCount(0);
+  await expect(page.locator('[target="mainFrame"]')).toHaveCount(0);
   await expect(page.locator("#mySidenav")).toHaveCount(1);
   await expect(page.locator("#sidebar-open-btn a")).toHaveAttribute("href", "javascript:void(0);");
   expect(await readDesktopClosedSidebarMetrics(page)).toEqual({
