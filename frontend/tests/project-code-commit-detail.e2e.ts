@@ -255,6 +255,25 @@ index 1234567..abcdef1 100644
     /height:\s*100px/,
   );
   await expect(page.locator("#comment-501 .comment-avatar img")).toHaveAttribute("alt", "dev");
+  await page.locator('#comment-501 [data-toggle="comment-delete"]').click();
+  await expect(page.locator("#comment-delete-modal")).toHaveClass(/in/);
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  expect(await commentDeleteModalMetrics(page)).toEqual({
+    backdropDisplay: "block",
+    bodyDisplay: "block",
+    confirmMethod: "delete",
+    confirmText: "Yes",
+    confirmUri: `${basePath}/comments/501`,
+    display: "block",
+    dismissCount: 2,
+    footerTextAlign: "right",
+    headerDisplay: "block",
+    left: 1,
+    noText: "No",
+    title: "Delete comment",
+    top: 10,
+    width: 562,
+  });
   expect(detailRequests).toEqual(["branch=main"]);
   expect(await canonicalize(page, ".diff-body")).toEqual(
     await canonicalizeHtml(
@@ -425,6 +444,38 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
     ),
   );
 });
+
+async function commentDeleteModalMetrics(page: Page) {
+  return page.locator("#comment-delete-modal").evaluate((modal) => {
+    const rect = modal.getBoundingClientRect();
+    const backdrop = document.querySelector<HTMLElement>(".modal-backdrop");
+    const body = modal.querySelector<HTMLElement>(".modal-body");
+    const confirm = modal.querySelector<HTMLButtonElement>("#comment-delete-confirm");
+    const footer = modal.querySelector<HTMLElement>(".modal-footer");
+    const header = modal.querySelector<HTMLElement>(".modal-header");
+    const viewportWidth = document.documentElement.clientWidth;
+    const width = Math.round(rect.width);
+
+    return {
+      backdropDisplay: backdrop ? window.getComputedStyle(backdrop).display : null,
+      bodyDisplay: body ? window.getComputedStyle(body).display : null,
+      confirmMethod: confirm?.dataset.requestMethod ?? null,
+      confirmText: confirm?.textContent?.trim() ?? null,
+      confirmUri: confirm?.dataset.requestUri ?? null,
+      display: window.getComputedStyle(modal).display,
+      dismissCount: modal.querySelectorAll('[data-dismiss="modal"]').length,
+      footerTextAlign: footer ? window.getComputedStyle(footer).textAlign : null,
+      headerDisplay: header ? window.getComputedStyle(header).display : null,
+      left: Math.round(rect.left - (viewportWidth - width) / 2),
+      noText:
+        footer?.querySelector<HTMLButtonElement>('[data-dismiss="modal"]')?.textContent?.trim() ??
+        null,
+      title: header?.querySelector("h3")?.textContent?.trim() ?? null,
+      top: Math.round((rect.top / window.innerHeight) * 100),
+      width,
+    };
+  });
+}
 
 async function mockProjectCommitDetail(
   page: Page,

@@ -88,6 +88,9 @@ Follow-up evidence: commit detail and PR changes thread reply forms now pin the
 `partial_comment_form_on_thread.scala.html` `common.editor("contents", "",
 "style=height:100px", "code-review-body")` output by asserting
 `code-review-body` textareas keep inline `style="height:100px"`.
+Commit detail also covers the `common/commentDeleteModal.scala.html` code caller
+through the inline review-comment delete button, including the opened modal
+layout metrics, backdrop, copied delete URI/method, and footer button order.
 
 ## Integrated Status Delta Findings
 
