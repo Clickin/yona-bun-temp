@@ -181,6 +181,7 @@ function ProjectCommitDetailBody({
                     ownerName={ownerName}
                     projectName={projectName}
                     runtimeConfig={runtimeConfig}
+                    threads={detail.threads}
                   />
                 ))}
                 <div className="btnPop">
@@ -276,6 +277,7 @@ function FileDiffView({
   ownerName,
   projectName,
   runtimeConfig,
+  threads,
 }: {
   commitA: string;
   commitB: string;
@@ -283,12 +285,14 @@ function FileDiffView({
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
+  threads: CodeReviewThread[];
 }) {
   const parsed = parseUnifiedDiff(file.path, file.patch);
   const filePath = parsed.pathB || parsed.pathA || file.path;
   const fileId = filePath.replace(/\//g, "-").replace(/\./g, "-");
   const commitAShort = shortenCommitId(commitA);
   const commitBShort = shortenCommitId(commitB);
+  const fileThreads = threads.filter((thread) => thread.path === filePath);
 
   return (
     <div id={fileId} className="diff-partial-outer">
@@ -354,8 +358,11 @@ function FileDiffView({
             data-file-path={filePath}
           >
             <tbody>
-              {parsed.lines.map((line) =>
-                line.kind === "range" ? (
+              {parsed.lines.map((line) => {
+                const lineThreads =
+                  line.kind === "line" ? threadsForDiffLine(fileThreads, line) : [];
+
+                return line.kind === "range" ? (
                   <tr className="range" key={diffLineKey(line)}>
                     <td className="linenum">
                       <div className="line-number" data-line-num="...">
@@ -370,14 +377,53 @@ function FileDiffView({
                     <td className="hunk">{line.text}</td>
                   </tr>
                 ) : (
-                  <DiffLineView key={diffLineKey(line)} line={line} />
-                ),
-              )}
+                  <FragmentWithInlineComments
+                    commitId={commitB}
+                    key={diffLineKey(line)}
+                    line={line}
+                    ownerName={ownerName}
+                    projectName={projectName}
+                    runtimeConfig={runtimeConfig}
+                    threads={lineThreads}
+                  />
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
     </div>
+  );
+}
+
+function FragmentWithInlineComments({
+  commitId,
+  line,
+  ownerName,
+  projectName,
+  runtimeConfig,
+  threads,
+}: {
+  commitId: string;
+  line: Extract<ParsedDiffLine, { kind: "line" }>;
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+  threads: CodeReviewThread[];
+}) {
+  return (
+    <>
+      <DiffLineView line={line} />
+      {threads.length > 0 ? (
+        <InlineCommentRow
+          commitId={commitId}
+          ownerName={ownerName}
+          projectName={projectName}
+          runtimeConfig={runtimeConfig}
+          threads={threads}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -414,6 +460,184 @@ function diffLineKey(line: ParsedDiffLine) {
   }
 
   return `line-${line.oldLineNumber ?? ""}-${line.newLineNumber ?? ""}-${line.prefix}${line.text}`;
+}
+
+function threadsForDiffLine(
+  threads: CodeReviewThread[],
+  line: Extract<ParsedDiffLine, { kind: "line" }>,
+) {
+  if (line.newLineNumber === null) {
+    return [];
+  }
+
+  return threads.filter((thread) => thread.startLine === line.newLineNumber);
+}
+
+function InlineCommentRow({
+  commitId,
+  ownerName,
+  projectName,
+  runtimeConfig,
+  threads,
+}: {
+  commitId: string;
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+  threads: CodeReviewThread[];
+}) {
+  return (
+    <tr className="comments board-comment-wrap" data-commit-id={threads[0]?.commitId || commitId}>
+      <td colSpan={3}>
+        {threads.map((thread) => (
+          <CodeCommentThreadView
+            key={thread.id}
+            ownerName={ownerName}
+            projectName={projectName}
+            runtimeConfig={runtimeConfig}
+            thread={thread}
+          />
+        ))}
+      </td>
+    </tr>
+  );
+}
+
+function CodeCommentThreadView({
+  ownerName,
+  projectName,
+  runtimeConfig,
+  thread,
+}: {
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+  thread: CodeReviewThread;
+}) {
+  const { t } = useLegacyMessages();
+  const state = thread.state.toLowerCase();
+  const action = commitCommentsHref(
+    runtimeConfig.basePath,
+    ownerName,
+    projectName,
+    thread.commitId,
+  );
+
+  return (
+    <div
+      id={`thread-${thread.id}`}
+      data-state={state}
+      className={`comment-thread-wrap ${state}${state === "closed" ? " fold" : ""}`}
+      data-toggle="CodeCommentThread"
+      data-range-path={thread.path}
+      data-range-startline={thread.startLine}
+      data-range-endline={thread.endLine}
+    >
+      <div className="btn-thread-here btn-thread-minimize">
+        <button type="button" className="ybtn ybtn-default ybtn-small">
+          <i className="yobicon-post2"></i>
+        </button>
+      </div>
+
+      <div className="thread-header">
+        <span className={`badge state ${state}`}>{t(`issue.state.${state}`)}</span>
+        <button type="button" className="ybtn ybtn-default ybtn-small btn-thread-minimize">
+          <i className="yobicon-maximize"></i>
+        </button>
+      </div>
+
+      <ul className="comments">
+        {thread.comments.map((comment) => (
+          <li id={`comment-${comment.id}`} className="comment" key={comment.id}>
+            <div className="comment-avatar">
+              <a
+                href={prefixBasePath(runtimeConfig.basePath, `/${comment.authorLoginId}`)}
+                className="avatar-wrap"
+                data-toggle="tooltip"
+                data-placement="top"
+                title={comment.authorLabel}
+              >
+                <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+              </a>
+            </div>
+            <div className="media-body">
+              <div className="meta-info">
+                <span className="comment_author pull-left">
+                  <a
+                    href={prefixBasePath(runtimeConfig.basePath, `/${comment.authorLoginId}`)}
+                    data-toggle="tooltip"
+                    data-placement="top"
+                    title={comment.authorLabel}
+                  >
+                    <strong>{`${comment.authorLoginId} `}</strong>
+                  </a>
+                </span>
+                <span className="ago">
+                  <a href={`#comment-${comment.id}`} title={comment.createdLabel}>
+                    {comment.createdLabel}
+                  </a>
+                </span>
+                {comment.canDelete ? (
+                  <span className="edit pull-right">
+                    <button
+                      className="btn-transparent pull-right close"
+                      data-toggle="comment-delete"
+                      data-request-uri={prefixBasePath(
+                        runtimeConfig.basePath,
+                        `/comments/${comment.id}`,
+                      )}
+                      title={t("common.comment.delete")}
+                    >
+                      <i className="yobicon-trash"></i>
+                    </button>
+                  </span>
+                ) : null}
+              </div>
+              <div
+                className="comment-body markdown-wrap"
+                data-via-email={String(comment.viaEmail)}
+                dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+              ></div>
+              <div className="attachments" data-attachments="[]"></div>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="write-comment-form">
+        <form
+          action={action}
+          method="post"
+          encType="multipart/form-data"
+          className="review-form"
+          style={{ display: "block" }}
+        >
+          <input type="hidden" name="thread.id" value={thread.id} />
+          <div className="write-comment-box">
+            <div className="write-comment-wrap">
+              <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
+              <div className="right-txt">
+                <button
+                  type="button"
+                  data-request-method="post"
+                  data-request-uri={prefixBasePath(
+                    runtimeConfig.basePath,
+                    `/threads/${thread.id}/${state === "open" ? "close" : "open"}`,
+                  )}
+                  className="ybtn ybtn-default ybtn-small"
+                >
+                  {t(state === "open" ? "commentThread.close" : "commentThread.open")}
+                </button>
+                <button type="submit" className="ybtn ybtn-success ybtn-small">
+                  {t("button.comment.new")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
