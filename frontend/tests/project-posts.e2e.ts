@@ -209,6 +209,43 @@ test("project board detail renders legacy comment update form", async ({ page })
   );
 });
 
+test("project board detail renders legacy post and comment attachments", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page, "attachments");
+
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator("#attachments .attached-file")).toHaveAttribute(
+    "data-href",
+    `${basePath}/files/31`,
+  );
+  await expect(page.locator("#comment-body-21 .attachments .attached-file")).toHaveAttribute(
+    "data-href",
+    `${basePath}/files/41`,
+  );
+
+  const postAttachments = [{ id: "31", mimeType: "text/plain", name: "post-note.txt", size: 1024 }];
+  const expectedPostAttachments =
+    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(postAttachments)}'><li class="attached-file" data-name="post-note.txt" data-href="__BASE_PATH__/files/31" data-mime="text/plain" data-size="1024"><strong>post-note.txt(1024)</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, ".span-left-pane > #attachments")).toEqual(
+    await canonicalizeHtml(page, expectedPostAttachments),
+  );
+
+  const commentAttachments = [
+    { id: "41", mimeType: "image/png", name: "comment-shot.png", size: 2048 },
+  ];
+  const expectedCommentAttachments =
+    `<div class="attachments" data-attachments='${JSON.stringify(commentAttachments)}'><li class="attached-file" data-name="comment-shot.png" data-href="__BASE_PATH__/files/41" data-mime="image/png" data-size="2048"><strong>comment-shot.png(2048)</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, "#comment-body-21 > .attachments")).toEqual(
+    await canonicalizeHtml(page, expectedCommentAttachments),
+  );
+});
+
 test("project board detail renders legacy child comments", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page, "childComment");
@@ -255,6 +292,7 @@ async function mockProjectPosts(
     | "readonlyLabel"
     | "comment"
     | "commentUpdate"
+    | "attachments"
     | "childComment" = "default",
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -400,7 +438,17 @@ async function mockProjectPosts(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        attachments: [],
+        attachments:
+          state === "attachments"
+            ? [
+                {
+                  id: "31",
+                  mimeType: "text/plain",
+                  name: "post-note.txt",
+                  size: 1024,
+                },
+              ]
+            : [],
         authorAvatarUrl: "/assets/images/default-avatar-32.png",
         authorId: "2",
         authorLabel: "Dev Member",
@@ -408,12 +456,29 @@ async function mockProjectPosts(
         bodyHtml: "<p>Post <strong>markdown</strong></p>",
         bodyMarkdown: "Post **markdown**",
         commentCount:
-          state === "comment" || state === "commentUpdate" ? 1 : state === "childComment" ? 2 : 0,
+          state === "comment" || state === "commentUpdate" || state === "attachments"
+            ? 1
+            : state === "childComment"
+              ? 2
+              : 0,
         comments:
-          state === "comment" || state === "commentUpdate" || state === "childComment"
+          state === "comment" ||
+          state === "commentUpdate" ||
+          state === "attachments" ||
+          state === "childComment"
             ? [
                 {
-                  attachments: [],
+                  attachments:
+                    state === "attachments"
+                      ? [
+                          {
+                            id: "41",
+                            mimeType: "image/png",
+                            name: "comment-shot.png",
+                            size: 2048,
+                          },
+                        ]
+                      : [],
                   authorId: "2",
                   authorLabel: "Dev Member",
                   authorLoginId: "dev",

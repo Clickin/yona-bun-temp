@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Fragment } from "react";
 import {
   readProjectPostQueryOptions,
+  type BoardAttachment,
   type BoardLabel,
   type BoardPostComment,
   type BoardPostDetail,
@@ -153,6 +154,9 @@ function ProjectPostDetailBody({
               className="attachments"
               id="attachments"
               data-attachments={JSON.stringify(post.attachments ?? [])}
+              dangerouslySetInnerHTML={{
+                __html: attachedFilesHtml(basePath, post.attachments),
+              }}
             ></div>
             <div className="board-actrow right-txt">
               <div className="pull-left">
@@ -517,6 +521,9 @@ function PostCommentRow({
           <div
             className="attachments"
             data-attachments={JSON.stringify(comment.attachments ?? [])}
+            dangerouslySetInnerHTML={{
+              __html: attachedFilesHtml(basePath, comment.attachments),
+            }}
           ></div>
         </div>
       </div>
@@ -820,6 +827,20 @@ function MarkdownEditor({
       </div>
     </div>
   );
+}
+
+function attachedFilesHtml(basePath: string, attachments: BoardAttachment[]) {
+  return attachments
+    .map((file) => {
+      const id = stringField(file.id);
+      const name = stringField(file.name);
+      const mimeType = stringField(file.mimeType);
+      const size = String(file.size);
+      const href = prefixBasePath(basePath, `/files/${id}`);
+
+      return `<li class="attached-file" data-name="${escapeHtml(name)}" data-href="${escapeHtml(href)}" data-mime="${escapeHtml(mimeType)}" data-size="${escapeHtml(size)}"><strong>${escapeHtml(name)}(${escapeHtml(size)})</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li>`;
+    })
+    .join("");
 }
 
 function TasklistBar() {
