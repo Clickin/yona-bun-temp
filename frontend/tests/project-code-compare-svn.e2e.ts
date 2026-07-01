@@ -31,6 +31,22 @@ test("project svn compare patch state matches legacy code/compare_svn.scala.html
   expect(await canonicalize(page, ".project-page-wrap")).toEqual(
     await canonicalizeHtml(page, EXPECTED_COMPARE_SVN_BODY),
   );
+  expect(await readCompareSvnMetrics(page)).toEqual({
+    codeBrowseMarginTop: "0px",
+    codeBrowsePosition: "relative",
+    commitIdColor: "rgb(102, 102, 102)",
+    commitIdFontFamily: 'Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace',
+    commitIdMarginTop: "5px",
+    commitInfoBackground: "rgba(0, 0, 0, 0)",
+    commitInfoBorderTopWidth: "0px",
+    commitInfoMarginBottom: "16px",
+    commitInfoPadding: "0px",
+    diffBodyDisplay: "none",
+    diffWrapMarginBottom: "20px",
+    diffWrapOverflowX: "auto",
+    diffWrapWidth: 1280,
+    projectPageWidth: 1280,
+  });
 });
 
 async function mockProjectSvnCompare(page: Page, compareRequests: string[]) {
@@ -93,6 +109,52 @@ async function mockProjectSvnCompare(page: Page, compareRequests: string[]) {
         revB: "abcdef1",
       }),
     });
+  });
+}
+
+async function readCompareSvnMetrics(page: Page) {
+  return page.evaluate(() => {
+    const projectPage = document.querySelector<HTMLElement>(".project-page-wrap");
+    const codeBrowse = document.querySelector<HTMLElement>(".code-browse-wrap");
+    const commitInfo = document.querySelector<HTMLElement>(".commitInfo");
+    const commitId = document.querySelector<HTMLElement>(".commitInfo .commitId");
+    const diffWrap = document.querySelector<HTMLElement>(".diff-wrap");
+    const diffBody = document.querySelector<HTMLElement>("#commit.diff-body");
+    const missing = Object.entries({
+      codeBrowse,
+      commitId,
+      commitInfo,
+      diffBody,
+      diffWrap,
+      projectPage,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected SVN compare metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const codeBrowseStyle = getComputedStyle(codeBrowse);
+    const commitIdStyle = getComputedStyle(commitId);
+    const commitInfoStyle = getComputedStyle(commitInfo);
+    const diffBodyStyle = getComputedStyle(diffBody);
+    const diffWrapStyle = getComputedStyle(diffWrap);
+    return {
+      codeBrowseMarginTop: codeBrowseStyle.marginTop,
+      codeBrowsePosition: codeBrowseStyle.position,
+      commitIdColor: commitIdStyle.color,
+      commitIdFontFamily: commitIdStyle.fontFamily,
+      commitIdMarginTop: commitIdStyle.marginTop,
+      commitInfoBackground: commitInfoStyle.backgroundColor,
+      commitInfoBorderTopWidth: commitInfoStyle.borderTopWidth,
+      commitInfoMarginBottom: commitInfoStyle.marginBottom,
+      commitInfoPadding: commitInfoStyle.padding,
+      diffBodyDisplay: diffBodyStyle.display,
+      diffWrapMarginBottom: diffWrapStyle.marginBottom,
+      diffWrapOverflowX: diffWrapStyle.overflowX,
+      diffWrapWidth: Math.round(diffWrap.getBoundingClientRect().width),
+      projectPageWidth: Math.round(projectPage.getBoundingClientRect().width),
+    };
   });
 }
 

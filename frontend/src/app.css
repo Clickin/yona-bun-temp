@@ -5767,6 +5767,11 @@ div.markdown-preview {
   margin-top: 18px;
 }
 
+.code-browse-wrap:has(> .commitInfo + .diff-wrap) {
+  position: relative;
+  margin-top: 0;
+}
+
 .code-browse-header,
 .file-header {
   display: flex;
@@ -5882,6 +5887,19 @@ div.markdown-preview {
   margin-bottom: 12px;
   background: #fff;
   border: 1px solid #ddd;
+}
+
+.code-browse-wrap > .commitInfo {
+  padding: 0;
+  margin-bottom: 16px;
+  background: transparent;
+  border: 0;
+}
+
+.code-browse-wrap > .commitInfo .commitId {
+  color: #666;
+  margin-top: 5px;
+  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace;
 }
 
 .commitAuthor,
