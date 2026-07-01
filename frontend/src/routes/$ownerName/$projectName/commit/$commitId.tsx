@@ -124,6 +124,20 @@ function ProjectCommitDetailBody({
   const openThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "open");
   const closedThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "closed");
   const nonRangedThreads = detail.threads.filter((thread) => thread.startLine === undefined);
+  const isSvn = project.vcs === "SVN" || project.vcs === "SUBVERSION";
+
+  if (isSvn) {
+    return (
+      <SvnCommitDetailBody
+        detail={detail}
+        encodedBranch={encodedBranch}
+        ownerName={ownerName}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+        selectedBranch={selectedBranch}
+      />
+    );
+  }
 
   return (
     <div className="page-wrap-outer">
@@ -277,6 +291,142 @@ function ProjectCommitDetailBody({
         >
           {t("button.list")}
         </a>
+      </div>
+    </div>
+  );
+}
+
+function SvnCommitDetailBody({
+  detail,
+  encodedBranch,
+  ownerName,
+  projectName,
+  runtimeConfig,
+  selectedBranch,
+}: {
+  detail: CodeCommitDetailResponse;
+  encodedBranch: string;
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+  selectedBranch: string;
+}) {
+  const { t } = useLegacyMessages();
+  const { commitId } = Route.useParams();
+  const commit = detail.commit;
+  const patch = detail.files[0]?.patch ?? "";
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div id="code-browse-wrap" className="code-browse-wrap">
+          <div
+            id="branches"
+            className="btn-group branches pull-right"
+            data-name="branch"
+            data-activate="manual"
+          >
+            <button className="btn dropdown-toggle large" data-toggle="dropdown">
+              <span className="d-label">{selectedBranch || "HEAD"}</span>
+              <span className="d-caret">
+                <span className="caret"></span>
+              </span>
+            </button>
+            <ul className="dropdown-menu">
+              {detail.branches.map((branch) => (
+                <li
+                  data-value={branch.name}
+                  data-selected={branch.name === selectedBranch ? "true" : undefined}
+                  key={branch.name}
+                >
+                  <a
+                    href={projectHref(
+                      runtimeConfig.basePath,
+                      ownerName,
+                      projectName,
+                      "commits",
+                      encodeURIComponent(branch.name),
+                    )}
+                  >
+                    {branch.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <ul className="nav nav-tabs" style={{ marginBottom: "20px" }}>
+            <li>
+              <a href={projectHref(runtimeConfig.basePath, ownerName, projectName, "code")}>
+                {t("code.files")}
+              </a>
+            </li>
+            <li className="active">
+              <a href={projectHref(runtimeConfig.basePath, ownerName, projectName, "commits")}>
+                {t("code.commits")}
+              </a>
+            </li>
+          </ul>
+
+          <p className="commitInfo">
+            <span className="avatar-wrap">
+              <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+            </span>
+            <strong>{commit?.authorName || commit?.authorEmail || "Anonymous"}</strong>
+            <span className="ago" title={commit?.authorDate ?? ""}>
+              {commit?.authorDate ?? ""}
+            </span>
+            <strong className="commitId pull-right">@{commit?.commitId ?? commitId}</strong>
+          </p>
+          <pre className="commitMsg">{commit?.message ?? ""}</pre>
+          <div className="diff-wrap">
+            <div id="commit" data-commit-origin="true" className="diff-body hide">
+              {patch}
+            </div>
+          </div>
+
+          <div className="board-comment-wrap">
+            {detail.permissions.canComment ? (
+              <CommentForm
+                action={commitCommentsHref(
+                  runtimeConfig.basePath,
+                  ownerName,
+                  projectName,
+                  commitId,
+                )}
+              />
+            ) : null}
+          </div>
+        </div>
+
+        <button
+          id="watch-button"
+          type="button"
+          className={`ybtn ${detail.isWatching ? "active" : ""}`}
+          data-toggle="button"
+        >
+          {t("notification.watch")}
+        </button>
+
+        <a
+          href={projectHref(
+            runtimeConfig.basePath,
+            ownerName,
+            projectName,
+            "commits",
+            encodedBranch,
+          )}
+          className="ybtn pull-right"
+        >
+          {t("button.list")}
+        </a>
+
+        <div id="minimap" className="minimap-outer">
+          <div className="minimap-wrap">
+            <div className="minimap-curr"></div>
+            <div className="minimap-links"></div>
+          </div>
+        </div>
       </div>
     </div>
   );
