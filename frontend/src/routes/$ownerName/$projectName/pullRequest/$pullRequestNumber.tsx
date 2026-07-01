@@ -8,6 +8,7 @@ import {
   type PullRequestEvent,
   type PullRequestState,
 } from "../../../../api/pull-requests";
+import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
@@ -50,12 +51,16 @@ function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: Ru
     }),
     enabled: !isEditChildRoute,
   });
+  const sessionQuery = useQuery({
+    ...currentSessionQueryOptions(runtimeConfig),
+    enabled: !isEditChildRoute,
+  });
 
   if (isEditChildRoute) {
     return <Outlet />;
   }
 
-  if (!projectQuery.data || !pullRequestQuery.data) {
+  if (!projectQuery.data || !pullRequestQuery.data || !sessionQuery.data) {
     return null;
   }
 
@@ -67,15 +72,21 @@ function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: Ru
         basePath={runtimeConfig.basePath}
         project={projectQuery.data}
       />
-      <PullRequestOverviewBody pullRequest={pullRequestQuery.data} runtimeConfig={runtimeConfig} />
+      <PullRequestOverviewBody
+        currentUserLoginId={String(sessionQuery.data.loginId ?? "")}
+        pullRequest={pullRequestQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
     </>
   );
 }
 
 function PullRequestOverviewBody({
+  currentUserLoginId,
   pullRequest,
   runtimeConfig,
 }: {
+  currentUserLoginId: string;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -114,7 +125,11 @@ function PullRequestOverviewBody({
           </div>
 
           <div id="state" className="pullRequest-stateInfo">
-            <PullRequestStateInfo pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
+            <PullRequestStateInfo
+              currentUserLoginId={currentUserLoginId}
+              pullRequest={pullRequest}
+              runtimeConfig={runtimeConfig}
+            />
           </div>
 
           <div className="board-footer board-actrow">
@@ -570,9 +585,11 @@ function PullRequestBranchInfo({
 }
 
 function PullRequestStateInfo({
+  currentUserLoginId,
   pullRequest,
   runtimeConfig,
 }: {
+  currentUserLoginId: string;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -643,6 +660,73 @@ function PullRequestStateInfo({
     <div className="alert alert-error">
       <i className="yobicon-error mr5"></i>
       <span>{t("pullRequest.is.not.safe")}</span>
+      {currentUserLoginId === pullRequest.contributor.loginId ? (
+        <PullRequestConflictGuide pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
+      ) : null}
+    </div>
+  );
+}
+
+function PullRequestConflictGuide({
+  pullRequest,
+  runtimeConfig,
+}: {
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { t } = useLegacyMessages();
+  const prPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
+  const upstreamUrl = projectCodeUrlWithLogin(
+    runtimeConfig.basePath,
+    pullRequest.ownerName,
+    pullRequest.projectName,
+    pullRequest.contributor.loginId,
+  );
+
+  return (
+    <div className="howto-resolve-conflict">
+      <h6>{t("pullRequest.resolve.conflict")}</h6>
+      <div className="help">
+        <ol>
+          <li>
+            {t("pullRequest.resolver.step1")}{" "}
+            <code>{`git checkout ${pullRequest.fromBranch}`}</code>
+          </li>
+          <li>
+            {t("pullRequest.resolver.step2")}{" "}
+            <code>{`git remote add upstream ${upstreamUrl}`}</code>
+          </li>
+          <li>
+            {t("pullRequest.resolver.step3")} <code>git fetch upstream</code>
+          </li>
+          <li>
+            {t("pullRequest.resolver.step4")}{" "}
+            <code>{`git rebase upstream/${pullRequest.toBranch}`}</code>
+          </li>
+          <li>{t("pullRequest.resolver.step5")}</li>
+          <li>
+            {t("pullRequest.resolver.step6")} <code>git add resolved_file</code>
+          </li>
+          <li>
+            {t("pullRequest.resolver.step7")} <code>git rebase --continue</code>
+          </li>
+          <li>{t("pullRequest.resolver.step8")}</li>
+          <li>
+            {t("pullRequest.resolver.step9")}{" "}
+            <code>{`git push -f origin ${pullRequest.fromBranch}`}</code>
+          </li>
+          <li>
+            {t("pullRequest.resolver.step10")}
+            <a
+              href={prefixBasePath(runtimeConfig.basePath, prPath)}
+              className="ybtn ybtn-mini ybtn-primary"
+            >
+              {t("button.page.refresh")}
+            </a>
+            {t("pullRequest.resolver.step11")}
+          </li>
+        </ol>
+      </div>
     </div>
   );
 }
@@ -696,6 +780,21 @@ function disabledAcceptButtonTitle(
     });
   }
   return t("pullRequest.not.acceptable.because.is.merging");
+}
+
+function projectCodeUrlWithLogin(
+  basePath: string,
+  ownerName: string,
+  projectName: string,
+  loginId: string,
+) {
+  const path = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
+  if (typeof window === "undefined") {
+    return path;
+  }
+  const url = new URL(path, window.location.origin);
+  url.username = loginId;
+  return url.toString();
 }
 
 function encodeBranch(branch: string) {

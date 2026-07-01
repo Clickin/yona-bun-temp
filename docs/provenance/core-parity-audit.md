@@ -14,6 +14,7 @@
 - The `Current route/contract` column below is a historical label. Legacy parity evidence must come from `yona-original/`; `reference/mixed-code/**` paths are obsolete pre-Rust residuals and are not reference material.
 - The canonical implementation path is [repo root](/G:/programming/yona).
 - PR detail empty-event rendering follows `git/view.scala.html`: keep `.board-comment-wrap`, omit `ul#comments`, and do not add placeholder text.
+- PR detail conflict contributor rendering follows `git/partial_state.scala.html`: when the current user is the contributor, keep `.howto-resolve-conflict`, resolver command ordering, login-qualified upstream URL, and the refresh link inside `#state .alert-error`. Focused guard: `frontend/tests/project-pullrequest-overview.e2e.ts`.
 - PR changes empty commit/diff rendering follows `git/viewChanges.scala.html`: keep `#commits`, keep `.diff-body.diffs-wrap-scroll`, and do not add placeholder text.
 - PR changes selected commit metadata follows `git/viewChanges.scala.html`: missing commit author email falls through to the legacy `User.anonymous.name` anonymous-author label.
 - PR review thread rendering follows `partial_comment_thread.scala.html`: use `.comment-thread-wrap` without the side-card `review-card` class, the top `.btn-thread-here.btn-thread-minimize` control, `ul.comments > li.comment`, `.comment-avatar`, `.media-body`, `.meta-info`, and legacy message-key fallbacks instead of generic English placeholders.

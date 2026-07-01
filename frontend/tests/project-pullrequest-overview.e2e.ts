@@ -31,6 +31,12 @@ const EXPECTED_PULL_REQUEST_CONFLICT_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.repl
     `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-error"><i class="yobicon-error mr5"></i><span>A conflict occurred when merging. This pull request cannot be merged safely.</span></div></div>`,
   );
 
+const EXPECTED_PULL_REQUEST_CONFLICT_CONTRIBUTOR_STATE =
+  EXPECTED_PULL_REQUEST_CONFLICT_STATE.replace(
+    `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-error"><i class="yobicon-error mr5"></i><span>A conflict occurred when merging. This pull request cannot be merged safely.</span></div></div>`,
+    `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-error"><i class="yobicon-error mr5"></i><span>A conflict occurred when merging. This pull request cannot be merged safely.</span><div class="howto-resolve-conflict"><h6>Resolving conflicts</h6><div class="help"><ol><li>Move from local to the branch that sent the code. <code>git checkout feature/ui</code></li><li>Add upstream repository URL as new remote. But if you did it already, skip it. <code>git remote add upstream __UPSTREAM_URL__</code></li><li>Get the latest upstream code. <code>git fetch upstream</code></li><li>Rebase branch that will receive the code. <code>git rebase upstream/main</code></li><li>There must be some conflicted files. Open the files and edit them.</li><li>Once you fix it, notify Git. <code>git add resolved_file</code></li><li>After resolving all conflicts, continue rebasing. <code>git rebase --continue</code></li><li>You may need to repeat steps 5 to 7 several times.</li><li>After rebasing, push it to origin. <code>git push -f origin feature/ui</code></li><li>The End!<a href="__BASE_PATH__/admin/sample/pullRequest/9" class="ybtn ybtn-mini ybtn-primary">Refresh page</a>Double check whether your pull request can be merged safely or not.</li></ol></div></div></div></div>`,
+  );
+
 const EXPECTED_PULL_REQUEST_MERGED_DELETE_BRANCH = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div>`,
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-merged">Merged</span></div>`,
@@ -226,6 +232,50 @@ test("project pull request overview renders legacy conflict state DOM", async ({
   );
 });
 
+test("project pull request overview renders legacy contributor conflict guide DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    detail: {
+      conflict: true,
+    },
+    session: {
+      actorId: 2,
+      emailAddress: "dev@example.com",
+      loginId: "dev",
+      userLabel: "Dev Member",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  const upstreamUrl = await page.evaluate((mountedBasePath) => {
+    const url = new URL(`${mountedBasePath}/admin/sample`, window.location.origin);
+    url.username = "dev";
+    return url.toString();
+  }, basePath);
+  await expect(page.locator(".howto-resolve-conflict")).toContainText("Resolving conflicts");
+  await expect(page.locator(".howto-resolve-conflict code")).toContainText([
+    "git checkout feature/ui",
+    `git remote add upstream ${upstreamUrl}`,
+    "git fetch upstream",
+    "git rebase upstream/main",
+    "git add resolved_file",
+    "git rebase --continue",
+    "git push -f origin feature/ui",
+  ]);
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_CONFLICT_CONTRIBUTOR_STATE.replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ).replace("__UPSTREAM_URL__", upstreamUrl),
+    ),
+  );
+});
+
 test("project pull request overview renders legacy merged source-branch delete state", async ({
   page,
 }) => {
@@ -291,7 +341,12 @@ test("project pull request overview renders legacy merged source-branch restore 
 
 async function mockPullRequestOverview(
   page: Page,
-  options: { detail?: Record<string, unknown>; events?: unknown[]; mergedCommitIdTo?: string } = {},
+  options: {
+    detail?: Record<string, unknown>;
+    events?: unknown[];
+    mergedCommitIdTo?: string;
+    session?: Record<string, unknown>;
+  } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -306,6 +361,7 @@ async function mockPullRequestOverview(
         isSiteAdmin: true,
         loginId: "admin",
         userLabel: "Site Admin",
+        ...options.session,
       }),
     });
   });
