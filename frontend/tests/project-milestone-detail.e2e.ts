@@ -171,7 +171,7 @@ function milestoneFixture() {
       },
     ],
     completionPercent: 50,
-    contentsHtml: "<p>Release scope</p>",
+    contentsHtml: "<p>Server HTML should not render</p>",
     contentsMarkdown: "Release scope",
     dueDateLabel: "2026-06-30",
     dueDateOverdue: true,

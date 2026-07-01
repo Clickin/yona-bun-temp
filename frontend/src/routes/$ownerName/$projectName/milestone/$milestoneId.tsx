@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectMilestone, ProjectMilestoneIssue, YonaLabel } from "../../../../api/types";
 import {
@@ -170,12 +172,13 @@ function ProjectMilestoneDetailBody({
             <div className="bar" style={{ width: `${completionPercent}%` }}></div>
           </div>
 
-          {stringField(milestone.contentsHtml) ? (
+          {stringField(milestone.contentsMarkdown) ? (
             <div className="milestone-desc">
-              <div
-                className="markdown-wrap"
-                dangerouslySetInnerHTML={{ __html: stringField(milestone.contentsHtml) }}
-              ></div>
+              <div className="markdown-wrap">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {stringField(milestone.contentsMarkdown)}
+                </ReactMarkdown>
+              </div>
               <div className="attachments" data-attachments={attachmentsJson}></div>
             </div>
           ) : (
