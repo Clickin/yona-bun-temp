@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { globalSearchQueryOptions, isSearchType, type SearchType } from "../api/search";
 import { LegacyI18nProvider } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
@@ -47,7 +47,6 @@ function SearchRoute() {
 
 function SearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: Route.fullPath });
   const hasKeyword = search.keyword.trim().length > 0;
   const searchQuery = useQuery({
     ...globalSearchQueryOptions(runtimeConfig, search),
@@ -64,20 +63,9 @@ function SearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     return <RequestTextTooLargeErrorBody />;
   }
 
-  const submitCategory = (nextSearchType: SearchType) => {
-    void navigate({
-      search: (current) => ({
-        ...current,
-        pageNum: 1,
-        searchType: nextSearchType,
-      }),
-    });
-  };
-
   return (
     <LegacySearchBody
       includeProjectCategory={true}
-      onCategory={submitCategory}
       result={result}
       runtimeConfig={runtimeConfig}
       searchPath="/search"

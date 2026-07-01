@@ -308,6 +308,33 @@ test("global project search renders legacy partial_projects.scala.html populated
   );
 });
 
+test("global search category link preserves legacy href with SPA transition", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockGlobalSearch(page);
+
+  await page.goto(`${basePath}/search?keyword=missing&searchType=project`);
+  const issueCategory = page.locator(".search-category-wrap a").filter({ hasText: "Issues" });
+  await expect(issueCategory).toHaveAttribute("href", "#");
+  await expect(issueCategory).toHaveAttribute("data-toggle", "search-category");
+  await expect(issueCategory).toHaveAttribute("data-type", "issue");
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await issueCategory.click();
+
+  await expect(page).toHaveURL(`${basePath}/search?keyword=missing&searchType=issue`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("issue");
+  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Issues0");
+});
+
 test("global user search renders legacy partial_users.scala.html populated row", async ({
   page,
 }) => {
@@ -454,6 +481,7 @@ async function mockGlobalSearch(page: Page) {
   await page.route("**/api/v1/search?**", async (route) => {
     const requestUrl = new URL(route.request().url());
     const keyword = requestUrl.searchParams.get("keyword") ?? "";
+    const requestedSearchType = requestUrl.searchParams.get("searchType") ?? "project";
     if (keyword === "too-large") {
       await route.fulfill({
         status: 413,
@@ -879,9 +907,9 @@ async function mockGlobalSearch(page: Page) {
         keyword: "missing",
         pageNum: 1,
         pageSize: 20,
-        requestedSearchType: "project",
+        requestedSearchType,
         scope: "global",
-        searchType: "project",
+        searchType: requestedSearchType,
         totalCount: 0,
       }),
     });

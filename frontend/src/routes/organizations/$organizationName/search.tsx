@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { readOrganizationContainerRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import { isSearchType, organizationSearchQueryOptions, type SearchType } from "../../../api/search";
@@ -51,7 +51,6 @@ function OrganizationSearchRoute() {
 function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { organizationName } = Route.useParams();
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: Route.fullPath });
   const organizationQuery = useQuery({
     queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
@@ -83,16 +82,6 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     typeof organizationQuery.data.logoUrl === "string" && organizationQuery.data.logoUrl.length > 0
       ? organizationQuery.data.logoUrl
       : "/assets/images/organization_default_logo.png";
-  const submitCategory = (nextSearchType: SearchType) => {
-    void navigate({
-      search: (current) => ({
-        ...current,
-        pageNum: 1,
-        searchType: nextSearchType,
-      }),
-    });
-  };
-
   return (
     <>
       <OrganizationHeader
@@ -107,7 +96,6 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       />
       <LegacySearchBody
         includeProjectCategory={true}
-        onCategory={submitCategory}
         result={result}
         runtimeConfig={runtimeConfig}
         searchPath={`/organizations/${organizationName}/search`}

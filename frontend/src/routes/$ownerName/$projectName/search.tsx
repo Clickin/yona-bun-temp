@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { isSearchType, projectSearchQueryOptions, type SearchType } from "../../../api/search";
 import { LegacyI18nProvider } from "../../../i18n";
@@ -51,7 +51,6 @@ function ProjectSearchRoute() {
 function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: Route.fullPath });
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -79,23 +78,12 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     return null;
   }
 
-  const submitCategory = (nextSearchType: SearchType) => {
-    void navigate({
-      search: (current) => ({
-        ...current,
-        pageNum: 1,
-        searchType: nextSearchType === "project" ? "auto" : nextSearchType,
-      }),
-    });
-  };
-
   return (
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <LegacySearchBody
         includeProjectCategory={false}
-        onCategory={submitCategory}
         result={result}
         runtimeConfig={runtimeConfig}
         searchPath={`/${ownerName}/${projectName}/search`}

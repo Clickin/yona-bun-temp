@@ -1,3 +1,4 @@
+import { useRouter } from "@tanstack/react-router";
 import { type SearchCounts, type SearchResponse, type SearchType } from "../api/search";
 import { RestApiError } from "../api/rest-client";
 import { useLegacyMessages } from "../i18n";
@@ -22,7 +23,6 @@ const ALL_SEARCH_CATEGORIES: SearchCategory[] = [
 
 export type SearchBodyInput = {
   includeProjectCategory: boolean;
-  onCategory: (nextSearchType: SearchType) => void;
   result: SearchResponse;
   runtimeConfig: RuntimeConfig;
   searchPath: string;
@@ -50,12 +50,12 @@ export function RequestTextTooLargeErrorBody() {
 
 export function LegacySearchBody({
   includeProjectCategory,
-  onCategory,
   result,
   runtimeConfig,
   searchPath,
 }: SearchBodyInput) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const activeType = result.searchType === "auto" ? "issue" : result.searchType;
   const activeCount = countForType(result.counts, activeType);
   const activeTitle = titleForType(t, activeType);
@@ -63,6 +63,12 @@ export function LegacySearchBody({
   const categories = includeProjectCategory
     ? ALL_SEARCH_CATEGORIES
     : ALL_SEARCH_CATEGORIES.filter((category) => category.type !== "project");
+  const categoryHref = (nextSearchType: SearchType) => {
+    const params = new URLSearchParams();
+    params.set("keyword", result.keyword);
+    params.set("searchType", nextSearchType);
+    return `${prefixBasePath(runtimeConfig.basePath, searchPath)}?${params.toString()}`;
+  };
 
   return (
     <>
@@ -93,7 +99,7 @@ export function LegacySearchBody({
                           data-type={menu.type}
                           onClick={(event) => {
                             event.preventDefault();
-                            onCategory(menu.type);
+                            router.history.push(categoryHref(menu.type));
                           }}
                         >
                           {t(menu.labelKey)}
