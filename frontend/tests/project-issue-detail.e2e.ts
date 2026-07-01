@@ -57,6 +57,18 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, expected),
   );
+  expect(await indexCommentMetrics(page)).toEqual({
+    authorDisplay: "block",
+    bodyPadding: "5px 20px",
+    bodyText: "Comment markdown",
+    childCountMarkers: 0,
+    commentDisplay: "list-item",
+    dataLocation: "#comment-77",
+    listDisplay: "block",
+    rowLeft: 985,
+    rowWidth: 285,
+    shareDisplay: "none",
+  });
 });
 
 test("project issue detail renders legacy posting history modal", async ({ page }) => {
@@ -1230,6 +1242,30 @@ async function commentVoterModalMetrics(page: Page) {
       rowCount: modal.querySelectorAll(".modal-body li").length,
       rowDisplay: firstRow ? window.getComputedStyle(firstRow).display : null,
       width: Math.round(rect.width),
+    };
+  });
+}
+
+async function indexCommentMetrics(page: Page) {
+  return page.locator(".span-right-pane #comment-77.index-comment").evaluate((comment) => {
+    const body = comment.querySelector<HTMLElement>(".comment-body");
+    const author = comment.querySelector<HTMLElement>(".index-comment-author");
+    const list = comment.closest<HTMLElement>("ul.comments");
+    const rect = comment.getBoundingClientRect();
+    const bodyStyle = body ? window.getComputedStyle(body) : null;
+    const share = comment.querySelector<HTMLElement>(".share-link");
+
+    return {
+      authorDisplay: author ? window.getComputedStyle(author).display : null,
+      bodyPadding: bodyStyle ? `${bodyStyle.paddingTop} ${bodyStyle.paddingRight}` : null,
+      bodyText: body?.textContent?.trim() ?? null,
+      childCountMarkers: comment.querySelectorAll(".comment-exists").length,
+      commentDisplay: window.getComputedStyle(comment).display,
+      dataLocation: comment.getAttribute("data-location"),
+      listDisplay: list ? window.getComputedStyle(list).display : null,
+      rowLeft: Math.round(rect.left),
+      rowWidth: Math.round(rect.width),
+      shareDisplay: share ? window.getComputedStyle(share).display : null,
     };
   });
 }
