@@ -364,7 +364,7 @@ function IssueVote({
   hasVoted: boolean;
   issue: RestIssueDetailResponse;
   issueHref: string;
-  voters: NonNullable<RestIssueDetailResponse["issueVoters"]>;
+  voters: VoterLike[];
 }) {
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
@@ -417,13 +417,7 @@ function IssueVote({
   );
 }
 
-function IssueVoterAvatars({
-  basePath,
-  voters,
-}: {
-  basePath: string;
-  voters: NonNullable<RestIssueDetailResponse["issueVoters"]>;
-}) {
+function IssueVoterAvatars({ basePath, voters }: { basePath: string; voters: VoterLike[] }) {
   return (
     <div className="voter-list-wrap">
       <ul className="voter-list">
@@ -452,10 +446,10 @@ function IssueVoterListDialog({
 }: {
   basePath: string;
   id: string;
-  issueNumber: string;
-  ownerName: string;
-  projectName: string;
-  voters: NonNullable<RestIssueDetailResponse["issueVoters"]>;
+  issueNumber?: string;
+  ownerName?: string;
+  projectName?: string;
+  voters: VoterLike[];
 }) {
   return (
     <div id={id} className="modal hide voters-dialog">
@@ -678,6 +672,12 @@ function EmptyTimeline() {
 
 type IssueComment = RestIssueDetailResponse["comments"][number];
 type IssueTimelineItem = RestIssueDetailResponse["timeline"][number];
+type VoterLike = {
+  avatarUrl?: unknown;
+  emailAddress?: unknown;
+  loginId?: unknown;
+  userLabel?: unknown;
+};
 
 function IssueMainTimeline({
   basePath,
@@ -794,7 +794,9 @@ function IssueCommentRow({
   const projectName = stringField(issue.projectName);
   const canUpdate = booleanField(comment.viewerCanUpdate);
   const canDelete = booleanField(comment.viewerCanDelete);
+  const hasVoted = booleanField(comment.viewerHasVoted);
   const contentsHtml = stringField(comment.contentsHtml);
+  const voters = comment.voters ?? [];
 
   return (
     <li className="comment " id={`comment-${commentId}`}>
@@ -855,17 +857,18 @@ function IssueCommentRow({
                 New issue by this comment
               </a>
             </span>
+            <CommentVoters basePath={basePath} commentId={commentId} voters={voters} />
             <button
               type="button"
               className="btn-transparent-with-fontsize-lineheight"
-              title="Vote"
+              title={hasVoted ? "Withdraw" : "Agree"}
               data-request-type="comment-vote"
               data-request-uri={prefixBasePath(
                 basePath,
-                `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}/vote`,
+                `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}/${hasVoted ? "unvote" : "vote"}`,
               )}
             >
-              <i className="yobicon-hearts vote-heart-off"></i>
+              <i className={`yobicon-hearts ${hasVoted ? "vote-heart-on" : "vote-heart-off"}`}></i>
             </button>
             {canUpdate ? (
               <button
@@ -908,6 +911,58 @@ function IssueCommentRow({
         </div>
       </div>
     </li>
+  );
+}
+
+function CommentVoters({
+  basePath,
+  commentId,
+  voters,
+}: {
+  basePath: string;
+  commentId: string;
+  voters: VoterLike[];
+}) {
+  if (!voters.length) {
+    return null;
+  }
+
+  if (voters.length > 5) {
+    return (
+      <>
+        <span
+          style={{ marginRight: "2px" }}
+          data-toggle="tooltip"
+          data-html="true"
+          title={`${voters
+            .slice(0, 5)
+            .map((voter) => stringField(voter.userLabel))
+            .join("\n")}\n…`}
+        >
+          <a className="vote-description-people" href={`#voters-${commentId}`} data-toggle="modal">
+            {voters.length} Agreements
+          </a>
+        </span>
+        <IssueVoterListDialog basePath={basePath} id={`voters-${commentId}`} voters={voters} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      {voters.map((voter) => (
+        <a
+          href={prefixBasePath(basePath, `/${stringField(voter.loginId)}`)}
+          className="avatar-wrap smaller"
+          data-toggle="tooltip"
+          data-placement="top"
+          title={stringField(voter.userLabel)}
+          key={stringField(voter.loginId)}
+        >
+          <img src={stringField(voter.avatarUrl)} alt="" />
+        </a>
+      ))}
+    </>
   );
 }
 
