@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import {
   readProjectPostQueryOptions,
   type BoardLabel,
+  type BoardPostComment,
   type BoardPostDetail,
 } from "../../../../api/boards";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -174,7 +175,15 @@ function ProjectPostDetailBody({
               <PostActionButtons canDelete={canDelete} canUpdate={canUpdate} editHref={editHref} />
             </div>
             <div className="watcher-list"></div>
-            <PostComments post={post} />
+            <PostComments
+              basePath={basePath}
+              canDelete={canDelete}
+              canUpdate={canUpdate}
+              ownerName={ownerName}
+              post={post}
+              postNumber={postNumber}
+              projectName={projectName}
+            />
           </div>
 
           <div className="span3 span-right-pane mb20">
@@ -334,8 +343,25 @@ function PostActionButtons({
   return wrap ? <span className="">{content}</span> : content;
 }
 
-function PostComments({ post }: { post: BoardPostDetail }) {
+function PostComments({
+  basePath,
+  canDelete,
+  canUpdate,
+  ownerName,
+  post,
+  postNumber,
+  projectName,
+}: {
+  basePath: string;
+  canDelete: boolean;
+  canUpdate: boolean;
+  ownerName: string;
+  post: BoardPostDetail;
+  postNumber: string;
+  projectName: string;
+}) {
   const { t } = useLegacyMessages();
+  const comments = post.comments.filter((comment) => !stringField(comment.parentCommentId));
   return (
     <div id="comments" className="board-comment-wrap">
       <div id="timeline">
@@ -345,10 +371,133 @@ function PostComments({ post }: { post: BoardPostDetail }) {
             <strong className="num">{post.comments.length}</strong>
           </div>
           <hr className="nm" />
-          <ul className="comments"></ul>
+          <ul className="comments">
+            {comments.map((comment) => (
+              <PostCommentRow
+                basePath={basePath}
+                canDelete={canDelete}
+                canUpdate={canUpdate}
+                comment={comment}
+                key={comment.id}
+                ownerName={ownerName}
+                postNumber={postNumber}
+                projectName={projectName}
+              />
+            ))}
+          </ul>
         </div>
       </div>
     </div>
+  );
+}
+
+function PostCommentRow({
+  basePath,
+  canDelete,
+  canUpdate,
+  comment,
+  ownerName,
+  postNumber,
+  projectName,
+}: {
+  basePath: string;
+  canDelete: boolean;
+  canUpdate: boolean;
+  comment: BoardPostComment;
+  ownerName: string;
+  postNumber: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+  const commentId = stringField(comment.id);
+  const authorLoginId = stringField(comment.authorLoginId);
+  const authorLabel = stringField(comment.authorLabel, authorLoginId);
+  const authorHref = prefixBasePath(basePath, `/${authorLoginId}`);
+  const avatarUrl = "/assets/images/default-avatar-32.png";
+
+  return (
+    <li className="comment" id={`comment-${commentId}`}>
+      <div className="comment-avatar">
+        <a
+          href={authorHref}
+          className="avatar-wrap"
+          data-toggle="tooltip"
+          data-placement="top"
+          title={authorLabel}
+        >
+          <img src={avatarUrl} width="32" height="32" alt={authorLoginId} />
+        </a>
+      </div>
+      <div className="media-body">
+        <div className="meta-info">
+          <span className="comment_author">
+            <span className="resp-comment-avatar">
+              <a
+                href={authorHref}
+                className="avatar-wrap"
+                data-toggle="tooltip"
+                data-placement="top"
+                title={authorLabel}
+              >
+                <img src={avatarUrl} width="32" height="32" alt={authorLabel} />
+              </a>
+            </span>
+            <a href={authorHref} data-toggle="tooltip" data-placement="top" title={authorLoginId}>
+              <strong>{authorLabel}</strong>
+            </a>
+          </span>
+          <span className="ago-date">
+            <a href={`#comment-${commentId}`} className="ago" title={comment.createdLabel}>
+              {comment.createdLabel}
+            </a>
+            <a href={`#comment-${commentId}`} className="share-link" style={{ display: "none" }}>
+              [Link]
+            </a>
+          </span>
+          <span className="act-row pull-right">
+            {canUpdate ? (
+              <button
+                type="button"
+                className="btn-transparent ml10"
+                data-toggle="comment-edit"
+                data-comment-id={commentId}
+                title={t("common.comment.edit")}
+              >
+                <i className="yobicon-edit-2"></i>
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button
+                type="button"
+                className="btn-transparent ml6"
+                data-toggle="comment-delete"
+                data-request-uri={prefixBasePath(
+                  basePath,
+                  `/${ownerName}/${projectName}/post/${postNumber}/comment/${commentId}`,
+                )}
+                title={t("common.comment.delete")}
+              >
+                <i className="yobicon-trash"></i>
+              </button>
+            ) : null}
+          </span>
+        </div>
+
+        <div id={`comment-body-${commentId}`}>
+          <TasklistBar />
+          <div
+            className="comment-body markdown-wrap"
+            data-via-email={String(booleanField(comment.viaEmail))}
+            data-allowed-update={String(canUpdate)}
+            dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+          />
+          <div
+            className="attachments"
+            data-attachments={JSON.stringify(comment.attachments ?? [])}
+          ></div>
+        </div>
+      </div>
+    </li>
   );
 }
 
