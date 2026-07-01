@@ -12,36 +12,23 @@
       "react-doctor/rerender-state-only-in-handlers",
       "react/no-danger"
     ],
-    "files": [
-      "src/gen/**",
-      "tests/live-legacy-html-parity.ts"
-    ],
+    "files": ["src/gen/**", "tests/live-legacy-html-parity.ts"],
     "overrides": [
       {
-        "files": [
-          "tests/**/*.e2e.ts"
-        ],
-        "rules": [
-          "knip/files",
-          "react-doctor/async-await-in-loop",
-          "react-doctor/async-parallel"
-        ]
+        "files": ["tests/**/*.e2e.ts"],
+        "rules": ["knip/files", "react-doctor/async-await-in-loop", "react-doctor/async-parallel"]
       },
       {
-        "files": [
-          "src/route-parity.spec.tsx"
-        ],
-        "rules": [
-          "react-doctor/js-set-map-lookups"
-        ]
+        "files": ["src/route-parity.spec.tsx"],
+        "rules": ["react-doctor/js-set-map-lookups"]
       },
       {
-        "files": [
-          "src/routes/-restricted-view.tsx"
-        ],
-        "rules": [
-          "react-doctor/design-no-three-period-ellipsis"
-        ]
+        "files": ["src/routes/-restricted-view.tsx"],
+        "rules": ["react-doctor/design-no-three-period-ellipsis"]
+      },
+      {
+        "files": ["src/routes/$ownerName/$projectName/issue/$issueNumber.tsx"],
+        "rules": ["react-doctor/design-no-vague-button-label"]
       }
     ]
   }
