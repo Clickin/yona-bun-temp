@@ -376,17 +376,15 @@ function NonRangedThreadComment({
             </a>
           </span>
         </div>
-        <div id={`comment-body-${comment.id}`}>
-          <div
-            className="comment-body markdown-wrap"
-            data-via-email={String(comment.viaEmail)}
-            dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
-          ></div>
-          <div
-            className="attachments"
-            data-attachments={JSON.stringify(comment.attachments ?? [])}
-          ></div>
-        </div>
+        <div
+          className="comment-body markdown-wrap"
+          data-via-email={String(comment.viaEmail)}
+          dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+        ></div>
+        <div
+          className="attachments"
+          data-attachments={JSON.stringify(comment.attachments ?? [])}
+        ></div>
       </div>
     </li>
   );

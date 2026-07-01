@@ -175,7 +175,10 @@ const EXPECTED_PULL_REQUEST_NON_RANGED_THREAD_HTML = `<div id="thread-92" class=
 
 const EXPECTED_PULL_REQUEST_NON_RANGED_THREAD = EXPECTED_PULL_REQUEST_REVIEW_CARD.replace(
   `<div class="non-ranged-threads-wrap"></div>`,
-  `<div class="non-ranged-threads-wrap">${EXPECTED_PULL_REQUEST_NON_RANGED_THREAD_HTML}</div>`,
+  `<div class="non-ranged-threads-wrap">${EXPECTED_PULL_REQUEST_NON_RANGED_THREAD_HTML.replace(
+    `<div id="comment-body-801"><div class="comment-body markdown-wrap" data-via-email="false"><p>General note</p></div><div class="attachments" data-attachments="[]"></div></div>`,
+    `<div class="comment-body markdown-wrap" data-via-email="false"><p>General note</p></div><div class="attachments" data-attachments="[]"></div>`,
+  )}</div>`,
 )
   .replace(
     `href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91"`,
