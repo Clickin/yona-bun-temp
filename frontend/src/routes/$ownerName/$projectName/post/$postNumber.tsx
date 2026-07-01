@@ -498,6 +498,14 @@ function PostCommentRow({
           </span>
         </div>
 
+        <PostCommentUpdateForm
+          basePath={basePath}
+          canUpdate={canUpdate}
+          comment={comment}
+          ownerName={ownerName}
+          postNumber={postNumber}
+          projectName={projectName}
+        />
         <div id={`comment-body-${commentId}`}>
           <TasklistBar />
           <div
@@ -523,6 +531,89 @@ function PostCommentRow({
         projectName={projectName}
       />
     </li>
+  );
+}
+
+function PostCommentUpdateForm({
+  basePath,
+  canUpdate,
+  comment,
+  ownerName,
+  postNumber,
+  projectName,
+}: {
+  basePath: string;
+  canUpdate: boolean;
+  comment: BoardPostComment;
+  ownerName: string;
+  postNumber: string;
+  projectName: string;
+}) {
+  const commentId = stringField(comment.id);
+
+  return (
+    <div id={`comment-editform-${commentId}`} className="comment-update-form">
+      <form
+        action={prefixBasePath(
+          basePath,
+          `/${ownerName}/${projectName}/post/${postNumber}/comments/${commentId}`,
+        )}
+        method="post"
+        encType="multipart/form-data"
+      >
+        <input type="hidden" name="id" value={commentId} />
+        <div className="write-comment-box">
+          <div className="write-comment-wrap">
+            <MarkdownEditor
+              editorMode="update-comment-body"
+              name="contents"
+              value={comment.contentsMarkdown}
+              wrapId={commentId}
+            />
+            <div className="upload-drop-here">
+              <div className="msg-wrap">
+                <div className="msg">Drag &amp; Drop files here to upload.</div>
+              </div>
+            </div>
+            <div className="right-txt comment-update-button upload-button-line">
+              <span className="file-upload">
+                <label htmlFor={`upload-${commentId}`} className="file-upload__label ybtn">
+                  File upload
+                </label>
+                <input
+                  id={`upload-${commentId}`}
+                  className="file-upload__input"
+                  type="file"
+                  name="filePath"
+                  multiple
+                />
+              </span>
+              <button type="button" className="ybtn ybtn-cancel" data-comment-id={commentId}>
+                Cancel
+              </button>
+              {canUpdate ? (
+                <button type="submit" className="ybtn ybtn-info">
+                  Save
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <input
+            type="hidden"
+            name="temporaryUploadFiles"
+            className="temporaryUploadFiles"
+            value=""
+          />
+          <div className={`preview-${commentId}`}></div>
+          <div className="attachment-files"></div>
+          <div
+            id={`upload-${commentId}`}
+            data-resourcetype="NONISSUE_COMMENT"
+            data-resourceid={commentId}
+          ></div>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -648,6 +739,85 @@ function PostChildComment({
   return (
     <div className="one-line-comment">
       <div className="contents" dangerouslySetInnerHTML={{ __html: contents }} />
+    </div>
+  );
+}
+
+function MarkdownEditor({
+  editorMode,
+  name,
+  value,
+  wrapId,
+}: {
+  editorMode: string;
+  name: string;
+  value: string;
+  wrapId: string;
+}) {
+  return (
+    <div data-toggle="markdown-editor" className="mt10">
+      <ul className="nav nav-tabs nm small">
+        <li className="active">
+          <a href={`#edit-${wrapId}`} data-toggle="tab" data-mode="edit">
+            Edit
+          </a>
+        </li>
+        <li>
+          <a href={`#preview-${wrapId}`} data-toggle="tab" data-mode="preview">
+            Preview
+          </a>
+        </li>
+        <li>
+          <div className="task-list-button">
+            <button
+              type="button"
+              className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
+            >
+              <i className="yobicon-list task-list-icon"></i> Add checklist
+            </button>
+          </div>
+        </li>
+        <li>
+          <div className="editor-clear-temporary">
+            <div className="editor-clear-temporary-button">
+              <button
+                type="button"
+                id="button-clear-temporary"
+                className="ybtn ybtn-small ybtn-warning"
+              >
+                Clear Temporary
+              </button>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div className="editor-notice-label"></div>
+        </li>
+      </ul>
+      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+        <div id={`edit-${wrapId}`} className="tab-pane active">
+          <div className="textarea-box">
+            <textarea
+              name={name}
+              className="editorSeries content comment nm"
+              data-editor-mode={editorMode}
+              {...{ markdown: "true" }}
+              id={`editor-${name}-${wrapId}`}
+              defaultValue={value}
+            ></textarea>
+          </div>
+        </div>
+        <div id={`preview-${wrapId}`} className="tab-pane">
+          <div
+            className={`markdown-preview markdown-wrap ${editorMode}`}
+            data-via-email="false"
+          ></div>
+        </div>
+        <div className="notification-receiver">
+          <span className="notification-receiver-title">Notification receivers </span>
+          <span className="notification-receiver-list"></span>
+        </div>
+      </div>
     </div>
   );
 }

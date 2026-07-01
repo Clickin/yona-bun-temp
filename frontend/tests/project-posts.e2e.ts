@@ -28,8 +28,17 @@ const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT = EXPECTED_PROJECT_POST_DETAIL.r
   '<div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">1</strong></div><hr class="nm"><ul class="comments"><li class="comment" id="comment-21"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author"><span class="resp-comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></span><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="#comment-21" class="ago" title="Jul 3, 2026">Jul 3, 2026</a><a href="#comment-21" class="share-link" style="display:none">[Link]</a></span><span class="act-row pull-right"><button type="button" class="btn-transparent ml10" data-toggle="comment-edit" data-comment-id="21" title="Edit comment"><i class="yobicon-edit-2"></i></button><button type="button" class="btn-transparent ml6" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/post/3/comment/21" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div id="comment-body-21"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="comment-body markdown-wrap" data-allowed-update="true" data-via-email="false"><p>First <strong>comment</strong></p></div><div class="attachments" data-attachments="[]"></div></div></div></li></ul>',
 );
 
-const EXPECTED_PROJECT_POST_DETAIL_WITH_CHILD_COMMENT =
+const COMMENT_UPDATE_FORM =
+  '<div id="comment-editform-21" class="comment-update-form"><form action="__BASE_PATH__/admin/sample/post/3/comments/21" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="21"><div class="write-comment-box"><div class="write-comment-wrap"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-21" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-21" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-21" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" markdown="true" id="editor-contents-21">First **comment**</textarea></div></div><div id="preview-21" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-21" class="file-upload__label ybtn">File upload</label><input id="upload-21" class="file-upload__input" type="file" name="filePath" multiple=""></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="21">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-21"></div><div class="attachment-files"></div><div id="upload-21" data-resourcetype="NONISSUE_COMMENT" data-resourceid="21"></div></div></form></div>';
+
+const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT_UPDATE =
   EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT.replace(
+    '<div id="comment-body-21">',
+    `${COMMENT_UPDATE_FORM}<div id="comment-body-21">`,
+  );
+
+const EXPECTED_PROJECT_POST_DETAIL_WITH_CHILD_COMMENT =
+  EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT_UPDATE.replace(
     '<strong class="num">1</strong>',
     '<strong class="num">2</strong>',
   )
@@ -175,7 +184,27 @@ test("project board detail renders legacy parent comments", async ({ page }) => 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT.replaceAll("__BASE_PATH__", basePath),
+      EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT_UPDATE.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("project board detail renders legacy comment update form", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page, "commentUpdate");
+
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator("#comment-editform-21 .comment-update-button")).toHaveCount(1);
+  await expect(page.locator("#editor-contents-21")).toHaveValue("First **comment**");
+  await expect(page.locator("#upload-21[data-resourcetype='NONISSUE_COMMENT']")).toHaveAttribute(
+    "data-resourceid",
+    "21",
+  );
+
+  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT_UPDATE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
@@ -219,7 +248,14 @@ async function issueLabelColorMetrics(page: Page) {
 
 async function mockProjectPosts(
   page: Page,
-  state: "default" | "empty" | "prefix" | "readonlyLabel" | "comment" | "childComment" = "default",
+  state:
+    | "default"
+    | "empty"
+    | "prefix"
+    | "readonlyLabel"
+    | "comment"
+    | "commentUpdate"
+    | "childComment" = "default",
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -371,9 +407,10 @@ async function mockProjectPosts(
         authorLoginId: "dev",
         bodyHtml: "<p>Post <strong>markdown</strong></p>",
         bodyMarkdown: "Post **markdown**",
-        commentCount: state === "comment" ? 1 : state === "childComment" ? 2 : 0,
+        commentCount:
+          state === "comment" || state === "commentUpdate" ? 1 : state === "childComment" ? 2 : 0,
         comments:
-          state === "comment" || state === "childComment"
+          state === "comment" || state === "commentUpdate" || state === "childComment"
             ? [
                 {
                   attachments: [],
