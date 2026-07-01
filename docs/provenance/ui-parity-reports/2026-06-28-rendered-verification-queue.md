@@ -329,7 +329,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `common/child_commentForm.scala.html` | shared partials | issue and board nested comment callers metric-covered by `frontend/tests/issue-detail-parity.e2e.ts` and `frontend/tests/project-posts.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/childComments.scala.html` | shared partials | issue and board nested comment callers metric-covered by `frontend/tests/issue-detail-parity.e2e.ts` and `frontend/tests/project-posts.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/commentAndVoterPairDisplay.scala.html` | shared partials | issue subtask caller metric-covered by `frontend/tests/issue-detail-parity.e2e.ts`; remaining callers still require per-route verification | 10 |
-| `common/commentCount.scala.html` | shared partials | issue-list caller metric-covered by `frontend/tests/project-issues-empty.e2e.ts`; remaining callers still require per-route verification | 10 |
+| `common/commentCount.scala.html` | shared partials | project issue-list caller metric-covered by `frontend/tests/project-issues-empty.e2e.ts`; user profile and my-issues no-color caller branches DOM-covered by `frontend/tests/user-public-profile.e2e.ts` and `frontend/tests/user-issues.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/commentDeleteModal.scala.html` | shared partials | issue-detail caller interaction-covered by `frontend/tests/project-issue-detail.e2e.ts`; board-detail caller interaction-covered by `frontend/tests/project-posts.e2e.ts`; PR and code comment delete modal callers remain to verify through each caller route | 10 |
 | `common/commentForm.scala.html` | shared partials | issue caller tracked by existing issue-detail guard; board-detail caller interaction-covered by `frontend/tests/project-posts.e2e.ts`; PR/code callers remain to verify when active detail routes exist | 10 |
 | `common/commitMsg.scala.html` | shared partials | commit history caller metric-covered by `frontend/tests/code-parity.e2e.ts`; remaining callers still require per-route verification | 10 |
@@ -341,7 +341,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `common/showSubtasksCheckbox.scala.html` | shared partials | issue-list caller metric-covered by `frontend/tests/vote-count-parity.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/tasklistBar.scala.html` | shared partials | issue-detail caller metric-covered by `frontend/tests/issue-detail-parity.e2e.ts`; board-detail caller DOM-covered by `frontend/tests/project-posts.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/twoColumnModeCheckboxArea.scala.html` | shared partials | issue-list caller metric-covered by existing issue-list guard; board-list caller metric-covered by `frontend/tests/project-posts.e2e.ts`; remaining callers still require per-route verification | 10 |
-| `common/voteCount.scala.html` | shared partials | issue-list caller metric-covered by `frontend/tests/project-issues-empty.e2e.ts`; remaining callers still require per-route verification | 10 |
+| `common/voteCount.scala.html` | shared partials | project issue-list caller metric-covered by `frontend/tests/project-issues-empty.e2e.ts`; my-issues no-color caller branch DOM-covered by `frontend/tests/user-issues.e2e.ts`; remaining callers still require per-route verification | 10 |
 
 ## Owner Expansion Rule
 

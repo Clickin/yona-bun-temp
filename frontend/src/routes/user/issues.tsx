@@ -575,16 +575,16 @@ function CommentVoteCounts({ issue, issueHref }: { issue: RestIssueListItem; iss
   return (
     <span className="infos-item item-count-groups">
       {issue.commentCount ? (
-        <a href={`${issueHref}#comments`}>
-          <span className="count-groups item-icon ">
-            <i className="yobicon-comments"></i>
+        <a href={`${issueHref}#comments`} className="comments-count">
+          <span className="count-groups item-icon">
+            <i className="yobicon-comment2"></i>
           </span>
-          <span className="count-groups item-count ">{issue.commentCount}</span>
+          <span className="count-groups item-count">{issue.commentCount}</span>
         </a>
       ) : null}
       {issue.voterCount ? (
-        <a href={`${issueHref}#vote`}>
-          <span className="count-groups item-icon strong">
+        <a href={`${issueHref}#vote`} className="vote-count">
+          <span className="count-groups item-icon">
             <i className="yobicon-hearts"></i>
           </span>
           <span className="count-groups item-count strong">{issue.voterCount}</span>
