@@ -152,14 +152,7 @@ function ProjectNewPullRequestBody({
                 placeholder={t("title")}
               />
               <div style={{ position: "relative" }}>
-                <div data-toggle="markdown-editor" className="markdown-editor-wrap">
-                  <textarea
-                    id="editor-body-content-body"
-                    name="body"
-                    data-editor-mode="content-body"
-                  ></textarea>
-                  <div id="preview-content-body" className="preview markdown-wrap"></div>
-                </div>
+                <PullRequestMarkdownEditor value="" />
               </div>
               <PullRequestFileUploader />
               <div className="actions">
@@ -295,6 +288,83 @@ function PullRequestBranchSelectors({
             </option>
           ))}
         </select>
+      </div>
+    </div>
+  );
+}
+
+function PullRequestMarkdownEditor({
+  isUserHasTyped = false,
+  value,
+}: {
+  isUserHasTyped?: boolean;
+  value: string;
+}) {
+  const { t } = useLegacyMessages();
+  const userTypedAttr = isUserHasTyped ? { "data-is-user-has-typed": "true" } : {};
+  return (
+    <div data-toggle="markdown-editor" className="mt10">
+      <ul className="nav nav-tabs nm small">
+        <li className="active">
+          <a href="#edit-body" data-toggle="tab" data-mode="edit">
+            {t("common.editor.edit")}
+          </a>
+        </li>
+        <li>
+          <a href="#preview-body" data-toggle="tab" data-mode="preview">
+            {t("common.editor.preview")}
+          </a>
+        </li>
+        <li>
+          <div className="task-list-button">
+            <button
+              type="button"
+              className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
+            >
+              <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
+            </button>
+          </div>
+        </li>
+        <li>
+          <div className="editor-clear-temporary">
+            <div className="editor-clear-temporary-button">
+              <button
+                type="button"
+                id="button-clear-temporary"
+                className="ybtn ybtn-small ybtn-warning"
+              >
+                {t("button.clear.temporary")}
+              </button>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div className="editor-notice-label"></div>
+        </li>
+      </ul>
+      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+        <div id="edit-body" className="tab-pane active">
+          <div className="textarea-box">
+            <textarea
+              name="body"
+              className="editorSeries content comment nm"
+              data-editor-mode="content-body"
+              id="editor-body-body"
+              defaultValue={value}
+              {...userTypedAttr}
+              {...{ markdown: "true" }}
+            ></textarea>
+          </div>
+        </div>
+        <div id="preview-body" className="tab-pane">
+          <div className="markdown-preview markdown-wrap content-body" data-via-email="false"></div>
+        </div>
+        <div className="notification-receiver">
+          <span className="notification-receiver-title">
+            {t("notification.receiver.list.title")}
+          </span>
+          <span className="notification-receiver-list"></span>
+        </div>
       </div>
     </div>
   );
