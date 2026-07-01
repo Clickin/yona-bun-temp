@@ -677,6 +677,7 @@ function EmptyTimeline() {
 }
 
 type IssueComment = RestIssueDetailResponse["comments"][number];
+type IssueTimelineItem = RestIssueDetailResponse["timeline"][number];
 
 function IssueMainTimeline({
   basePath,
@@ -686,7 +687,10 @@ function IssueMainTimeline({
   issue: RestIssueDetailResponse;
 }) {
   const comments = issue.comments ?? [];
-  if (!comments.length) {
+  const timeline: IssueTimelineItem[] = issue.timeline?.length
+    ? issue.timeline
+    : comments.map((comment) => ({ comment, id: stringField(comment.id) }));
+  if (!comments.length && !timelineHasVisibleEvent(timeline)) {
     return <EmptyTimeline />;
   }
 
@@ -700,19 +704,76 @@ function IssueMainTimeline({
           </div>
           <hr className="nm" />
           <ul className="comments">
-            {comments.map((comment) => (
-              <IssueCommentRow
-                basePath={basePath}
-                comment={comment}
-                issue={issue}
-                key={stringField(comment.id)}
-              />
-            ))}
+            {timeline.map((item) =>
+              item.comment ? (
+                <IssueCommentRow
+                  basePath={basePath}
+                  comment={item.comment}
+                  issue={issue}
+                  key={`comment-${stringField(item.comment.id)}`}
+                />
+              ) : (
+                <IssueEventRow
+                  basePath={basePath}
+                  event={item}
+                  key={`event-${stringField(item.id)}`}
+                />
+              ),
+            )}
           </ul>
         </div>
       </div>
     </div>
   );
+}
+
+function IssueEventRow({ basePath, event }: { basePath: string; event: IssueTimelineItem }) {
+  const eventType = stringField(event.eventType);
+  if (eventType === "ISSUE_BODY_CHANGED") {
+    return null;
+  }
+
+  const eventId = stringField(event.id);
+  const newValue = stringField(event.newValue).toLowerCase();
+  const senderLoginId = stringField(event.senderLoginId);
+  const senderLabel = stringField(event.senderLabel, senderLoginId);
+  const senderHref = prefixBasePath(basePath, `/${senderLoginId}`);
+
+  if (eventType === "ISSUE_STATE_CHANGED") {
+    return (
+      <li className="event" id={`event-${eventId}`}>
+        <span className={`state ${newValue}`}>{issueStateLabel(newValue)}</span>
+        <a
+          href={senderHref}
+          className="usf-group"
+          data-toggle="tooltip"
+          data-placement="top"
+          title={senderLabel}
+        >
+          <img
+            src={stringField(event.senderAvatarUrl, "/assets/images/default-avatar-32.png")}
+            className="avatar-wrap small"
+            alt=""
+          />
+        </a>
+        <a
+          href={senderHref}
+          className="usf-group"
+          data-toggle="tooltip"
+          data-placement="top"
+          title={senderLoginId}
+        >
+          <strong>{senderLabel}</strong>
+        </a>
+        {issueStateEventText(newValue)}
+        <span className="date">
+          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+        </span>
+      </li>
+    );
+  }
+
+  return null;
 }
 
 function IssueCommentRow({
@@ -1019,6 +1080,20 @@ function ellipsisText(html: string) {
     .replace(/\s+/gu, " ")
     .trim();
   return text.length > 60 ? `${text.slice(0, 60)}...` : text;
+}
+
+function timelineHasVisibleEvent(timeline: IssueTimelineItem[]) {
+  return timeline.some(
+    (item) => !item.comment && stringField(item.eventType) !== "ISSUE_BODY_CHANGED",
+  );
+}
+
+function issueStateLabel(state: string) {
+  return state === "closed" ? "Closed" : "Open";
+}
+
+function issueStateEventText(state: string) {
+  return state === "closed" ? " closed this issue" : " reopened this issue";
 }
 
 function stringField(value: unknown, fallback = "") {
