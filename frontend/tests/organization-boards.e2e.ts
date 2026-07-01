@@ -72,6 +72,35 @@ test("organization board aggregate empty state matches legacy group_board_list.s
   );
 });
 
+test("organization boards menu issue link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationBoards(page);
+
+  await page.goto(
+    `${basePath}/organizations/weblabs/boards?filter=release&projectNames%5B%5D=sample&orderBy=numOfComments&orderDir=desc`,
+  );
+  const issueLink = page.locator(".project-menu-gruop a").filter({ hasText: "Issue" });
+  await expect(issueLink).toHaveAttribute("href", `${basePath}/organizations/weblabs/issues`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await issueLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/issues`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Issue");
+  await expect(page.locator("#search")).toBeVisible();
+});
+
 async function mockOrganizationBoards(page: Page, state: "default" | "empty" = "default") {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -150,6 +179,30 @@ async function mockOrganizationBoards(page: Page, state: "default" | "empty" = "
         pageNum: 1,
         pageSize: 20,
         totalCount: isEmpty ? 0 : 2,
+        visibleProjects: [
+          { ownerName: "weblabs", projectName: "sample" },
+          { ownerName: "weblabs", projectName: "playground" },
+        ],
+      }),
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs/issues**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        closedIssueCount: 0,
+        filter: "",
+        items: [],
+        openIssueCount: 0,
+        orderBy: "createdDate",
+        orderDir: "desc",
+        organizationName: "weblabs",
+        pageNum: 1,
+        pageSize: 20,
+        state: "open",
+        totalCount: 0,
+        totalPages: 1,
+        viewerUserId: 1,
         visibleProjects: [
           { ownerName: "weblabs", projectName: "sample" },
           { ownerName: "weblabs", projectName: "playground" },
