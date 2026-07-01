@@ -115,6 +115,26 @@ test("project webhooks renders legacy project/partial_webhooks_list.scala.html p
   });
 });
 
+test("project webhooks JSON type forces git push checkbox like legacy script", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  const gitPush = page.locator("#gitPush");
+
+  await expect(gitPush).not.toBeChecked();
+  await page.locator('input[name="webhookType"][value="JSON"]').check();
+  await expect(gitPush).toBeChecked();
+
+  await gitPush.click();
+  await expect(gitPush).toBeChecked();
+
+  await page.locator('input[name="webhookType"][value="SIMPLE"]').check();
+  await expect(gitPush).not.toBeChecked();
+  await gitPush.check();
+  await expect(gitPush).toBeChecked();
+});
+
 async function mockProjectAdmin(page: Page, webhooks: unknown[] = []) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { FormEvent } from "react";
+import { useState } from "react";
 import {
   createProjectWebhookRest,
   deleteProjectWebhookRest,
@@ -76,6 +77,9 @@ function ProjectWebhooksBody({
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
+  const [selectedWebhookType, setSelectedWebhookType] = useState<ProjectWebhookType>("SIMPLE");
+  const [gitPushChecked, setGitPushChecked] = useState(false);
+  const isJsonWebhook = selectedWebhookType === "JSON";
   const mutation = useMutation({
     mutationFn: async (input: {
       gitPush: boolean;
@@ -106,6 +110,11 @@ function ProjectWebhooksBody({
       secret: String(formData.get("secret") ?? ""),
       webhookType: String(formData.get("webhookType") ?? "SIMPLE") as ProjectWebhookType,
     });
+  }
+
+  function onWebhookTypeChange(webhookType: ProjectWebhookType) {
+    setSelectedWebhookType(webhookType);
+    setGitPushChecked(webhookType === "JSON" ? true : false);
   }
 
   return (
@@ -150,26 +159,67 @@ function ProjectWebhooksBody({
               </div>
               <div>
                 <label className="radio inline">
-                  <input type="radio" name="webhookType" value="SIMPLE" defaultChecked /> Messenger
-                  (Only text)
+                  <input
+                    type="radio"
+                    name="webhookType"
+                    value="SIMPLE"
+                    checked={selectedWebhookType === "SIMPLE"}
+                    onChange={() => onWebhookTypeChange("SIMPLE")}
+                  />{" "}
+                  Messenger (Only text)
                 </label>
                 <label className="radio inline">
-                  <input type="radio" name="webhookType" value="DETAIL_SLACK" /> Slack (Meta)
+                  <input
+                    type="radio"
+                    name="webhookType"
+                    value="DETAIL_SLACK"
+                    checked={selectedWebhookType === "DETAIL_SLACK"}
+                    onChange={() => onWebhookTypeChange("DETAIL_SLACK")}
+                  />{" "}
+                  Slack (Meta)
                 </label>
                 <label className="radio inline">
-                  <input type="radio" name="webhookType" value="DETAIL_HANGOUT_CHAT" /> Google Chat
-                  (Thread)
+                  <input
+                    type="radio"
+                    name="webhookType"
+                    value="DETAIL_HANGOUT_CHAT"
+                    checked={selectedWebhookType === "DETAIL_HANGOUT_CHAT"}
+                    onChange={() => onWebhookTypeChange("DETAIL_HANGOUT_CHAT")}
+                  />{" "}
+                  Google Chat (Thread)
                 </label>
                 <label className="radio inline">
-                  <input type="radio" name="webhookType" value="JSON" /> Continuous Integration tool
-                  (Only push event)
+                  <input
+                    type="radio"
+                    name="webhookType"
+                    value="JSON"
+                    checked={selectedWebhookType === "JSON"}
+                    onChange={() => onWebhookTypeChange("JSON")}
+                  />{" "}
+                  Continuous Integration tool (Only push event)
                 </label>
                 <span className="radio inline" aria-hidden="true">
                   |
                 </span>
                 <span className="radio inline" aria-hidden="true"></span>
                 <label className="checkbox inline" htmlFor="gitPush">
-                  <input type="checkbox" id="gitPush" name="gitPush" className="form-check-input" />{" "}
+                  <input
+                    type="checkbox"
+                    id="gitPush"
+                    name="gitPush"
+                    className="form-check-input"
+                    checked={gitPushChecked}
+                    onClick={(event) => {
+                      if (isJsonWebhook) {
+                        event.preventDefault();
+                      }
+                    }}
+                    onChange={(event) => {
+                      if (!isJsonWebhook) {
+                        setGitPushChecked(event.currentTarget.checked);
+                      }
+                    }}
+                  />{" "}
                   {t("project.webhook.includeGitPush")}
                 </label>
               </div>
