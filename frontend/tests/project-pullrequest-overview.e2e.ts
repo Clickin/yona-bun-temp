@@ -31,6 +31,11 @@ const EXPECTED_PULL_REQUEST_OPEN_THREAD_BADGE = EXPECTED_PULL_REQUEST_OVERVIEW.r
   `<li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes<span class="num-badge">1</span></a></li>`,
 );
 
+const EXPECTED_PULL_REQUEST_REVIEWER_CONTROLS = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
+  `<div class="pull-right"><a id="btnAccept" href="__BASE_PATH__/admin/sample/pullRequest/9/accept" data-request-method="post" class="ybtn ybtn-success">Merge</a></div>`,
+  `<div class="pull-right"><div id="reviewers" style="display:inline-block; margin-right:5px;"><span style="font-size: 13px; vertical-align: middle; margin: 0px 10px;"><strong>2</strong> participants</span><a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a></div><a data-request-method="post" class="ybtn ybtn-default" href="__BASE_PATH__/admin/sample/pullRequest/9/unreview">Cancel review</a><a id="btnAccept" href="__BASE_PATH__/admin/sample/pullRequest/9/accept" data-request-method="post" class="ybtn ybtn-success">Merge</a></div>`,
+);
+
 const EXPECTED_PULL_REQUEST_CONFLICT_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div>`,
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-conflict">Conflict</span></div>`,
@@ -292,6 +297,43 @@ test("project pull request overview renders legacy changes tab open-thread badge
   );
 });
 
+test("project pull request overview renders legacy reviewer controls DOM", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    container: {
+      isUsingReviewerCount: true,
+    },
+    detail: {
+      reviewed: true,
+      reviewers: [
+        {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "admin",
+          userId: 1,
+          userLabel: "Site Admin",
+        },
+        {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "dev",
+          userId: 2,
+          userLabel: "Dev Member",
+        },
+      ],
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator("#reviewers")).toContainText("2 participants");
+  await expect(page.locator('a[href$="/unreview"]')).toHaveText("Cancel review");
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_REVIEWER_CONTROLS.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 test("project pull request overview renders legacy conflict state DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPullRequestOverview(page, {
@@ -425,6 +467,7 @@ test("project pull request overview renders legacy merged source-branch restore 
 async function mockPullRequestOverview(
   page: Page,
   options: {
+    container?: Record<string, unknown>;
     detail?: Record<string, unknown>;
     events?: unknown[];
     mergedCommitIdTo?: string;
@@ -472,6 +515,7 @@ async function mockPullRequestOverview(
         projectName: "sample",
         vcs: "GIT",
         viewerCanUpdate: true,
+        ...options.container,
       }),
     });
   });

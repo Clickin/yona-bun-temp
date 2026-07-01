@@ -9,6 +9,7 @@ import {
   type PullRequestState,
 } from "../../../../api/pull-requests";
 import { currentSessionQueryOptions } from "../../../../api/session";
+import type { ProjectContainer } from "../../../../api/types";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
@@ -74,6 +75,7 @@ function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: Ru
       />
       <PullRequestOverviewBody
         currentUserLoginId={String(sessionQuery.data.loginId ?? "")}
+        project={projectQuery.data}
         pullRequest={pullRequestQuery.data}
         runtimeConfig={runtimeConfig}
       />
@@ -83,10 +85,12 @@ function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: Ru
 
 function PullRequestOverviewBody({
   currentUserLoginId,
+  project,
   pullRequest,
   runtimeConfig,
 }: {
   currentUserLoginId: string;
+  project: ProjectContainer;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -98,7 +102,11 @@ function PullRequestOverviewBody({
     <>
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <PullRequestHeader pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
+          <PullRequestHeader
+            project={project}
+            pullRequest={pullRequest}
+            runtimeConfig={runtimeConfig}
+          />
           <div className="board-body">
             <div className="author-info left-txt" style={{ marginTop: "20px" }}>
               <a
@@ -449,9 +457,11 @@ function CommitMessage({ commit, href }: { commit: PullRequestCommit; href: stri
 }
 
 function PullRequestHeader({
+  project,
   pullRequest,
   runtimeConfig,
 }: {
+  project: ProjectContainer;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -460,6 +470,8 @@ function PullRequestHeader({
   const prPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
   const isOpen = isOpenState(pullRequest.state);
   const isAcceptable = isOpen && !pullRequest.conflict && pullRequest.lackingReviewerCount <= 0;
+  const showReviewerControls =
+    project.isUsingReviewerCount === true && pullRequest.permissions.canReview;
   const openThreadCount = pullRequest.threads.filter(
     (thread) => thread.state.toLowerCase() === "open",
   ).length;
@@ -480,6 +492,50 @@ function PullRequestHeader({
       </div>
 
       <div className="pull-right">
+        {showReviewerControls ? (
+          <>
+            <div id="reviewers" style={{ display: "inline-block", marginRight: "5px" }}>
+              <span style={{ fontSize: "13px", verticalAlign: "middle", margin: "0 10px" }}>
+                {messageWithStrong(
+                  t("pullRequest.review.participants", { args: ["__COUNT__"] }),
+                  "__COUNT__",
+                  pullRequest.reviewers.length,
+                )}
+              </span>
+              {pullRequest.reviewers.map((reviewer) => (
+                <a
+                  key={reviewer.loginId}
+                  href={prefixBasePath(runtimeConfig.basePath, `/${reviewer.loginId}`)}
+                  className="usf-group"
+                  data-toggle="tooltip"
+                  data-placement="top"
+                  title={reviewer.userLabel}
+                >
+                  <img src={reviewer.avatarUrl} className="avatar-wrap small" alt="" />
+                </a>
+              ))}
+            </div>
+            {isOpen ? (
+              pullRequest.reviewed ? (
+                <a
+                  data-request-method="post"
+                  className="ybtn ybtn-default"
+                  href={prefixBasePath(runtimeConfig.basePath, `${prPath}/unreview`)}
+                >
+                  {t("pullRequest.unreview")}
+                </a>
+              ) : (
+                <a
+                  data-request-method="post"
+                  className={`ybtn ${pullRequest.reviewers.length > 0 ? "ybtn-default" : "ybtn-success"}`}
+                  href={prefixBasePath(runtimeConfig.basePath, `${prPath}/review`)}
+                >
+                  {t("pullRequest.review")}
+                </a>
+              )
+            ) : null}
+          </>
+        ) : null}
         {pullRequest.permissions.canReview ? (
           isAcceptable ? (
             <a
@@ -827,6 +883,21 @@ function messageWithNodes(message: string, nodes: Record<string, ReactNode>) {
     const node = nodes[part];
     return node === undefined ? part : <Fragment key={key}>{node}</Fragment>;
   });
+}
+
+function messageWithStrong(message: string, token: string, value: number) {
+  const strongToken = `<strong>${token}</strong>`;
+  const [before, after] = message.split(strongToken);
+  if (after === undefined) {
+    return messageWithNodes(message, { [token]: <strong>{value}</strong> });
+  }
+  return (
+    <>
+      {before}
+      <strong>{value}</strong>
+      {after}
+    </>
+  );
 }
 
 function escapeRegExp(value: string) {
