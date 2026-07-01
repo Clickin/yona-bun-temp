@@ -223,46 +223,104 @@ function OrganizationMenu({
   viewerCanUpdate: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
+  const navigate = (to: string) => {
+    router.navigate({ to });
+  };
 
   return (
     <div className="project-menu-outer">
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className="">
-            <a href={organizationHref(basePath, organizationName)}>{t("title.organizationHome")}</a>
+            <OrganizationMenuLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}`}
+            >
+              {t("title.organizationHome")}
+            </OrganizationMenuLink>
           </li>
           <li className="">
-            <a href={prefixBasePath(basePath, `/organizations/${organizationName}/issues`)}>
+            <OrganizationMenuLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}/issues`}
+            >
               {t("menu.issue")}
-            </a>
+            </OrganizationMenuLink>
           </li>
           <li className="">
-            <a href={prefixBasePath(basePath, `/organizations/${organizationName}/boards`)}>
+            <OrganizationMenuLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}/boards`}
+            >
               {t("menu.board")}
-            </a>
+            </OrganizationMenuLink>
           </li>
           <li className="">
-            <a href={prefixBasePath(basePath, `/organizations/${organizationName}/pullrequests`)}>
+            <OrganizationMenuLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}/pullrequests`}
+            >
               {t("menu.pullRequest")}
-            </a>
+            </OrganizationMenuLink>
           </li>
         </ul>
         <div className="project-setting">
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">
-                <a
-                  href={prefixBasePath(basePath, `/organizations/${organizationName}/settingform`)}
+                <OrganizationMenuLink
+                  basePath={basePath}
+                  onNavigate={navigate}
+                  to={`/organizations/${organizationName}/settingform`}
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
-                </a>
+                </OrganizationMenuLink>
               </li>
             ) : null}
           </ul>
         </div>
       </div>
     </div>
+  );
+}
+
+function OrganizationMenuLink({
+  basePath,
+  children,
+  onNavigate,
+  to,
+}: {
+  basePath: string;
+  children: ReactNode;
+  onNavigate: (to: string) => void;
+  to: string;
+}) {
+  const navigateWithinOrganizationMenu = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    onNavigate(to);
+  };
+
+  return (
+    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinOrganizationMenu}>
+      {children}
+    </a>
   );
 }
 

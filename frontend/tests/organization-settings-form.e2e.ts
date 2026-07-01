@@ -192,6 +192,33 @@ test("organization settings menu members link preserves legacy href with SPA tra
   await expect(page.locator("#addNewMember")).toBeVisible();
 });
 
+test("organization settings menu home link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationSettings(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/settingform`);
+  const homeLink = page.locator(".project-menu-gruop a").filter({ hasText: "Group Home" });
+  await expect(homeLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await homeLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator(".project-menu-gruop li").first()).toHaveClass("active");
+  await expect(page.locator("#mylist-filter")).toBeVisible();
+});
+
 async function mockOrganizationSettings(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -227,6 +254,33 @@ async function mockOrganizationSettings(page: Page) {
       body: JSON.stringify(organizationAdminPayload()),
     });
   });
+  await page.route("**/api/v1/organizations/weblabs/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(organizationContainerPayload()),
+    });
+  });
+}
+
+function organizationContainerPayload() {
+  return {
+    adminMembers: [
+      {
+        avatarUrl: "/assets/images/default-avatar-45.png",
+        loginId: "admin",
+        role: "org_admin",
+        userLabel: "Site Admin",
+      },
+    ],
+    description: "Web labs group",
+    logoUrl: "/assets/images/organization_default_logo.png",
+    memberMembers: [],
+    organizationName: "weblabs",
+    viewerCanCreateProject: true,
+    viewerCanLeave: true,
+    viewerCanUpdate: true,
+    visibleProjects: [],
+  };
 }
 
 function organizationAdminPayload() {
