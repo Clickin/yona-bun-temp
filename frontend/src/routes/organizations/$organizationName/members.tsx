@@ -429,40 +429,64 @@ function OrganizationMenu({
   viewerCanUpdate: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
+  const navigate = (to: string) => {
+    router.navigate({ to });
+  };
 
   return (
     <div className="project-menu-outer">
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className="">
-            <a href={organizationHref(basePath, organizationName)}>{t("title.organizationHome")}</a>
+            <OrganizationRouteLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}`}
+            >
+              {t("title.organizationHome")}
+            </OrganizationRouteLink>
           </li>
           <li className="">
-            <a href={prefixBasePath(basePath, `/organizations/${organizationName}/issues`)}>
+            <OrganizationRouteLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}/issues`}
+            >
               {t("menu.issue")}
-            </a>
+            </OrganizationRouteLink>
           </li>
           <li className="">
-            <a href={prefixBasePath(basePath, `/organizations/${organizationName}/boards`)}>
+            <OrganizationRouteLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}/boards`}
+            >
               {t("menu.board")}
-            </a>
+            </OrganizationRouteLink>
           </li>
           <li className="">
-            <a href={prefixBasePath(basePath, `/organizations/${organizationName}/pullrequests`)}>
+            <OrganizationRouteLink
+              basePath={basePath}
+              onNavigate={navigate}
+              to={`/organizations/${organizationName}/pullrequests`}
+            >
               {t("menu.pullRequest")}
-            </a>
+            </OrganizationRouteLink>
           </li>
         </ul>
         <div className="project-setting">
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">
-                <a
-                  href={prefixBasePath(basePath, `/organizations/${organizationName}/settingform`)}
+                <OrganizationRouteLink
+                  basePath={basePath}
+                  onNavigate={navigate}
+                  to={`/organizations/${organizationName}/settingform`}
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
-                </a>
+                </OrganizationRouteLink>
               </li>
             ) : null}
           </ul>
@@ -490,37 +514,37 @@ function OrganizationSettingMenu({
   return (
     <ul className="nav nav-tabs">
       <li className="">
-        <OrganizationSettingLink
+        <OrganizationRouteLink
           basePath={basePath}
           onNavigate={navigate}
           to={`/organizations/${organizationName}/settingform`}
         >
           {t("organization.settingFrom")}
-        </OrganizationSettingLink>
+        </OrganizationRouteLink>
       </li>
       <li className={active === "members" ? "active" : ""}>
-        <OrganizationSettingLink
+        <OrganizationRouteLink
           basePath={basePath}
           onNavigate={navigate}
           to={`/organizations/${organizationName}/members`}
         >
           {t("organization.member")}
-        </OrganizationSettingLink>
+        </OrganizationRouteLink>
       </li>
       <li className="">
-        <OrganizationSettingLink
+        <OrganizationRouteLink
           basePath={basePath}
           onNavigate={navigate}
           to={`/organizations/${organizationName}/deleteForm`}
         >
           {t("organization.delete")}
-        </OrganizationSettingLink>
+        </OrganizationRouteLink>
       </li>
     </ul>
   );
 }
 
-function OrganizationSettingLink({
+function OrganizationRouteLink({
   basePath,
   children,
   onNavigate,
@@ -531,7 +555,7 @@ function OrganizationSettingLink({
   onNavigate: (to: string) => void;
   to: string;
 }) {
-  const navigateWithinOrganizationSettings = (event: MouseEvent<HTMLAnchorElement>) => {
+  const navigateWithinOrganization = (event: MouseEvent<HTMLAnchorElement>) => {
     if (
       event.defaultPrevented ||
       event.button !== 0 ||
@@ -548,7 +572,7 @@ function OrganizationSettingLink({
   };
 
   return (
-    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinOrganizationSettings}>
+    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinOrganization}>
       {children}
     </a>
   );
