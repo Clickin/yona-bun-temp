@@ -408,8 +408,19 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/\$user\.tsx$/i,
       /^frontend\/src\/routes\/\$user\/route\.tsx$/i,
       /^frontend\/src\/routes\/-workspace-views\.tsx$/i,
+      /^crates\/persistence\/src\/repo\/project_activity\.rs$/i,
+      /^crates\/persistence\/src\/repo_types\.rs$/i,
+      /^crates\/server\/src\/api_types\.rs$/i,
+      /^crates\/server\/src\/routes\/(?:users|workspace)\.rs$/i,
     ],
-    testKeywords: ["user-profile", "profile", "workspace", "route-parity", "api-query"],
+    testKeywords: [
+      "user-profile",
+      "profile",
+      "workspace",
+      "route-parity",
+      "api-query",
+      "rest_public_user_profile",
+    ],
     provenanceDocs: [
       "docs/provenance/phase-0b/user-workspace.md",
       "docs/provenance/core-parity-audit.md",
@@ -835,6 +846,18 @@ function classifyCapability(filePath, changedFiles = [], repoRoot = DEFAULT_REPO
     }
   }
 
+  const publicUserProfileBucket = [...PARITY_SLICES, ...DOMAIN_BUCKETS].find(
+    (bucket) => bucket.id === "public-user-profile",
+  );
+  if (
+    publicUserProfileBucket &&
+    isPublicUserProfileBackendSurface(filePath) &&
+    capabilityHasTestEvidence(publicUserProfileBucket, changedFiles, repoRoot) &&
+    capabilityHasProvenanceEvidence(publicUserProfileBucket, changedFiles)
+  ) {
+    return publicUserProfileBucket;
+  }
+
   const markdownBucket = DOMAIN_BUCKETS.find(
     (bucket) => bucket.id === "project-markdown-rendering",
   );
@@ -874,6 +897,16 @@ function classifyCapability(filePath, changedFiles = [], repoRoot = DEFAULT_REPO
   }
 
   return null;
+}
+
+function isPublicUserProfileBackendSurface(filePath) {
+  return [
+    "crates/persistence/src/repo/project_activity.rs",
+    "crates/persistence/src/repo_types.rs",
+    "crates/server/src/api_types.rs",
+    "crates/server/src/routes/users.rs",
+    "crates/server/src/routes/workspace.rs",
+  ].includes(filePath);
 }
 
 function capabilityHasTestEvidence(capability, changedFiles, repoRoot) {

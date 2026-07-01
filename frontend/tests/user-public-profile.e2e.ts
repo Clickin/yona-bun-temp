@@ -40,7 +40,7 @@ const EXPECTED_PROFILE_SCREEN = `
                   <li class="post-item title" id="issue-item-11" href="__BASE_PATH__/door/sample/issue/7">
                     <div class="span12 span-hard-wrap">
                       <div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/door/sample" class="title project" data-toggle="tooltip" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#7</span></div>
-                      <div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/7" class="title">Open profile issue</a><span class="item-count-groups"><a href="__BASE_PATH__/door/sample/issue/7#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a></span><span class="for-subtask-progressbar"></span><div class="child-issue-list hide"></div></span></div>
+                      <div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/7" class="title">Open profile issue</a><span class="item-count-groups"><a href="__BASE_PATH__/door/sample/issue/7#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a></span><span class="for-subtask-progressbar"></span><a href="__BASE_PATH__/door/sample/issues?state=open&labelIds=17" class="label issue-label list-label" data-label-id="17" style="background:rgb(244,67,54)">Bug</a><div class="child-issue-list hide"></div></span></div>
                       <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/door" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="door">Door User</a></div>
                       <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="alice">Alice</a></div>
                       <div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="alice">Alice</a></span><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="2026-07-01">2026-07-01</span></span></div>
@@ -287,6 +287,14 @@ async function mockPublicProfile(page: Page, options: MockPublicProfileOptions =
             commentCount: 3,
             id: 11,
             issueNumber: 7,
+            labels: [
+              {
+                categoryName: "Type",
+                color: "#f44336",
+                id: 17,
+                name: "Bug",
+              },
+            ],
             ownerName: "door",
             projectName: "sample",
             state: "open",

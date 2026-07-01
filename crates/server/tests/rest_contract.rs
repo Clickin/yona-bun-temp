@@ -15,8 +15,8 @@ use yoram_migration::Migrator;
 use yoram_persistence::{
     email, issue, title_head, user_project_notification, watch, AppRepository,
     CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput, CreatePostingInput,
-    CreateProjectInput, CreatePullRequestInput, CreatePullRequestResult, IssueMutationInput,
-    PostingMutationInput, PullRequestMutationInput,
+    CreateProjectInput, CreateProjectLabelInput, CreatePullRequestInput, CreatePullRequestResult,
+    IssueMutationInput, PostingMutationInput, PullRequestMutationInput,
 };
 use yoram_server::{
     create_router, create_router_with_app_repository, create_router_with_repository_and_app_config,
@@ -5389,6 +5389,18 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
         .add_project_membership(private_project.id, owner.id, "member")
         .await
         .unwrap();
+    let (profile_label, _) = repository
+        .create_project_label(CreateProjectLabelInput {
+            category_is_exclusive: false,
+            category_name: "Type".to_string(),
+            label_color: "#f44336".to_string(),
+            label_name: "Bug".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "publicYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("profile issue label");
     repository
         .create_issue(CreateIssueInput {
             actor_display_name: "owner".to_string(),
@@ -5403,7 +5415,7 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
                 due_date: None,
                 is_draft: false,
                 is_publish: false,
-                label_ids: Vec::new(),
+                label_ids: vec![profile_label.id],
                 milestone_id: None,
                 parent_issue_id: None,
                 title: "public profile issue".to_string(),
@@ -5463,6 +5475,9 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
     assert_eq!(issues.len(), 1);
     assert_eq!(issues[0]["authorLoginId"], "owner");
     assert_eq!(issues[0]["assigneeLoginId"], "owner");
+    assert_eq!(issues[0]["labels"][0]["id"], profile_label.id);
+    assert_eq!(issues[0]["labels"][0]["name"], "Bug");
+    assert_eq!(issues[0]["labels"][0]["color"], "#f44336");
     let pull_requests = profile["pullRequestItems"].as_array().unwrap();
     assert_eq!(pull_requests.len(), 1);
     assert_eq!(pull_requests[0]["contributorLoginId"], "owner");

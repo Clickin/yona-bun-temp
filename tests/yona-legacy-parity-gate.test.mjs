@@ -578,6 +578,12 @@ test("maps public user profile files to the user workspace provenance slice", ()
     "frontend/src/api/users.ts",
     "frontend/src/routes/$user.tsx",
     "frontend/src/routes/-workspace-views.tsx",
+    "crates/persistence/src/repo/project_activity.rs",
+    "crates/persistence/src/repo_types.rs",
+    "crates/server/src/api_types.rs",
+    "crates/server/src/routes/users.rs",
+    "crates/server/src/routes/workspace.rs",
+    "crates/server/tests/rest_contract.rs",
     "frontend/tests/user-profile-parity.e2e.ts",
     "docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md",
   ]);

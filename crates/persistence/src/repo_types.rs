@@ -1485,6 +1485,7 @@ pub struct WorkspaceIssueListItemRecord {
     pub author_login_id: String,
     pub comment_count: u32,
     pub issue_number: i64,
+    pub labels: Vec<IssueLabelRecord>,
     pub owner_name: String,
     pub project_name: String,
     pub state: String,

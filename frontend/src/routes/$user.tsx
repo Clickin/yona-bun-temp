@@ -9,6 +9,7 @@ import type {
   WorkspaceMemberProjectItem,
   WorkspaceProfile,
   WorkspacePullRequestItem,
+  YonaLabel,
   YonaRecord,
 } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
@@ -420,6 +421,7 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
   const issueId = numberField(issue, "id", issueNumber);
   const projectHref = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
   const issueHref = `${projectHref}/issue/${issueNumber}`;
+  const labels = sortedWorkspaceIssueLabels(issue.labels ?? []);
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
 
   return (
@@ -446,6 +448,17 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
             </a>
             <ProfileIssueCommentCount issue={issue} issueHref={issueHref} />
             <span className="for-subtask-progressbar"></span>
+            {labels.map((label) => (
+              <a
+                href={`${projectHref}/issues?state=open&labelIds=${String(label.id)}`}
+                className="label issue-label list-label"
+                data-label-id={String(label.id)}
+                key={String(label.id)}
+                style={{ background: label.color }}
+              >
+                {label.name}
+              </a>
+            ))}
             <div className="child-issue-list hide"></div>
           </span>
         </div>
@@ -485,6 +498,17 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
       </div>
     </li>
   );
+}
+
+function sortedWorkspaceIssueLabels(labels: YonaLabel[]) {
+  return labels.slice().sort(compareIssueLabels);
+}
+
+function compareIssueLabels(left: YonaLabel, right: YonaLabel) {
+  const categoryOrder = stringField(left.categoryName, "").localeCompare(
+    stringField(right.categoryName, ""),
+  );
+  return categoryOrder || left.name.localeCompare(right.name);
 }
 
 function ProfileIssueCommentCount({

@@ -68,7 +68,9 @@ export type WorkspaceProfile = YonaRecord & {
   sinceLabel: string;
 };
 
-export type WorkspaceIssueItem = YonaRecord;
+export type WorkspaceIssueItem = YonaRecord & {
+  labels?: YonaLabel[];
+};
 
 export type WorkspacePullRequestItem = YonaRecord;
 

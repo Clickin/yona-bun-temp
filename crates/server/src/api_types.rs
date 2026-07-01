@@ -734,6 +734,8 @@ pub struct WorkspaceIssueItem {
     #[serde(default)]
     pub issue_number: i64,
     #[serde(default)]
+    pub labels: Vec<IssueLabel>,
+    #[serde(default)]
     pub title: String,
     #[serde(default)]
     pub state: String,

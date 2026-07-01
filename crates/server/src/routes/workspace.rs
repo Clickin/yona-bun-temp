@@ -193,6 +193,11 @@ fn workspace_issue_item_from_record(
         author_login_id: record.author_login_id.clone(),
         comment_count: record.comment_count,
         issue_number: record.issue_number,
+        labels: record
+            .labels
+            .iter()
+            .map(super::utils::issue_label_from_record)
+            .collect(),
         owner_name: record.owner_name.clone(),
         project_name: record.project_name.clone(),
         state: record.state.clone(),

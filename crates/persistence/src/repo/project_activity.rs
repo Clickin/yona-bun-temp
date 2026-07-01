@@ -642,6 +642,7 @@ impl AppRepositoryImpl<'_> {
             };
             let author_login_id = row.author_login_id.unwrap_or_default();
             let author_label = row.author_name.unwrap_or_default();
+            let labels = self.list_issue_labels(row.id).await?;
             let (assignee_login_id, assignee_label) = match row.assignee_id {
                 Some(assignee_id) => {
                     let assignee_user_id = assignee::Entity::find_by_id(assignee_id)
@@ -667,6 +668,7 @@ impl AppRepositoryImpl<'_> {
                 author_login_id,
                 comment_count: row.num_of_comments.unwrap_or_default() as u32,
                 issue_number,
+                labels,
                 owner_name: project_record.owner_name,
                 project_name: project_record.project_name,
                 state: issue_state_from_raw(row.state),
