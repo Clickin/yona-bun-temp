@@ -146,6 +146,27 @@ test("project issue detail toggles legacy comment update form through comment-ed
   await expect(comment.locator("#comment-body-77")).toBeVisible();
 });
 
+test("project issue detail preserves legacy child comment anchor divs", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const comment = page.locator(".span-left-pane #comment-77");
+  const childAnchor = comment.locator(":scope > #comment-78");
+  await expect(childAnchor).toHaveCount(1);
+  await expect(comment.locator(".one-line-comment #comment-78")).toHaveCount(0);
+  await expect(comment.locator('.subcomment-author a[href="#comment-78"].ago')).toHaveText(
+    "Jul 2, 2026",
+  );
+
+  expect(await childCommentAnchorMetrics(page)).toEqual({
+    anchorHeight: 0,
+    anchorNextClass: "comment-avatar",
+    childHref: "#comment-78",
+    inlineChildAnchorCount: 0,
+  });
+});
+
 test("project issue detail renders legacy draft header state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {
@@ -1150,6 +1171,21 @@ async function commentUpdateFormMetrics(page: Page) {
       formDisplay: form ? window.getComputedStyle(form).display : null,
       replyDisplay: reply ? window.getComputedStyle(reply).display : null,
       textareaValue: textarea?.value,
+    };
+  });
+}
+
+async function childCommentAnchorMetrics(page: Page) {
+  return page.locator(".span-left-pane #comment-77").evaluate((comment) => {
+    const anchor = comment.querySelector<HTMLElement>(":scope > #comment-78");
+    const childAnchor = comment.querySelector<HTMLAnchorElement>(
+      '.subcomment-author a[href="#comment-78"].ago',
+    );
+    return {
+      anchorHeight: anchor ? anchor.getBoundingClientRect().height : null,
+      anchorNextClass: anchor?.nextElementSibling?.className ?? null,
+      childHref: childAnchor?.getAttribute("href") ?? null,
+      inlineChildAnchorCount: comment.querySelectorAll(".one-line-comment #comment-78").length,
     };
   });
 }
