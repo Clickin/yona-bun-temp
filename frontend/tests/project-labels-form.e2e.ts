@@ -88,6 +88,36 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
 
   const expected = expectedProjectLabels(basePath);
   expect(await canonicalizeScreenRoots(page)).toEqual(await canonicalizeHtml(page, expected));
+  await expect(labelFormMetrics(page)).resolves.toEqual({
+    activeTabClass: "active",
+    activeTabHeight: "38px",
+    categoryInputWidth: "214px",
+    colorInputWidth: "90px",
+    colorRowMarginTop: "3px",
+    copyFormMarginBottom: "30px",
+    copyFormWidth: 1260,
+    copyLegendDisplay: "block",
+    copyLegendMarginBottom: "10px",
+    copyOwnerHeight: "30px",
+    copyOwnerWidth: "214px",
+    copySubmitHeight: "30px",
+    copySubmitPadding: "4px 12px",
+    copyWrapMarginTop: "0px",
+    editCategoryDisplay: "none",
+    editCategoryWidth: "500px",
+    editLabelDisplay: "none",
+    editLabelWidth: "500px",
+    emptyPadding: "100px 0px",
+    labelsListMarginTop: "0px",
+    newFormMarginBottom: "30px",
+    newWrapMarginTop: "0px",
+    pageWrapMinWidth: "1100px",
+    presetColorHeight: "24px",
+    presetColorWidth: "auto",
+    projectPageMarginTop: "5px",
+    projectPageWidth: 1260,
+    tabsMarginBottom: "15px",
+  });
 });
 
 test("project labels renders legacy project/partial_issuelabels_list.scala.html populated list", async ({
@@ -218,6 +248,87 @@ async function labelListMetrics(page: Page) {
       labelName: firstLabel?.getAttribute("data-label-name"),
       updateUri: editButton?.getAttribute("data-update-uri"),
     };
+  });
+}
+
+async function labelFormMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = requireElement(".page-wrap-outer");
+    const projectPageWrap = requireElement(".project-page-wrap.label-editor-wrap");
+    const tabs = requireElement(".project-page-wrap > .nav.nav-tabs");
+    const activeTab = requireElement("#subMenuIssueLabel");
+    const copyForm = requireElement("#copyLabel");
+    const copyLegend = requireElement("#copyLabel .form-legend");
+    const copyWrap = requireElement("#copyLabel .form-wrap");
+    const copyOwner = requireElement('#copyLabel input[name="owner"]');
+    const copySubmit = requireElement("#copyLabel .btn-submit");
+    const newForm = requireElement("#frmNewLabel");
+    const newWrap = requireElement("#frmNewLabel .form-wrap");
+    const categoryInput = requireElement('#frmNewLabel input[name="category"]');
+    const colorRow = requireElement("#frmNewLabel .label-preset-colors");
+    const presetColor = requireElement("#frmNewLabel .btn-preset-color");
+    const colorInput = requireElement('#frmNewLabel input[name="color"]');
+    const labelsList = requireElement("#labelsList");
+    const empty = requireElement("#labelsList .error-wrap");
+    const editCategory = requireElement("#editCategory");
+    const editLabel = requireElement("#editLabel");
+    const pageWrapStyle = getComputedStyle(pageWrapOuter);
+    const projectPageStyle = getComputedStyle(projectPageWrap);
+    const tabsStyle = getComputedStyle(tabs);
+    const activeTabStyle = getComputedStyle(activeTab);
+    const copyFormStyle = getComputedStyle(copyForm);
+    const copyLegendStyle = getComputedStyle(copyLegend);
+    const copyWrapStyle = getComputedStyle(copyWrap);
+    const copyOwnerStyle = getComputedStyle(copyOwner);
+    const copySubmitStyle = getComputedStyle(copySubmit);
+    const newFormStyle = getComputedStyle(newForm);
+    const newWrapStyle = getComputedStyle(newWrap);
+    const categoryInputStyle = getComputedStyle(categoryInput);
+    const colorRowStyle = getComputedStyle(colorRow);
+    const presetColorStyle = getComputedStyle(presetColor);
+    const colorInputStyle = getComputedStyle(colorInput);
+    const labelsListStyle = getComputedStyle(labelsList);
+    const emptyStyle = getComputedStyle(empty);
+    const editCategoryStyle = getComputedStyle(editCategory);
+    const editLabelStyle = getComputedStyle(editLabel);
+    return {
+      activeTabClass: activeTab.className,
+      activeTabHeight: activeTabStyle.height,
+      colorInputWidth: colorInputStyle.width,
+      colorRowMarginTop: colorRowStyle.marginTop,
+      copyFormMarginBottom: copyFormStyle.marginBottom,
+      copyFormWidth: Math.round(copyForm.getBoundingClientRect().width),
+      copyLegendDisplay: copyLegendStyle.display,
+      copyLegendMarginBottom: copyLegendStyle.marginBottom,
+      copyOwnerHeight: copyOwnerStyle.height,
+      copyOwnerWidth: copyOwnerStyle.width,
+      copySubmitHeight: copySubmitStyle.height,
+      copySubmitPadding: copySubmitStyle.padding,
+      copyWrapMarginTop: copyWrapStyle.marginTop,
+      editCategoryDisplay: editCategoryStyle.display,
+      editCategoryWidth: editCategoryStyle.width,
+      editLabelDisplay: editLabelStyle.display,
+      editLabelWidth: editLabelStyle.width,
+      emptyPadding: emptyStyle.padding,
+      labelsListMarginTop: labelsListStyle.marginTop,
+      newFormMarginBottom: newFormStyle.marginBottom,
+      newWrapMarginTop: newWrapStyle.marginTop,
+      pageWrapMinWidth: pageWrapStyle.minWidth,
+      presetColorHeight: presetColorStyle.height,
+      presetColorWidth: presetColorStyle.width,
+      projectPageMarginTop: projectPageStyle.marginTop,
+      projectPageWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
+      tabsMarginBottom: tabsStyle.marginBottom,
+      categoryInputWidth: categoryInputStyle.width,
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
   });
 }
 
