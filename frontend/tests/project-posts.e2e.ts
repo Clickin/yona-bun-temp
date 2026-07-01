@@ -19,6 +19,19 @@ const EXPECTED_PROJECT_POSTS_PREFIX = EXPECTED_PROJECT_POSTS.replace(
   '<span class="post-id">3</span><a href="javascript:void(0)" class="title-prefix">[P1]</a><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a>',
 );
 
+function expectedProjectPostsEmpty() {
+  const listStart = EXPECTED_PROJECT_POSTS.indexOf('<div class="filter-wrap board">');
+  const listEnd = EXPECTED_PROJECT_POSTS.indexOf(
+    '<div class="write-btn-wrap"></div><div id="pagination"></div>',
+  );
+  return `${EXPECTED_PROJECT_POSTS.slice(0, listStart).replace(
+    'value="release"',
+    'value="empty"',
+  )}<div class="error-wrap"><i class="ico ico-err1"></i><p>No post has been added.</p></div>${EXPECTED_PROJECT_POSTS.slice(
+    listEnd,
+  )}`;
+}
+
 test("project board list matches legacy board/list.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page);
@@ -46,6 +59,23 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_POSTS.replaceAll("__BASE_PATH__", basePath)),
+  );
+});
+
+test("project board list empty state matches legacy board/list.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page, "empty");
+
+  await page.goto(`${basePath}/admin/sample/posts?filter=empty&labelIds=8`);
+  await expect(page.locator("#option_form")).toBeVisible();
+  await expect(page.locator(".error-wrap")).toHaveText("No post has been added.");
+  await expect(page.locator(".filter-wrap.board")).toHaveCount(0);
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(page, expectedProjectPostsEmpty().replaceAll("__BASE_PATH__", basePath)),
   );
 });
 
@@ -85,7 +115,7 @@ async function issueLabelColorMetrics(page: Page) {
     });
 }
 
-async function mockProjectPosts(page: Page, state: "default" | "prefix" = "default") {
+async function mockProjectPosts(page: Page, state: "default" | "empty" | "prefix" = "default") {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -165,58 +195,63 @@ async function mockProjectPosts(page: Page, state: "default" | "prefix" = "defau
     });
   });
   await page.route("**/api/v1/projects/admin/sample/posts?**", async (route) => {
+    const isEmpty = state === "empty";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        items: [
-          {
-            authorAvatarUrl: "/assets/images/default-avatar-32.png",
-            authorLabel: "Dev Member",
-            authorLoginId: "dev",
-            commentCount: 2,
-            createdLabel: "Jul 2, 2026",
-            labels: [
+        items: isEmpty
+          ? []
+          : [
               {
-                categoryId: "3",
-                categoryIsExclusive: false,
-                categoryName: "type",
-                color: "#51aacc",
-                id: "8",
-                name: "bug",
+                authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                authorLabel: "Dev Member",
+                authorLoginId: "dev",
+                commentCount: 2,
+                createdLabel: "Jul 2, 2026",
+                labels: [
+                  {
+                    categoryId: "3",
+                    categoryIsExclusive: false,
+                    categoryName: "type",
+                    color: "#51aacc",
+                    id: "8",
+                    name: "bug",
+                  },
+                ],
+                notice: false,
+                ownerName: "admin",
+                postNumber: "3",
+                projectName: "sample",
+                readme: false,
+                title: state === "prefix" ? "[P1] Release note" : "Release note",
+                updatedLabel: "Jul 2, 2026",
               },
             ],
-            notice: false,
-            ownerName: "admin",
-            postNumber: "3",
-            projectName: "sample",
-            readme: false,
-            title: state === "prefix" ? "[P1] Release note" : "Release note",
-            updatedLabel: "Jul 2, 2026",
-          },
-        ],
-        notices: [
-          {
-            authorAvatarUrl: "/assets/images/default-avatar-32.png",
-            authorLabel: "Site Admin",
-            authorLoginId: "admin",
-            commentCount: 1,
-            createdLabel: "Jul 1, 2026",
-            labels: [],
-            notice: true,
-            ownerName: "admin",
-            postNumber: "2",
-            projectName: "sample",
-            readme: false,
-            title: "Pinned notice",
-            updatedLabel: "Jul 1, 2026",
-          },
-        ],
+        notices: isEmpty
+          ? []
+          : [
+              {
+                authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                authorLabel: "Site Admin",
+                authorLoginId: "admin",
+                commentCount: 1,
+                createdLabel: "Jul 1, 2026",
+                labels: [],
+                notice: true,
+                ownerName: "admin",
+                postNumber: "2",
+                projectName: "sample",
+                readme: false,
+                title: "Pinned notice",
+                updatedLabel: "Jul 1, 2026",
+              },
+            ],
         ownerName: "admin",
         pageNum: 1,
         pageSize: 15,
         projectName: "sample",
         readme: null,
-        totalCount: 2,
+        totalCount: isEmpty ? 0 : 2,
       }),
     });
   });
