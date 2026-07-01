@@ -13,6 +13,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { SitePagination } from "../../sites/-pagination";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 export type ProjectPullRequestsSearch = {
@@ -245,7 +246,9 @@ function ProjectPullRequestsBody({
                   currentUserLabel={currentUserLabel(pullRequests)}
                   defaultBranch={stringField(recordField(project).defaultBranch, "main")}
                   isUsingReviewerCount={booleanField(recordField(project).isUsingReviewerCount)}
+                  listAction={searchAction}
                   pullRequests={pullRequests}
+                  search={search}
                 />
               </div>
             </div>
@@ -261,13 +264,17 @@ function ProjectPullRequestRows({
   currentUserLabel,
   defaultBranch,
   isUsingReviewerCount,
+  listAction,
   pullRequests,
+  search,
 }: {
   basePath: string;
   currentUserLabel: string;
   defaultBranch: string;
   isUsingReviewerCount: boolean;
+  listAction: string;
   pullRequests: PullRequestListResponse;
+  search: ProjectPullRequestsSearch;
 }) {
   const { t } = useLegacyMessages();
 
@@ -294,8 +301,34 @@ function ProjectPullRequestRows({
           pullRequest={pullRequest}
         />
       ))}
-      <div id="pagination"></div>
+      <ProjectPullRequestPagination
+        listAction={listAction}
+        pullRequests={pullRequests}
+        search={search}
+      />
     </ul>
+  );
+}
+
+function ProjectPullRequestPagination({
+  listAction,
+  pullRequests,
+  search,
+}: {
+  listAction: string;
+  pullRequests: PullRequestListResponse;
+  search: ProjectPullRequestsSearch;
+}) {
+  const pages = totalPages(pullRequests);
+  if (pages <= 1) {
+    return <div id="pagination"></div>;
+  }
+  return (
+    <SitePagination
+      currentPage={pullRequests.pageNum}
+      pageHref={(pageNum) => pullRequestPageHref(listAction, search, pageNum)}
+      totalPages={pages}
+    />
   );
 }
 
@@ -459,6 +492,22 @@ function projectPullRequestsHref(basePath: string, ownerName: string, projectNam
   return prefixBasePath(basePath, `/${ownerName}/${projectName}/pullRequests`);
 }
 
+function pullRequestPageHref(
+  listAction: string,
+  search: ProjectPullRequestsSearch,
+  pageNum: number,
+) {
+  const params = new URLSearchParams();
+  if (search.contributorId) {
+    params.set("contributorId", String(search.contributorId));
+  }
+  if (search.filter) {
+    params.set("filter", search.filter);
+  }
+  params.set("pageNum", String(pageNum));
+  return `${listAction}?${params.toString()}`;
+}
+
 function stringField(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
 }
@@ -480,6 +529,10 @@ function recordField(value: unknown): Record<string, unknown> {
 
 function percentOf(count: number, total: number) {
   return total > 0 ? Math.round((count / total) * 100) : 0;
+}
+
+function totalPages(pullRequests: PullRequestListResponse) {
+  return Math.ceil(pullRequests.totalCount / Math.max(pullRequests.pageSize, 1));
 }
 
 function splitHeaderWordsInBrackets(title: string) {

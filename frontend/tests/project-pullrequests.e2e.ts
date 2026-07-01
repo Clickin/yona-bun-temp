@@ -113,6 +113,26 @@ test("project pull request reviewer-count row matches legacy git/partial_list.sc
   );
 });
 
+test("project pull request multi-page list matches legacy pagination DOM", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=pages&pageNum=1`);
+  await expect(page.locator("#search")).toBeVisible();
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
+  await expect(page.locator("#pagination a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequests?filter=pages&pageNum=2`,
+  );
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(page, expectedPagedPullRequests(basePath)),
+  );
+});
+
 function expectedClosedPullRequestsEmpty(basePath: string) {
   return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
     .replace(
@@ -222,6 +242,18 @@ function expectedReviewerPullRequests(basePath: string) {
     );
 }
 
+function expectedPagedPullRequests(basePath: string) {
+  return expectedPopulatedPullRequests(basePath)
+    .replace('value="row"', 'value="pages"')
+    .replace('<span class="num-badge">1</span>', '<span class="num-badge">2</span>')
+    .replace(
+      '<div id="pagination"></div>',
+      '<div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">PREV</span></li><li class="page-num"><input class="input-mini nospinner" max="2" min="1" name="pageNum" pattern="[0-9]*" readonly="" type="number" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">2</li><li class="page-num ikon"><a href="' +
+        basePath +
+        '/admin/sample/pullRequests?filter=pages&amp;pageNum=2" pjax-page=""><span>NEXT</span><i class="ico btn-pg-next"></i></a></li></ul></div>',
+    );
+}
+
 async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin?: boolean } = {}) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -327,7 +359,32 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
                 updatedLabel: "Jul 1, 2026",
               },
             ]
-          : [];
+          : filter === "pages" && category === "open"
+            ? [
+                {
+                  closedCommentThreadCount: 1,
+                  commentThreadCount: 2,
+                  conflict: false,
+                  contributorLabel: "Dev Member",
+                  contributorLoginId: "dev",
+                  createdLabel: "Jul 1, 2026",
+                  fromBranch: "feature/api",
+                  fromOwnerName: "dev",
+                  fromProjectName: "sample",
+                  id: 77,
+                  ownerName: "admin",
+                  projectName: "sample",
+                  pullRequestNumber: 7,
+                  receiverLabel: "Site Admin",
+                  receiverLoginId: "admin",
+                  reviewerCount: 0,
+                  state: "open",
+                  title: "[API] Restore PR rows",
+                  toBranch: "main",
+                  updatedLabel: "Jul 1, 2026",
+                },
+              ]
+            : [];
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -350,12 +407,12 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
         ],
         currentUserId: 1,
         items,
-        openCount: items.length,
+        openCount: filter === "pages" ? 2 : items.length,
         pageNum: 1,
-        pageSize: 15,
+        pageSize: filter === "pages" ? 1 : 15,
         recentlyPushedBranches: [],
         sentCount: 0,
-        totalCount: items.length,
+        totalCount: filter === "pages" ? 2 : items.length,
       }),
     });
   });
