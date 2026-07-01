@@ -64,6 +64,33 @@ export type CodeCommitDetailResponse = {
   threads: CodeReviewThread[];
 };
 
+export type CodeHistoryCommit = {
+  authorAvatarUrl: string;
+  authorDate: string;
+  authorEmail: string;
+  authorLoginId: string;
+  authorName: string;
+  commentCount: number;
+  commitId: string;
+  commitShortId: string;
+  message: string;
+  shortMessage: string;
+};
+
+export type CodeHistoryResponse = {
+  branches: Array<{ name: string }>;
+  breadcrumbs: Array<{ name: string; path: string }>;
+  commits: CodeHistoryCommit[];
+  hasNewer: boolean;
+  hasOlder: boolean;
+  noHead: boolean;
+  ownerName: string;
+  page: number;
+  path: string;
+  projectName: string;
+  selectedBranch: string;
+};
+
 export type CodeCommitDetailQuery = {
   branch?: string;
   path?: string;
@@ -156,6 +183,43 @@ function normalizeCommitDetail(
   };
 }
 
+function normalizeHistoryCommit(commit: Partial<CodeHistoryCommit>): CodeHistoryCommit {
+  return {
+    authorAvatarUrl: commit.authorAvatarUrl ?? "",
+    authorDate: commit.authorDate ?? "",
+    authorEmail: commit.authorEmail ?? "",
+    authorLoginId: commit.authorLoginId ?? "",
+    authorName: commit.authorName ?? "",
+    commentCount: commit.commentCount ?? 0,
+    commitId: commit.commitId ?? "",
+    commitShortId: commit.commitShortId ?? "",
+    message: commit.message ?? "",
+    shortMessage: commit.shortMessage ?? "",
+  };
+}
+
+function normalizeHistory(response: Partial<CodeHistoryResponse>): CodeHistoryResponse {
+  return {
+    branches: response.branches ?? [],
+    breadcrumbs: response.breadcrumbs ?? [],
+    commits: (response.commits ?? []).map(normalizeHistoryCommit),
+    hasNewer: response.hasNewer ?? false,
+    hasOlder: response.hasOlder ?? false,
+    noHead: response.noHead ?? false,
+    ownerName: response.ownerName ?? "",
+    page: response.page ?? 0,
+    path: response.path ?? "",
+    projectName: response.projectName ?? "",
+    selectedBranch: response.selectedBranch ?? "",
+  };
+}
+
+function projectPath(input: { ownerName: string; projectName: string }, suffix = "") {
+  return `/projects/${encodeURIComponent(input.ownerName)}/${encodeURIComponent(
+    input.projectName,
+  )}${suffix}`;
+}
+
 function commitPath(input: CommitDiscussionScopeInput, suffix = "") {
   return `/projects/${encodeURIComponent(input.ownerName)}/${encodeURIComponent(
     input.projectName,
@@ -166,6 +230,21 @@ function commitSearch(input: CodeCommitDetailQuery = {}) {
   const search = new URLSearchParams();
   if (input.branch) {
     search.set("branch", input.branch);
+  }
+  if (input.path) {
+    search.set("path", input.path);
+  }
+  const serialized = search.toString();
+  return serialized ? `?${serialized}` : "";
+}
+
+function historySearch(input: { branch?: string; page?: number; path?: string } = {}) {
+  const search = new URLSearchParams();
+  if (input.branch) {
+    search.set("branch", input.branch);
+  }
+  if (input.page) {
+    search.set("page", String(input.page));
   }
   if (input.path) {
     search.set("path", input.path);
@@ -195,6 +274,18 @@ export function readCodeCommitDetailRest(
     `${commitPath(input)}${commitSearch(input.query)}`,
     { fetchImpl, method: "GET" },
   ).then(normalizeCommitDetail);
+}
+
+export function readCodeHistoryRest(
+  runtimeConfig: RuntimeConfig,
+  input: { branch?: string; ownerName: string; page?: number; path?: string; projectName: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<CodeHistoryResponse> {
+  return restFetch<Partial<CodeHistoryResponse>>(
+    runtimeConfig,
+    `${projectPath(input, "/commits")}${historySearch(input)}`,
+    { fetchImpl, method: "GET" },
+  ).then(normalizeHistory);
 }
 
 export function createCommitDiscussionCommentRest(
@@ -317,5 +408,19 @@ export function codeCommitDetailQueryOptions(
       input.commitId,
       normalizedQuery,
     ),
+  });
+}
+
+export function codeHistoryQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: { branch?: string; ownerName: string; page?: number; path?: string; projectName: string },
+) {
+  return queryOptions({
+    queryFn: () => readCodeHistoryRest(runtimeConfig, input),
+    queryKey: apiQueryKeys.project.codeHistory(input.ownerName, input.projectName, {
+      branch: input.branch ?? "",
+      page: input.page ?? 0,
+      path: input.path ?? "",
+    }),
   });
 }
