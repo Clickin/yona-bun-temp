@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Fragment } from "react";
-import { readProjectPostQueryOptions, type BoardPostDetail } from "../../../../api/boards";
+import {
+  readProjectPostQueryOptions,
+  type BoardLabel,
+  type BoardPostDetail,
+} from "../../../../api/boards";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
@@ -187,6 +191,14 @@ function ProjectPostDetailBody({
                   </dd>
                 ) : null}
               </dl>
+              {!canUpdate ? (
+                <PostSelectedLabels
+                  basePath={basePath}
+                  labels={post.labels}
+                  ownerName={ownerName}
+                  projectName={projectName}
+                />
+              ) : null}
               <div className="right-menu-icons">
                 <PostActionButtons
                   canDelete={canDelete}
@@ -230,6 +242,43 @@ function ProjectPostDetailBody({
         </div>
       </div>
     </div>
+  );
+}
+
+function PostSelectedLabels({
+  basePath,
+  labels,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  labels: BoardLabel[];
+  ownerName: string;
+  projectName: string;
+}) {
+  if (!labels.length) {
+    return null;
+  }
+
+  const listLink = prefixBasePath(basePath, `/${ownerName}/${projectName}/posts`);
+
+  return (
+    <dl>
+      <dt>Label</dt>
+      <dd>
+        {labels.map((label) => (
+          <a
+            href={`${listLink}?labelIds=${encodeURIComponent(label.id)}`}
+            className="label issue-label active static"
+            data-label-id={label.id}
+            key={label.id}
+            style={{ background: label.color }}
+          >
+            {label.name}
+          </a>
+        ))}
+      </dd>
+    </dl>
   );
 }
 

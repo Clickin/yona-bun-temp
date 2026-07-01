@@ -123,6 +123,26 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
   );
 });
 
+test("project board detail renders legacy read-only selected labels", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page, "readonlyLabel");
+
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator(".issue-info.board-labels #labelIds")).toHaveCount(0);
+  await expect(
+    page.locator(".issue-info.board-labels .label.issue-label.active.static"),
+  ).toHaveAttribute("data-label-id", "8");
+
+  const expected =
+    `<dl><dt>Label</dt><dd><a href="__BASE_PATH__/admin/sample/posts?labelIds=8" class="label issue-label active static" data-label-id="8" style="background:rgb(81, 170, 204)">bug</a></dd></dl>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(
+    await canonicalize(page, ".issue-info.board-labels dl:has(a.label.issue-label.active.static)"),
+  ).toEqual(await canonicalizeHtml(page, expected));
+});
+
 async function issueLabelColorMetrics(page: Page) {
   return page
     .locator(".post-list-wrap:not(.notice-wrap) .issue-label")
@@ -141,7 +161,10 @@ async function issueLabelColorMetrics(page: Page) {
     });
 }
 
-async function mockProjectPosts(page: Page, state: "default" | "empty" | "prefix" = "default") {
+async function mockProjectPosts(
+  page: Page,
+  state: "default" | "empty" | "prefix" | "readonlyLabel" = "default",
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -299,7 +322,19 @@ async function mockProjectPosts(page: Page, state: "default" | "empty" | "prefix
         historyMarkdown: "",
         id: "33",
         isWatching: false,
-        labels: [],
+        labels:
+          state === "readonlyLabel"
+            ? [
+                {
+                  categoryId: "3",
+                  categoryIsExclusive: false,
+                  categoryName: "type",
+                  color: "#51aacc",
+                  id: "8",
+                  name: "bug",
+                },
+              ]
+            : [],
         notice: false,
         ownerName: "admin",
         permissions: {
@@ -309,7 +344,7 @@ async function mockProjectPosts(page: Page, state: "default" | "empty" | "prefix
           canRead: true,
           canSetNotice: true,
           canWatch: true,
-          canUpdate: true,
+          canUpdate: state !== "readonlyLabel",
         },
         postNumber: "3",
         projectName: "sample",
