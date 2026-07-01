@@ -706,7 +706,7 @@ function IssueActionButtons({
           data-toggle="popover"
           data-trigger="hover"
           data-placement="top"
-          data-content="Issue cannot be deleted"
+          data-content="Can't be deleted because of other users' comments"
         >
           <i className="yobicon-trash"></i>
         </button>

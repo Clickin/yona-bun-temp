@@ -155,6 +155,20 @@ test("project issue detail renders legacy read-only action buttons", async ({ pa
   );
 });
 
+test("project issue detail renders legacy disabled delete action", async ({ page }) => {
+  await mockProjectIssueDetail(page, { viewerCanDelete: false });
+
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
+
+  const expected = `<button type="button" class="icon disabled btn-transparent-with-fontsize-lineheight ml6" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Can't be deleted because of other users' comments"><i class="yobicon-trash"></i></button>`;
+  expect(
+    await canonicalize(page, ".span-left-pane > .board-actrow .act-row > button.disabled"),
+  ).toEqual(await canonicalizeHtml(page, expected));
+  expect(await canonicalize(page, ".issue-info .right-menu-icons > button.disabled")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+});
+
 test("project issue detail renders legacy attachment file items", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const issueAttachments = {
