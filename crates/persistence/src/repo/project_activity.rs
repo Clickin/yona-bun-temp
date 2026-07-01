@@ -646,6 +646,23 @@ impl AppRepositoryImpl<'_> {
             let due_date = row.due_date;
             let (milestone_id, milestone_title) =
                 self.issue_milestone_summary(row.milestone_id).await?;
+            let (parent_issue_number, parent_issue_title) =
+                self.issue_parent_summary(row.parent_id).await?;
+            let child_group_issue_id = row.parent_id.unwrap_or(row.id);
+            let child_issues = self
+                .list_issue_child_records(child_group_issue_id, &author_login_id)
+                .await?;
+            let direct_child_issues = self
+                .list_issue_child_records(row.id, &author_login_id)
+                .await?;
+            let child_open_count = direct_child_issues
+                .iter()
+                .filter(|child| child.state == "open")
+                .count() as u32;
+            let child_closed_count = direct_child_issues
+                .iter()
+                .filter(|child| child.state == "closed")
+                .count() as u32;
             let (assignee_login_id, assignee_label) = match row.assignee_id {
                 Some(assignee_id) => {
                     let assignee_user_id = assignee::Entity::find_by_id(assignee_id)
@@ -669,6 +686,9 @@ impl AppRepositoryImpl<'_> {
                 assignee_login_id,
                 author_label,
                 author_login_id,
+                child_closed_count,
+                child_issues,
+                child_open_count,
                 comment_count: row.num_of_comments.unwrap_or_default() as u32,
                 due_date_label: format_workspace_date_label(due_date),
                 due_date_overdue: due_date
@@ -679,6 +699,8 @@ impl AppRepositoryImpl<'_> {
                 milestone_id,
                 milestone_title,
                 owner_name: project_record.owner_name,
+                parent_issue_number,
+                parent_issue_title,
                 project_name: project_record.project_name,
                 state: issue_state_from_raw(row.state),
                 title: row.title.unwrap_or_default(),

@@ -40,7 +40,7 @@ const EXPECTED_PROFILE_SCREEN = `
                   <li class="post-item title" id="issue-item-11" href="__BASE_PATH__/door/sample/issue/7">
                     <div class="span12 span-hard-wrap">
                       <div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/door/sample" class="title project" data-toggle="tooltip" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#7</span></div>
-                      <div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/7" class="title">Open profile issue</a><span class="item-count-groups"><a href="__BASE_PATH__/door/sample/issue/7#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a></span><span class="for-subtask-progressbar"></span><a href="__BASE_PATH__/door/sample/issues?state=open&labelIds=17" class="label issue-label list-label" data-label-id="17" style="background:rgb(244,67,54)">Bug</a><div class="child-issue-list hide"></div></span></div>
+                      <div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/7" class="title">Open profile issue</a><span class="item-count-groups"><a href="__BASE_PATH__/door/sample/issue/7#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a></span><span class="for-subtask-progressbar"><div class="subtask-progress upload-progress red-outline"><div class="bar red" style="width: 50%;" title="Subtask"></div></div><span class="subtask-progress completion-ratio">1/2</span></span><a href="__BASE_PATH__/door/sample/issues?state=open&labelIds=17" class="label issue-label list-label" data-label-id="17" style="background:rgb(244,67,54)">Bug</a><div class="child-issue-list hide"><div class="child-issues"><div class="issue-item  child-issue"><span class="state-label open"></span><a class="twoColumeModeTarget" href="__BASE_PATH__/door/sample/issue/13"><span class="item-name"><span class="subtask-number">#13</span><span>Open profile child</span><span> - Alice</span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="2026-07-03">2026-07-03</span></div><div class="issue-item  child-issue"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><a class="twoColumeModeTarget" href="__BASE_PATH__/door/sample/issue/14"><span class="item-name"><span class="subtask-number">#14</span><span>Closed profile child</span><span></span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="2026-07-04">2026-07-04</span></div></div></div></span></div>
                       <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/door" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="door">Door User</a></div>
                       <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="alice">Alice</a></div>
                       <div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="alice">Alice</a></span><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="2026-07-01">2026-07-01</span><span class="pull-right " data-toggle="tooltip" data-placement="top" title="Due date: 2026-08-01"><i class="yobicon-clock2"></i>31 days</span></span></div>
@@ -284,6 +284,32 @@ async function mockPublicProfile(page: Page, options: MockPublicProfileOptions =
             assigneeLoginId: "alice",
             authorLabel: "Door User",
             authorLoginId: "door",
+            childClosedCount: 1,
+            childIssues: [
+              {
+                assigneeLabel: "Alice",
+                commentCount: 0,
+                createdLabel: "2026-07-03",
+                isDraft: false,
+                issueNumber: 13,
+                labels: [],
+                state: "open",
+                title: "Open profile child",
+                voterCount: 0,
+              },
+              {
+                assigneeLabel: "",
+                commentCount: 0,
+                createdLabel: "2026-07-04",
+                isDraft: false,
+                issueNumber: 14,
+                labels: [],
+                state: "closed",
+                title: "Closed profile child",
+                voterCount: 0,
+              },
+            ],
+            childOpenCount: 1,
             commentCount: 3,
             dueDateLabel: "2026-08-01",
             dueDateOverdue: false,

@@ -191,6 +191,13 @@ fn workspace_issue_item_from_record(
         assignee_login_id: record.assignee_login_id.clone(),
         author_label: record.author_label.clone(),
         author_login_id: record.author_login_id.clone(),
+        child_closed_count: record.child_closed_count,
+        child_issues: record
+            .child_issues
+            .iter()
+            .map(workspace_issue_child_item_from_record)
+            .collect(),
+        child_open_count: record.child_open_count,
         comment_count: record.comment_count,
         due_date_label: record.due_date_label.clone(),
         due_date_overdue: record.due_date_overdue,
@@ -204,11 +211,33 @@ fn workspace_issue_item_from_record(
         milestone_id: record.milestone_id.unwrap_or_default(),
         milestone_title: record.milestone_title.clone(),
         owner_name: record.owner_name.clone(),
+        parent_issue_number: record.parent_issue_number.unwrap_or_default(),
+        parent_issue_title: record.parent_issue_title.clone(),
         project_name: record.project_name.clone(),
         state: record.state.clone(),
         title: record.title.clone(),
         updated_label: record.updated_label.clone(),
         ..Default::default()
+    }
+}
+
+fn workspace_issue_child_item_from_record(
+    record: &persistence::IssueChildRecord,
+) -> WorkspaceIssueChildItem {
+    WorkspaceIssueChildItem {
+        assignee_label: record.assignee_label.clone(),
+        comment_count: record.comment_count,
+        created_label: record.created_label.clone(),
+        is_draft: record.is_draft,
+        issue_number: record.issue_number,
+        labels: record
+            .labels
+            .iter()
+            .map(super::utils::issue_label_from_record)
+            .collect(),
+        state: record.state.clone(),
+        title: record.title.clone(),
+        voter_count: record.voter_count,
     }
 }
 

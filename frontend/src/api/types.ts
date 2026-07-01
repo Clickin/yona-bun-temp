@@ -69,12 +69,17 @@ export type WorkspaceProfile = YonaRecord & {
 };
 
 export type WorkspaceIssueItem = YonaRecord & {
+  childClosedCount?: number;
+  childIssues?: YonaIssueListItem[];
+  childOpenCount?: number;
   dueDateLabel?: string;
   dueDateOverdue?: boolean;
   dueDateText?: string;
   labels?: YonaLabel[];
   milestoneId?: bigint | number | string;
   milestoneTitle?: string;
+  parentIssueNumber?: bigint | number | string;
+  parentIssueTitle?: string;
 };
 
 export type WorkspacePullRequestItem = YonaRecord;

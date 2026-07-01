@@ -5420,7 +5420,7 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
     let profile_due_date =
         DateTimeUtc::from(SystemTime::now() + Duration::from_secs(31 * 24 * 60 * 60)).naive_utc();
     let profile_due_date_label = profile_due_date.format("%Y-%m-%d").to_string();
-    repository
+    let profile_issue = repository
         .create_issue(CreateIssueInput {
             actor_display_name: "owner".to_string(),
             actor_id: owner.id,
@@ -5443,6 +5443,62 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
         .await
         .unwrap()
         .expect("public profile issue");
+    repository
+        .create_issue(CreateIssueInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner.id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "publicYobi".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: Vec::new(),
+                body_markdown: "open child profile issue body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
+                label_ids: Vec::new(),
+                milestone_id: None,
+                parent_issue_id: Some(profile_issue.id),
+                title: "open child profile issue".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("open child profile issue");
+    let closed_child_issue = repository
+        .create_issue(CreateIssueInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner.id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "publicYobi".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: Vec::new(),
+                body_markdown: "closed child profile issue body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
+                label_ids: Vec::new(),
+                milestone_id: None,
+                parent_issue_id: Some(profile_issue.id),
+                title: "closed child profile issue".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("closed child profile issue");
+    repository
+        .update_issue_state(
+            "owner",
+            "publicYobi",
+            closed_child_issue.issue_number,
+            "closed",
+        )
+        .await
+        .unwrap()
+        .expect("closed child issue state");
     match repository
         .create_pull_request(CreatePullRequestInput {
             actor_display_name: "owner".to_string(),
@@ -5491,17 +5547,45 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
     );
     assert_eq!(profile["viewerCanEditProfile"], false);
     let issues = profile["issueItems"].as_array().unwrap();
-    assert_eq!(issues.len(), 1);
-    assert_eq!(issues[0]["authorLoginId"], "owner");
-    assert_eq!(issues[0]["assigneeLoginId"], "owner");
-    assert_eq!(issues[0]["labels"][0]["id"], profile_label.id);
-    assert_eq!(issues[0]["labels"][0]["name"], "Bug");
-    assert_eq!(issues[0]["labels"][0]["color"], "#f44336");
-    assert_eq!(issues[0]["milestoneId"], profile_milestone.id);
-    assert_eq!(issues[0]["milestoneTitle"], "v1.0");
-    assert_eq!(issues[0]["dueDateLabel"], profile_due_date_label);
-    assert_eq!(issues[0]["dueDateOverdue"], false);
-    assert_eq!(issues[0]["dueDateText"], "31 days");
+    assert_eq!(issues.len(), 3);
+    let profile_issue = issues
+        .iter()
+        .find(|issue| issue["title"] == "public profile issue")
+        .expect("public profile parent issue");
+    assert_eq!(profile_issue["authorLoginId"], "owner");
+    assert_eq!(profile_issue["assigneeLoginId"], "owner");
+    assert_eq!(profile_issue["labels"][0]["id"], profile_label.id);
+    assert_eq!(profile_issue["labels"][0]["name"], "Bug");
+    assert_eq!(profile_issue["labels"][0]["color"], "#f44336");
+    assert_eq!(profile_issue["milestoneId"], profile_milestone.id);
+    assert_eq!(profile_issue["milestoneTitle"], "v1.0");
+    assert_eq!(profile_issue["dueDateLabel"], profile_due_date_label);
+    assert_eq!(profile_issue["dueDateOverdue"], false);
+    assert_eq!(profile_issue["dueDateText"], "31 days");
+    assert_eq!(profile_issue["childOpenCount"], 1);
+    assert_eq!(profile_issue["childClosedCount"], 1);
+    assert_eq!(
+        profile_issue["childIssues"][0]["title"],
+        "open child profile issue"
+    );
+    assert_eq!(profile_issue["childIssues"][0]["state"], "open");
+    assert_eq!(
+        profile_issue["childIssues"][1]["title"],
+        "closed child profile issue"
+    );
+    assert_eq!(profile_issue["childIssues"][1]["state"], "closed");
+    let open_child_profile_issue = issues
+        .iter()
+        .find(|issue| issue["title"] == "open child profile issue")
+        .expect("public profile child issue");
+    assert_eq!(
+        open_child_profile_issue["parentIssueNumber"],
+        profile_issue["issueNumber"]
+    );
+    assert_eq!(
+        open_child_profile_issue["parentIssueTitle"],
+        "public profile issue"
+    );
     let pull_requests = profile["pullRequestItems"].as_array().unwrap();
     assert_eq!(pull_requests.len(), 1);
     assert_eq!(pull_requests[0]["contributorLoginId"], "owner");

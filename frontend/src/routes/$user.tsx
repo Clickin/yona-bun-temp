@@ -453,7 +453,14 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
               {stringField(issue, "title")}
             </a>
             <ProfileIssueCommentCount issue={issue} issueHref={issueHref} />
-            <span className="for-subtask-progressbar"></span>
+            <span className="for-subtask-progressbar">
+              <ProfileIssueSubtaskSummary
+                basePath={basePath}
+                issue={issue}
+                ownerName={ownerName}
+                projectName={projectName}
+              />
+            </span>
             {labels.map((label) => (
               <a
                 href={`${projectHref}/issues?state=open&labelIds=${String(label.id)}`}
@@ -465,7 +472,14 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
                 {label.name}
               </a>
             ))}
-            <div className="child-issue-list hide"></div>
+            <div className="child-issue-list hide">
+              <ProfileIssueChildRows
+                basePath={basePath}
+                issues={issue.childIssues ?? []}
+                ownerName={ownerName}
+                projectName={projectName}
+              />
+            </div>
           </span>
         </div>
         <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
@@ -531,6 +545,181 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
       </div>
     </li>
   );
+}
+
+function ProfileIssueSubtaskSummary({
+  basePath,
+  issue,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  issue: WorkspaceIssueItem;
+  ownerName: string;
+  projectName: string;
+}) {
+  const childClosedCount = numberField(issue, "childClosedCount");
+  const childOpenCount = numberField(issue, "childOpenCount");
+  const childTotalCount = childClosedCount + childOpenCount;
+  const percentage = childTotalCount ? Math.trunc((childClosedCount / childTotalCount) * 100) : 0;
+  const parentIssueNumber = numberField(issue, "parentIssueNumber");
+  const parentIssueTitle = stringField(issue, "parentIssueTitle");
+
+  return (
+    <>
+      {childTotalCount ? (
+        <>
+          <div
+            className={`subtask-progress upload-progress ${
+              percentage === 100 ? "done-outline" : "red-outline"
+            }`}
+          >
+            <div
+              className={`bar ${percentage === 100 ? "done" : "red"}`}
+              style={{ width: `${percentage}%` }}
+              title="Subtask"
+            ></div>
+          </div>
+          <span
+            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""}`}
+          >
+            {percentage === 100 ? "" : `${childClosedCount}/`}
+            {childTotalCount}
+          </span>
+        </>
+      ) : null}
+      {parentIssueNumber ? (
+        <span className="infos-item subtask">
+          <a
+            href={prefixBasePath(
+              basePath,
+              `/${ownerName}/${projectName}/issue/${parentIssueNumber}`,
+            )}
+          >
+            {`#${parentIssueNumber} ${truncateParentIssueTitle(parentIssueTitle)}`}
+          </a>
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+function ProfileIssueChildRows({
+  basePath,
+  issues,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  issues: YonaRecord[];
+  ownerName: string;
+  projectName: string;
+}) {
+  const openIssues = issues.filter((issue) => stringField(issue, "state") !== "closed");
+  const closedIssues = issues.filter((issue) => stringField(issue, "state") === "closed");
+  const orderedIssues = [...openIssues, ...closedIssues];
+
+  return orderedIssues.length ? (
+    <div className="child-issues">
+      {orderedIssues.map((issue) => (
+        <ProfileIssueChildRow
+          basePath={basePath}
+          issue={issue}
+          key={`${stringField(issue, "state")}-${numberField(issue, "issueNumber")}`}
+          ownerName={ownerName}
+          projectName={projectName}
+        />
+      ))}
+    </div>
+  ) : null;
+}
+
+function ProfileIssueChildRow({
+  basePath,
+  issue,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  issue: YonaRecord;
+  ownerName: string;
+  projectName: string;
+}) {
+  const issueNumber = numberField(issue, "issueNumber");
+  const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
+  const isClosed = stringField(issue, "state") === "closed";
+  const labels = sortedWorkspaceIssueLabels((issue.labels ?? []) as YonaLabel[]);
+
+  return (
+    <div className="issue-item  child-issue">
+      <span className={`state-label ${isClosed ? "closed" : "open"}`}>
+        {isClosed ? <i className=" yobicon-checkmark"></i> : null}
+      </span>
+      <a className="twoColumeModeTarget" href={issueHref}>
+        <span className="item-name">
+          <span className="subtask-number">
+            {issue.isDraft ? <span className="draft-number">#Draft</span> : `#${issueNumber}`}
+          </span>
+          <span>{stringField(issue, "title")}</span>
+          <span>
+            {stringField(issue, "assigneeLabel") ? ` - ${stringField(issue, "assigneeLabel")}` : ""}
+          </span>
+        </span>
+      </a>
+      <span className="font12 no-border-at-child">
+        <ProfileIssueChildCounts issue={issue} issueHref={issueHref} />
+      </span>
+      {labels.map((label) => (
+        <a
+          href={`${prefixBasePath(basePath, `/${ownerName}/${projectName}`)}/issues?state=open&labelIds=${String(label.id)}`}
+          className="label issue-label list-label active twoColumeModeTarget"
+          data-category-id={String(label.categoryId ?? "")}
+          data-label-id={String(label.id)}
+          key={String(label.id)}
+          style={{ background: label.color }}
+        >
+          {label.name}
+        </a>
+      ))}
+      <span className="child-issue-date" title={stringField(issue, "createdLabel")}>
+        {stringField(issue, "createdLabel")}
+      </span>
+    </div>
+  );
+}
+
+function ProfileIssueChildCounts({ issue, issueHref }: { issue: YonaRecord; issueHref: string }) {
+  const commentCount = numberField(issue, "commentCount");
+  const voterCount = numberField(issue, "voterCount");
+  if (commentCount <= 0 && voterCount <= 0) {
+    return null;
+  }
+
+  return (
+    <span className="item-count-groups">
+      {commentCount > 0 ? (
+        <a href={`${issueHref}#comments`}>
+          <span className="count-groups item-icon ">
+            <i className="yobicon-comments"></i>
+          </span>
+          <span className="count-groups item-count ">{commentCount}</span>
+        </a>
+      ) : null}
+      {voterCount > 0 ? (
+        <a href={`${issueHref}#vote`}>
+          <span className="count-groups item-icon strong">
+            <i className="yobicon-hearts"></i>
+          </span>
+          <span className="count-groups item-count strong">{voterCount}</span>
+        </a>
+      ) : null}
+    </span>
+  );
+}
+
+function truncateParentIssueTitle(title: string) {
+  const trimmed = title.slice(0, 10).trim();
+  return title.length > 10 ? `${trimmed}...` : trimmed;
 }
 
 function sortedWorkspaceIssueLabels(labels: YonaLabel[]) {

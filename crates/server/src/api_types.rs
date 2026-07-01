@@ -736,6 +736,12 @@ pub struct WorkspaceIssueItem {
     #[serde(default)]
     pub labels: Vec<IssueLabel>,
     #[serde(default)]
+    pub child_closed_count: u32,
+    #[serde(default)]
+    pub child_issues: Vec<WorkspaceIssueChildItem>,
+    #[serde(default)]
+    pub child_open_count: u32,
+    #[serde(default)]
     pub due_date_label: String,
     #[serde(default)]
     pub due_date_overdue: bool,
@@ -761,6 +767,33 @@ pub struct WorkspaceIssueItem {
     pub updated_label: String,
     #[serde(default)]
     pub comment_count: u32,
+    #[serde(default)]
+    pub parent_issue_number: i64,
+    #[serde(default)]
+    pub parent_issue_title: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceIssueChildItem {
+    #[serde(default)]
+    pub assignee_label: String,
+    #[serde(default)]
+    pub comment_count: u32,
+    #[serde(default)]
+    pub created_label: String,
+    #[serde(default)]
+    pub is_draft: bool,
+    #[serde(default)]
+    pub issue_number: i64,
+    #[serde(default)]
+    pub labels: Vec<IssueLabel>,
+    #[serde(default)]
+    pub state: String,
+    #[serde(default)]
+    pub title: String,
+    #[serde(default)]
+    pub voter_count: u32,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
