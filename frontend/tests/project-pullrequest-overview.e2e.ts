@@ -18,6 +18,19 @@ const EXPECTED_PULL_REQUEST_OVERVIEW_WITH_STATE_EVENTS = EXPECTED_PULL_REQUEST_O
   EXPECTED_PULL_REQUEST_STATE_EVENTS,
 );
 
+const EXPECTED_PULL_REQUEST_CONFLICT_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
+  `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div>`,
+  `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-conflict">Conflict</span></div>`,
+)
+  .replace(
+    `<div class="pull-right"><a id="btnAccept" href="__BASE_PATH__/admin/sample/pullRequest/9/accept" data-request-method="post" class="ybtn ybtn-success">Merge</a></div>`,
+    `<div class="pull-right"><button class="ybtn ybtn-disabled" data-toggle="tooltip" data-placement="top" title="There are conflicts.">Merge</button></div>`,
+  )
+  .replace(
+    `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div>`,
+    `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-error"><i class="yobicon-error mr5"></i><span>A conflict occurred when merging. This pull request cannot be merged safely.</span></div></div>`,
+  );
+
 const EXPECTED_PULL_REQUEST_MERGED_DELETE_BRANCH = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div>`,
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-merged">Merged</span></div>`,
@@ -186,6 +199,29 @@ test("project pull request overview renders legacy review and state event DOM", 
     await canonicalizeHtmlAll(
       page,
       EXPECTED_PULL_REQUEST_OVERVIEW_WITH_STATE_EVENTS.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("project pull request overview renders legacy conflict state DOM", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    detail: {
+      conflict: true,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator(".badge-issue-conflict")).toHaveText("Conflict");
+  await expect(page.locator(".ybtn-disabled")).toHaveAttribute("title", "There are conflicts.");
+  await expect(page.locator("#state .alert-error")).toContainText(
+    "A conflict occurred when merging. This pull request cannot be merged safely.",
+  );
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_CONFLICT_STATE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });

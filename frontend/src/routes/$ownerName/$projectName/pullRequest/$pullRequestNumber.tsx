@@ -443,6 +443,8 @@ function PullRequestHeader({
   const { t } = useLegacyMessages();
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
   const prPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
+  const isOpen = isOpenState(pullRequest.state);
+  const isAcceptable = isOpen && !pullRequest.conflict && pullRequest.lackingReviewerCount <= 0;
   return (
     <>
       <div className="board-header issue">
@@ -460,15 +462,26 @@ function PullRequestHeader({
       </div>
 
       <div className="pull-right">
-        {pullRequest.permissions.canReview && isOpenState(pullRequest.state) ? (
-          <a
-            id="btnAccept"
-            href={prefixBasePath(runtimeConfig.basePath, `${prPath}/accept`)}
-            data-request-method="post"
-            className="ybtn ybtn-success"
-          >
-            {t("pullRequest.merge")}
-          </a>
+        {pullRequest.permissions.canReview ? (
+          isAcceptable ? (
+            <a
+              id="btnAccept"
+              href={prefixBasePath(runtimeConfig.basePath, `${prPath}/accept`)}
+              data-request-method="post"
+              className="ybtn ybtn-success"
+            >
+              {t("pullRequest.merge")}
+            </a>
+          ) : (
+            <button
+              className="ybtn ybtn-disabled"
+              data-toggle="tooltip"
+              data-placement="top"
+              title={disabledAcceptButtonTitle(pullRequest, t)}
+            >
+              {t("pullRequest.merge")}
+            </button>
+          )
         ) : null}
       </div>
 
@@ -665,6 +678,24 @@ function PullRequestHelpModal() {
 
 function isOpenState(state: PullRequestState) {
   return state.toLowerCase() === "open";
+}
+
+function disabledAcceptButtonTitle(
+  pullRequest: PullRequestDetailResponse,
+  t: ReturnType<typeof useLegacyMessages>["t"],
+) {
+  if (pullRequest.conflict) {
+    return t("pullRequest.not.acceptable.because.is.conflict");
+  }
+  if (!isOpenState(pullRequest.state)) {
+    return t("pullRequest.not.acceptable.because.is.not.open");
+  }
+  if (pullRequest.lackingReviewerCount > 0) {
+    return t("pullRequest.not.acceptable.because.is.not.enough.review.point", {
+      args: [String(pullRequest.lackingReviewerCount)],
+    });
+  }
+  return t("pullRequest.not.acceptable.because.is.merging");
 }
 
 function encodeBranch(branch: string) {
