@@ -67,7 +67,102 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
       EXPECTED_PROJECT_CHANGE_VCS_FORM.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  expect(await readDesktopChangeVcsMetrics(page)).toEqual({
+    activeTabClass: "active",
+    activeTabHeight: "38px",
+    agreementLineHeight: "20px",
+    agreementMarginLeft: "0px",
+    bottomPadding: "20px 0px 12px",
+    bubbleBackground: "rgb(247, 247, 247)",
+    bubblePadding: "20px 20px 10px",
+    bubbleWidth: 1260,
+    buttonHeight: "21px",
+    buttonLineHeight: "20px",
+    buttonPadding: "4px 12px",
+    checkboxMargin: "2px",
+    descMarginLeft: "0px",
+    descWidth: 413,
+    headingFontSize: "24.5px",
+    headingLineHeight: "40px",
+    headingMargin: "0px",
+    modalDisplay: "none",
+    modalFooterPadding: "14px 15px 15px",
+    modalHeaderPadding: "9px 15px",
+    modalWidth: "560px",
+    pageWrapMinWidth: "1100px",
+    projectPageMarginTop: "5px",
+    projectPageWidth: 1260,
+    tabsMarginBottom: "15px",
+  });
 });
+
+async function readDesktopChangeVcsMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = requireElement(".page-wrap-outer");
+    const projectPageWrap = requireElement(".project-page-wrap");
+    const tabs = requireElement(".project-page-wrap > .nav.nav-tabs");
+    const activeTab = requireElement("#subMenuProjectChangeVCS");
+    const bubble = requireElement(".bubble-wrap.gray.wp");
+    const heading = requireElement(".bubble-wrap.gray.wp h3");
+    const desc = requireElement(".bubble-wrap.gray.wp .cu-desc");
+    const accept = requireElement("#acceptChangeVCS");
+    const agreement = requireElement(".label-agreement");
+    const bottom = requireElement(".box-wrap.bottom");
+    const changeButton = requireElement("#btnChangeVCS");
+    const modal = requireElement("#alertChangeVCS");
+    const modalHeader = requireElement("#alertChangeVCS .modal-header");
+    const modalFooter = requireElement("#alertChangeVCS .modal-footer");
+    const pageWrapStyle = getComputedStyle(pageWrapOuter);
+    const projectPageStyle = getComputedStyle(projectPageWrap);
+    const tabsStyle = getComputedStyle(tabs);
+    const activeTabStyle = getComputedStyle(activeTab);
+    const bubbleStyle = getComputedStyle(bubble);
+    const headingStyle = getComputedStyle(heading);
+    const descStyle = getComputedStyle(desc);
+    const acceptStyle = getComputedStyle(accept);
+    const agreementStyle = getComputedStyle(agreement);
+    const bottomStyle = getComputedStyle(bottom);
+    const buttonStyle = getComputedStyle(changeButton);
+    const modalStyle = getComputedStyle(modal);
+    const modalHeaderStyle = getComputedStyle(modalHeader);
+    const modalFooterStyle = getComputedStyle(modalFooter);
+    return {
+      activeTabClass: activeTab.className,
+      activeTabHeight: activeTabStyle.height,
+      agreementLineHeight: agreementStyle.lineHeight,
+      agreementMarginLeft: agreementStyle.marginLeft,
+      bottomPadding: bottomStyle.padding,
+      bubbleBackground: bubbleStyle.backgroundColor,
+      bubblePadding: bubbleStyle.padding,
+      bubbleWidth: Math.round(bubble.getBoundingClientRect().width),
+      buttonHeight: buttonStyle.height,
+      buttonLineHeight: buttonStyle.lineHeight,
+      buttonPadding: buttonStyle.padding,
+      checkboxMargin: acceptStyle.margin,
+      descMarginLeft: descStyle.marginLeft,
+      descWidth: Math.round(desc.getBoundingClientRect().width),
+      headingFontSize: headingStyle.fontSize,
+      headingLineHeight: headingStyle.lineHeight,
+      headingMargin: headingStyle.margin,
+      modalDisplay: modalStyle.display,
+      modalFooterPadding: modalFooterStyle.padding,
+      modalHeaderPadding: modalHeaderStyle.padding,
+      modalWidth: modalStyle.width,
+      pageWrapMinWidth: pageWrapStyle.minWidth,
+      projectPageMarginTop: projectPageStyle.marginTop,
+      projectPageWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
+      tabsMarginBottom: tabsStyle.marginBottom,
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
 
 async function mockProjectAdmin(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
