@@ -13,12 +13,12 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
       <div class="left-menu span2 span-hard-wrap">
         <div class="inner advanced">
           <ul class="lst-stacked unstyled">
-            <li class="active"><a pjax-filter="" href="#" data-author-id="" data-assignee-id="1" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="" class="assigned-to-me"><i class="yobicon-user"></i>Assigned</a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="1" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="" class="authored-by-me"><i class="yobicon-pencil"></i>Created</a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="1" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="" class="commented-by-me"><i class="yobicon-comments"></i>Commented</a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="1" data-sharer-id="" data-favorite-id="" class="mentioned-of-me"><i class="yobicon-at"></i>Mentioned(2)</a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="1" data-favorite-id="" class="shared-with-me"><i class="yobicon-share"></i>Shared(1)</a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="1" class="favorite-issue"><i class="yobicon-favorite"></i>Favorite(1)</a></li>
+            <li class="active"><a pjax-filter="" href="#" data-author-id="" data-assignee-id="1" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="assigned-to-me"><i class="yobicon-user"></i>Assigned</span></a></li>
+            <li class=""><a pjax-filter="" href="#" data-author-id="1" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="authored-by-me"><i class="yobicon-pencil"></i>Created</span></a></li>
+            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="1" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="commented-by-me"><i class="yobicon-comments"></i>Commented</span></a></li>
+            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="1" data-sharer-id="" data-favorite-id=""><span class="mentioned-of-me"><i class="yobicon-at"></i>Mentioned</span>(2)</a></li>
+            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="1" data-favorite-id=""><span class="shared-with-me"><i class="yobicon-share"></i>Shared</span>(1)</a></li>
+            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="1"><span class="favorite-issue"><i class="yobicon-favorite"></i>Favorite</span>(1)</a></li>
           </ul>
           <form id="search" name="search" action="__BASE_PATH__/user/issues" method="get">
             <input type="hidden" name="orderBy" value="updatedDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open">
@@ -46,6 +46,46 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
           <li class="post-item title" id="issue-item-43" href="__BASE_PATH__/admin/sample/issue/12"><div class="span12 span-hard-wrap"><div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/admin/sample" class="title project" data-toggle="tooltip" data-placement="bottom" title="Project name">sample</a><span class="infos-item post-id">#12</span></div><div class="title-wrap span6"><span class="title-cell"><a href="__BASE_PATH__/admin/sample/issue/12" class="title">Second issue</a><span class="for-subtask-progressbar"></span><div class="child-issue-list hide"></div></span></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/bob" class="infos-link-item author-cell" data-toggle="tooltip" data-placement="top" title="bob">Bob</a></div><div class="infos span3 meta"><span class="infos-item" title="2026-06-29">2026-06-29</span></div></div></li>
         </ul>
         <div id="pagination" data-total="1"></div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
+<div class="page-wrap-outer">
+  <div class="page-wrap">
+    <ul class="nav nav-tabs">
+      <li><a href="__BASE_PATH__/notifications">Notification</a></li>
+      <li class="active"><a href="__BASE_PATH__/user/issues">My Issues</a></li>
+      <li><a href="__BASE_PATH__/user/files">My Files</a></li>
+      <li><button type="button" class="ybtn hide-in-mobile" id="setDefaultLoginPage" data-url="user/issues" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
+    </ul>
+    <div pjax-container="" class="row-fluid issue-list-wrap">
+      <div class="left-menu span2 span-hard-wrap">
+        <div class="inner advanced">
+          <ul class="lst-stacked unstyled">
+            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="1" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="assigned-to-me"><i class="yobicon-user"></i>Assigned</span></a></li>
+            <li class=""><a pjax-filter="" href="#" data-author-id="1" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="authored-by-me"><i class="yobicon-pencil"></i>Created</span></a></li>
+            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="1" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="commented-by-me"><i class="yobicon-comments"></i>Commented</span></a></li>
+            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="1" data-sharer-id="" data-favorite-id=""><span class="mentioned-of-me"><i class="yobicon-at"></i>Mentioned</span></a></li>
+            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="1" data-favorite-id=""><span class="shared-with-me"><i class="yobicon-share"></i>Shared</span></a></li>
+            <li class="active"><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="1"><span class="favorite-issue"><i class="yobicon-favorite"></i>Favorite</span></a></li>
+          </ul>
+          <form id="search" name="search" action="__BASE_PATH__/user/issues" method="get">
+            <input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="orderDir" value="asc"><input type="hidden" name="state" value="closed">
+            <input type="hidden" name="authorId" value="" data-search="authorId"><input type="hidden" name="commenterId" value="" data-search="commenterId"><input type="hidden" name="assigneeId" value="" data-search="assigneeId"><input type="hidden" name="mentionId" value="" data-search="mentionId"><input type="hidden" name="sharerId" value="" data-search="sharerId"><input type="hidden" name="favoriteId" value="1" data-search="favoriteId">
+            <div class="search myissues-search-input"><div class="search-bar"><input name="filter" class="textbox full" type="text" placeholder="Search Issues" value="needle"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div>
+          </form>
+        </div>
+      </div>
+      <div class="span10 span-hard-wrap" id="span10">
+        <ul class="nav nav-tabs nm">
+          <li class=""><a href="#" state="open">Open<span class="num-badge">0</span></a></li><li class="active"><a href="#" state="closed">Closed<span class="num-badge">0</span></a></li>
+          <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
+          <li><div class="show-subtask-icon mr10 hide-in-mobile" id="show-subtasks-checkbox" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><input id="show-subtasks" type="checkbox"></label></div></li>
+        </ul>
+        <div class="error-wrap"><i class="ico ico-err1"></i><p>No issue found</p></div>
       </div>
     </div>
   </div>
@@ -143,6 +183,89 @@ test("current-user issues page matches legacy issue/my_list.scala.html shell", a
     rowFluidWidth: 1080,
     span10Width: 896,
   });
+
+  await page.route(
+    "**/api/v1/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=1&query=needle&state=open",
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          closedIssueCount: 0,
+          filter: "assigned",
+          items: [],
+          openIssueCount: 0,
+          pageNum: 1,
+          pageSize: 20,
+          sideFilterCounts: { favorite: 0, mentioned: 0, shared: 0 },
+          state: "open",
+          totalCount: 0,
+          totalPages: 1,
+          viewerUserId: 1,
+        }),
+      });
+    },
+  );
+  await page.fill('form#search input[name="filter"]', "needle");
+  const searchResponse = page.waitForResponse((response) =>
+    response
+      .url()
+      .endsWith(
+        "/api/v1/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=1&query=needle&state=open",
+      ),
+  );
+  await page.click("form#search button[type=submit]");
+  await searchResponse;
+  await expect(page).toHaveURL(/query=needle/);
+});
+
+test("current-user issues page matches legacy filtered empty search state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        isAnonymous: false,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+      }),
+    });
+  });
+  await page.route(
+    "**/api/v1/user/issues?filter=favorite&orderBy=createdDate&orderDir=asc&pageNum=2&query=needle&state=closed",
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          closedIssueCount: 0,
+          filter: "favorite",
+          items: [],
+          openIssueCount: 0,
+          pageNum: 2,
+          pageSize: 20,
+          sideFilterCounts: { favorite: 1, mentioned: 2, shared: 1 },
+          state: "closed",
+          totalCount: 0,
+          totalPages: 1,
+          viewerUserId: 1,
+        }),
+      });
+    },
+  );
+
+  await page.goto(
+    `${basePath}/user/issues?filter=favorite&query=needle&pageNum=2&state=closed&orderBy=createdDate&orderDir=asc`,
+  );
+  await expect(page.locator(".error-wrap")).toBeVisible();
+
+  const actual = await canonicalizePageWrap(page);
+  const expected = await canonicalizeHtml(
+    page,
+    EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP.replaceAll("__BASE_PATH__", basePath),
+  );
+  expect(actual).toEqual(expected);
 });
 
 async function readUserIssuesMetrics(page: Page) {

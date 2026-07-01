@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import type { HTMLAttributes, LiHTMLAttributes } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import type { FormEvent, HTMLAttributes, LiHTMLAttributes } from "react";
 import { apiQueryKeys } from "../../api/query-keys";
 import { currentSessionQueryOptions } from "../../api/session";
 import {
@@ -106,6 +106,20 @@ function UserIssuesBody({
   const basePath = runtimeConfig.basePath;
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const activeFilterIds = quickFilterIds(search.filter, currentUserId);
+  const navigate = useNavigate({ from: Route.fullPath });
+
+  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const query = String(formData.get("filter") ?? "");
+    void navigate({
+      search: (current) => ({
+        ...current,
+        pageNum: 1,
+        query,
+      }),
+    });
+  };
 
   return (
     <div className="page-wrap-outer">
@@ -124,6 +138,7 @@ function UserIssuesBody({
                 name="search"
                 action={prefixBasePath(basePath, "/user/issues")}
                 method="get"
+                onSubmit={submitSearch}
               >
                 <input type="hidden" name="orderBy" value={search.orderBy} />
                 <input type="hidden" name="orderDir" value={search.orderDir} />
@@ -340,11 +355,12 @@ function QuickSearch({
               data-mention-id={ids.mentionId}
               data-sharer-id={ids.sharerId}
               data-favorite-id={ids.favoriteId}
-              className={row.className}
             >
-              <i className={row.icon}></i>
-              {row.label}
-              {"count" in row && row.count ? ` (${row.count})` : null}
+              <span className={row.className}>
+                <i className={row.icon}></i>
+                {row.label}
+              </span>
+              {!search.query && "count" in row && row.count ? `(${row.count})` : null}
             </a>
           </li>
         );
