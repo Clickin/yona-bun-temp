@@ -819,35 +819,44 @@ function IssueEventRow({ basePath, event }: { basePath: string; event: IssueTime
   const newValue = stringField(event.newValue).toLowerCase();
   const senderLoginId = stringField(event.senderLoginId);
   const senderLabel = stringField(event.senderLabel, senderLoginId);
-  const senderHref = prefixBasePath(basePath, `/${senderLoginId}`);
+  const sender = (
+    <EventUserLink
+      avatarUrl={stringField(event.senderAvatarUrl, "/assets/images/default-avatar-32.png")}
+      basePath={basePath}
+      label={senderLabel}
+      loginId={senderLoginId}
+    />
+  );
 
   if (eventType === "ISSUE_STATE_CHANGED") {
     return (
       <li className="event" id={`event-${eventId}`}>
         <span className={`state ${newValue}`}>{issueStateLabel(newValue)}</span>
-        <a
-          href={senderHref}
-          className="usf-group"
-          data-toggle="tooltip"
-          data-placement="top"
-          title={senderLabel}
-        >
-          <img
-            src={stringField(event.senderAvatarUrl, "/assets/images/default-avatar-32.png")}
-            className="avatar-wrap small"
-            alt=""
-          />
-        </a>
-        <a
-          href={senderHref}
-          className="usf-group"
-          data-toggle="tooltip"
-          data-placement="top"
-          title={senderLoginId}
-        >
-          <strong>{senderLabel}</strong>
-        </a>
+        {sender}
         {issueStateEventText(newValue)}
+        <span className="date">
+          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+        </span>
+      </li>
+    );
+  }
+
+  if (eventType === "ISSUE_ASSIGNEE_CHANGED") {
+    const targetLoginId = stringField(event.targetLoginId, stringField(event.newValue));
+    const targetLabel = stringField(event.targetLabel, targetLoginId);
+    return (
+      <li className="event" id={`event-${eventId}`}>
+        <span className="state changed">Assigned</span>
+        {sender}
+        {targetLoginId === senderLoginId ? " self-assigned this issue" : " assigned this issue to "}
+        {targetLoginId === senderLoginId ? null : (
+          <EventUserLink
+            avatarUrl={stringField(event.targetAvatarUrl, "/assets/images/default-avatar-32.png")}
+            basePath={basePath}
+            label={targetLabel}
+            loginId={targetLoginId}
+          />
+        )}
         <span className="date">
           <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
         </span>
@@ -857,33 +866,41 @@ function IssueEventRow({ basePath, event }: { basePath: string; event: IssueTime
 
   return (
     <li className="event" id={`event-${eventId}`}>
-      {stringField(event.newValue)} by{" "}
-      <a
-        href={senderHref}
-        className="usf-group"
-        data-toggle="tooltip"
-        data-placement="top"
-        title={senderLabel}
-      >
-        <img
-          src={stringField(event.senderAvatarUrl, "/assets/images/default-avatar-32.png")}
-          className="avatar-wrap small"
-          alt=""
-        />
-      </a>
-      <a
-        href={senderHref}
-        className="usf-group"
-        data-toggle="tooltip"
-        data-placement="top"
-        title={senderLoginId}
-      >
-        <strong>{senderLabel}</strong>
-      </a>
+      {stringField(event.newValue)} by {sender}
       <span className="date">
         <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
       </span>
     </li>
+  );
+}
+
+function EventUserLink({
+  avatarUrl,
+  basePath,
+  label,
+  loginId,
+}: {
+  avatarUrl: string;
+  basePath: string;
+  label: string;
+  loginId: string;
+}) {
+  const href = prefixBasePath(basePath, `/${loginId}`);
+  return (
+    <>
+      <a href={href} className="usf-group" data-toggle="tooltip" data-placement="top" title={label}>
+        <img src={avatarUrl} className="avatar-wrap small" alt="" />
+      </a>
+      <a
+        href={href}
+        className="usf-group"
+        data-toggle="tooltip"
+        data-placement="top"
+        title={loginId}
+      >
+        <strong>{label}</strong>
+      </a>
+    </>
   );
 }
 
