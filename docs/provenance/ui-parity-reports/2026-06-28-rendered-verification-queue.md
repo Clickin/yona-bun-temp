@@ -341,7 +341,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `common/showSubtasksCheckbox.scala.html` | shared partials | issue-list caller metric-covered by `frontend/tests/vote-count-parity.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/tasklistBar.scala.html` | shared partials | issue-detail caller metric-covered by `frontend/tests/issue-detail-parity.e2e.ts`; board-detail caller DOM-covered by `frontend/tests/project-posts.e2e.ts`; remaining callers still require per-route verification | 10 |
 | `common/twoColumnModeCheckboxArea.scala.html` | shared partials | issue-list caller metric-covered by existing issue-list guard; board-list caller metric-covered by `frontend/tests/project-posts.e2e.ts`; remaining callers still require per-route verification | 10 |
-| `common/voteCount.scala.html` | shared partials | included partial; verify through each caller route | 10 |
+| `common/voteCount.scala.html` | shared partials | issue-list caller metric-covered by `frontend/tests/project-issues-empty.e2e.ts`; remaining callers still require per-route verification | 10 |
 
 ## Owner Expansion Rule
 

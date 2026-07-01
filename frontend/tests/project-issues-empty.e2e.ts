@@ -379,6 +379,25 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
     href: "#",
     text: "bug",
   });
+  expect(await issueVoteCountMetrics(page)).toEqual({
+    groupClassName: "infos-item item-count-groups",
+    groupMarginTop: "2px",
+    groupLineHeight: "14px",
+    groupBorder: "1px solid rgb(238, 238, 238)",
+    groupBorderRadius: "3px",
+    href: `${basePath}/admin/sample/issue/11#vote`,
+    className: "",
+    iconClassName: "count-groups item-icon strong",
+    iconPadding: "2px 5px 0px",
+    iconFontSize: "9px",
+    iconLineHeight: "12px",
+    heartClassName: "yobicon-hearts",
+    countClassName: "count-groups item-count strong",
+    countPadding: "0px 5px 0px 0px",
+    countText: "1",
+    marginLeft: "-5px",
+    iconBeforeCount: true,
+  });
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -680,6 +699,41 @@ async function issueLabelColorMetrics(page: Page, selector: string) {
         text: element.textContent?.trim(),
       };
     });
+}
+
+async function issueVoteCountMetrics(page: Page) {
+  return page.locator("#issue-item-42 .item-count-groups a[href$='#vote']").evaluate((element) => {
+    const group = element.closest(".item-count-groups") as HTMLElement;
+    const icon = element.querySelector(".item-icon") as HTMLElement;
+    const heart = element.querySelector("i") as HTMLElement;
+    const count = element.querySelector(".item-count") as HTMLElement;
+    const groupStyle = window.getComputedStyle(group);
+    const linkStyle = window.getComputedStyle(element);
+    const iconStyle = window.getComputedStyle(icon);
+    const countStyle = window.getComputedStyle(count);
+    const iconRect = icon.getBoundingClientRect();
+    const countRect = count.getBoundingClientRect();
+
+    return {
+      groupClassName: group.className,
+      groupMarginTop: groupStyle.marginTop,
+      groupLineHeight: groupStyle.lineHeight,
+      groupBorder: groupStyle.border,
+      groupBorderRadius: groupStyle.borderRadius,
+      href: element.getAttribute("href"),
+      className: element.className,
+      iconClassName: icon.className,
+      iconPadding: iconStyle.padding,
+      iconFontSize: iconStyle.fontSize,
+      iconLineHeight: iconStyle.lineHeight,
+      heartClassName: heart.className,
+      countClassName: count.className,
+      countPadding: countStyle.padding,
+      countText: count.textContent?.trim(),
+      marginLeft: linkStyle.marginLeft,
+      iconBeforeCount: iconRect.left < countRect.left,
+    };
+  });
 }
 
 async function mockProjectIssues(
