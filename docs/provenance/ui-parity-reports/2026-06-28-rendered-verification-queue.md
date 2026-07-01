@@ -259,7 +259,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `issue/partial_view_childIssueListOnly.scala.html` | P3 issue | covered by `frontend/tests/project-issues-empty.e2e.ts`: `/admin/sample/issues?filter=children` renders hidden `.child-issue-list.hide` with open/closed child issue rows, child links, labels, dates, state labels, and checkmark branch | 13 |
 | `issue/partial_voters.scala.html` | P3 issue | covered by issue detail `/admin/sample/issue/11` in `frontend/tests/project-issue-detail.e2e.ts` | 13 |
 | `board/create.scala.html` | P4 board/milestone | covered by `frontend/tests/project-board-create-form.e2e.ts`: `/admin/sample/postform` renders the legacy create form body, active Board project menu, title/body/uploader/notice/hidden/action shells, and REST POST/redirect boundary | 13 |
-| `board/edit.scala.html` | P4 board/milestone | /:owner/:projectName/post/:postNumber/editform | 13 |
+| `board/edit.scala.html` | P4 board/milestone | covered by `frontend/tests/project-board-edit-form.e2e.ts`: `/admin/sample/post/3/editform` renders the legacy edit form body, active Board project menu, title/body/uploader/notice/readme/notification/action shells, and REST PATCH/redirect boundary | 13 |
 | `board/list.scala.html` | P4 board/milestone | /:owner/:projectName/posts | 13 |
 | `milestone/create.scala.html` | P4 board/milestone | covered by `frontend/tests/project-milestone-create-form.e2e.ts`: `/admin/sample/newMilestoneForm` renders the legacy create form body, active Milestone project menu, title/content/state/due-date/uploader/action shells, and REST POST/redirect boundary | 13 |
 | `milestone/partial_status.scala.html` | P4 board/milestone | included partial caller route; inspect Play route and React owner | 13 |

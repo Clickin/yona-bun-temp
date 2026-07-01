@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { Fragment, type FormEvent, useState } from "react";
 import {
   createPostCommentRest,
@@ -44,6 +44,8 @@ function ProjectPostDetailRoute() {
 
 function ProjectPostDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, postNumber, projectName } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isEditChildRoute = pathname.endsWith(`/post/${postNumber}/editform`);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -59,11 +61,15 @@ function ProjectPostDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectPostDetailBody
-        post={postQuery.data}
-        project={projectQuery.data}
-        runtimeConfig={runtimeConfig}
-      />
+      {isEditChildRoute ? (
+        <Outlet />
+      ) : (
+        <ProjectPostDetailBody
+          post={postQuery.data}
+          project={projectQuery.data}
+          runtimeConfig={runtimeConfig}
+        />
+      )}
     </>
   );
 }
