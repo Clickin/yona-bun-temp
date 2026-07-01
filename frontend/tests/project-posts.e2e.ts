@@ -261,6 +261,107 @@ test("project board detail submits legacy comment form through REST", async ({ p
   );
   await expect(page.locator("#comment-form")).toHaveAttribute("method", "post");
   await expect(page.locator("#comment-form")).toHaveAttribute("enctype", "multipart/form-data");
+  const editorMetrics = await page
+    .locator('#comment-form [data-toggle="markdown-editor"]')
+    .evaluate((editor) => {
+      const nav = editor.querySelector(".nav-tabs") as HTMLElement;
+      const editLink = editor.querySelector('a[data-mode="edit"]') as HTMLAnchorElement;
+      const previewLink = editor.querySelector('a[data-mode="preview"]') as HTMLAnchorElement;
+      const taskButton = editor.querySelector(".add-task-list-button") as HTMLButtonElement;
+      const clearButton = editor.querySelector("#button-clear-temporary") as HTMLButtonElement;
+      const tabContent = editor.querySelector(".tab-content") as HTMLElement;
+      const editPane = editor.querySelector("#edit-contents") as HTMLElement;
+      const previewPane = editor.querySelector("#preview-contents") as HTMLElement;
+      const textarea = editor.querySelector("textarea") as HTMLTextAreaElement;
+      const preview = editor.querySelector(".markdown-preview") as HTMLElement;
+      const notification = editor.querySelector(".notification-receiver") as HTMLElement;
+      const notificationTitle = editor.querySelector(".notification-receiver-title") as HTMLElement;
+      const navStyle = window.getComputedStyle(nav);
+      const tabContentStyle = window.getComputedStyle(tabContent);
+      const editPaneStyle = window.getComputedStyle(editPane);
+      const previewPaneStyle = window.getComputedStyle(previewPane);
+      const notificationStyle = window.getComputedStyle(notification);
+
+      return {
+        className: editor.className,
+        navClassName: nav.className,
+        navHeight: navStyle.height,
+        navMargin: navStyle.margin,
+        editHref: editLink.getAttribute("href"),
+        editToggle: editLink.getAttribute("data-toggle"),
+        editMode: editLink.getAttribute("data-mode"),
+        editText: editLink.textContent?.trim(),
+        previewHref: previewLink.getAttribute("href"),
+        previewToggle: previewLink.getAttribute("data-toggle"),
+        previewMode: previewLink.getAttribute("data-mode"),
+        previewText: previewLink.textContent?.trim(),
+        taskButtonType: taskButton.type,
+        taskButtonClassName: taskButton.className,
+        taskButtonText: taskButton.textContent?.trim(),
+        clearButtonType: clearButton.type,
+        clearButtonClassName: clearButton.className,
+        clearButtonText: clearButton.textContent?.trim(),
+        tabContentStyle: tabContent.getAttribute("style"),
+        tabContentPosition: tabContentStyle.position,
+        tabContentOverflow: tabContentStyle.overflow,
+        editPaneClassName: editPane.className,
+        editPaneDisplay: editPaneStyle.display,
+        previewPaneClassName: previewPane.className,
+        previewPaneDisplay: previewPaneStyle.display,
+        textareaName: textarea.name,
+        textareaClassName: textarea.className,
+        textareaMode: textarea.getAttribute("data-editor-mode"),
+        textareaMarkdown: textarea.getAttribute("markdown"),
+        textareaId: textarea.id,
+        previewClassName: preview.className,
+        previewViaEmail: preview.getAttribute("data-via-email"),
+        notificationClassName: notification.className,
+        notificationDisplay: notificationStyle.display,
+        notificationText: notificationTitle.textContent,
+      };
+    });
+  expect(editorMetrics).toEqual({
+    className: "mt10",
+    navClassName: "nav nav-tabs nm small",
+    navHeight: "29px",
+    navMargin: "0px",
+    editHref: "#edit-contents",
+    editToggle: "tab",
+    editMode: "edit",
+    editText: "Edit",
+    previewHref: "#preview-contents",
+    previewToggle: "tab",
+    previewMode: "preview",
+    previewText: "Preview",
+    taskButtonType: "button",
+    taskButtonClassName: "add-task-list-button ybtn ybtn-small ybtn-danger-no-outline",
+    taskButtonText: "Add checklist",
+    clearButtonType: "button",
+    clearButtonClassName: "ybtn ybtn-small ybtn-warning",
+    clearButtonText: "Clear Temporary",
+    tabContentStyle: "position: relative; overflow: visible;",
+    tabContentPosition: "relative",
+    tabContentOverflow: "visible",
+    editPaneClassName: "tab-pane active",
+    editPaneDisplay: "block",
+    previewPaneClassName: "tab-pane",
+    previewPaneDisplay: "none",
+    textareaName: "contents",
+    textareaClassName: "editorSeries content comment nm",
+    textareaMode: "comment-body",
+    textareaMarkdown: "true",
+    textareaId: "editor-contents-contents",
+    previewClassName: "markdown-preview markdown-wrap comment-body",
+    previewViaEmail: "false",
+    notificationClassName: "notification-receiver",
+    notificationDisplay: "none",
+    notificationText: "Notification receivers ",
+  });
+  await page.locator('#comment-form a[data-mode="preview"]').click();
+  await expect(page.locator("#comment-form #preview-contents")).toHaveClass(/active/);
+  await expect(page.locator("#comment-form #edit-contents")).not.toHaveClass(/active/);
+  await page.locator('#comment-form a[data-mode="edit"]').click();
+  await expect(page.locator("#comment-form #edit-contents")).toHaveClass(/active/);
   await expect(
     page.locator("#comment-form #upload[data-resource-type='NONISSUE_COMMENT']"),
   ).toHaveCount(1);
