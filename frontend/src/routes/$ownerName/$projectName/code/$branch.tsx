@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
@@ -15,6 +15,14 @@ export const Route = createFileRoute("/$ownerName/$projectName/code/$branch")({
 
 function ProjectCodeBranchRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { branch, ownerName, projectName } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isProjectCodeBranchRoot =
+    pathname === `/${ownerName}/${projectName}/code/${encodeURIComponent(branch)}`;
+
+  if (!isProjectCodeBranchRoot) {
+    return <Outlet />;
+  }
 
   return (
     <YonaQueryProvider>
