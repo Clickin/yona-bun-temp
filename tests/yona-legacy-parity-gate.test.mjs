@@ -108,7 +108,7 @@ test("active template-first UI parity surfaces are closed in the gate", () => {
     [
       "public-user-profile",
       [
-        "frontend/src/routes/$user/route.tsx",
+        "frontend/src/routes/$user.tsx",
         "frontend/tests/user-profile-parity.e2e.ts",
         "docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md",
       ],
@@ -576,7 +576,7 @@ test("maps public user profile files to the user workspace provenance slice", ()
     "frontend/src/api/query-keys.ts",
     "frontend/src/auth-workspace-client.ts",
     "frontend/src/api/users.ts",
-    "frontend/src/routes/$user/route.tsx",
+    "frontend/src/routes/$user.tsx",
     "frontend/src/routes/-workspace-views.tsx",
     "frontend/tests/user-profile-parity.e2e.ts",
     "docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md",

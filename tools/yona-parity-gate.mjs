@@ -405,6 +405,7 @@ const DOMAIN_BUCKETS = [
     status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/users\.ts$/i,
+      /^frontend\/src\/routes\/\$user\.tsx$/i,
       /^frontend\/src\/routes\/\$user\/route\.tsx$/i,
       /^frontend\/src\/routes\/-workspace-views\.tsx$/i,
     ],
