@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer } from "../../../../../api/types";
@@ -228,6 +230,7 @@ function FileView({
   const shortCommitId = commitId.slice(0, 7);
   const authorLoginId = stringField(file.userLoginId, "");
   const authorHref = prefixBasePath(runtimeConfig.basePath, `/${authorLoginId}`);
+  const fileText = stringField(file.data, "") || stringField(file.text, "");
   const rawHref = projectHref(
     runtimeConfig.basePath,
     ownerName,
@@ -325,10 +328,22 @@ function FileView({
           </a>
         </div>
       </div>
-      <div id="codeVal" className="hidden">
-        {stringField(file.data, "")}
-      </div>
-      <pre id="showCode" className="code-wrap" data-mimetype={stringField(file.mimeType, "")}></pre>
+      {isMarkdownPath(filePath) ? (
+        <div id="codeVal" className="markdown-wrap codebrowser-markdown">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{fileText}</ReactMarkdown>
+        </div>
+      ) : (
+        <>
+          <div id="codeVal" className="hidden">
+            {fileText}
+          </div>
+          <pre
+            id="showCode"
+            className="code-wrap"
+            data-mimetype={stringField(file.mimeType, "")}
+          ></pre>
+        </>
+      )}
     </div>
   );
 }
@@ -343,6 +358,12 @@ function projectHref(basePath: string, ownerName: string, projectName: string, .
 function directoryPath(filePath: string) {
   const slash = filePath.lastIndexOf("/");
   return slash > 0 ? `${filePath.slice(0, slash)}/` : "";
+}
+
+function isMarkdownPath(filePath: string) {
+  return ["markdown", "mdown", "mkdn", "mkd", "md", "mdwn"].includes(
+    filePath.split(".").pop()?.toLowerCase() ?? "",
+  );
 }
 
 function recordField(value: unknown): CodeFile {
