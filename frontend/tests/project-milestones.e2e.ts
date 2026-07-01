@@ -26,6 +26,26 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_MILESTONES_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await readMilestoneListMetrics(page)).toEqual({
+    completionRateFontSize: "20px",
+    completionRateFontWeight: "700",
+    dueDateColor: "rgb(243, 108, 34)",
+    filterWrapHeight: 30,
+    firstMilestonePaddingBottom: "15px",
+    firstMilestonePaddingTop: "15px",
+    infosWidth: 1260,
+    metaInfoMargin: "5px 0px 10px",
+    milestoneNameFontSize: "20px",
+    milestoneNameFontWeight: "700",
+    progressHeight: "8px",
+    progressMarginTop: "15px",
+    progressWidth: 1260,
+    progressWrapWidth: 1260,
+    rowWidth: 1260,
+    searchButtonWidth: 38,
+    searchInputWidth: 350,
+    tabWrapMarginBottom: "0px",
+  });
 
   await page.fill('.filter-wrap.milestone input[name="filter"]', "closed");
   await expect(
@@ -275,4 +295,64 @@ async function canonicalizeHtml(page: Page, html: string) {
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   }, html);
+}
+
+async function readMilestoneListMetrics(page: Page) {
+  return page.evaluate(() => {
+    const tabWrap = document.querySelector<HTMLElement>(".tab-wrap");
+    const filterWrap = document.querySelector<HTMLElement>(".filter-wrap.milestone");
+    const searchInput = document.querySelector<HTMLElement>(".filter-wrap.milestone .textbox");
+    const searchButton = document.querySelector<HTMLElement>(".filter-wrap.milestone .search-btn");
+    const milestone = document.querySelector<HTMLElement>("ul.milestones > li.milestone");
+    const infos = document.querySelector<HTMLElement>(".milestones .infos");
+    const metaInfo = document.querySelector<HTMLElement>(".milestones .meta-info");
+    const milestoneName = document.querySelector<HTMLElement>(".milestones .milestone-name");
+    const dueDate = document.querySelector<HTMLElement>(".milestones .due-date.over");
+    const completionRate = document.querySelector<HTMLElement>(".milestones .completion-rate");
+    const progressWrap = document.querySelector<HTMLElement>(".milestones .progress-wrap");
+    const progress = document.querySelector<HTMLElement>(".milestones .progress");
+    const missing = Object.entries({
+      completionRate,
+      dueDate,
+      filterWrap,
+      infos,
+      metaInfo,
+      milestone,
+      milestoneName,
+      progress,
+      progressWrap,
+      searchButton,
+      searchInput,
+      tabWrap,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected milestone list metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const milestoneStyle = getComputedStyle(milestone);
+    const milestoneNameStyle = getComputedStyle(milestoneName);
+    const completionRateStyle = getComputedStyle(completionRate);
+    return {
+      completionRateFontSize: completionRateStyle.fontSize,
+      completionRateFontWeight: completionRateStyle.fontWeight,
+      dueDateColor: getComputedStyle(dueDate).color,
+      filterWrapHeight: Math.round(filterWrap.getBoundingClientRect().height),
+      firstMilestonePaddingBottom: milestoneStyle.paddingBottom,
+      firstMilestonePaddingTop: milestoneStyle.paddingTop,
+      infosWidth: Math.round(infos.getBoundingClientRect().width),
+      metaInfoMargin: getComputedStyle(metaInfo).margin,
+      milestoneNameFontSize: milestoneNameStyle.fontSize,
+      milestoneNameFontWeight: milestoneNameStyle.fontWeight,
+      progressHeight: getComputedStyle(progress).height,
+      progressMarginTop: getComputedStyle(progressWrap).marginTop,
+      progressWidth: Math.round(progress.getBoundingClientRect().width),
+      progressWrapWidth: Math.round(progressWrap.getBoundingClientRect().width),
+      rowWidth: Math.round(milestone.getBoundingClientRect().width),
+      searchButtonWidth: Math.round(searchButton.getBoundingClientRect().width),
+      searchInputWidth: Math.round(searchInput.getBoundingClientRect().width),
+      tabWrapMarginBottom: getComputedStyle(tabWrap).marginBottom,
+    };
+  });
 }
