@@ -243,7 +243,13 @@ function ProjectPullRequestChangesBody({
                 />
               ) : null}
             </div>
-            {hasReviewCards ? <ReviewWrap threads={changes.threads} /> : null}
+            {hasReviewCards ? (
+              <ReviewWrap
+                pullRequest={pullRequest}
+                runtimeConfig={runtimeConfig}
+                threads={changes.threads}
+              />
+            ) : null}
           </div>
         </div>
       </div>
@@ -386,7 +392,15 @@ function NonRangedThreadComment({
   );
 }
 
-function ReviewWrap({ threads }: { threads: ReviewThread[] }) {
+function ReviewWrap({
+  pullRequest,
+  runtimeConfig,
+  threads,
+}: {
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+  threads: ReviewThread[];
+}) {
   const { t } = useLegacyMessages();
   const openThreads = threads.filter((thread) => thread.state.toLowerCase() === "open");
   const closedThreads = threads.filter((thread) => thread.state.toLowerCase() === "closed");
@@ -412,8 +426,19 @@ function ReviewWrap({ threads }: { threads: ReviewThread[] }) {
         </ul>
 
         <div className="tab-content review-list">
-          <ReviewCards id="reviewcards-open" isActive threads={openThreads} />
-          <ReviewCards id="reviewcards-closed" threads={closedThreads} />
+          <ReviewCards
+            id="reviewcards-open"
+            isActive
+            pullRequest={pullRequest}
+            runtimeConfig={runtimeConfig}
+            threads={openThreads}
+          />
+          <ReviewCards
+            id="reviewcards-closed"
+            pullRequest={pullRequest}
+            runtimeConfig={runtimeConfig}
+            threads={closedThreads}
+          />
         </div>
       </div>
     </div>
@@ -423,28 +448,45 @@ function ReviewWrap({ threads }: { threads: ReviewThread[] }) {
 function ReviewCards({
   id,
   isActive = false,
+  pullRequest,
+  runtimeConfig,
   threads,
 }: {
   id: string;
   isActive?: boolean;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
   threads: ReviewThread[];
 }) {
   return (
     <div id={id} className={`tab-pane${isActive ? " active" : ""}`}>
       {threads.map((thread) => (
-        <ReviewCard key={thread.id} thread={thread} />
+        <ReviewCard
+          key={thread.id}
+          pullRequest={pullRequest}
+          runtimeConfig={runtimeConfig}
+          thread={thread}
+        />
       ))}
     </div>
   );
 }
 
-function ReviewCard({ thread }: { thread: ReviewThread }) {
+function ReviewCard({
+  pullRequest,
+  runtimeConfig,
+  thread,
+}: {
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+  thread: ReviewThread;
+}) {
   const { t } = useLegacyMessages();
   const remainingCommentCount = Math.max(0, thread.comments.length - 1);
 
   return (
     <a
-      href={`#thread-${thread.id}`}
+      href={reviewThreadHref(runtimeConfig.basePath, pullRequest, thread)}
       className={`review-card ${thread.state.toLowerCase()}${thread.isOutdated ? " outdated" : ""}`}
     >
       <p className="content">{thread.comments[0]?.contentsMarkdown ?? ""}</p>
@@ -464,6 +506,16 @@ function ReviewCard({ thread }: { thread: ReviewThread }) {
       </p>
     </a>
   );
+}
+
+function reviewThreadHref(
+  basePath: string,
+  pullRequest: PullRequestDetailResponse,
+  thread: ReviewThread,
+) {
+  const changesPath = pullRequestChangesPath(pullRequest);
+  const commitPath = thread.commitId ? `/${encodeURIComponent(thread.commitId)}` : "";
+  return `${prefixBasePath(basePath, `${changesPath}${commitPath}`)}#thread-${thread.id}`;
 }
 
 function CommitDropdown({

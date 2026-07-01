@@ -139,7 +139,7 @@ const EXPECTED_PULL_REQUEST_REVIEW_CARD = EXPECTED_PULL_REQUEST_CHANGES.replace(
   )
   .replace(
     `</div></div></div></div></div></div>`,
-    `</div></div><div class="review-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs" style="margin-bottom:10px"><li class="active"><a href="#reviewcards-open" data-toggle="tab">Open1</a></li><li><a href="#reviewcards-closed" data-toggle="tab">Closed0</a></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"><a href="#thread-91" class="review-card open"><p class="content">Review note</p><p class="info"><span class="comments pull-left"><i class="yobicon-comments"></i>1</span><span class="outdated-label">Outdated</span><span class="date" title="Jul 5, 2026">Jul 5, 2026</span><span class="avatar-wrap smaller ml5"><img src="/assets/images/default-avatar-32.png"></span></p></a></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div></div></div>`,
+    `</div></div><div class="review-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs" style="margin-bottom:10px"><li class="active"><a href="#reviewcards-open" data-toggle="tab">Open1</a></li><li><a href="#reviewcards-closed" data-toggle="tab">Closed0</a></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91" class="review-card open"><p class="content">Review note</p><p class="info"><span class="comments pull-left"><i class="yobicon-comments"></i>1</span><span class="outdated-label">Outdated</span><span class="date" title="Jul 5, 2026">Jul 5, 2026</span><span class="avatar-wrap smaller ml5"><img src="/assets/images/default-avatar-32.png"></span></p></a></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div></div></div>`,
   );
 
 const NON_RANGED_THREAD = {
@@ -177,14 +177,17 @@ const EXPECTED_PULL_REQUEST_NON_RANGED_THREAD = EXPECTED_PULL_REQUEST_REVIEW_CAR
   `<div class="non-ranged-threads-wrap"></div>`,
   `<div class="non-ranged-threads-wrap">${EXPECTED_PULL_REQUEST_NON_RANGED_THREAD_HTML}</div>`,
 )
-  .replace(`href="#thread-91"`, `href="#thread-92"`)
+  .replace(
+    `href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91"`,
+    `href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-92"`,
+  )
   .replace(`<p class="content">Review note</p>`, `<p class="content">General note</p>`)
   .replace(`title="Jul 5, 2026">Jul 5, 2026`, `title="Jul 7, 2026">Jul 7, 2026`)
   .replace(`<span class="comments pull-left"><i class="yobicon-comments"></i>1</span>`, ``);
 
 const EXPECTED_PULL_REQUEST_OUTDATED_REVIEW_CARD = EXPECTED_PULL_REQUEST_REVIEW_CARD.replace(
-  `href="#thread-91" class="review-card open"`,
-  `href="#thread-93" class="review-card open outdated"`,
+  `href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91" class="review-card open"`,
+  `href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-93" class="review-card open outdated"`,
 );
 
 test("project pull request changes matches legacy git/viewChanges.scala.html empty diff DOM", async ({
@@ -289,7 +292,7 @@ test("project pull request changes renders legacy review cards when threads exis
   await expect(page.locator(".btn-show-reviewcards")).toHaveCount(1);
   await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
     "href",
-    "#thread-91",
+    `${basePath}/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91`,
   );
 
   expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
@@ -333,7 +336,7 @@ test("project pull request changes renders review cards for non-ranged-only thre
   await expect(page.locator(".codediff-wrap")).not.toHaveClass(/diffs-only/u);
   await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
     "href",
-    "#thread-92",
+    `${basePath}/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-92`,
   );
 
   expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
