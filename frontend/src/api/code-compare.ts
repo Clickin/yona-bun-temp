@@ -22,6 +22,7 @@ export type CodeCompareResponse = {
   files: CodeCompareFile[];
   noHead: boolean;
   ownerName: string;
+  patch: string;
   projectName: string;
   revA: string;
   revB: string;
@@ -43,6 +44,7 @@ function normalizeCompare(response: Partial<CodeCompareResponse>): CodeCompareRe
     })),
     noHead: response.noHead ?? false,
     ownerName: response.ownerName ?? "",
+    patch: response.patch ?? "",
     projectName: response.projectName ?? "",
     revA: response.revA ?? "",
     revB: response.revB ?? "",
