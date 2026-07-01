@@ -277,9 +277,29 @@ function FolderList({
           <div className="span1 commitDate">{entry.commitDate}</div>
         </div>
       ))}
+
+      <script
+        id="tplFileListItem"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{ __html: FILE_LIST_ITEM_TEMPLATE }}
+      ></script>
     </div>
   );
 }
+
+const FILE_LIST_ITEM_TEMPLATE =
+  '<div id="cb-${listPath}${fileName}" class="row-fluid listitem" data-path="${targetPath}">' +
+  '<div class="span6 filename">' +
+  '<a href="${path}" class="${fileClass}" title="${fileName}" data-targetPath="${targetPath}" data-type="${type}">' +
+  '<span class="dynatree-icon vmiddle"></span>${fileName}' +
+  "</a>" +
+  "</div>" +
+  '<div class="span5 commitMsg">' +
+  "${avatarImg}" +
+  '<span class="ml5"><a href="${commitUrl}">${commitMsg}</a></span>' +
+  "</div>" +
+  '<div class="span1 commitDate">${commitDate}</div>' +
+  "</div>";
 
 function commitHref(
   basePath: string,
