@@ -569,6 +569,18 @@ test("project issue detail renders legacy child issue list", async ({ page }) =>
   expect(await canonicalize(page, ".span-left-pane > .subtasks")).toEqual(
     await canonicalizeHtml(page, expected),
   );
+  expect(await childIssueMetrics(page)).toEqual({
+    countGroupBorder: "0px none rgb(51, 51, 51)",
+    countGroupLineHeight: "14px",
+    countGroupMarginTop: "2px",
+    dateDisplay: "none",
+    firstChildWidth: 938,
+    itemIconFontSize: "9px",
+    parentFontSize: "16px",
+    rowDisplay: "block",
+    rowPadding: "0px 3px",
+    voteLinkMarginLeft: "-5px",
+  });
 });
 
 test("project issue detail renders legacy unauthorized comment form", async ({ page }) => {
@@ -1301,6 +1313,34 @@ async function eventTimelineMetrics(page: Page, selector: string) {
       stateWidth: state ? Math.round(state.getBoundingClientRect().width) : null,
     };
   });
+}
+
+async function childIssueMetrics(page: Page) {
+  return page
+    .locator(".span-left-pane .issue-item.child-issue")
+    .first()
+    .evaluate((row) => {
+      const rowStyle = window.getComputedStyle(row);
+      const parent = row.closest(".subtasks")?.querySelector<HTMLElement>(".parent-issue");
+      const countGroup = row.querySelector<HTMLElement>(".item-count-groups");
+      const countStyle = countGroup ? window.getComputedStyle(countGroup) : null;
+      const itemIcon = row.querySelector<HTMLElement>(".count-groups.item-icon");
+      const date = row.querySelector<HTMLElement>(".child-issue-date");
+      const voteLink = row.querySelector<HTMLElement>(".vote-count");
+
+      return {
+        countGroupBorder: countStyle?.border ?? null,
+        countGroupLineHeight: countStyle?.lineHeight ?? null,
+        countGroupMarginTop: countStyle?.marginTop ?? null,
+        dateDisplay: date ? window.getComputedStyle(date).display : null,
+        firstChildWidth: Math.round(row.getBoundingClientRect().width),
+        itemIconFontSize: itemIcon ? window.getComputedStyle(itemIcon).fontSize : null,
+        parentFontSize: parent ? window.getComputedStyle(parent).fontSize : null,
+        rowDisplay: rowStyle.display,
+        rowPadding: `${rowStyle.paddingTop} ${rowStyle.paddingRight}`,
+        voteLinkMarginLeft: voteLink ? window.getComputedStyle(voteLink).marginLeft : null,
+      };
+    });
 }
 
 async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string, unknown> = {}) {
