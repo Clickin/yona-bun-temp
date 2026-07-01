@@ -14,6 +14,7 @@ const LEFT_COMMENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><di
 const RIGHT_INDEX_COMMENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><strong>Comment</strong> <strong class="num">1</strong></div><ul class="comments"><li class="comment index-comment  " id="comment-77" data-location="#comment-77"><div><div id="comment-body-77"><div class="comment-body"><a href="#comment-77">Comment markdown</a></div></div><div class="index-comment-author"><span class="comment_author"><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="#comment-77" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><a href="#comment-77" class="share-link" style="display:none">[Link]</a></span></div></div></li></ul></div></div></div>`;
 const LEFT_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-88"><span class="state closed">Closed</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> closed this issue<span class="date"><a href="#event-88">Jul 3, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_ASSIGNEE_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-90"><span class="state changed">Assigned</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> assigned this issue to <a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="admin"><strong>Site Admin</strong></a><span class="date"><a href="#event-90">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
+const LEFT_MILESTONE_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-91"><span class="state milestone-changed">Update milestone</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> changed milestone to <span class="bold font-blue"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="date"><a href="#event-91">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_DEFAULT_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-89">fallback noteby <a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a><span class="date"><a href="#event-89">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 
 test("project issue detail matches legacy issue/view.scala.html voter state", async ({ page }) => {
@@ -139,6 +140,38 @@ test("project issue detail renders legacy assignee timeline event", async ({ pag
     await canonicalizeHtml(
       page,
       LEFT_ASSIGNEE_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("project issue detail renders legacy milestone timeline event", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    commentCount: 0,
+    comments: [],
+    timeline: [
+      {
+        createdLabel: "Jul 4, 2026",
+        eventType: "ISSUE_MILESTONE_CHANGED",
+        id: 91,
+        kind: "event",
+        milestoneId: 5,
+        milestoneTitle: "v1.0",
+        newValue: "5",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#event-91 .state.milestone-changed")).toHaveText("Update milestone");
+
+  expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
+    await canonicalizeHtml(
+      page,
+      LEFT_MILESTONE_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });

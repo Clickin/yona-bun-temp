@@ -717,6 +717,7 @@ function IssueMainTimeline({
                   <IssueEventRow
                     basePath={basePath}
                     event={item}
+                    issue={issue}
                     key={`event-${stringField(item.id)}`}
                   />
                 ),
@@ -809,7 +810,15 @@ function UploadForm({ resourceType }: { resourceType: string }) {
   );
 }
 
-function IssueEventRow({ basePath, event }: { basePath: string; event: IssueTimelineItem }) {
+function IssueEventRow({
+  basePath,
+  event,
+  issue,
+}: {
+  basePath: string;
+  event: IssueTimelineItem;
+  issue: RestIssueDetailResponse;
+}) {
   const eventType = stringField(event.eventType);
   if (eventType === "ISSUE_BODY_CHANGED") {
     return null;
@@ -819,6 +828,8 @@ function IssueEventRow({ basePath, event }: { basePath: string; event: IssueTime
   const newValue = stringField(event.newValue).toLowerCase();
   const senderLoginId = stringField(event.senderLoginId);
   const senderLabel = stringField(event.senderLabel, senderLoginId);
+  const ownerName = stringField(issue.ownerName);
+  const projectName = stringField(issue.projectName);
   const sender = (
     <EventUserLink
       avatarUrl={stringField(event.senderAvatarUrl, "/assets/images/default-avatar-32.png")}
@@ -857,6 +868,30 @@ function IssueEventRow({ basePath, event }: { basePath: string; event: IssueTime
             loginId={targetLoginId}
           />
         )}
+        <span className="date">
+          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+        </span>
+      </li>
+    );
+  }
+
+  if (eventType === "ISSUE_MILESTONE_CHANGED") {
+    const milestoneId = stringField(event.milestoneId, stringField(event.newValue));
+    const milestoneTitle = stringField(event.milestoneTitle, stringField(event.newValue));
+    return (
+      <li className="event" id={`event-${eventId}`}>
+        <span className="state milestone-changed">Update milestone</span>
+        {sender} changed milestone to{" "}
+        <span className="bold font-blue">
+          <a
+            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/milestone/${milestoneId}`)}
+            data-toggle="tooltip"
+            data-placement="bottom"
+            title="Milestone"
+          >
+            {milestoneTitle}
+          </a>
+        </span>
         <span className="date">
           <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
         </span>
