@@ -56,7 +56,23 @@ function ProjectImportScreen({
     optionsQuery.data?.selectedOwnerName ??
     ownerOptions[0]?.ownerName ??
     "";
+  const selectedOwnerOption = ownerOptions.find((option) => option.ownerName === selectedOwner);
+  const [ownerName, setOwnerName] = React.useState(selectedOwner);
+  const isSelectedOwnerGroup =
+    ownerOptions.find((option) => option.ownerName === ownerName)?.organization ??
+    selectedOwnerOption?.organization ??
+    false;
   const [usesRepoAuth, setUsesRepoAuth] = React.useState(false);
+  const [repoAuthChanged, setRepoAuthChanged] = React.useState(false);
+  const [projectScope, setProjectScope] = React.useState("PUBLIC");
+  const [menuCodeChecked, setMenuCodeChecked] = React.useState(true);
+  const [menuPullRequestChecked, setMenuPullRequestChecked] = React.useState(true);
+  const [menuReviewChecked, setMenuReviewChecked] = React.useState(true);
+  React.useEffect(() => {
+    if (!ownerName && selectedOwner) {
+      setOwnerName(selectedOwner);
+    }
+  }, [ownerName, selectedOwner]);
   const importMutation = useMutation({
     mutationFn: async (input: {
       authId: string;
@@ -123,7 +139,7 @@ function ProjectImportScreen({
                   <a
                     href={prefixBasePath(
                       runtimeConfig.basePath,
-                      `/projectform?owner=${encodeURIComponent(selectedOwner)}`,
+                      `/projectform?owner=${encodeURIComponent(ownerName || selectedOwner)}`,
                     )}
                     className="ybtn ybtn-small nm"
                   >
@@ -155,7 +171,10 @@ function ProjectImportScreen({
                       type="checkbox"
                       id="useRepoAuth"
                       checked={usesRepoAuth}
-                      onChange={(event) => setUsesRepoAuth(event.currentTarget.checked)}
+                      onChange={(event) => {
+                        setRepoAuthChanged(true);
+                        setUsesRepoAuth(event.currentTarget.checked);
+                      }}
                     />{" "}
                     {t("project.import.auth.required")}
                   </label>
@@ -174,6 +193,7 @@ function ProjectImportScreen({
                             name="authId"
                             className="text"
                             defaultValue=""
+                            disabled={repoAuthChanged && !usesRepoAuth}
                             placeholder={t("project.import.auth.userid.desc")}
                           />
                         </dd>
@@ -181,7 +201,12 @@ function ProjectImportScreen({
                       <dl className="span6">
                         <dt>{t("project.import.auth.userpw")}</dt>
                         <dd>
-                          <input type="password" name="authPw" className="text" />
+                          <input
+                            type="password"
+                            name="authPw"
+                            className="text"
+                            disabled={repoAuthChanged && !usesRepoAuth}
+                          />
                         </dd>
                       </dl>
                     </div>
@@ -201,7 +226,17 @@ function ProjectImportScreen({
                     data-toggle="select2"
                     data-format="user"
                     className="mb10"
-                    defaultValue={selectedOwner}
+                    value={ownerName}
+                    onChange={(event) => {
+                      const nextOwner = event.currentTarget.value;
+                      setOwnerName(nextOwner);
+                      const nextOwnerIsGroup = ownerOptions.find(
+                        (option) => option.ownerName === nextOwner,
+                      )?.organization;
+                      if (!nextOwnerIsGroup && projectScope === "PROTECTED") {
+                        setProjectScope("PUBLIC");
+                      }
+                    }}
                   >
                     {ownerOptions.map((option) => (
                       <OwnerOption key={option.ownerName} option={option} />
@@ -252,7 +287,8 @@ function ProjectImportScreen({
                           name="projectScope"
                           value="PUBLIC"
                           className="radio-btn pull-left"
-                          defaultChecked
+                          checked={projectScope === "PUBLIC"}
+                          onChange={() => setProjectScope("PUBLIC")}
                         />
                         <label htmlFor="public">
                           <strong className="ml5">{t("project.public")}</strong>
@@ -260,13 +296,19 @@ function ProjectImportScreen({
                         </label>
                       </li>
 
-                      <li id="opt-protected" className="mt10" style={{ display: "none" }}>
+                      <li
+                        id="opt-protected"
+                        className="mt10"
+                        style={isSelectedOwnerGroup ? undefined : { display: "none" }}
+                      >
                         <input
                           type="radio"
                           id="protected"
                           name="projectScope"
                           value="PROTECTED"
                           className="radio-btn pull-left"
+                          checked={projectScope === "PROTECTED"}
+                          onChange={() => setProjectScope("PROTECTED")}
                         />
                         <label htmlFor="protected">
                           <strong className="ml5">{t("project.protected")}</strong>
@@ -281,6 +323,8 @@ function ProjectImportScreen({
                           name="projectScope"
                           value="PRIVATE"
                           className="radio-btn pull-left"
+                          checked={projectScope === "PRIVATE"}
+                          onChange={() => setProjectScope("PRIVATE")}
                         />
                         <label htmlFor="private">
                           <strong className="ml5">{t("project.private")}</strong>
@@ -310,14 +354,44 @@ function ProjectImportScreen({
                 <div className="row-fluid">
                   <div className="span2 right-txt">{t("project.menu.setting")}</div>
                   <div className="span10 cu-desc">
-                    <MenuCheckbox id="menuSettingCode" name="code" label={t("menu.code")} />
+                    <MenuCheckbox
+                      id="menuSettingCode"
+                      name="code"
+                      label={t("menu.code")}
+                      checked={menuCodeChecked}
+                      onChange={(checked) => {
+                        setMenuCodeChecked(checked);
+                        if (!checked) {
+                          setMenuPullRequestChecked(false);
+                          setMenuReviewChecked(false);
+                        }
+                      }}
+                    />
                     <MenuCheckbox id="menuSettingIssue" name="issue" label={t("menu.issue")} />
                     <MenuCheckbox
                       id="menuSettingPullRequest"
                       name="pullRequest"
                       label={t("menu.pullRequest")}
+                      checked={menuPullRequestChecked}
+                      onChange={(checked) => {
+                        setMenuPullRequestChecked(checked);
+                        if (checked) {
+                          setMenuCodeChecked(true);
+                        }
+                      }}
                     />
-                    <MenuCheckbox id="menuSettingReview" name="review" label={t("menu.review")} />
+                    <MenuCheckbox
+                      id="menuSettingReview"
+                      name="review"
+                      label={t("menu.review")}
+                      checked={menuReviewChecked}
+                      onChange={(checked) => {
+                        setMenuReviewChecked(checked);
+                        if (checked) {
+                          setMenuCodeChecked(true);
+                        }
+                      }}
+                    />
                     <MenuCheckbox
                       id="menuSettingMilestone"
                       name="milestone"
@@ -356,7 +430,19 @@ function OwnerOption({ option }: { option: ProjectCreateOwnerOption }) {
   );
 }
 
-function MenuCheckbox({ id, label, name }: { id: string; label: string; name: string }) {
+function MenuCheckbox({
+  checked,
+  id,
+  label,
+  name,
+  onChange,
+}: {
+  checked?: boolean;
+  id: string;
+  label: string;
+  name: string;
+  onChange?: (checked: boolean) => void;
+}) {
   return (
     <label htmlFor={id} className="bg-radiobtn label-public inline-list">
       <input
@@ -365,7 +451,9 @@ function MenuCheckbox({ id, label, name }: { id: string; label: string; name: st
         id={id}
         name={name}
         value="true"
-        defaultChecked
+        checked={checked}
+        defaultChecked={checked === undefined ? true : undefined}
+        onChange={(event) => onChange?.(event.currentTarget.checked)}
       />
       {label}
     </label>

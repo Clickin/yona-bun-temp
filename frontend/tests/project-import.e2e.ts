@@ -198,6 +198,41 @@ test("project import form matches legacy project/importing.scala.html DOM", asyn
   });
 });
 
+test("project import form mirrors legacy auth, owner, and menu dependencies", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectImport(page);
+
+  await page.goto(`${basePath}/_import?owner=admin`);
+
+  await expect(page.locator("#repoAuth")).toBeHidden();
+  await page.locator("#useRepoAuth").check();
+  await expect(page.locator("#repoAuth")).toBeVisible();
+  await expect(page.locator("#repoAuth input[name='authId']")).toBeEnabled();
+  await expect(page.locator("#repoAuth input[name='authPw']")).toBeEnabled();
+  await page.locator("#useRepoAuth").uncheck();
+  await expect(page.locator("#repoAuth")).toBeHidden();
+  await expect(page.locator("#repoAuth input[name='authId']")).toBeDisabled();
+  await expect(page.locator("#repoAuth input[name='authPw']")).toBeDisabled();
+
+  await page.locator("#project-owner").selectOption("weblabs");
+  await expect(page.locator("#opt-protected")).toBeVisible();
+  await page.locator("#protected").check();
+  await page.locator("#project-owner").selectOption("admin");
+  await expect(page.locator("#opt-protected")).toBeHidden();
+  await expect(page.locator("#public")).toBeChecked();
+
+  await page.locator("#menuSettingCode").uncheck();
+  await expect(page.locator("#menuSettingCode")).not.toBeChecked();
+  await expect(page.locator("#menuSettingPullRequest")).not.toBeChecked();
+  await expect(page.locator("#menuSettingReview")).not.toBeChecked();
+
+  await page.locator("#menuSettingPullRequest").check();
+  await expect(page.locator("#menuSettingCode")).toBeChecked();
+
+  await page.locator("#menuSettingReview").check();
+  await expect(page.locator("#menuSettingCode")).toBeChecked();
+});
+
 async function mockProjectImport(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
