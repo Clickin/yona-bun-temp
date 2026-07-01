@@ -273,6 +273,92 @@ async function readPartialDiffMetrics(page: Page) {
   });
 }
 
+async function readInlineDiffCommentRowMetrics(page: Page) {
+  return page.evaluate(() => {
+    const row = document.querySelector<HTMLTableRowElement>("tr.comments.board-comment-wrap");
+    const cell = document.querySelector<HTMLTableCellElement>(
+      "tr.comments.board-comment-wrap > td",
+    );
+    const thread = document.querySelector<HTMLElement>(
+      "tr.comments.board-comment-wrap .comment-thread-wrap",
+    );
+    const threadHeader = document.querySelector<HTMLElement>(
+      "tr.comments.board-comment-wrap .comment-thread-wrap .thread-header",
+    );
+    const badge = document.querySelector<HTMLElement>(
+      "tr.comments.board-comment-wrap .comment-thread-wrap .thread-header .badge",
+    );
+    const comments = document.querySelector<HTMLElement>(
+      "tr.comments.board-comment-wrap .comment-thread-wrap > .comments",
+    );
+    const comment = document.querySelector<HTMLElement>(
+      "tr.comments.board-comment-wrap .comment-thread-wrap > .comments > .comment",
+    );
+    const mediaBody = document.querySelector<HTMLElement>(
+      "tr.comments.board-comment-wrap .comment-thread-wrap .media-body",
+    );
+    const threadHere = document.querySelector<HTMLElement>(
+      "tr.comments.board-comment-wrap .comment-thread-wrap .btn-thread-here",
+    );
+    const minimize = document.querySelector<HTMLElement>(
+      "tr.comments.board-comment-wrap .comment-thread-wrap .thread-header .btn-thread-minimize",
+    );
+    const missing = Object.entries({
+      badge,
+      cell,
+      comment,
+      comments,
+      mediaBody,
+      minimize,
+      row,
+      thread,
+      threadHeader,
+      threadHere,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected inline diff comment metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const cellStyle = getComputedStyle(cell);
+    const commentStyle = getComputedStyle(comment);
+    const commentsStyle = getComputedStyle(comments);
+    const mediaBodyStyle = getComputedStyle(mediaBody);
+    const minimizeStyle = getComputedStyle(minimize);
+    const rowStyle = getComputedStyle(row);
+    const threadStyle = getComputedStyle(thread);
+    const threadHeaderStyle = getComputedStyle(threadHeader);
+    const threadHereStyle = getComputedStyle(threadHere);
+    return {
+      badgeMargin: getComputedStyle(badge).margin,
+      badgePadding: getComputedStyle(badge).padding,
+      cellColspan: cell.colSpan,
+      cellPadding: cellStyle.padding,
+      commentPadding: commentStyle.padding,
+      commentsMargin: commentsStyle.margin,
+      mediaBodyBackground: mediaBodyStyle.backgroundColor,
+      minimizePosition: minimizeStyle.position,
+      minimizeRight: minimizeStyle.right,
+      minimizeTop: minimizeStyle.top,
+      rowDisplay: rowStyle.display,
+      threadBackground: threadStyle.backgroundColor,
+      threadBorderBottomWidth: threadStyle.borderBottomWidth,
+      threadBorderColor: threadStyle.borderTopColor,
+      threadBorderLeftWidth: threadStyle.borderLeftWidth,
+      threadBoxShadow: threadStyle.boxShadow,
+      threadHereDisplay: threadHereStyle.display,
+      threadHeaderPadding: threadHeaderStyle.padding,
+      threadMarginTop: threadStyle.marginTop,
+      threadMaxWidth: threadStyle.maxWidth,
+      threadPadding: threadStyle.padding,
+      threadPosition: threadStyle.position,
+    };
+  });
+}
+
 test("project commit detail renders legacy inline diff comment row", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
@@ -335,6 +421,30 @@ index 1234567..abcdef1 100644
     "style",
     /height:\s*100px/,
   );
+  expect(await readInlineDiffCommentRowMetrics(page)).toEqual({
+    badgeMargin: "0px",
+    badgePadding: "2px 10px",
+    cellColspan: 3,
+    cellPadding: "0px",
+    commentPadding: "2px 0px",
+    commentsMargin: "0px 5px",
+    mediaBodyBackground: "rgb(255, 255, 255)",
+    minimizePosition: "absolute",
+    minimizeRight: "10px",
+    minimizeTop: "8px",
+    rowDisplay: "table-row",
+    threadBackground: "rgb(254, 254, 254)",
+    threadBorderBottomWidth: "1px",
+    threadBorderColor: "rgb(229, 229, 229)",
+    threadBorderLeftWidth: "0px",
+    threadBoxShadow: "rgb(182, 218, 84) 5px 0px 0px 0px inset",
+    threadHereDisplay: "none",
+    threadHeaderPadding: "5px 10px 10px",
+    threadMarginTop: "0px",
+    threadMaxWidth: "876px",
+    threadPadding: "5px 5px 0px",
+    threadPosition: "relative",
+  });
   await expect(page.locator("#comment-501 .comment-avatar img")).toHaveAttribute("alt", "dev");
   await page.locator('#comment-501 [data-toggle="comment-delete"]').click();
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/in/);

@@ -6027,6 +6027,75 @@ div.markdown-preview {
   content: "+";
 }
 
+.diff-container tr.comments {
+  display: none;
+}
+
+.diff-container.show-comments tr.comments {
+  display: table-row;
+}
+
+.diff-container tr.comments > td {
+  padding: 0;
+}
+
+.diff-container tr.comments li {
+  max-width: 1150px;
+}
+
+.diff-container tr.comments .comment-thread-wrap {
+  position: relative;
+  max-width: 876px;
+  padding: 5px 5px 0;
+  margin-top: 0;
+  background-color: #fefefe;
+  border: 1px solid #e5e5e5;
+  border-width: 1px 0;
+}
+
+.diff-container tr.comments .comment-thread-wrap.open {
+  box-shadow: inset 5px 0 0 #b6da54;
+}
+
+.diff-container tr.comments .comment-thread-wrap.closed {
+  box-shadow: inset 5px 0 0 #fd6956;
+}
+
+.diff-container tr.comments .comment-thread-wrap + .comment-thread-wrap {
+  margin-top: 10px;
+}
+
+.diff-container tr.comments .comment-thread-wrap .thread-header {
+  padding: 5px 10px 10px;
+}
+
+.diff-container tr.comments .comment-thread-wrap .thread-header .badge {
+  padding: 2px 10px;
+  margin: 0;
+}
+
+.diff-container tr.comments .comment-thread-wrap > .comments {
+  margin: 0 5px;
+}
+
+.diff-container tr.comments .comment-thread-wrap > .comments .comment {
+  padding: 2px 0;
+}
+
+.diff-container tr.comments .comment-thread-wrap > .comments .media-body {
+  background: #fff;
+}
+
+.diff-container tr.comments .comment-thread-wrap .btn-thread-here {
+  display: none;
+}
+
+.diff-container tr.comments .comment-thread-wrap .btn-thread-minimize {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+}
+
 .inline-comment-form-row td {
   padding: 12px;
   background: #fafafa;
