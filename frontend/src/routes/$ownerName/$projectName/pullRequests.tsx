@@ -242,7 +242,9 @@ function ProjectPullRequestsBody({
               <div id="list" className="row-fluid tab-pane active">
                 <ProjectPullRequestRows
                   basePath={runtimeConfig.basePath}
+                  currentUserLabel={currentUserLabel(pullRequests)}
                   defaultBranch={stringField(recordField(project).defaultBranch, "main")}
+                  isUsingReviewerCount={booleanField(recordField(project).isUsingReviewerCount)}
                   pullRequests={pullRequests}
                 />
               </div>
@@ -256,11 +258,15 @@ function ProjectPullRequestsBody({
 
 function ProjectPullRequestRows({
   basePath,
+  currentUserLabel,
   defaultBranch,
+  isUsingReviewerCount,
   pullRequests,
 }: {
   basePath: string;
+  currentUserLabel: string;
   defaultBranch: string;
+  isUsingReviewerCount: boolean;
   pullRequests: PullRequestListResponse;
 }) {
   const { t } = useLegacyMessages();
@@ -281,7 +287,9 @@ function ProjectPullRequestRows({
       {pullRequests.items.map((pullRequest) => (
         <ProjectPullRequestRow
           basePath={basePath}
+          currentUserLabel={currentUserLabel}
           defaultBranch={defaultBranch}
+          isUsingReviewerCount={isUsingReviewerCount}
           key={pullRequest.id || pullRequest.pullRequestNumber}
           pullRequest={pullRequest}
         />
@@ -293,11 +301,15 @@ function ProjectPullRequestRows({
 
 function ProjectPullRequestRow({
   basePath,
+  currentUserLabel,
   defaultBranch,
+  isUsingReviewerCount,
   pullRequest,
 }: {
   basePath: string;
+  currentUserLabel: string;
   defaultBranch: string;
+  isUsingReviewerCount: boolean;
   pullRequest: PullRequestListItem;
 }) {
   const { t } = useLegacyMessages();
@@ -314,6 +326,10 @@ function ProjectPullRequestRow({
   const legacyHref = { href: pullRequestHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
   const toBranchClass = pullRequest.toBranch === defaultBranch ? "to-default-branch" : "to-branch";
   const titleParts = splitHeaderWordsInBrackets(pullRequest.title);
+  const showReviewerCount = isUsingReviewerCount && pullRequest.reviewerCount > 0;
+  const reviewerClass = pullRequest.reviewerNames.includes(currentUserLabel)
+    ? "infos-item over"
+    : "infos-item";
 
   return (
     <li className="post-item title" {...legacyHref}>
@@ -367,6 +383,19 @@ function ProjectPullRequestRow({
                 <span>{pullRequest.closedCommentThreadCount}</span>
                 <span className="gray-txt">/</span>
                 <span className="size total">{pullRequest.commentThreadCount}</span>
+              </a>
+            </div>
+          ) : null}
+          {showReviewerCount ? (
+            <div className={reviewerClass} style={{ marginTop: -1 }}>
+              <i className="infos-icon yobicon-preview vmiddle"></i>
+              <a
+                href={`${pullRequestHref}#reviewers`}
+                data-toggle="tooltip"
+                data-html="true"
+                data-title={pullRequest.reviewerNames.join("<br>")}
+              >
+                <span className="vmiddle">{pullRequest.reviewerCount}</span>
               </a>
             </div>
           ) : null}
@@ -436,6 +465,13 @@ function stringField(value: unknown, fallback = "") {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function currentUserLabel(pullRequests: PullRequestListResponse) {
+  const currentUser = pullRequests.contributors.find(
+    (contributor) => contributor.userId === pullRequests.currentUserId,
+  );
+  return currentUser?.userLabel ?? "";
 }
 
 function recordField(value: unknown): Record<string, unknown> {

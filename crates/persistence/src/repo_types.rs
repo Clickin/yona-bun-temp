@@ -1546,6 +1546,7 @@ pub struct PullRequestListItemRecord {
     pub receiver_label: String,
     pub receiver_login_id: String,
     pub reviewer_count: u32,
+    pub reviewer_names: Vec<String>,
     pub state: String,
     pub title: String,
     pub to_branch: String,

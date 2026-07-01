@@ -699,6 +699,25 @@ test("maps project scoped pull request routes before generic project routes", ()
   );
 });
 
+test("maps pull request persistence payload changes to PR evidence", () => {
+  const result = runGate([
+    "crates/persistence/src/repo/record_helpers.rs",
+    "crates/persistence/src/repo_types.rs",
+    "crates/server/src/routes/pull_requests.rs",
+    "frontend/src/api/pull-requests.ts",
+    "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx",
+    "frontend/tests/project-pullrequests.e2e.ts",
+    "docs/provenance/ui-parity-reports/ui-parity-pull-request-review.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["pull-request-and-review", "parity"]],
+  );
+});
+
 test("maps organization pull request routes before generic organization routes", () => {
   const result = runGate([
     "frontend/src/routes/organizations/$organizationName/pullrequests/route.tsx",

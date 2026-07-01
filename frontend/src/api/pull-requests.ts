@@ -48,6 +48,7 @@ export type PullRequestListItem = {
   receiverLabel: string;
   receiverLoginId: string;
   reviewerCount: number;
+  reviewerNames: string[];
   state: PullRequestState;
   title: string;
   toBranch: string;
@@ -424,6 +425,7 @@ function normalizeListItem(item: Partial<PullRequestListItem>): PullRequestListI
     receiverLabel: item.receiverLabel ?? "",
     receiverLoginId: item.receiverLoginId ?? "",
     reviewerCount: item.reviewerCount ?? 0,
+    reviewerNames: item.reviewerNames ?? [],
     state: item.state ?? "open",
     title: item.title ?? "",
     toBranch: item.toBranch ?? "",

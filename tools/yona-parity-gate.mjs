@@ -457,6 +457,7 @@ const DOMAIN_BUCKETS = [
       "project-fork",
       "pull-request",
       "pull_request",
+      "pullrequests",
       "pulls",
       "review",
       "reviews",
@@ -858,6 +859,18 @@ function classifyCapability(filePath, changedFiles = [], repoRoot = DEFAULT_REPO
     return publicUserProfileBucket;
   }
 
+  const pullRequestReviewBucket = [...PARITY_SLICES, ...DOMAIN_BUCKETS].find(
+    (bucket) => bucket.id === "pull-request-and-review",
+  );
+  if (
+    pullRequestReviewBucket &&
+    isPullRequestReviewBackendSurface(filePath) &&
+    capabilityHasTestEvidence(pullRequestReviewBucket, changedFiles, repoRoot) &&
+    capabilityHasProvenanceEvidence(pullRequestReviewBucket, changedFiles)
+  ) {
+    return pullRequestReviewBucket;
+  }
+
   const markdownBucket = DOMAIN_BUCKETS.find(
     (bucket) => bucket.id === "project-markdown-rendering",
   );
@@ -907,6 +920,14 @@ function isPublicUserProfileBackendSurface(filePath) {
     "crates/server/src/api_types.rs",
     "crates/server/src/routes/users.rs",
     "crates/server/src/routes/workspace.rs",
+  ].includes(filePath);
+}
+
+function isPullRequestReviewBackendSurface(filePath) {
+  return [
+    "crates/persistence/src/repo/record_helpers.rs",
+    "crates/persistence/src/repo/pull_request.rs",
+    "crates/persistence/src/repo_types.rs",
   ].includes(filePath);
 }
 

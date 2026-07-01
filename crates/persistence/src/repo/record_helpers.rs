@@ -357,10 +357,12 @@ impl AppRepositoryImpl<'_> {
             .filter(review_thread_closed_condition())
             .count(&self.db)
             .await? as u32;
-        let reviewer_count = pull_request_reviewers::Entity::find()
-            .filter(pull_request_reviewers::Column::PullRequestId.eq(row.id))
-            .count(&self.db)
-            .await? as u32;
+        let reviewers = self.list_pull_request_reviewers(row.id).await?;
+        let reviewer_count = reviewers.len() as u32;
+        let reviewer_names = reviewers
+            .into_iter()
+            .map(|reviewer| reviewer.user_label)
+            .collect();
 
         Ok(PullRequestListItemRecord {
             closed_comment_thread_count,
@@ -379,6 +381,7 @@ impl AppRepositoryImpl<'_> {
             receiver_label: receiver.user_label,
             receiver_login_id: receiver.login_id,
             reviewer_count,
+            reviewer_names,
             state: pull_request_state_from_raw(row.state, row.is_conflict),
             title: row.title.unwrap_or_default(),
             to_branch: row.to_branch.unwrap_or_default(),
