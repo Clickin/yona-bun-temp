@@ -108,6 +108,31 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   );
 });
 
+test("project issue detail opens legacy keymap modal through data-toggle modal", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await page.locator('.board-footer a[href="#helpKeys"][data-toggle="modal"]').click();
+  await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/);
+  await expect(page.locator("#helpKeys")).toHaveClass(/in/);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  expect(await keymapModalMetrics(page)).toEqual({
+    display: "block",
+    firstColumnTitle: "projects",
+    left: 320,
+    top: 72,
+    width: 682,
+  });
+
+  await page.locator('#helpKeys [data-dismiss="modal"]').click();
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+});
+
 test("project issue detail switches legacy comment editor tabs through data-toggle tab", async ({
   page,
 }) => {
@@ -1378,6 +1403,19 @@ async function selectedLabelMetrics(page: Page) {
         labelPadding: labelStyle ? `${labelStyle.paddingTop} ${labelStyle.paddingRight}` : null,
       };
     });
+}
+
+async function keymapModalMetrics(page: Page) {
+  return page.locator("#helpKeys").evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      display: window.getComputedStyle(element).display,
+      firstColumnTitle: element.querySelector(".span3 h5")?.textContent?.trim(),
+      left: Math.round(rect.left),
+      top: Math.round(rect.top),
+      width: Math.round(rect.width),
+    };
+  });
 }
 
 async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string, unknown> = {}) {
