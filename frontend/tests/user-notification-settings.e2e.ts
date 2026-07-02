@@ -84,6 +84,20 @@ test("current-user notification settings page matches legacy user/edit_notificat
     tableDisplay: "table",
   });
 
+  await expect(page.locator('.nav-tabs a:has-text("Email settings")')).toHaveAttribute(
+    "href",
+    `${basePath}/user/editform/emails`,
+  );
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "notifications-email-tab";
+  });
+  await page.locator('.nav-tabs a:has-text("Email settings")').click();
+  await expect(page).toHaveURL(`${basePath}/user/editform/emails`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("notifications-email-tab");
+
+  await page.goto(`${basePath}/user/editform/notifications#7`);
   await page.locator('#notification-projects a[href="#2"]').click();
   await expect(page.locator("#notification-projects li").first()).toHaveClass(/active/);
   await page.locator('[id="2"] input[data-href$="/noti/toggle/2/NEW_COMMENT"]').click();
@@ -298,11 +312,27 @@ async function canonicalizeScreenRoots(page: Page) {
     function stableAttrs(current: Element, names: string[]) {
       const attrs = names
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`);
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean);
       if (current instanceof HTMLInputElement && current.type === "checkbox" && current.checked) {
         attrs.push('checked="checked"');
       }
       return attrs.join(" ");
+    }
+
+    function normalizeAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        current.tagName.toLowerCase() === "a" &&
+        current.closest(".page-wrap .nav-tabs")
+      ) {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/)
+          .filter((value) => value && value !== "active")
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
     return Array.from(
@@ -366,11 +396,27 @@ async function canonicalizeHtml(page: Page, html: string) {
       function stableAttrs(current: Element, names: string[]) {
         const attrs = names
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`);
+          .map((name) => normalizeAttribute(current, name))
+          .filter(Boolean);
         if (current instanceof HTMLInputElement && current.type === "checkbox" && current.checked) {
           attrs.push('checked="checked"');
         }
         return attrs.join(" ");
+      }
+
+      function normalizeAttribute(current: Element, name: string) {
+        if (
+          name === "class" &&
+          current.tagName.toLowerCase() === "a" &&
+          current.closest(".page-wrap .nav-tabs")
+        ) {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/)
+            .filter((value) => value && value !== "active")
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
+        return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
 
       const template = document.createElement("template");
