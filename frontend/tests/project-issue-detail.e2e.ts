@@ -27,7 +27,7 @@ const COMMENT_FORM_UNAUTHORIZED = `<div class="write-comment-box mt20" title="Yo
 const CHILD_COMMENT_ANCHORS = `<div id="comment-78"></div>`;
 const CHILD_COMMENTS = `<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Child <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/qa1" class="usf-group" data-toggle="tooltip" data-placement="top" title="qa1"><strong>QA One</strong></a><a href="#comment-78" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><a href="javascript:void(0)" type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/issue/11/comment/78" title="Delete comment">x</a></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/issue/11/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="77"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (CTRL + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>`;
 const LEFT_COMMENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">1</strong></div><hr class="nm"><ul class="comments"><li class="comment " id="comment-77">${CHILD_COMMENT_ANCHORS}<div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Dev Member"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author"><span class="resp-comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="dev"></a></span><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="#comment-77" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><a href="#comment-77" class="share-link" style="display:none">[Link]</a></span><span class="act-row pull-right"><span class="new-issue-by"><a href="__BASE_PATH__/user/issues/new?commentId=77">New issue by this comment</a></span><button type="button" class="btn-transparent-with-fontsize-lineheight" title="Agree" data-request-type="comment-vote" data-request-uri="__BASE_PATH__/admin/sample/issue/11/comment/77/vote"><i class="yobicon-hearts vote-heart-off"></i></button><button type="button" class="btn-transparent-with-fontsize-lineheight ml10" data-toggle="comment-edit" data-comment-id="77" title="Edit comment"><i class="yobicon-edit-2"></i></button><button type="button" class="btn-transparent-with-fontsize-lineheight ml6" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/issue/11/comment/77" title="Delete comment"><i class="yobicon-trash"></i></button></span></div>${COMMENT_UPDATE_FORM}<div id="comment-body-77">${TASKLIST}<div class="comment-body markdown-wrap" data-allowed-update="true" data-via-email="false"><p>Comment <strong>markdown</strong></p></div><div class="attachments pull-left" data-attachments="[]"></div></div></div>${CHILD_COMMENTS}</li></ul></div></div>${COMMENT_FORM}</div>`;
-const RIGHT_INDEX_COMMENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><strong>Comment</strong> <strong class="num">1</strong></div><ul class="comments"><li class="comment index-comment  " id="comment-77" data-location="#comment-77"><div><div id="comment-body-77"><div class="comment-body"><a href="#comment-77">Comment markdown</a></div></div><div class="index-comment-author"><span class="comment_author"><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="#comment-77" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><a href="#comment-77" class="share-link" style="display:none">[Link]</a></span></div></div></li></ul></div></div></div>`;
+const RIGHT_INDEX_COMMENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><strong>Comment</strong> <strong class="num">1</strong></div><ul class="comments"><li class="comment index-comment  " id="comment-77" data-location="#comment-77"><div><div id="comment-body-77"><div class="comment-body"><a href="#comment-77">Comment markdown</a></div></div><div class="index-comment-author"><span class="comment-exists"><i class="yobicon-comment2"></i></span><span class="comment_author"><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="#comment-77" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><a href="#comment-77" class="share-link" style="display:none">[Link]</a></span></div></div></li></ul></div></div></div>`;
 const LEFT_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-88"><span class="state closed">Closed</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> closed this issue<span class="date"><a href="#event-88">Jul 3, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_ASSIGNEE_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-90"><span class="state changed">Assigned</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> assigned this issue to <a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="admin"><strong>Site Admin</strong></a><span class="date"><a href="#event-90">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_MILESTONE_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-91"><span class="state milestone-changed">Update milestone</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> changed milestone to <span class="bold font-blue"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="date"><a href="#event-91">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
@@ -100,7 +100,7 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     authorDisplay: "block",
     bodyPadding: "5px 20px",
     bodyText: "Comment markdown",
-    childCountMarkers: 0,
+    childCountMarkers: 1,
     commentDisplay: "list-item",
     dataLocation: "#comment-77",
     listDisplay: "block",
@@ -554,6 +554,61 @@ test("project issue detail preserves legacy child comment anchor divs", async ({
     childHref: "#comment-78",
     inlineChildAnchorCount: 0,
   });
+});
+
+test("project issue detail renders legacy index comment mention and child count state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    comments: [
+      {
+        attachments: [],
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorLabel: "Dev Member",
+        authorLoginId: "dev",
+        childComments: [
+          {
+            authorLabel: "QA One",
+            authorLoginId: "qa1",
+            contentsHtml: "<p>Child mention</p>",
+            contentsMarkdown: "Child @admin note",
+            createdLabel: "Jul 2, 2026",
+            id: 78,
+            viewerCanDelete: true,
+          },
+          {
+            authorLabel: "QA Two",
+            authorLoginId: "qa2",
+            contentsHtml: "<p>Second child</p>",
+            contentsMarkdown: "Second child",
+            createdLabel: "Jul 2, 2026",
+            id: 79,
+            viewerCanDelete: true,
+          },
+        ],
+        contentsHtml: "<p>Ping @admin please</p>",
+        contentsMarkdown: "Ping @admin please",
+        createdLabel: "Jul 2, 2026",
+        id: 77,
+        viewerCanDelete: true,
+        viewerCanUpdate: true,
+        viaEmail: false,
+        voterCount: 0,
+        voters: [],
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const indexComment = page.locator(".span-right-pane #comment-77.index-comment");
+  await expect(indexComment).toHaveClass("comment index-comment mentioned mentionedInChild");
+  expect(await canonicalize(page, ".span-right-pane #comment-77 .comment-exists")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<span class="comment-exists"><i class="yobicon-comment2"></i>2</span>`,
+    ),
+  );
 });
 
 test("project issue detail renders legacy draft header state", async ({ page }) => {

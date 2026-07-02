@@ -898,7 +898,11 @@ function IssueDetailBody({
                   />
                 </div>
               </form>
-              <IssueIndexTimeline basePath={basePath} issue={issue} />
+              <IssueIndexTimeline
+                basePath={basePath}
+                currentUserLoginId={currentUserLoginId}
+                issue={issue}
+              />
             </div>
           </div>
         </div>
@@ -2838,9 +2842,11 @@ function CommentVoters({
 
 function IssueIndexTimeline({
   basePath,
+  currentUserLoginId,
   issue,
 }: {
   basePath: string;
+  currentUserLoginId: string;
   issue: RestIssueDetailResponse;
 }) {
   const comments = issue.comments ?? [];
@@ -2860,6 +2866,7 @@ function IssueIndexTimeline({
               <IssueIndexComment
                 basePath={basePath}
                 comment={comment}
+                currentUserLoginId={currentUserLoginId}
                 key={stringField(comment.id)}
               />
             ))}
@@ -2870,14 +2877,29 @@ function IssueIndexTimeline({
   );
 }
 
-function IssueIndexComment({ basePath, comment }: { basePath: string; comment: IssueComment }) {
+function IssueIndexComment({
+  basePath,
+  comment,
+  currentUserLoginId,
+}: {
+  basePath: string;
+  comment: IssueComment;
+  currentUserLoginId: string;
+}) {
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel);
+  const childComments = Array.isArray(comment.childComments)
+    ? (comment.childComments as IssueChildComment[])
+    : [];
+  const hasCurrentUserMention = hasLegacyMention(comment.contentsMarkdown, currentUserLoginId);
+  const hasCurrentUserMentionInChild = childComments.some((childComment) =>
+    hasLegacyMention(childComment.contentsMarkdown, currentUserLoginId),
+  );
 
   return (
     <li
-      className="comment index-comment  "
+      className={`comment index-comment ${hasCurrentUserMention ? "mentioned" : ""} ${hasCurrentUserMentionInChild ? "mentionedInChild" : ""}`}
       id={`comment-${commentId}`}
       data-location={`#comment-${commentId}`}
     >
@@ -2890,6 +2912,12 @@ function IssueIndexComment({ basePath, comment }: { basePath: string; comment: I
           </div>
         </div>
         <div className="index-comment-author">
+          {childComments.length > 0 ? (
+            <span className="comment-exists">
+              <i className="yobicon-comment2"></i>
+              {childComments.length > 1 ? childComments.length : ""}
+            </span>
+          ) : null}
           <span className="comment_author">
             <a
               href={prefixBasePath(basePath, `/${authorLoginId}`)}
@@ -3098,6 +3126,10 @@ function ellipsisMarkdown(markdown: string) {
     .replace(/\s+/gu, " ")
     .trim();
   return text.length > 60 ? `${text.slice(0, 60)}...` : text;
+}
+
+function hasLegacyMention(value: unknown, loginId: string) {
+  return loginId !== "" && stringField(value).includes(`@${loginId} `);
 }
 
 function timelineHasVisibleEvent(timeline: IssueTimelineItem[]) {
