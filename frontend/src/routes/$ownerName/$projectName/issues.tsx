@@ -795,6 +795,9 @@ function MassUpdateToolbar({
       const labelCounts = new Map<string, number>();
       let checkedCount = 0;
       for (const checkbox of checkboxes) {
+        document
+          .getElementById(`issue-item-${checkbox.dataset.issueId ?? ""}`)
+          ?.classList.toggle("active", checkbox.checked);
         if (!checkbox.checked) {
           continue;
         }

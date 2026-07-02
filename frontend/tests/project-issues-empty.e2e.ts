@@ -1131,20 +1131,26 @@ test("project issue list mass update checkboxes enable legacy toolbar controls",
   expect(await massUpdateButtonsDisabled(page)).toEqual([true, true, true, true, true]);
   await page.locator("#issue-42").check();
   expect(await massUpdateButtonsDisabled(page)).toEqual([false, false, false, false, false]);
+  await expect(page.locator("#issue-item-42")).toHaveClass(/active/);
   await expect(page.locator("#check-all")).not.toBeChecked();
 
   await page.locator("#issue-42").uncheck();
   expect(await massUpdateButtonsDisabled(page)).toEqual([true, true, true, true, true]);
+  await expect(page.locator("#issue-item-42")).not.toHaveClass(/active/);
 
   await page.locator("#check-all").check();
   await expect(page.locator("#issue-42")).toBeChecked();
   await expect(page.locator("#issue-43")).toBeChecked();
   expect(await massUpdateButtonsDisabled(page)).toEqual([false, false, false, false, false]);
+  await expect(page.locator("#issue-item-42")).toHaveClass(/active/);
+  await expect(page.locator("#issue-item-43")).toHaveClass(/active/);
 
   await page.locator("#check-all").uncheck();
   await expect(page.locator("#issue-42")).not.toBeChecked();
   await expect(page.locator("#issue-43")).not.toBeChecked();
   expect(await massUpdateButtonsDisabled(page)).toEqual([true, true, true, true, true]);
+  await expect(page.locator("#issue-item-42")).not.toHaveClass(/active/);
+  await expect(page.locator("#issue-item-43")).not.toHaveClass(/active/);
 });
 
 test("project issue list mass update state posts selected issues through REST", async ({
