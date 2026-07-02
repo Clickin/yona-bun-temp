@@ -70,14 +70,14 @@ JavaScript or Play form handlers.
 
 ## Open Reset Queue Summary
 
-| status                | count |
-| --------------------- | ----: |
-| gap                   |     0 |
-| deviation             |     0 |
-| weak evidence         |     0 |
-| covered               |    14 |
-| not-applicable        |     1 |
-| needs-parent-decision |     0 |
+| status | count |
+| --- | --- |
+| gap | 0 |
+| deviation | 0 |
+| weak evidence | 0 |
+| covered | 15 |
+| not-applicable | 1 |
+| needs-parent-decision | 0 |
 
 ## Reset Findings
 

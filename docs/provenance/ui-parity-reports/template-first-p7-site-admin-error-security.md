@@ -49,14 +49,14 @@ DOM, not copied legacy Play templates or legacy JavaScript modules.
 
 ## Open Reset Queue Summary
 
-| status                | count |
-| --------------------- | ----: |
-| gap                   |     0 |
-| deviation             |     0 |
-| weak evidence         |     0 |
-| covered               |    18 |
-| not-applicable        |     2 |
-| needs-parent-decision |     0 |
+| status | count |
+| --- | --- |
+| gap | 0 |
+| deviation | 0 |
+| weak evidence | 0 |
+| covered | 18 |
+| not-applicable | 2 |
+| needs-parent-decision | 0 |
 
 ## Reset Findings
 

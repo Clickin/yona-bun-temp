@@ -174,11 +174,11 @@ Total rows: 20
 
 | status | count |
 | --- | ---: |
-| covered | 19 |
+| covered | 20 |
 | gap | 0 |
 | deviation | 0 |
 | deferred | 0 |
-| not-applicable | 1 |
+| not-applicable | 0 |
 | weak evidence | 0 |
 | needs-parent-decision | 0 |
 

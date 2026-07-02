@@ -198,11 +198,11 @@ Mode: read-only audit, no files edited by the explorer
 
 ## Route Inventory Summary
 
-Total rows: 18
+Total rows: 19
 
 | status | count |
 | --- | ---: |
-| covered | 18 |
+| covered | 19 |
 | gap | 0 |
 | deviation | 0 |
 | deferred | 0 |

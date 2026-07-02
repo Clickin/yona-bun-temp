@@ -45,19 +45,19 @@ Current template-first report-summary totals:
 
 | status | count |
 | --- | ---: |
-| covered | 111 |
+| covered | 119 |
 | gap | 0 |
 | deviation | 0 |
 | deferred | 0 |
-| not-applicable | 28 |
+| not-applicable | 27 |
 | weak evidence | 0 |
 | needs-parent-decision | 0 |
-| total | 139 |
+| total | 146 |
 
 Actionable UI parity coverage is 100.0% because every actionable row is
 `covered` and every blocker bucket is zero.
 
-Raw coverage is 79.9% because the remaining 28 rows are `not-applicable`
+Raw coverage is 81.5% because the remaining 27 rows are `not-applicable`
 transport/template mechanics, not missing user-visible UI functions.
 
 The 2026-06-28 integrated desktop sweep rerun against node-proxied legacy Yona
@@ -128,7 +128,7 @@ The template-first report gate is closed for the current app-runtime scope:
 
 - There are no remaining `gap`, `deviation`, `deferred`, `weak evidence`, or
   `needs-parent-decision` rows in the UI parity report set.
-- The remaining 28 non-covered template-first rows are explicitly not
+- The remaining 27 non-covered template-first rows are explicitly not
   app-runtime UI functions.
 - Markdown rendering is centralized in the React compatibility renderer and is
   covered by boundary, renderer, browser, and server-preview tests.
