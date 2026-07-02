@@ -982,7 +982,7 @@ export function ProjectMenu({
   basePath,
   project,
 }: {
-  active?: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest";
+  active?: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review";
   basePath: string;
   project: ProjectContainer;
 }) {
@@ -1028,6 +1028,7 @@ export function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.review) ? (
             <ProjectMenuItem
+              active={active === "review"}
               href={prefixBasePath(basePath, `/${ownerName}/${projectName}/reviews`)}
               label={t("menu.review")}
               short="R"
