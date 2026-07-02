@@ -18,8 +18,17 @@ test("rendered evidence summary counts match manifest row statuses", () => {
   const prioritySummaryCounts = new Map();
   const primaryStatusCounts = new Map();
   const evidenceStatusCounts = new Map();
+  const visualMetricClosureStatuses = new Set([
+    "visual-layout-metric-guard-passed",
+    "targeted-absence-guard-passed",
+    "legacy-placeholder-deviation-recorded",
+    "no-active-play-caller",
+    "targeted-selector-and-inert-template-metric-guard-passed",
+    "non-browser-mail-template-recorded",
+  ]);
   let inSummary = false;
   let inPrioritySummary = false;
+  let visualLayoutMetricsNeeded = 0;
 
   for (const line of source.split("\n")) {
     if (line.startsWith("## ")) {
@@ -67,6 +76,9 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     );
     primaryStatusCounts.set(primaryStatus, (primaryStatusCounts.get(primaryStatus) ?? 0) + 1);
     evidenceStatusCounts.set(evidenceStatus, (evidenceStatusCounts.get(evidenceStatus) ?? 0) + 1);
+    if (!visualMetricClosureStatuses.has(evidenceStatus)) {
+      visualLayoutMetricsNeeded += 1;
+    }
   }
 
   for (const status of [
@@ -84,6 +96,11 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     summaryCounts.get("visual-layout-metric-guard-passed"),
     evidenceStatusCounts.get("visual-layout-metric-guard-passed"),
     "visual-layout-metric-guard-passed count drifted",
+  );
+  assert.equal(
+    summaryCounts.get("visual-layout-metrics-needed"),
+    visualLayoutMetricsNeeded,
+    "visual-layout-metrics-needed count drifted",
   );
   for (const priority of ["P0", "P1", "P2/P3"]) {
     assert.equal(
