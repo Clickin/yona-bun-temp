@@ -439,6 +439,19 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
       EXPECTED_SIDEBAR_FAVORITE_TAB.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  expect(await readSidebarFavoriteTabMetrics(page)).toEqual({
+    logoWidth: 350,
+    organizationCount: 2,
+    organizationRowDisplay: "block",
+    organizationRowHeight: 40,
+    projectCount: 3,
+    projectRowDisplay: "block",
+    projectRowHeight: 49,
+    rootWidth: 350,
+    searchHeight: 30,
+    searchPadding: "4px 6px",
+    starWidth: 350,
+  });
 });
 
 test("authenticated root keeps retired legacy index/sidebar framed shell absent", async ({
@@ -498,6 +511,19 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
       EXPECTED_SIDEBAR_PROJECT_TAB.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  expect(await readSidebarProjectTabMetrics(page)).toEqual({
+    activePaneDisplay: "block",
+    logoWidth: 350,
+    ownerFontSize: "13px",
+    projectCount: 3,
+    projectRowDisplay: "block",
+    projectRowHeight: 69,
+    rootWidth: 350,
+    searchHeight: 30,
+    searchPadding: "4px 6px",
+    subtabDisplay: "block",
+    subtabMarginTop: "0px",
+  });
 });
 
 test("authenticated root sidebar recent issue tab matches legacy index/myRecentIssueList DOM", async ({
@@ -520,6 +546,18 @@ test("authenticated root sidebar recent issue tab matches legacy index/myRecentI
       EXPECTED_SIDEBAR_RECENT_ISSUE_TAB.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  expect(await readSidebarRecentIssueTabMetrics(page)).toEqual({
+    activePaneDisplay: "block",
+    issueCount: 2,
+    issueRowDisplay: "block",
+    issueRowHeight: 40,
+    issueTitleColor: "rgb(0, 0, 0)",
+    issueTitleDisplay: "block",
+    issueTitleStartWidth: 350,
+    rootWidth: 350,
+    searchHeight: 30,
+    searchPadding: "4px 6px",
+  });
 });
 
 test("direct notifications route matches legacy Application.notifications empty state DOM", async ({
@@ -951,6 +989,150 @@ async function readMobileOpenSidebarMetrics(page: Page) {
       openRight: Math.round(window.innerWidth - openBox.right),
       openTop: Math.round(openBox.top),
       openWidth: Math.round(openBox.width),
+    };
+  });
+}
+
+async function readSidebarFavoriteTabMetrics(page: Page) {
+  return page.evaluate(() => {
+    const root = document.querySelector<HTMLElement>("#usermenu-tab-content-list");
+    const search = document.querySelector<HTMLElement>("#usermenu-tab-content-list .org-search");
+    const organization = document.querySelector<HTMLElement>("#usermenu-tab-content-list .org-li");
+    const organizationRow = document.querySelector<HTMLElement>(
+      "#usermenu-tab-content-list .org-list",
+    );
+    const project = document.querySelector<HTMLElement>(
+      "#usermenu-tab-content-list .user-li[data-location$='/admin/sample']",
+    );
+    const projectRow = project?.querySelector<HTMLElement>(".project-list");
+    const logo = project?.querySelector<HTMLElement>(".site-logo");
+    const star = project?.querySelector<HTMLElement>(".star-project");
+    const missing = Object.entries({
+      logo,
+      organization,
+      organizationRow,
+      project,
+      projectRow,
+      root,
+      search,
+      star,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected favorite sidebar metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const organizationRowStyle = getComputedStyle(organizationRow);
+    const projectRowStyle = getComputedStyle(projectRow);
+    const searchStyle = getComputedStyle(search);
+    return {
+      logoWidth: Math.round(logo.getBoundingClientRect().width),
+      organizationCount: root.querySelectorAll(".org-li").length,
+      organizationRowDisplay: organizationRowStyle.display,
+      organizationRowHeight: Math.round(organizationRow.getBoundingClientRect().height),
+      projectCount: root.querySelectorAll(".user-li").length,
+      projectRowDisplay: projectRowStyle.display,
+      projectRowHeight: Math.round(projectRow.getBoundingClientRect().height),
+      rootWidth: Math.round(root.getBoundingClientRect().width),
+      searchHeight: Math.round(search.getBoundingClientRect().height),
+      searchPadding: searchStyle.padding,
+      starWidth: Math.round(star.getBoundingClientRect().width),
+    };
+  });
+}
+
+async function readSidebarProjectTabMetrics(page: Page) {
+  return page.evaluate(() => {
+    const root = document.querySelector<HTMLElement>("#usermenu-tab-content-list");
+    const search = document.querySelector<HTMLElement>(
+      "#usermenu-tab-content-list .project-search",
+    );
+    const subtab = document.querySelector<HTMLElement>("#usermenu-tab-content-list .subtab-wrap");
+    const activePane = document.querySelector<HTMLElement>("#recentlyVisited");
+    const project = document.querySelector<HTMLElement>("#recentlyVisited .user-li");
+    const projectRow = project?.querySelector<HTMLElement>(".project-list");
+    const logo = project?.querySelector<HTMLElement>(".site-logo");
+    const owner = project?.querySelector<HTMLElement>(".project-owner");
+    const missing = Object.entries({
+      activePane,
+      logo,
+      owner,
+      project,
+      projectRow,
+      root,
+      search,
+      subtab,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected project sidebar metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const projectRowStyle = getComputedStyle(projectRow);
+    const searchStyle = getComputedStyle(search);
+    const subtabStyle = getComputedStyle(subtab);
+    return {
+      activePaneDisplay: getComputedStyle(activePane).display,
+      logoWidth: Math.round(logo.getBoundingClientRect().width),
+      ownerFontSize: getComputedStyle(owner).fontSize,
+      projectCount: root.querySelectorAll(".user-li").length,
+      projectRowDisplay: projectRowStyle.display,
+      projectRowHeight: Math.round(projectRow.getBoundingClientRect().height),
+      rootWidth: Math.round(root.getBoundingClientRect().width),
+      searchHeight: Math.round(search.getBoundingClientRect().height),
+      searchPadding: searchStyle.padding,
+      subtabDisplay: subtabStyle.display,
+      subtabMarginTop: subtabStyle.marginTop,
+    };
+  });
+}
+
+async function readSidebarRecentIssueTabMetrics(page: Page) {
+  return page.evaluate(() => {
+    const root = document.querySelector<HTMLElement>("#usermenu-tab-content-list");
+    const search = document.querySelector<HTMLElement>(
+      "#usermenu-tab-content-list .project-search",
+    );
+    const activePane = document.querySelector<HTMLElement>("#recentlyVisitedIssues");
+    const issue = document.querySelector<HTMLElement>("#recentlyVisitedIssues .user-li");
+    const issueRow = issue?.querySelector<HTMLElement>(".project-list");
+    const issueTitle = issue?.querySelector<HTMLElement>(".issue-title");
+    const issueTitleStart = issue?.querySelector<HTMLElement>(".issue-title-start");
+    const missing = Object.entries({
+      activePane,
+      issue,
+      issueRow,
+      issueTitle,
+      issueTitleStart,
+      root,
+      search,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected recent issue sidebar metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const issueRowStyle = getComputedStyle(issueRow);
+    const issueTitleStyle = getComputedStyle(issueTitle);
+    const searchStyle = getComputedStyle(search);
+    return {
+      activePaneDisplay: getComputedStyle(activePane).display,
+      issueCount: root.querySelectorAll(".user-li").length,
+      issueRowDisplay: issueRowStyle.display,
+      issueRowHeight: Math.round(issueRow.getBoundingClientRect().height),
+      issueTitleColor: issueTitleStyle.color,
+      issueTitleDisplay: issueTitleStyle.display,
+      issueTitleStartWidth: Math.round(issueTitleStart.getBoundingClientRect().width),
+      rootWidth: Math.round(root.getBoundingClientRect().width),
+      searchHeight: Math.round(search.getBoundingClientRect().height),
+      searchPadding: searchStyle.padding,
     };
   });
 }
