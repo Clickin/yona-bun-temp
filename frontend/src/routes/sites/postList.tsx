@@ -6,6 +6,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { SitePagination } from "./-pagination";
 
 type PostListSearch = {
   pageNum: number;
@@ -74,7 +75,13 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 ))}
               </ul>
 
-              <div id="pagination"></div>
+              <SitePagination
+                currentPage={query.data?.page ?? pageNum}
+                pageHref={(nextPage) =>
+                  prefixBasePath(runtimeConfig.basePath, `/sites/postList?pageNum=${nextPage}`)
+                }
+                totalPages={query.data?.totalPages ?? 0}
+              />
             </div>
           </div>
         </div>
