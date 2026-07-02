@@ -539,6 +539,31 @@ test("current-user issues row project and meta wrappers follow legacy my_partial
   await expect(metaCell.locator("> .pull-right")).toHaveText("5 days left");
 });
 
+test("current-user issues assignee avatar column follows legacy authored-tab branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForFilterLinks(page);
+
+  await page.goto(`${basePath}/user/issues?filter=authored`);
+
+  const assignee = page.locator("#issue-item-42 .avatar-wrap.assinee");
+  await expect(assignee).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(assignee).toHaveAttribute("data-toggle", "tooltip");
+  await expect(assignee).toHaveAttribute("data-placement", "bottom");
+  await expect(assignee).toHaveAttribute("title", "Assignee: Admin");
+  await expect(assignee.locator("img")).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-32.png",
+  );
+  await expect(assignee.locator("img")).toHaveAttribute("width", "32");
+  await expect(assignee.locator("img")).toHaveAttribute("height", "32");
+  await expect(assignee.locator("img")).toHaveAttribute("alt", "Admin");
+  await expect(page.locator("#issue-item-42 > .span12 > .infos.meta")).toHaveClass(
+    /(^|\s)span2(\s|$)/,
+  );
+});
+
 test("current-user issues set-default-login-page button follows legacy success branch", async ({
   page,
 }) => {
@@ -743,6 +768,8 @@ async function mockUserIssuesForFilterLinks(page: Page) {
         filter: "assigned",
         items: [
           {
+            assigneeAvatarUrl: "/assets/images/default-avatar-32.png",
+            assigneeLabel: "Admin",
             assigneeLoginId: "admin",
             authorLabel: "Alice",
             authorLoginId: "alice",

@@ -759,7 +759,7 @@ function UserIssueItem({
   const projectHref = prefixBasePath(basePath, projectRoutePath);
   const issueHref = prefixBasePath(basePath, issueRoutePath);
   const authorRoutePath = `/${issue.authorLoginId}`;
-  const assigneeHref = prefixBasePath(basePath, `/${issue.assigneeLoginId}`);
+  const assigneeRoutePath = `/${issue.assigneeLoginId}`;
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
   const showAuthor = search.filter !== "authored";
@@ -920,20 +920,20 @@ function UserIssueItem({
         {showAssignee ? (
           <div className="span1 hide-in-mobile">
             <div className="mt5 pull-right hide-in-mobile">
-              <a
-                href={assigneeHref}
+              <LegacyInternalLink
+                to={assigneeRoutePath}
                 className="avatar-wrap assinee"
                 data-toggle="tooltip"
-                data-placement="top"
+                data-placement="bottom"
                 title={`${t("issue.assignee")}: ${issue.assigneeLabel}`}
               >
                 <img
                   src={issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png"}
                   width="32"
                   height="32"
-                  alt=""
+                  alt={issue.assigneeLabel ?? ""}
                 />
-              </a>
+              </LegacyInternalLink>
             </div>
           </div>
         ) : null}
