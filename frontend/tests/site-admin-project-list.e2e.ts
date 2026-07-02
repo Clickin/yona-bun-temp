@@ -155,6 +155,13 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   await mockProjects(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
@@ -269,6 +276,13 @@ test("site admin project delete waits for legacy confirmation modal", async ({ p
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   const requests = await mockProjects(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
   await page.locator('[data-toggle="delete-project"]').click();
@@ -284,6 +298,26 @@ test("site admin project delete waits for legacy confirmation modal", async ({ p
   await page.locator('[data-toggle="delete-project"]').click();
   await page.locator("#projectDeleteBtn").click();
   await expect.poll(() => requests.deletedProjectIds).toEqual(["77"]);
+});
+
+test("site admin project list renders legacy update notification badge", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockProjects(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isAvailable",
+    releaseUrl: "https://example.test/yona-1.1.0",
+    versionToUpdate: "1.1.0",
+  });
+
+  await page.goto(`${basePath}/sites/projectList?filter=road`);
+
+  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
+  await expect(updateLink).toHaveText("Software Update1");
+  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
 async function mockSiteAdminSession(page: Page) {
@@ -348,6 +382,24 @@ async function mockProjects(page: Page) {
   });
 
   return requests;
+}
+
+async function mockUpdate(
+  page: Page,
+  response: {
+    currentVersion: string;
+    error: string | null;
+    message: string;
+    releaseUrl: string | null;
+    versionToUpdate: string | null;
+  },
+) {
+  await page.route("**/api/v1/site/update", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(response),
+    });
+  });
 }
 
 async function mockPosts(page: Page) {

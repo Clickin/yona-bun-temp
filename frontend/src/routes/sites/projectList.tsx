@@ -4,6 +4,7 @@ import { useState, type AnchorHTMLAttributes, type ComponentType, type ReactNode
 import {
   deleteSiteProjectRest,
   siteProjectsQueryOptions,
+  siteUpdateQueryOptions,
   type SiteProject,
 } from "../../api/site-admin";
 import { apiQueryKeys } from "../../api/query-keys";
@@ -57,6 +58,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   const [deleteProject, setDeleteProject] = useState<SiteProject | null>(null);
   const [deleteModalClosed, setDeleteModalClosed] = useState(false);
   const query = useQuery(siteProjectsQueryOptions(runtimeConfig, { filter, page: pageNum }));
+  const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
   const deleteMutation = useMutation({
     mutationFn: async (projectId: number) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -80,7 +82,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
         <div className="site-setting-wrap">
           <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar />
+              <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
               <div className="title_area">
@@ -304,7 +306,7 @@ function ProjectListPagination({
   );
 }
 
-function SiteAdminSidebar() {
+function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   const navItems = [
     { href: "/sites/userList", labelKey: "site.sidebar.userList" },
     { href: "/sites/postList", labelKey: "site.sidebar.postList" },
@@ -312,7 +314,7 @@ function SiteAdminSidebar() {
     { href: "/sites/projectList", labelKey: "site.sidebar.projectList", active: true },
     { href: "/sites/mail", labelKey: "site.sidebar.mailSend" },
     { href: "/sites/massmail", labelKey: "site.sidebar.massMail" },
-    { href: "/sites/update", labelKey: "site.sidebar.update" },
+    { href: "/sites/update", labelKey: "site.sidebar.update", badge: showUpdateBadge },
     { href: "/sites/diagnostic", labelKey: "site.sidebar.diagnostics" },
   ];
 
@@ -322,6 +324,7 @@ function SiteAdminSidebar() {
         <li className={item.active ? "active" : ""} key={item.href}>
           <LegacyInternalLink activeProps={{ className: undefined }} to={item.href}>
             <LegacyMessage messageKey={item.labelKey} />
+            {item.badge ? <span className="notification-badge">1</span> : null}
           </LegacyInternalLink>
         </li>
       ))}
