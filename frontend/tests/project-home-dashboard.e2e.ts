@@ -41,6 +41,38 @@ test("project home Dashboard tab matches legacy dashboard partials DOM", async (
   });
 });
 
+test("project home Dashboard tab keeps legacy overview proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await mockProjectHome(page);
+
+  await page.goto(`${basePath}/admin/sample?tabId=dashboard`);
+  await expect(page.locator(".project-overview-home")).toBeVisible();
+
+  expect(await dashboardLayoutMetrics(page)).toEqual({
+    desktop: {
+      emptyMessageColor: "rgb(153, 153, 153)",
+      emptyMessageFontSize: 13,
+      emptyMessageMarginBottom: 15,
+      firstColumnWidthRatio: 0.49,
+      headingBorderColor: "rgb(255, 115, 50)",
+      leftPaneWidthRatio: 0.74,
+      pageWrapMarginTop: 20,
+      progressHeight: 7,
+      progressMarginTop: 7,
+      progressWidth: 100,
+      rightPaneDisplay: "block",
+      rightPaneWidthRatio: 0.23,
+    },
+    mobile: {
+      leftPaneWidthRatio: 1,
+      pageWrapMarginTop: 5,
+      pageWrapWidth: 390,
+      rightPaneDisplay: "none",
+    },
+  });
+});
+
 async function mockProjectHome(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -130,6 +162,77 @@ async function mockProjectHome(page: Page) {
       }),
     });
   });
+}
+
+async function dashboardLayoutMetrics(page: Page) {
+  const desktop = await collectDashboardLayoutMetrics(page, "desktop");
+  await page.setViewportSize({ width: 390, height: 740 });
+  return {
+    desktop,
+    mobile: await collectDashboardLayoutMetrics(page, "mobile"),
+  };
+}
+
+async function collectDashboardLayoutMetrics(page: Page, mode: "desktop" | "mobile") {
+  return page.evaluate((targetMode) => {
+    const pageWrap = requireElement(".page-wrap-outer > .project-page-wrap");
+    const row = requireElement(".project-page-wrap > .row-fluid");
+    const leftPane = requireElement(".span-left-pane");
+    const rightPane = requireElement(".span-right-pane");
+    const pageWrapStyle = getComputedStyle(pageWrap);
+    const leftRect = leftPane.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    const rightStyle = getComputedStyle(rightPane);
+
+    const mobile = {
+      leftPaneWidthRatio: Number((leftRect.width / rowRect.width).toFixed(2)),
+      pageWrapMarginTop: Math.round(parseFloat(pageWrapStyle.marginTop)),
+      pageWrapWidth: Math.round(pageWrap.getBoundingClientRect().width),
+      rightPaneDisplay: rightStyle.display,
+    };
+
+    if (targetMode === "mobile") {
+      return mobile;
+    }
+
+    const dashboardRow = requireElement(".project-overview-home");
+    const firstColumn = requireElement(".project-overview-home > .span6");
+    const heading = requireElement(".project-overview-home h5");
+    const progress = requireElement(".project-overview-home .progress");
+    const emptyMessage = requireElement(".project-overview-home .empty p");
+    const headingStyle = getComputedStyle(heading);
+    const progressStyle = getComputedStyle(progress);
+    const emptyStyle = getComputedStyle(emptyMessage);
+
+    return {
+      emptyMessageColor: emptyStyle.color,
+      emptyMessageFontSize: Math.round(parseFloat(emptyStyle.fontSize)),
+      emptyMessageMarginBottom: Math.round(parseFloat(emptyStyle.marginBottom)),
+      firstColumnWidthRatio: Number(
+        (
+          firstColumn.getBoundingClientRect().width / dashboardRow.getBoundingClientRect().width
+        ).toFixed(2),
+      ),
+      headingBorderColor: headingStyle.borderLeftColor,
+      leftPaneWidthRatio: mobile.leftPaneWidthRatio,
+      pageWrapMarginTop: mobile.pageWrapMarginTop,
+      progressHeight: Math.round(parseFloat(progressStyle.height)),
+      progressMarginTop: Math.round(parseFloat(progressStyle.marginTop)),
+      progressWidth: Math.round(parseFloat(progressStyle.width)),
+      rightPaneDisplay: mobile.rightPaneDisplay,
+      rightPaneWidthRatio: Number(
+        (rightPane.getBoundingClientRect().width / rowRect.width).toFixed(2),
+      ),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  }, mode);
 }
 
 async function canonicalizeScreenRoots(page: Page) {
