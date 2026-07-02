@@ -1443,6 +1443,25 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
   );
 });
 
+test("project issue child rows hide foreign drafts like legacy partial_view_child.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "child-draft");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=child-draft`);
+
+  await expect(page.locator(".child-issue-list .issue-item.child-issue")).toHaveCount(1);
+  await expect(page.locator(".child-issue-list")).not.toContainText("Foreign draft child");
+  const ownDraftChild = page.locator(".child-issue-list .issue-item.child-issue").first();
+  await expect(ownDraftChild).toContainText("#DraftOwn draft child");
+  await expect(ownDraftChild.locator(".subtask-number .draft-number")).toHaveText("#Draft");
+  await expect(ownDraftChild.locator("a.twoColumeModeTarget")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/16`,
+  );
+});
+
 test("project issue show-subtasks toggle follows legacy yona.showSubtask localStorage behavior", async ({
   page,
 }) => {
@@ -1521,6 +1540,8 @@ test("project issue two-column title click highlights row and changes history li
   await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
   await page.reload();
   await page.locator("#two-column-mode").click();
+  await expect(page.locator("#two-column-mode")).toBeChecked();
+  await expect(page.locator("#issue-item-42")).toHaveCSS("cursor", "pointer");
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-two-column-title";
   });
@@ -1841,6 +1862,7 @@ async function mockProjectIssues(
   state:
     | "anonymous"
     | "bulk"
+    | "child-draft"
     | "children"
     | "draft"
     | "empty"
@@ -2187,43 +2209,67 @@ async function mockProjectIssues(
                           totalCount: 1,
                           totalPages: 1,
                         }
-                      : state === "children"
+                      : state === "children" || state === "child-draft"
                         ? {
                             ...populatedIssueResponse(),
                             items: [
                               {
                                 ...populatedIssueResponse().items[0],
-                                childIssues: [
-                                  {
-                                    assigneeLabel: "Dev Member",
-                                    commentCount: 2,
-                                    createdLabel: "Jul 3, 2026",
-                                    id: 42,
-                                    issueNumber: 13,
-                                    labels: [
-                                      {
-                                        categoryId: 3,
-                                        categoryIsExclusive: false,
-                                        categoryName: "bug",
-                                        color: "#51aacc",
-                                        id: 8,
-                                        name: "bug",
-                                      },
-                                    ],
-                                    state: "open",
-                                    title: "Open child issue",
-                                    voterCount: 1,
-                                  },
-                                  {
-                                    assigneeLabel: "",
-                                    createdLabel: "Jul 4, 2026",
-                                    id: 43,
-                                    issueNumber: 14,
-                                    labels: [],
-                                    state: "closed",
-                                    title: "Closed child issue",
-                                  },
-                                ],
+                                childIssues:
+                                  state === "child-draft"
+                                    ? [
+                                        {
+                                          authorLoginId: "dev",
+                                          createdLabel: "Jul 3, 2026",
+                                          id: 45,
+                                          isDraft: true,
+                                          issueNumber: 15,
+                                          labels: [],
+                                          state: "open",
+                                          title: "Foreign draft child",
+                                        },
+                                        {
+                                          authorLoginId: "admin",
+                                          createdLabel: "Jul 4, 2026",
+                                          id: 46,
+                                          isDraft: true,
+                                          issueNumber: 16,
+                                          labels: [],
+                                          state: "open",
+                                          title: "Own draft child",
+                                        },
+                                      ]
+                                    : [
+                                        {
+                                          assigneeLabel: "Dev Member",
+                                          commentCount: 2,
+                                          createdLabel: "Jul 3, 2026",
+                                          id: 42,
+                                          issueNumber: 13,
+                                          labels: [
+                                            {
+                                              categoryId: 3,
+                                              categoryIsExclusive: false,
+                                              categoryName: "bug",
+                                              color: "#51aacc",
+                                              id: 8,
+                                              name: "bug",
+                                            },
+                                          ],
+                                          state: "open",
+                                          title: "Open child issue",
+                                          voterCount: 1,
+                                        },
+                                        {
+                                          assigneeLabel: "",
+                                          createdLabel: "Jul 4, 2026",
+                                          id: 43,
+                                          issueNumber: 14,
+                                          labels: [],
+                                          state: "closed",
+                                          title: "Closed child issue",
+                                        },
+                                      ],
                               },
                             ],
                           }

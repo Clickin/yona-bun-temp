@@ -745,6 +745,7 @@ function ProjectIssuesBody({
                     {draftItems.map((issue) => (
                       <ProjectIssueItem
                         basePath={runtimeConfig.basePath}
+                        currentUserLoginId={currentUserLoginId}
                         issue={issue}
                         key={`draft-${issue.id || issue.issueNumber}`}
                         ownerName={ownerName}
@@ -762,6 +763,7 @@ function ProjectIssuesBody({
                   {issues.items.map((issue) => (
                     <ProjectIssueItem
                       basePath={runtimeConfig.basePath}
+                      currentUserLoginId={currentUserLoginId}
                       issue={issue}
                       key={issue.id || issue.issueNumber}
                       ownerName={ownerName}
@@ -1420,6 +1422,7 @@ function LabelMassUpdateGroup({
 
 function ProjectIssueItem({
   basePath,
+  currentUserLoginId,
   issue,
   onTitlePrefixSearch,
   ownerName,
@@ -1430,6 +1433,7 @@ function ProjectIssueItem({
   useTwoColumnMode,
 }: {
   basePath: string;
+  currentUserLoginId: string;
   issue: RestIssueListItem;
   onTitlePrefixSearch: (filter: string) => void;
   ownerName: string;
@@ -1624,6 +1628,7 @@ function ProjectIssueItem({
             >
               <IssueChildRows
                 basePath={basePath}
+                currentUserLoginId={currentUserLoginId}
                 issues={issue.childIssues ?? []}
                 ownerName={ownerName}
                 parentIssueId={issueId}
@@ -1680,19 +1685,24 @@ type RestIssueChildItem = NonNullable<RestIssueListItem["childIssues"]>[number];
 
 function IssueChildRows({
   basePath,
+  currentUserLoginId,
   issues,
   ownerName,
   parentIssueId,
   projectName,
 }: {
   basePath: string;
+  currentUserLoginId: string;
   issues: RestIssueChildItem[];
   ownerName: string;
   parentIssueId: string;
   projectName: string;
 }) {
-  const openIssues = issues.filter((issue) => issue.state !== "closed");
-  const closedIssues = issues.filter((issue) => issue.state === "closed");
+  const visibleIssues = issues.filter(
+    (issue) => !issue.isDraft || stringField(issue.authorLoginId, "") === currentUserLoginId,
+  );
+  const openIssues = visibleIssues.filter((issue) => issue.state !== "closed");
+  const closedIssues = visibleIssues.filter((issue) => issue.state === "closed");
   const orderedIssues = [...openIssues, ...closedIssues];
 
   return orderedIssues.length ? (
