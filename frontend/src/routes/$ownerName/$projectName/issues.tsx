@@ -1889,18 +1889,6 @@ function issueLabelIds(value: string) {
   return labelIds;
 }
 
-function uniqueMilestones(issues: RestIssueListItem[]) {
-  const milestones = new Map<string, { id: string; title: string }>();
-  for (const issue of issues) {
-    const id = stringField(issue.milestoneId, "");
-    const title = stringField(issue.milestoneTitle, "");
-    if (id && id !== "0" && title && !milestones.has(id)) {
-      milestones.set(id, { id, title });
-    }
-  }
-  return Array.from(milestones.values());
-}
-
 function projectMilestoneOptions(milestones: ProjectMilestone[]) {
   const options = [];
   for (const milestone of milestones) {
