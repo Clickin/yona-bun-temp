@@ -77,7 +77,7 @@ const EXPECTED_DIAGNOSTIC_NO_ERROR_SCREEN = `
           <li class=""><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
           <li class=""><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
           <li class=""><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/massMail">Send mass emails</a></li>
+          <li class=""><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
           <li class=""><a href="__BASE_PATH__/sites/update">Software Update</a></li>
           <li class="active"><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
@@ -107,10 +107,22 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   await mockDiagnostics(page, { errorCount: 0, errors: [] });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
 
   await page.goto(`${basePath}/sites/diagnostic`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Diagnostics");
+  await expect(
+    page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
+  ).toHaveAttribute("href", `${basePath}/sites/massmail`);
+  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -119,6 +131,17 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
   );
 
   expect(actual).toEqual(expected);
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-diagnostic-sidebar";
+  });
+  await updateLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/update`);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Software Update");
+  await expect(page.locator(".title_area h2")).toHaveText("Software Update");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-diagnostic-sidebar");
 });
 
 test("site admin diagnostics renders legacy error pre blocks", async ({ page }) => {
@@ -234,6 +257,24 @@ async function mockDiagnostics(
   },
 ) {
   await page.route("**/api/v1/site/diagnostics", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(response),
+    });
+  });
+}
+
+async function mockUpdate(
+  page: Page,
+  response: {
+    currentVersion: string;
+    error: string | null;
+    message: string;
+    releaseUrl: string | null;
+    versionToUpdate: string | null;
+  },
+) {
+  await page.route("**/api/v1/site/update", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(response),
