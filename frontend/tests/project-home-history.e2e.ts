@@ -152,7 +152,6 @@ async function projectHistoryLayoutMetrics(page: Page) {
       (document.querySelector(selector) as HTMLElement).getBoundingClientRect();
     const pageWrap = rect(".project-page-wrap");
     const leftPane = rect(".span-left-pane");
-    const rightPane = rect(".span-right-pane");
 
     return {
       activityBorderBottomWidth: numberStyle(".activity-stream", "border-bottom-width"),
