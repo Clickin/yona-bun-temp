@@ -1,11 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import type { AnchorHTMLAttributes, ComponentType } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { changePasswordRest, readWorkspaceOverviewRest } from "../../../api/workspace";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
+>;
 
 export const Route = createFileRoute("/user/editform/password")({
   component: UserPasswordSettingsRoute,
@@ -27,6 +32,7 @@ function UserPasswordSettingsRoute() {
 
 function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const workspaceQuery = useQuery({
     queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
@@ -45,7 +51,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries();
-      window.location.href = prefixBasePath(runtimeConfig.basePath, "/users/loginform");
+      await router.navigate({ search: { password: "", redirectUrl: "" }, to: "/users/loginform" });
     },
   });
 
@@ -58,7 +64,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
       </div>
       <div className="page-wrap-outer">
         <div className="page-wrap">
-          <EditTabMenu active="password" basePath={runtimeConfig.basePath} />
+          <EditTabMenu active="password" />
 
           <form
             id="frmPassword"
@@ -106,12 +112,9 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
             <dl>
               <dt>{t("site.resetPasswordEmail.desc")}</dt>
               <dd className="mt10">
-                <a
-                  href={prefixBasePath(runtimeConfig.basePath, "/lostPassword")}
-                  className="ybtn ybtn-fail"
-                >
+                <LegacyInternalLink to="/lostPassword" className="ybtn ybtn-fail">
                   {t("site.resetPasswordEmail.title")}
-                </a>
+                </LegacyInternalLink>
               </dd>
             </dl>
           </div>
@@ -121,7 +124,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
   );
 }
 
-function EditTabMenu({ active, basePath }: { active: string; basePath: string }) {
+function EditTabMenu({ active }: { active: string }) {
   const { t } = useLegacyMessages();
   const tabs = [
     ["/user/editform", "profile", "userinfo.editProfile"],
@@ -135,7 +138,7 @@ function EditTabMenu({ active, basePath }: { active: string; basePath: string })
     <ul className="nav nav-tabs mt20">
       {tabs.map(([href, id, messageKey]) => (
         <li key={id} className={active === id ? "active" : undefined}>
-          <a href={prefixBasePath(basePath, href)}>{t(messageKey)}</a>
+          <LegacyInternalLink to={href}>{t(messageKey)}</LegacyInternalLink>
         </li>
       ))}
     </ul>

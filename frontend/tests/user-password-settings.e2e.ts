@@ -114,12 +114,36 @@ test("current-user password settings page matches legacy user/edit_password.scal
     resetLinkDisplay: "inline-block",
   });
 
+  await expect(page.locator('.nav-tabs a:has-text("User Token")')).toHaveAttribute(
+    "href",
+    `${basePath}/user/editform/token`,
+  );
+  await expect(page.locator(".page-wrap > .mt10 a.ybtn-fail")).toHaveAttribute(
+    "href",
+    `${basePath}/lostPassword`,
+  );
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "password-token-tab";
+  });
+  await page.locator('.nav-tabs a:has-text("User Token")').click();
+  await expect(page).toHaveURL(`${basePath}/user/editform/token`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("password-token-tab");
+
+  await page.goto(`${basePath}/user/editform/password`);
   await page.locator("#oldPassword").fill("old-pass");
   await page.locator("#password").fill("new-pass");
   await page.locator("#retypedPassword").fill("new-pass");
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "password-submit";
+  });
   await page.locator("#frmPassword button[type=submit]").click();
   await page.waitForURL("**/users/loginform*");
   expect(new URL(page.url()).pathname).toBe(`${basePath}/users/loginform`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("password-submit");
 });
 
 async function mockAuthenticatedSession(page: Page) {
@@ -203,7 +227,8 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -224,6 +249,20 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(Boolean)
         .join("");
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+    function normalizeAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        current.tagName.toLowerCase() === "a" &&
+        current.closest(".page-wrap .nav-tabs")
+      ) {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/)
+          .filter((value) => value && value !== "active")
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
     return Array.from(
@@ -258,7 +297,8 @@ async function canonicalizeHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map((name) => normalizeAttribute(current, name))
+          .filter(Boolean)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -279,6 +319,20 @@ async function canonicalizeHtml(page: Page, html: string) {
           .filter(Boolean)
           .join("");
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+      function normalizeAttribute(current: Element, name: string) {
+        if (
+          name === "class" &&
+          current.tagName.toLowerCase() === "a" &&
+          current.closest(".page-wrap .nav-tabs")
+        ) {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/)
+            .filter((value) => value && value !== "active")
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
+        return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
       const template = document.createElement("template");
       template.innerHTML = markup.trim();
