@@ -554,6 +554,24 @@ test("project issue detail shows child reply notification receiver on editor foc
   );
 });
 
+test("project issue detail child reply escape hides legacy input form", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const comment = page.locator(".span-left-pane #comment-77");
+  const form = comment.locator(".child-comment-input-form");
+  await expect(form).toBeHidden();
+
+  await comment.hover();
+  await expect(comment.locator(".add-a-comment")).toBeVisible();
+  await comment.locator(".add-a-comment").click();
+  await expect(form).toBeVisible();
+  await comment.locator(".child-comment-input-form .editorSeries").press("Escape");
+  await expect(form).toBeHidden();
+  await expect(comment.locator(".add-a-comment")).toBeVisible();
+});
+
 test("project issue detail toggles legacy comment update form through comment-edit", async ({
   page,
 }) => {

@@ -2573,6 +2573,10 @@ function IssueCommentRow({
       <ChildComments
         basePath={basePath}
         childComments={childComments}
+        closeForm={() => {
+          setChildFormOpen(false);
+          setReplyVisible(true);
+        }}
         formOpen={childFormOpen}
         issue={issue}
         parentCommentId={commentId}
@@ -2599,6 +2603,7 @@ function ChildCommentAnchors({ childComments }: { childComments: IssueChildComme
 function ChildComments({
   basePath,
   childComments,
+  closeForm,
   formOpen,
   issue,
   parentCommentId,
@@ -2607,6 +2612,7 @@ function ChildComments({
 }: {
   basePath: string;
   childComments: IssueChildComment[];
+  closeForm: () => void;
   formOpen: boolean;
   issue: RestIssueDetailResponse;
   parentCommentId: string;
@@ -2662,6 +2668,11 @@ function ChildComments({
                   rows={1}
                   placeholder="Reply (CTRL + ENTER)"
                   onFocus={() => setNotificationVisible(true)}
+                  onKeyUp={(event) => {
+                    if (event.key === "Escape") {
+                      closeForm();
+                    }
+                  }}
                   {...{ markdown: "true" }}
                 ></textarea>
                 <button type="submit" className="ybtn ybtn-success">
