@@ -438,30 +438,9 @@ function RootResetShell() {
       <Outlet />
       {rendersPlainResponseState ? null : (
         <>
-          <div
-            id="yobiDialog"
-            className="modal hide yobiDialog"
-            tabIndex={-1}
-            role="dialog"
-            aria-hidden
-          >
-            <div className="btn-dismiss">
-              <button type="button" className="btn-transparent" data-dismiss="modal">
-                &times;
-              </button>
-            </div>
-            <div className="message">
-              <div className="center-text">
-                <p className="msg" />
-                <p className="desc" />
-              </div>
-              <div className="center-txt buttons">
-                <button type="button" className="ybtn ybtn-info" data-dismiss="modal">
-                  Confirm
-                </button>
-              </div>
-            </div>
-          </div>
+          <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+            <RootYobiDialog />
+          </LegacyI18nProvider>
           <div id="yobiToasts" className="yobiToasts" />
           <script type="text/x-jquery-tmpl" id="tplYobiToast">
             {
@@ -477,6 +456,30 @@ function RootResetShell() {
         </>
       )}
     </>
+  );
+}
+
+function RootYobiDialog() {
+  const { t } = useLegacyMessages();
+  return (
+    <div id="yobiDialog" className="modal hide yobiDialog" tabIndex={-1} role="dialog" aria-hidden>
+      <div className="btn-dismiss">
+        <button type="button" className="btn-transparent" data-dismiss="modal">
+          &times;
+        </button>
+      </div>
+      <div className="message">
+        <div className="center-text">
+          <p className="msg" />
+          <p className="desc" />
+        </div>
+        <div className="center-txt buttons">
+          <button type="button" className="ybtn ybtn-info" data-dismiss="modal">
+            {t("button.confirm")}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

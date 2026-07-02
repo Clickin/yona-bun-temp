@@ -504,6 +504,14 @@ test("standalone UI kit root shell dismisses legacy modal buttons", async ({ pag
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
   await page.goto(`${basePath}/_UIKit`);
+  await expect(page.locator("#yobiDialog .center-txt.buttons .ybtn.ybtn-info")).toHaveText(
+    "Confirm",
+  );
+  await expect(page.locator("#yobiDialog .center-txt.buttons .ybtn.ybtn-info")).toHaveAttribute(
+    "data-dismiss",
+    "modal",
+  );
+
   const dialog = page.locator("#loginDialog");
   await dialog.evaluate((element) => {
     element.classList.remove("hide");
