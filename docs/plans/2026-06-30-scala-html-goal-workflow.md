@@ -7,6 +7,24 @@ This document defines the repeatable goal-sized workflow for rebuilding one
 React SPA screen from legacy Yona Scala HTML. It is the execution companion to
 `docs/plans/2026-06-30-scala-html-sot-frontend-rebuild.md`.
 
+## Goal-Turn Memory
+
+Every resumed goal turn must restate this directive before choosing work:
+
+- Legacy Scala HTML is the UI source of truth.
+- Existing React DOM is not implementation evidence.
+- If a prior implementation was built by patching the existing DOM instead of
+  porting the owning Scala template, delete or replace that screen path.
+- Every frontend route TSX change must update
+  `docs/provenance/frontend-scala-html-goal-violation-audit.md` in the same
+  commit with route, screen state, legacy root template, included partials, and
+  focused verification.
+- Every frontend E2E/CSS/UI parity evidence change must include a route TSX
+  implementation change unless the turn is explicitly marked evidence-only.
+
+This is enforced by `tools/scala-html-goal-guard.mjs` through the turn commit
+hook. Treat guard failures as goal failures, not as optional review comments.
+
 ## Goal Unit
 
 One goal must target exactly one user-visible screen or one explicit screen

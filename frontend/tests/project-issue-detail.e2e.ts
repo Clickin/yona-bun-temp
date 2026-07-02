@@ -53,6 +53,7 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     "Site Admin <admin@example.com>;Dev Member <dev@example.com>;",
   );
   await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
+  await expectIssueDetailStylesheets(page, basePath);
 
   const emptyTimeline =
     '<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div>';
@@ -84,7 +85,7 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     leftPaneWidth: 938,
     outerMarginTop: "10px",
     outerMinHeight: "450px",
-    projectMarginTop: "5px",
+    projectMarginTop: "20px",
     rightPaneWidth: 295,
     titleBackground: "rgb(242, 242, 242)",
     titleBorderRadius: "10px",
@@ -120,6 +121,22 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     replyDisplay: "none",
   });
 });
+
+async function expectIssueDetailStylesheets(page: Page, basePath: string) {
+  const hrefs = [
+    `${basePath}/admin/sample/issue/labels.css`,
+    `${basePath}/assets/javascripts/lib/atjs/jquery.atwho.css`,
+    `${basePath}/assets/javascripts/lib/elevator/jquery.elevator.css`,
+    `${basePath}/assets/javascripts/lib/videojs/video-js.min.css`,
+  ];
+
+  for (const href of hrefs) {
+    const link = page.locator(`link[href="${href}"]`);
+    await expect(link).toHaveAttribute("rel", "stylesheet");
+    await expect(link).toHaveAttribute("type", "text/css");
+    await expect(link).toHaveAttribute("media", "screen");
+  }
+}
 
 test("project issue detail not found renders legacy project error shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";

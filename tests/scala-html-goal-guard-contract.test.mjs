@@ -55,6 +55,19 @@ test("blocks frontend route TSX work without the Scala HTML audit memo", () => {
   assert.match(formatScalaHtmlGoalGuardSummary(result), /undocumented frontend route work/u);
 });
 
+test("blocks frontend route TSX plus E2E work without the Scala HTML audit memo", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+      "frontend/tests/project-issue-detail.e2e.ts",
+    ],
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /undocumented frontend route work/u);
+});
+
 test("passes frontend route TSX work when the Scala HTML audit memo is updated", () => {
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [

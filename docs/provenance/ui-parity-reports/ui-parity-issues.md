@@ -101,6 +101,9 @@ Mode: read-only audit, no files edited by the explorer
   `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx`, keeping
   the issue menu active, detail keymap mode, and `issue-detail-page` shell CSS
   hook while retaining REST detail/comment/action/metadata boundaries.
+- Continuation: the route now preserves the root `issue/view.scala.html`
+  stylesheet links for `/:owner/:project/issue/labels.css`,
+  `jquery.atwho.css`, `jquery.elevator.css`, and `video-js.min.css`.
 - Verification: `pnpm --dir frontend test:e2e -- project-issue-detail.e2e.ts`.
 
 ## 2026-07-01 Project Issue Detail Due Date Status Follow-Up

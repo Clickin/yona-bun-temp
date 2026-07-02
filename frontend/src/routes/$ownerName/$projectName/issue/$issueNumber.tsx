@@ -96,11 +96,55 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <IssueDetailStylesheets
+        basePath={runtimeConfig.basePath}
+        ownerName={ownerName}
+        projectName={projectName}
+      />
       <IssueDetailBody
         basePath={runtimeConfig.basePath}
         issue={issueQuery.data}
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
+      />
+    </>
+  );
+}
+
+function IssueDetailStylesheets({
+  basePath,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  ownerName: string;
+  projectName: string;
+}) {
+  return (
+    <>
+      <link
+        rel="stylesheet"
+        type="text/css"
+        media="screen"
+        href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labels.css`)}
+      />
+      <link
+        rel="stylesheet"
+        type="text/css"
+        media="screen"
+        href={prefixBasePath(basePath, "/assets/javascripts/lib/atjs/jquery.atwho.css")}
+      />
+      <link
+        rel="stylesheet"
+        type="text/css"
+        media="screen"
+        href={prefixBasePath(basePath, "/assets/javascripts/lib/elevator/jquery.elevator.css")}
+      />
+      <link
+        rel="stylesheet"
+        type="text/css"
+        media="screen"
+        href={prefixBasePath(basePath, "/assets/javascripts/lib/videojs/video-js.min.css")}
       />
     </>
   );
