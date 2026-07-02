@@ -496,6 +496,45 @@ test("project issue detail toggles legacy comment update form through comment-ed
   await expect(comment.locator("#comment-body-77")).toBeVisible();
 });
 
+test("project issue detail keeps legacy comment edit trigger for readable comments", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    comments: [
+      {
+        attachments: [],
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorLabel: "Dev Member",
+        authorLoginId: "dev",
+        childComments: [],
+        contentsHtml: "<p>Server HTML should not render</p>",
+        contentsMarkdown: "Comment **markdown**",
+        createdLabel: "Jul 2, 2026",
+        id: 77,
+        viewerCanDelete: true,
+        viewerCanRead: true,
+        viewerCanUpdate: false,
+        viaEmail: false,
+        voterCount: 0,
+        voters: [],
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const comment = page.locator(".span-left-pane #comment-77");
+  const editButton = comment.locator('[data-toggle="comment-edit"][data-comment-id="77"]');
+  await expect(editButton).toHaveCount(1);
+  await expect(editButton).toHaveClass("btn-transparent-with-fontsize-lineheight ml10");
+  await expect(editButton).toHaveAttribute("title", "Edit comment");
+  await expect(editButton.locator("i.yobicon-edit-2")).toHaveCount(1);
+
+  await editButton.click();
+  await expect(comment.locator("#comment-editform-77")).toBeVisible();
+  await expect(comment.locator("#comment-editform-77 button[type='submit']")).toHaveCount(0);
+});
+
 test("project issue detail preserves legacy child comment anchor divs", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page);

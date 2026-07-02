@@ -2253,6 +2253,7 @@ function IssueCommentRow({
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const canUpdate = booleanField(comment.viewerCanUpdate);
+  const canRead = comment.viewerCanRead !== false;
   const canDelete = booleanField(comment.viewerCanDelete);
   const hasVoted = booleanField(comment.viewerHasVoted);
   const canVote = booleanField(issue.viewerCanComment);
@@ -2380,7 +2381,7 @@ function IssueCommentRow({
                 <i className="yobicon-lang"></i>
               </button>
             ) : null}
-            {canUpdate ? (
+            {canRead ? (
               <button
                 type="button"
                 className="btn-transparent-with-fontsize-lineheight ml10"
