@@ -470,29 +470,15 @@ function ProjectIssuesBody({
     });
   };
   const handleIssueListClick = useEffectEvent((event: MouseEvent) => {
-    const target = event.target instanceof Element ? event.target : null;
+    const target =
+      event.target instanceof Element
+        ? event.target
+        : event.target instanceof Node
+          ? event.target.parentElement
+          : null;
     if (!target) {
       return;
     }
-
-    const label = target.closest<HTMLAnchorElement>("a[data-label-id][data-category-id]");
-    if (label) {
-      event.preventDefault();
-      const labelId = label.dataset.labelId ?? "";
-      if (!labelId) {
-        return;
-      }
-
-      void navigate({
-        to: projectIssuesRoutePath(ownerName, projectName, {
-          ...search,
-          labelIds: [...search.labelIds, labelId],
-          pageNum: 1,
-        }),
-      });
-      return;
-    }
-
     if (target.closest(".mass-update-check")) {
       return;
     }
@@ -503,7 +489,10 @@ function ProjectIssuesBody({
       issueListRef.current
         ?.querySelectorAll(".post-item.highlightBg")
         .forEach((row) => row.classList.remove("highlightBg"));
-      target.closest(".post-item")?.classList.add("highlightBg");
+      (
+        twoColumnTarget.closest(".post-item") ??
+        twoColumnTarget.closest(".child-issue-list")?.closest(".post-item")
+      )?.classList.add("highlightBg");
       if (twoColumnTarget.href) {
         if (!history.state) {
           history.pushState(
@@ -519,6 +508,45 @@ function ProjectIssuesBody({
           );
         }
       }
+      return;
+    }
+
+    const label = target.closest<HTMLAnchorElement>("a[data-label-id][data-category-id]");
+    if (label) {
+      event.preventDefault();
+      if (useTwoColumnMode && label.classList.contains("twoColumeModeTarget")) {
+        issueListRef.current
+          ?.querySelectorAll(".post-item.highlightBg")
+          .forEach((row) => row.classList.remove("highlightBg"));
+        (
+          label.closest(".post-item") ?? label.closest(".child-issue-list")?.closest(".post-item")
+        )?.classList.add("highlightBg");
+        if (label.href) {
+          if (!history.state) {
+            history.pushState(
+              { startPath: location.pathname },
+              label.textContent ?? "",
+              label.href,
+            );
+          } else {
+            history.replaceState(history.state, label.textContent ?? "", label.href);
+          }
+        }
+        return;
+      }
+
+      const labelId = label.dataset.labelId ?? "";
+      if (!labelId) {
+        return;
+      }
+
+      void navigate({
+        to: projectIssuesRoutePath(ownerName, projectName, {
+          ...search,
+          labelIds: [...search.labelIds, labelId],
+          pageNum: 1,
+        }),
+      });
       return;
     }
 

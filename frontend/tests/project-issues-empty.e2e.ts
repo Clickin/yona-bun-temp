@@ -1512,6 +1512,7 @@ test("project issue two-column row click uses legacy post-item href branch", asy
   await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
   await page.reload();
   await page.locator("#two-column-mode").click();
+  await expect(page.locator("#issue-item-42")).toHaveCSS("cursor", "pointer");
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-two-column-row";
   });
@@ -1523,6 +1524,35 @@ test("project issue two-column row click uses legacy post-item href branch", asy
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("issue-two-column-row");
+});
+
+test("project issue two-column child label click uses legacy twoColumeModeTarget branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "children");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=children`);
+  await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
+  await page.reload();
+  await page.locator("#issue-item-42 .issue-item-row").click();
+  await page.locator("#two-column-mode").click();
+  await expect(page.locator("#two-column-mode")).toBeChecked();
+  await expect(page.locator("#issue-item-42")).toHaveCSS("cursor", "pointer");
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "issue-two-column-child-label";
+  });
+
+  await page.locator(".child-issue-list .label.twoColumeModeTarget[data-label-id='8']").click();
+
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/admin/sample/issues`);
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBeNull();
+  await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("open");
+  await expect.poll(() => new URL(page.url()).searchParams.getAll("labelIds").join(",")).toBe("8");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("issue-two-column-child-label");
 });
 
 async function issueListShellMetrics(page: Page) {
