@@ -1,8 +1,32 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_EDIT_FORM_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><form action="__BASE_PATH__/admin/sample/post/3" method="post" enctype="multipart/form-data" class="nm"><div class="content-wrap frm-wrap"><dl><dt><label for="title">Title</label></dt><dd><input type="text" id="title" name="title" value="Release note" class="zen-mode text title " maxlength="250" tabindex="1" autocomplete="off"></dd><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Post **markdown**</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="right-txt mt10 mb10"><label class="checkbox"><input type="checkbox" id="notice" name="notice">Set this post as notice.</label><label class="checkbox"><input type="checkbox" id="readme" name="readme">make it a README file</label></div><div class="actions"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button class="ybtn ybtn-info" tabindex="3">Save</button><a href="javascript:history.back();" class="ybtn" tabindex="4">Cancel</a></div></div></form></div></div>
 `;
+const LEGACY_MARKDOWN_HELP = readFileSync(
+  new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
+  "utf8",
+)
+  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
+  .replace(/@\{"@"\}/g, "@")
+  .replace(/<script[\s\S]*$/u, "")
+  .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
+  .replace(/<\/div>\s*$/u, "</div>");
+
+function withLegacyEditor(html: string) {
+  return html.replace(
+    `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Post **markdown**</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
+    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-body" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-body" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Post **markdown**</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+  );
+}
+
+function withLegacyFileUploader(html: string) {
+  return html.replace(
+    `<div class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
+    `<div id="upload" class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><script type="text/x-jquery-tmpl" id="tplAttachedFile"><li class="attached-file" data-id="\${fileId}" data-name="\${fileName}" data-href="\${fileHref}" data-mime="\${mimeType}" data-size="\${fileSize}"><i class="yobicon-supportrequest"></i><i class="mimetype"></i><strong class="name">\${fileName}</strong><span class="size">\${fileSizeReadable}</span><div class="pull-right"><div class="progress upload-progress"><div class="bar orange"></div></div></div><button type="button" class="btn-transparent btn-delete pull-right">×</button><span class="pull-right nbtn small white btn-insert">Click to post</span></li></script><script type="text/x-jquery-tmpl" id="tplDropFilesHere"><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div></script>`,
+  );
+}
 
 test("project board edit form matches legacy board/edit.scala.html core form DOM", async ({
   page,
@@ -14,9 +38,19 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   await page.goto(`${basePath}/admin/sample/post/3/editform`);
   await expect(page.locator("form.nm")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
+  await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
+  await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
+  await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
+  await expect(page.locator("#tplAttachedFile")).toHaveAttribute("type", "text/x-jquery-tmpl");
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(page, EXPECTED_EDIT_FORM_BODY.replaceAll("__BASE_PATH__", basePath)),
+    await canonicalizeHtml(
+      page,
+      withLegacyFileUploader(withLegacyEditor(EXPECTED_EDIT_FORM_BODY)).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
+    ),
   );
   expect(await readBoardEditFormMetrics(page)).toEqual({
     actionsDisplay: "block",
@@ -46,7 +80,7 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   });
 
   await page.fill("#title", "Release note patched");
-  await page.fill("#editor-body-content-body", "Patched **body**");
+  await page.fill("#editor-body-body", "Patched **body**");
   await page.check("#notice");
   const patchResponsePromise = page.waitForResponse(
     (response) =>

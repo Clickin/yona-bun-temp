@@ -1,12 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import {
-  useEffect,
-  useRef,
-  type ButtonHTMLAttributes,
-  type InputHTMLAttributes,
-  type TextareaHTMLAttributes,
-} from "react";
+import { useEffect, useRef, type ButtonHTMLAttributes, type InputHTMLAttributes } from "react";
+import legacyMarkdownHelpTemplate from "../../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import {
   readProjectPostQueryOptions,
   updateProjectPostRest,
@@ -15,6 +10,13 @@ import {
 import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
+
+const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
+  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
+  .replace(/@\{"@"\}/g, "@")
+  .replace(/<script[\s\S]*$/u, "")
+  .replace(/^[\s\S]*?<div class="markdown-help">/u, "")
+  .replace(/<\/div>\s*$/u, "");
 
 export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber/editform")({
   component: ProjectBoardEditFormRoute,
@@ -114,28 +116,11 @@ function ProjectBoardEditFormBody({
                 />
               </dd>
               <dd style={{ position: "relative" }}>
-                <div data-toggle="markdown-editor" className="markdown-editor-wrap">
-                  <LegacyTabIndexTextarea
-                    tabIndexValue="2"
-                    id="editor-body-content-body"
-                    name="body"
-                    data-editor-mode="content-body"
-                    defaultValue={post.bodyMarkdown}
-                  ></LegacyTabIndexTextarea>
-                  <div id="preview-content-body" className="preview markdown-wrap"></div>
-                </div>
+                <BoardPostMarkdownEditor value={post.bodyMarkdown} />
               </dd>
             </dl>
 
-            <div
-              className="upload-wrap content-footer"
-              data-resource-type="BOARD_POST"
-              data-resource-id={post.id}
-            >
-              <div className="attach-wrap">
-                <div className="attachments" id="attachments"></div>
-              </div>
-            </div>
+            <BoardPostFileUploader resourceId={String(post.id)} />
 
             <div className="right-txt mt10 mb10">
               {canSetNotice ? (
@@ -192,17 +177,6 @@ function LegacyTabIndexInput({
   return <input ref={inputRef} {...props} />;
 }
 
-function LegacyTabIndexTextarea({
-  tabIndexValue,
-  ...props
-}: TextareaHTMLAttributes<HTMLTextAreaElement> & { tabIndexValue: string }) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    textareaRef.current?.setAttribute("tabindex", tabIndexValue);
-  }, [tabIndexValue]);
-  return <textarea ref={textareaRef} {...props}></textarea>;
-}
-
 function LegacyTabIndexButton({
   tabIndexValue,
   ...props
@@ -224,6 +198,126 @@ function HistoryBackLink({ children }: { children: string }) {
     <a ref={anchorRef} href="/" className="ybtn">
       {children}
     </a>
+  );
+}
+
+function BoardPostMarkdownEditor({ value }: { value: string }) {
+  const { t } = useLegacyMessages();
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    bodyRef.current?.setAttribute("tabindex", "2");
+  }, []);
+  return (
+    <div data-toggle="markdown-editor" className="mt10">
+      <ul className="nav nav-tabs nm small">
+        <li className="active">
+          <a href="#edit-body" data-toggle="tab" data-mode="edit">
+            {t("common.editor.edit")}
+          </a>
+        </li>
+        <li>
+          <a href="#preview-body" data-toggle="tab" data-mode="preview">
+            {t("common.editor.preview")}
+          </a>
+        </li>
+        <li>
+          <div className="task-list-button">
+            <button
+              type="button"
+              className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
+            >
+              <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
+            </button>
+          </div>
+        </li>
+        <li>
+          <div className="editor-clear-temporary">
+            <div className="editor-clear-temporary-button">
+              <button
+                type="button"
+                id="button-clear-temporary"
+                className="ybtn ybtn-small ybtn-warning"
+              >
+                {t("button.clear.temporary")}
+              </button>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div className="editor-notice-label"></div>
+        </li>
+      </ul>
+      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+        <div
+          className="markdown-help"
+          dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
+        />
+        <div id="edit-body" className="tab-pane active">
+          <div className="textarea-box">
+            <textarea
+              ref={bodyRef}
+              name="body"
+              className="editorSeries content comment nm"
+              data-editor-mode="content-body"
+              id="editor-body-body"
+              defaultValue={value}
+              {...{ markdown: "true" }}
+            ></textarea>
+          </div>
+        </div>
+        <div id="preview-body" className="tab-pane">
+          <div className="markdown-preview markdown-wrap content-body" data-via-email="false"></div>
+        </div>
+        <div className="notification-receiver">
+          <span className="notification-receiver-title">
+            {t("notification.receiver.list.title")}
+          </span>
+          <span className="notification-receiver-list"></span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BoardPostFileUploader({ resourceId }: { resourceId: string }) {
+  const { t } = useLegacyMessages();
+  const attachedFileTemplate = `<li class="attached-file" data-id="\${fileId}" data-name="\${fileName}" data-href="\${fileHref}" data-mime="\${mimeType}" data-size="\${fileSize}"><i class="yobicon-supportrequest"></i><i class="mimetype"></i><strong class="name">\${fileName}</strong><span class="size">\${fileSizeReadable}</span><div class="pull-right"><div class="progress upload-progress"><div class="bar orange"></div></div></div><button type="button" class="btn-transparent btn-delete pull-right">×</button><span class="pull-right nbtn small white btn-insert">${t("common.attach.clickToPost")}</span></li>`;
+  const dropFilesHereTemplate = `<div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div>`;
+  return (
+    <>
+      <div
+        id="upload"
+        className="upload-wrap content-footer"
+        data-resource-type="BOARD_POST"
+        data-resource-id={resourceId}
+      >
+        <div className="attach-wrap">
+          <span className="help help-droppable">{t("common.attach.drophere")}</span>
+          <div className="btn-wrap">
+            <div className="nbtn medium white fake-file-wrap">
+              <i className="yobicon-upload"></i> {t("button.upload")}
+              <input type="file" className="file" name="filePath" multiple />
+            </div>
+          </div>
+          <span className="plain">{t("common.attach.clickbutton")}</span>
+          <span className="help help-pastable">{t("common.attach.pastehere")}</span>
+        </div>
+        <ul className="attached-files unstyled"></ul>
+        <p className="right-txt help">
+          <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
+        </p>
+      </div>
+      <script
+        type="text/x-jquery-tmpl"
+        id="tplAttachedFile"
+        dangerouslySetInnerHTML={{ __html: attachedFileTemplate }}
+      />
+      <script
+        type="text/x-jquery-tmpl"
+        id="tplDropFilesHere"
+        dangerouslySetInnerHTML={{ __html: dropFilesHereTemplate }}
+      />
+    </>
   );
 }
 
