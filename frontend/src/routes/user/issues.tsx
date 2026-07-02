@@ -1,6 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import type { FormEvent, HTMLAttributes, LiHTMLAttributes, MouseEvent } from "react";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import type {
+  AnchorHTMLAttributes,
+  ComponentType,
+  FormEvent,
+  HTMLAttributes,
+  LiHTMLAttributes,
+  MouseEvent,
+} from "react";
 import { apiQueryKeys } from "../../api/query-keys";
 import { currentSessionQueryOptions } from "../../api/session";
 import {
@@ -12,6 +19,12 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    to: string;
+  }
+>;
 
 type UserIssuesSearch = {
   filter: "assigned" | "authored" | "commented" | "favorite" | "mentioned" | "shared";
@@ -187,7 +200,7 @@ function UserIssuesBody({
   return (
     <div className="page-wrap-outer">
       <div className="page-wrap">
-        <MySeriesMenuTabs basePath={basePath} />
+        <MySeriesMenuTabs />
         <div {...pjaxContainer} className="row-fluid issue-list-wrap">
           <div className="left-menu span2 span-hard-wrap">
             <div className="inner advanced">
@@ -322,19 +335,19 @@ function UserIssuesBody({
   );
 }
 
-function MySeriesMenuTabs({ basePath }: { basePath: string }) {
+function MySeriesMenuTabs() {
   const { t } = useLegacyMessages();
 
   return (
     <ul className="nav nav-tabs">
       <li>
-        <a href={prefixBasePath(basePath, "/notifications")}>{t("notification")}</a>
+        <LegacyInternalLink to="/notifications">{t("notification")}</LegacyInternalLink>
       </li>
       <li className="active">
-        <a href={prefixBasePath(basePath, "/user/issues")}>{t("issue.myIssue")}</a>
+        <LegacyInternalLink to="/user/issues">{t("issue.myIssue")}</LegacyInternalLink>
       </li>
       <li>
-        <a href={prefixBasePath(basePath, "/user/files")}>{t("user.files")}</a>
+        <LegacyInternalLink to="/user/files">{t("user.files")}</LegacyInternalLink>
       </li>
       <li>
         <button

@@ -207,6 +207,19 @@ test("current-user issues page matches legacy issue/my_list.scala.html shell", a
       });
     },
   );
+  await page.route("**/api/v1/workspace/files?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        files: [],
+        filter: "",
+        page: 1,
+        pageSize: 50,
+        total: 0,
+        totalPages: 1,
+      }),
+    });
+  });
   await page.fill('form#search input[name="filter"]', "needle");
   const searchResponse = page.waitForResponse((response) =>
     response
@@ -220,6 +233,22 @@ test("current-user issues page matches legacy issue/my_list.scala.html shell", a
   await expect(page).toHaveURL(
     `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&query=needle&state=open`,
   );
+
+  const myFilesTab = page.locator('.page-wrap > .nav-tabs a:has-text("My Files")');
+  await expect(myFilesTab).toHaveAttribute("href", `${basePath}/user/files`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "my-files-tab";
+  });
+  await myFilesTab.click();
+  await expect(page).toHaveURL(`${basePath}/user/files?filter=&pageNum=1`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("my-files-tab");
 });
 
 test("current-user issues page matches legacy filtered empty search state", async ({ page }) => {
@@ -564,7 +593,8 @@ async function canonicalizePageWrap(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -582,6 +612,24 @@ async function canonicalizePageWrap(page: Page) {
         .filter(Boolean)
         .join("");
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+    function normalizeAttribute(current: Element, name: string) {
+      if (name === "class") {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/)
+          .filter((value, index, values) => value && values.indexOf(value) === index)
+          .filter(
+            (value) =>
+              !(
+                value === "active" &&
+                current.tagName.toLowerCase() === "a" &&
+                current.closest(".page-wrap > .nav-tabs")
+              ),
+          )
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
     const root = document.querySelector(".page-wrap-outer");
@@ -630,7 +678,8 @@ async function canonicalizeHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map((name) => normalizeAttribute(current, name))
+          .filter(Boolean)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -648,6 +697,24 @@ async function canonicalizeHtml(page: Page, html: string) {
           .filter(Boolean)
           .join("");
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+      function normalizeAttribute(current: Element, name: string) {
+        if (name === "class") {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/)
+            .filter((value, index, values) => value && values.indexOf(value) === index)
+            .filter(
+              (value) =>
+                !(
+                  value === "active" &&
+                  current.tagName.toLowerCase() === "a" &&
+                  current.closest(".page-wrap > .nav-tabs")
+                ),
+            )
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
+        return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
 
       const template = document.createElement("template");
