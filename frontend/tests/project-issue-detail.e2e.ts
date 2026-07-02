@@ -600,6 +600,66 @@ test("project issue detail renders legacy translation button when translation AP
   ]);
 });
 
+test("project issue detail renders legacy comment translation button when translation API is configured", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const translationRequests: Array<{
+    body: unknown;
+    csrfToken: string | null;
+    method: string;
+  }> = [];
+  await page.route("**/-_-api/v1/translation", async (route) => {
+    translationRequests.push({
+      body: JSON.parse(route.request().postData() ?? "{}") as unknown,
+      csrfToken: route.request().headers()["x-csrf-token"] ?? null,
+      method: route.request().method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        translated: "<p>Translated <strong>comment</strong></p>",
+        translatedMarkdown: "Translated **comment**",
+      }),
+    });
+  });
+  await mockProjectIssueDetail(page, { translationApiEnabled: true });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const translateButton = page.locator("#comment-77 .comment-translate");
+  await expect(translateButton).toHaveClass(
+    "icon btn-transparent-with-fontsize-lineheight ml10 comment-translate",
+  );
+  await expect(translateButton).toHaveAttribute("data-toggle", "tooltip");
+  await expect(translateButton).toHaveAttribute("data-comment-id", "77");
+  await expect(translateButton).toHaveAttribute("title", "Translation");
+  await expect(translateButton.locator("i.yobicon-lang")).toHaveCount(1);
+
+  await translateButton.click();
+
+  await expect(page.locator(".span-left-pane #comment-body-77 .comment-body")).toContainText(
+    "Translated comment",
+  );
+  await expect(page.locator(".span-left-pane #comment-body-77 .comment-body strong")).toHaveText(
+    "comment",
+  );
+  await expect(translateButton).toBeDisabled();
+  expect(translationRequests[0]?.csrfToken).toBeTruthy();
+  expect(translationRequests).toEqual([
+    {
+      body: {
+        number: 77,
+        owner: "admin",
+        projectName: "sample",
+        type: "issue-comment",
+      },
+      csrfToken: translationRequests[0]?.csrfToken,
+      method: "POST",
+    },
+  ]);
+});
+
 test("project issue detail renders legacy read-only selected labels", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, { viewerCanUpdate: false });

@@ -737,6 +737,7 @@ function IssueDetailBody({
                 onCommentVote={(commentId, voted) =>
                   commentVoteMutation.mutate({ commentId, hasVoted: voted })
                 }
+                runtimeConfig={runtimeConfig}
               />
             ) : null}
           </div>
@@ -1827,10 +1828,12 @@ function IssueMainTimeline({
   basePath,
   issue,
   onCommentVote,
+  runtimeConfig,
 }: {
   basePath: string;
   issue: RestIssueDetailResponse;
   onCommentVote: (commentId: string, hasVoted: boolean) => void;
+  runtimeConfig: RuntimeConfig;
 }) {
   const comments = issue.comments ?? [];
   const timeline: IssueTimelineItem[] = issue.timeline?.length
@@ -1857,6 +1860,7 @@ function IssueMainTimeline({
                     issue={issue}
                     key={`comment-${stringField(item.comment.id)}`}
                     onCommentVote={onCommentVote}
+                    runtimeConfig={runtimeConfig}
                   />
                 ) : (
                   <IssueEventRow
@@ -2233,11 +2237,13 @@ function IssueCommentRow({
   comment,
   issue,
   onCommentVote,
+  runtimeConfig,
 }: {
   basePath: string;
   comment: IssueComment;
   issue: RestIssueDetailResponse;
   onCommentVote: (commentId: string, hasVoted: boolean) => void;
+  runtimeConfig: RuntimeConfig;
 }) {
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
@@ -2249,11 +2255,33 @@ function IssueCommentRow({
   const canUpdate = booleanField(comment.viewerCanUpdate);
   const canDelete = booleanField(comment.viewerCanDelete);
   const hasVoted = booleanField(comment.viewerHasVoted);
-  const contentsMarkdown = stringField(comment.contentsMarkdown);
+  const [translatedContentsMarkdown, setTranslatedContentsMarkdown] = useState<string | null>(null);
+  const [translatePending, setTranslatePending] = useState(false);
+  const translationApiEnabled = booleanField(issue.translationApiEnabled);
+  const contentsMarkdown = translatedContentsMarkdown ?? stringField(comment.contentsMarkdown);
   const voters = comment.voters ?? [];
   const childComments = Array.isArray(comment.childComments)
     ? (comment.childComments as IssueChildComment[])
     : [];
+
+  async function translateComment() {
+    if (translatePending || translatedContentsMarkdown !== null) {
+      return;
+    }
+    setTranslatePending(true);
+    try {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const translatedMarkdown = await translateLegacyResource(runtimeConfig, csrfToken, {
+        number: Number(commentId) || 0,
+        owner: ownerName,
+        projectName,
+        type: "issue-comment",
+      });
+      setTranslatedContentsMarkdown(translatedMarkdown);
+    } finally {
+      setTranslatePending(false);
+    }
+  }
 
   return (
     <li className="comment " id={`comment-${commentId}`}>
@@ -2332,6 +2360,19 @@ function IssueCommentRow({
             >
               <i className={`yobicon-hearts ${hasVoted ? "vote-heart-on" : "vote-heart-off"}`}></i>
             </button>
+            {translationApiEnabled ? (
+              <button
+                type="button"
+                className="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"
+                data-toggle="tooltip"
+                data-comment-id={commentId}
+                title="Translation"
+                disabled={translatePending || translatedContentsMarkdown !== null}
+                onClick={() => void translateComment()}
+              >
+                <i className="yobicon-lang"></i>
+              </button>
+            ) : null}
             {canUpdate ? (
               <button
                 type="button"
