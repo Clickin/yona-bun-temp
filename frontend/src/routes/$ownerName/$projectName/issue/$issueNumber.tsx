@@ -135,6 +135,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       <IssueDetailBody
         basePath={runtimeConfig.basePath}
         currentUserLoginId={stringField(sessionQuery.data.loginId)}
+        currentUserIsAnonymous={booleanField(sessionQuery.data.isAnonymous)}
         issue={issueQuery.data}
         labels={labelsQuery.data.labels}
         milestones={{
@@ -395,6 +396,7 @@ function ProjectIssueNotFoundBody({
 function IssueDetailBody({
   basePath,
   currentUserLoginId,
+  currentUserIsAnonymous,
   issue,
   labels: projectLabels,
   milestones,
@@ -403,6 +405,7 @@ function IssueDetailBody({
 }: {
   basePath: string;
   currentUserLoginId: string;
+  currentUserIsAnonymous: boolean;
   issue: RestIssueDetailResponse;
   labels: YonaRecord[];
   milestones: {
@@ -599,6 +602,8 @@ function IssueDetailBody({
               </a>
               <IssuePostingHistory
                 historyMarkdown={historyMarkdown}
+                loginTo={`/users/loginform?redirectUrl=/${ownerName}/${projectName}/issue/${issueNumber}`}
+                isAnonymous={currentUserIsAnonymous}
                 updatedByAuthorLabel={stringField(issue.updatedByAuthorLabel)}
                 updatedLabel={stringField(issue.updatedLabel)}
               />
@@ -1083,10 +1088,14 @@ function IssueViewBootstrapScript({
 
 function IssuePostingHistory({
   historyMarkdown,
+  isAnonymous,
+  loginTo,
   updatedByAuthorLabel,
   updatedLabel,
 }: {
   historyMarkdown: string;
+  isAnonymous: boolean;
+  loginTo: string;
   updatedByAuthorLabel: string;
   updatedLabel: string;
 }) {
@@ -1094,6 +1103,16 @@ function IssuePostingHistory({
 
   if (!historyMarkdown) {
     return null;
+  }
+
+  if (isAnonymous) {
+    return (
+      <div className="posting-history">
+        <LegacyInternalLink to={loginTo} data-toggle="modal">
+          {t("change.history")}
+        </LegacyInternalLink>
+      </div>
+    );
   }
 
   return (

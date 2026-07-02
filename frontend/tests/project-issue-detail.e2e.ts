@@ -413,6 +413,36 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   );
 });
 
+test("project issue detail renders legacy anonymous posting history login link", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    __sessionOverrides: {
+      actorId: 0,
+      emailAddress: "",
+      isAnonymous: true,
+      isConfirmed: false,
+      isSiteAdmin: false,
+      loginId: "anonymous",
+      userLabel: "anonymous",
+    },
+    historyMarkdown: "Previous **body**",
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const expected =
+    `<div class="posting-history"><a href="__BASE_PATH__/users/loginform?redirectUrl=/admin/sample/issue/11" data-toggle="modal">Change history</a></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, ".author-info .posting-history")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+  await expect(page.locator("#-yona-posting-history")).toHaveCount(0);
+});
+
 test("project issue detail opens legacy keymap modal through data-toggle modal", async ({
   page,
 }) => {
@@ -2401,45 +2431,44 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
     !Array.isArray(issueOverrides.__projectOverrides)
       ? (issueOverrides.__projectOverrides as Record<string, unknown>)
       : {};
+  const sessionOverrides =
+    issueOverrides.__sessionOverrides &&
+    typeof issueOverrides.__sessionOverrides === "object" &&
+    !Array.isArray(issueOverrides.__sessionOverrides)
+      ? (issueOverrides.__sessionOverrides as Record<string, unknown>)
+      : {};
   const effectiveIssueOverrides = { ...issueOverrides };
   delete effectiveIssueOverrides.__issueStatus;
   delete effectiveIssueOverrides.__issueNumber;
   delete effectiveIssueOverrides.__projectOverrides;
+  delete effectiveIssueOverrides.__sessionOverrides;
   const deleteRequests: string[] = [];
   const commentDeleteRequests: string[] = [];
   const commentVoteRequests: { csrfToken: string | null; method: string }[] = [];
   const issueWeightRequests: { csrfToken: string | null; method: string; url: string }[] = [];
+  const sessionResponse = {
+    actorId: 1,
+    avatarUrl: "/assets/images/default-avatar-32.png",
+    defaultLandingPath: "/",
+    emailAddress: "admin@example.com",
+    isAnonymous: false,
+    isConfirmed: true,
+    isSiteAdmin: true,
+    loginId: "admin",
+    userLabel: "Site Admin",
+    ...sessionOverrides,
+  };
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        actorId: 1,
-        avatarUrl: "/assets/images/default-avatar-32.png",
-        defaultLandingPath: "/",
-        emailAddress: "admin@example.com",
-        isAnonymous: false,
-        isConfirmed: true,
-        isSiteAdmin: true,
-        loginId: "admin",
-        userLabel: "Site Admin",
-      }),
+      body: JSON.stringify(sessionResponse),
     });
   });
   await page.route("**/api/v1/auth/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       headers: { "x-csrf-token": "test-csrf-token" },
-      body: JSON.stringify({
-        actorId: 1,
-        avatarUrl: "/assets/images/default-avatar-32.png",
-        defaultLandingPath: "/",
-        emailAddress: "admin@example.com",
-        isAnonymous: false,
-        isConfirmed: true,
-        isSiteAdmin: true,
-        loginId: "admin",
-        userLabel: "Site Admin",
-      }),
+      body: JSON.stringify(sessionResponse),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
