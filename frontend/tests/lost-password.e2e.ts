@@ -147,6 +147,17 @@ test("anonymous lost-password form matches legacy site/lostPassword.scala.html s
   });
 });
 
+test("authenticated lost-password form prefills current user like legacy", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedSession(page);
+
+  await page.goto(`${basePath}/lostPassword`);
+  await expect(page.locator("#loginId")).toHaveValue("doortts");
+  await expect(page.locator("#loginId")).toHaveAttribute("value", "doortts");
+  await expect(page.locator("#emailAddress")).toHaveValue("doortts@example.com");
+  await expect(page.locator("#emailAddress")).toHaveAttribute("value", "doortts@example.com");
+});
+
 test("lost-password requested alert matches legacy site/lostPassword.scala.html screen DOM", async ({
   page,
 }) => {
@@ -253,6 +264,26 @@ test("lost-password invalid-request alert matches legacy site/lostPassword.scala
     headingMargin: "0px",
   });
 });
+
+async function mockAuthenticatedSession(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: "42",
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "doortts@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isGuest: false,
+        isSiteAdmin: false,
+        loginId: "doortts",
+        userLabel: "Door TTS",
+      }),
+    });
+  });
+}
 
 function expectedLostPasswordScreen(basePath: string, alertHtml: string) {
   return EXPECTED_LOST_PASSWORD_SCREEN.replaceAll("__BASE_PATH__", basePath).replace(

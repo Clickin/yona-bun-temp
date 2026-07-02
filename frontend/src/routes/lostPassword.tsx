@@ -1,7 +1,8 @@
 import * as React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { apiQueryKeys } from "../api/query-keys";
+import { currentSessionQueryOptions } from "../api/session";
 import { readSessionBootstrap, requestPasswordReset } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
@@ -38,6 +39,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const [submitError, setSubmitError] = React.useState("");
   const siteName = runtimeConfig.siteName ?? "Yona";
   const title = lookupLegacyMessage(language, "title.resetPasswordFor", {
@@ -45,6 +47,15 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   });
   const isSent = requested !== "";
   const errorMessage = error ? t(error) : submitError;
+  const shouldPrefillCurrentUser = sessionQuery.data?.isAnonymous === false;
+  const currentUserLoginId =
+    shouldPrefillCurrentUser && typeof sessionQuery.data?.loginId === "string"
+      ? sessionQuery.data.loginId
+      : "";
+  const currentUserEmail =
+    shouldPrefillCurrentUser && typeof sessionQuery.data?.emailAddress === "string"
+      ? sessionQuery.data.emailAddress
+      : "";
   const requestMutation = useMutation({
     mutationFn: async (input: { emailAddress: string; loginId: string }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -97,7 +108,12 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
             </div>
           ) : null}
 
-          <form method="post" action="/lostPassword" onSubmit={(event) => void handleSubmit(event)}>
+          <form
+            key={`${currentUserLoginId}:${currentUserEmail}`}
+            method="post"
+            action="/lostPassword"
+            onSubmit={(event) => void handleSubmit(event)}
+          >
             <dl>
               <dd>
                 <input
@@ -108,6 +124,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   ref={setRequiredAttributeValue}
                   placeholder={t("user.loginId")}
                   className="text"
+                  {...(shouldPrefillCurrentUser ? { defaultValue: currentUserLoginId } : {})}
                 />
               </dd>
               <dd>
@@ -118,6 +135,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   required
                   placeholder={t("user.email")}
                   className="text"
+                  {...(shouldPrefillCurrentUser ? { defaultValue: currentUserEmail } : {})}
                 />
               </dd>
             </dl>
