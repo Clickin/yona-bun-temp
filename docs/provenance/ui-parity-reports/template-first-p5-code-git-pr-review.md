@@ -1,7 +1,7 @@
 # Template-First UI Parity Report: P5 Code/Git/PR/Review
 
 Status: current reset baseline
-Date: 2026-06-27
+Date: 2026-07-02
 Owner packet: P5 code/git/pr/review
 Mode: template-first mapper baseline; implementation evidence reviewed
 
@@ -149,6 +149,15 @@ Route/source proof:
 Browser interaction proof:
 
 - `frontend/tests/project-code-commit-detail.e2e.ts`
+- `frontend/tests/project-code-view-folder.e2e.ts`
+- `frontend/tests/project-code-view-file.e2e.ts`
+- `frontend/tests/project-code-nohead.e2e.ts`
+- `frontend/tests/project-code-nohead-svn.e2e.ts`
+- `frontend/tests/project-code-history.e2e.ts`
+- `frontend/tests/project-code-history-file.e2e.ts`
+- `frontend/tests/project-code-compare.e2e.ts`
+- `frontend/tests/project-code-compare-svn.e2e.ts`
+- `frontend/tests/project-code-branches.e2e.ts`
 - `frontend/tests/project-pullrequests.e2e.ts`
 - `frontend/tests/project-reviews.e2e.ts`
 - `frontend/tests/project-fork-form.e2e.ts`
@@ -157,6 +166,14 @@ Browser interaction proof:
 - `frontend/tests/project-pullrequest-overview.e2e.ts`
 - `frontend/tests/project-pullrequest-changes.e2e.ts`
 - `frontend/tests/organization-pullrequests.e2e.ts`
+
+Focused P5 verifier run on 2026-07-02:
+
+```bash
+pnpm --dir frontend test:e2e -- project-code-view-folder.e2e.ts project-code-view-file.e2e.ts project-code-nohead.e2e.ts project-code-nohead-svn.e2e.ts project-code-history.e2e.ts project-code-history-file.e2e.ts project-code-commit-detail.e2e.ts project-code-compare.e2e.ts project-code-compare-svn.e2e.ts project-code-branches.e2e.ts project-pullrequests.e2e.ts project-pullrequest-create-form.e2e.ts project-pullrequest-edit-form.e2e.ts project-pullrequest-overview.e2e.ts project-pullrequest-changes.e2e.ts project-reviews.e2e.ts organization-pullrequests.e2e.ts
+```
+
+Result: 66 passed.
 
 Integrated browser sweep evidence:
 
