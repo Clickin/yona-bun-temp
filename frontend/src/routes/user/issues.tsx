@@ -754,21 +754,41 @@ function UserIssueItem({
   useTwoColumnMode: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const issueRoutePath = `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`;
   const projectHref = prefixBasePath(basePath, `/${issue.ownerName}/${issue.projectName}`);
-  const issueHref = `${projectHref}/issue/${issue.issueNumber}`;
+  const issueHref = prefixBasePath(basePath, issueRoutePath);
   const authorHref = prefixBasePath(basePath, `/${issue.authorLoginId}`);
   const assigneeHref = prefixBasePath(basePath, `/${issue.assigneeLoginId}`);
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
   const showAuthor = search.filter !== "authored";
   const showAssignee = search.filter !== "assigned" && issue.assigneeLoginId;
+  const [isChildListVisible, setIsChildListVisible] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <li
       className="post-item title"
       id={`issue-item-${issue.id}`}
-      style={useTwoColumnMode ? { cursor: "pointer" } : undefined}
+      style={{
+        ...(useTwoColumnMode ? { cursor: "pointer" } : {}),
+        ...(isHovered ? { backgroundColor: "#fafafa" } : {}),
+      }}
       {...legacyHref}
+      onClick={() => {
+        setIsChildListVisible(true);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          setIsChildListVisible(true);
+        }
+      }}
+      onMouseEnter={() => {
+        setIsHovered(true);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+      }}
     >
       <div className="span12 span-hard-wrap">
         <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
@@ -793,9 +813,15 @@ function UserIssueItem({
                 title={t("issue.weight")}
               ></i>
             ) : null}
-            <a href={issueHref} className="title">
+            <LegacyInternalLink
+              to={issueRoutePath}
+              className="title"
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+            >
               {issue.title}
-            </a>
+            </LegacyInternalLink>
             <CommentVoteCounts issue={issue} issueHref={issueHref} />
             <span className="for-subtask-progressbar"></span>
             {issue.labels.map((label) => (
@@ -811,7 +837,7 @@ function UserIssueItem({
             ))}
             <div
               className="child-issue-list hide"
-              style={showSubtasksAlways ? { display: "block" } : undefined}
+              style={showSubtasksAlways || isChildListVisible ? { display: "block" } : undefined}
             >
               <UserIssueChildRows issue={issue} />
             </div>

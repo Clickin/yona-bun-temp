@@ -550,6 +550,32 @@ test("current-user issues pagination follows legacy yobi.Pagination pjax-page an
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("3");
 });
 
+test("current-user issues row click reveals child list and hover follows legacy yobi.issue.List", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForFilterLinks(page);
+
+  await page.goto(`${basePath}/user/issues`);
+  await page.evaluate(() => localStorage.removeItem("showSubtasksAlways"));
+  await page.reload();
+  const row = page.locator("#issue-item-42");
+  const childList = page.locator("#issue-item-42 .child-issue-list");
+  await expect(childList).not.toBeVisible();
+
+  await row.hover();
+  await expect(row).toHaveCSS("background-color", "rgb(250, 250, 250)");
+  await page.mouse.move(0, 0);
+  await expect(row).not.toHaveCSS("background-color", "rgb(250, 250, 250)");
+
+  await row.locator(".infos.meta").click();
+  await expect(childList).toBeVisible();
+  await expect(childList).toHaveAttribute("style", "display: block;");
+  await expect(page.locator(".child-issue-list .issue-item.child-issue").first()).toContainText(
+    "Open child issue - Dev Member",
+  );
+});
+
 async function mockUserIssuesForStateTabs(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
