@@ -18,18 +18,22 @@ import {
 type SearchRouteSearch = {
   keyword: string;
   pageNum: number;
+  routeInvalid: boolean;
   searchType: SearchType;
 };
 
 export const Route = createFileRoute("/search")({
   component: SearchRoute,
   validateSearch: (search: Record<string, unknown>): SearchRouteSearch => {
-    const rawSearchType = typeof search.searchType === "string" ? search.searchType : "auto";
+    const rawSearchType = typeof search.searchType === "string" ? search.searchType : "";
+    const rawKeyword = typeof search.keyword === "string" ? search.keyword : "";
     const rawPageNum = typeof search.pageNum === "string" ? Number.parseInt(search.pageNum, 10) : 1;
+    const validSearchType = isSearchType(rawSearchType);
     return {
-      keyword: typeof search.keyword === "string" ? search.keyword : "",
+      keyword: rawKeyword,
       pageNum: Number.isFinite(rawPageNum) && rawPageNum > 0 ? rawPageNum : 1,
-      searchType: isSearchType(rawSearchType) ? rawSearchType : "auto",
+      routeInvalid: rawKeyword.length === 0 || !validSearchType,
+      searchType: validSearchType ? rawSearchType : "auto",
     };
   },
 });
@@ -53,7 +57,7 @@ function SearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const hasKeyword = search.keyword.trim().length > 0;
   const searchQuery = useQuery({
     ...globalSearchQueryOptions(runtimeConfig, search),
-    enabled: hasKeyword,
+    enabled: hasKeyword && !search.routeInvalid,
   });
   const result =
     searchQuery.data ??
@@ -61,6 +65,17 @@ function SearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       ...search,
       scope: "global",
     });
+
+  if (search.routeInvalid) {
+    return (
+      <DefaultSearchErrorBody
+        iconClassName="ico-404"
+        messageKey="error.badrequest"
+        runtimeConfig={runtimeConfig}
+        ybtnClassName="ybtn ybtn-info"
+      />
+    );
+  }
 
   if (isRequestTextTooLargeError(searchQuery.error)) {
     return <RequestTextTooLargeErrorBody />;

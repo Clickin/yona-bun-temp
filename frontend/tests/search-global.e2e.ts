@@ -357,6 +357,34 @@ test("global search category link preserves legacy href with SPA transition", as
   await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Issues0");
 });
 
+test("global search without required query renders legacy badrequest_default.scala.html shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const searchApi = await mockGlobalSearch(page);
+
+  await page.goto(`${basePath}/search`);
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText(
+    "The request cannot be fulfilled due to bad syntax",
+  );
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", basePath);
+  await expect(page.locator("#searchInnerForm")).toHaveCount(0);
+  expect(searchApi.count).toBe(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedDefaultSearchErrorScreen({
+        basePath,
+        buttonClass: "ybtn ybtn-info",
+        iconClass: "ico-404",
+        message: "The request cannot be fulfilled due to bad syntax",
+      }),
+    ),
+  );
+});
+
 test("global user search renders legacy partial_users.scala.html populated row", async ({
   page,
 }) => {
@@ -504,7 +532,7 @@ test("global search renders legacy request text too large error shell", async ({
     footerPaddingBottom: "10px",
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "5px",
+    projectPageWrapMarginTop: "20px",
   });
 });
 
@@ -547,7 +575,7 @@ test("global search renders legacy error/forbidden_default.scala.html shell", as
     footerPaddingBottom: "10px",
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "5px",
+    projectPageWrapMarginTop: "20px",
   });
 });
 
@@ -594,7 +622,7 @@ test("global search renders legacy error/internalServerError_default.scala.html 
     footerPaddingBottom: "10px",
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "5px",
+    projectPageWrapMarginTop: "20px",
   });
 });
 
@@ -781,6 +809,7 @@ async function readSearchResultShellMetrics(page: Page) {
 }
 
 async function mockGlobalSearch(page: Page) {
+  const apiCalls = { count: 0 };
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -791,6 +820,7 @@ async function mockGlobalSearch(page: Page) {
     });
   });
   await page.route("**/api/v1/search?**", async (route) => {
+    apiCalls.count += 1;
     const requestUrl = new URL(route.request().url());
     const keyword = requestUrl.searchParams.get("keyword") ?? "";
     const requestedSearchType = requestUrl.searchParams.get("searchType") ?? "project";
@@ -1254,6 +1284,7 @@ async function mockGlobalSearch(page: Page) {
       }),
     });
   });
+  return apiCalls;
 }
 
 function expectedDefaultSearchErrorScreen({

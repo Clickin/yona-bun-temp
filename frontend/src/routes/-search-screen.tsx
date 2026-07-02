@@ -44,10 +44,12 @@ export function DefaultSearchErrorBody({
   iconClassName,
   messageKey,
   runtimeConfig,
+  ybtnClassName = "ybtn ybtn-primary",
 }: {
   iconClassName: string;
   messageKey: string;
   runtimeConfig: RuntimeConfig;
+  ybtnClassName?: string;
 }) {
   const { t } = useLegacyMessages();
 
@@ -57,7 +59,7 @@ export function DefaultSearchErrorBody({
         <div className="error-wrap">
           <i className={iconClassName}></i>
           <p>{t(messageKey)}</p>
-          <a href={prefixBasePath(runtimeConfig.basePath, "/")} className="ybtn ybtn-primary">
+          <a href={prefixBasePath(runtimeConfig.basePath, "/")} className={ybtnClassName}>
             {t("menu.home")}
           </a>
         </div>
