@@ -339,13 +339,14 @@ test("global search category link preserves legacy href with SPA transition", as
   await expect(issueCategory).toHaveAttribute("href", "#");
   await expect(issueCategory).toHaveAttribute("data-toggle", "search-category");
   await expect(issueCategory).toHaveAttribute("data-type", "issue");
+  await page.locator("#searchKeyword").fill("fresh");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
   await issueCategory.click();
 
-  await expect(page).toHaveURL(`${basePath}/search?keyword=missing&searchType=issue`);
+  await expect(page).toHaveURL(`${basePath}/search?keyword=fresh&searchType=issue`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -354,6 +355,7 @@ test("global search category link preserves legacy href with SPA transition", as
     )
     .toBe("kept");
   await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("issue");
+  await expect(page.locator("#searchKeyword")).toHaveValue("fresh");
   await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Issues0");
 });
 
@@ -1274,7 +1276,7 @@ async function mockGlobalSearch(page: Page) {
           users: 0,
         },
         items: [],
-        keyword: "missing",
+        keyword,
         pageNum: 1,
         pageSize: 20,
         requestedSearchType,

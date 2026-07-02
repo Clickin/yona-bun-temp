@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useRef, type ReactNode } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { type SearchCounts, type SearchResponse, type SearchType } from "../api/search";
 import { RestApiError } from "../api/rest-client";
@@ -93,6 +93,7 @@ export function LegacySearchBody({
 }: SearchBodyInput) {
   const { t } = useLegacyMessages();
   const router = useRouter();
+  const searchFormRef = useRef<HTMLFormElement>(null);
   const activeType = result.searchType === "auto" ? "issue" : result.searchType;
   const activeCount = countForType(result.counts, activeType);
   const activeTitle = titleForType(t, activeType);
@@ -101,8 +102,10 @@ export function LegacySearchBody({
     ? ALL_SEARCH_CATEGORIES
     : ALL_SEARCH_CATEGORIES.filter((category) => category.type !== "project");
   const categoryHref = (nextSearchType: SearchType) => {
+    const formData = searchFormRef.current ? new FormData(searchFormRef.current) : null;
+    const liveKeyword = String(formData?.get("keyword") ?? result.keyword);
     const params = new URLSearchParams();
-    params.set("keyword", result.keyword);
+    params.set("keyword", liveKeyword);
     params.set("searchType", nextSearchType);
     return `${prefixBasePath(runtimeConfig.basePath, searchPath)}?${params.toString()}`;
   };
@@ -136,6 +139,11 @@ export function LegacySearchBody({
                           data-type={menu.type}
                           onClick={(event) => {
                             event.preventDefault();
+                            const searchTypeInput =
+                              searchFormRef.current?.elements.namedItem("searchType");
+                            if (searchTypeInput instanceof HTMLInputElement) {
+                              searchTypeInput.value = menu.type;
+                            }
                             router.history.push(categoryHref(menu.type));
                           }}
                         >
@@ -153,6 +161,7 @@ export function LegacySearchBody({
                     id="searchInnerForm"
                     method="get"
                     action={prefixBasePath(runtimeConfig.basePath, searchPath)}
+                    ref={searchFormRef}
                   >
                     <input type="hidden" name="searchType" value={activeType} />
                     <input
