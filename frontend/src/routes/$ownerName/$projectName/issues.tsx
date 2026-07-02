@@ -1813,6 +1813,7 @@ function IssueSearchForm({
   showCurrentUserOptions: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const formRef = useRef<HTMLFormElement>(null);
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
   const hasMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
@@ -1821,6 +1822,29 @@ function IssueSearchForm({
     event.preventDefault();
     onSearchSubmit(projectIssuesSearchFromForm(event.currentTarget, search));
   };
+  const handleSearchFieldChange = useEffectEvent((event: Event) => {
+    const target = event.target;
+    if (
+      !(target instanceof Element) ||
+      !target.matches("[data-search], [data-toggle='calendar']")
+    ) {
+      return;
+    }
+
+    formRef.current?.requestSubmit();
+  });
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) {
+      return;
+    }
+
+    form.addEventListener("change", handleSearchFieldChange);
+    return () => {
+      form.removeEventListener("change", handleSearchFieldChange);
+    };
+  }, []);
 
   return (
     <form
@@ -1829,6 +1853,7 @@ function IssueSearchForm({
       action={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
       method="get"
       onSubmit={handleSubmit}
+      ref={formRef}
     >
       <input type="hidden" name="orderBy" value={search.orderBy} />
       <input type="hidden" name="orderDir" value={search.orderDir} />

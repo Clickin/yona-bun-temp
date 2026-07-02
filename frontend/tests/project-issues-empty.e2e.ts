@@ -711,6 +711,31 @@ test("project issue search button submits route like legacy partial_searchform.s
   ).toBe("issue-search-submit");
 });
 
+test("project issue search field change submits route like legacy issue.List data-search change", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug&pageNum=3&orderBy=createdDate`);
+  await expect(page.locator("#search #authorId")).toBeVisible();
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-search-change";
+  });
+
+  await page.locator("#search #authorId").selectOption("2");
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("authorId") ?? "").toBe("2");
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("bug");
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("orderBy") ?? "")
+    .toBe("createdDate");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("issue-search-change");
+});
+
 test("project issue state tab updates route like legacy partial_list_wrap.scala.html pjax tab", async ({
   page,
 }) => {
