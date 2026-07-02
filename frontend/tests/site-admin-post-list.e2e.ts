@@ -98,7 +98,7 @@ const EXPECTED_POST_LIST_SCREEN = `
             </div>
             <div class="post-meta-wrap">
               <a href="__BASE_PATH__/alice" class="avatar-wrap">
-                <img src="/avatars/alice.png" alt="Alice" width="16" height="16">
+                <img src="https://www.gravatar.com/avatar/alice-default?s=16">
               </a>
               <a href="__BASE_PATH__/alice" class="post-meta-item">Alice</a>
               <span class="post-meta-item" title="2026-06-29 14:30">1 day ago</span>
@@ -141,6 +141,12 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await page.goto(`${basePath}/sites/postList`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Posts");
+  await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("alt", /.*/);
+  await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("width", /.*/);
+  await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute(
+    "height",
+    /.*/,
+  );
   await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
   await expect(page.locator(".post-title")).toHaveAttribute(
     "href",
@@ -246,6 +252,13 @@ async function mockSiteAdminSession(page: Page) {
 }
 
 async function mockPosts(page: Page) {
+  await page.route("https://www.gravatar.com/avatar/alice-default?s=16", async (route) => {
+    await route.fulfill({
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"></svg>',
+      contentType: "image/svg+xml",
+    });
+  });
+
   await page.route("**/api/v1/site/posts?*", async (route) => {
     const url = new URL(route.request().url());
     const pageNum = Number(url.searchParams.get("pageNum") ?? "1") || 1;
@@ -256,7 +269,7 @@ async function mockPosts(page: Page) {
         pageSize: 20,
         posts: [
           {
-            authorAvatarUrl: "/avatars/alice.png",
+            authorAvatarUrl: "https://www.gravatar.com/avatar/alice-default?s=16",
             authorLabel: "Alice",
             authorLoginId: "alice",
             commentCount: 3,

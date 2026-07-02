@@ -212,7 +212,12 @@ function PostListItem({ post, runtimeConfig }: { post: SitePost; runtimeConfig: 
       </div>
       <div className="post-meta-wrap">
         <a href={authorPath} className="avatar-wrap">
-          <img src={post.authorAvatarUrl} alt={post.authorLabel} width="16" height="16" />
+          {isDefaultAuthorAvatar(post.authorAvatarUrl) ? (
+            /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default author avatar branch renders no alt/size attributes. */
+            <img src={post.authorAvatarUrl} />
+          ) : (
+            <img src={post.authorAvatarUrl} alt={post.authorLabel} width="16" height="16" />
+          )}
         </a>
         <a href={authorPath} className="post-meta-item">
           {post.authorLabel}
@@ -229,6 +234,10 @@ function PostListItem({ post, runtimeConfig }: { post: SitePost; runtimeConfig: 
       </div>
     </li>
   );
+}
+
+function isDefaultAuthorAvatar(avatarUrl: string) {
+  return avatarUrl.includes("gravatar.com/avatar/");
 }
 
 function LegacyMessage({ messageKey }: { messageKey: string }) {
