@@ -1253,6 +1253,7 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
 
   await page.goto(`${basePath}/admin/sample/issues?filter=children`);
   await expect(page.locator(".child-issue-list.hide .issue-item.child-issue")).toHaveCount(2);
+  await expect(page.locator("#issue-item-42 .child-issue-list")).not.toBeVisible();
   await expect(page.locator(".child-issue-list .issue-item.child-issue").first()).toContainText(
     "#13Open child issue - Dev Member",
   );
@@ -1304,6 +1305,13 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
         basePath,
       ),
     ),
+  );
+
+  await page.locator("#issue-item-42 .infos").click();
+  await expect(page.locator("#issue-item-42 .child-issue-list")).toBeVisible();
+  await expect(page.locator("#issue-item-42 .child-issue-list")).toHaveAttribute(
+    "style",
+    "display: block;",
   );
 });
 

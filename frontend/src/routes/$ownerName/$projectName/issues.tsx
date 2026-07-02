@@ -443,27 +443,37 @@ function ProjectIssuesBody({
     });
   };
   const handleIssueListClick = useEffectEvent((event: MouseEvent) => {
-    const target =
-      event.target instanceof Element
-        ? event.target.closest<HTMLAnchorElement>("a[data-label-id][data-category-id]")
-        : null;
+    const target = event.target instanceof Element ? event.target : null;
     if (!target) {
       return;
     }
 
-    event.preventDefault();
-    const labelId = target.dataset.labelId ?? "";
-    if (!labelId) {
+    const label = target.closest<HTMLAnchorElement>("a[data-label-id][data-category-id]");
+    if (label) {
+      event.preventDefault();
+      const labelId = label.dataset.labelId ?? "";
+      if (!labelId) {
+        return;
+      }
+
+      void navigate({
+        to: projectIssuesRoutePath(ownerName, projectName, {
+          ...search,
+          labelIds: [...search.labelIds, labelId],
+          pageNum: 1,
+        }),
+      });
       return;
     }
 
-    void navigate({
-      to: projectIssuesRoutePath(ownerName, projectName, {
-        ...search,
-        labelIds: [...search.labelIds, labelId],
-        pageNum: 1,
-      }),
-    });
+    if (target.closest(".title-wrap > .title")) {
+      return;
+    }
+
+    const childList = target.closest(".post-item")?.querySelector<HTMLElement>(".child-issue-list");
+    if (childList) {
+      childList.style.display = "block";
+    }
   });
   useEffect(() => {
     const issueList = issueListRef.current;
