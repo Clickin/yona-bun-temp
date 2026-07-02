@@ -522,6 +522,24 @@ function ProjectIssuesBody({
       return;
     }
 
+    const twoColumnRow = target.closest<HTMLElement>(".post-item.title");
+    if (useTwoColumnMode && twoColumnRow) {
+      event.preventDefault();
+      issueListRef.current
+        ?.querySelectorAll(".post-item.highlightBg")
+        .forEach((row) => row.classList.remove("highlightBg"));
+      twoColumnRow.classList.add("highlightBg");
+      const href = twoColumnRow.getAttribute("href");
+      if (href) {
+        if (!history.state) {
+          history.pushState({ startPath: location.pathname }, twoColumnRow.textContent ?? "", href);
+        } else {
+          history.replaceState(history.state, twoColumnRow.textContent ?? "", href);
+        }
+      }
+      return;
+    }
+
     if (target.closest(".title-wrap > .title")) {
       return;
     }
