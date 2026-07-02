@@ -285,27 +285,27 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `reviewthread/list.scala.html` | P5 code/pr/review | /:owner/:projectName/reviews | 30 |
 | `reviewthread/partial_list.scala.html` | P5 code/pr/review | /:owner/:projectName/reviews | 30 |
 | `common/mySeriesMenuTab.scala.html` | P6 directory/workspace | notifications, my-issues, and user-files callers covered by `frontend/tests/authenticated-home-empty-notifications.e2e.ts`, `frontend/tests/user-issues.e2e.ts`, and `frontend/tests/user-files.e2e.ts` | 39 |
-| `organization/deleteForm.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `organization/group_board_list_partial.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `organization/group_issue_list.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `organization/group_issue_search_partial.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `organization/group_pullrequest_list_partial.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `organization/group_pullrequest_list.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `organization/header.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `organization/list.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `organization/menu.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `organization/partial_settingmenu.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `organization/setting.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `organization/view.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
-| `search/partial_issue_comments.scala.html` | P6 directory/workspace | /search or /:owner/:projectName/search | 39 |
-| `search/partial_issues.scala.html` | P6 directory/workspace | /search or /:owner/:projectName/search | 39 |
-| `search/partial_milestones.scala.html` | P6 directory/workspace | /search or /:owner/:projectName/search | 39 |
-| `search/partial_post_comments.scala.html` | P6 directory/workspace | /search or /:owner/:projectName/search | 39 |
-| `search/partial_posts.scala.html` | P6 directory/workspace | /search or /:owner/:projectName/search | 39 |
-| `search/partial_projects.scala.html` | P6 directory/workspace | /search or /:owner/:projectName/search | 39 |
-| `search/partial_reviews.scala.html` | P6 directory/workspace | /search or /:owner/:projectName/search | 39 |
-| `search/partial_search.scala.html` | P6 directory/workspace | /search or /:owner/:projectName/search | 39 |
-| `search/partial_users.scala.html` | P6 directory/workspace | /search or /:owner/:projectName/search | 39 |
+| `organization/deleteForm.scala.html` | P6 directory/workspace | delete settings screen metric-covered by `frontend/tests/organization-delete-form.e2e.ts` | 39 |
+| `organization/group_board_list_partial.scala.html` | P6 directory/workspace | organization board row partial metric-covered by `frontend/tests/organization-boards.e2e.ts` | 39 |
+| `organization/group_issue_list.scala.html` | P6 directory/workspace | organization issue list shell metric-covered by `frontend/tests/organization-issues.e2e.ts` | 39 |
+| `organization/group_issue_search_partial.scala.html` | P6 directory/workspace | organization issue search form metric-covered by `frontend/tests/organization-issues.e2e.ts` | 39 |
+| `organization/group_pullrequest_list_partial.scala.html` | P6 directory/workspace | organization PR row partial metric-covered by `frontend/tests/organization-pullrequests.e2e.ts` | 39 |
+| `organization/group_pullrequest_list.scala.html` | P6 directory/workspace | organization PR list shell metric-covered by `frontend/tests/organization-pullrequests.e2e.ts` | 39 |
+| `organization/header.scala.html` | P6 directory/workspace | organization header metric-covered by `frontend/tests/organization-settings-form.e2e.ts` | 39 |
+| `organization/list.scala.html` | P6 directory/workspace | organization directory screen metric-covered by `frontend/tests/organizations-list.e2e.ts` | 39 |
+| `organization/menu.scala.html` | P6 directory/workspace | organization menu metric-covered across settings/home/members/delete/issues/boards/pullrequests E2E guards | 39 |
+| `organization/partial_settingmenu.scala.html` | P6 directory/workspace | organization settings submenu metric-covered by settings, members, and delete E2E guards | 39 |
+| `organization/setting.scala.html` | P6 directory/workspace | organization settings form metric-covered by `frontend/tests/organization-settings-form.e2e.ts` | 39 |
+| `organization/view.scala.html` | P6 directory/workspace | organization home screen metric-covered by `frontend/tests/organization-home.e2e.ts` | 39 |
+| `search/partial_issue_comments.scala.html` | P6 directory/workspace | issue-comment search row metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
+| `search/partial_issues.scala.html` | P6 directory/workspace | issue search row metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
+| `search/partial_milestones.scala.html` | P6 directory/workspace | milestone search row metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
+| `search/partial_post_comments.scala.html` | P6 directory/workspace | post-comment search row metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
+| `search/partial_posts.scala.html` | P6 directory/workspace | post search row metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
+| `search/partial_projects.scala.html` | P6 directory/workspace | project search row metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
+| `search/partial_reviews.scala.html` | P6 directory/workspace | review search row metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
+| `search/partial_search.scala.html` | P6 directory/workspace | search shell/category controls metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
+| `search/partial_users.scala.html` | P6 directory/workspace | user search row metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
 | `user/edit_emails.scala.html` | P6 directory/workspace | /user/editform/* or /me/settings/* | 39 |
 | `user/edit_password.scala.html` | P6 directory/workspace | /user/editform/* or /me/settings/* | 39 |
 | `user/edit_token.scala.html` | P6 directory/workspace | /user/editform/* or /me/settings/* | 39 |
