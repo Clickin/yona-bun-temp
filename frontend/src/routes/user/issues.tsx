@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import type {
   AnchorHTMLAttributes,
   ComponentType,
@@ -120,6 +121,10 @@ function UserIssuesBody({
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const activeFilterIds = quickFilterIds(search.filter, currentUserId);
   const router = useRouter();
+  const [useTwoColumnMode, setUseTwoColumnMode] = useState(
+    () =>
+      typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
+  );
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -293,7 +298,13 @@ function UserIssuesBody({
                 state="closed"
               />
               <li>
-                <TwoColumnModeCheckbox />
+                <TwoColumnModeCheckbox
+                  checked={useTwoColumnMode}
+                  onToggle={(checked) => {
+                    localStorage.setItem("useTwoColumnMode", String(checked));
+                    setUseTwoColumnMode(checked);
+                  }}
+                />
               </li>
               <li className="show-subtasks-li">
                 <ShowSubtasksCheckbox />
@@ -317,6 +328,7 @@ function UserIssuesBody({
                         issue.id || `${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`
                       }
                       search={search}
+                      useTwoColumnMode={useTwoColumnMode}
                     />
                   ))}
                 </ul>
@@ -533,10 +545,12 @@ function UserIssueItem({
   basePath,
   issue,
   search,
+  useTwoColumnMode,
 }: {
   basePath: string;
   issue: RestIssueListItem;
   search: UserIssuesSearch;
+  useTwoColumnMode: boolean;
 }) {
   const { t } = useLegacyMessages();
   const projectHref = prefixBasePath(basePath, `/${issue.ownerName}/${issue.projectName}`);
@@ -549,7 +563,12 @@ function UserIssueItem({
   const showAssignee = search.filter !== "assigned" && issue.assigneeLoginId;
 
   return (
-    <li className="post-item title" id={`issue-item-${issue.id}`} {...legacyHref}>
+    <li
+      className="post-item title"
+      id={`issue-item-${issue.id}`}
+      style={useTwoColumnMode ? { cursor: "pointer" } : undefined}
+      {...legacyHref}
+    >
       <div className="span12 span-hard-wrap">
         <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
           <a
@@ -691,7 +710,13 @@ function CommentVoteCounts({ issue, issueHref }: { issue: RestIssueListItem; iss
   );
 }
 
-function TwoColumnModeCheckbox() {
+function TwoColumnModeCheckbox({
+  checked,
+  onToggle,
+}: {
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
+}) {
   const { t } = useLegacyMessages();
 
   return (
@@ -704,7 +729,12 @@ function TwoColumnModeCheckbox() {
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
       <label className="checkbox">
         <div className="two-column-icon-border">
-          <input id="two-column-mode" type="checkbox" />
+          <input
+            checked={checked}
+            id="two-column-mode"
+            type="checkbox"
+            onChange={(event) => onToggle(event.currentTarget.checked)}
+          />
           <span className="two-column-mode-text">{t("common.two.column.view")}</span>
         </div>
       </label>

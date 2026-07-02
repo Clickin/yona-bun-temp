@@ -396,6 +396,39 @@ test("current-user issues quick filter preserves legacy pjax hooks with SPA tran
   await expect(page.locator('input[name="favoriteId"]')).toHaveValue("1");
 });
 
+test("current-user issues two-column mode toggle follows legacy yona.twoColumnMode localStorage branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForFilterLinks(page);
+
+  await page.goto(`${basePath}/user/issues`);
+  await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
+  await page.reload();
+  const toggle = page.locator("#two-column-mode");
+  const row = page.locator("#issue-item-42");
+  await expect(toggle).not.toBeChecked();
+  await expect(row).not.toHaveCSS("cursor", "pointer");
+
+  await toggle.click();
+  await expect(toggle).toBeChecked();
+  await expect(row).toHaveCSS("cursor", "pointer");
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))
+    .toBe("true");
+
+  await page.reload();
+  await expect(page.locator("#two-column-mode")).toBeChecked();
+  await expect(page.locator("#issue-item-42")).toHaveCSS("cursor", "pointer");
+
+  await page.locator("#two-column-mode").click();
+  await expect(page.locator("#two-column-mode")).not.toBeChecked();
+  await expect(page.locator("#issue-item-42")).not.toHaveCSS("cursor", "pointer");
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))
+    .toBe("false");
+});
+
 async function mockUserIssuesForStateTabs(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
