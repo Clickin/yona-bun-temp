@@ -41,6 +41,18 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await expect(page.locator('.issue-label[data-category-id="3"][data-label-id="8"]')).toHaveText(
     "bug",
   );
+  expect(await milestoneDetailMetrics(page)).toEqual({
+    descBackgroundColor: "rgb(247, 247, 247)",
+    descBorderBottomWidth: "1px",
+    descBorderTopWidth: "1px",
+    descMarginBottom: "15px",
+    descMarginTop: "15px",
+    descPaddingLeft: "15px",
+    descPaddingTop: "10px",
+    filterMinHeight: "30px",
+    progressBackgroundColor: "rgb(182, 218, 84)",
+    progressBarBackgroundColor: "rgb(94, 185, 94)",
+  });
   expect(await issueLabelColorMetrics(page, ".post-list-wrap .issue-label")).toEqual({
     backgroundColor: "rgb(81, 170, 204)",
   });
@@ -214,4 +226,29 @@ async function issueLabelColorMetrics(page: Page, selector: string) {
         backgroundColor: style.backgroundColor,
       };
     });
+}
+
+async function milestoneDetailMetrics(page: Page) {
+  return page.evaluate(() => {
+    const desc = document.querySelector<HTMLElement>(".milestone-desc");
+    const filter = document.querySelector<HTMLElement>(".milesion-wrap #issues .filter-wrap");
+    const progress = document.querySelector<HTMLElement>(".milesion-wrap .progress");
+    const progressBar = document.querySelector<HTMLElement>(".milesion-wrap .progress .bar");
+    if (!desc || !filter || !progress || !progressBar) {
+      throw new Error("Expected milestone detail metric targets are missing.");
+    }
+    const descStyle = getComputedStyle(desc);
+    return {
+      descBackgroundColor: descStyle.backgroundColor,
+      descBorderBottomWidth: descStyle.borderBottomWidth,
+      descBorderTopWidth: descStyle.borderTopWidth,
+      descMarginBottom: descStyle.marginBottom,
+      descMarginTop: descStyle.marginTop,
+      descPaddingLeft: descStyle.paddingLeft,
+      descPaddingTop: descStyle.paddingTop,
+      filterMinHeight: getComputedStyle(filter).minHeight,
+      progressBackgroundColor: getComputedStyle(progress).backgroundColor,
+      progressBarBackgroundColor: getComputedStyle(progressBar).backgroundColor,
+    };
+  });
 }
