@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import type { AnchorHTMLAttributes, ComponentType } from "react";
 import {
   deleteSiteProjectRest,
@@ -53,6 +53,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   const { filter, pageNum } = Route.useSearch();
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [deleteProject, setDeleteProject] = useState<SiteProject | null>(null);
   const [deleteModalClosed, setDeleteModalClosed] = useState(false);
   const query = useQuery(siteProjectsQueryOptions(runtimeConfig, { filter, page: pageNum }));
@@ -89,6 +90,18 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                 <form
                   className="form-search pull-right"
                   action={prefixBasePath(runtimeConfig.basePath, "/sites/projectList")}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const form = new FormData(event.currentTarget);
+                    const nextFilter = String(form.get("filter") ?? "");
+                    void queryClient.invalidateQueries({
+                      queryKey: apiQueryKeys.siteAdmin.projectsBase(),
+                    });
+                    void router.navigate({
+                      search: { filter: nextFilter, pageNum: 1 },
+                      to: "/sites/projectList",
+                    });
+                  }}
                 >
                   <div className="search-bar">
                     <input

@@ -217,6 +217,22 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     titleAreaHeight: 39,
   });
 
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-project-search";
+  });
+  await page.locator('.form-search input[name="filter"]').fill("board");
+  await page.locator(".form-search").evaluate((form) => {
+    if (!(form instanceof HTMLFormElement)) {
+      throw new Error("Expected project search form");
+    }
+    form.requestSubmit();
+  });
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("board");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-project-search");
+
   await mockPosts(page);
   const postsLink = page.locator(".site-setting-nav a", { hasText: "Posts" });
   await expect(postsLink).toHaveAttribute("href", `${basePath}/sites/postList`);
