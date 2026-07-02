@@ -460,6 +460,25 @@ test("authenticated home empty notifications matches legacy index notifications 
     .toBe("gnb-my-issues");
 
   await page.goto(`${basePath}/`);
+  await mockSiteUsers(page);
+  const siteAdminLink = page.locator(".gnb-usermenu a.usermenu-icon-button.show-progress-bar");
+  await expect(siteAdminLink).toHaveAttribute("href", `${basePath}/sites/userList`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "gnb-site-admin";
+  });
+  await siteAdminLink.click();
+  await expect(page).toHaveURL(`${basePath}/sites/userList?pageNum=1&query=&state=ACTIVE`);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("gnb-site-admin");
+
+  await page.goto(`${basePath}/`);
   const profileLink = page.locator("#mySidenav .user-menu a", { hasText: "Profile" });
   const accountLink = page.locator("#mySidenav .user-menu a", { hasText: "Account" });
   await expect(profileLink).toHaveAttribute("href", `${basePath}/admin`);
@@ -1536,6 +1555,37 @@ async function mockWorkspaceSidebarProjects(page: Page) {
             logoUrl: "",
             ownerName: "weblabs",
             projectName: "playground",
+          },
+        ],
+      }),
+    });
+  });
+}
+
+async function mockSiteUsers(page: Page) {
+  await page.route("**/api/v1/site/users?*", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        page: 1,
+        pageSize: 20,
+        query: "",
+        siteAdminCount: 1,
+        state: "ACTIVE",
+        total: 1,
+        totalPages: 1,
+        users: [
+          {
+            avatarUrl: "/avatars/admin.png",
+            createdAt: "2026-06-28 12:00:00",
+            displayName: "Site Admin",
+            emailAddress: "admin@example.com",
+            id: 1,
+            isGuest: false,
+            isSiteAdmin: true,
+            lastStateModifiedAt: "",
+            loginId: "admin",
+            state: "ACTIVE",
           },
         ],
       }),

@@ -718,15 +718,15 @@ function AuthenticatedSiteUserMenu({
         {isSiteAdmin ? (
           <>
             <li className="gnb-usermenu-item">
-              <a
-                href={prefixBasePath(basePath, "/sites/userList")}
+              <LegacyInternalLink
+                to="/sites/userList"
                 data-toggle="tooltip"
                 title={t("menu.siteAdmin")}
                 data-placement="bottom"
                 className="usermenu-icon-button show-progress-bar"
               >
                 <i className="yobicon-wrench" />
-              </a>
+              </LegacyInternalLink>
             </li>
             <li className="divider"></li>
           </>
