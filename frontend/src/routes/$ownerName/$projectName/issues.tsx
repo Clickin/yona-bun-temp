@@ -1,15 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useEffect, useRef, type HTMLAttributes, type LiHTMLAttributes } from "react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  type HTMLAttributes,
+  type LiHTMLAttributes,
+  type ReactNode,
+} from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
-import type { ProjectContainer } from "../../../api/types";
+import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   listProjectIssues,
+  listProjectMilestones,
   massUpdateIssues,
   readSessionBootstrap,
   type ProjectIssueListRestResponse,
@@ -105,8 +113,32 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       search.state,
     ],
   });
+  const openMilestonesQuery = useQuery({
+    queryFn: () =>
+      listProjectMilestones(runtimeConfig, ownerName, projectName, {
+        orderBy: "dueDate",
+        orderDir: "asc",
+        state: "open",
+      }),
+    queryKey: ["project", ownerName, projectName, "milestones", "open", "issue-search"],
+  });
+  const closedMilestonesQuery = useQuery({
+    queryFn: () =>
+      listProjectMilestones(runtimeConfig, ownerName, projectName, {
+        orderBy: "dueDate",
+        orderDir: "asc",
+        state: "closed",
+      }),
+    queryKey: ["project", ownerName, projectName, "milestones", "closed", "issue-search"],
+  });
 
-  if (!projectQuery.data || !sessionQuery.data || !issuesQuery.data) {
+  if (
+    !projectQuery.data ||
+    !sessionQuery.data ||
+    !issuesQuery.data ||
+    !openMilestonesQuery.data ||
+    !closedMilestonesQuery.data
+  ) {
     return null;
   }
 
@@ -126,6 +158,10 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
         currentUserLoginId={stringField(sessionQuery.data.loginId, "")}
         issues={issuesQuery.data}
+        milestones={{
+          closed: closedMilestonesQuery.data.milestones,
+          open: openMilestonesQuery.data.milestones,
+        }}
         ownerName={ownerName}
         project={projectQuery.data}
         projectName={projectName}
@@ -140,6 +176,7 @@ function ProjectIssuesBody({
   currentUserId,
   currentUserLoginId,
   issues,
+  milestones,
   ownerName,
   project,
   projectName,
@@ -149,6 +186,10 @@ function ProjectIssuesBody({
   currentUserId: string;
   currentUserLoginId: string;
   issues: ProjectIssueListRestResponse;
+  milestones: {
+    closed: ProjectMilestone[];
+    open: ProjectMilestone[];
+  };
   ownerName: string;
   project: ProjectContainer;
   projectName: string;
@@ -181,6 +222,7 @@ function ProjectIssuesBody({
               basePath={runtimeConfig.basePath}
               currentUserId={currentUserId}
               issues={issues.items}
+              milestones={milestones}
               ownerName={ownerName}
               projectName={projectName}
               search={search}
@@ -300,24 +342,48 @@ function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string
     <div className="filters pull-right">
       {filters.map((filter) => {
         const active = orderBy === filter.field;
-        const legacySort = {
-          orderby: filter.field,
-          orderdir: active && orderDir === "desc" ? "asc" : "desc",
-        } as unknown as HTMLAttributes<HTMLAnchorElement>;
         return (
-          /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy sort filters use href="#" plus order attrs. */
-          <a
-            href="#"
-            {...legacySort}
-            className={active ? "filter active" : "filter"}
+          <IssueSortFilter
+            active={active}
+            field={filter.field}
             key={filter.field}
+            label={filter.label}
+            orderDir={active && orderDir === "desc" ? "asc" : "desc"}
           >
             <i className={`ico btn-gray-arrow${!active || orderDir === "desc" ? " down" : ""}`}></i>
-            {filter.label}
-          </a>
+          </IssueSortFilter>
         );
       })}
     </div>
+  );
+}
+
+function IssueSortFilter({
+  active,
+  children,
+  field,
+  label,
+  orderDir,
+}: {
+  active: boolean;
+  children: ReactNode;
+  field: string;
+  label: string;
+  orderDir: string;
+}) {
+  const linkRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    linkRef.current?.setAttribute("orderBy", field);
+    linkRef.current?.setAttribute("orderDir", orderDir);
+  }, [field, orderDir]);
+
+  return (
+    /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy sort filters use href="#" plus order attrs set after mount. */
+    <a href="#" className={active ? "filter active" : "filter"} ref={linkRef}>
+      {children}
+      {label}
+    </a>
   );
 }
 
@@ -1165,6 +1231,7 @@ function IssueSearchForm({
   basePath,
   currentUserId,
   issues,
+  milestones,
   ownerName,
   projectName,
   search,
@@ -1173,6 +1240,10 @@ function IssueSearchForm({
   basePath: string;
   currentUserId: string;
   issues: RestIssueListItem[];
+  milestones: {
+    closed: ProjectMilestone[];
+    open: ProjectMilestone[];
+  };
   ownerName: string;
   projectName: string;
   search: ProjectIssuesSearch;
@@ -1181,6 +1252,7 @@ function IssueSearchForm({
   const { t } = useLegacyMessages();
   const authors = uniqueIssueUsers(issues, "author");
   const assignees = uniqueIssueUsers(issues, "assignee");
+  const hasMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
 
   return (
     <form
@@ -1270,6 +1342,47 @@ function IssueSearchForm({
             </select>
           </dd>
         </dl>
+        {hasMilestones ? (
+          <dl className="issue-option">
+            <dt>{t("milestone")}</dt>
+            <dd>
+              <select
+                id="milestoneId"
+                name="milestoneId"
+                data-search="milestoneId"
+                data-toggle="select2"
+                data-format="milestone"
+                data-container-css-class="fullsize"
+                defaultValue={search.milestoneId}
+              >
+                <option value="">{t("milestone.state.all")}</option>
+                <option value="-1">{t("issue.noMilestone")}</option>
+                <optgroup label={t("milestone.state.open")}>
+                  {milestones.open.map((milestone) => (
+                    <option
+                      value={stringField(milestone.id, "")}
+                      data-state="open"
+                      key={milestone.id}
+                    >
+                      {stringField(milestone.title, "")}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label={t("milestone.state.closed")}>
+                  {milestones.closed.map((milestone) => (
+                    <option
+                      value={stringField(milestone.id, "")}
+                      data-state="closed"
+                      key={milestone.id}
+                    >
+                      {stringField(milestone.title, "")}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+            </dd>
+          </dl>
+        ) : null}
         <dl className="issue-option">
           <dt>{t("issue.dueDate")}</dt>
           <dd className="search search-bar">
