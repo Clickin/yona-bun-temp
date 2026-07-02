@@ -608,7 +608,6 @@ async function readSearchResultShellMetrics(page: Page) {
     const activeCategoryStyle = getComputedStyle(activeCategory);
     const categoryColumnStyle = getComputedStyle(categoryColumn);
     const keywordStyle = getComputedStyle(keyword);
-    const resultColumnStyle = getComputedStyle(resultColumn);
     const resultWrapStyle = getComputedStyle(resultWrap);
     const searchBoxStyle = getComputedStyle(searchBox);
     const titleStyle = getComputedStyle(title);
