@@ -2255,6 +2255,7 @@ function IssueCommentRow({
   const canUpdate = booleanField(comment.viewerCanUpdate);
   const canDelete = booleanField(comment.viewerCanDelete);
   const hasVoted = booleanField(comment.viewerHasVoted);
+  const canVote = booleanField(issue.viewerCanComment);
   const [translatedContentsMarkdown, setTranslatedContentsMarkdown] = useState<string | null>(null);
   const [translatePending, setTranslatePending] = useState(false);
   const translationApiEnabled = booleanField(issue.translationApiEnabled);
@@ -2344,22 +2345,28 @@ function IssueCommentRow({
               </a>
             </span>
             <CommentVoters basePath={basePath} commentId={commentId} voters={voters} />
-            <button
-              type="button"
-              className="btn-transparent-with-fontsize-lineheight"
-              title={hasVoted ? "Withdraw" : "Agree"}
-              data-request-type="comment-vote"
-              data-request-uri={prefixBasePath(
-                basePath,
-                `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}/${hasVoted ? "unvote" : "vote"}`,
-              )}
-              onClick={(event) => {
-                event.preventDefault();
-                onCommentVote(commentId, hasVoted);
-              }}
-            >
-              <i className={`yobicon-hearts ${hasVoted ? "vote-heart-on" : "vote-heart-off"}`}></i>
-            </button>
+            {hasVoted || canVote ? (
+              <button
+                type="button"
+                className="btn-transparent-with-fontsize-lineheight"
+                title={hasVoted ? "Withdraw" : "Agree"}
+                data-request-type="comment-vote"
+                data-request-uri={prefixBasePath(
+                  basePath,
+                  `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}/${hasVoted ? "unvote" : "vote"}`,
+                )}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onCommentVote(commentId, hasVoted);
+                }}
+              >
+                <i
+                  className={`yobicon-hearts ${hasVoted ? "vote-heart-on" : "vote-heart-off"}`}
+                ></i>
+              </button>
+            ) : (
+              <i className="yobicon-hearts vote-heart-off vote-heart-disable-hover"></i>
+            )}
             {translationApiEnabled ? (
               <button
                 type="button"

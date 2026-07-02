@@ -959,6 +959,21 @@ test("project issue detail votes comments through legacy agree action", async ({
     .toEqual([{ hasCsrfToken: true, method: "POST" }]);
 });
 
+test("project issue detail renders legacy disabled comment vote icon for non-commentable viewer", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { commentVoteRequests } = await mockProjectIssueDetail(page, { viewerCanComment: false });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  await expect(page.locator('#comment-77 [data-request-type="comment-vote"]')).toHaveCount(0);
+  await expect(
+    page.locator("#comment-77 .act-row > i.yobicon-hearts.vote-heart-off.vote-heart-disable-hover"),
+  ).toHaveCount(1);
+  expect(commentVoteRequests).toEqual([]);
+});
+
 test("project issue detail updates issue weight through React mutation", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const { issueWeightRequests } = await mockProjectIssueDetail(page);
