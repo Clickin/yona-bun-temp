@@ -22,6 +22,44 @@ test("project home History tab matches legacy partial_history.scala.html DOM", a
   );
 });
 
+test("project home History tab keeps legacy stream proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample?tabId=history`);
+  await expect(page.locator(".activity-streams .activity-stream")).toBeVisible();
+
+  const desktop = await projectHistoryLayoutMetrics(page);
+  expect(desktop.pageWrapMarginTop).toBe(20);
+  expect(desktop.mainStreamMarginBottom).toBe(15);
+  expect(desktop.activityStreamsMarginTop).toBe(0);
+  expect(desktop.activityPaddingTop).toBe(10);
+  expect(desktop.activityPaddingBottom).toBe(6);
+  expect(desktop.activityMarginBottom).toBe(6);
+  expect(desktop.activityBorderBottomWidth).toBe(0);
+  expect(desktop.headerTextFontSize).toBe(12);
+  expect(desktop.headerTextLineHeight).toBe(12);
+  expect(desktop.headerTextMarginTop).toBe(0);
+  expect(desktop.headerTextMarginBottom).toBe(5);
+  expect(desktop.whereisFontSize).toBe(11);
+  expect(desktop.wherePadding).toBe("3px 5px");
+  expect(desktop.whereDisplay).toBe("inline-block");
+  expect(desktop.dateColor).toBe("rgb(187, 187, 187)");
+  expect(desktop.leftPanePercent).toBeCloseTo(74.47, 1);
+  expect(desktop.rightPaneDisplay).not.toBe("none");
+
+  await page.setViewportSize({ width: 390, height: 720 });
+  await page.goto(`${basePath}/admin/sample?tabId=history`);
+  await expect(page.locator(".activity-streams .activity-stream")).toBeVisible();
+
+  const mobile = await projectHistoryLayoutMetrics(page);
+  expect(mobile.pageWrapMarginTop).toBe(5);
+  expect(mobile.pageWrapWidth).toBe(390);
+  expect(mobile.leftPanePercent).toBeCloseTo(100, 1);
+  expect(mobile.rightPaneDisplay).toBe("none");
+});
+
 async function mockProjectHome(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -101,6 +139,41 @@ async function mockProjectHome(page: Page) {
         viewerCanUpdate: true,
       }),
     });
+  });
+}
+
+async function projectHistoryLayoutMetrics(page: Page) {
+  return page.evaluate(() => {
+    const style = (selector: string) =>
+      getComputedStyle(document.querySelector(selector) as Element);
+    const numberStyle = (selector: string, property: string) =>
+      Number.parseFloat(style(selector).getPropertyValue(property));
+    const rect = (selector: string) =>
+      (document.querySelector(selector) as HTMLElement).getBoundingClientRect();
+    const pageWrap = rect(".project-page-wrap");
+    const leftPane = rect(".span-left-pane");
+    const rightPane = rect(".span-right-pane");
+
+    return {
+      activityBorderBottomWidth: numberStyle(".activity-stream", "border-bottom-width"),
+      activityMarginBottom: numberStyle(".activity-stream", "margin-bottom"),
+      activityPaddingBottom: numberStyle(".activity-stream", "padding-bottom"),
+      activityPaddingTop: numberStyle(".activity-stream", "padding-top"),
+      activityStreamsMarginTop: numberStyle(".activity-streams", "margin-top"),
+      dateColor: style(".activity-desc .date").color,
+      headerTextFontSize: numberStyle(".activity-desc .header-text", "font-size"),
+      headerTextLineHeight: numberStyle(".activity-desc .header-text", "line-height"),
+      headerTextMarginBottom: numberStyle(".activity-desc .header-text", "margin-bottom"),
+      headerTextMarginTop: numberStyle(".activity-desc .header-text", "margin-top"),
+      leftPanePercent: (leftPane.width / pageWrap.width) * 100,
+      mainStreamMarginBottom: numberStyle(".content-container .main-stream", "margin-bottom"),
+      pageWrapMarginTop: numberStyle(".project-page-wrap", "margin-top"),
+      pageWrapWidth: pageWrap.width,
+      rightPaneDisplay: style(".span-right-pane").display,
+      whereDisplay: style(".activity-desc .whereis .where").display,
+      whereisFontSize: numberStyle(".activity-desc .whereis", "font-size"),
+      wherePadding: style(".activity-desc .whereis .where").padding,
+    };
   });
 }
 
