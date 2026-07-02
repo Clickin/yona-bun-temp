@@ -843,6 +843,27 @@ test("project issue list bracketed title prefix matches legacy title helpers", a
   );
 });
 
+test("project issue title prefix updates route like legacy issue.List implicit prefix search", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "prefix");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=prefix&pageNum=3`);
+  await expect(page.locator(".title-prefix")).toHaveText("[P1]");
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-title-prefix";
+  });
+
+  await page.locator(".title-prefix").click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("[P1]");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("issue-title-prefix");
+});
+
 test("project issue list open due date shows legacy relative until text", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "upcoming");

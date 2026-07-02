@@ -432,6 +432,15 @@ function ProjectIssuesBody({
       }),
     });
   };
+  const handleTitlePrefixSearch = (filter: string) => {
+    void navigate({
+      to: projectIssuesRoutePath(ownerName, projectName, {
+        ...search,
+        filter,
+        pageNum: 1,
+      }),
+    });
+  };
   const handleIssueListClick = useEffectEvent((event: MouseEvent) => {
     const target =
       event.target instanceof Element
@@ -583,6 +592,7 @@ function ProjectIssuesBody({
                       projectName={projectName}
                       showMassUpdateControls={showMassUpdateControls}
                       showMilestone={showMilestone}
+                      onTitlePrefixSearch={handleTitlePrefixSearch}
                     />
                   ))}
                   {issues.items.map((issue) => (
@@ -594,6 +604,7 @@ function ProjectIssuesBody({
                       projectName={projectName}
                       showMassUpdateControls={showMassUpdateControls}
                       showMilestone={showMilestone}
+                      onTitlePrefixSearch={handleTitlePrefixSearch}
                     />
                   ))}
                 </ul>
@@ -1126,6 +1137,7 @@ function LabelMassUpdateGroup({
 function ProjectIssueItem({
   basePath,
   issue,
+  onTitlePrefixSearch,
   ownerName,
   projectName,
   showMassUpdateControls,
@@ -1133,6 +1145,7 @@ function ProjectIssueItem({
 }: {
   basePath: string;
   issue: RestIssueListItem;
+  onTitlePrefixSearch: (filter: string) => void;
   ownerName: string;
   projectName: string;
   showMassUpdateControls: boolean;
@@ -1216,7 +1229,10 @@ function ProjectIssueItem({
               </span>
             ) : null}
             {titleParts.prefixes.map((prefix) => (
-              <LegacyTitlePrefixAnchor key={`${issueId}-${prefix}`}>
+              <LegacyTitlePrefixAnchor
+                key={`${issueId}-${prefix}`}
+                onTitlePrefixSearch={onTitlePrefixSearch}
+              >
                 {prefix}
               </LegacyTitlePrefixAnchor>
             ))}
@@ -2670,10 +2686,29 @@ function numberField(value: unknown) {
   return Number.isFinite(number) ? number : 0;
 }
 
-function LegacyTitlePrefixAnchor({ children }: { children: string }) {
+function LegacyTitlePrefixAnchor({
+  children,
+  onTitlePrefixSearch,
+}: {
+  children: string;
+  onTitlePrefixSearch: (filter: string) => void;
+}) {
   const anchorRef = useRef<HTMLAnchorElement>(null);
+  const handleClick = useEffectEvent((event: MouseEvent) => {
+    event.preventDefault();
+    onTitlePrefixSearch(children);
+  });
   useEffect(() => {
-    anchorRef.current?.setAttribute("href", "javascript:void(0)");
+    const anchor = anchorRef.current;
+    if (!anchor) {
+      return;
+    }
+
+    anchor.setAttribute("href", "javascript:void(0)");
+    anchor.addEventListener("click", handleClick);
+    return () => {
+      anchor.removeEventListener("click", handleClick);
+    };
   }, []);
   return (
     <a ref={anchorRef} href="/" className="title-prefix">
