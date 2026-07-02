@@ -1,14 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Fragment,
   useEffect,
   useEffectEvent,
   useRef,
   useState,
+  type AnchorHTMLAttributes,
   type CSSProperties,
+  type ComponentType,
   type FormEvent as ReactFormEvent,
   type HTMLAttributes,
+  type KeyboardEvent as ReactKeyboardEvent,
   type LiHTMLAttributes,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
@@ -32,6 +35,13 @@ import {
 } from "../../../auth-workspace-client";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeProps?: { className?: string | undefined };
+    to: string;
+  }
+>;
 
 type ProjectIssuesSearch = {
   assigneeId: string;
@@ -443,6 +453,14 @@ function ProjectIssuesBody({
       }),
     });
   };
+  const handlePageChange = (pageNum: number) => {
+    void navigate({
+      to: projectIssuesRoutePath(ownerName, projectName, {
+        ...search,
+        pageNum,
+      }),
+    });
+  };
   const handleIssueListClick = useEffectEvent((event: MouseEvent) => {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) {
@@ -654,7 +672,14 @@ function ProjectIssuesBody({
                   </a>
                 </div>
                 <IssueListKeymap project={project} />
-                <div id="pagination" data-total={totalPages(issues)}></div>
+                <IssuePagination
+                  currentPage={search.pageNum}
+                  ownerName={ownerName}
+                  projectName={projectName}
+                  search={search}
+                  totalPages={totalPages(issues)}
+                  onPageChange={handlePageChange}
+                />
               </>
             )}
           </div>
@@ -662,6 +687,106 @@ function ProjectIssuesBody({
       </div>
     </div>
   );
+}
+
+function IssuePagination({
+  currentPage,
+  ownerName,
+  projectName,
+  search,
+  totalPages,
+  onPageChange,
+}: {
+  currentPage: number;
+  ownerName: string;
+  projectName: string;
+  search: ProjectIssuesSearch;
+  totalPages: number;
+  onPageChange: (pageNum: number) => void;
+}) {
+  const { t } = useLegacyMessages();
+  if (totalPages <= 0) {
+    return <div id="pagination" data-total={totalPages}></div>;
+  }
+
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+  const pageRoutePath = (pageNum: number) =>
+    projectIssuesRoutePath(ownerName, projectName, {
+      ...search,
+      pageNum,
+    });
+  const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    const value = clampPageNum(Number.parseInt(event.currentTarget.value, 10), totalPages);
+    event.currentTarget.value = String(value);
+    onPageChange(value);
+  };
+
+  return (
+    <div id="pagination" className="page-navigation-wrap" data-total={totalPages}>
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <LegacyInternalLink
+              activeProps={{ className: undefined }}
+              to={pageRoutePath(currentPage - 1)}
+              {...{ "pjax-page": "" }}
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>{t("button.prevPage")}</span>
+            </LegacyInternalLink>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">{t("button.prevPage")}</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            defaultValue={currentPage}
+            max={totalPages}
+            min={1}
+            name="pageNum"
+            pattern="[0-9]*"
+            type="number"
+            onKeyDown={handleInputKeyDown}
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <LegacyInternalLink
+              activeProps={{ className: undefined }}
+              to={pageRoutePath(currentPage + 1)}
+              {...{ "pjax-page": "" }}
+            >
+              <span>{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next"></i>
+            </LegacyInternalLink>
+          ) : (
+            <>
+              <span className="off">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+function clampPageNum(pageNum: number, totalPages: number) {
+  if (!Number.isFinite(pageNum)) {
+    return 1;
+  }
+  return Math.min(Math.max(pageNum, 1), totalPages);
 }
 
 function IssueFilters({

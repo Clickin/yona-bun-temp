@@ -29,7 +29,9 @@ const POPULATED_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-sear
 const EMPTY_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>`;
 const POPULATED_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>`;
 
-const POPULATED_SPAN10 = `<div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active" data-pjax=""><a href="#" state="open">Open<span class="num-badge">1</span></a></li><li data-pjax=""><a href="#" state="closed">Closed<span class="num-badge">2</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="filter-wrap board"></div><ul class="post-list-wrap row-fluid"><li class="post-item title" id="issue-item-42" data-item="issue-item" data-value="dev 11 Fix flaky issue" href="__BASE_PATH__/admin/sample/issue/11"><div class="span9 span-hard-wrap"><label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-toggle="issue-checkbox" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label><div for="issue-42" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="dev">Dev Member</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 1, 2026">Jul 1, 2026</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments" class="comments-count comments-count-color"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><a href="#" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</a><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Site Admin"></a></div><div class="mr20 mt10 pull-right overdue" data-toggle="tooltip" data-placement="top" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div></div></li></ul><div class="pull-left" style="padding:10px"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div class="pull-left" style="padding:10px 0px;margin-left:55px"><a href="#helpKeys" data-toggle="modal" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</a>${ISSUE_LIST_KEYMAP}</div><div id="pagination" data-total="3"></div></div>`;
+const POPULATED_SPAN10 = `<div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active" data-pjax=""><a href="#" state="open">Open<span class="num-badge">1</span></a></li><li data-pjax=""><a href="#" state="closed">Closed<span class="num-badge">2</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="filter-wrap board"></div><ul class="post-list-wrap row-fluid"><li class="post-item title" id="issue-item-42" data-item="issue-item" data-value="dev 11 Fix flaky issue" href="__BASE_PATH__/admin/sample/issue/11"><div class="span9 span-hard-wrap"><label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-toggle="issue-checkbox" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label><div for="issue-42" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="dev">Dev Member</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 1, 2026">Jul 1, 2026</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments" class="comments-count comments-count-color"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><a href="#" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</a><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Site Admin"></a></div><div class="mr20 mt10 pull-right overdue" data-toggle="tooltip" data-placement="top" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div></div></li></ul><div class="pull-left" style="padding:10px"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div class="pull-left" style="padding:10px 0px;margin-left:55px"><a href="#helpKeys" data-toggle="modal" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</a>${ISSUE_LIST_KEYMAP}</div><div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open" pjax-page=""><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div></div>`;
+const POPULATED_PAGINATION = `<div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open" pjax-page=""><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div>`;
+const SINGLE_PAGE_PAGINATION = `<div id="pagination" class="page-navigation-wrap" data-total="1"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="1" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">1</li><li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li></ul></div>`;
 
 const MASS_UPDATE_MILESTONE_DROPDOWN = `<div id="milestone" class="btn-group" data-name="milestone.id"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update milestone</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="-1"><a>No milestone</a></li><li class="divider"></li><li data-value="5"><a>v1.0</a></li></ul></div>`;
 const MASS_UPDATE_LABEL_TEMPLATES = `<script id="labelListItem" type="text/x-jquery-tmpl"><li data-value="\${id}" data-category="\${category}"> <a><span class="issue-label active list-label" data-label-id="\${id}">\${name}</span></a> </li></script><script id="labelCatetoryItem" type="text/x-jquery-tmpl"><li class="disabled" data-category="\${category}"><span>\${category}</span></li> <li data-value="\${id}" data-category="\${category}"> <a> <span class="issue-label active list-label" data-label-id="\${id}">\${name}</span> </a> </li> <li class="divider" data-category="\${category}"></li></script>`;
@@ -67,7 +69,7 @@ const LABEL_SORT_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
     `<a href="#" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</a>`,
     `<a href="#" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</a><a href="#" class="label issue-label list-label active" data-category-id="4" data-label-id="9">P1</a>`,
   )
-  .replace("filter=bug&amp;format=xls", "filter=labels-unsorted&amp;format=xls");
+  .replaceAll("filter=bug", "filter=labels-unsorted");
 
 const EXPECTED_PROJECT_ISSUES_LABEL_SORT = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
@@ -87,7 +89,7 @@ const NON_MEMBER_SPAN10 = POPULATED_SPAN10.replace(
   "",
 )
   .replace(ISSUE_LIST_KEYMAP, ISSUE_LIST_KEYMAP_NON_MANAGER)
-  .replace("filter=bug&amp;format=xls", "filter=non-member&amp;format=xls");
+  .replaceAll("filter=bug", "filter=non-member");
 
 const EXPECTED_PROJECT_ISSUES_NON_MEMBER = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
@@ -123,7 +125,7 @@ const NO_MILESTONE_MENU_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   "",
 )
   .replace(MASS_UPDATE_MILESTONE_DROPDOWN, "")
-  .replace("filter=bug&amp;format=xls", "filter=no-milestone-menu&amp;format=xls");
+  .replaceAll("filter=bug", "filter=no-milestone-menu");
 
 const EXPECTED_PROJECT_ISSUES_NO_MILESTONE_MENU = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
@@ -150,7 +152,7 @@ const PREFIX_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
     '<div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div>',
     '<div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="javascript:void(0)" class="title-prefix">[P1]</a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div>',
   )
-  .replace("filter=bug&amp;format=xls", "filter=prefix&amp;format=xls");
+  .replaceAll("filter=bug", "filter=prefix");
 
 const EXPECTED_PROJECT_ISSUES_PREFIX = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
@@ -168,7 +170,7 @@ const EXPECTED_PROJECT_ISSUES_PREFIX = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
 const UPCOMING_DUE_DATE_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<div class="mr20 mt10 pull-right overdue" data-toggle="tooltip" data-placement="top" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div>',
   '<div class="mr20 mt10 pull-right" data-toggle="tooltip" data-placement="top" title="Jul 5, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">4 days left</span></div>',
-).replace("filter=bug&amp;format=xls", "filter=upcoming&amp;format=xls");
+).replaceAll("filter=bug", "filter=upcoming");
 
 const EXPECTED_PROJECT_ISSUES_UPCOMING_DUE_DATE = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
@@ -186,7 +188,7 @@ const EXPECTED_PROJECT_ISSUES_UPCOMING_DUE_DATE = EXPECTED_PROJECT_ISSUES_EMPTY.
 const SHARER_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span>',
   '<a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a><a class="sharer-color" data-toggle="tooltip" data-placement="bottom" title="Issue Sharer"><span class="count-groups item-icon"><i class="yobicon-friends"></i></span><span class="count-groups item-count strong">2</span></a></span>',
-).replace("filter=bug&amp;format=xls", "filter=sharer&amp;format=xls");
+).replaceAll("filter=bug", "filter=sharer");
 
 const EXPECTED_PROJECT_ISSUES_SHARER = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
@@ -208,7 +210,7 @@ const DRAFT_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   `<ul class="post-list-wrap row-fluid">${DRAFT_ISSUE_ROW}`,
 )
   .replace("filter=bug&amp;format=xls", "format=xls")
-  .replace('data-total="3"', 'data-total="1"');
+  .replace(POPULATED_PAGINATION, SINGLE_PAGE_PAGINATION);
 
 const EXPECTED_PROJECT_ISSUES_DRAFT = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
@@ -238,8 +240,8 @@ const BULK_SPAN10 = POPULATED_SPAN10.replace(
     `<div class="filter-wrap board">${MASS_UPDATE_TOOLBAR}${SORT_FILTERS}</div>`,
   )
   .replace('</ul><div class="pull-left"', `${SECOND_ISSUE_ROW}</ul><div class="pull-left"`)
-  .replace("filter=bug&amp;format=xls", "filter=bulk&amp;format=xls")
-  .replace('data-total="3"', 'data-total="1"');
+  .replaceAll("filter=bug", "filter=bulk")
+  .replace(POPULATED_PAGINATION.replaceAll("filter=bug", "filter=bulk"), SINGLE_PAGE_PAGINATION);
 
 const EXPECTED_PROJECT_ISSUES_BULK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
@@ -257,7 +259,7 @@ const EXPECTED_PROJECT_ISSUES_BULK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
 const SUBTASK_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span>',
   '<div class="subtask-progress upload-progress red-outline"><div class="bar red" style="width: 33%;" title="Subtask"></div></div><span class="subtask-progress completion-ratio">1/3</span><span class="infos-item subtask"><a href="__BASE_PATH__/admin/sample/issue/9">#9 Parent iss...</a></span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span>',
-).replace("filter=bug&amp;format=xls", "filter=subtask&amp;format=xls");
+).replaceAll("filter=bug", "filter=subtask");
 
 const EXPECTED_PROJECT_ISSUES_SUBTASK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
@@ -285,7 +287,7 @@ const WEIGHTED_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
     '<div class="mr20 mt10 pull-right darkgray-txt"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Jul 5, 2026</span></div>',
   )
   .replace("filter=bug&amp;format=xls", "filter=weighted&amp;state=closed&amp;format=xls")
-  .replace('data-total="3"', 'data-total="1"');
+  .replace(POPULATED_PAGINATION, SINGLE_PAGE_PAGINATION);
 
 const EXPECTED_PROJECT_ISSUES_WEIGHTED_CLOSED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
@@ -308,7 +310,7 @@ const CHILD_ISSUES = `<div class="child-issues"><div class="issue-item selected-
 const CHILDREN_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<div class="child-issue-list hide"></div>',
   `<div class="child-issue-list hide">${CHILD_ISSUES}</div>`,
-).replace("filter=bug&amp;format=xls", "filter=children&amp;format=xls");
+).replaceAll("filter=bug", "filter=children");
 
 const EXPECTED_PROJECT_ISSUES_CHILDREN = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
@@ -680,6 +682,31 @@ test("project issue quick search updates route like legacy partial_list_quicksea
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("issue-quick-search");
+});
+
+test("project issue pagination updates route like legacy yobi.Pagination pjax-page", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  const nextPage = page.locator("#pagination a[pjax-page]").last();
+  await expect(nextPage).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issues?filter=bug&orderBy=updatedDate&orderDir=desc&pageNum=2&state=open`,
+  );
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-pagination";
+  });
+
+  await nextPage.click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("2");
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("bug");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("issue-pagination");
 });
 
 test("project issue row hover matches legacy issue.List hover effect", async ({ page }) => {
