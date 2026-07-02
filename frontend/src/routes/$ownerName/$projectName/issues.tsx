@@ -21,6 +21,7 @@ import {
   listProjectMilestones,
   massUpdateIssues,
   readSessionBootstrap,
+  searchProjectAssignableUsers,
   type ProjectIssueListRestResponse,
   type RestIssueListItem,
 } from "../../../auth-workspace-client";
@@ -39,6 +40,15 @@ type ProjectIssuesSearch = {
   orderDir: string;
   pageNum: number;
   state: "closed" | "open";
+};
+
+type ProjectAssignableUserOptionSource = {
+  avatarUrl?: string;
+  displayName?: string;
+  loginId?: string;
+  pureNameOnly?: string;
+  type?: string;
+  userId?: string;
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/issues")({
@@ -135,6 +145,15 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   const labelsQuery = useQuery(
     listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const assignableUsersQuery = useQuery({
+    queryFn: () =>
+      searchProjectAssignableUsers(runtimeConfig, {
+        ownerName,
+        projectName,
+        query: "",
+      }),
+    queryKey: ["project", ownerName, projectName, "assignable-users", "issue-list", ""],
+  });
 
   if (
     !projectQuery.data ||
@@ -142,7 +161,8 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     !issuesQuery.data ||
     !openMilestonesQuery.data ||
     !closedMilestonesQuery.data ||
-    !labelsQuery.data
+    !labelsQuery.data ||
+    !assignableUsersQuery.data
   ) {
     return null;
   }
@@ -165,6 +185,7 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         projectName={projectName}
       />
       <ProjectIssuesBody
+        assignableUsers={assignableUsersQuery.data.items}
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
         isAnonymous={Boolean(sessionQuery.data.isAnonymous)}
         currentUserLoginId={stringField(sessionQuery.data.loginId, "")}
@@ -244,6 +265,7 @@ $(function(){
 }
 
 function ProjectIssuesBody({
+  assignableUsers,
   currentUserId,
   currentUserLoginId,
   isAnonymous,
@@ -256,6 +278,7 @@ function ProjectIssuesBody({
   runtimeConfig,
   search,
 }: {
+  assignableUsers: ProjectAssignableUserOptionSource[];
   currentUserId: string;
   currentUserLoginId: string;
   isAnonymous: boolean;
@@ -352,8 +375,11 @@ function ProjectIssuesBody({
                 <div className="filter-wrap board">
                   {showMassUpdateControls ? (
                     <MassUpdateToolbar
+                      assignableUsers={assignableUsers}
                       currentUserId={currentUserId}
                       issues={issues.items}
+                      labels={labels}
+                      milestones={milestones.open}
                       ownerName={ownerName}
                       projectName={projectName}
                       runtimeConfig={runtimeConfig}
@@ -480,15 +506,21 @@ function shouldShowDraftItems(search: ProjectIssuesSearch) {
 }
 
 function MassUpdateToolbar({
+  assignableUsers,
   currentUserId,
   issues,
+  labels: projectLabels,
+  milestones: openMilestones,
   ownerName,
   projectName,
   runtimeConfig,
   showMilestone,
 }: {
+  assignableUsers: ProjectAssignableUserOptionSource[];
   currentUserId: string;
   issues: RestIssueListItem[];
+  labels: Array<Record<string, unknown>>;
+  milestones: ProjectMilestone[];
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -497,9 +529,9 @@ function MassUpdateToolbar({
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const formRef = useRef<HTMLFormElement>(null);
-  const milestones = uniqueMilestones(issues);
-  const labels = uniqueLabels(issues);
-  const users = uniqueUsers(issues, currentUserId);
+  const milestones = projectMilestoneOptions(openMilestones);
+  const labels = projectIssueLabelOptions(projectLabels, issues);
+  const users = projectAssignableUserOptions(assignableUsers, issues, currentUserId);
   const { mutate: mutateMassUpdate } = useMutation({
     mutationFn: async (input: Record<string, unknown>) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -1869,6 +1901,41 @@ function uniqueMilestones(issues: RestIssueListItem[]) {
   return Array.from(milestones.values());
 }
 
+function projectMilestoneOptions(milestones: ProjectMilestone[]) {
+  const options = [];
+  for (const milestone of milestones) {
+    const id = stringField(milestone.id, "");
+    const title = stringField(milestone.title, "");
+    if (id && title) {
+      options.push({ id, title });
+    }
+  }
+  return options;
+}
+
+function projectIssueLabelOptions(
+  labels: Array<Record<string, unknown>>,
+  issues: RestIssueListItem[],
+) {
+  const projectLabels = [];
+  for (const label of labels) {
+    const id = stringField(label.id, "");
+    const name = stringField(label.name, "");
+    if (id && name) {
+      projectLabels.push({
+        categoryId: stringField(label.categoryId, ""),
+        categoryName: stringField(label.categoryName, stringField(label.category, "")),
+        color: stringField(label.color, ""),
+        id,
+        name,
+      });
+    }
+  }
+  projectLabels.sort(compareIssueLabels);
+
+  return projectLabels.length > 0 ? projectLabels : uniqueLabels(issues);
+}
+
 function uniqueLabels(issues: RestIssueListItem[]) {
   const labels = new Map<
     string,
@@ -1918,6 +1985,46 @@ function groupLabels(
     groups.set(label.categoryId, group);
   }
   return Array.from(groups.values());
+}
+
+function projectAssignableUserOptions(
+  assignableUsers: ProjectAssignableUserOptionSource[],
+  issues: RestIssueListItem[],
+  currentUserId: string,
+) {
+  const fallbackUsers = uniqueUsers(issues, currentUserId);
+  if (assignableUsers.length === 0) {
+    return fallbackUsers;
+  }
+
+  const fallbackByLoginId = new Map(fallbackUsers.map((user) => [user.loginId, user]));
+  const users = new Map<
+    string,
+    { avatarUrl: string; id: string; label: string; loginId: string }
+  >();
+
+  for (const item of assignableUsers) {
+    if (item.type && item.type !== "user") {
+      continue;
+    }
+    const loginId = stringField(item.loginId, "");
+    if (!loginId) {
+      continue;
+    }
+    const fallback = fallbackByLoginId.get(loginId);
+    const id = stringField(item.userId, fallback?.id ?? loginId);
+    addUser(users, {
+      avatarUrl: stringField(
+        item.avatarUrl,
+        fallback?.avatarUrl ?? "/assets/images/default-avatar-32.png",
+      ),
+      id,
+      label: stringField(item.displayName, stringField(item.pureNameOnly, fallback?.label ?? "")),
+      loginId,
+    });
+  }
+
+  return Array.from(users.values());
 }
 
 function uniqueUsers(issues: RestIssueListItem[], currentUserId: string) {

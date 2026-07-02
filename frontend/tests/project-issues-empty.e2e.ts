@@ -774,6 +774,34 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
   );
 });
 
+test("project issue list mass update options come from project-wide legacy sources", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "project-wide-options");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=project-wide-options`);
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator('#assignee .mass-update-list li[data-value="3"] .name')).toHaveText(
+    "Project Wide Member",
+  );
+  await expect(
+    page.locator('#assignee .mass-update-list li[data-value="3"] .loginid'),
+  ).toContainText("@wide");
+  await expect(page.locator('#milestone .mass-update-list li[data-value="9"]')).toHaveText("v2.0");
+  await expect(page.locator('#attach-label-list li[data-value="10"]')).toHaveAttribute(
+    "data-category",
+    "5",
+  );
+  await expect(page.locator('#attach-label-list li[data-value="10"] .issue-label')).toHaveText(
+    "backend",
+  );
+  await expect(page.locator('#delete-label-list li[data-value="10"] .issue-label')).toHaveText(
+    "backend",
+  );
+});
+
 test("project issue list mass update checkboxes enable legacy toolbar controls", async ({
   page,
 }) => {
@@ -1212,6 +1240,7 @@ async function mockProjectIssues(
     | "populated"
     | "prefix"
     | "project-labels"
+    | "project-wide-options"
     | "sharer"
     | "subtask"
     | "upcoming"
@@ -1278,13 +1307,81 @@ async function mockProjectIssues(
                   title: "v0.9",
                 },
               ]
+            : state === "project-wide-options"
+              ? [
+                  {
+                    id: 5,
+                    state: "open",
+                    title: "v1.0",
+                  },
+                  {
+                    id: 9,
+                    state: "open",
+                    title: "v2.0",
+                  },
+                ]
+              : [
+                  {
+                    id: 5,
+                    state: "open",
+                    title: "v1.0",
+                  },
+                ],
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/assignable-users**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        items:
+          state === "project-wide-options"
+            ? [
+                {
+                  avatarUrl: "/assets/images/default-avatar-32.png",
+                  displayName: "Site Admin",
+                  loginId: "admin",
+                  pureNameOnly: "Site Admin",
+                  type: "user",
+                  userId: 1,
+                },
+                {
+                  avatarUrl: "/assets/images/default-avatar-32.png",
+                  displayName: "Dev Member",
+                  loginId: "dev",
+                  pureNameOnly: "Dev Member",
+                  type: "user",
+                  userId: 2,
+                },
+                {
+                  avatarUrl: "/assets/images/default-avatar-32.png",
+                  displayName: "Project Wide Member",
+                  loginId: "wide",
+                  pureNameOnly: "Project Wide Member",
+                  type: "user",
+                  userId: 3,
+                },
+              ]
             : [
                 {
-                  id: 5,
-                  state: "open",
-                  title: "v1.0",
+                  avatarUrl: "/assets/images/default-avatar-32.png",
+                  displayName: "Site Admin",
+                  loginId: "admin",
+                  pureNameOnly: "Site Admin",
+                  type: "user",
+                  userId: 1,
+                },
+                {
+                  avatarUrl: "/assets/images/default-avatar-32.png",
+                  displayName: "Dev Member",
+                  loginId: "dev",
+                  pureNameOnly: "Dev Member",
+                  type: "user",
+                  userId: 2,
                 },
               ],
+        total: state === "project-wide-options" ? 3 : 2,
+        truncated: false,
       }),
     });
   });
@@ -1304,7 +1401,26 @@ async function mockProjectIssues(
                   name: "bug",
                 },
               ]
-            : [],
+            : state === "project-wide-options"
+              ? [
+                  {
+                    categoryId: 3,
+                    categoryIsExclusive: false,
+                    categoryName: "bug",
+                    color: "#51aacc",
+                    id: 8,
+                    name: "bug",
+                  },
+                  {
+                    categoryId: 5,
+                    categoryIsExclusive: false,
+                    categoryName: "area",
+                    color: "#7bc043",
+                    id: 10,
+                    name: "backend",
+                  },
+                ]
+              : [],
       }),
     });
   });
@@ -1312,7 +1428,10 @@ async function mockProjectIssues(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(
-        state === "populated" || state === "no-milestone-menu" || state === "non-member"
+        state === "populated" ||
+          state === "no-milestone-menu" ||
+          state === "non-member" ||
+          state === "project-wide-options"
           ? populatedIssueResponse()
           : state === "labels-unsorted"
             ? {

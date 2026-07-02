@@ -55,6 +55,7 @@ export type IssueAssignableUserItem = {
   loginId: string;
   pureNameOnly: string;
   type: "project" | "user";
+  userId?: string;
 };
 
 export type IssueAssignableUsersResponse = {
@@ -231,6 +232,7 @@ function normalizeIssueAssignableUsersResponse(
     loginId: item.loginId ?? "",
     pureNameOnly: item.pureNameOnly ?? "",
     type: item.type === "project" ? "project" : "user",
+    userId: String((item as unknown as { userId?: unknown }).userId ?? ""),
   }));
   return {
     items,
