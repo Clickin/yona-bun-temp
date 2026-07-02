@@ -631,12 +631,12 @@ function AuthenticatedSiteUserMenu({
         <div className="span5 right-menu span-hard-wrap">
           <div className="row-fluid user-menu-wrap">
             <span className="user-menu">
-              <a href={prefixBasePath(basePath, `/${loginId}`)}>{t("userinfo.profile")}</a>
+              <LegacyInternalLink to={`/${loginId}`}>{t("userinfo.profile")}</LegacyInternalLink>
             </span>
             <span className="user-menu">
-              <a href={prefixBasePath(basePath, "/user/editform")}>
+              <LegacyInternalLink to="/user/editform">
                 {t("userinfo.accountSetting")}
-              </a>
+              </LegacyInternalLink>
             </span>
             <a href={prefixBasePath(basePath, "/users/logout")}>
               <span className="user-menu logout label">{t("title.logout")}</span>

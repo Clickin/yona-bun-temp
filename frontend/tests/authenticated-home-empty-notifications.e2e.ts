@@ -460,6 +460,26 @@ test("authenticated home empty notifications matches legacy index notifications 
     .toBe("gnb-my-issues");
 
   await page.goto(`${basePath}/`);
+  const profileLink = page.locator("#mySidenav .user-menu a", { hasText: "Profile" });
+  const accountLink = page.locator("#mySidenav .user-menu a", { hasText: "Account" });
+  await expect(profileLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(accountLink).toHaveAttribute("href", `${basePath}/user/editform`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "side-account";
+  });
+  await accountLink.evaluate((link) => (link as HTMLAnchorElement).click());
+  await expect(page).toHaveURL(`${basePath}/user/editform`);
+  await expect(page.locator(".site-breadcrumb-inner h3")).toHaveText("Account");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("side-account");
+
+  await page.goto(`${basePath}/`);
   const createProjectLink = page.locator(".gnb-usermenu .dropdown-menu a", {
     hasText: "Create new project",
   });
