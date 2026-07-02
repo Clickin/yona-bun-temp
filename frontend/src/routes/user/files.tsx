@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import type { AnchorHTMLAttributes, ComponentType } from "react";
 import {
   listWorkspaceFilesRest,
   type WorkspaceFileItem,
@@ -9,6 +10,13 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    search?: Record<string, unknown>;
+    to: string;
+  }
+>;
 
 type UserFilesSearch = {
   filter?: string;
@@ -58,6 +66,8 @@ function UserFilesScreen({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const filesQuery = useQuery({
     queryFn: () => listWorkspaceFilesRest(runtimeConfig, { filter, page: pageNum }),
     queryKey: ["workspace", "files", { filter, pageNum }],
@@ -70,23 +80,40 @@ function UserFilesScreen({
     total: 0,
     totalPages: 0,
   };
+  const searchNavigationMutation = useMutation({
+    mutationFn: async (nextFilter: string) => nextFilter,
+    onSuccess: async (nextFilter) => {
+      await queryClient.invalidateQueries({ queryKey: ["workspace", "files"] });
+      await router.navigate({
+        search: { filter: nextFilter, pageNum: 1 },
+        to: "/user/files",
+      });
+    },
+  });
 
   return (
     <div className="page-wrap-outer">
       <div className="page-wrap">
         <ul className="nav nav-tabs">
           <li>
-            <a href={prefixBasePath(basePath, "/notifications")}>{t("notification")}</a>
+            <LegacyInternalLink to="/notifications">{t("notification")}</LegacyInternalLink>
           </li>
           <li>
-            <a href={prefixBasePath(basePath, "/user/issues")}>{t("issue.myIssue")}</a>
+            <LegacyInternalLink to="/user/issues">{t("issue.myIssue")}</LegacyInternalLink>
           </li>
           <li className="active">
-            <a href={prefixBasePath(basePath, "/user/files")}>{t("user.files")}</a>
+            <LegacyInternalLink to="/user/files">{t("user.files")}</LegacyInternalLink>
           </li>
           <li></li>
         </ul>
-        <form action={prefixBasePath(basePath, "/user/files")}>
+        <form
+          action={prefixBasePath(basePath, "/user/files")}
+          onSubmit={(event) => {
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            searchNavigationMutation.mutate(String(formData.get("filter") ?? ""));
+          }}
+        >
           <div className="user-file-search search search-bar">
             <input
               ref={(element) => {
@@ -117,7 +144,7 @@ function UserFilesScreen({
           ))}
         </div>
       </div>
-      <Pagination basePath={basePath} files={files} />
+      <Pagination files={files} />
     </div>
   );
 }
@@ -165,25 +192,21 @@ function UserFileRow({
   );
 }
 
-function Pagination({ basePath, files }: { basePath: string; files: WorkspaceFilesResponse }) {
+function Pagination({ files }: { files: WorkspaceFilesResponse }) {
   const pages = Array.from({ length: files.totalPages }, (_, index) => index + 1);
 
   return (
     <div id="pagination">
       {pages.map((page) => {
-        const params = new URLSearchParams();
-        if (files.filter !== "") {
-          params.set("filter", files.filter);
-        }
-        params.set("pageNum", String(page));
         return (
-          <a
+          <LegacyInternalLink
             key={page}
-            href={`${prefixBasePath(basePath, "/user/files")}?${params.toString()}`}
+            to="/user/files"
+            search={{ filter: files.filter, pageNum: page }}
             className={page === files.page ? "active" : undefined}
           >
             {page}
-          </a>
+          </LegacyInternalLink>
         );
       })}
     </div>

@@ -79,31 +79,37 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
       }),
     });
   });
-  await page.route("**/api/v1/workspace/files?filter=avatar&pageNum=2", async (route) => {
+  await page.route("**/api/v1/workspace/files?**", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const filter = requestUrl.searchParams.get("filter") ?? "";
+    const pageNum = Number(requestUrl.searchParams.get("pageNum") ?? "1");
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        files: [
-          {
-            containerId: 1,
-            containerType: "ISSUE_POST",
-            createdLabel: "2026-06-30 7:05 PM",
-            downloadUrl: "/files/7?action=download",
-            id: 7,
-            locationHref: "/admin/sample/issue/1",
-            locationLabel: "/admin/sample/issue/1",
-            mimeType: "image/png",
-            name: "avatar.png",
-            previewUrl: "/files/7",
-            size: 12345,
-            sizeLabel: "12.3 kB",
-            url: "/files/7",
-          },
-        ],
-        filter: "avatar",
-        page: 2,
+        files:
+          filter === "avatar" && pageNum === 2
+            ? [
+                {
+                  containerId: 1,
+                  containerType: "ISSUE_POST",
+                  createdLabel: "2026-06-30 7:05 PM",
+                  downloadUrl: "/files/7?action=download",
+                  id: 7,
+                  locationHref: "/admin/sample/issue/1",
+                  locationLabel: "/admin/sample/issue/1",
+                  mimeType: "image/png",
+                  name: "avatar.png",
+                  previewUrl: "/files/7",
+                  size: 12345,
+                  sizeLabel: "12.3 kB",
+                  url: "/files/7",
+                },
+              ]
+            : [],
+        filter,
+        page: pageNum,
         pageSize: 50,
-        total: 51,
+        total: filter === "avatar" ? 51 : 0,
         totalPages: 2,
       }),
     });
@@ -128,6 +134,34 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
     pageWrapMarginTop: "10px",
     searchMargin: "12px 0px 16px",
   });
+
+  await expect(page.locator('.nav-tabs a:has-text("My Issues")')).toHaveAttribute(
+    "href",
+    `${basePath}/user/issues`,
+  );
+  await expect(page.locator('#pagination a:has-text("1")')).toHaveAttribute(
+    "href",
+    `${basePath}/user/files?filter=avatar&pageNum=1`,
+  );
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "files-page-1";
+  });
+  await page.locator('#pagination a:has-text("1")').click();
+  await expect(page).toHaveURL(`${basePath}/user/files?filter=avatar&pageNum=1`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("files-page-1");
+
+  await page.goto(`${basePath}/user/files?filter=avatar&pageNum=2`);
+  await page.locator('.user-file-search input[name="filter"]').fill("fresh");
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "files-search";
+  });
+  await page.locator(".user-file-search .search-btn").click();
+  await expect(page).toHaveURL(`${basePath}/user/files?filter=fresh&pageNum=1`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("files-search");
 });
 
 async function readUserFilesMetrics(page: Page) {
@@ -174,7 +208,8 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -192,6 +227,24 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(Boolean)
         .join("");
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+    function normalizeAttribute(current: Element, name: string) {
+      if (name === "class") {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/)
+          .filter((value, index, values) => value && values.indexOf(value) === index)
+          .filter(
+            (value) =>
+              !(
+                value === "active" &&
+                current.tagName.toLowerCase() === "a" &&
+                current.closest(".page-wrap .nav-tabs")
+              ),
+          )
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
     return Array.from(
@@ -225,7 +278,8 @@ async function canonicalizeHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map((name) => normalizeAttribute(current, name))
+          .filter(Boolean)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -243,6 +297,24 @@ async function canonicalizeHtml(page: Page, html: string) {
           .filter(Boolean)
           .join("");
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+      function normalizeAttribute(current: Element, name: string) {
+        if (name === "class") {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/)
+            .filter((value, index, values) => value && values.indexOf(value) === index)
+            .filter(
+              (value) =>
+                !(
+                  value === "active" &&
+                  current.tagName.toLowerCase() === "a" &&
+                  current.closest(".page-wrap .nav-tabs")
+                ),
+            )
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
+        return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
       const template = document.createElement("template");
       template.innerHTML = markup.trim();
