@@ -7,6 +7,9 @@ import type { RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 import {
   emptySearchResult,
+  DefaultSearchErrorBody,
+  isDefaultForbiddenError,
+  isDefaultInternalServerError,
   isRequestTextTooLargeError,
   LegacySearchBody,
   RequestTextTooLargeErrorBody,
@@ -61,6 +64,24 @@ function SearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
   if (isRequestTextTooLargeError(searchQuery.error)) {
     return <RequestTextTooLargeErrorBody />;
+  }
+  if (isDefaultForbiddenError(searchQuery.error)) {
+    return (
+      <DefaultSearchErrorBody
+        iconClassName="ico ico-err2"
+        messageKey="error.forbidden"
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+  if (isDefaultInternalServerError(searchQuery.error)) {
+    return (
+      <DefaultSearchErrorBody
+        iconClassName="ico-404"
+        messageKey="error.internalServerError"
+        runtimeConfig={runtimeConfig}
+      />
+    );
   }
 
   return (

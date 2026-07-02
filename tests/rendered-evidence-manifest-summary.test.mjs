@@ -76,6 +76,8 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     ["organization/view.scala.html", "frontend/tests/organization-home.e2e.ts"],
     ["common/commitMsg.scala.html", "frontend/tests/project-code-history.e2e.ts"],
     ["error/badrequest_default.scala.html", "frontend/tests/reset-password.e2e.ts"],
+    ["error/forbidden_default.scala.html", "frontend/tests/search-global.e2e.ts"],
+    ["error/internalServerError_default.scala.html", "frontend/tests/search-global.e2e.ts"],
   ]);
   let inSummary = false;
   let inPrioritySummary = false;

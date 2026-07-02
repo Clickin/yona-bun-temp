@@ -508,6 +508,96 @@ test("global search renders legacy request text too large error shell", async ({
   });
 });
 
+test("global search renders legacy error/forbidden_default.scala.html shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockGlobalSearch(page);
+
+  await page.goto(`${basePath}/search?keyword=forbidden&searchType=issue&pageNum=1`);
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".search-box-wrap")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedDefaultSearchErrorScreen({
+        basePath,
+        buttonClass: "ybtn ybtn-primary",
+        iconClass: "ico ico-err2",
+        message: "You are not authorized",
+      }),
+    ),
+  );
+  expect(await readDefaultSearchErrorMetrics(page, ".error-wrap .ico-err2")).toEqual({
+    actionDisplay: "inline-block",
+    actionHeight: "20px",
+    actionLineHeight: "20px",
+    errorIconHeight: "80px",
+    errorIconWidth: "50px",
+    errorPaddingBottom: "100px",
+    errorPaddingTop: "100px",
+    errorTextAlign: "center",
+    errorTextColor: "rgb(137, 137, 137)",
+    errorTextFontSize: "16px",
+    errorTextFontWeight: "700",
+    errorTextMarginBottom: "30px",
+    errorTextMarginTop: "30px",
+    footerLineHeight: "34px",
+    footerPaddingBottom: "10px",
+    footerPaddingTop: "10px",
+    pageWrapOuterMinHeight: "450px",
+    projectPageWrapMarginTop: "5px",
+  });
+});
+
+test("global search renders legacy error/internalServerError_default.scala.html shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockGlobalSearch(page);
+
+  await page.goto(`${basePath}/search?keyword=server-error&searchType=issue&pageNum=1`);
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText(
+    "Server error occurred; service is not available",
+  );
+  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".search-box-wrap")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedDefaultSearchErrorScreen({
+        basePath,
+        buttonClass: "ybtn ybtn-primary",
+        iconClass: "ico-404",
+        message: "Server error occurred; service is not available",
+      }),
+    ),
+  );
+  expect(await readDefaultSearchErrorMetrics(page, ".error-wrap .ico-404")).toEqual({
+    actionDisplay: "inline-block",
+    actionHeight: "20px",
+    actionLineHeight: "20px",
+    errorIconHeight: "80px",
+    errorIconWidth: "50px",
+    errorPaddingBottom: "100px",
+    errorPaddingTop: "100px",
+    errorTextAlign: "center",
+    errorTextColor: "rgb(137, 137, 137)",
+    errorTextFontSize: "16px",
+    errorTextFontWeight: "700",
+    errorTextMarginBottom: "30px",
+    errorTextMarginTop: "30px",
+    footerLineHeight: "34px",
+    footerPaddingBottom: "10px",
+    footerPaddingTop: "10px",
+    pageWrapOuterMinHeight: "450px",
+    projectPageWrapMarginTop: "5px",
+  });
+});
+
 async function readRequestTextTooLargeMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
@@ -557,6 +647,60 @@ async function readRequestTextTooLargeMetrics(page: Page) {
       projectPageWrapMarginTop: getComputedStyle(projectPageWrap).marginTop,
     };
   });
+}
+
+async function readDefaultSearchErrorMetrics(page: Page, iconSelector: string) {
+  return page.evaluate((selector) => {
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const projectPageWrap = document.querySelector<HTMLElement>(".project-page-wrap");
+    const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
+    const errorIcon = document.querySelector<HTMLElement>(selector);
+    const errorText = document.querySelector<HTMLElement>(".error-wrap p");
+    const action = document.querySelector<HTMLElement>(".error-wrap .ybtn");
+    const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const footer = document.querySelector<HTMLElement>(".page-footer");
+    const missing = Object.entries({
+      action,
+      errorIcon,
+      errorText,
+      errorWrap,
+      footer,
+      footerOuter,
+      pageWrapOuter,
+      projectPageWrap,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected default error metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const actionStyle = getComputedStyle(action);
+    const errorWrapStyle = getComputedStyle(errorWrap);
+    const errorIconStyle = getComputedStyle(errorIcon);
+    const errorTextStyle = getComputedStyle(errorText);
+    const footerOuterStyle = getComputedStyle(footerOuter);
+    return {
+      actionDisplay: actionStyle.display,
+      actionHeight: actionStyle.height,
+      actionLineHeight: actionStyle.lineHeight,
+      errorIconHeight: errorIconStyle.height,
+      errorIconWidth: errorIconStyle.width,
+      errorPaddingBottom: errorWrapStyle.paddingBottom,
+      errorPaddingTop: errorWrapStyle.paddingTop,
+      errorTextAlign: errorWrapStyle.textAlign,
+      errorTextColor: errorTextStyle.color,
+      errorTextFontSize: errorTextStyle.fontSize,
+      errorTextFontWeight: errorTextStyle.fontWeight,
+      errorTextMarginBottom: errorTextStyle.marginBottom,
+      errorTextMarginTop: errorTextStyle.marginTop,
+      footerLineHeight: getComputedStyle(footer).lineHeight,
+      footerPaddingBottom: footerOuterStyle.paddingBottom,
+      footerPaddingTop: footerOuterStyle.paddingTop,
+      pageWrapOuterMinHeight: getComputedStyle(pageWrapOuter).minHeight,
+      projectPageWrapMarginTop: getComputedStyle(projectPageWrap).marginTop,
+    };
+  }, iconSelector);
 }
 
 async function readSearchResultShellMetrics(page: Page) {
@@ -650,6 +794,34 @@ async function mockGlobalSearch(page: Page) {
     const requestUrl = new URL(route.request().url());
     const keyword = requestUrl.searchParams.get("keyword") ?? "";
     const requestedSearchType = requestUrl.searchParams.get("searchType") ?? "project";
+    if (keyword === "forbidden") {
+      await route.fulfill({
+        status: 403,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "forbidden",
+            message: "You are not authorized",
+            status: 403,
+          },
+        }),
+      });
+      return;
+    }
+    if (keyword === "server-error") {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "internal_server_error",
+            message: "Server error occurred; service is not available",
+            status: 500,
+          },
+        }),
+      });
+      return;
+    }
     if (keyword === "too-large") {
       await route.fulfill({
         status: 413,
@@ -1082,6 +1254,37 @@ async function mockGlobalSearch(page: Page) {
       }),
     });
   });
+}
+
+function expectedDefaultSearchErrorScreen({
+  basePath,
+  buttonClass,
+  iconClass,
+  message,
+}: {
+  basePath: string;
+  buttonClass: string;
+  iconClass: string;
+  message: string;
+}) {
+  return `
+<div class="unsupported hidden">
+  <div class="unsupported-inner"><p id="unsupported-content"></p></div>
+</div>
+<header class="gnb-outer">
+  <div class="gnb-inner">
+    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <ul class="gnb-nav">
+      <li><a href="${basePath}" class="logo logo-letter">Y</a></li>
+      <li><form action="${basePath}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+    </ul>
+    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="${basePath}/user/anonymous">Profile</a></span><span class="user-menu"><a href="${basePath}/user/editform">Account</a></span><a href="${basePath}/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
+    <ul class="gnb-usermenu"><li class="gnb-usermenu-item" id="required-logged-in"><a href="${basePath}/users/loginform" class="user-item-btn" data-login="required">Log in</a></li><li class="divider"></li><li><a href="${basePath}/users/signupform" class="ybtn ybtn-success">Sign up</a></li></ul>
+  </div>
+</header>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="${iconClass}"></i><p>${message}</p><a href="${basePath}" class="${buttonClass}">Home</a></div></div></div>
+<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
+`;
 }
 
 async function canonicalizeScreenRoots(page: Page) {

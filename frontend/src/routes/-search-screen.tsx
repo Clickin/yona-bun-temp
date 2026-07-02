@@ -32,6 +32,40 @@ export function isRequestTextTooLargeError(error: unknown) {
   return error instanceof RestApiError && error.status === 413;
 }
 
+export function isDefaultForbiddenError(error: unknown) {
+  return error instanceof RestApiError && error.status === 403;
+}
+
+export function isDefaultInternalServerError(error: unknown) {
+  return error instanceof RestApiError && error.status >= 500;
+}
+
+export function DefaultSearchErrorBody({
+  iconClassName,
+  messageKey,
+  runtimeConfig,
+}: {
+  iconClassName: string;
+  messageKey: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className={iconClassName}></i>
+          <p>{t(messageKey)}</p>
+          <a href={prefixBasePath(runtimeConfig.basePath, "/")} className="ybtn ybtn-primary">
+            {t("menu.home")}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function RequestTextTooLargeErrorBody() {
   const { t } = useLegacyMessages();
 
