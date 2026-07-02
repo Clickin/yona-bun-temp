@@ -321,6 +321,9 @@ test("global project search renders legacy partial_projects.scala.html populated
 
   await page.goto(`${basePath}/search?keyword=sample&searchType=project`);
   await expect(page.locator(".search-list-wrap .search-list-item.project")).toBeVisible();
+  const projectLogo = page.locator(".search-list-item.project .avatar-wrap img");
+  await expect(projectLogo).toHaveAttribute("src", "/assets/images/project_default_logo.png");
+  await expect(projectLogo).not.toHaveAttribute("alt");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(

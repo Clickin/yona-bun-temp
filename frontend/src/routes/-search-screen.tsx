@@ -1,4 +1,4 @@
-import { Fragment, useRef, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, type ReactNode } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { type SearchCounts, type SearchResponse, type SearchType } from "../api/search";
 import { RestApiError } from "../api/rest-client";
@@ -212,9 +212,8 @@ function SearchResultList({
         {result.items.map((item) => (
           <li className="search-list-item project" key={item.id}>
             <a href={item.href} className="avatar-wrap">
-              <img
+              <LegacyProjectLogoImage
                 src={item.projectLogoUrl || "/assets/images/project_default_logo.png"}
-                alt={item.projectName}
               />
             </a>
             <div className="title-wrap">
@@ -426,6 +425,16 @@ function SearchResultList({
   }
 
   return <div className="empty-result"></div>;
+}
+
+function LegacyProjectLogoImage({ src }: { src: string }) {
+  const imageRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    imageRef.current?.removeAttribute("alt");
+  }, []);
+
+  return <img alt="" ref={imageRef} src={src} />;
 }
 
 export function emptySearchResult(input: {
