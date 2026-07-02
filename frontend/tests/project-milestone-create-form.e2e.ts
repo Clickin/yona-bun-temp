@@ -20,6 +20,32 @@ test("project milestone create form matches legacy milestone/create.scala.html c
   expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
     await canonicalizeHtml(page, EXPECTED_CREATE_FORM_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await readMilestoneCreateFormMetrics(page)).toEqual({
+    actionDisplay: "block",
+    actionMarginTop: "20px",
+    actionTextAlign: "right",
+    ddMargin: "0px",
+    ddPadding: "0px",
+    dueDateInputWidth: 206,
+    editorPosition: "relative",
+    formMargin: "0px 0px 2px",
+    issueOptionDdMargin: "0px",
+    issueOptionDtMarginBottom: "5px",
+    issueOptionMarginBottom: "16px",
+    issueOptionWidthPercent: 100,
+    leftPaneWidthPercent: 74.5,
+    rightPaneMarginLeftPercent: 2.1,
+    rightPaneWidthPercent: 23.4,
+    titleBorderBottomWidth: "1px",
+    titleBorderRadius: "0px",
+    titleFontSize: "18px",
+    titleMarginBottom: "15px",
+    titleMarginTop: "15px",
+    titleWidthPercent: 97,
+    uploadBackground: "rgb(245, 245, 245)",
+    uploadBorderRadius: "5px",
+    uploadPadding: "10px 20px",
+  });
 
   await page.fill("#title", "v3.0");
   await page.fill("#editor-contents-content-body", "Create scope");
@@ -121,6 +147,96 @@ async function mockProjectMilestoneCreateForm(page: Page, postRequests: unknown[
       return;
     }
     await route.fallback();
+  });
+}
+
+async function readMilestoneCreateFormMetrics(page: Page) {
+  return page.locator(".content-wrap.frm-wrap").evaluate((contentWrap) => {
+    const form = contentWrap.querySelector<HTMLElement>("#milestone-form");
+    const firstDd = contentWrap.querySelector<HTMLElement>("dd");
+    const title = contentWrap.querySelector<HTMLElement>("#title");
+    const leftPane = contentWrap.querySelector<HTMLElement>(".span-left-pane");
+    const rightPane = contentWrap.querySelector<HTMLElement>(".span-hard-wrap");
+    const editorDd = contentWrap.querySelector<HTMLElement>('dd[style*="position"]');
+    const upload = contentWrap.querySelector<HTMLElement>(".upload-wrap.content-footer");
+    const action = contentWrap.querySelector<HTMLElement>(".actrow.right-txt");
+    const issueOption = contentWrap.querySelector<HTMLElement>(".issue-option");
+    const issueOptionDt = issueOption?.querySelector<HTMLElement>("dt");
+    const issueOptionDd = issueOption?.querySelector<HTMLElement>("dd");
+    const dueDateInput = contentWrap.querySelector<HTMLElement>("#dueDate");
+    const missing = Object.entries({
+      action,
+      dueDateInput,
+      editorDd,
+      firstDd,
+      form,
+      issueOption,
+      issueOptionDd,
+      issueOptionDt,
+      leftPane,
+      rightPane,
+      title,
+      upload,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected milestone create metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const formStyle = getComputedStyle(form!);
+    const ddStyle = getComputedStyle(firstDd!);
+    const titleStyle = getComputedStyle(title!);
+    const editorStyle = getComputedStyle(editorDd!);
+    const uploadStyle = getComputedStyle(upload!);
+    const actionStyle = getComputedStyle(action!);
+    const rightPaneStyle = getComputedStyle(rightPane!);
+    const issueOptionStyle = getComputedStyle(issueOption!);
+    const issueOptionDtStyle = getComputedStyle(issueOptionDt!);
+    const issueOptionDdStyle = getComputedStyle(issueOptionDd!);
+    const contentWidth = contentWrap.getBoundingClientRect().width;
+    const titleWidthPercent =
+      Math.round((title!.getBoundingClientRect().width / contentWidth) * 1000) / 10;
+    const leftPaneWidthPercent =
+      Math.round((leftPane!.getBoundingClientRect().width / contentWidth) * 1000) / 10;
+    const rightPaneWidthPercent =
+      Math.round((rightPane!.getBoundingClientRect().width / contentWidth) * 1000) / 10;
+    const rightPaneMarginLeftPercent =
+      Math.round((parseFloat(rightPaneStyle.marginLeft) / contentWidth) * 1000) / 10;
+    const issueOptionWidthPercent =
+      Math.round(
+        (issueOption!.getBoundingClientRect().width / rightPane!.getBoundingClientRect().width) *
+          1000,
+      ) / 10;
+
+    return {
+      actionDisplay: actionStyle.display,
+      actionMarginTop: actionStyle.marginTop,
+      actionTextAlign: actionStyle.textAlign,
+      ddMargin: ddStyle.margin,
+      ddPadding: ddStyle.padding,
+      dueDateInputWidth: Math.round(dueDateInput!.getBoundingClientRect().width),
+      editorPosition: editorStyle.position,
+      formMargin: formStyle.margin,
+      issueOptionDdMargin: issueOptionDdStyle.margin,
+      issueOptionDtMarginBottom: issueOptionDtStyle.marginBottom,
+      issueOptionMarginBottom: issueOptionStyle.marginBottom,
+      issueOptionWidthPercent,
+      leftPaneWidthPercent,
+      rightPaneMarginLeftPercent,
+      rightPaneWidthPercent,
+      titleBorderBottomWidth: titleStyle.borderBottomWidth,
+      titleBorderRadius: titleStyle.borderRadius,
+      titleFontSize: titleStyle.fontSize,
+      titleMarginBottom: titleStyle.marginBottom,
+      titleMarginTop: titleStyle.marginTop,
+      titleWidthPercent,
+      uploadBackground: uploadStyle.backgroundColor,
+      uploadBorderRadius: uploadStyle.borderRadius,
+      uploadPadding: uploadStyle.padding,
+    };
   });
 }
 
