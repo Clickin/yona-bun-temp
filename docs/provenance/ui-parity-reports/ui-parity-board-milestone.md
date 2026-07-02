@@ -45,57 +45,58 @@ Worker update, 2026-06-26:
   buttons issuing REST JSON callbacks before rendering the returned open/closed
   state.
 - Worker update, 2026-06-27 layout follow-up: project milestone list shell
-  ownership moved into `frontend/src/routes/$owner/$projectName/route.tsx` for
+  ownership moved into `frontend/src/routes/$ownerName/$projectName.tsx` for
   `/milestones`, keeping the milestone menu active and rendering
   `ProjectMilestoneListPage` through the TanStack Router `<Outlet />`.
   `ProjectMilestoneListPage` now supports `renderShell={false}` while retaining
   the legacy label stylesheet link and list markup. Verification:
-  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
-  src/board-milestone-parity.spec.tsx`.
+  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend test:e2e --
+  project-milestones.e2e.ts`.
 - Worker update, 2026-06-27 milestone form layout follow-up: project milestone
   create/edit shell ownership moved into
-  `frontend/src/routes/$owner/$projectName/route.tsx` for `/newMilestoneForm`
+  `frontend/src/routes/$ownerName/$projectName.tsx` for `/newMilestoneForm`
   and `/milestone/:milestoneId/editform`, keeping the milestone menu active.
   `ProjectMilestoneFormPage` now supports `renderShell={false}` while retaining
   the existing form and REST submit boundaries. Verification:
-  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
-  src/board-milestone-parity.spec.tsx`.
+  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend test:e2e --
+  project-milestone-create-form.e2e.ts project-milestone-edit-form.e2e.ts`.
 - Worker update, 2026-06-27 milestone detail layout follow-up: project
   milestone detail shell ownership moved into
-  `frontend/src/routes/$owner/$projectName/route.tsx` for
+  `frontend/src/routes/$ownerName/$projectName.tsx` for
   `/milestone/:milestoneId`, keeping the milestone menu active.
   `ProjectMilestoneDetailPage` now supports `renderShell={false}` while
   retaining the legacy label stylesheet, `milesion-wrap` body, issue
   mass-update controls, and delete modal. Verification:
-  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
-  src/board-milestone-parity.spec.tsx`.
+  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend test:e2e --
+  project-milestone-detail.e2e.ts`.
 - Worker update, 2026-06-27 board list layout follow-up: project board list
   shell ownership moved into
-  `frontend/src/routes/$owner/$projectName/route.tsx` for `/posts`, keeping the
+  `frontend/src/routes/$ownerName/$projectName.tsx` for `/posts`, keeping the
   board menu active, the board list keymap mode, and the `board-page` shell CSS
   hook. `ProjectBoardListPage` now supports `renderShell={false}` while
   retaining the legacy `post-list project-page-wrap`, `#option_form`, label
   selector, notice rows, and pagination body. Verification:
-  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend exec vitest run
-  src/board-milestone-parity.spec.tsx`.
+  `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend test:e2e --
+  project-posts.e2e.ts`.
 - Worker update, 2026-06-27 board form layout follow-up: project board
   create/edit shell ownership moved into
-  `frontend/src/routes/$owner/$projectName/route.tsx` for `/postform` and
+  `frontend/src/routes/$ownerName/$projectName.tsx` for `/postform` and
   `/post/:postNumber/editform`, keeping the board menu active and the
   `board-page` shell CSS hook. `ProjectPostFormPage` now supports
   `renderShell={false}` while retaining the legacy `project-page-wrap`,
   `.board-form`, markdown editor, uploader, notice/readme, and submit/cancel
   body. Verification: `pnpm --dir frontend exec tsc --noEmit`;
-  `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
+  `pnpm --dir frontend test:e2e -- project-board-create-form.e2e.ts
+  project-board-edit-form.e2e.ts`.
 - Worker update, 2026-06-27 board detail layout follow-up: project board detail
   shell ownership moved into
-  `frontend/src/routes/$owner/$projectName/route.tsx` for
+  `frontend/src/routes/$ownerName/$projectName.tsx` for
   `/post/:postNumber`, keeping the board menu active, detail keymap mode, and
   the `board-page` shell CSS hook. `ProjectBoardDetailPage` now supports
   `renderShell={false}` while retaining the legacy `project-page-wrap
   board-view`, comments, labels, attachment metadata, action buttons, and
   delete modal. Verification: `pnpm --dir frontend exec tsc --noEmit`;
-  `pnpm --dir frontend exec vitest run src/board-milestone-parity.spec.tsx`.
+  `pnpm --dir frontend test:e2e -- project-posts.e2e.ts`.
 - Worker update, 2026-06-27 board detail browser parity follow-up: the detail
   route now reads TanStack Router state for edit/detail mode so SPA navigation
   from `/post/:postNumber/editform` back to `/post/:postNumber` renders the
@@ -105,7 +106,7 @@ Worker update, 2026-06-26:
   browser hit area, and the nested organization board E2E fixture includes the
   parent organization container. Verification: `pnpm --dir frontend test`;
   `pnpm --dir frontend exec tsc --noEmit`; `pnpm --dir frontend test:e2e --
-  board-posting-parity.e2e.ts`.
+  project-posts.e2e.ts`.
 - Worker update, 2026-07-01 flat route rebuild: project board list parity now
   lives in `frontend/src/routes/$ownerName/$projectName/posts.tsx` and reuses
   the shared project header/menu from the project home route. The parent
@@ -151,13 +152,21 @@ Legacy evidence:
 
 Current evidence:
 
-- `frontend/src/routes/-board-views.tsx`
-- `frontend/src/routes/-milestone-views.tsx`
-- `frontend/src/route-parity.spec.tsx`
-- `frontend/tests/board-posting-parity.e2e.ts`
+- `frontend/src/routes/$ownerName/$projectName/posts.tsx`
+- `frontend/src/routes/$ownerName/$projectName/postform.tsx`
+- `frontend/src/routes/$ownerName/$projectName/post/$postNumber.tsx`
+- `frontend/src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx`
+- `frontend/src/routes/$ownerName/$projectName/milestones.tsx`
+- `frontend/src/routes/$ownerName/$projectName/newMilestoneForm.tsx`
+- `frontend/src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx`
+- `frontend/src/routes/$ownerName/$projectName/milestone/$milestoneId/editform.tsx`
 - `frontend/tests/project-posts.e2e.ts`
-- `frontend/tests/milestone-delete-modal-parity.e2e.ts`
-- `frontend/tests/shell-routing-smoke.e2e.ts`
+- `frontend/tests/project-board-create-form.e2e.ts`
+- `frontend/tests/project-board-edit-form.e2e.ts`
+- `frontend/tests/project-milestones.e2e.ts`
+- `frontend/tests/project-milestone-create-form.e2e.ts`
+- `frontend/tests/project-milestone-edit-form.e2e.ts`
+- `frontend/tests/project-milestone-detail.e2e.ts`
 
 ## Route Inventory Summary
 
@@ -181,22 +190,22 @@ Total rows: 20
 | `/organizations/:name/boards` | Organization board aggregate with project multiselect, keyword search, sort, pagination, optional page-1 notice wrap, empty state, and cross-project rows. | `OrganizationBoardListPage` preserves organization header/menu and aggregate controls. Organization board REST now returns `notices`, keeps notice posts out of normal `items` / `totalCount`, renders page-1 notices in `.post-list-wrap.notice-wrap` before normal rows, and preserves the empty `.error-wrap` branch when no normal posts or notices exist. | covered | `frontend/src/routes/organizations/$organizationName/boards.tsx`, `frontend/tests/organization-boards.e2e.ts`, `crates/server/src/routes/boards.rs`, `crates/persistence/src/repo/posting.rs`, `crates/server/tests/organization_board_contract.rs` |
 | board create notice/readme/online commit controls | Legacy create form renders notice/readme/issue-template/branch/path/line-ending/file uploader controls. | `frontend/src/routes/$ownerName/$projectName/postform.tsx` restores the flat create route and renders the legacy form body, including title/body editor, uploader, notice control, hidden issueTemplate/branch/path/lineEnding fields, readme/online-commit branches, legacy cancel href, and REST POST redirect boundary. The active create-form E2E now expands the direct legacy `common.editor`, `help.markdown`, `common.uploadForm`, and `common.fileUploader` output for the `BOARD_POST` caller. | covered | `frontend/src/routes/$ownerName/$projectName/postform.tsx`, `frontend/tests/project-board-create-form.e2e.ts` |
 | board edit notice/readme/notification controls | Legacy edit form renders title label, body editor, existing-post uploader, notice/readme controls, notification checkbox, and save/cancel actions. | `frontend/src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx` renders the legacy edit form body under the parent board route outlet and wires submit through REST PATCH while preserving the legacy cancel href and detail redirect. The active edit-form E2E now expands the direct legacy `common.editor`, `help.markdown`, `common.uploadForm`, and `common.fileUploader` output for the `BOARD_POST` caller with resource id. | covered | `frontend/src/routes/$ownerName/$projectName/post/$postNumber.tsx`, `frontend/src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx`, `frontend/tests/project-board-edit-form.e2e.ts` |
-| board create/edit label picker | Legacy create/edit templates do not render a board label picker. | `ProjectPostFormPage` no longer renders `.board-label-picker`; edit submit preserves existing labels without exposing a non-legacy form control. | covered | `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/board-posting-parity.e2e.ts` |
-| board create/edit attachment picker shell | Legacy uses `common.fileUploader(ResourceType.BOARD_POST, ...)`. | `ProjectPostFormPage` renders `.upload-wrap.content-footer[data-resource-type="BOARD_POST"]` while preserving paste/drop REST upload insertion. | covered | `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/board-posting-parity.e2e.ts` |
-| board detail history/watch/comments/child comments | Legacy renders history modal, watch button, comments, child comments, parentCommentId. | Project layout owns the header/menu/page-wrap shell with active board menu, detail keymap, and `board-page`; `ProjectBoardDetailPage` renders these shells under the outlet. The route derives edit/detail mode from TanStack Router state for SPA transitions, and comment edit forms apply the active `display:block` override over the legacy hidden default. | covered | `frontend/src/routes/$owner/$projectName/route.tsx`, `frontend/src/routes/$owner/$projectName/post/$postNumber/route.tsx`, `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/board-posting-parity.e2e.ts` |
-| board detail delete confirmation | Legacy delete opens `#deleteConfirm`; only modal confirm deletes. | `ProjectBoardDetailPage` renders `#deleteConfirm` with `post.delete.confirm`; delete REST callback runs from the modal Yes button. | covered | `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/board-posting-parity.e2e.ts` |
-| board detail labels | Legacy updateable detail uses label Select2 and posts the selected label id array to `BoardApi.updatePostLabel`; readonly detail shows selected labels. | React renders the updateable `#labelIds[data-toggle=select2][data-format=issuelabel]` shell and readonly selected-label shell, keeps the legacy direct `data-request-uri`, and now wires changes through canonical REST JSON `PATCH /api/v1/projects/:owner/:project/posts/:number/labels` with returned detail DTO/cache refresh. | covered | `frontend/src/api/boards.ts`, `frontend/src/routes/-board-views.tsx`, `frontend/src/routes/$owner/$projectName/post/$postNumber/route.tsx`, `crates/server/src/routes/boards.rs`, `crates/server/tests/board_contract.rs`, `frontend/src/api-query.spec.ts`, `frontend/tests/board-posting-parity.e2e.ts` |
-| board post/comment attachments | Legacy detail/comment containers include serialized attachment data. | `ProjectBoardDetailPage` serializes current DTO attachments into `.attachments[data-attachments]` and visible `.attached-file` rows for posts, comments, and child comments; backend already projects board post/comment attachments; `frontend/tests/board-posting-parity.e2e.ts` now browser-verifies post/comment metadata and rows from REST DTO fixtures. | covered | `frontend/src/routes/-board-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/board-posting-parity.e2e.ts` |
+| board create/edit label picker | Legacy create/edit templates do not render a board label picker. | `ProjectPostFormPage` no longer renders `.board-label-picker`; edit submit preserves existing labels without exposing a non-legacy form control. | covered | `frontend/src/routes/$ownerName/$projectName/postform.tsx`, `frontend/src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx`, `frontend/tests/project-board-create-form.e2e.ts`, `frontend/tests/project-board-edit-form.e2e.ts` |
+| board create/edit attachment picker shell | Legacy uses `common.fileUploader(ResourceType.BOARD_POST, ...)`. | `ProjectPostFormPage` renders `.upload-wrap.content-footer[data-resource-type="BOARD_POST"]` while preserving paste/drop REST upload insertion. | covered | `frontend/src/routes/$ownerName/$projectName/postform.tsx`, `frontend/src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx`, `frontend/tests/project-board-create-form.e2e.ts`, `frontend/tests/project-board-edit-form.e2e.ts` |
+| board detail history/watch/comments/child comments | Legacy renders history modal, watch button, comments, child comments, parentCommentId. | Project layout owns the header/menu/page-wrap shell with active board menu, detail keymap, and `board-page`; `ProjectBoardDetailPage` renders these shells under the outlet. The route derives edit/detail mode from TanStack Router state for SPA transitions, and comment edit forms apply the active `display:block` override over the legacy hidden default. | covered | `frontend/src/routes/$ownerName/$projectName.tsx`, `frontend/src/routes/$ownerName/$projectName/post/$postNumber.tsx`, `frontend/tests/project-posts.e2e.ts` |
+| board detail delete confirmation | Legacy delete opens `#deleteConfirm`; only modal confirm deletes. | `ProjectBoardDetailPage` renders `#deleteConfirm` with `post.delete.confirm`; delete REST callback runs from the modal Yes button. | covered | `frontend/src/routes/$ownerName/$projectName/post/$postNumber.tsx`, `frontend/tests/project-posts.e2e.ts` |
+| board detail labels | Legacy updateable detail uses label Select2 and posts the selected label id array to `BoardApi.updatePostLabel`; readonly detail shows selected labels. | React renders the updateable `#labelIds[data-toggle=select2][data-format=issuelabel]` shell and readonly selected-label shell, keeps the legacy direct `data-request-uri`, and now wires changes through canonical REST JSON `PATCH /api/v1/projects/:owner/:project/posts/:number/labels` with returned detail DTO/cache refresh. | covered | `frontend/src/api/boards.ts`, `frontend/src/routes/$ownerName/$projectName/post/$postNumber.tsx`, `crates/server/src/routes/boards.rs`, `crates/server/tests/board_contract.rs`, `frontend/tests/project-posts.e2e.ts` |
+| board post/comment attachments | Legacy detail/comment containers include serialized attachment data. | `ProjectBoardDetailPage` serializes current DTO attachments into `.attachments[data-attachments]` and visible `.attached-file` rows for posts, comments, and child comments; backend already projects board post/comment attachments; `frontend/tests/project-posts.e2e.ts` browser-verifies post/comment metadata and rows from REST DTO fixtures. | covered | `frontend/src/routes/$ownerName/$projectName/post/$postNumber.tsx`, `frontend/tests/project-posts.e2e.ts` |
 | milestone list tabs/empty/progress/counts | Legacy open/closed/all tabs, empty state, all-state open/closed badges, counts, completion, progress. | `ProjectMilestoneListPage` renders tabs, empty state, counts, completion and progress. `frontend/tests/project-milestones.e2e.ts` now also covers the all-state metadata branch with `.state.nm.open`, `.state.nm.closed`, and the closed due-date `ml5` branch without relative date text. | covered | `frontend/src/routes/$ownerName/$projectName/milestones.tsx`, `frontend/tests/project-milestones.e2e.ts` |
-| milestone list sort links | Legacy inactive sort links use `orderDir=asc`; active links toggle asc/desc. | `sortHref` now uses `orderDir=asc` for inactive fields and toggles only the active field. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
-| milestone list search | Legacy `.textbox` keyup filters `.issue-link` rows client-side. | `ProjectMilestoneListPage` now keeps React filter state and hides non-matching `.issue-link` rows client-side. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
-| milestone due-date relative/overdue display | Legacy renders `milestone.until` and overdue class. | Project milestone REST/RPC projects `untilLabel` and `dueDateOverdue`; React renders `untilLabel` and `.due-date.over` on list/detail through the legacy selectors. | covered | `crates/server/src/routes/projects/milestones.rs`, `crates/server/src/api_types.rs`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-milestone-views.tsx`, `crates/server/tests/milestone_contract.rs`, `crates/server/tests/rest_contract.rs`, `frontend/src/board-milestone-parity.spec.tsx` |
+| milestone list sort links | Legacy inactive sort links use `orderDir=asc`; active links toggle asc/desc. | `sortHref` now uses `orderDir=asc` for inactive fields and toggles only the active field. | covered | `frontend/src/routes/$ownerName/$projectName/milestones.tsx`, `frontend/tests/project-milestones.e2e.ts` |
+| milestone list search | Legacy `.textbox` keyup filters `.issue-link` rows client-side. | `ProjectMilestoneListPage` now keeps React filter state and hides non-matching `.issue-link` rows client-side. | covered | `frontend/src/routes/$ownerName/$projectName/milestones.tsx`, `frontend/tests/project-milestones.e2e.ts` |
+| milestone due-date relative/overdue display | Legacy renders `milestone.until` and overdue class. | Project milestone REST/RPC projects `untilLabel` and `dueDateOverdue`; React renders `untilLabel` and `.due-date.over` on list/detail through the legacy selectors. | covered | `crates/server/src/routes/projects/milestones.rs`, `crates/server/src/api_types.rs`, `frontend/src/api/types.ts`, `frontend/src/api/milestones.ts`, `frontend/src/routes/$ownerName/$projectName/milestones.tsx`, `frontend/src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx`, `crates/server/tests/milestone_contract.rs`, `crates/server/tests/rest_contract.rs`, `frontend/tests/project-milestones.e2e.ts`, `frontend/tests/project-milestone-detail.e2e.ts` |
 | milestone create form shell | Legacy create renders `#milestone-form` with title/content/state/due-date/uploader/action controls under the active Milestone project shell. | `frontend/src/routes/$ownerName/$projectName/newMilestoneForm.tsx` restores the flat create route and renders the legacy form body with empty title/content/due-date, open default radio state, `autocomplete=off` due date, uploader shell without resource id, and REST POST redirect boundary. | covered | `frontend/src/routes/$ownerName/$projectName/newMilestoneForm.tsx`, `frontend/tests/project-milestone-create-form.e2e.ts` |
 | milestone form attachments | Legacy uses `common.fileUploader(ResourceType.MILESTONE, ...)`. | Create renders `.upload-wrap.content-footer[data-resource-type="MILESTONE"]` without a resource id; edit renders the same shell with the milestone resource id. | covered | `frontend/src/routes/$ownerName/$projectName/newMilestoneForm.tsx`, `frontend/src/routes/$ownerName/$projectName/milestone/$milestoneId/editform.tsx`, `frontend/tests/project-milestone-create-form.e2e.ts`, `frontend/tests/project-milestone-edit-form.e2e.ts` |
-| milestone detail actions/delete modal | Legacy list/edit/delete/open/close plus `#deleteConfirm` modal. | Current renders action links and delete modal with legacy request attrs; focused Playwright now verifies close/reopen issue REST JSON state callbacks and visible returned state. | covered | `frontend/tests/milestone-delete-modal-parity.e2e.ts` |
-| milestone detail attachments | Legacy `.attachments` carries serialized attachment data. | Project milestone REST/RPC carries milestone attachments in the richer detail/list projection; React serializes them into `.attachments[data-attachments]` and visible `.attached-file` rows; focused Playwright now verifies metadata/row output from REST DTO fixtures. | covered | `crates/server/src/routes/projects/milestones.rs`, `crates/server/src/api_types.rs`, `frontend/src/app-view-models.ts`, `frontend/src/routes/-milestone-views.tsx`, `crates/server/tests/rest_contract.rs`, `frontend/src/board-milestone-parity.spec.tsx`, `frontend/tests/milestone-delete-modal-parity.e2e.ts` |
-| milestone linked issue tabs/list | Legacy uses issue tabs, mass update, and `issue.partial_list` rows. | Project milestone REST/RPC carries open/closed `ProjectIssueListItem` rows, and React renders legacy `issue.partial_list` selectors (`.post-list-wrap`, `.post-item`, mass-update checkboxes, author/count/assignee/due-date cells) with client search. Milestone detail now also renders the legacy state/assignee/milestone/attach-label/detach-label mass-update dropdown options and wires checkbox-selected mutations through the shared issue mass-update REST client. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
-| milestone issue search | Legacy `data-toggle="item-search"` filters `.issue-item`. | `ProjectMilestoneDetailPage` now filters rendered issue links through React state from the legacy search input. | covered | `frontend/src/routes/-milestone-views.tsx`, `frontend/src/board-milestone-parity.spec.tsx` |
+| milestone detail actions/delete modal | Legacy list/edit/delete/open/close plus `#deleteConfirm` modal. | Current renders action links and delete modal with legacy request attrs; focused Playwright now verifies close/reopen issue REST JSON state callbacks and visible returned state. | covered | `frontend/src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx`, `frontend/tests/project-milestone-detail.e2e.ts` |
+| milestone detail attachments | Legacy `.attachments` carries serialized attachment data. | Project milestone REST/RPC carries milestone attachments in the richer detail/list projection; React serializes them into `.attachments[data-attachments]` and visible `.attached-file` rows; focused Playwright now verifies metadata/row output from REST DTO fixtures. | covered | `crates/server/src/routes/projects/milestones.rs`, `crates/server/src/api_types.rs`, `frontend/src/api/types.ts`, `frontend/src/api/milestones.ts`, `frontend/src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx`, `crates/server/tests/rest_contract.rs`, `frontend/tests/project-milestone-detail.e2e.ts` |
+| milestone linked issue tabs/list | Legacy uses issue tabs, mass update, and `issue.partial_list` rows. | Project milestone REST/RPC carries open/closed `ProjectIssueListItem` rows, and React renders legacy `issue.partial_list` selectors (`.post-list-wrap`, `.post-item`, mass-update checkboxes, author/count/assignee/due-date cells) with client search. Milestone detail now also renders the legacy state/assignee/milestone/attach-label/detach-label mass-update dropdown options and wires checkbox-selected mutations through the shared issue mass-update REST client. | covered | `frontend/src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx`, `frontend/tests/project-milestone-detail.e2e.ts` |
+| milestone issue search | Legacy `data-toggle="item-search"` filters `.issue-item`. | `ProjectMilestoneDetailPage` now filters rendered issue links through React state from the legacy search input. | covered | `frontend/src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx`, `frontend/tests/project-milestone-detail.e2e.ts` |
 
 ## Playwright Scenario Matrix
 
