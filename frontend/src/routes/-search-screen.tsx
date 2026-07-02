@@ -315,60 +315,67 @@ function SearchResultList({
     return (
       <>
         <ul className="search-list-wrap">
-          {result.items.map((item) => (
-            <li className="search-list-item" key={item.id}>
-              <div className="title-wrap">
-                <span className="post-id">#{item.number}</span>
-                <a href={item.href} className={titleClassName}>
-                  {titleClassName ? (
-                    <HighlightedText text={item.title} keyword={result.keyword} />
-                  ) : (
-                    item.title
-                  )}
-                </a>
-              </div>
-              <div className="search-content">
-                {item.snippets.map((snippet) => (
-                  <p
-                    className="search-content-body"
-                    key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
-                  >
-                    <HighlightedText text={snippet.text} keyword={result.keyword} />
-                    {snippet.truncated ? " ..... " : null}
-                  </p>
-                ))}
-              </div>
-              <div className="search-meta-info">
-                {result.scope !== "project" ? (
-                  <a
-                    href={prefixBasePath(
-                      runtimeConfig.basePath,
-                      `/${item.ownerName}/${item.projectName}`,
-                    )}
-                    className="project-link meta-item"
-                  >
-                    {item.ownerName}/{item.projectName}
-                  </a>
+          {result.items.map((item) => {
+            const reviewThreadOnPullRequest =
+              result.searchType !== "review" || item.number.trim().length > 0;
+            const snippets = item.snippets.map((snippet) => (
+              <p
+                className="search-content-body"
+                key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
+              >
+                <HighlightedText text={snippet.text} keyword={result.keyword} />
+                {snippet.truncated ? " ..... " : null}
+              </p>
+            ));
+            return (
+              <li className="search-list-item" key={item.id}>
+                {reviewThreadOnPullRequest ? (
+                  <div className="title-wrap">
+                    <span className="post-id">#{item.number}</span>
+                    <a href={item.href} className={titleClassName}>
+                      {titleClassName ? (
+                        <HighlightedText text={item.title} keyword={result.keyword} />
+                      ) : (
+                        item.title
+                      )}
+                    </a>
+                  </div>
                 ) : null}
-                {item.authorLabel ? (
-                  <a
-                    href={prefixBasePath(runtimeConfig.basePath, `/${item.authorLoginId}`)}
-                    className="meta-item"
-                    data-toggle="tooltip"
-                    data-placement="top"
-                    title={item.authorLoginId}
-                  >
-                    {item.authorLabel}
-                  </a>
-                ) : (
-                  <span className="meta-item">{t(noAuthorMessageKey(result.searchType))}</span>
-                )}
-                <span className="meta-item" title={item.createdLabel}>
-                  {item.createdLabel}
-                </span>
-              </div>
-            </li>
-          ))}
+                <div className="search-content">
+                  {reviewThreadOnPullRequest ? snippets : <a href={item.href}>{snippets}</a>}
+                </div>
+                <div className="search-meta-info">
+                  {result.scope !== "project" ? (
+                    <a
+                      href={prefixBasePath(
+                        runtimeConfig.basePath,
+                        `/${item.ownerName}/${item.projectName}`,
+                      )}
+                      className="project-link meta-item"
+                    >
+                      {item.ownerName}/{item.projectName}
+                    </a>
+                  ) : null}
+                  {item.authorLabel ? (
+                    <a
+                      href={prefixBasePath(runtimeConfig.basePath, `/${item.authorLoginId}`)}
+                      className="meta-item"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title={item.authorLoginId}
+                    >
+                      {item.authorLabel}
+                    </a>
+                  ) : (
+                    <span className="meta-item">{t(noAuthorMessageKey(result.searchType))}</span>
+                  )}
+                  <span className="meta-item" title={item.createdLabel}>
+                    {item.createdLabel}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
         </ul>
         <div id="pagination"></div>
       </>

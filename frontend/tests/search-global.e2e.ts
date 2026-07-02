@@ -277,6 +277,26 @@ const EXPECTED_GLOBAL_REVIEW_SEARCH = `
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
+const EXPECTED_GLOBAL_INLINE_REVIEW_SEARCH = `
+<div class="unsupported hidden">
+  <div class="unsupported-inner"><p id="unsupported-content"></p></div>
+</div>
+<header class="gnb-outer">
+  <div class="gnb-inner">
+    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <ul class="gnb-nav">
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+    </ul>
+    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
+    <ul class="gnb-usermenu"><li class="gnb-usermenu-item" id="required-logged-in"><a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a></li><li class="divider"></li><li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li></ul>
+  </div>
+</header>
+<div class="site-breadcrumb-outer"><div class="site-breadcrumb-inner"><h3>Search</h3></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="project-page-wrap"><div class="row-fluid"><div class="span2"><ul class="lst-stacked unstyled search-category-wrap"><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue">Issues<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="user">Users<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="project">Projects<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post">Posts<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="milestone">Milestones<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue_comment">Issue Comments<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post_comment">Post Comments<span class="num-badge pull-right">0</span></a></li><li class="active "><a href="#" data-toggle="search-category" data-type="review">Code Reviews<span class="num-badge pull-right">1</span></a></li></ul></div><div class="span10"><div class="search-box-wrap"><form id="searchInnerForm" method="get" action="__BASE_PATH__/search"><input type="hidden" name="searchType" value="review"><input type="text" id="searchKeyword" name="keyword" class="span11" value="inline"><button type="submit" class="ybtn">Search</button></form><h3 class="search-result-title">Found <strong>1</strong> result(s) in Code Reviews</h3></div><div class="search-result-wrap"><ul class="search-list-wrap"><li class="search-list-item"><div class="search-content"><a href="__BASE_PATH__/admin/sample/code/main/src/App.ts#comment-100"><p class="search-content-body"><strong class="keyword">Inline</strong> review body.....</p></a></div><div class="search-meta-info"><a href="__BASE_PATH__/admin/sample" class="project-link meta-item">admin/sample</a><a href="__BASE_PATH__/dave" class="meta-item" data-toggle="tooltip" data-placement="top" title="dave">Dave</a><span class="meta-item" title="Jun 27, 2026">Jun 27, 2026</span></div></li></ul><div id="pagination"></div></div></div></div></div></div></div>
+<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
+`;
+
 test("global search matches legacy search/result.scala.html empty project result DOM", async ({
   page,
 }) => {
@@ -499,6 +519,31 @@ test("global review search renders legacy partial_reviews.scala.html populated r
     await canonicalizeHtml(
       page,
       EXPECTED_GLOBAL_REVIEW_SEARCH.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("global inline review search renders legacy partial_reviews.scala.html non-pull-request row", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockGlobalSearch(page);
+
+  await page.goto(`${basePath}/search?keyword=inline&searchType=review`);
+  await expect(page.locator(".search-list-wrap .search-list-item")).toBeVisible();
+  await expect(page.locator(".search-list-item .title-wrap")).toHaveCount(0);
+  await expect(page.locator(".search-content > a > p.search-content-body")).toHaveText(
+    "Inline review body .....",
+  );
+  await expect(page.locator(".search-content > a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/main/src/App.ts#comment-100`,
+  );
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_GLOBAL_INLINE_REVIEW_SEARCH.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
@@ -1249,6 +1294,54 @@ async function mockGlobalSearch(page: Page) {
             },
           ],
           keyword: "review",
+          pageNum: 1,
+          pageSize: 20,
+          requestedSearchType: "review",
+          scope: "global",
+          searchType: "review",
+          totalCount: 1,
+        }),
+      });
+      return;
+    }
+    if (keyword === "inline") {
+      const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          context: {
+            organizationName: "",
+            ownerName: "",
+            projectName: "",
+          },
+          counts: {
+            issueComments: 0,
+            issues: 0,
+            milestones: 0,
+            postComments: 0,
+            posts: 0,
+            projects: 0,
+            reviews: 1,
+            users: 0,
+          },
+          items: [
+            {
+              authorLabel: "Dave",
+              authorLoginId: "dave",
+              createdLabel: "Jun 27, 2026",
+              href: `${basePath}/admin/sample/code/main/src/App.ts#comment-100`,
+              id: "100",
+              number: "",
+              ownerName: "admin",
+              projectName: "sample",
+              snippets: [{ highlights: [], text: "Inline review body", truncated: true }],
+              state: "open",
+              title: "",
+              type: "review",
+              updatedLabel: "",
+            },
+          ],
+          keyword: "inline",
           pageNum: 1,
           pageSize: 20,
           requestedSearchType: "review",
