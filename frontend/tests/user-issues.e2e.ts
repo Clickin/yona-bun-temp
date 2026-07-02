@@ -40,7 +40,7 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
           <li class="post-item title" id="issue-item-42" href="__BASE_PATH__/admin/sample/issue/11">
             <div class="span12 span-hard-wrap">
               <div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/admin/sample" class="title project" data-toggle="tooltip" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#11</span></div>
-              <div class="title-wrap span6"><span class="title-cell"><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Assigned issue</a><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><span class="for-subtask-progressbar"></span><a href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label twoColumeModeTarget white" data-label-id="8">bug</a><div class="child-issue-list hide"></div></span></div>
+              <div class="title-wrap span6"><span class="title-cell"><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Assigned issue</a><span class="item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><span class="for-subtask-progressbar"></span><a href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label twoColumeModeTarget white" data-label-id="8">bug</a><div class="child-issue-list hide"></div></span></div>
               <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="alice">Alice</a></div>
               <div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="alice">Alice</a></span><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Created at 2026-06-30">2026-06-30</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="pull-right" data-toggle="tooltip" data-placement="top" title="Due date: 2026-07-05"><i class="yobicon-clock2"></i>5 days left</span></span></div>
             </div>
@@ -170,6 +170,17 @@ test("current-user issues page matches legacy issue/my_list.scala.html shell", a
 
   await page.goto(`${basePath}/user/issues`);
   await expect(page.locator(".post-list-wrap.my-issues .post-item")).toHaveCount(2);
+  const commentVotePair = page.locator("#issue-item-42 .title-cell > .item-count-groups");
+  await expect(commentVotePair).toHaveClass("item-count-groups");
+  await expect(commentVotePair).not.toHaveClass(/(^|\s)infos-item(\s|$)/);
+  await expect(commentVotePair.locator(".comments-count")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/11#comments`,
+  );
+  await expect(commentVotePair.locator(".vote-count")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/11#vote`,
+  );
 
   const actual = await canonicalizePageWrap(page);
   const expected = await canonicalizeHtml(

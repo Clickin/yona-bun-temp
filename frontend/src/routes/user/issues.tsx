@@ -1220,7 +1220,7 @@ function CommentVoteCounts({ issue, issueHref }: { issue: RestIssueListItem; iss
   }
 
   return (
-    <span className="infos-item item-count-groups">
+    <span className="item-count-groups">
       {issue.commentCount ? (
         <a href={`${issueHref}#comments`} className="comments-count">
           <span className="count-groups item-icon">
