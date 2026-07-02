@@ -201,6 +201,38 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
   );
 });
 
+test("project commit detail submits watch and comment mutations through legacy controls", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  const mutationRequests: Array<{ body: unknown; method: string; pathname: string }> = [];
+  await mockProjectCommitDetail(page, detailRequests, {}, {}, mutationRequests);
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  await page.locator("#watch-button").click();
+  await page.locator("#editor-contents-comment").fill("Top level note");
+  await page.locator("#comment-form button[type=submit]").click();
+
+  await expect.poll(() => mutationRequests.length).toBe(2);
+  expect(mutationRequests).toEqual([
+    {
+      body: null,
+      method: "POST",
+      pathname: `${basePath}/api/v1/projects/admin/sample/commit/abcdef1234567890/watch`,
+    },
+    {
+      body: {
+        attachmentIds: [],
+        contentsMarkdown: "Top level note",
+      },
+      method: "POST",
+      pathname: `${basePath}/api/v1/projects/admin/sample/commit/abcdef1234567890/comments`,
+    },
+  ]);
+  await expect(page.locator("#watch-button")).toHaveClass(/active/);
+});
+
 test("project commit detail renders legacy partial_filediff rows", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
@@ -938,7 +970,15 @@ async function mockProjectCommitDetail(
   detailRequests: string[],
   detailOverrides: Record<string, unknown> = {},
   projectOverrides: Record<string, unknown> = {},
+  mutationRequests: Array<{ body: unknown; method: string; pathname: string }> = [],
 ) {
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "test-csrf-token" },
+      body: JSON.stringify({ session: null, user: null }),
+    });
+  });
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -983,9 +1023,25 @@ async function mockProjectCommitDetail(
       }),
     });
   });
+  let currentWatching =
+    typeof detailOverrides.isWatching === "boolean" ? detailOverrides.isWatching : false;
   await page.route("**/api/v1/projects/admin/sample/commit/abcdef1234567890**", async (route) => {
     const url = new URL(route.request().url());
-    detailRequests.push(url.searchParams.toString());
+    const request = route.request();
+    const method = request.method();
+    if (url.pathname.endsWith("/watch")) {
+      currentWatching = method === "POST";
+    }
+    if (method === "GET") {
+      detailRequests.push(url.searchParams.toString());
+    } else {
+      const postData = request.postData();
+      mutationRequests.push({
+        body: postData ? JSON.parse(postData) : null,
+        method,
+        pathname: url.pathname,
+      });
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -1002,7 +1058,6 @@ async function mockProjectCommitDetail(
           shortMessage: "Initial commit",
         },
         files: [],
-        isWatching: false,
         noHead: false,
         ownerName: "admin",
         parentCommit: { commitId: "1234567890abcdef", commitShortId: "1234567" },
@@ -1015,6 +1070,7 @@ async function mockProjectCommitDetail(
         selectedBranch: "main",
         threads: [],
         ...detailOverrides,
+        isWatching: currentWatching,
       }),
     });
   });

@@ -1,17 +1,26 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacyMarkdownHelpTemplate from "../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import {
   codeCommitDetailQueryOptions,
+  closeCommitDiscussionThreadRest,
+  createCommitDiscussionCommentRest,
+  deleteCommitDiscussionCommentRest,
+  openCommitDiscussionThreadRest,
   type CodeCommitDetailResponse,
   type CodeReviewComment,
   type CodeReviewThread,
+  unwatchCommitRest,
+  updateCommitDiscussionCommentRest,
+  watchCommitRest,
 } from "../../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
+import { apiQueryKeys } from "../../../../api/query-keys";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import type { ProjectContainer } from "../../../../api/types";
+import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
@@ -149,6 +158,7 @@ function ProjectCommitDetailBody({
   const { t } = useLegacyMessages();
   const { commitId, ownerName, projectName } = Route.useParams();
   const { branch, path } = Route.useSearch();
+  const queryClient = useQueryClient();
   const selectedBranch = detail.selectedBranch || branch;
   const encodedBranch = encodeURIComponent(selectedBranch);
   const commit = detail.commit;
@@ -156,16 +166,90 @@ function ProjectCommitDetailBody({
   const closedThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "closed");
   const nonRangedThreads = detail.threads.filter((thread) => thread.startLine === undefined);
   const isSvn = project.vcs === "SVN" || project.vcs === "SUBVERSION";
+  const detailQueryKey = apiQueryKeys.project.commitDetail(ownerName, projectName, commitId, {
+    branch: branch ?? "",
+    path: path ?? "",
+  });
+  const scope = { commitId, ownerName, projectName };
+  const watchMutation = useMutation({
+    mutationFn: async (nextWatching: boolean) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const input = { ...scope, query: { branch, path } };
+      return nextWatching
+        ? watchCommitRest(runtimeConfig, csrfToken, input)
+        : unwatchCommitRest(runtimeConfig, csrfToken, input);
+    },
+    onSuccess(nextDetail) {
+      queryClient.setQueryData(detailQueryKey, nextDetail);
+    },
+  });
+  const createCommentMutation = useMutation({
+    mutationFn: async (input: { contentsMarkdown: string; threadId?: number }) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return createCommitDiscussionCommentRest(runtimeConfig, csrfToken, {
+        ...scope,
+        contentsMarkdown: input.contentsMarkdown,
+        threadId: input.threadId,
+      });
+    },
+    onSuccess(nextDetail) {
+      queryClient.setQueryData(detailQueryKey, nextDetail);
+    },
+  });
+  const updateCommentMutation = useMutation({
+    mutationFn: async (input: { commentId: number; contentsMarkdown: string }) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updateCommitDiscussionCommentRest(runtimeConfig, csrfToken, {
+        ...scope,
+        commentId: input.commentId,
+        contentsMarkdown: input.contentsMarkdown,
+      });
+    },
+    onSuccess(nextDetail) {
+      queryClient.setQueryData(detailQueryKey, nextDetail);
+    },
+  });
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: number) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return deleteCommitDiscussionCommentRest(runtimeConfig, csrfToken, {
+        ...scope,
+        commentId,
+      });
+    },
+    onSuccess(nextDetail) {
+      queryClient.setQueryData(detailQueryKey, nextDetail);
+    },
+  });
+  const threadStateMutation = useMutation({
+    mutationFn: async (input: { state: string; threadId: number }) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return input.state === "open"
+        ? closeCommitDiscussionThreadRest(runtimeConfig, csrfToken, {
+            ...scope,
+            threadId: input.threadId,
+          })
+        : openCommitDiscussionThreadRest(runtimeConfig, csrfToken, {
+            ...scope,
+            threadId: input.threadId,
+          });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({ queryKey: detailQueryKey });
+    },
+  });
 
   if (isSvn) {
     return (
       <SvnCommitDetailBody
+        createComment={(contentsMarkdown) => createCommentMutation.mutate({ contentsMarkdown })}
         detail={detail}
         encodedBranch={encodedBranch}
         ownerName={ownerName}
         projectName={projectName}
         runtimeConfig={runtimeConfig}
         selectedBranch={selectedBranch}
+        toggleWatch={() => watchMutation.mutate(!detail.isWatching)}
       />
     );
   }
@@ -225,10 +309,20 @@ function ProjectCommitDetailBody({
                     file={file}
                     key={file.path}
                     currentUser={currentUser}
+                    deleteComment={(commentId) => deleteCommentMutation.mutate(commentId)}
                     ownerName={ownerName}
                     projectName={projectName}
                     runtimeConfig={runtimeConfig}
+                    submitReply={(threadId, contentsMarkdown) =>
+                      createCommentMutation.mutate({ contentsMarkdown, threadId })
+                    }
                     threads={detail.threads}
+                    toggleThreadState={(threadId, state) =>
+                      threadStateMutation.mutate({ state, threadId })
+                    }
+                    updateComment={(commentId, contentsMarkdown) =>
+                      updateCommentMutation.mutate({ commentId, contentsMarkdown })
+                    }
                   />
                 ))}
                 <div className="btnPop">
@@ -244,11 +338,21 @@ function ProjectCommitDetailBody({
                     <CodeCommentThreadView
                       isNonRanged
                       currentUser={currentUser}
+                      deleteComment={(commentId) => deleteCommentMutation.mutate(commentId)}
                       key={thread.id}
                       ownerName={ownerName}
                       projectName={projectName}
                       runtimeConfig={runtimeConfig}
                       thread={thread}
+                      submitReply={(threadId, contentsMarkdown) =>
+                        createCommentMutation.mutate({ contentsMarkdown, threadId })
+                      }
+                      toggleThreadState={(threadId, state) =>
+                        threadStateMutation.mutate({ state, threadId })
+                      }
+                      updateComment={(commentId, contentsMarkdown) =>
+                        updateCommentMutation.mutate({ commentId, contentsMarkdown })
+                      }
                     />
                   ))}
                 </div>
@@ -260,6 +364,9 @@ function ProjectCommitDetailBody({
                       projectName,
                       commitId,
                     )}
+                    onSubmit={(contentsMarkdown) =>
+                      createCommentMutation.mutate({ contentsMarkdown })
+                    }
                   />
                 ) : null}
               </div>
@@ -309,6 +416,7 @@ function ProjectCommitDetailBody({
           type="button"
           className={`pull-left ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}
           data-toggle="button"
+          onClick={() => watchMutation.mutate(!detail.isWatching)}
         >
           {t("notification.watch")}
         </button>
@@ -332,19 +440,23 @@ function ProjectCommitDetailBody({
 }
 
 function SvnCommitDetailBody({
+  createComment,
   detail,
   encodedBranch,
   ownerName,
   projectName,
   runtimeConfig,
   selectedBranch,
+  toggleWatch,
 }: {
+  createComment: (contentsMarkdown: string) => void;
   detail: CodeCommitDetailResponse;
   encodedBranch: string;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
   selectedBranch: string;
+  toggleWatch: () => void;
 }) {
   const { t } = useLegacyMessages();
   const { commitId } = Route.useParams();
@@ -429,6 +541,7 @@ function SvnCommitDetailBody({
                   projectName,
                   commitId,
                 )}
+                onSubmit={createComment}
               />
             ) : null}
           </div>
@@ -439,6 +552,7 @@ function SvnCommitDetailBody({
           type="button"
           className={`ybtn ${detail.isWatching ? "active" : ""}`}
           data-toggle="button"
+          onClick={toggleWatch}
         >
           {t("notification.watch")}
         </button>
@@ -471,20 +585,28 @@ function FileDiffView({
   commitA,
   commitB,
   currentUser,
+  deleteComment,
   file,
   ownerName,
   projectName,
   runtimeConfig,
+  submitReply,
   threads,
+  toggleThreadState,
+  updateComment,
 }: {
   commitA: string;
   commitB: string;
   currentUser: CurrentUserSummary;
+  deleteComment: (commentId: number) => void;
   file: { path: string; patch: string };
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
+  submitReply: (threadId: number, contentsMarkdown: string) => void;
   threads: CodeReviewThread[];
+  toggleThreadState: (threadId: number, state: string) => void;
+  updateComment: (commentId: number, contentsMarkdown: string) => void;
 }) {
   const parsed = parseUnifiedDiff(file.path, file.patch);
   const filePath = parsed.pathB || parsed.pathA || file.path;
@@ -579,12 +701,16 @@ function FileDiffView({
                   <FragmentWithInlineComments
                     commitId={commitB}
                     currentUser={currentUser}
+                    deleteComment={deleteComment}
                     key={diffLineKey(line)}
                     line={line}
                     ownerName={ownerName}
                     projectName={projectName}
                     runtimeConfig={runtimeConfig}
+                    submitReply={submitReply}
                     threads={lineThreads}
+                    toggleThreadState={toggleThreadState}
+                    updateComment={updateComment}
                   />
                 );
               })}
@@ -599,19 +725,27 @@ function FileDiffView({
 function FragmentWithInlineComments({
   commitId,
   currentUser,
+  deleteComment,
   line,
   ownerName,
   projectName,
   runtimeConfig,
+  submitReply,
   threads,
+  toggleThreadState,
+  updateComment,
 }: {
   commitId: string;
   currentUser: CurrentUserSummary;
+  deleteComment: (commentId: number) => void;
   line: Extract<ParsedDiffLine, { kind: "line" }>;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
+  submitReply: (threadId: number, contentsMarkdown: string) => void;
   threads: CodeReviewThread[];
+  toggleThreadState: (threadId: number, state: string) => void;
+  updateComment: (commentId: number, contentsMarkdown: string) => void;
 }) {
   return (
     <>
@@ -620,10 +754,14 @@ function FragmentWithInlineComments({
         <InlineCommentRow
           commitId={commitId}
           currentUser={currentUser}
+          deleteComment={deleteComment}
           ownerName={ownerName}
           projectName={projectName}
           runtimeConfig={runtimeConfig}
+          submitReply={submitReply}
           threads={threads}
+          toggleThreadState={toggleThreadState}
+          updateComment={updateComment}
         />
       ) : null}
     </>
@@ -679,17 +817,25 @@ function threadsForDiffLine(
 function InlineCommentRow({
   commitId,
   currentUser,
+  deleteComment,
   ownerName,
   projectName,
   runtimeConfig,
+  submitReply,
   threads,
+  toggleThreadState,
+  updateComment,
 }: {
   commitId: string;
   currentUser: CurrentUserSummary;
+  deleteComment: (commentId: number) => void;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
+  submitReply: (threadId: number, contentsMarkdown: string) => void;
   threads: CodeReviewThread[];
+  toggleThreadState: (threadId: number, state: string) => void;
+  updateComment: (commentId: number, contentsMarkdown: string) => void;
 }) {
   return (
     <tr className="comments board-comment-wrap" data-commit-id={threads[0]?.commitId || commitId}>
@@ -697,11 +843,15 @@ function InlineCommentRow({
         {threads.map((thread) => (
           <CodeCommentThreadView
             currentUser={currentUser}
+            deleteComment={deleteComment}
             key={thread.id}
             ownerName={ownerName}
             projectName={projectName}
             runtimeConfig={runtimeConfig}
+            submitReply={submitReply}
             thread={thread}
+            toggleThreadState={toggleThreadState}
+            updateComment={updateComment}
           />
         ))}
       </td>
@@ -711,18 +861,26 @@ function InlineCommentRow({
 
 function CodeCommentThreadView({
   currentUser,
+  deleteComment,
   isNonRanged = false,
   ownerName,
   projectName,
   runtimeConfig,
+  submitReply,
   thread,
+  toggleThreadState,
+  updateComment,
 }: {
   currentUser: CurrentUserSummary;
+  deleteComment: (commentId: number) => void;
   isNonRanged?: boolean;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
+  submitReply: (threadId: number, contentsMarkdown: string) => void;
   thread: CodeReviewThread;
+  toggleThreadState: (threadId: number, state: string) => void;
+  updateComment: (commentId: number, contentsMarkdown: string) => void;
 }) {
   const { t } = useLegacyMessages();
   const state = thread.state.toLowerCase();
@@ -821,6 +979,11 @@ function CodeCommentThreadView({
                         runtimeConfig.basePath,
                         `/comments/${comment.id}`,
                       )}
+                      onClick={() => {
+                        if (isNonRanged) {
+                          deleteComment(comment.id);
+                        }
+                      }}
                       title={isNonRanged ? undefined : t("common.comment.delete")}
                     >
                       <i className="yobicon-trash"></i>
@@ -832,6 +995,7 @@ function CodeCommentThreadView({
                 action={prefixBasePath(runtimeConfig.basePath, `/comments/${comment.id}`)}
                 basePath={runtimeConfig.basePath}
                 comment={comment}
+                onSubmit={(contentsMarkdown) => updateComment(comment.id, contentsMarkdown)}
               />
               <div id={`comment-body-${comment.id}`}>
                 <div
@@ -859,6 +1023,10 @@ function CodeCommentThreadView({
           encType="multipart/form-data"
           className="review-form"
           style={{ display: "block" }}
+          onSubmit={(event) => {
+            event.preventDefault();
+            submitReply(thread.id, formContents(event.currentTarget));
+          }}
         >
           <input type="hidden" name="thread.id" value={thread.id} />
           <div className="author-info-wrap pull-left hide-in-mobile">
@@ -891,6 +1059,7 @@ function CodeCommentThreadView({
                     `/threads/${thread.id}/${state === "open" ? "close" : "open"}`,
                   )}
                   className="ybtn ybtn-default ybtn-small"
+                  onClick={() => toggleThreadState(thread.id, state)}
                 >
                   {t(state === "open" ? "commentThread.close" : "commentThread.open")}
                 </button>
@@ -910,17 +1079,27 @@ function CodeCommentUpdateForm({
   action,
   basePath,
   comment,
+  onSubmit,
 }: {
   action: string;
   basePath: string;
   comment: CodeReviewComment;
+  onSubmit: (contentsMarkdown: string) => void;
 }) {
   const { t } = useLegacyMessages();
   const commentId = String(comment.id);
 
   return (
     <div id={`comment-editform-${commentId}`} className="comment-update-form">
-      <form action={action} method="post" encType="multipart/form-data">
+      <form
+        action={action}
+        method="post"
+        encType="multipart/form-data"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit(formContents(event.currentTarget));
+        }}
+      >
         <input type="hidden" name="id" value={commentId} />
         <div className="write-comment-box">
           <div className="write-comment-wrap">
@@ -1007,10 +1186,25 @@ function CommitMessage({ message, shortMessage }: { message: string; shortMessag
   );
 }
 
-function CommentForm({ action }: { action: string }) {
+function CommentForm({
+  action,
+  onSubmit,
+}: {
+  action: string;
+  onSubmit: (contentsMarkdown: string) => void;
+}) {
   const { t } = useLegacyMessages();
   return (
-    <form id="comment-form" action={action} method="post" encType="multipart/form-data">
+    <form
+      id="comment-form"
+      action={action}
+      method="post"
+      encType="multipart/form-data"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit(formContents(event.currentTarget));
+      }}
+    >
       <div className="write-comment-box">
         <Editor editorMode="comment-body" wrapId="comment" />
         <UploadForm resourceType="COMMIT_COMMENT" />
@@ -1025,6 +1219,12 @@ function CommentForm({ action }: { action: string }) {
       </div>
     </form>
   );
+}
+
+function formContents(form: HTMLFormElement) {
+  const data = new FormData(form);
+  const value = data.get("contents");
+  return typeof value === "string" ? value : "";
 }
 
 function ReviewForm({
