@@ -31,6 +31,10 @@ It blocks commits that change frontend E2E files, `frontend/src/app.css`, or
 UI parity reports without changing a TSX route implementation in the same
 staged change. Intentional audit-only exceptions require the explicit
 `YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY=1` environment marker.
+The mandatory `pnpm agent:turn-commit` path refuses Scala HTML exception
+environment markers by default; these markers are human-supervised manual
+commit escape hatches only and require a durable audit note with route, reason,
+and follow-up.
 
 It also blocks frontend route TSX commits that do not update this audit memo in
 the same staged change. Each route/screen rebuild must leave a `Rebuilt From
@@ -47,6 +51,9 @@ paired with a same-commit focused `frontend/tests/*.e2e.ts` change and named in
 a newly added audit table row that also names a legacy `.scala.html` source and
 that same changed focused E2E verification file. This is the machine-checkable
 memo format for multi-day automated goal turns.
+Deleted E2E files do not count as focused verification, and the legacy
+`.scala.html` source must appear in the audit row's legacy source column, not
+only in implementation prose.
 It also blocks route TSX goal commits that add multiple new rebuild audit rows.
 That keeps unattended runs to one user-visible screen state per commit, matching
 the goal directive; coordinated exceptions must set
@@ -84,6 +91,12 @@ The hook also reads the first non-comment line from the ignored local file
 `.agent/scala-html-goal-history-range` when the environment variable is absent,
 so a multi-day workspace can persist the unattended audit range across resumed
 goal turns without relying on every agent turn to remember an export command.
+`pnpm agent:scala-html-goal-automation` is the start-of-turn arming check for
+this mode: it requires that environment or local memo range to exist, validates
+that it is a git revision range, and runs
+`scripts/audit-scala-html-goal-history.mjs -- --fail-on-violation` before the
+agent picks another frontend screen. Use it as the automated answer to "did the
+agent remember the goal context?" rather than relying on manual commit review.
 
 ## High Confidence Rebuild Candidates
 

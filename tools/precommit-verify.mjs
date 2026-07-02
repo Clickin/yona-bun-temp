@@ -17,7 +17,7 @@ import {
   formatScalaHtmlGoalGuardSummary,
 } from "./scala-html-goal-guard.mjs";
 
-const STAGED_CMD = ["diff", "--cached", "--name-only", "--diff-filter=ACMRD"];
+const STAGED_CMD = ["diff", "--cached", "--name-status", "--diff-filter=ACMRD"];
 const IGNORED_PREFIXES = [
   ".svelte-kit/",
   "node_modules/",
@@ -130,11 +130,21 @@ if (stagedResult.status !== 0) {
   process.exit(stagedResult.status ?? 1);
 }
 
-const stagedFiles = stagedResult.stdout
+const stagedEntries = stagedResult.stdout
   .split("\n")
-  .map((file) => file.trim())
+  .map((line) => line.trim())
   .filter(Boolean)
-  .filter((file) => !IGNORED_PREFIXES.some((prefix) => file.startsWith(prefix)));
+  .map((line) => {
+    const [status, ...pathParts] = line.split(/\s+/u);
+    const file = pathParts.at(-1) ?? "";
+    return { file, status };
+  })
+  .filter(({ file }) => file && !IGNORED_PREFIXES.some((prefix) => file.startsWith(prefix)));
+const stagedFiles = stagedEntries.map(({ file }) => file);
+const stagedFileStatuses = new Map(stagedEntries.map(({ file, status }) => [file, status]));
+const nonDeletedStagedFiles = stagedEntries
+  .filter(({ status }) => status !== "D")
+  .map(({ file }) => file);
 
 if (stagedFiles.length === 0) {
   console.log("precommit: no staged files to verify");
@@ -151,7 +161,7 @@ const readStagedPatch = (file) => {
   return result.stdout;
 };
 
-const lintTargets = stagedFiles
+const lintTargets = nonDeletedStagedFiles
   .filter((file) => OXLINT_EXTENSIONS.has(getExtension(file)))
   .filter((file) => !isGeneratedFile(file));
 if (lintTargets.length > 0) {
@@ -179,7 +189,7 @@ if (reactDoctorTargets.length > 0) {
   }
 }
 
-const formatTargets = stagedFiles
+const formatTargets = nonDeletedStagedFiles
   .filter((file) => OXFMT_EXTENSIONS.has(getExtension(file)))
   .filter((file) => !isGeneratedFile(file));
 if (formatTargets.length > 0) {
@@ -195,7 +205,7 @@ if (formatTargets.length > 0) {
 }
 
 const designResult = evaluateDesignHarness({
-  changedFiles: stagedFiles,
+  changedFiles: nonDeletedStagedFiles,
   repoRoot: process.cwd(),
 });
 console.log(formatDesignHarnessSummary(designResult));
@@ -205,6 +215,7 @@ if (shouldBlockDesignHarness(designResult)) {
 
 const scalaHtmlGoalResult = evaluateScalaHtmlGoalGuard({
   changedFiles: stagedFiles,
+  changedFileStatuses: stagedFileStatuses,
   auditPatch: readStagedPatch("docs/provenance/frontend-scala-html-goal-violation-audit.md"),
   env: {
     ...process.env,
@@ -217,7 +228,7 @@ if (scalaHtmlGoalResult.blocked) {
 }
 
 const parityResult = evaluateParityGate({
-  changedFiles: stagedFiles,
+  changedFiles: nonDeletedStagedFiles,
   repoRoot: process.cwd(),
 });
 console.log(formatParitySummary(parityResult));

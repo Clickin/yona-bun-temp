@@ -150,6 +150,43 @@ test("checks only the legacy source column for Scala HTML source existence", () 
   assert.equal(result.blocked, false);
 });
 
+test("blocks frontend route TSX work when Scala HTML appears outside the legacy source column only", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/issues` | legacy issue list | `frontend/src/routes/$ownerName/$projectName/issues.tsx` mentions `issue/list.scala.html` in implementation prose | `frontend/tests/project-issues-empty.e2e.ts` E2E |\n",
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /incomplete audit row work/u);
+});
+
+test("blocks frontend route TSX work when the only focused E2E change is deleted", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    changedFileStatuses: new Map([
+      ["frontend/src/routes/$ownerName/$projectName/issues.tsx", "M"],
+      ["frontend/tests/project-issues-empty.e2e.ts", "D"],
+      ["docs/provenance/frontend-scala-html-goal-violation-audit.md", "M"],
+    ]),
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/issues` | `issue/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issues-empty.e2e.ts` E2E |\n",
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /unverified frontend route work/u);
+});
+
 test("blocks frontend route TSX work when the audit row does not name the route file", () => {
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [

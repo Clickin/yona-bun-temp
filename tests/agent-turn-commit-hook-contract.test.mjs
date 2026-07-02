@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import {
+  disallowedScalaHtmlGoalExceptionEnv,
   hasPorcelainChanges,
   parseArgs,
   unattendedScalaHtmlGoalHistoryRange,
@@ -69,5 +70,24 @@ describe("agent turn commit hook contract", () => {
 
     assert.match(source, /\.agent\/scala-html-goal-history-range/u);
     assert.match(source, /LOCAL_SCALA_HTML_GOAL_HISTORY_RANGE_FILE/u);
+  });
+
+  it("rejects Scala HTML goal exception environment variables in the mandatory turn commit path", () => {
+    assert.deepEqual(
+      disallowedScalaHtmlGoalExceptionEnv({
+        YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE: "1",
+        YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY: "0",
+      }),
+      ["YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE"],
+    );
+    assert.deepEqual(
+      disallowedScalaHtmlGoalExceptionEnv({
+        YONA_SCALA_HTML_GOAL_HISTORY_RANGE: "base..HEAD",
+      }),
+      [],
+    );
+
+    const source = readFileSync(turnCommitHookPath, "utf8");
+    assert.match(source, /human-supervised manual commit path/u);
   });
 });

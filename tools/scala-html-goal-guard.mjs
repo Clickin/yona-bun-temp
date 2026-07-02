@@ -16,6 +16,14 @@ const SCALA_HTML_SOURCE_PATTERN =
   /\b(?:yona-original\/app\/views\/)?([A-Za-z0-9_.$/-]+\.scala\.html)\b/gu;
 const LEGACY_VIEW_ROOT = "yona-original/app/views";
 
+function fileStatus(file, changedFileStatuses) {
+  return changedFileStatuses?.get(file) ?? "M";
+}
+
+function nonDeletedFiles(files, changedFileStatuses) {
+  return files.filter((file) => fileStatus(file, changedFileStatuses) !== "D");
+}
+
 function isFrontendImplementation(file) {
   if (!FRONTEND_IMPLEMENTATION_PATTERN.test(file)) {
     return false;
@@ -59,7 +67,7 @@ function routeFileHasCompleteAuditRow(routeFile, auditPatch, frontendE2EFiles) {
   return addedAuditRows(auditPatch).some(
     (row) =>
       row.includes(routeFile) &&
-      /\.scala\.html\b/u.test(row) &&
+      /\.scala\.html\b/u.test(legacySourceCell(row)) &&
       rowNamesChangedFocusedE2E(row, frontendE2EFiles),
   );
 }
@@ -91,11 +99,13 @@ function missingLegacyScalaHtmlSources(auditPatch, repoRoot) {
 
 export function evaluateScalaHtmlGoalGuard({
   changedFiles,
+  changedFileStatuses = new Map(),
   env = process.env,
   auditPatch = null,
   repoRoot = process.cwd(),
 }) {
-  const frontendEvidenceFiles = changedFiles.filter(isFrontendEvidence);
+  const nonDeletedChangedFiles = nonDeletedFiles(changedFiles, changedFileStatuses);
+  const frontendEvidenceFiles = nonDeletedChangedFiles.filter(isFrontendEvidence);
   const frontendImplementationFiles = changedFiles.filter(isFrontendImplementation);
   const frontendRouteImplementationFiles = frontendImplementationFiles.filter(
     isFrontendRouteImplementation,
@@ -113,11 +123,7 @@ export function evaluateScalaHtmlGoalGuard({
   const enforceSingleAuditRow = env.YONA_ENFORCE_SCALA_HTML_SINGLE_ROW === "1";
   const auditRows = auditPatch === null ? [] : addedAuditRows(auditPatch);
 
-  if (
-    implementationTouchesRuntime &&
-    frontendEvidenceFiles.filter((file) => FRONTEND_E2E_PATTERN.test(file)).length === 0 &&
-    !allowUndocumentedRoute
-  ) {
+  if (implementationTouchesRuntime && frontendE2EFiles.length === 0 && !allowUndocumentedRoute) {
     return {
       blocked: true,
       frontendEvidenceFiles,

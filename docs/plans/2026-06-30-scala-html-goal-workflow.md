@@ -24,6 +24,8 @@ Every resumed goal turn must restate this directive before choosing work:
   and the focused `frontend/tests/*.e2e.ts` file changed in the same commit.
   This is the durable memo that survives resumed multi-day goal turns and is
   enforced by the commit hook.
+  The `.scala.html` source must be in the row's legacy source column, and a
+  deleted E2E file does not count as verification.
 - Every frontend E2E/CSS/UI parity evidence change must include a route TSX
   implementation change unless the turn is explicitly marked evidence-only.
 - For long-running unattended work, run
@@ -44,9 +46,17 @@ Every resumed goal turn must restate this directive before choosing work:
   the machine-checkable per-screen memory in
   `docs/provenance/frontend-scala-html-goal-violation-audit.md`; keep the
   unattended multi-commit audit range in `.agent/scala-html-goal-history-range`.
+- At the start of every resumed unattended frontend goal turn, run
+  `pnpm agent:scala-html-goal-automation`. It fails if neither the environment
+  variable nor `.agent/scala-html-goal-history-range` arms a multi-commit range,
+  and it immediately runs the blocking history audit for that range. This is
+  the machine check that the agent remembered the multi-day goal context before
+  choosing another screen.
 
 This is enforced by `tools/scala-html-goal-guard.mjs` through the turn commit
 hook. Treat guard failures as goal failures, not as optional review comments.
+The `YONA_ALLOW_SCALA_HTML_*` exception markers are human-supervised manual
+escape hatches; `pnpm agent:turn-commit` refuses them for unattended goal work.
 
 ## Goal Unit
 

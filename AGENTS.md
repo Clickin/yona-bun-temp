@@ -69,6 +69,8 @@
 - 같은 goal turn에서 E2E metric, CSS, provenance만 추가하고 TSX 화면 구현을 바꾸지 않는 작업은 금지한다. 단, 이미 해당 화면이 이번 turn에서 legacy Scala HTML 기준으로 재구축된 뒤 검증을 보강하는 경우는 허용한다.
 - 기존 TSX가 legacy Scala HTML과 다르면 기존 TSX를 보존하려고 부분 패치하지 말고, 화면 단위로 legacy template skeleton을 다시 만든다. 잘못 만든 구현은 삭제하거나 대체한다.
 - subagent가 frontend 화면을 구현할 때도 동일하다. subagent 산출물이 legacy Scala HTML source-of-truth를 먼저 대조하지 않았거나 기존 React DOM에 맞춘 보정이면 통합하지 말고 폐기한다.
+- multi-day unattended frontend goal turn을 resume할 때는 구현 대상을 고르기 전에 `pnpm agent:scala-html-goal-automation`을 실행한다. 이 명령은 `YONA_SCALA_HTML_GOAL_HISTORY_RANGE` 또는 `.agent/scala-html-goal-history-range`가 없거나 range audit이 실패하면 중단해야 한다.
+- `YONA_ALLOW_SCALA_HTML_*` 예외 marker는 unattended `pnpm agent:turn-commit` 경로에서 사용하지 않는다. 사람이 감독하는 수동 예외 commit에만 쓰고, route/reason/follow-up 감사 note를 남긴다.
 - frontend component design 또는 화면 styling 작업 전에는 [`DESIGN.md`](/G:/programming/yona/DESIGN.md)를 확인하고, `yona-original/`의 view/LESS 근거를 우선한다.
 - `reference/mixed-code/**`를 구현 근거로 읽거나 사용하지 않는다. 기능/UX 근거는 `yona-original/`에서만 찾는다.
 - 새 canonical 구현이나 문서 기준선은 `repo root`를 기준으로 적는다.

@@ -66,6 +66,7 @@ test("pre-commit hook points at the canonical root verification tool", () => {
 test("pre-commit verification runs the Scala HTML goal guard", () => {
   const verifySource = readFileSync(verifyToolPath, "utf8");
 
+  assert.match(verifySource, /--name-status/u);
   assert.match(verifySource, /--diff-filter=ACMRD/u);
   assert.match(verifySource, /from "\.\/scala-html-goal-guard\.mjs"/u);
   assert.match(verifySource, /evaluateScalaHtmlGoalGuard/u);
@@ -76,6 +77,8 @@ test("pre-commit verification runs the Scala HTML goal guard", () => {
     /auditPatch:\s*readStagedPatch\("docs\/provenance\/frontend-scala-html-goal-violation-audit\.md"\)/u,
   );
   assert.match(verifySource, /YONA_ENFORCE_SCALA_HTML_SINGLE_ROW:\s*"1"/u);
+  assert.match(verifySource, /changedFileStatuses/u);
+  assert.match(verifySource, /nonDeletedStagedFiles/u);
 });
 
 test("pre-commit verification runs the legacy Yona design harness", () => {

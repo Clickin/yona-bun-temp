@@ -88,6 +88,14 @@ export function unattendedScalaHtmlGoalHistoryRange({
   );
 }
 
+export function disallowedScalaHtmlGoalExceptionEnv(env = process.env) {
+  return [
+    "YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY",
+    "YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE",
+    "YONA_ALLOW_SCALA_HTML_MULTI_SCREEN",
+  ].filter((name) => env[name]?.trim() === "1");
+}
+
 function stagedChangesExist() {
   const result = spawnSync("git", ["diff", "--cached", "--quiet", "--exit-code"], {
     stdio: "ignore",
@@ -96,6 +104,13 @@ function stagedChangesExist() {
 }
 
 export function runAgentTurnCommit(options) {
+  const disallowedScalaHtmlGoalEnv = disallowedScalaHtmlGoalExceptionEnv();
+  if (disallowedScalaHtmlGoalEnv.length > 0) {
+    throw new Error(
+      `Agent turn commit refuses Scala HTML goal exception env var(s): ${disallowedScalaHtmlGoalEnv.join(", ")}. These exceptions require a human-supervised manual commit path with a durable audit note.`,
+    );
+  }
+
   const status = git(["status", "--porcelain", "--untracked-files=all"], {
     capture: true,
     errorMessage: "Failed to inspect git status before agent turn commit.",

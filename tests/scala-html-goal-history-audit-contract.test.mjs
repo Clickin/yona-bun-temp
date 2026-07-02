@@ -64,6 +64,26 @@ test("scala html goal history audit rejects memo rows naming E2E files not chang
   assert.match(result.message, /incomplete audit row work/u);
 });
 
+test("scala html goal history audit rejects deleted focused E2E files as verification", () => {
+  const result = evaluateCommit({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    changedFileStatuses: new Map([
+      ["frontend/src/routes/$ownerName/$projectName/issues.tsx", "M"],
+      ["frontend/tests/project-issues-empty.e2e.ts", "D"],
+      ["docs/provenance/frontend-scala-html-goal-violation-audit.md", "M"],
+    ]),
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/issues` | `issue/list.scala.html`, `issue/partial_massupdate.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issues-empty.e2e.ts` focused E2E |\n",
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(result.message, /unverified frontend route work/u);
+});
+
 test("root scripts expose the scala html goal history audit smoke command", () => {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
   const historyAuditSource = readFileSync(historyAuditPath, "utf8");
@@ -73,6 +93,7 @@ test("root scripts expose the scala html goal history audit smoke command", () =
     "node scripts/audit-scala-html-goal-history.mjs",
   );
   assert.match(historyAuditSource, /evaluateScalaHtmlGoalGuard/u);
+  assert.match(historyAuditSource, /--name-status/u);
   assert.match(historyAuditSource, /--diff-filter=ACMRD/u);
   assert.match(historyAuditSource, /arg === "--"/u);
   assert.match(historyAuditSource, /--fail-on-violation/u);

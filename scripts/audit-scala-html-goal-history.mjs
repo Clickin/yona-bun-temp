@@ -57,21 +57,28 @@ function commitsForRange(range) {
     });
 }
 
-function changedFilesForCommit(sha) {
-  return git(["diff-tree", "--no-commit-id", "--name-only", "-r", "--diff-filter=ACMRD", sha])
+function changedFileEntriesForCommit(sha) {
+  return git(["diff-tree", "--no-commit-id", "--name-status", "-r", "--diff-filter=ACMRD", sha])
     .split("\n")
-    .map((file) => file.trim())
-    .filter(Boolean);
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [status, ...pathParts] = line.split(/\s+/u);
+      const file = pathParts.at(-1) ?? "";
+      return { file, status };
+    })
+    .filter(({ file }) => file);
 }
 
 function auditPatchForCommit(sha) {
   return git(["show", "--format=", "--unified=0", sha, "--", AUDIT_FILE]);
 }
 
-export function evaluateCommit({ changedFiles, auditPatch }) {
+export function evaluateCommit({ changedFiles, changedFileStatuses = new Map(), auditPatch }) {
   return evaluateScalaHtmlGoalGuard({
     auditPatch,
     changedFiles,
+    changedFileStatuses,
     env: {
       YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1",
     },
@@ -80,9 +87,13 @@ export function evaluateCommit({ changedFiles, auditPatch }) {
 
 export function summarizeHistory({ commits }) {
   const entries = commits.map((commit) => {
-    const changedFiles = changedFilesForCommit(commit.sha);
+    const changedFileEntries = changedFileEntriesForCommit(commit.sha);
+    const changedFiles = changedFileEntries.map(({ file }) => file);
+    const changedFileStatuses = new Map(
+      changedFileEntries.map(({ file, status }) => [file, status]),
+    );
     const auditPatch = changedFiles.includes(AUDIT_FILE) ? auditPatchForCommit(commit.sha) : "";
-    const result = evaluateCommit({ auditPatch, changedFiles });
+    const result = evaluateCommit({ auditPatch, changedFiles, changedFileStatuses });
     return {
       ...commit,
       blocked: result.blocked,
