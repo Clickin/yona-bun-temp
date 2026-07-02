@@ -1,7 +1,7 @@
 # Template-First UI Parity Report: P3 Issue/Editor/Comments
 
 Status: current reset baseline
-Date: 2026-06-26
+Date: 2026-07-02
 Owner packet: P3 issue/editor/comments
 Mode: template-first mapper baseline; implementation evidence reviewed
 
@@ -143,7 +143,10 @@ Focused interaction verifier runs:
 - Command:
   `pnpm --dir frontend test:e2e -- project-issues-empty.e2e.ts project-issue-form.e2e.ts project-issue-edit-form.e2e.ts project-issue-detail.e2e.ts user-issues.e2e.ts`
 - Checked at: `2026-07-02`
-- Result: active issue/editor/comment browser proof passed.
+- Result: active issue/editor/comment browser proof passed. Clean verifier runs
+  were split as `project-issues-empty.e2e.ts project-issue-form.e2e.ts
+  project-issue-edit-form.e2e.ts user-issues.e2e.ts` with 25 passed, and
+  `project-issue-detail.e2e.ts` with 42 passed.
 - Coverage: issue list filter/search submit URL and REST query proof,
   pagination, mass update dropdown open/select and REST payload proof, child
   issue list shell, full comment edit/delete controls, child-comment/new-issue
@@ -154,7 +157,7 @@ Focused interaction verifier runs:
 - Command:
   `pnpm --dir frontend test:e2e project-issue-detail.e2e.ts`
 - Checked at: `2026-07-02`
-- Result: `40 passed`.
+- Result: `42 passed`.
 - Coverage: issue detail `bodyHtml` and parent/child comment `contentsHtml`
   fixtures are deliberately wrong, proving the visible issue body, full and
   one-line comment bodies, and right-pane compact comment text render from
