@@ -193,6 +193,38 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
   ).toBe("site-mail-sidebar");
 });
 
+test("site admin mail renders legacy sended=true success state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockMailOptions(page, {
+    notConfiguredItems: [],
+    sender: "site-admin@yona.local",
+    sent: false,
+  });
+
+  await page.goto(`${basePath}/sites/mail?sended=true`);
+  await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator(".title_area h2")).toHaveText("Send email");
+  await expect(page.locator(".span10 > .alert-success")).toHaveText("Mail has been sent.");
+  await expect(page.locator(".span10 > .alert-error")).toHaveCount(0);
+  await expect(page.locator("#mailForm")).toHaveAttribute("action", `${basePath}/sites/mail`);
+  await expect(page.locator('input[name="from"]')).toHaveValue("site-admin@yona.local");
+  expect(await mailSuccessStateOrder(page)).toEqual([
+    "title_area",
+    "alert alert-success",
+    "form-horizontal",
+  ]);
+});
+
+async function mailSuccessStateOrder(page: Page) {
+  return page.evaluate(() =>
+    Array.from(
+      document.querySelectorAll(".site-setting-wrap .span10 > *"),
+      (element) => element.getAttribute("class") ?? element.tagName.toLowerCase(),
+    ),
+  );
+}
+
 async function mailFormMetrics(page: Page) {
   return page.evaluate(() => {
     const requireElement = (selector: string) => {
@@ -291,15 +323,18 @@ async function mockSiteAdminSession(page: Page) {
   });
 }
 
-async function mockMailOptions(page: Page) {
+async function mockMailOptions(
+  page: Page,
+  response = {
+    notConfiguredItems: ["smtp.host", "smtp.port"],
+    sender: "noreply@example.com",
+    sent: false,
+  },
+) {
   await page.route("**/api/v1/site/mail", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        notConfiguredItems: ["smtp.host", "smtp.port"],
-        sender: "noreply@example.com",
-        sent: false,
-      }),
+      body: JSON.stringify(response),
     });
   });
 }

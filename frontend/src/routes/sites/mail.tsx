@@ -12,6 +12,10 @@ import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
+interface SiteMailSearch {
+  sended: boolean;
+}
+
 const LegacyInternalLink = Link as ComponentType<
   AnchorHTMLAttributes<HTMLAnchorElement> & {
     activeProps?: { className?: string | undefined };
@@ -21,23 +25,33 @@ const LegacyInternalLink = Link as ComponentType<
 
 export const Route = createFileRoute("/sites/mail")({
   component: SiteMailRoute,
+  validateSearch: (search: Record<string, unknown>): SiteMailSearch => ({
+    sended: search.sended === true || search.sended === "true",
+  }),
 });
 
 function SiteMailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { sended } = Route.useSearch();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <SiteMailScreen runtimeConfig={runtimeConfig} />
+          <SiteMailScreen runtimeConfig={runtimeConfig} sentBySearch={sended} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function SiteMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function SiteMailScreen({
+  runtimeConfig,
+  sentBySearch,
+}: {
+  runtimeConfig: RuntimeConfig;
+  sentBySearch: boolean;
+}) {
   const mailOptions = siteMailOptionsQueryOptions(runtimeConfig);
   const query = useQuery(mailOptions);
 
@@ -57,7 +71,11 @@ function SiteMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <SiteAdminSidebar />
             </div>
             <div className="span10">
-              <MailBody response={query.data} runtimeConfig={runtimeConfig} />
+              <MailBody
+                response={query.data}
+                runtimeConfig={runtimeConfig}
+                sentBySearch={sentBySearch}
+              />
             </div>
           </div>
         </div>
@@ -94,9 +112,11 @@ function SiteAdminSidebar() {
 function MailBody({
   response,
   runtimeConfig,
+  sentBySearch,
 }: {
   response: SiteMailOptionsResponse | undefined;
   runtimeConfig: RuntimeConfig;
+  sentBySearch: boolean;
 }) {
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
@@ -113,7 +133,7 @@ function MailBody({
     return null;
   }
 
-  const sent = response.sent || mutation.data?.sent === true;
+  const sent = sentBySearch || response.sent || mutation.data?.sent === true;
 
   return (
     <>
