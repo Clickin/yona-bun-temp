@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 const FRONTEND_E2E_PATTERN = /^frontend\/tests\/.+\.e2e\.ts$/u;
 const FRONTEND_IMPLEMENTATION_PATTERN = /^frontend\/src\/.+\.(ts|tsx)$/u;
 const FRONTEND_ROUTE_PATTERN = /^frontend\/src\/routes\/.+\.tsx$/u;
@@ -8,6 +11,9 @@ const SCALA_HTML_AUDIT_FILE = "docs/provenance/frontend-scala-html-goal-violatio
 const ADDED_SCALA_HTML_SOURCE_PATTERN = /^\+(?!\+\+).*\.scala\.html\b/mu;
 const ADDED_AUDIT_ROW_PATTERN = /^\+\|(?! --- )(.*)$/gmu;
 const E2E_VERIFICATION_PATTERN = /frontend\/tests\/.+\.e2e\.ts\b/u;
+const SCALA_HTML_SOURCE_PATTERN =
+  /\b(?:yona-original\/app\/views\/)?([A-Za-z0-9_.$/-]+\.scala\.html)\b/gu;
+const LEGACY_VIEW_ROOT = "yona-original/app/views";
 
 function isFrontendImplementation(file) {
   if (!FRONTEND_IMPLEMENTATION_PATTERN.test(file)) {
@@ -50,7 +56,28 @@ function routeFileHasCompleteAuditRow(routeFile, auditPatch) {
   );
 }
 
-export function evaluateScalaHtmlGoalGuard({ changedFiles, env = process.env, auditPatch = null }) {
+function addedScalaHtmlSources(auditPatch) {
+  return addedAuditRows(auditPatch).flatMap((row) =>
+    [...row.matchAll(SCALA_HTML_SOURCE_PATTERN)].map((match) => match[1]),
+  );
+}
+
+function missingLegacyScalaHtmlSources(auditPatch, repoRoot) {
+  return [...new Set(addedScalaHtmlSources(auditPatch))].filter((source) => {
+    const normalizedSource = path.normalize(source);
+    const legacyRoot = path.resolve(repoRoot, LEGACY_VIEW_ROOT);
+    const sourcePath = path.resolve(legacyRoot, normalizedSource);
+
+    return !sourcePath.startsWith(`${legacyRoot}${path.sep}`) || !existsSync(sourcePath);
+  });
+}
+
+export function evaluateScalaHtmlGoalGuard({
+  changedFiles,
+  env = process.env,
+  auditPatch = null,
+  repoRoot = process.cwd(),
+}) {
   const frontendEvidenceFiles = changedFiles.filter(isFrontendEvidence);
   const frontendImplementationFiles = changedFiles.filter(isFrontendImplementation);
   const frontendRouteImplementationFiles = frontendImplementationFiles.filter(
@@ -118,6 +145,24 @@ export function evaluateScalaHtmlGoalGuard({ changedFiles, env = process.env, au
       message:
         "Scala HTML goal guard blocked weak audit memo work. Route TSX changed, but the staged audit memo diff does not add a legacy .scala.html source. Add the target legacy Scala HTML root and included partials to docs/provenance/frontend-scala-html-goal-violation-audit.md, or set YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE=1 for an explicitly intentional non-goal route change.",
     };
+  }
+
+  if (
+    implementationTouchesRuntime &&
+    auditUpdated &&
+    auditPatch !== null &&
+    !allowUndocumentedRoute
+  ) {
+    const missingScalaHtmlSources = missingLegacyScalaHtmlSources(auditPatch, repoRoot);
+
+    if (missingScalaHtmlSources.length > 0) {
+      return {
+        blocked: true,
+        frontendEvidenceFiles,
+        frontendImplementationFiles,
+        message: `Scala HTML goal guard blocked nonexistent legacy source work. Audit rows must name real legacy templates under ${LEGACY_VIEW_ROOT}; missing: ${missingScalaHtmlSources.join(", ")}.`,
+      };
+    }
   }
 
   if (
