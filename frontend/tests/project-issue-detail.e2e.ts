@@ -216,6 +216,55 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
   );
   expect(issueViewBootstrap).toContain(`$(".comment-body:contains('Site Admin')`);
   expect(issueViewBootstrap).toContain(`$(".user-link:contains('Site Admin')`);
+
+  const inlineHandlers = await inlineScriptContaining(page, "yonaAssgineeModule(");
+  expect(inlineHandlers).toContain("yonaAssgineeModule(");
+  expect(inlineHandlers).toContain(
+    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/assignableUsers"`,
+  );
+  expect(inlineHandlers).toContain(
+    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/assignees"`,
+  );
+  expect(inlineHandlers).toContain('"Assignee"');
+  expect(inlineHandlers).toContain("yonaIssueSharerModule(");
+  expect(inlineHandlers).toContain(
+    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/findSharer"`,
+  );
+  expect(inlineHandlers).toContain(
+    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/sharableUsers"`,
+  );
+  expect(inlineHandlers).toContain(
+    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/share"`,
+  );
+  expect(inlineHandlers).toContain('"Issue Sharer"');
+  expect(inlineHandlers).toContain("$('#issue-share-button').on('click'");
+  expect(inlineHandlers).toContain("$('#sharer-list').show();");
+  expect(inlineHandlers).toContain("$('#translate').one('click'");
+  expect(inlineHandlers).toContain(`url: "${basePath}/-_-api/v1/translation"`);
+  expect(inlineHandlers).toContain('type: "issue"');
+  expect(inlineHandlers).toContain('type: "issue-comment"');
+  expect(inlineHandlers).toContain("new ClipboardJS('#copyEmailBtn')");
+  expect(inlineHandlers).toContain('$yobi.alert("Copying email was successful.")');
+  expect(inlineHandlers).toContain(
+    '$yobi.notify("Your browser doesnt support the clipboard feature.", 1500)',
+  );
+  expect(inlineHandlers).toContain('$(".event > .label").each(function()');
+  expect(inlineHandlers).toContain("$.elevator({");
+  expect(inlineHandlers).toContain('$("#upvote-issue-weight").on("click"');
+  expect(inlineHandlers).toContain(
+    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/upvoteWeight"`,
+  );
+  expect(inlineHandlers).toContain('$("#down-vote-issue-weight").on("click"');
+  expect(inlineHandlers).toContain(
+    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/downvoteWeight"`,
+  );
+  expect(inlineHandlers).toContain(
+    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/commentNotiReceivers"`,
+  );
+  expect(inlineHandlers).toContain('$(".index-comment").on("click"');
+  expect(inlineHandlers).toContain(
+    `detectPageChange("${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/detectChange")`,
+  );
 }
 
 async function inlineScriptContaining(page: Page, text: string) {
