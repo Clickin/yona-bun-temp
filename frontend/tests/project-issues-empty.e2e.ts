@@ -323,6 +323,21 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
   await expect(page.locator(".error-wrap")).toContainText("No issue found");
 
+  expect(await issueListShellMetrics(page)).toEqual({
+    wrapClear: "both",
+    leftMenuClassName: "left-menu span2 span-hard-wrap",
+    rightPaneClassName: "span10 span-hard-wrap",
+    newIssueAboveTabs: true,
+    tabBeforeEmptyState: true,
+    emptyIconBeforeText: true,
+    searchBarBorder: "1px solid rgb(204, 204, 204)",
+    searchBarBorderRadius: "3px",
+    searchBarHeight: "20px",
+    searchButtonRight: "5px",
+    advancedMarginTop: "10px",
+    issueOptionMarginBottom: "16px",
+  });
+
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
@@ -376,6 +391,37 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
     "/assets/images/default-avatar-32.png",
   );
 
+  expect(await issueListRowMetrics(page)).toEqual({
+    listStyle: "none",
+    listPaddingLeft: "0px",
+    rowClear: "both",
+    rowDisplay: "block",
+    rowOverflow: "auto",
+    rowPadding: "10px",
+    rowBorderBottom: "1px solid rgb(221, 221, 221)",
+    checkboxFloat: "left",
+    checkboxMarginRight: "15px",
+    checkboxInputMarginTop: "15px",
+    titleWrapDisplay: "block",
+    titleWrapLineHeight: "20px",
+    titleWrapOverflow: "hidden",
+    titleWrapTextOverflow: "ellipsis",
+    titleWrapWhiteSpace: "nowrap",
+    postIdColor: "rgb(153, 153, 153)",
+    postIdFontSize: "13px",
+    postIdFontWeight: "700",
+    postIdMarginRight: "5px",
+    titleColor: "rgb(51, 51, 51)",
+    titleFontSize: "15px",
+    titleFontWeight: "600",
+    infosColor: "rgb(153, 153, 153)",
+    infosFontSize: "12px",
+    infosLineHeight: "20px",
+    authorBeforeDate: true,
+    titleAboveInfos: true,
+    assigneeRightOfMainColumn: true,
+    dueDateLeftOfAssignee: true,
+  });
   expect(await issueLabelColorMetrics(page, ".post-list-wrap .issue-label")).toEqual({
     backgroundColor: "rgb(81, 170, 204)",
     boxShadow: "rgb(81, 170, 204) 2px 0px 0px 0px inset",
@@ -620,6 +666,17 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
   await expect(page.locator("#mass-update-form")).toBeVisible();
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(2);
 
+  expect(await issueListMassUpdateMetrics(page)).toEqual({
+    formPosition: "relative",
+    groupDisplay: "inline-block",
+    groupFontSize: "0px",
+    adjacentGroupMarginLeft: "5px",
+    checkAllInputMargin: "4px 0px 0px",
+    dropdownMaxHeight: "350px",
+    dropdownOverflowY: "auto",
+    toolbarBeforeRows: true,
+  });
+
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
@@ -796,6 +853,140 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
     ),
   );
 });
+
+async function issueListShellMetrics(page: Page) {
+  return page.locator(".issue-list-wrap").evaluate((wrap) => {
+    const leftMenu = wrap.querySelector(".left-menu") as HTMLElement;
+    const rightPane = wrap.querySelector("#span10") as HTMLElement;
+    const newIssue = rightPane.querySelector(".pull-right") as HTMLElement;
+    const tabs = rightPane.querySelector(".nav-tabs") as HTMLElement;
+    const emptyState = rightPane.querySelector(".error-wrap") as HTMLElement;
+    const emptyIcon = emptyState.querySelector(".ico-err1") as HTMLElement;
+    const emptyText = emptyState.querySelector("p") as HTMLElement;
+    const searchBar = leftMenu.querySelector(".search-bar") as HTMLElement;
+    const searchButton = searchBar.querySelector(".search-btn") as HTMLElement;
+    const advanced = leftMenu.querySelector(".srch-advanced") as HTMLElement;
+    const issueOption = leftMenu.querySelector(".issue-option") as HTMLElement;
+    const wrapStyle = window.getComputedStyle(wrap);
+    const searchBarStyle = window.getComputedStyle(searchBar);
+    const searchButtonStyle = window.getComputedStyle(searchButton);
+    const advancedStyle = window.getComputedStyle(advanced);
+    const issueOptionStyle = window.getComputedStyle(issueOption);
+    const newIssueRect = newIssue.getBoundingClientRect();
+    const tabsRect = tabs.getBoundingClientRect();
+    const emptyStateRect = emptyState.getBoundingClientRect();
+    const emptyIconRect = emptyIcon.getBoundingClientRect();
+    const emptyTextRect = emptyText.getBoundingClientRect();
+
+    return {
+      wrapClear: wrapStyle.clear,
+      leftMenuClassName: leftMenu.className,
+      rightPaneClassName: rightPane.className,
+      newIssueAboveTabs: newIssueRect.top <= tabsRect.top,
+      tabBeforeEmptyState: tabsRect.top < emptyStateRect.top,
+      emptyIconBeforeText: emptyIconRect.top < emptyTextRect.top,
+      searchBarBorder: searchBarStyle.border,
+      searchBarBorderRadius: searchBarStyle.borderRadius,
+      searchBarHeight: searchBarStyle.height,
+      searchButtonRight: searchButtonStyle.right,
+      advancedMarginTop: advancedStyle.marginTop,
+      issueOptionMarginBottom: issueOptionStyle.marginBottom,
+    };
+  });
+}
+
+async function issueListRowMetrics(page: Page) {
+  return page.locator("#issue-item-42").evaluate((row) => {
+    const list = row.closest(".post-list-wrap") as HTMLElement;
+    const checkbox = row.querySelector(".mass-update-check") as HTMLElement;
+    const checkboxInput = checkbox.querySelector("input") as HTMLElement;
+    const titleWrap = row.querySelector(".title-wrap") as HTMLElement;
+    const postId = titleWrap.querySelector(".post-id") as HTMLElement;
+    const title = titleWrap.querySelector("a.title:last-child") as HTMLElement;
+    const infos = row.querySelector(".infos") as HTMLElement;
+    const author = infos.querySelector(".infos-link-item") as HTMLElement;
+    const date = infos.querySelector(".infos-item:nth-child(2)") as HTMLElement;
+    const mainColumn = row.querySelector(".span9") as HTMLElement;
+    const assignee = row.querySelector(".avatar-wrap.assinee") as HTMLElement;
+    const dueDate = row.querySelector(".mr20.mt10.pull-right") as HTMLElement;
+    const listStyle = window.getComputedStyle(list);
+    const rowStyle = window.getComputedStyle(row);
+    const checkboxStyle = window.getComputedStyle(checkbox);
+    const checkboxInputStyle = window.getComputedStyle(checkboxInput);
+    const titleWrapStyle = window.getComputedStyle(titleWrap);
+    const postIdStyle = window.getComputedStyle(postId);
+    const titleStyle = window.getComputedStyle(title);
+    const infosStyle = window.getComputedStyle(infos);
+    const titleWrapRect = titleWrap.getBoundingClientRect();
+    const infosRect = infos.getBoundingClientRect();
+    const authorRect = author.getBoundingClientRect();
+    const dateRect = date.getBoundingClientRect();
+    const mainRect = mainColumn.getBoundingClientRect();
+    const assigneeRect = assignee.getBoundingClientRect();
+    const dueDateRect = dueDate.getBoundingClientRect();
+
+    return {
+      listStyle: listStyle.listStyleType,
+      listPaddingLeft: listStyle.paddingLeft,
+      rowClear: rowStyle.clear,
+      rowDisplay: rowStyle.display,
+      rowOverflow: rowStyle.overflow,
+      rowPadding: rowStyle.padding,
+      rowBorderBottom: rowStyle.borderBottom,
+      checkboxFloat: checkboxStyle.cssFloat,
+      checkboxMarginRight: checkboxStyle.marginRight,
+      checkboxInputMarginTop: checkboxInputStyle.marginTop,
+      titleWrapDisplay: titleWrapStyle.display,
+      titleWrapLineHeight: titleWrapStyle.lineHeight,
+      titleWrapOverflow: titleWrapStyle.overflow,
+      titleWrapTextOverflow: titleWrapStyle.textOverflow,
+      titleWrapWhiteSpace: titleWrapStyle.whiteSpace,
+      postIdColor: postIdStyle.color,
+      postIdFontSize: postIdStyle.fontSize,
+      postIdFontWeight: postIdStyle.fontWeight,
+      postIdMarginRight: postIdStyle.marginRight,
+      titleColor: titleStyle.color,
+      titleFontSize: titleStyle.fontSize,
+      titleFontWeight: titleStyle.fontWeight,
+      infosColor: infosStyle.color,
+      infosFontSize: infosStyle.fontSize,
+      infosLineHeight: infosStyle.lineHeight,
+      authorBeforeDate: authorRect.left < dateRect.left,
+      titleAboveInfos: titleWrapRect.top < infosRect.top,
+      assigneeRightOfMainColumn: assigneeRect.left > mainRect.right,
+      dueDateLeftOfAssignee: dueDateRect.left < assigneeRect.left,
+    };
+  });
+}
+
+async function issueListMassUpdateMetrics(page: Page) {
+  return page.locator("#mass-update-form").evaluate((form) => {
+    const firstGroup = form.querySelector(".btn-group") as HTMLElement;
+    const secondGroup = form.querySelector(".btn-group + .btn-group") as HTMLElement;
+    const checkAllInput = form.querySelector(".btn-group.check-all input") as HTMLElement;
+    const dropdown = form.querySelector(".mass-update-list") as HTMLElement;
+    const filterWrap = form.closest(".filter-wrap") as HTMLElement;
+    const list = document.querySelector(".post-list-wrap") as HTMLElement;
+    const formStyle = window.getComputedStyle(form);
+    const firstGroupStyle = window.getComputedStyle(firstGroup);
+    const secondGroupStyle = window.getComputedStyle(secondGroup);
+    const inputStyle = window.getComputedStyle(checkAllInput);
+    const dropdownStyle = window.getComputedStyle(dropdown);
+    const filterWrapRect = filterWrap.getBoundingClientRect();
+    const listRect = list.getBoundingClientRect();
+
+    return {
+      formPosition: formStyle.position,
+      groupDisplay: firstGroupStyle.display,
+      groupFontSize: firstGroupStyle.fontSize,
+      adjacentGroupMarginLeft: secondGroupStyle.marginLeft,
+      checkAllInputMargin: inputStyle.margin,
+      dropdownMaxHeight: dropdownStyle.maxHeight,
+      dropdownOverflowY: dropdownStyle.overflowY,
+      toolbarBeforeRows: filterWrapRect.top < listRect.top,
+    };
+  });
+}
 
 async function issueLabelColorMetrics(page: Page, selector: string) {
   return page
