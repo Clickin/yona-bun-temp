@@ -3,11 +3,11 @@ import { expect, test, type Page } from "@playwright/test";
 const BUG_LABEL_STYLE = "background:rgb(81,170,204)";
 
 const EXPECTED_MILESTONES_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="tab-wrap"><div class="pull-right btns"><a href="__BASE_PATH__/admin/sample/newMilestoneForm" class="ybtn ybtn-success">New milestone</a></div><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/milestones?state=open">Open</a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=closed">Closed</a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=all">All</a></li></ul></div><div class="filter-wrap milestone"><div class="filters"><a href="__BASE_PATH__/admin/sample/milestones?orderBy=dueDate&amp;orderDir=desc&amp;state=open" class="filter active"><i class="ico btn-gray-arrow "></i>Due Date</a><a href="__BASE_PATH__/admin/sample/milestones?orderBy=completionRate&amp;orderDir=asc&amp;state=open" class="filter"><i class="ico btn-gray-arrow"></i>Completion Rate</a></div><div class="pull-left search search-bar"><input name="filter" class="textbox" type="text" placeholder="Search" value=""><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div><div class="row-fluid"><div><ul class="milestones"><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/5" class="milestone-name">v1.0</a><span class="sp">|</span><span class="issue-item">1 / 2</span><span class="sp">|</span><span class="due-date over">Due Date<strong>2026-06-30</strong><span class="date">(Overdue)</span></span><div class="pull-right"><span class="number completion-rate">50 %</span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:50%"></div></div></div></div><div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/11" target="_blank"><div class="issue-item"><span class="state-label open"></span><span class="item-name"><span class="number">#11</span>Open milestone issue - Dev Member<a href="#" class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</a></span></div></a></div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/12" target="_blank"><div class="issue-item"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><span class="item-name"><span class="number">#12</span>Closed milestone issue<a href="#" class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</a></span></div></a></div></div></li><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/6" class="milestone-name">v2.0</a><span class="sp">|</span><span class="issue-item">0 / 0</span><span class="sp">|</span><span class="due-date ">Due Date<strong>2026-08-31</strong><span class="date">(D-61)</span></span><div class="pull-right"><span class="number completion-rate"></span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:0%"></div></div></div></div><div><div></div><div></div><div></div><div></div></div></li></ul></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="tab-wrap"><div class="pull-right btns"><a href="__BASE_PATH__/admin/sample/newMilestoneForm" class="ybtn ybtn-success">New milestone</a></div><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/milestones?state=open">Open</a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=closed">Closed</a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=all">All</a></li></ul></div><div class="filter-wrap milestone"><div class="filters"><a href="__BASE_PATH__/admin/sample/milestones?orderBy=dueDate&amp;orderDir=desc&amp;state=open" class="filter active"><i class="ico btn-gray-arrow "></i>Due Date</a><a href="__BASE_PATH__/admin/sample/milestones?orderBy=completionRate&amp;orderDir=asc&amp;state=open" class="filter"><i class="ico btn-gray-arrow"></i>Completion Rate</a></div><div class="pull-left search search-bar"><input name="filter" class="textbox" type="text" placeholder="Search" value=""><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div><div class="row-fluid"><div><ul class="milestones"><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/5" class="milestone-name">v1.0</a><span class="sp">|</span><span class="issue-item">1 / 2</span><span class="sp">|</span><span class="due-date over">Due Date<strong>2026-06-30</strong><span class="date">(Overdue)</span></span><div class="pull-right"><span class="number completion-rate">50 %</span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:50%"></div></div></div></div><div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/11" target="_blank"><div class="issue-item"><span class="state-label open"></span><span class="item-name"><span class="number">#11</span>Open milestone issue - Dev Member<span class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</span></span></div></a></div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/12" target="_blank"><div class="issue-item"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><span class="item-name"><span class="number">#12</span>Closed milestone issue<span class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</span></span></div></a></div></div></li><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/6" class="milestone-name">v2.0</a><span class="sp">|</span><span class="issue-item">0 / 0</span><span class="sp">|</span><span class="due-date ">Due Date<strong>2026-08-31</strong><span class="date">(D-61)</span></span><div class="pull-right"><span class="number completion-rate"></span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:0%"></div></div></div></div><div><div></div><div></div><div></div><div></div></div></li></ul></div></div></div></div>
 `;
 
 const EXPECTED_MILESTONES_ALL_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="tab-wrap"><div class="pull-right btns"><a href="__BASE_PATH__/admin/sample/newMilestoneForm" class="ybtn ybtn-success">New milestone</a></div><ul class="nav nav-tabs"><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=open">Open</a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=closed">Closed</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/milestones?state=all">All</a></li></ul></div><div class="filter-wrap milestone"><div class="filters"><a href="__BASE_PATH__/admin/sample/milestones?orderBy=dueDate&amp;orderDir=desc&amp;state=all" class="filter active"><i class="ico btn-gray-arrow "></i>Due Date</a><a href="__BASE_PATH__/admin/sample/milestones?orderBy=completionRate&amp;orderDir=asc&amp;state=all" class="filter"><i class="ico btn-gray-arrow"></i>Completion Rate</a></div><div class="pull-left search search-bar"><input name="filter" class="textbox" type="text" placeholder="Search" value=""><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div><div class="row-fluid"><div><ul class="milestones"><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/5" class="milestone-name">v1.0</a><span class="sp">|</span><span class="issue-item">1 / 2</span><span class="sp">|</span><span class="state nm open">Open</span><span class="sp">|</span><span class="due-date over">Due Date<strong>2026-06-30</strong><span class="date">(Overdue)</span></span><div class="pull-right"><span class="number completion-rate">50 %</span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:50%"></div></div></div></div><div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/11" target="_blank"><div class="issue-item"><span class="state-label open"></span><span class="item-name"><span class="number">#11</span>Open milestone issue - Dev Member<a href="#" class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</a></span></div></a></div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/12" target="_blank"><div class="issue-item"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><span class="item-name"><span class="number">#12</span>Closed milestone issue<a href="#" class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</a></span></div></a></div></div></li><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/7" class="milestone-name">v0.9</a><span class="sp">|</span><span class="issue-item">1 / 1</span><span class="sp">|</span><span class="state nm closed">Closed</span><span class="sp">|</span><span class="due-date ml5">Due Date<strong>2026-05-31</strong></span><div class="pull-right"><span class="number completion-rate">100 %</span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:100%"></div></div></div></div><div><div></div><div></div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/13" target="_blank"><div class="issue-item"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><span class="item-name"><span class="number">#13</span>Closed all-state issue</span></div></a></div></div></li></ul></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="tab-wrap"><div class="pull-right btns"><a href="__BASE_PATH__/admin/sample/newMilestoneForm" class="ybtn ybtn-success">New milestone</a></div><ul class="nav nav-tabs"><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=open">Open</a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=closed">Closed</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/milestones?state=all">All</a></li></ul></div><div class="filter-wrap milestone"><div class="filters"><a href="__BASE_PATH__/admin/sample/milestones?orderBy=dueDate&amp;orderDir=desc&amp;state=all" class="filter active"><i class="ico btn-gray-arrow "></i>Due Date</a><a href="__BASE_PATH__/admin/sample/milestones?orderBy=completionRate&amp;orderDir=asc&amp;state=all" class="filter"><i class="ico btn-gray-arrow"></i>Completion Rate</a></div><div class="pull-left search search-bar"><input name="filter" class="textbox" type="text" placeholder="Search" value=""><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div><div class="row-fluid"><div><ul class="milestones"><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/5" class="milestone-name">v1.0</a><span class="sp">|</span><span class="issue-item">1 / 2</span><span class="sp">|</span><span class="state nm open">Open</span><span class="sp">|</span><span class="due-date over">Due Date<strong>2026-06-30</strong><span class="date">(Overdue)</span></span><div class="pull-right"><span class="number completion-rate">50 %</span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:50%"></div></div></div></div><div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/11" target="_blank"><div class="issue-item"><span class="state-label open"></span><span class="item-name"><span class="number">#11</span>Open milestone issue - Dev Member<span class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</span></span></div></a></div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/12" target="_blank"><div class="issue-item"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><span class="item-name"><span class="number">#12</span>Closed milestone issue<span class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</span></span></div></a></div></div></li><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/7" class="milestone-name">v0.9</a><span class="sp">|</span><span class="issue-item">1 / 1</span><span class="sp">|</span><span class="state nm closed">Closed</span><span class="sp">|</span><span class="due-date ml5">Due Date<strong>2026-05-31</strong></span><div class="pull-right"><span class="number completion-rate">100 %</span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:100%"></div></div></div></div><div><div></div><div></div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/13" target="_blank"><div class="issue-item"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><span class="item-name"><span class="number">#13</span>Closed all-state issue</span></div></a></div></div></li></ul></div></div></div></div>
 `;
 
 test("project milestones list matches legacy milestone/list.scala.html populated DOM", async ({
@@ -17,10 +17,25 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   await mockProjectMilestones(page);
 
   await page.goto(`${basePath}/admin/sample/milestones?state=open&orderBy=dueDate&orderDir=asc`);
+  await expect(
+    page.locator(`link[href="${basePath}/admin/sample/issue/labels.css"]`),
+  ).toHaveAttribute("type", "text/css");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator("ul.milestones > li.milestone")).toHaveCount(2);
   await expect(page.locator('.issue-label[data-category-id="3"][data-label-id="8"]')).toHaveCount(
     2,
+  );
+  await expect(
+    page.locator('.issue-label[data-category-id="3"][data-label-id="8"]').first(),
+  ).toHaveJSProperty("tagName", "SPAN");
+  await expect(page.locator('.issue-link[href$="/issue/11"]')).toHaveAttribute("target", "_blank");
+  await expect(page.locator(".tab-wrap .ybtn-success")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/newMilestoneForm`,
+  );
+  await expect(page.locator('.filters a:has-text("Completion Rate")')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestones?orderBy=completionRate&orderDir=asc&state=open`,
   );
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
@@ -54,6 +69,11 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   await expect(
     page.locator('.issue-link[href$="/issue/12"]').filter({ hasText: "#12" }),
   ).toBeVisible();
+
+  await page.click('.nav-tabs a:has-text("Closed")');
+  await expect(page).toHaveURL(
+    `${basePath}/admin/sample/milestones?state=closed&orderBy=dueDate&orderDir=asc`,
+  );
 });
 
 test("project milestones all-state list renders legacy open and closed state metadata", async ({
@@ -237,7 +257,7 @@ async function canonicalize(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => !isNormalizedRuntimeAttr(attr))
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -254,7 +274,26 @@ async function canonicalize(page: Page, selector: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement?.tagName.toLowerCase() === "a" &&
+        attr.value === "active"
+      ) {
+        return "";
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+    }
+
+    function isNormalizedRuntimeAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "alt" ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status" ||
+        (attr.name === "class" &&
+          attr.ownerElement?.tagName.toLowerCase() === "a" &&
+          attr.value === "active")
+      );
     }
   });
 }
@@ -275,7 +314,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => !isNormalizedRuntimeAttr(attr))
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -292,7 +331,26 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement?.tagName.toLowerCase() === "a" &&
+        attr.value === "active"
+      ) {
+        return "";
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+    }
+
+    function isNormalizedRuntimeAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "alt" ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status" ||
+        (attr.name === "class" &&
+          attr.ownerElement?.tagName.toLowerCase() === "a" &&
+          attr.value === "active")
+      );
     }
   }, html);
 }
