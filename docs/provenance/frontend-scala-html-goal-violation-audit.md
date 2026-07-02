@@ -58,6 +58,12 @@ The mandatory workflow remains:
 6. Reject any subagent patch whose audit row cannot pass the route-file,
    `.scala.html`, and focused-E2E guard.
 
+For multi-day unattended runs, use
+`pnpm smoke:scala-html-goal-history -- --range <base>..HEAD` as the automated
+post-run audit. It reuses the same guard evaluator against each commit in the
+range and reports evidence-only, undocumented route, and weak audit-row commits.
+Use `--fail-on-violation` when the audit should stop a checkpoint pipeline.
+
 ## High Confidence Rebuild Candidates
 
 | Priority | Route/screen | Current files | Legacy source of truth | Required action |

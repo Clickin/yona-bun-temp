@@ -25,6 +25,11 @@ Every resumed goal turn must restate this directive before choosing work:
   survives resumed multi-day goal turns and is enforced by the commit hook.
 - Every frontend E2E/CSS/UI parity evidence change must include a route TSX
   implementation change unless the turn is explicitly marked evidence-only.
+- For long-running unattended work, run
+  `pnpm smoke:scala-html-goal-history -- --range <base>..HEAD` to audit recent
+  commits with the same Scala HTML guard rules used by the turn commit hook. Add
+  `--fail-on-violation` when this should behave as a blocking CI/checkpoint
+  command.
 
 This is enforced by `tools/scala-html-goal-guard.mjs` through the turn commit
 hook. Treat guard failures as goal failures, not as optional review comments.
