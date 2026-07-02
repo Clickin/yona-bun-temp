@@ -47,7 +47,7 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
           </li>
           <li class="post-item title" id="issue-item-43" href="__BASE_PATH__/admin/sample/issue/12"><div class="span12 span-hard-wrap"><div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/admin/sample" class="title project" data-toggle="tooltip" data-placement="bottom" title="Project name">sample</a><span class="infos-item post-id">#12</span></div><div class="title-wrap span6"><span class="title-cell"><a href="__BASE_PATH__/admin/sample/issue/12" class="title">Second issue</a><span class="for-subtask-progressbar"></span><div class="child-issue-list hide"></div></span></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/bob" class="infos-link-item author-cell" data-toggle="tooltip" data-placement="top" title="bob">Bob</a></div><div class="infos span3 meta"><span class="infos-item" title="2026-06-29">2026-06-29</span></div></div></li>
         </ul>
-        <div id="pagination" data-total="1"></div>
+        <div id="pagination" class="page-navigation-wrap" data-total="1"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="1" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">1</li><li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li></ul></div>
       </div>
     </div>
   </div>
@@ -519,6 +519,37 @@ test("current-user issues label text contrast follows legacy labelTextColorAdjus
   );
 });
 
+test("current-user issues pagination follows legacy yobi.Pagination pjax-page and input behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForFilterLinks(page);
+
+  await page.goto(`${basePath}/user/issues`);
+  const nextPage = page.locator("#pagination a[pjax-page]").last();
+  await expect(nextPage).toHaveAttribute(
+    "href",
+    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=2&state=open`,
+  );
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "user-issues-pagination";
+  });
+
+  await nextPage.click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("2");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("user-issues-pagination");
+
+  const pageInput = page.locator('#pagination input[name="pageNum"][type="number"]');
+  await expect(pageInput).toHaveAttribute("max", "3");
+  await pageInput.click();
+  await pageInput.fill("9");
+  await pageInput.press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("3");
+});
+
 async function mockUserIssuesForStateTabs(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -609,6 +640,7 @@ async function mockUserIssuesForFilterLinks(page: Page) {
     const url = new URL(route.request().url());
     const orderBy = url.searchParams.get("orderBy") ?? "updatedDate";
     const orderDir = url.searchParams.get("orderDir") ?? "desc";
+    const pageNum = Number(url.searchParams.get("pageNum")) || 1;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -682,12 +714,12 @@ async function mockUserIssuesForFilterLinks(page: Page) {
           },
         ],
         openIssueCount: 2,
-        pageNum: 1,
+        pageNum,
         pageSize: 20,
         sideFilterCounts: { favorite: 1, mentioned: 2, shared: 1 },
         state: "open",
         totalCount: 2,
-        totalPages: 1,
+        totalPages: 3,
         viewerUserId: 1,
       }),
     });

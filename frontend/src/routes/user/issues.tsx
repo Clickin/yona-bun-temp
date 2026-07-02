@@ -7,6 +7,7 @@ import type {
   CSSProperties,
   FormEvent,
   HTMLAttributes,
+  KeyboardEvent,
   LiHTMLAttributes,
   MouseEvent,
 } from "react";
@@ -24,6 +25,7 @@ import { SiteLayoutShell } from "../-home-route-screen";
 
 const LegacyInternalLink = Link as ComponentType<
   AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeProps?: { className: undefined };
     to: string;
   }
 >;
@@ -167,12 +169,18 @@ function UserIssuesBody({
     router.history.push(userIssuesHref({ query }));
   };
   const userIssuesHref = (
-    next: Partial<Pick<UserIssuesSearch, "filter" | "orderBy" | "orderDir" | "query" | "state">>,
+    next: Partial<
+      Pick<UserIssuesSearch, "filter" | "orderBy" | "orderDir" | "pageNum" | "query" | "state">
+    >,
   ) => {
     const params = new URLSearchParams();
     params.set("filter", next.filter ?? search.filter);
     params.set("orderBy", next.orderBy ?? search.orderBy);
     params.set("orderDir", next.orderDir ?? search.orderDir);
+    const pageNum = next.pageNum ?? search.pageNum;
+    if (pageNum !== 1) {
+      params.set("pageNum", String(pageNum));
+    }
     const query = next.query ?? search.query;
     if (query) {
       params.set("query", query);
@@ -376,7 +384,14 @@ function UserIssuesBody({
                     />
                   ))}
                 </ul>
-                <div id="pagination" data-total={totalPages(issues)}></div>
+                <IssuePagination
+                  currentPage={search.pageNum}
+                  search={search}
+                  totalPages={totalPages(issues)}
+                  onPageChange={(pageNum) => {
+                    router.history.push(userIssuesHref({ pageNum }));
+                  }}
+                />
               </>
             ) : (
               <div className="error-wrap">
@@ -390,6 +405,114 @@ function UserIssuesBody({
       <YobiToast notice={defaultLoginNotice} />
     </div>
   );
+}
+
+function IssuePagination({
+  currentPage,
+  search,
+  totalPages,
+  onPageChange,
+}: {
+  currentPage: number;
+  search: UserIssuesSearch;
+  totalPages: number;
+  onPageChange: (pageNum: number) => void;
+}) {
+  const { t } = useLegacyMessages();
+  if (totalPages <= 0) {
+    return <div id="pagination" data-total={totalPages}></div>;
+  }
+
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+  const pageRoutePath = (pageNum: number) => userIssuesRoutePath({ ...search, pageNum });
+  const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    const value = clampPageNum(Number.parseInt(event.currentTarget.value, 10), totalPages);
+    event.currentTarget.value = String(value);
+    onPageChange(value);
+  };
+
+  return (
+    <div id="pagination" className="page-navigation-wrap" data-total={totalPages}>
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <LegacyInternalLink
+              activeProps={{ className: undefined }}
+              to={pageRoutePath(currentPage - 1)}
+              {...{ "pjax-page": "" }}
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>{t("button.prevPage")}</span>
+            </LegacyInternalLink>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">{t("button.prevPage")}</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            defaultValue={currentPage}
+            max={totalPages}
+            min={1}
+            name="pageNum"
+            pattern="[0-9]*"
+            type="number"
+            onClick={(event) => {
+              event.currentTarget.select();
+            }}
+            onKeyDown={handleInputKeyDown}
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <LegacyInternalLink
+              activeProps={{ className: undefined }}
+              to={pageRoutePath(currentPage + 1)}
+              {...{ "pjax-page": "" }}
+            >
+              <span>{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next"></i>
+            </LegacyInternalLink>
+          ) : (
+            <>
+              <span className="off">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+function userIssuesRoutePath(search: UserIssuesSearch) {
+  const params = new URLSearchParams();
+  params.set("filter", search.filter);
+  params.set("orderBy", search.orderBy);
+  params.set("orderDir", search.orderDir);
+  params.set("pageNum", String(search.pageNum));
+  if (search.query) {
+    params.set("query", search.query);
+  }
+  params.set("state", search.state);
+  return `/user/issues?${params.toString()}`;
+}
+
+function clampPageNum(pageNum: number, totalPages: number) {
+  if (!Number.isFinite(pageNum)) {
+    return 1;
+  }
+  return Math.min(Math.max(pageNum, 1), totalPages);
 }
 
 function MySeriesMenuTabs({
