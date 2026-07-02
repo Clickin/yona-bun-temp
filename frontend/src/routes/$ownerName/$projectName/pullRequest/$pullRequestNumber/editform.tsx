@@ -6,6 +6,7 @@ import {
   type PullRequestFormOptionsResponse,
   type PullRequestFormSelected,
 } from "../../../../../api/pull-requests";
+import legacyMarkdownHelpTemplate from "../../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
@@ -13,6 +14,13 @@ import { YonaQueryProvider } from "../../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../../$projectName";
+
+const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
+  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
+  .replace(/@\{"@"\}/g, "@")
+  .replace(/<script[\s\S]*$/u, "")
+  .replace(/^[\s\S]*?<div class="markdown-help">/u, "")
+  .replace(/<\/div>\s*$/u, "");
 
 export const Route = createFileRoute(
   "/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform",
@@ -328,6 +336,10 @@ function PullRequestMarkdownEditor({
         </li>
       </ul>
       <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+        <div
+          className="markdown-help"
+          dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
+        />
         <div id="edit-body" className="tab-pane active">
           <div className="textarea-box">
             <textarea
