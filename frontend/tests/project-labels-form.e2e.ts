@@ -203,7 +203,63 @@ test("project labels renders legacy project/partial_issuelabels_list.scala.html 
   });
 });
 
-async function mockProjectLabels(page: Page, labels: unknown[] = []) {
+test("project labels header favorite star posts and toggles starred class", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectLabels(page, [], { favoriteRequests });
+
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  await expect(favoriteStar).not.toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(favoriteStar).toHaveClass(/starred/);
+});
+
+test("project labels header favorite star removes starred class when unfavorited", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectLabels(page, [], {
+    favoriteRequests,
+    favoriteResponseFavorited: false,
+    project: { isFavorite: true, isFavorited: true },
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  await expect(favoriteStar).toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(favoriteStar).not.toHaveClass(/starred/);
+});
+
+async function mockProjectLabels(
+  page: Page,
+  labels: unknown[] = [],
+  overrides: {
+    favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
+    favoriteResponseFavorited?: boolean;
+    project?: Partial<ReturnType<typeof projectSettings>>;
+  } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -220,10 +276,24 @@ async function mockProjectLabels(page: Page, labels: unknown[] = []) {
       }),
     });
   });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-labels" },
+      body: JSON.stringify({
+        isAuthenticated: true,
+        user: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "admin",
+          name: "Site Admin",
+        },
+      }),
+    });
+  });
   await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(projectSettings()),
+      body: JSON.stringify({ ...projectSettings(), ...overrides.project }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/labels", async (route) => {
@@ -246,6 +316,17 @@ async function mockProjectLabels(page: Page, labels: unknown[] = []) {
         permissions: { canDelete: true, canUpdate: true },
         projectName: "sample",
       }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
+    const request = route.request();
+    overrides.favoriteRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-labels",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ favorited: overrides.favoriteResponseFavorited ?? true }),
     });
   });
 }
@@ -426,7 +507,13 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
