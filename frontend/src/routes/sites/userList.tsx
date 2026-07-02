@@ -413,6 +413,7 @@ function UserStateTabs({
   currentState: SiteUserState;
   siteAdminCount: number;
 }) {
+  const legacySiteAdminBadgeCount = Math.max(siteAdminCount - 1, 0);
   const items: Array<{ labelKey: string; state: SiteUserState }> = [
     { labelKey: "site.userList.unlocked", state: "ACTIVE" },
     { labelKey: "site.userList.locked", state: "LOCKED" },
@@ -432,7 +433,7 @@ function UserStateTabs({
           >
             <LegacyMessage messageKey={item.labelKey} />
             {item.state === "SITE_ADMIN" ? (
-              <span className="num-badge">{siteAdminCount}</span>
+              <span className="num-badge">{legacySiteAdminBadgeCount}</span>
             ) : null}
           </LegacyInternalLink>
         </li>

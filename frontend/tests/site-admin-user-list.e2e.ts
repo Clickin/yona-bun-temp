@@ -195,6 +195,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(nextPageLink).toHaveAttribute("pjax-page", "");
   const lockedTab = page.getByRole("link", { exact: true, name: "Locked user" });
   await expect(lockedTab).toHaveAttribute("href", `${basePath}/sites/userList?state=LOCKED`);
+  await expect(page.locator(".nav-tabs .num-badge")).toHaveText("2");
   expect(await siteLayoutRootOrder(page)).toEqual([
     "unsupported hidden",
     "gnb-outer",
@@ -398,7 +399,7 @@ async function mockSiteUsers(page: Page) {
         page: pageNum,
         pageSize: 20,
         query: "",
-        siteAdminCount: 2,
+        siteAdminCount: 3,
         state: "ACTIVE",
         total: 2,
         totalPages: 2,
