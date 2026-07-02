@@ -44,7 +44,8 @@ export interface SiteUserPasswordResetResponse {
   isSuccess: boolean;
   loginId: string;
   name: string;
-  newPassword: string;
+  newPassword?: string;
+  reason?: string;
 }
 
 export interface SiteProjectListInput {

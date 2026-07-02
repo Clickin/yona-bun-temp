@@ -99,15 +99,17 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
       setPasswordResetByLoginId((current) => ({ ...current, [loginId]: "pending" }));
     },
     onSuccess(data, loginId) {
+      if (data.isSuccess !== true) {
+        clearPasswordResetAlert(loginId);
+        // oxlint-disable-next-line no-alert -- legacy site/userList.scala.html uses $yobi.alert for reset-password failures.
+        window.alert(`password change failed: ${data.reason ?? ""}`);
+        return;
+      }
       setPasswordResetByLoginId((current) => ({ ...current, [loginId]: data }));
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
     },
     onError(error, loginId) {
-      setPasswordResetByLoginId((current) => {
-        const next = { ...current };
-        delete next[loginId];
-        return next;
-      });
+      clearPasswordResetAlert(loginId);
       // oxlint-disable-next-line no-alert -- legacy site/userList.scala.html uses $yobi.alert for reset-password failures.
       window.alert(`password change failed: ${error.message}`);
     },
@@ -309,6 +311,14 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
       </div>
     </>
   );
+
+  function clearPasswordResetAlert(loginId: string) {
+    setPasswordResetByLoginId((current) => {
+      const next = { ...current };
+      delete next[loginId];
+      return next;
+    });
+  }
 }
 
 function UserListPagination({
@@ -543,7 +553,7 @@ function UserListItem({
           </button>
           {passwordReset === "pending" ? <RequestWaitingAlert /> : null}
           {passwordReset && passwordReset !== "pending" ? (
-            <PasswordResetAlert newPassword={passwordReset.newPassword} />
+            <PasswordResetAlert newPassword={passwordReset.newPassword ?? ""} />
           ) : null}
           {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
           <a
