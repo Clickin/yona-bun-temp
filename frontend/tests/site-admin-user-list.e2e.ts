@@ -171,6 +171,13 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   await mockSiteUsers(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
 
   await page.goto(`${basePath}/sites/userList`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
@@ -306,6 +313,13 @@ test("site admin user actions follow legacy confirmation and alert flow", async 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   const requests = await mockSiteUsers(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
 
   await page.goto(`${basePath}/sites/userList`);
 
@@ -333,6 +347,13 @@ test("site admin user role toggles use legacy row action requests", async ({ pag
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   const requests = await mockSiteUsers(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
 
   await page.goto(`${basePath}/sites/userList`);
 
@@ -343,6 +364,26 @@ test("site admin user role toggles use legacy row action requests", async ({ pag
   await expect
     .poll(() => requests.toggledActions)
     .toEqual(["doortts:guest", "doortts:account-lock", "doortts:site-admin"]);
+});
+
+test("site admin user list renders legacy update notification badge", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockSiteUsers(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isAvailable",
+    releaseUrl: "https://example.test/yona-1.1.0",
+    versionToUpdate: "1.1.0",
+  });
+
+  await page.goto(`${basePath}/sites/userList`);
+
+  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
+  await expect(updateLink).toHaveText("Software Update1");
+  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
 async function mockSiteAdminSession(page: Page) {
@@ -520,6 +561,24 @@ async function mockPosts(page: Page) {
         total: 1,
         totalPages: 1,
       }),
+    });
+  });
+}
+
+async function mockUpdate(
+  page: Page,
+  response: {
+    currentVersion: string;
+    error: string | null;
+    message: string;
+    releaseUrl: string | null;
+    versionToUpdate: string | null;
+  },
+) {
+  await page.route("**/api/v1/site/update", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(response),
     });
   });
 }
