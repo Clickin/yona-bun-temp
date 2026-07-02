@@ -75,6 +75,7 @@ test("pre-commit verification runs the Scala HTML goal guard", () => {
     verifySource,
     /auditPatch:\s*readStagedPatch\("docs\/provenance\/frontend-scala-html-goal-violation-audit\.md"\)/u,
   );
+  assert.match(verifySource, /YONA_ENFORCE_SCALA_HTML_SINGLE_ROW:\s*"1"/u);
 });
 
 test("pre-commit verification runs the legacy Yona design harness", () => {

@@ -487,6 +487,32 @@ test("project issue list label select hides legacy edit link for non-managers", 
   await expect(page.locator('#labelIds option[value="8"]')).toHaveText("bug");
 });
 
+test("project issue list search form renders selected milestone status like legacy partial_status.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "milestone-selected");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=empty&milestoneId=5`);
+  await expect(page.locator("#advanced-search-form #milestoneId")).toHaveValue("5");
+
+  const status = page.locator("#advanced-search-form .milestone-info");
+  await expect(status.locator(".meta-info .title")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestone/5`,
+  );
+  await expect(status.locator(".meta-info .title")).toHaveText("v1.0");
+  await expect(status.locator(".due-date")).toHaveClass("due-date");
+  await expect(status.locator(".due-date strong")).toHaveText("Jul 5, 2026");
+  await expect(status.locator(".due-date .date")).toHaveText("(4 days left)");
+  await expect(status.locator(".progress.progress-success.nm .bar")).toHaveAttribute(
+    "style",
+    "width: 50%;",
+  );
+  await expect(status.locator(".progress-info .pull-right strong")).toHaveText("1 / 2");
+  await expect(page.locator("#advanced-search-form .milestone-info + hr")).toHaveCount(1);
+});
+
 test("anonymous project issue list hides current-user quick search links like legacy partial_list_quicksearch.scala.html", async ({
   page,
 }) => {
@@ -1346,6 +1372,7 @@ async function mockProjectIssues(
     | "empty"
     | "foreign-draft"
     | "labels-unsorted"
+    | "milestone-selected"
     | "no-milestone-menu"
     | "non-member"
     | "populated"
@@ -1423,8 +1450,14 @@ async function mockProjectIssues(
               ? [
                   {
                     id: 5,
+                    closedIssueCount: 1,
+                    completionPercent: 50,
+                    dueDateLabel: "Jul 5, 2026",
+                    dueDateOverdue: false,
                     state: "open",
                     title: "v1.0",
+                    openIssueCount: 1,
+                    untilLabel: "4 days left",
                   },
                   {
                     id: 9,
@@ -1435,8 +1468,14 @@ async function mockProjectIssues(
               : [
                   {
                     id: 5,
+                    closedIssueCount: 1,
+                    completionPercent: 50,
+                    dueDateLabel: "Jul 5, 2026",
+                    dueDateOverdue: false,
                     state: "open",
                     title: "v1.0",
+                    openIssueCount: 1,
+                    untilLabel: "4 days left",
                   },
                 ],
       }),

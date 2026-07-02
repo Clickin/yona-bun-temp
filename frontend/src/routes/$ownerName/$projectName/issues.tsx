@@ -1548,6 +1548,7 @@ function IssueSearchForm({
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
   const hasMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
+  const selectedMilestone = selectedSearchMilestone(search.milestoneId, milestones);
 
   return (
     <form
@@ -1647,6 +1648,9 @@ function IssueSearchForm({
             <dd>
               <select
                 id="milestoneId"
+                key={[search.milestoneId, milestones.open.length, milestones.closed.length].join(
+                  ":",
+                )}
                 name="milestoneId"
                 data-search="milestoneId"
                 data-toggle="select2"
@@ -1679,6 +1683,17 @@ function IssueSearchForm({
                   ))}
                 </optgroup>
               </select>
+              {selectedMilestone ? (
+                <>
+                  <SearchMilestoneStatus
+                    basePath={basePath}
+                    milestone={selectedMilestone}
+                    ownerName={ownerName}
+                    projectName={projectName}
+                  />
+                  <hr />
+                </>
+              ) : null}
             </dd>
           </dl>
         ) : null}
@@ -1723,6 +1738,77 @@ function IssueSearchForm({
         </div>
       </div>
     </form>
+  );
+}
+
+function SearchMilestoneStatus({
+  basePath,
+  milestone,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  milestone: ProjectMilestone;
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+  const milestoneId = stringField(milestone.id, "");
+  const isClosed = stringField(milestone.state, "open") === "closed";
+  const dueDateLabel = stringField(milestone.dueDateLabel, "");
+  const completionPercent = numberField(milestone.completionPercent);
+  const openCount = numberField(milestone.openIssueCount);
+  const closedCount = numberField(milestone.closedIssueCount);
+
+  return (
+    <div className="milestone-info">
+      <div className="meta-info">
+        <a
+          href={prefixBasePath(basePath, `/${ownerName}/${projectName}/milestone/${milestoneId}`)}
+          className="title"
+        >
+          {stringField(milestone.title, "")}
+        </a>
+        {dueDateLabel ? (
+          <span
+            className={
+              !isClosed && booleanField(milestone.dueDateOverdue) ? "due-date over" : "due-date"
+            }
+          >
+            {t("label.dueDate")}
+            <strong>{dueDateLabel}</strong>
+            {!isClosed ? (
+              <span className="date">({stringField(milestone.untilLabel, "")})</span>
+            ) : null}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="progress-wrap">
+        <div className="progress progress-success nm">
+          <div className="bar" style={{ width: `${completionPercent}%` }}></div>
+        </div>
+        <div className="progress-info">
+          <span className="pull-right">
+            <strong>{`${closedCount} / ${openCount + closedCount}`}</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function selectedSearchMilestone(
+  milestoneId: string,
+  milestones: { closed: ProjectMilestone[]; open: ProjectMilestone[] },
+) {
+  if (!milestoneId || milestoneId === "-1") {
+    return null;
+  }
+  return (
+    [...milestones.open, ...milestones.closed].find(
+      (milestone) => stringField(milestone.id, "") === milestoneId,
+    ) ?? null
   );
 }
 
@@ -2306,7 +2392,10 @@ function arraySearch(value: unknown): string[] {
 }
 
 function stringSearch(value: unknown, fallback = "") {
-  return typeof value === "string" ? value : fallback;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "bigint") {
+    return String(value);
+  }
+  return fallback;
 }
 
 function stringField(value: unknown, fallback: string) {
@@ -2350,6 +2439,11 @@ function projectIssueLabelCreatable(project: ProjectContainer) {
 
 function booleanField(value: unknown) {
   return value === true || value === "true" || value === 1 || value === "1";
+}
+
+function numberField(value: unknown) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
 }
 
 function LegacyTitlePrefixAnchor({ children }: { children: string }) {

@@ -206,6 +206,10 @@ if (shouldBlockDesignHarness(designResult)) {
 const scalaHtmlGoalResult = evaluateScalaHtmlGoalGuard({
   changedFiles: stagedFiles,
   auditPatch: readStagedPatch("docs/provenance/frontend-scala-html-goal-violation-audit.md"),
+  env: {
+    ...process.env,
+    YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1",
+  },
 });
 console.log(formatScalaHtmlGoalGuardSummary(scalaHtmlGoalResult));
 if (scalaHtmlGoalResult.blocked) {

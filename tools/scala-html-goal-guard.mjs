@@ -109,6 +109,9 @@ export function evaluateScalaHtmlGoalGuard({
   const allowEvidenceOnly = env.YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY === "1";
   const auditUpdated = changedFiles.includes(SCALA_HTML_AUDIT_FILE);
   const allowUndocumentedRoute = env.YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE === "1";
+  const allowMultiScreen = env.YONA_ALLOW_SCALA_HTML_MULTI_SCREEN === "1";
+  const enforceSingleAuditRow = env.YONA_ENFORCE_SCALA_HTML_SINGLE_ROW === "1";
+  const auditRows = auditPatch === null ? [] : addedAuditRows(auditPatch);
 
   if (
     implementationTouchesRuntime &&
@@ -181,6 +184,24 @@ export function evaluateScalaHtmlGoalGuard({
         message: `Scala HTML goal guard blocked nonexistent legacy source work. Audit rows must name real legacy templates under ${LEGACY_VIEW_ROOT}; missing: ${missingScalaHtmlSources.join(", ")}.`,
       };
     }
+  }
+
+  if (
+    implementationTouchesRuntime &&
+    auditUpdated &&
+    auditPatch !== null &&
+    !allowUndocumentedRoute &&
+    enforceSingleAuditRow &&
+    !allowMultiScreen &&
+    auditRows.length > 1
+  ) {
+    return {
+      blocked: true,
+      frontendEvidenceFiles,
+      frontendImplementationFiles,
+      message:
+        "Scala HTML goal guard blocked multi-screen frontend goal work. A route TSX goal commit must add exactly one audit row so unattended runs keep one legacy screen state per commit, or set YONA_ALLOW_SCALA_HTML_MULTI_SCREEN=1 for an explicit coordinated exception.",
+    };
   }
 
   if (

@@ -47,6 +47,10 @@ paired with a same-commit focused `frontend/tests/*.e2e.ts` change and named in
 a newly added audit table row that also names a legacy `.scala.html` source and
 that same changed focused E2E verification file. This is the machine-checkable
 memo format for multi-day automated goal turns.
+It also blocks route TSX goal commits that add multiple new rebuild audit rows.
+That keeps unattended runs to one user-visible screen state per commit, matching
+the goal directive; coordinated exceptions must set
+`YONA_ALLOW_SCALA_HTML_MULTI_SCREEN=1` explicitly.
 
 The mandatory workflow remains:
 
@@ -135,6 +139,7 @@ must not be counted as successful Scala HTML goal implementation turns:
 
 | Date | Route/screen | Legacy source of truth | Implementation evidence | Verification |
 | --- | --- | --- | --- | --- |
+| 2026-07-02 | `/admin/sample/issues?milestoneId=5` issue list selected milestone search status branch | `issue/list.scala.html`, `issue/partial_searchform.scala.html`, `milestone/partial_status.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` now follows the `partial_searchform.scala.html` selected-milestone branch by rendering `milestone.partial_status` style `.milestone-info` and the following `<hr>` after the `#milestoneId` select when the selected id exists in the open/closed milestone query results. | `frontend/tests/project-issues-empty.e2e.ts` adds a focused selected-milestone state that asserts the legacy milestone title link, due-date text/date class, progress bar width, closed/total count, and adjacent `<hr>`. |
 | 2026-07-02 | `/admin/sample/issues` issue list label management permission/text branch | `issue/list.scala.html`, `issue/partial_searchform.scala.html`, `issue/partial_select_label.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` now follows `partial_searchform.scala.html` by showing the label management cog text only when the project label list is empty, and follows `partial_select_label.scala.html` by gating the `[Edit]` label link on project-manager capability rather than the broader mass-update/member control flag. | `frontend/tests/project-issues-empty.e2e.ts` asserts the project-label search form renders an icon-only manage cog when labels exist and adds a non-manager-with-labels state proving the `#labelIds` select remains while `.label-edit` and the management cog are omitted. |
 | 2026-07-02 | `/$user` missing-user not-found branch | `error/notfound_default.scala.html`, `common/usermenu.scala.html`, `layout.scala.html` | `frontend/src/routes/$user.tsx` now renders the not-found shell with the anonymous `#mySidenav` and `gnb-usermenu` structure from `common.usermenu()` instead of the earlier partial header-only branch. | `frontend/tests/user-public-profile.e2e.ts` whole-screen expected DOM includes the legacy side menu, error copy `user.notExists.name`, home button, and footer. |
 | 2026-07-02 | Global unmatched route not-found | `error/notfound_default.scala.html`, `common/usermenu.scala.html`, `layout.scala.html` | `frontend/src/routes/__root.tsx` now wraps the fallback in `LegacyI18nProvider` and renders nav/user-menu/error/home labels through the same legacy message keys used by `Messages(...)` in the Scala template, while keeping the reset-password alias redirect separate. | `frontend/tests/not-found.e2e.ts` whole-screen DOM and desktop/mobile metric checks cover the default not-found shell and anonymous user menu. |

@@ -12,7 +12,7 @@ test("blocks frontend e2e metric-only work without a TSX route implementation", 
       "frontend/tests/organization-home.e2e.ts",
       "docs/provenance/ui-parity-reports/template-first-p6-organization-directory-workspace.md",
     ],
-    env: {},
+    env: { YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1" },
   });
 
   assert.equal(result.blocked, true);
@@ -25,7 +25,7 @@ test("blocks CSS-only layout restoration without a TSX route implementation", ()
       "frontend/src/app.css",
       "docs/provenance/ui-parity-reports/template-first-p7-site-admin-error-security.md",
     ],
-    env: {},
+    env: { YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1" },
   });
 
   assert.equal(result.blocked, true);
@@ -196,6 +196,42 @@ test("blocks frontend route TSX work when the audit row names an unchanged E2E f
 
   assert.equal(result.blocked, true);
   assert.match(formatScalaHtmlGoalGuardSummary(result), /incomplete audit row work/u);
+});
+
+test("blocks multiple frontend goal audit rows in one route commit", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/issues` list branch | `issue/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issues-empty.e2e.ts` E2E |\n" +
+      "+| 2026-07-02 | `/admin/sample/issues` search branch | `issue/partial_searchform.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issues-empty.e2e.ts` E2E |\n",
+    env: { YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1" },
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /multi-screen frontend goal work/u);
+});
+
+test("allows explicitly marked multi-screen frontend goal commits", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/issues` list branch | `issue/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issues-empty.e2e.ts` E2E |\n" +
+      "+| 2026-07-02 | `/admin/sample/issues` search branch | `issue/partial_searchform.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issues-empty.e2e.ts` E2E |\n",
+    env: {
+      YONA_ALLOW_SCALA_HTML_MULTI_SCREEN: "1",
+      YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1",
+    },
+  });
+
+  assert.equal(result.blocked, false);
 });
 
 test("allows explicitly marked non-goal frontend route commits", () => {
