@@ -117,6 +117,54 @@ test("project transfer menu settings link preserves legacy href with SPA transit
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 
+test("project transfer header favorite star posts and toggles starred class", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectAdmin(page, { favoriteRequests });
+
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  await expect(favoriteStar).not.toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(favoriteStar).toHaveClass(/starred/);
+});
+
+test("project transfer header favorite star removes starred class when unfavorited", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectAdmin(page, {
+    favoriteRequests,
+    favoriteResponseFavorited: false,
+    project: { isFavorite: true, isFavorited: true },
+  });
+
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  await expect(favoriteStar).toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(favoriteStar).not.toHaveClass(/starred/);
+});
+
 async function readDesktopTransferMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = requireElement(".page-wrap-outer");
@@ -189,7 +237,14 @@ async function readDesktopTransferMetrics(page: Page) {
   });
 }
 
-async function mockProjectAdmin(page: Page) {
+async function mockProjectAdmin(
+  page: Page,
+  options: {
+    favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
+    favoriteResponseFavorited?: boolean;
+    project?: Partial<ReturnType<typeof transferProject>>;
+  } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -206,33 +261,24 @@ async function mockProjectAdmin(page: Page) {
       }),
     });
   });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-transfer" },
+      body: JSON.stringify({
+        isAuthenticated: true,
+        user: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "admin",
+          name: "Site Admin",
+        },
+      }),
+    });
+  });
   await page.route("**/api/v1/owners/admin/projects/sample/transfer", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        destination: "",
-        enrollmentRequestCount: 0,
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        ownerName: "admin",
-        projectName: "sample",
-        vcs: "GIT",
-        viewerCanTransfer: true,
-        viewerCanUpdate: true,
-      }),
+      body: JSON.stringify({ ...transferProject(), ...options.project }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
@@ -257,6 +303,45 @@ async function mockProjectAdmin(page: Page) {
       }),
     });
   });
+  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
+    const request = route.request();
+    options.favoriteRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-transfer",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
+    });
+  });
+}
+
+function transferProject() {
+  return {
+    backgroundImageUrl: "/assets/images/bg-default-project.png",
+    destination: "",
+    enrollmentRequestCount: 0,
+    id: 7,
+    isFavorite: false,
+    isFavorited: false,
+    isForkedFromOrigin: false,
+    isPrivate: false,
+    isProtected: false,
+    logoUrl: "/assets/images/project_default_logo.png",
+    menuSetting: {
+      board: true,
+      code: true,
+      issue: true,
+      milestone: true,
+      pullRequest: true,
+      review: true,
+    },
+    ownerName: "admin",
+    projectName: "sample",
+    vcs: "GIT",
+    viewerCanTransfer: true,
+    viewerCanUpdate: true,
+  };
 }
 
 function projectSettings() {
