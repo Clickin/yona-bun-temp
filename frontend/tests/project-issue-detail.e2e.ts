@@ -514,6 +514,22 @@ test("project issue detail switches legacy comment editor tabs through data-togg
   await expect(page.locator("#edit-contents")).not.toHaveClass(/active/);
 });
 
+test("project issue detail shows notification receiver on editor focus", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const receiver = page.locator("#comment-form .notification-receiver");
+  await expect(receiver).toBeHidden();
+
+  await page.locator("#comment-form .editorSeries").focus();
+  await expect(receiver).toBeVisible();
+  await expect(receiver).toHaveCSS("display", "block");
+  await expect(receiver.locator(".notification-receiver-title")).toHaveText(
+    "Notification receivers",
+  );
+});
+
 test("project issue detail toggles legacy comment update form through comment-edit", async ({
   page,
 }) => {

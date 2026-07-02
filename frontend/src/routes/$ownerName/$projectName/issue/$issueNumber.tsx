@@ -2823,6 +2823,8 @@ function MarkdownEditor({
   value: string;
   wrapId: string;
 }) {
+  const [notificationVisible, setNotificationVisible] = useState(false);
+
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
@@ -2876,6 +2878,7 @@ function MarkdownEditor({
               data-editor-mode={editorMode}
               id={`editor-${name}-${wrapId}`}
               defaultValue={value}
+              onFocus={() => setNotificationVisible(true)}
               {...{ markdown: "true" }}
             ></textarea>
           </div>
@@ -2886,7 +2889,10 @@ function MarkdownEditor({
             data-via-email="false"
           ></div>
         </div>
-        <div className="notification-receiver">
+        <div
+          className="notification-receiver"
+          style={notificationVisible ? { display: "block" } : undefined}
+        >
           <span className="notification-receiver-title">Notification receivers </span>
           <span className="notification-receiver-list"></span>
         </div>
