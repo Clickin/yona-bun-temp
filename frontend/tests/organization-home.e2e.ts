@@ -95,6 +95,47 @@ test("organization home filters projects like legacy item-search", async ({ page
   await expect(page.locator(".all-projects .project")).toBeVisible();
 });
 
+test("organization home keeps legacy view.scala.html layout metrics", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationHome(page);
+
+  await page.goto(`${basePath}/organizations/weblabs`);
+  await expect(page.locator(".all-projects .project")).toBeVisible();
+
+  const metrics = await organizationHomeMetrics(page);
+
+  expect(metrics.row.paddingTop).toBe("5px");
+  expect(metrics.row.paddingBottom).toBe("5px");
+  expect(metrics.row.marginBottom).toBe("20px");
+  expect(metrics.mainColumn.widthRatio).toBeCloseTo(0.7447, 3);
+  expect(metrics.sideColumn.widthRatio).toBeCloseTo(0.234, 3);
+  expect(metrics.sideColumn.marginLeftRatio).toBeCloseTo(0.0213, 3);
+  expect(metrics.projectList.margin).toBe("0px 0px 20px");
+  expect(metrics.projectList.listStyle).toBe("none");
+  expect(metrics.projectRow.padding).toBe("15px 0px 10px");
+  expect(metrics.projectRow.borderBottom).toBe("1px solid rgb(220, 220, 220)");
+  expect(metrics.projectAvatar.width).toBe(50);
+  expect(metrics.projectAvatar.height).toBe(50);
+  expect(metrics.projectAvatar.marginRight).toBe("10px");
+  expect(metrics.projectTitle.fontSize).toBe("20px");
+  expect(metrics.projectTitle.fontWeight).toBe("700");
+  expect(metrics.projectDesc.maxWidth).toBe("647px");
+  expect(metrics.projectDesc.color).toBe("rgb(186, 186, 186)");
+  expect(metrics.projectNameTag.fontSize).toBe("11px");
+  expect(metrics.projectStats.textAlign).toBe("right");
+  expect(metrics.projectStats.strongColor).toBe("rgb(81, 170, 204)");
+  expect(metrics.memberPanel.padding).toBe("10px");
+  expect(metrics.memberInner.borderRadius).toBe("10px");
+  expect(metrics.memberInner.fontSize).toBe("12px");
+  expect(metrics.memberHeader.padding).toBe("10px 0px");
+  expect(metrics.memberHeader.backgroundColor).toBe("rgb(248, 248, 248)");
+  expect(metrics.memberHeaderTitle.fontSize).toBe("12px");
+  expect(metrics.memberHeaderTitle.lineHeight).toBe("20px");
+  expect(metrics.memberList.padding).toBe("10px");
+  expect(metrics.memberRow.padding).toBe("0px 10px");
+  expect(metrics.memberRow.color).toBe("rgb(153, 153, 153)");
+});
+
 test("organization home leave modal posts legacy leave action", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const leaveRequests: { hasCsrfToken: boolean; method: string }[] = [];
@@ -114,6 +155,125 @@ test("organization home leave modal posts legacy leave action", async ({ page })
   await expect(page).toHaveURL(`${basePath}/organizations`);
   expect(leaveRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
 });
+
+async function organizationHomeMetrics(page: Page) {
+  return page.evaluate(() => {
+    const row = mustElement(".project-home-header");
+    const mainColumn = mustElement(".project-home-header > .span9");
+    const sideColumn = mustElement(".project-home-header > .span3");
+    const projectList = mustElement(".all-projects");
+    const projectRow = mustElement(".all-projects .project");
+    const projectAvatar = mustElement(".all-projects .owner-avatar-wrap");
+    const projectTitle = mustElement(".all-projects .header");
+    const projectDesc = mustElement(".all-projects .desc");
+    const projectNameTag = mustElement(".all-projects .name-tag");
+    const projectStats = mustElement(".all-projects .stats-wrap");
+    const projectStatsStrong = mustElement(".all-projects .stats-wrap strong");
+    const memberPanel = mustElement(".bubble-wrap.gray.project-home");
+    const memberInner = mustElement(".bubble-wrap.gray.project-home .inner.member-info");
+    const memberHeader = mustElement(".bubble-wrap.gray.project-home .inner.member-info header");
+    const memberHeaderTitle = mustElement(
+      ".bubble-wrap.gray.project-home .inner.member-info header h3",
+    );
+    const memberList = mustElement(".bubble-wrap.gray.project-home .project-members");
+    const memberRow = mustElement(".bubble-wrap.gray.project-home .project-members .member");
+    const rowBox = row.getBoundingClientRect();
+    const mainColumnBox = mainColumn.getBoundingClientRect();
+    const sideColumnBox = sideColumn.getBoundingClientRect();
+    const rowStyle = getComputedStyle(row);
+    const sideColumnStyle = getComputedStyle(sideColumn);
+    const projectListStyle = getComputedStyle(projectList);
+    const projectRowStyle = getComputedStyle(projectRow);
+    const projectAvatarStyle = getComputedStyle(projectAvatar);
+    const projectTitleStyle = getComputedStyle(projectTitle);
+    const projectDescStyle = getComputedStyle(projectDesc);
+    const projectNameTagStyle = getComputedStyle(projectNameTag);
+    const projectStatsStyle = getComputedStyle(projectStats);
+    const memberPanelStyle = getComputedStyle(memberPanel);
+    const memberInnerStyle = getComputedStyle(memberInner);
+    const memberHeaderStyle = getComputedStyle(memberHeader);
+    const memberHeaderTitleStyle = getComputedStyle(memberHeaderTitle);
+    const memberListStyle = getComputedStyle(memberList);
+    const memberRowStyle = getComputedStyle(memberRow);
+
+    return {
+      row: {
+        paddingBottom: rowStyle.paddingBottom,
+        paddingTop: rowStyle.paddingTop,
+        marginBottom: rowStyle.marginBottom,
+      },
+      mainColumn: {
+        widthRatio: ratio(mainColumnBox.width, rowBox.width),
+      },
+      sideColumn: {
+        marginLeftRatio: ratio(parseFloat(sideColumnStyle.marginLeft), rowBox.width),
+        widthRatio: ratio(sideColumnBox.width, rowBox.width),
+      },
+      projectList: {
+        listStyle: projectListStyle.listStyleType,
+        margin: projectListStyle.margin,
+      },
+      projectRow: {
+        borderBottom: `${projectRowStyle.borderBottomWidth} ${projectRowStyle.borderBottomStyle} ${projectRowStyle.borderBottomColor}`,
+        padding: projectRowStyle.padding,
+      },
+      projectAvatar: {
+        height: Math.round(projectAvatar.getBoundingClientRect().height),
+        marginRight: projectAvatarStyle.marginRight,
+        width: Math.round(projectAvatar.getBoundingClientRect().width),
+      },
+      projectTitle: {
+        fontSize: projectTitleStyle.fontSize,
+        fontWeight: projectTitleStyle.fontWeight,
+      },
+      projectDesc: {
+        color: projectDescStyle.color,
+        maxWidth: projectDescStyle.maxWidth,
+      },
+      projectNameTag: {
+        fontSize: projectNameTagStyle.fontSize,
+      },
+      projectStats: {
+        strongColor: getComputedStyle(projectStatsStrong).color,
+        textAlign: projectStatsStyle.textAlign,
+      },
+      memberPanel: {
+        padding: memberPanelStyle.padding,
+      },
+      memberInner: {
+        borderRadius: memberInnerStyle.borderRadius,
+        fontSize: memberInnerStyle.fontSize,
+      },
+      memberHeader: {
+        backgroundColor: memberHeaderStyle.backgroundColor,
+        padding: memberHeaderStyle.padding,
+      },
+      memberHeaderTitle: {
+        fontSize: memberHeaderTitleStyle.fontSize,
+        lineHeight: memberHeaderTitleStyle.lineHeight,
+      },
+      memberList: {
+        padding: memberListStyle.padding,
+      },
+      memberRow: {
+        color: memberRowStyle.color,
+        padding: memberRowStyle.padding,
+      },
+    };
+
+    function mustElement(selector: string) {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing selector: ${selector}`);
+      }
+      return element;
+    }
+
+    function ratio(value: number, base: number) {
+      return Math.round((value / base) * 10_000) / 10_000;
+    }
+  });
+}
 
 async function mockOrganizationHome(
   page: Page,

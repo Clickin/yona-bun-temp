@@ -109,6 +109,18 @@ are implemented as REST JSON/API-return plus React-rendered legacy DOM.
 - Verification after the fix: `pnpm --dir frontend test:e2e -- user-public-profile.e2e.ts`
   passed 7 tests; the P6 representative verifier listed below passed 62 tests.
 
+## 2026-07-02 Organization Home Layout Metrics Follow-Up
+
+- Restored the legacy `organization/view.scala.html` organization home styling
+  backed by `_page.less` for `.all-projects`, project row metadata/stats, and
+  `.bubble-wrap.gray.project-home` member panels in `frontend/src/app.css`.
+- Added browser metric proof to `frontend/tests/organization-home.e2e.ts` for
+  the legacy `span9`/`span3` content ratio, project row padding/border/avatar
+  sizing, metadata typography/color, stats alignment, and manager/member panel
+  padding/header/list proportions.
+- Verification: `pnpm --dir frontend test:e2e -- organization-home.e2e.ts`
+  passed 6 tests.
+
 ## Verifier Evidence
 
 Route/source proof:

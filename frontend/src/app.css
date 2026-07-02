@@ -2562,6 +2562,118 @@ h1 {
   margin-top: 20px !important;
 }
 
+.all-projects {
+  clear: both;
+  margin: 0 0 20px;
+  list-style: none;
+}
+
+.all-projects .project {
+  padding: 15px 0 10px;
+  overflow: hidden;
+  border-bottom: 1px solid #dcdcdc;
+}
+
+.all-projects .project .info-wrap .owner-avatar-wrap {
+  position: relative;
+  display: inline;
+  float: left;
+  width: 50px;
+  height: 50px;
+  margin-right: 10px;
+  overflow: hidden;
+  border-radius: 3px !important;
+}
+
+.all-projects .project .info-wrap .owner-avatar-wrap img {
+  width: 100%;
+  height: 100%;
+  vertical-align: top;
+}
+
+.all-projects .project .info-wrap .header {
+  margin-bottom: 5px;
+  margin-left: 10px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.all-projects .project .info-wrap .header .yobicon-lock {
+  color: #7f8c8d;
+}
+
+.all-projects .project .info-wrap .header .owner-name-small {
+  color: #999;
+  font-size: 19px;
+}
+
+.all-projects .project .info-wrap .forked {
+  padding: 3px 5px;
+  margin-left: 10px;
+  font-size: 11px;
+  text-shadow: none;
+}
+
+.all-projects .project .info-wrap .desc {
+  max-width: 647px;
+  max-height: 100px;
+  margin-left: 10px;
+  overflow-y: auto;
+  color: #bababa;
+  text-overflow: ellipsis;
+}
+
+.all-projects .project .info-wrap .name-tag {
+  margin: 0 0 0 10px;
+  font-size: 11px;
+  color: #999;
+}
+
+.all-projects .project .stats-wrap {
+  margin-top: 0;
+  text-align: right;
+}
+
+.all-projects .project .stats-wrap .like {
+  display: inline-block;
+  width: 42px;
+  margin-right: 20px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.all-projects .project .stats-wrap .like .num {
+  color: #4489a4;
+}
+
+.all-projects .project .stats-wrap .like .ico {
+  margin-right: 3px;
+  vertical-align: text-bottom;
+}
+
+.all-projects .project .stats-wrap .members {
+  width: 100%;
+}
+
+.all-projects .project .stats-wrap .members ul {
+  display: inline-block;
+  padding-left: 50px;
+  overflow: hidden;
+}
+
+.all-projects .project .stats-wrap .members ul li {
+  float: right;
+}
+
+.all-projects .project .stats-wrap .members ul li .avatar-wrap {
+  margin-right: 3px;
+  margin-bottom: 3px;
+}
+
+.all-projects .project .stats-wrap .members strong {
+  color: #51aacc;
+}
+
 .project-home-header {
   position: relative;
   padding: 5px 0;
@@ -2665,6 +2777,117 @@ h1 {
 
 .bubble-wrap.wp {
   padding: 20px 20px 10px;
+}
+
+.project-home {
+  padding: 10px;
+}
+
+.project-home .issue-wrap {
+  margin-bottom: 15px;
+}
+
+.project-home .issue-wrap a.btn {
+  width: 105px;
+}
+
+.project-home .project-btn-wrap {
+  padding: 5px 0;
+  text-align: center;
+}
+
+.project-home .project-btn-wrap .project-btn-item {
+  display: block;
+  margin-top: 10px;
+}
+
+.project-home .project-btn-wrap .project-btn-item a {
+  display: block;
+}
+
+.project-home .project-btn-wrap .project-btn-item:first-child {
+  margin-top: 0;
+}
+
+.project-home .inner {
+  margin-bottom: 10px;
+  overflow: hidden;
+  font-size: 12px;
+  vertical-align: top;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 5%);
+}
+
+.project-home .inner.member-info {
+  height: auto !important;
+  margin-right: 0;
+}
+
+.project-home .inner .project-members {
+  padding: 10px;
+  margin: 0;
+  list-style: none;
+}
+
+.project-home .inner .project-members .member {
+  display: block;
+  padding: 5px 10px;
+  color: #999;
+  border-bottom: 1px solid #ededed;
+}
+
+.project-home .inner .project-members .member:first-child {
+  padding-top: 0;
+}
+
+.project-home .inner .project-members .member:last-child {
+  padding-bottom: 0;
+  border-bottom: 0 none;
+}
+
+.project-home .inner .project-members .member .name {
+  margin-left: 5px;
+  line-height: 24px;
+}
+
+.project-home .inner .project-members .member .name strong {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-home .inner header {
+  padding: 10px 0;
+  background-color: #f8f8f8;
+}
+
+.project-home .inner header h3 {
+  display: inline-block;
+  margin: 0;
+  font-size: 12px;
+  line-height: 20px;
+  color: #4c4c4c;
+}
+
+.project-home .inner header .project-status {
+  float: right;
+  line-height: 19px;
+}
+
+.project-home .inner header .project-status .ico-like {
+  vertical-align: bottom;
+}
+
+.project-home .inner header .project-status .num {
+  color: #4489a4;
+}
+
+.project-home .inner header .project-status .sp {
+  margin: 0 7px;
+  color: #ccc;
 }
 
 .box-wrap {
