@@ -141,6 +141,13 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   await mockIssues(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
 
   await page.goto(`${basePath}/sites/issueList?state=open`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
@@ -253,6 +260,26 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ).toBe("site-posts-nav");
 });
 
+test("site admin issue list renders legacy update notification badge", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockIssues(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isAvailable",
+    releaseUrl: "https://example.test/yona-1.1.0",
+    versionToUpdate: "1.1.0",
+  });
+
+  await page.goto(`${basePath}/sites/issueList?state=open`);
+
+  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
+  await expect(updateLink).toHaveText("Software Update1");
+  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
+});
+
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -348,6 +375,24 @@ async function mockPosts(page: Page) {
         total: 1,
         totalPages: 1,
       }),
+    });
+  });
+}
+
+async function mockUpdate(
+  page: Page,
+  response: {
+    currentVersion: string;
+    error: string | null;
+    message: string;
+    releaseUrl: string | null;
+    versionToUpdate: string | null;
+  },
+) {
+  await page.route("**/api/v1/site/update", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(response),
     });
   });
 }
