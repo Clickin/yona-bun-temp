@@ -907,7 +907,7 @@ function UserIssueItem({
                 className={`pull-right${issue.dueDateOverdue ? " overdue" : ""}`}
                 data-toggle="tooltip"
                 data-placement="top"
-                title={issue.dueDateLabel}
+                title={`Due date: ${issue.dueDateLabel}`}
               >
                 <i className="yobicon-clock2"></i>
                 {issue.state === "open" && issue.dueDateOverdue
