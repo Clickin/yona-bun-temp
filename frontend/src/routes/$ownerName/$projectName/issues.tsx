@@ -411,6 +411,8 @@ function ProjectIssuesBody({
     : [];
   const showMilestone = projectMilestoneMenuEnabled(project);
   const showMassUpdateControls = projectMemberControlsEnabled(project);
+  const showLabelManagement = projectIssueLabelCreatable(project);
+  const showLabelEdit = projectManagerControlsEnabled(project);
 
   return (
     <div className="page-wrap-outer">
@@ -437,7 +439,10 @@ function ProjectIssuesBody({
               projectName={projectName}
               search={search}
               showCurrentUserOptions={showMassUpdateControls}
-              showLabelManagement={showMassUpdateControls}
+              labelControls={{
+                showEditLink: showLabelEdit,
+                showManageLink: showLabelManagement,
+              }}
             />
           </div>
           <div className="span10 span-hard-wrap" id="span10">
@@ -1512,12 +1517,12 @@ function IssueSearchForm({
   issues,
   isAnonymous,
   labels,
+  labelControls,
   milestones,
   ownerName,
   projectName,
   search,
   showCurrentUserOptions,
-  showLabelManagement,
 }: {
   basePath: string;
   currentUserId: string;
@@ -1526,6 +1531,10 @@ function IssueSearchForm({
   issues: RestIssueListItem[];
   isAnonymous: boolean;
   labels: Array<Record<string, unknown>>;
+  labelControls: {
+    showEditLink: boolean;
+    showManageLink: boolean;
+  };
   milestones: {
     closed: ProjectMilestone[];
     open: ProjectMilestone[];
@@ -1534,7 +1543,6 @@ function IssueSearchForm({
   projectName: string;
   search: ProjectIssuesSearch;
   showCurrentUserOptions: boolean;
-  showLabelManagement: boolean;
 }) {
   const { t } = useLegacyMessages();
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
@@ -1691,15 +1699,17 @@ function IssueSearchForm({
           </dd>
         </dl>
         <div className="labels-wrap">
-          {showLabelManagement ? (
+          {labelControls.showManageLink ? (
             <a
               href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
               className="ybtn ybtn-default ybtn-mini pull-right"
             >
               <i className="yobicon-cog vmiddle"></i>
-              <span className="vmiddle" style={{ marginLeft: "2px" }}>
-                {t("label.manage")}
-              </span>
+              {labels.length === 0 ? (
+                <span className="vmiddle" style={{ marginLeft: "2px" }}>
+                  {t("label.manage")}
+                </span>
+              ) : null}
             </a>
           ) : null}
           <IssueSearchLabelSelect
@@ -1708,6 +1718,7 @@ function IssueSearchForm({
             ownerName={ownerName}
             projectName={projectName}
             search={search}
+            showLabelEdit={labelControls.showEditLink}
           />
         </div>
       </div>
@@ -1721,12 +1732,14 @@ function IssueSearchLabelSelect({
   ownerName,
   projectName,
   search,
+  showLabelEdit,
 }: {
   basePath: string;
   labels: Array<Record<string, unknown>>;
   ownerName: string;
   projectName: string;
   search: ProjectIssuesSearch;
+  showLabelEdit: boolean;
 }) {
   const { t } = useLegacyMessages();
   const groupedLabels = groupProjectLabels(labels);
@@ -1739,14 +1752,16 @@ function IssueSearchLabelSelect({
     <dl className="issue-option">
       <dt>
         {t("label")}{" "}
-        <a
-          href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
-          target="_blank"
-          className="label-edit"
-          rel="noreferrer"
-        >
-          [{t("button.edit")}]
-        </a>
+        {showLabelEdit ? (
+          <a
+            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
+            target="_blank"
+            className="label-edit"
+            rel="noreferrer"
+          >
+            [{t("button.edit")}]
+          </a>
+        ) : null}
       </dt>
       <dd>
         <select
@@ -2315,6 +2330,22 @@ function projectMilestoneMenuEnabled(project: ProjectContainer) {
 
 function projectMemberControlsEnabled(project: ProjectContainer) {
   return booleanField((project as Record<string, unknown>).viewerCanUpdate);
+}
+
+function projectManagerControlsEnabled(project: ProjectContainer) {
+  const record = project as Record<string, unknown>;
+  if ("viewerIsProjectManager" in record) {
+    return booleanField(record.viewerIsProjectManager);
+  }
+  return booleanField(record.viewerCanUpdate);
+}
+
+function projectIssueLabelCreatable(project: ProjectContainer) {
+  const record = project as Record<string, unknown>;
+  if ("viewerCanCreateIssueLabel" in record) {
+    return booleanField(record.viewerCanCreateIssueLabel);
+  }
+  return projectManagerControlsEnabled(project);
 }
 
 function booleanField(value: unknown) {

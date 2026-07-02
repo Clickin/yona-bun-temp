@@ -437,6 +437,11 @@ test("project issue list search form renders legacy partial_select_label when pr
 
   await page.goto(`${basePath}/admin/sample/issues?filter=empty&labelIds=8`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await expect(page.locator(".labels-wrap > .ybtn")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/labelsform`,
+  );
+  await expect(page.locator(".labels-wrap > .ybtn span.vmiddle")).toHaveCount(0);
   await expect(page.locator(".labels-wrap dl.issue-option dt")).toContainText("Label");
   await expect(page.locator(".labels-wrap .label-edit")).toHaveAttribute(
     "href",
@@ -464,6 +469,21 @@ test("project issue list search form renders legacy partial_select_label when pr
     "data-category-id",
     "3",
   );
+  await expect(page.locator('#labelIds option[value="8"]')).toHaveText("bug");
+});
+
+test("project issue list label select hides legacy edit link for non-managers", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "project-labels-non-manager");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=empty&labelIds=8`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await expect(page.locator(".labels-wrap > .ybtn")).toHaveCount(0);
+  await expect(page.locator(".labels-wrap dl.issue-option dt")).toContainText("Label");
+  await expect(page.locator(".labels-wrap .label-edit")).toHaveCount(0);
+  await expect(page.locator("#labelIds")).toHaveAttribute("multiple", "");
   await expect(page.locator('#labelIds option[value="8"]')).toHaveText("bug");
 });
 
@@ -1331,6 +1351,7 @@ async function mockProjectIssues(
     | "populated"
     | "prefix"
     | "project-labels"
+    | "project-labels-non-manager"
     | "project-wide-options"
     | "sharer"
     | "subtask"
@@ -1379,7 +1400,7 @@ async function mockProjectIssues(
         ownerName: "admin",
         projectName: "sample",
         vcs: "GIT",
-        viewerCanUpdate: state !== "non-member",
+        viewerCanUpdate: state !== "non-member" && state !== "project-labels-non-manager",
       }),
     });
   });
@@ -1520,7 +1541,7 @@ async function mockProjectIssues(
       contentType: "application/json",
       body: JSON.stringify({
         labels:
-          state === "project-labels"
+          state === "project-labels" || state === "project-labels-non-manager"
             ? [
                 {
                   categoryId: 3,
