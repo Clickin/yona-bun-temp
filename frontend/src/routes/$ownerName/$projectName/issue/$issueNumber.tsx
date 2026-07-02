@@ -1808,16 +1808,6 @@ function IssueActionButtons({
   return wrap ? buttons : <>{buttons.props.children}</>;
 }
 
-function EmptyTimeline() {
-  return (
-    <div id="comments" className="board-comment-wrap">
-      <div id="timeline">
-        <div className="timeline-list"></div>
-      </div>
-    </div>
-  );
-}
-
 type IssueComment = RestIssueDetailResponse["comments"][number];
 type IssueTimelineItem = RestIssueDetailResponse["timeline"][number];
 type IssueChildComment = IssueComment;
@@ -1843,7 +1833,7 @@ function IssueMainTimeline({
   const timeline: IssueTimelineItem[] = issue.timeline?.length
     ? issue.timeline
     : comments.map((comment) => ({ comment, id: stringField(comment.id) }));
-  const hasTimelineRows = comments.length || timelineHasVisibleEvent(timeline);
+  const hasTimelineItems = comments.length + (issue.timeline ?? []).length > 0;
 
   return (
     <div id="comments" className="board-comment-wrap">
@@ -1854,7 +1844,7 @@ function IssueMainTimeline({
             <strong>Comment</strong> <strong className="num">{comments.length}</strong>
           </div>
           <hr className="nm" />
-          {hasTimelineRows ? (
+          {hasTimelineItems ? (
             <ul className="comments">
               {timeline.map((item, index) =>
                 item.comment ? (
@@ -3130,12 +3120,6 @@ function ellipsisMarkdown(markdown: string) {
 
 function hasLegacyMention(value: unknown, loginId: string) {
   return loginId !== "" && stringField(value).includes(`@${loginId} `);
-}
-
-function timelineHasVisibleEvent(timeline: IssueTimelineItem[]) {
-  return timeline.some(
-    (item) => !item.comment && stringField(item.eventType) !== "ISSUE_BODY_CHANGED",
-  );
 }
 
 function issueStateLabel(state: string) {

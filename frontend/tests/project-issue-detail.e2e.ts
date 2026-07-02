@@ -1456,6 +1456,38 @@ test("project issue detail renders legacy state-change timeline event", async ({
   });
 });
 
+test("project issue detail preserves legacy body-changed-only timeline shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    commentCount: 0,
+    comments: [],
+    timeline: [
+      {
+        createdLabel: "Jul 4, 2026",
+        eventType: "ISSUE_BODY_CHANGED",
+        id: 104,
+        kind: "event",
+        newValue: "new body",
+        oldValue: "old body",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#event-104")).toHaveCount(0);
+  const expected =
+    `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul></div></div>${COMMENT_FORM}</div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+});
+
 test("project issue detail renders legacy assignee timeline event", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {
