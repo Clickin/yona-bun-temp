@@ -3257,6 +3257,58 @@ h1 {
   line-height: 30px;
 }
 
+.site-setting-wrap .post-list-wrap {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.site-setting-wrap .post-list-wrap .listitem {
+  padding: 10px 0;
+}
+
+.site-setting-wrap .post-list-wrap .post-info-wrap {
+  margin-top: 5px;
+  line-height: 20px;
+}
+
+.site-setting-wrap .post-list-wrap .post-project {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: bold;
+  line-height: 20px;
+  color: #0088cc;
+}
+
+.site-setting-wrap .post-list-wrap .post-info-separator {
+  padding: 0 5px;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.site-setting-wrap .post-list-wrap .post-title {
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.site-setting-wrap .post-list-wrap .post-meta-wrap {
+  font-size: 11px;
+  line-height: 20px;
+}
+
+.site-setting-wrap .post-list-wrap .post-meta-wrap .avatar-wrap {
+  width: 14px;
+  height: 14px;
+}
+
+.site-setting-wrap .post-list-wrap .post-meta-item {
+  margin: 0 5px;
+}
+
+.site-setting-wrap .post-list-wrap .post-comments i {
+  vertical-align: middle;
+}
+
 .filter-wrap {
   position: relative;
   display: block;
