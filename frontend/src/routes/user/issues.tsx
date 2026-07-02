@@ -823,7 +823,9 @@ function UserIssueItem({
               {issue.title}
             </LegacyInternalLink>
             <CommentVoteCounts issue={issue} issueHref={issueHref} />
-            <span className="for-subtask-progressbar"></span>
+            <span className="for-subtask-progressbar">
+              <IssueSubtaskSummary issue={issue} />
+            </span>
             {issue.labels.map((label) => (
               <a
                 href={`${projectHref}/issues?state=${search.state}&labelIds=${label.id}`}
@@ -961,6 +963,50 @@ function UserIssueChildRows({ issue }: { issue: RestIssueListItem }) {
         />
       ))}
     </div>
+  );
+}
+
+function IssueSubtaskSummary({ issue }: { issue: RestIssueListItem }) {
+  const childClosedCount = issue.childClosedCount ?? 0;
+  const childOpenCount = issue.childOpenCount ?? 0;
+  const childTotalCount = childClosedCount + childOpenCount;
+  const percentage = childTotalCount ? Math.trunc((childClosedCount / childTotalCount) * 100) : 0;
+  const parentIssueNumber = stringField(issue.parentIssueNumber, "");
+  const parentIssueTitle = issue.parentIssueTitle ?? "";
+
+  return (
+    <>
+      {childTotalCount ? (
+        <>
+          <div
+            className={`subtask-progress upload-progress ${
+              percentage === 100 ? "done-outline" : "red-outline"
+            }`}
+          >
+            <div
+              className={`bar ${percentage === 100 ? "done" : "red"}`}
+              style={{ width: `${percentage}%` }}
+              title="Subtask"
+            ></div>
+          </div>
+          <span
+            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""}`}
+          >
+            {percentage === 100 ? "" : `${childClosedCount}/`}
+            {childTotalCount}
+          </span>
+        </>
+      ) : null}
+      {parentIssueNumber ? (
+        <span className="infos-item subtask">
+          <LegacyInternalLink
+            to={`/${issue.ownerName}/${issue.projectName}/issue/${parentIssueNumber}`}
+          >
+            {`#${parentIssueNumber} ${truncateParentIssueTitle(parentIssueTitle)}`}
+          </LegacyInternalLink>
+        </span>
+      ) : null}
+    </>
   );
 }
 
@@ -1241,4 +1287,9 @@ function stringField(value: unknown, fallback: unknown) {
     typeof fallback === "bigint"
     ? String(fallback)
     : "";
+}
+
+function truncateParentIssueTitle(title: string) {
+  const trimmed = title.slice(0, 10).trim();
+  return title.length > 10 ? `${trimmed}...` : trimmed;
 }

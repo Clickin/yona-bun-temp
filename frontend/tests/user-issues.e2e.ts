@@ -470,6 +470,28 @@ test("current-user issues show-subtasks toggle follows legacy yona.showSubtask l
     .toBe("false");
 });
 
+test("current-user issues subtask summary follows legacy partial_list_subtask", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForFilterLinks(page);
+
+  await page.goto(`${basePath}/user/issues`);
+
+  const parentSummary = page.locator("#issue-item-42 .for-subtask-progressbar");
+  await expect(
+    parentSummary.locator(".subtask-progress.upload-progress.red-outline"),
+  ).toBeVisible();
+  await expect(parentSummary.locator(".bar.red")).toHaveAttribute("title", "Subtask");
+  await expect(parentSummary.locator(".bar.red")).toHaveAttribute("style", "width: 50%;");
+  await expect(parentSummary.locator(".completion-ratio")).toHaveText("1/2");
+  await expect(parentSummary.locator(".completion-ratio")).not.toHaveClass(/(^|\s)txt-green(\s|$)/);
+
+  const childSummary = page.locator("#issue-item-43 .for-subtask-progressbar .subtask a");
+  await expect(childSummary).toHaveAttribute("href", `${basePath}/admin/sample/issue/11`);
+  await expect(childSummary).toHaveText("#11 Parent iss...");
+});
+
 test("current-user issues set-default-login-page button follows legacy success branch", async ({
   page,
 }) => {
@@ -677,6 +699,7 @@ async function mockUserIssuesForFilterLinks(page: Page) {
             assigneeLoginId: "admin",
             authorLabel: "Alice",
             authorLoginId: "alice",
+            childClosedCount: 1,
             childIssues: [
               {
                 assigneeLabel: "Dev Member",
@@ -709,6 +732,7 @@ async function mockUserIssuesForFilterLinks(page: Page) {
                 voterCount: 0,
               },
             ],
+            childOpenCount: 1,
             commentCount: 0,
             createdLabel: "2026-06-30",
             id: 42,
@@ -733,6 +757,8 @@ async function mockUserIssuesForFilterLinks(page: Page) {
             issueNumber: 12,
             labels: [],
             ownerName: "admin",
+            parentIssueNumber: 11,
+            parentIssueTitle: "Parent issue title",
             projectName: "sample",
             state: "open",
             title: "Second issue",
