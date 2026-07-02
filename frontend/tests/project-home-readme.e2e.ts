@@ -49,7 +49,33 @@ test("project home README tab renders README Markdown instead of compatibility H
   await expect(page.locator(".readme-body")).not.toContainText("Server HTML should not render");
 });
 
-async function mockProjectHome(page: Page, overrides: Partial<{ readmeFile: unknown }> = {}) {
+test("project home leave modal posts legacy leave action", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const leaveRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectHome(page, { leaveRequests });
+
+  await page.goto(`${basePath}/admin/sample`);
+  await page.locator("#projectLeaveBtn").click();
+  await expect(page.locator("#alertLeave")).not.toHaveClass(/hide/);
+
+  await page.locator('#alertLeave [data-dismiss="modal"]').last().click();
+  await expect(page.locator("#alertLeave")).toHaveClass(/hide/);
+  expect(leaveRequests).toEqual([]);
+
+  await page.locator("#projectLeaveBtn").click();
+  await expect(page.locator("#alertLeave")).not.toHaveClass(/hide/);
+  await page.locator("#leaveBtn").click();
+  await expect(page).toHaveURL(`${basePath}/admin`);
+  expect(leaveRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+});
+
+async function mockProjectHome(
+  page: Page,
+  overrides: Partial<{
+    leaveRequests: { hasCsrfToken: boolean; method: string }[];
+    readmeFile: unknown;
+  }> = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -64,6 +90,38 @@ async function mockProjectHome(page: Page, overrides: Partial<{ readmeFile: unkn
         loginId: "admin",
         userLabel: "Site Admin",
       }),
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-project-home" },
+      body: JSON.stringify({
+        session: {
+          csrfToken: "csrf-project-home",
+          projection: {},
+          userId: 1,
+        },
+        user: {
+          emailAddress: "admin@example.com",
+          id: 1,
+          isConfirmed: true,
+          isSiteAdmin: true,
+          loginId: "admin",
+          name: "Site Admin",
+        },
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/members/1", async (route) => {
+    const request = route.request();
+    overrides.leaveRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ redirectPath: "/admin" }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {

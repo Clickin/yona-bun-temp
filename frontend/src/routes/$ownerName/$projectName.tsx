@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -96,6 +97,7 @@ function ProjectHomeBody({
   const { ownerName, projectName } = Route.useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const projectRecord = recordField(project);
   const menuSetting = projectMenuSetting(project);
   const members = arrayField(projectRecord.members) as YonaUserItem[];
@@ -121,7 +123,13 @@ function ProjectHomeBody({
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.base(ownerName, projectName),
       });
-      router.history.push(stringField(response.redirectPath, `/${ownerName}/${projectName}`));
+      const redirectPath = stringField(response.redirectPath, `/${ownerName}/${projectName}`);
+      router.history.push(
+        redirectPath.startsWith(`${runtimeConfig.basePath}/`) ||
+          redirectPath === runtimeConfig.basePath
+          ? redirectPath
+          : prefixBasePath(runtimeConfig.basePath, redirectPath),
+      );
     },
   });
   const overviewMutation = useMutation({
@@ -355,6 +363,7 @@ function ProjectHomeBody({
                     runtimeConfig.basePath,
                     `/${ownerName}/${projectName}/members/${currentUserId}`,
                   )}
+                  onClick={() => setLeaveModalOpen(true)}
                 >
                   {t("project.member.leave")}
                 </button>
@@ -362,9 +371,18 @@ function ProjectHomeBody({
             </div>
           </div>
         </div>
-        <div id="alertLeave" className="modal hide">
+        <div
+          id="alertLeave"
+          className={leaveModalOpen ? "modal" : "modal hide"}
+          style={leaveModalOpen ? { display: "block" } : undefined}
+        >
           <div className="modal-header">
-            <button type="button" className="close" data-dismiss="modal">
+            <button
+              type="button"
+              className="close"
+              data-dismiss="modal"
+              onClick={() => setLeaveModalOpen(false)}
+            >
               ×
             </button>
             <h3>{t("project.member.leave")}</h3>
@@ -381,7 +399,12 @@ function ProjectHomeBody({
             >
               {t("button.yes")}
             </button>
-            <button type="button" className="ybtn ybtn-mini" data-dismiss="modal">
+            <button
+              type="button"
+              className="ybtn ybtn-mini"
+              data-dismiss="modal"
+              onClick={() => setLeaveModalOpen(false)}
+            >
               {t("button.no")}
             </button>
           </div>
