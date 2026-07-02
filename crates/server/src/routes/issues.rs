@@ -678,6 +678,7 @@ struct RestIssueDetailResponse {
     parent_issue_number: Option<i64>,
     parent_issue_state: String,
     parent_issue_title: String,
+    translation_api_enabled: bool,
     viewer_user_id: i64,
     weight: i16,
 }
@@ -2867,6 +2868,7 @@ async fn rest_read_issue_detail(
             &access,
             actor_id,
             &service.base_path,
+            !service.translation_proxy.api_url.trim().is_empty(),
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -2951,6 +2953,7 @@ async fn rest_update_issue_state(
             true,
             session.user_id,
             &service.base_path,
+            !service.translation_proxy.api_url.trim().is_empty(),
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -3068,6 +3071,7 @@ async fn rest_create_issue(
             true,
             session.user_id,
             &service.base_path,
+            !service.translation_proxy.api_url.trim().is_empty(),
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -3176,6 +3180,7 @@ async fn rest_update_issue(
             true,
             session.user_id,
             &service.base_path,
+            !service.translation_proxy.api_url.trim().is_empty(),
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -3913,6 +3918,7 @@ fn rest_issue_detail_response_from_record_with_sharer_flags_and_references(
     base_path: &str,
     issue_references: &[MarkdownIssueReference],
     mention_references: &[MarkdownMentionReference],
+    translation_api_enabled: bool,
 ) -> RestIssueDetailResponse {
     let detail = issue_detail_response_from_record_with_sharer_flags_and_references(
         issue,
@@ -3955,6 +3961,7 @@ fn rest_issue_detail_response_from_record_with_sharer_flags_and_references(
         parent_issue_number: issue.parent_issue_number,
         parent_issue_state: issue.parent_issue_state.clone(),
         parent_issue_title: issue.parent_issue_title.clone(),
+        translation_api_enabled,
         viewer_user_id: viewer_id.unwrap_or_default(),
         weight: issue.weight,
     }
@@ -4145,6 +4152,7 @@ async fn rest_issue_detail_response_from_record_with_access_issue_references(
     access: &IssueAccessContext,
     viewer_id: Option<i64>,
     base_path: &str,
+    translation_api_enabled: bool,
 ) -> Result<RestIssueDetailResponse, ConnectError> {
     let mut markdowns = vec![
         issue.body_markdown.as_str(),
@@ -4175,6 +4183,7 @@ async fn rest_issue_detail_response_from_record_with_access_issue_references(
             base_path,
             &issue_references,
             &mention_references,
+            translation_api_enabled,
         ),
     )
 }
@@ -4187,6 +4196,7 @@ async fn rest_issue_detail_response_from_record_with_authorization_issue_referen
     viewer_can_comment: bool,
     viewer_id: Option<i64>,
     base_path: &str,
+    translation_api_enabled: bool,
 ) -> Result<RestIssueDetailResponse, ConnectError> {
     let mut markdowns = vec![
         issue.body_markdown.as_str(),
@@ -4213,6 +4223,7 @@ async fn rest_issue_detail_response_from_record_with_authorization_issue_referen
             base_path,
             &issue_references,
             &mention_references,
+            translation_api_enabled,
         ),
     )
 }
@@ -4238,6 +4249,7 @@ async fn rest_issue_detail_response_from_access_with_repository_issue_references
     access: &IssueAccessContext,
     viewer_id: Option<i64>,
     base_path: &str,
+    translation_api_enabled: bool,
 ) -> Result<RestIssueDetailResponse, ConnectError> {
     let mut markdowns = vec![
         access.issue.body_markdown.as_str(),
@@ -4269,6 +4281,7 @@ async fn rest_issue_detail_response_from_access_with_repository_issue_references
             base_path,
             &issue_references,
             &mention_references,
+            translation_api_enabled,
         ),
     )
 }

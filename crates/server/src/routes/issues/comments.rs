@@ -289,6 +289,7 @@ pub(super) async fn rest_create_issue_comment(
             true,
             session.user_id,
             &service.base_path,
+            !service.translation_proxy.api_url.trim().is_empty(),
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -360,6 +361,7 @@ pub(super) async fn rest_update_issue_comment(
             &access,
             session.user_id,
             &service.base_path,
+            !service.translation_proxy.api_url.trim().is_empty(),
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
@@ -419,6 +421,7 @@ pub(super) async fn rest_delete_issue_comment(
             &access,
             session.user_id,
             &service.base_path,
+            !service.translation_proxy.api_url.trim().is_empty(),
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,

@@ -547,6 +547,59 @@ test("project issue detail hides watch button when legacy WATCH is not allowed",
   await expect(page.locator(".board-actrow .issue-weight")).toHaveCount(1);
 });
 
+test("project issue detail renders legacy translation button when translation API is configured", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const translationRequests: Array<{
+    body: unknown;
+    csrfToken: string | null;
+    method: string;
+  }> = [];
+  await page.route("**/-_-api/v1/translation", async (route) => {
+    translationRequests.push({
+      body: JSON.parse(route.request().postData() ?? "{}") as unknown,
+      csrfToken: route.request().headers()["x-csrf-token"] ?? null,
+      method: route.request().method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        translated: "<p>Translated <strong>issue</strong></p>",
+        translatedMarkdown: "Translated **issue**",
+      }),
+    });
+  });
+  await mockProjectIssueDetail(page, { translationApiEnabled: true });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const translateButton = page.locator(".board-actrow > #translate");
+  await expect(translateButton).toHaveClass("icon btn-transparent-with-fontsize-lineheight ml10");
+  await expect(translateButton).toHaveAttribute("data-toggle", "tooltip");
+  await expect(translateButton).toHaveAttribute("title", "Translation");
+  await expect(translateButton.locator("i.yobicon-lang")).toHaveCount(1);
+
+  await translateButton.click();
+
+  await expect(page.locator("#issue-body-11 .markdown-wrap")).toContainText("Translated issue");
+  await expect(page.locator("#issue-body-11 .markdown-wrap strong")).toHaveText("issue");
+  await expect(translateButton).toBeDisabled();
+  expect(translationRequests[0]?.csrfToken).toBeTruthy();
+  expect(translationRequests).toEqual([
+    {
+      body: {
+        number: 11,
+        owner: "admin",
+        projectName: "sample",
+        type: "issue",
+      },
+      csrfToken: translationRequests[0]?.csrfToken,
+      method: "POST",
+    },
+  ]);
+});
+
 test("project issue detail renders legacy read-only selected labels", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, { viewerCanUpdate: false });

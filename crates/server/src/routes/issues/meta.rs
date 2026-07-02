@@ -698,6 +698,7 @@ pub(super) async fn rest_refreshed_issue_detail(
             parent_issue_number: None,
             parent_issue_state: String::new(),
             parent_issue_title: String::new(),
+            translation_api_enabled: !service.translation_proxy.api_url.trim().is_empty(),
             viewer_user_id: actor_id.unwrap_or_default(),
             weight: 0,
         });
@@ -710,6 +711,7 @@ pub(super) async fn rest_refreshed_issue_detail(
         &access,
         actor_id,
         &service.base_path,
+        !service.translation_proxy.api_url.trim().is_empty(),
     )
     .await
     .map_err(RestRouteError::from_connect_error)

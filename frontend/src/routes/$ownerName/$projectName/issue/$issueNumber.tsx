@@ -8,6 +8,7 @@ import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { RestApiError } from "../../../../api/rest-client";
+import { translateLegacyResource } from "../../../../api/translation";
 import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../../../../i18n";
 import type { ProjectContainer, ProjectMilestone, YonaRecord } from "../../../../api/types";
 import { YonaQueryProvider } from "../../../../query-client";
@@ -415,6 +416,8 @@ function IssueDetailBody({
   const queryClient = useQueryClient();
   const { t } = useLegacyMessages();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [translatedBodyMarkdown, setTranslatedBodyMarkdown] = useState<string | null>(null);
+  const [translatePending, setTranslatePending] = useState(false);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
@@ -431,6 +434,7 @@ function IssueDetailBody({
   const canComment = booleanField(issue.viewerCanComment);
   const canWatch = issue.viewerCanWatch !== false;
   const hasVoted = booleanField(issue.hasVoted);
+  const translationApiEnabled = booleanField(issue.translationApiEnabled);
   const labels = (issue.labels ?? []).slice().sort(compareLabels);
   const selectableLabels = (projectLabels ?? []).slice().sort(compareLabels);
   const canManageProjectLabels = booleanField(project.viewerCanUpdate);
@@ -443,7 +447,7 @@ function IssueDetailBody({
   const assigneeLoginId = stringField(issue.assigneeLoginId);
   const sharers = issue.sharers ?? [];
   const sharerValue = sharers.map((sharer) => stringField(sharer.loginId)).join(",");
-  const bodyMarkdown = stringField(issue.bodyMarkdown);
+  const bodyMarkdown = translatedBodyMarkdown ?? stringField(issue.bodyMarkdown);
   const bodyChecksum = stringField(issue.bodyChecksum, "body-sha1");
   const historyMarkdown = stringField(issue.historyMarkdown);
   const issueUpdateMillis = stringField(issue.issueUpdateMillis, "0");
@@ -504,6 +508,24 @@ function IssueDetailBody({
       });
     },
   });
+  async function translateIssueBody() {
+    if (translatePending || translatedBodyMarkdown !== null) {
+      return;
+    }
+    setTranslatePending(true);
+    try {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const translatedMarkdown = await translateLegacyResource(runtimeConfig, csrfToken, {
+        number: Number(issueNumber) || 0,
+        owner: ownerName,
+        projectName,
+        type: "issue",
+      });
+      setTranslatedBodyMarkdown(translatedMarkdown);
+    } finally {
+      setTranslatePending(false);
+    }
+  }
 
   return (
     <div className="page-wrap-outer">
@@ -647,6 +669,19 @@ function IssueDetailBody({
                 issueHref={issueHref}
                 voters={voters}
               />
+              {translationApiEnabled ? (
+                <button
+                  type="button"
+                  id="translate"
+                  className="icon btn-transparent-with-fontsize-lineheight ml10"
+                  data-toggle="tooltip"
+                  title="Translation"
+                  disabled={translatePending || translatedBodyMarkdown !== null}
+                  onClick={() => void translateIssueBody()}
+                >
+                  <i className="yobicon-lang"></i>
+                </button>
+              ) : null}
               <IssueActionButtons
                 canDelete={canDelete}
                 canUpdate={canUpdate}
