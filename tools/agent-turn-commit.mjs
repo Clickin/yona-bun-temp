@@ -91,6 +91,19 @@ export function runAgentTurnCommit(options) {
   git(["commit", "-m", options.message], {
     errorMessage: "Failed to create agent turn commit.",
   });
+  run(
+    "node",
+    [
+      "./scripts/audit-scala-html-goal-history.mjs",
+      "--",
+      "--range",
+      "HEAD~1..HEAD",
+      "--fail-on-violation",
+    ],
+    {
+      errorMessage: "Agent turn Scala HTML goal history audit failed.",
+    },
+  );
   const rev = git(["rev-parse", "--short", "HEAD"], {
     capture: true,
     errorMessage: "Failed to read agent turn commit hash.",

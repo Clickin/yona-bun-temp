@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 import { hasPorcelainChanges, parseArgs } from "../tools/agent-turn-commit.mjs";
+
+const repoRoot = path.resolve(import.meta.dirname, "..");
+const turnCommitHookPath = path.join(repoRoot, "tools", "agent-turn-commit.mjs");
 
 describe("agent turn commit hook contract", () => {
   it("defaults to the repo turn checkpoint commit message", () => {
@@ -27,5 +32,13 @@ describe("agent turn commit hook contract", () => {
     assert.equal(hasPorcelainChanges("\n\n"), false);
     assert.equal(hasPorcelainChanges(" M AGENTS.md\n"), true);
     assert.equal(hasPorcelainChanges("?? tools/agent-turn-commit.mjs\n"), true);
+  });
+
+  it("runs the Scala HTML goal history audit for the committed turn", () => {
+    const source = readFileSync(turnCommitHookPath, "utf8");
+
+    assert.match(source, /scripts\/audit-scala-html-goal-history\.mjs/u);
+    assert.match(source, /HEAD~1\.\.HEAD/u);
+    assert.match(source, /--fail-on-violation/u);
   });
 });

@@ -8,13 +8,14 @@ import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { RestApiError } from "../../../../api/rest-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
-import type { ProjectContainer } from "../../../../api/types";
+import type { ProjectContainer, ProjectMilestone } from "../../../../api/types";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import {
   deleteIssueComment,
   deleteIssue,
   readIssueDetail,
+  listProjectMilestones,
   readSessionBootstrap,
   unvoteIssueComment,
   voteIssueComment,
@@ -69,6 +70,24 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     queryFn: () => readIssueDetail(runtimeConfig, ownerName, projectName, numericIssueNumber),
     queryKey: ["project-issue-detail", ownerName, projectName, numericIssueNumber],
   });
+  const openMilestonesQuery = useQuery({
+    queryFn: () =>
+      listProjectMilestones(runtimeConfig, ownerName, projectName, {
+        orderBy: "dueDate",
+        orderDir: "asc",
+        state: "open",
+      }),
+    queryKey: ["project", ownerName, projectName, "milestones", "open", "issue-detail"],
+  });
+  const closedMilestonesQuery = useQuery({
+    queryFn: () =>
+      listProjectMilestones(runtimeConfig, ownerName, projectName, {
+        orderBy: "dueDate",
+        orderDir: "asc",
+        state: "closed",
+      }),
+    queryKey: ["project", ownerName, projectName, "milestones", "closed", "issue-detail"],
+  });
 
   if (!projectQuery.data || !sessionQuery.data) {
     return null;
@@ -88,7 +107,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     );
   }
 
-  if (!issueQuery.data) {
+  if (!issueQuery.data || !openMilestonesQuery.data || !closedMilestonesQuery.data) {
     return null;
   }
 
@@ -104,6 +123,10 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       <IssueDetailBody
         basePath={runtimeConfig.basePath}
         issue={issueQuery.data}
+        milestones={{
+          closed: closedMilestonesQuery.data.milestones,
+          open: openMilestonesQuery.data.milestones,
+        }}
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
       />
@@ -265,11 +288,16 @@ function ProjectIssueNotFoundBody({
 function IssueDetailBody({
   basePath,
   issue,
+  milestones,
   project,
   runtimeConfig,
 }: {
   basePath: string;
   issue: RestIssueDetailResponse;
+  milestones: {
+    closed: ProjectMilestone[];
+    open: ProjectMilestone[];
+  };
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -293,6 +321,8 @@ function IssueDetailBody({
   const canComment = booleanField(issue.viewerCanComment);
   const hasVoted = booleanField(issue.hasVoted);
   const labels = (issue.labels ?? []).slice().sort(compareLabels);
+  const hasProjectMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
+  const showMilestone = projectMenuEnabled(project, "milestone");
   const voters = issue.issueVoters ?? [];
   const parentIssueId = stringField(issue.parentIssueId, issueId);
   const newSubtaskPath = `/${ownerName}/${projectName}/issueform?parentIssueId=${parentIssueId}`;
@@ -604,23 +634,40 @@ function IssueDetailBody({
                     )}
                   </dd>
                 </dl>
-                <dl>
-                  <dt>Milestone</dt>
-                  <dd>
-                    {issue.milestoneId ? (
-                      <a
-                        href={prefixBasePath(
-                          basePath,
-                          `/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}`,
-                        )}
-                      >
-                        {stringField(issue.milestoneTitle)}
-                      </a>
-                    ) : (
-                      "No milestone"
-                    )}
-                  </dd>
-                </dl>
+                {showMilestone ? (
+                  <dl>
+                    <dt>Milestone</dt>
+                    <dd>
+                      {hasProjectMilestones ? (
+                        canUpdate ? (
+                          <IssueMilestoneSelect issue={issue} milestones={milestones} />
+                        ) : issue.milestoneId ? (
+                          <a
+                            href={prefixBasePath(
+                              basePath,
+                              `/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}`,
+                            )}
+                          >
+                            {stringField(issue.milestoneTitle)}
+                          </a>
+                        ) : (
+                          "No milestone"
+                        )
+                      ) : (
+                        <a
+                          href={prefixBasePath(
+                            basePath,
+                            `/${ownerName}/${projectName}/newMilestoneForm`,
+                          )}
+                          className="ybtn ybtn-small ybtn-fullsize"
+                          target="_blank"
+                        >
+                          New milestone
+                        </a>
+                      )}
+                    </dd>
+                  </dl>
+                ) : null}
                 <dl>
                   <dt>
                     Due date
@@ -957,6 +1004,54 @@ function IssueWeight({ weight }: { weight: number }) {
         {weight}
       </span>
     </span>
+  );
+}
+
+function IssueMilestoneSelect({
+  issue,
+  milestones,
+}: {
+  issue: RestIssueDetailResponse;
+  milestones: {
+    closed: ProjectMilestone[];
+    open: ProjectMilestone[];
+  };
+}) {
+  const selectedMilestoneId = stringField(issue.milestoneId);
+
+  return (
+    <select
+      id="milestone"
+      name="milestone.id"
+      data-toggle="select2"
+      data-format="milestone"
+      data-container-css-class="fullsize"
+      defaultValue={selectedMilestoneId || "-1"}
+    >
+      <option value="-1">No milestone</option>
+      <optgroup label="Open">
+        {milestones.open.map((milestone) => (
+          <option
+            key={stringField(milestone.id)}
+            value={stringField(milestone.id)}
+            data-state={stringField(milestone.state, "open")}
+          >
+            {stringField(milestone.title)}
+          </option>
+        ))}
+      </optgroup>
+      <optgroup label="Closed">
+        {milestones.closed.map((milestone) => (
+          <option
+            key={stringField(milestone.id)}
+            value={stringField(milestone.id)}
+            data-state={stringField(milestone.state, "closed")}
+          >
+            {stringField(milestone.title)}
+          </option>
+        ))}
+      </optgroup>
+    </select>
   );
 }
 
@@ -2622,6 +2717,14 @@ function stringField(value: unknown, fallback = "") {
     : typeof value === "number" || typeof value === "bigint"
       ? String(value)
       : fallback;
+}
+
+function projectMenuEnabled(project: ProjectContainer, key: string) {
+  const menuSetting = (project as Record<string, unknown>).menuSetting;
+  if (!menuSetting || typeof menuSetting !== "object") {
+    return true;
+  }
+  return (menuSetting as Record<string, unknown>)[key] !== false;
 }
 
 function numberField(value: unknown, fallback = 0) {
