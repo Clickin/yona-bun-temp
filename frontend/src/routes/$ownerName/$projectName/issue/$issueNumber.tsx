@@ -1635,28 +1635,35 @@ function IssueCommentForm({
   }
 
   return (
-    <form
-      id="comment-form"
-      action={prefixBasePath(
-        basePath,
-        `/${ownerName}/${projectName}/issue/${issueNumber}/comments`,
-      )}
-      method="post"
-      encType="multipart/form-data"
-    >
-      <div className="write-comment-box">
-        <MarkdownEditor editorMode="comment-body" name="contents" value="" wrapId="contents" />
-        <UploadForm resourceType="ISSUE_COMMENT" />
-        <div className="write-comment-wrap">
-          <div className="right-txt">
-            <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
-            <button type="submit" className="ybtn ybtn-success">
-              Add a comment
-            </button>
+    <>
+      <form
+        id="comment-form"
+        action={prefixBasePath(
+          basePath,
+          `/${ownerName}/${projectName}/issue/${issueNumber}/comments`,
+        )}
+        method="post"
+        encType="multipart/form-data"
+      >
+        <div className="write-comment-box">
+          <MarkdownEditor editorMode="comment-body" name="contents" value="" wrapId="contents" />
+          <UploadForm resourceType="ISSUE_COMMENT" />
+          <div className="write-comment-wrap">
+            <div className="right-txt">
+              <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
+              <button type="submit" className="ybtn ybtn-success">
+                Add a comment
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </form>
+      </form>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.CommentForm.js")}
+      ></script>
+    </>
   );
 }
 
