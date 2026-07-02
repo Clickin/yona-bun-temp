@@ -138,6 +138,54 @@ test("project settings navbar search scope matches legacy projectLayout common n
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
 });
 
+test("project settings header favorite star posts and toggles starred class", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectSettings(page, { favoriteRequests });
+
+  await page.goto(`${basePath}/admin/sample/setting`);
+  await expect(page.locator(".project-breadcrumb .user-project-list i")).not.toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(page.locator(".project-breadcrumb .user-project-list i")).toHaveClass(/starred/);
+});
+
+test("project settings header favorite star removes starred class when unfavorited", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectSettings(page, {
+    favoriteRequests,
+    favoriteResponseFavorited: false,
+    project: {
+      isFavorited: true,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/setting`);
+  await expect(page.locator(".project-breadcrumb .user-project-list i")).toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(page.locator(".project-breadcrumb .user-project-list i")).not.toHaveClass(/starred/);
+});
+
 test("project settings reviewer count radios mirror legacy show/hide behavior", async ({
   page,
 }) => {
@@ -181,7 +229,14 @@ test("project settings menu checkboxes mirror legacy dependency behavior", async
   await expect(page.locator("#menuSettingCode")).toBeChecked();
 });
 
-async function mockProjectSettings(page: Page) {
+async function mockProjectSettings(
+  page: Page,
+  overrides: Partial<{
+    favoriteResponseFavorited: boolean;
+    favoriteRequests: { hasCsrfToken: boolean; method: string }[];
+    project: Record<string, unknown>;
+  }> = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -198,16 +253,51 @@ async function mockProjectSettings(page: Page) {
       }),
     });
   });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-settings" },
+      body: JSON.stringify({
+        session: {
+          csrfToken: "csrf-settings",
+          projection: {},
+          userId: 1,
+        },
+        user: {
+          emailAddress: "admin@example.com",
+          id: 1,
+          isConfirmed: true,
+          isSiteAdmin: true,
+          loginId: "admin",
+          name: "Site Admin",
+        },
+      }),
+    });
+  });
   await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(projectSettings()),
+      body: JSON.stringify({
+        ...projectSettings(),
+        ...overrides.project,
+      }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(projectContainer()),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
+    const request = route.request();
+    overrides.favoriteRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-settings",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ favorited: overrides.favoriteResponseFavorited ?? true }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/members", async (route) => {

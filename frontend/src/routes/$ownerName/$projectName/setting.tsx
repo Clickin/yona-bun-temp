@@ -10,7 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import { codeBranchesQueryOptions, setDefaultCodeBranchRest } from "../../../api/code-branches";
-import { readProjectSettingsQueryOptions, updateProjectRest } from "../../../api/org-project";
+import {
+  readProjectSettingsQueryOptions,
+  toggleFavoriteProjectRest,
+  updateProjectRest,
+} from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
@@ -566,10 +570,14 @@ function LegacyNoHrefAnchor({ children }: { children: ReactNode }) {
 }
 
 function ProjectHeader({ basePath, project }: { basePath: string; project: ProjectContainer }) {
+  const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const projectIdValue = projectId(project);
+  const favoriteToggleRef = useRef<HTMLSpanElement | null>(null);
+  const [isFavoritedProject, setIsFavoritedProject] = useState(() => projectFavorited(project));
   const logoUrl = projectLogoUrl(project);
   const backgroundImageUrl =
     stringField(recordField(project).backgroundImageUrl, "") ||
@@ -584,6 +592,34 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
   const originalProjectName =
     stringField(recordField(project).originalProjectName, "") ||
     stringField(recordField(project).originProjectName, "");
+  const favoriteMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return toggleFavoriteProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
+    },
+    onSuccess(response) {
+      setIsFavoritedProject((current) =>
+        typeof response.favorited === "boolean" ? response.favorited : !current,
+      );
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.base(ownerName, projectName),
+      });
+    },
+  });
+  useEffect(() => {
+    const favoriteToggle = favoriteToggleRef.current;
+    if (!favoriteToggle) {
+      return;
+    }
+    const handleFavoriteToggle = (event: MouseEvent) => {
+      event.stopPropagation();
+      favoriteMutation.mutate();
+    };
+    favoriteToggle.addEventListener("mousedown", handleFavoriteToggle);
+    return () => {
+      favoriteToggle.removeEventListener("mousedown", handleFavoriteToggle);
+    };
+  }, [favoriteMutation]);
 
   return (
     <div
@@ -604,9 +640,13 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
               <span className="project-name">
                 <a href={projectHref(basePath, ownerName, projectName)}>{projectName}</a>
               </span>
-              <span className="user-project-list" data-project-id={projectIdValue}>
+              <span
+                className="user-project-list"
+                data-project-id={projectIdValue}
+                ref={favoriteToggleRef}
+              >
                 <i
-                  className={`${projectFavorited(project) ? "starred" : ""} star material-icons va-text-top`}
+                  className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
                 >
                   star
                 </i>
