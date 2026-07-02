@@ -602,6 +602,15 @@ function RootLoginDialog({ basePath }: { basePath: string }) {
 
 export function RootAliasNotFound() {
   const { runtimeConfig } = Route.useRouteContext();
+  return (
+    <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+      <RootAliasNotFoundScreen runtimeConfig={runtimeConfig} />
+    </LegacyI18nProvider>
+  );
+}
+
+function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { t } = useLegacyMessages();
   const basePath = runtimeConfig.basePath === "/" ? "" : runtimeConfig.basePath;
   const pathname =
     typeof window === "undefined" ? "/" : window.location.pathname.slice(basePath.length) || "/";
@@ -627,14 +636,16 @@ export function RootAliasNotFound() {
           </Link>
           <ul className="gnb-nav">
             <li>
-              <a href={prefixBasePath(runtimeConfig.basePath, "/projects")}>Project list</a>
+              <a href={prefixBasePath(runtimeConfig.basePath, "/projects")}>
+                {t("title.projectList")}
+              </a>
             </li>
             <li>
-              <Link to="/_help">Help</Link>
+              <Link to="/_help">{t("title.help")}</Link>
             </li>
             <li>
               <a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">
-                Feedback
+                {t("title.yobi.feedback")}
               </a>
             </li>
           </ul>
@@ -642,29 +653,33 @@ export function RootAliasNotFound() {
             <div className="span5 right-menu span-hard-wrap">
               <div className="row-fluid user-menu-wrap">
                 <span className="user-menu">
-                  <a href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}>Profile</a>
+                  <a href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}>
+                    {t("userinfo.profile")}
+                  </a>
                 </span>
                 <span className="user-menu">
-                  <a href={prefixBasePath(runtimeConfig.basePath, "/user/editform")}>Account</a>
+                  <a href={prefixBasePath(runtimeConfig.basePath, "/user/editform")}>
+                    {t("userinfo.accountSetting")}
+                  </a>
                 </span>
                 <a href={prefixBasePath(runtimeConfig.basePath, "/logout")}>
-                  <span className="user-menu logout label">Log out</span>
+                  <span className="user-menu logout label">{t("title.logout")}</span>
                 </a>
               </div>
               <ul className="nav nav-tabs nm">
                 <li className="myOrganizationList active">
                   <a href="#myOrganizationList" data-toggle="tab">
-                    Favorite
+                    {t("title.favorite")}
                   </a>
                 </li>
                 <li className="myProjectList">
                   <a href="#myProjectList" data-toggle="tab">
-                    Project
+                    {t("title.project")}
                   </a>
                 </li>
                 <li className="myRecentIssueList">
                   <a href="#myRecentIssueList" data-toggle="tab">
-                    Recent History
+                    {t("title.recently.visited.issue")}
                   </a>
                 </li>
               </ul>
@@ -682,7 +697,7 @@ export function RootAliasNotFound() {
                 className="user-item-btn"
                 data-login="required"
               >
-                Log in
+                {t("title.login")}
               </a>
             </li>
             <li className="divider"></li>
@@ -691,7 +706,7 @@ export function RootAliasNotFound() {
                 href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}
                 className="ybtn ybtn-success"
               >
-                Sign up
+                {t("title.signup")}
               </a>
             </li>
           </ul>
@@ -701,9 +716,9 @@ export function RootAliasNotFound() {
         <div className="project-page-wrap">
           <div className="error-wrap">
             <i className="ico ico-err2" />
-            <p>Page not found</p>
+            <p>{t("error.notfound")}</p>
             <Link to="/" className="ybtn ybtn-info">
-              Home
+              {t("menu.home")}
             </Link>
           </div>
         </div>

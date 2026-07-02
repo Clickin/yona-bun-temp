@@ -52,7 +52,6 @@ The mandatory workflow remains:
 
 | Priority | Route/screen | Current files | Legacy source of truth | Required action |
 | --- | --- | --- | --- | --- |
-| P1 | Global unmatched route not-found | `frontend/src/routes/__root.tsx`, `frontend/tests/not-found.e2e.ts` | `error/notfound_default.scala.html`, `layout.scala.html`, `common/usermenu.scala.html` | Rebuild fallback branch from legacy not-found template, keeping alias redirects separate. |
 | P1 | Global common scripts/dialog/select2 shell | `frontend/src/routes/__root.tsx` | `layout.scala.html`, `common/scripts.scala.html`, `common/loginDialog.scala.html`, `common/select2.scala.html` | Rebuild or isolate the legacy partial-derived region; document intentional JS deviations. |
 | P1 | Milestone detail | `frontend/src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx`, `frontend/tests/project-milestone-detail.e2e.ts` | `milestone/view.scala.html`, issue list partials, project layout/menu | Re-run as a one-screen Scala HTML verification. Replace selector/metric-only proof with whole-screen DOM comparison; rebuild if mismatch appears. |
 | P1 | `/search` | `frontend/src/routes/search.tsx`, `frontend/src/routes/-search-screen.tsx`, `frontend/tests/search-global.e2e.ts` | `search/result.scala.html`, `search/partial_search.scala.html`, search result partials, `siteLayout` | Rebuild/verify from Scala HTML. Current provenance and TSX disagree on missing keyword/searchType behavior. |
@@ -85,6 +84,7 @@ must not be counted as successful Scala HTML goal implementation turns:
 | Date | Route/screen | Legacy source of truth | Implementation evidence | Verification |
 | --- | --- | --- | --- | --- |
 | 2026-07-02 | `/$user` missing-user not-found branch | `error/notfound_default.scala.html`, `common/usermenu.scala.html`, `layout.scala.html` | `frontend/src/routes/$user.tsx` now renders the not-found shell with the anonymous `#mySidenav` and `gnb-usermenu` structure from `common.usermenu()` instead of the earlier partial header-only branch. | `frontend/tests/user-public-profile.e2e.ts` whole-screen expected DOM includes the legacy side menu, error copy `user.notExists.name`, home button, and footer. |
+| 2026-07-02 | Global unmatched route not-found | `error/notfound_default.scala.html`, `common/usermenu.scala.html`, `layout.scala.html` | `frontend/src/routes/__root.tsx` now wraps the fallback in `LegacyI18nProvider` and renders nav/user-menu/error/home labels through the same legacy message keys used by `Messages(...)` in the Scala template, while keeping the reset-password alias redirect separate. | `frontend/tests/not-found.e2e.ts` whole-screen DOM and desktop/mobile metric checks cover the default not-found shell and anonymous user menu. |
 
 ## Not Immediate Delete Targets
 

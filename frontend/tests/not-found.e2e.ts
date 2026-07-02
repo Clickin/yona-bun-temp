@@ -94,7 +94,7 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
     logoWidth: "44px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "5px",
+    projectPageWrapMarginTop: "20px",
     providerFontSize: "9px",
   });
 });
