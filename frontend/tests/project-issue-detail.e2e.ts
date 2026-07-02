@@ -146,6 +146,9 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
   const scriptSources = [
     `${basePath}/assets/javascripts/lib/highlight/highlight.pack.js`,
     `${basePath}/assets/javascripts/lib/marked.js`,
+    `${basePath}/assets/javascripts/lib/moment-with-langs.min.js`,
+    `${basePath}/assets/javascripts/lib/pikaday/pikaday.js`,
+    `${basePath}/assets/javascripts/common/yobi.ui.Calendar.js`,
     `${basePath}/assets/javascripts/lib/atjs/jquery.caret.min.js`,
     `${basePath}/assets/javascripts/lib/atjs/jquery.atwho.js`,
     `${basePath}/assets/javascripts/lib/elevator/jquery.elevator.js`,

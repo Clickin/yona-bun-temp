@@ -170,6 +170,21 @@ function IssueDetailAssets({
         type="text/javascript"
         src={prefixBasePath(basePath, "/assets/javascripts/lib/marked.js")}
       ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/moment-with-langs.min.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/pikaday/pikaday.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.ui.Calendar.js")}
+      ></script>
       <link
         rel="stylesheet"
         type="text/css"
