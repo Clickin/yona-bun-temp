@@ -585,7 +585,15 @@ function IssueDetailBody({
       setHasVotedIssue(nextHasVoted);
       queryClient.setQueryData<RestIssueDetailResponse>(
         ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
-        (current) => (current ? { ...current, hasVoted: nextHasVoted } : current),
+        (current) =>
+          current
+            ? {
+                ...current,
+                hasVoted: nextHasVoted,
+                issueVoters: response.issueVoters,
+                voterCount: response.voterCount,
+              }
+            : current,
       );
     },
   });

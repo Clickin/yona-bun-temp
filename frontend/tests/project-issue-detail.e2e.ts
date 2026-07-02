@@ -1299,6 +1299,50 @@ test("project issue detail vote action posts and toggles legacy voted state", as
   await expect(page.locator("#vote > a")).toHaveClass(/ybtn-watching/);
 });
 
+test("project issue detail vote action refreshes legacy voter list branch", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    __issueVoteResponseOverrides: {
+      issueVoters: [
+        {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          emailAddress: "admin@example.com",
+          loginId: "admin",
+          userId: 1,
+          userLabel: "Site Admin",
+        },
+      ],
+      voterCount: 1,
+    },
+    issueVoters: [],
+    voterCount: 0,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#vote")).not.toHaveClass(/voter-exists/);
+  await expect(page.locator("#vote > .voter-list-wrap")).toHaveCount(0);
+  await expect(page.locator("#voters.voters-dialog")).toHaveCount(0);
+
+  const voteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/issues/11/vote") &&
+      response.request().method() === "POST",
+  );
+  await page.locator('#vote > a[href$="/vote"]').click();
+  await voteResponsePromise;
+
+  const expected =
+    `<div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  await expect(page.locator("#vote")).toHaveClass(/voter-exists/);
+  expect(await canonicalize(page, "#vote > .voter-list-wrap")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+  await expect(page.locator("#voters.voters-dialog")).toHaveCount(1);
+});
+
 test("project issue detail renders legacy voter overflow link", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {
@@ -2507,7 +2551,14 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
     !Array.isArray(issueOverrides.__sessionOverrides)
       ? (issueOverrides.__sessionOverrides as Record<string, unknown>)
       : {};
+  const issueVoteResponseOverrides =
+    issueOverrides.__issueVoteResponseOverrides &&
+    typeof issueOverrides.__issueVoteResponseOverrides === "object" &&
+    !Array.isArray(issueOverrides.__issueVoteResponseOverrides)
+      ? (issueOverrides.__issueVoteResponseOverrides as Record<string, unknown>)
+      : {};
   const effectiveIssueOverrides = { ...issueOverrides };
+  delete effectiveIssueOverrides.__issueVoteResponseOverrides;
   delete effectiveIssueOverrides.__issueStatus;
   delete effectiveIssueOverrides.__issueNumber;
   delete effectiveIssueOverrides.__projectOverrides;
@@ -2672,6 +2723,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
         contentType: "application/json",
         body: JSON.stringify({
           ...effectiveIssueOverrides,
+          ...issueVoteResponseOverrides,
           hasVoted: method !== "DELETE",
           issueNumber: Number(issueNumber),
           ownerName: "admin",
