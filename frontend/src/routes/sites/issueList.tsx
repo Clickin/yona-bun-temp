@@ -6,6 +6,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { SitePagination } from "./-pagination";
 
 type IssueListSearch = {
   pageNum: number;
@@ -81,7 +82,17 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                 ))}
               </ul>
 
-              <div id="pagination"></div>
+              <SitePagination
+                currentPage={query.data?.page ?? pageNum}
+                pageHref={(nextPage) => {
+                  const params = new URLSearchParams({
+                    pageNum: String(nextPage),
+                    state,
+                  });
+                  return prefixBasePath(runtimeConfig.basePath, `/sites/issueList?${params}`);
+                }}
+                totalPages={query.data?.totalPages ?? 0}
+              />
             </div>
           </div>
         </div>
