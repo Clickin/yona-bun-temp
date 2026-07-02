@@ -217,7 +217,82 @@ test("project pull request overview renders legacy commit-changed event DOM", as
       EXPECTED_PULL_REQUEST_OVERVIEW_WITH_COMMIT_EVENT.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  expect(await pullRequestEventMetrics(page)).toEqual({
+    commitIdColor: "rgb(81, 170, 204)",
+    commitIdFloat: "left",
+    commitIdFontSize: "12px",
+    commitIdTextAlign: "center",
+    commitIdWidth: 74,
+    commitInfoPadding: "10px 5px",
+    commitListBackground: "rgb(253, 253, 253)",
+    commitListBorderRadius: "3px",
+    commitListBorderWidth: "1px",
+    commitListMargin: "10px 0px 0px 102px",
+    commitListPadding: "0px",
+    dateFontSize: "11px",
+    eventLineHeight: "30px",
+    eventPaddingLeft: "55px",
+    shortMargin: "0px",
+    shortPadding: "5px",
+    stateBackground: "rgb(101, 201, 223)",
+    stateMarginRight: "10px",
+    stateWidth: 90,
+  });
 });
+
+async function pullRequestEventMetrics(page: Page) {
+  return page.locator("#comment-94").evaluate((event) => {
+    const state = event.querySelector<HTMLElement>(".state");
+    const date = event.querySelector<HTMLElement>(".date");
+    const commitList = event.querySelector<HTMLElement>(".commit-list");
+    const commitInfo = event.querySelector<HTMLElement>(".commit-info");
+    const commitId = event.querySelector<HTMLElement>(".commit-id");
+    const short = event.querySelector<HTMLElement>(".commitMsg.short");
+    const missing = Object.entries({
+      commitId,
+      commitInfo,
+      commitList,
+      date,
+      short,
+      state,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected pull request event metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const commitIdStyle = window.getComputedStyle(commitId);
+    const commitInfoStyle = window.getComputedStyle(commitInfo);
+    const commitListStyle = window.getComputedStyle(commitList);
+    const eventStyle = window.getComputedStyle(event);
+    const shortStyle = window.getComputedStyle(short);
+    const stateStyle = window.getComputedStyle(state);
+    return {
+      commitIdColor: commitIdStyle.color,
+      commitIdFloat: commitIdStyle.float,
+      commitIdFontSize: commitIdStyle.fontSize,
+      commitIdTextAlign: commitIdStyle.textAlign,
+      commitIdWidth: Math.round(commitId.getBoundingClientRect().width),
+      commitInfoPadding: commitInfoStyle.padding,
+      commitListBackground: commitListStyle.backgroundColor,
+      commitListBorderRadius: commitListStyle.borderRadius,
+      commitListBorderWidth: commitListStyle.borderTopWidth,
+      commitListMargin: commitListStyle.margin,
+      commitListPadding: commitListStyle.padding,
+      dateFontSize: window.getComputedStyle(date).fontSize,
+      eventLineHeight: eventStyle.lineHeight,
+      eventPaddingLeft: eventStyle.paddingLeft,
+      shortMargin: shortStyle.margin,
+      shortPadding: shortStyle.padding,
+      stateBackground: stateStyle.backgroundColor,
+      stateMarginRight: stateStyle.marginRight,
+      stateWidth: Math.round(state.getBoundingClientRect().width),
+    };
+  });
+}
 
 test("project pull request overview renders legacy review and state event DOM", async ({
   page,

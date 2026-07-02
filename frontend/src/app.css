@@ -3494,6 +3494,94 @@ h1 {
   font-weight: 400;
 }
 
+.board-comment-wrap .comments {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.board-comment-wrap .comments .event {
+  padding: 2px 0 2px 55px;
+  font-size: 1em;
+  line-height: 30px;
+}
+
+.board-comment-wrap .comments .event .state {
+  display: inline-block;
+  width: 90px;
+  margin-right: 10px;
+  padding: 6px 0;
+  color: #fff;
+  font-weight: bold;
+  line-height: 14px;
+  text-align: center;
+  border-radius: 5px;
+}
+
+.board-comment-wrap .comments .event .state.merged,
+.board-comment-wrap .comments .event .state.changed {
+  background-color: #65c9df;
+}
+
+.board-comment-wrap .comments .event .state.closed {
+  background-color: #fd6956;
+}
+
+.board-comment-wrap .comments .event .state.conflict {
+  background-color: #c0392b;
+}
+
+.board-comment-wrap .comments .event .state.resolved {
+  background-color: #468847;
+}
+
+.board-comment-wrap .comments .event .date {
+  color: #aaa;
+  font-size: 11px;
+}
+
+.board-comment-wrap .comments .event .commit-list {
+  padding: 0;
+  margin: 10px 0 0 102px;
+  list-style: none;
+  background: #fdfdfd;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+.board-comment-wrap .comments .event .commit-list .commit-info {
+  padding: 10px 5px;
+}
+
+.board-comment-wrap .comments .event .commit-list .commit-info:nth-child(even) {
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+
+.board-comment-wrap .comments .event .commit-list .commit-info:last-child {
+  border-bottom: 0;
+}
+
+.board-comment-wrap .comments .event .commit-list .commit-id {
+  float: left;
+  width: 70px;
+  color: #51aacc;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-size: 12px;
+  text-align: center;
+}
+
+.board-comment-wrap .comments .event .commit-list .commitMsg.short {
+  padding: 5px;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.board-comment-wrap .comments .event .commit-list .commitMsg.desc {
+  margin-left: 80px;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
 .post-list {
   margin: 0;
   border-top: 1px solid #ddd;
