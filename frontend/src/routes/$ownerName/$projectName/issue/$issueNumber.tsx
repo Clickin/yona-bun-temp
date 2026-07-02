@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, useState, type AnchorHTMLAttributes, type ComponentType } from "react";
+import { Fragment, useRef, useState, type AnchorHTMLAttributes, type ComponentType } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacyMarkdownHelpTemplate from "../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
@@ -2627,13 +2627,19 @@ function ChildComments({
     `/${ownerName}/${projectName}/issue/${issueNumber}/comments`,
   );
   const [notificationVisible, setNotificationVisible] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   return (
     <>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         className="add-a-comment pull-right"
-        onClick={toggleForm}
+        onClick={() => {
+          toggleForm();
+          if (!formOpen) {
+            requestAnimationFrame(() => textareaRef.current?.focus());
+          }
+        }}
         style={replyVisible ? { display: "block" } : undefined}
       >
         Reply
@@ -2663,6 +2669,7 @@ function ChildComments({
               />
               <div className="oneline-comment-box">
                 <textarea
+                  ref={textareaRef}
                   className="editorSeries"
                   name="contents"
                   rows={1}

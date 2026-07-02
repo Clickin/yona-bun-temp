@@ -530,7 +530,7 @@ test("project issue detail shows notification receiver on editor focus", async (
   );
 });
 
-test("project issue detail shows child reply notification receiver on editor focus", async ({
+test("project issue detail focuses child reply editor after legacy reply click", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -546,7 +546,7 @@ test("project issue detail shows child reply notification receiver on editor foc
   await expect(comment.locator(".add-a-comment")).toBeVisible();
   await comment.locator(".add-a-comment").click();
   await expect(comment.locator(".child-comment-input-form")).toBeVisible();
-  await comment.locator(".child-comment-input-form .editorSeries").focus();
+  await expect(comment.locator(".child-comment-input-form .editorSeries")).toBeFocused();
   await expect(receiver).toBeVisible();
   await expect(receiver).toHaveCSS("display", "block");
   await expect(receiver.locator(".notification-receiver-title")).toHaveText(
