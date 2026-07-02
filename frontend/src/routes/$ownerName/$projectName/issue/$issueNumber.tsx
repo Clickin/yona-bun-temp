@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { Fragment, useState, type AnchorHTMLAttributes, type ComponentType } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -31,6 +31,12 @@ export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumbe
 
 function ProjectIssueDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { issueNumber } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  if (pathname.endsWith(`/issue/${issueNumber}/editform`)) {
+    return <Outlet />;
+  }
 
   return (
     <YonaQueryProvider>

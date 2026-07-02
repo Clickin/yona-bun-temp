@@ -97,6 +97,23 @@ test("rendered evidence summary counts match manifest row statuses", () => {
         `${legacyTemplate} must not cite historical search-parity evidence`,
       );
     }
+    if (legacyTemplate === "issue/create.scala.html") {
+      assert.match(
+        evidenceFiles,
+        /frontend\/tests\/project-issue-form\.e2e\.ts/,
+        "issue/create.scala.html must cite current issue create form evidence",
+      );
+    }
+    if (
+      legacyTemplate === "issue/edit.scala.html" ||
+      legacyTemplate === "common/calendar.scala.html"
+    ) {
+      assert.doesNotMatch(
+        evidenceFiles,
+        /frontend\/tests\/issue-form-parity\.e2e\.ts/,
+        `${legacyTemplate} must not cite historical issue-form-parity evidence`,
+      );
+    }
     prioritySummaryCounts.set(
       `__actual:${priority}`,
       (prioritySummaryCounts.get(`__actual:${priority}`) ?? 0) + 1,
