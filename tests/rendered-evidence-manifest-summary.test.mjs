@@ -80,6 +80,7 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     ["error/internalServerError_default.scala.html", "frontend/tests/search-global.e2e.ts"],
     ["error/badrequest.scala.html", "frontend/tests/project-members-form.e2e.ts"],
     ["error/forbidden.scala.html", "frontend/tests/project-members-form.e2e.ts"],
+    ["error/forbidden_organization.scala.html", "frontend/tests/organization-members-form.e2e.ts"],
   ]);
   let inSummary = false;
   let inPrioritySummary = false;

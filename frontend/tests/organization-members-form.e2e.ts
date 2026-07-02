@@ -46,6 +46,39 @@ test("organization members matches legacy organization/members.scala.html DOM", 
   });
 });
 
+test("organization members forbidden response renders legacy organization error shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationMembers(page, { adminStatus: 403 });
+
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".project-page-wrap > .error-wrap")).toBeVisible();
+  await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
+    "You are not authorized",
+  );
+  await expect(page.locator(".project-page-wrap > .error-wrap .ico.ico-err2")).toBeVisible();
+  await expect(page.locator("#addNewMember")).toHaveCount(0);
+  await expect(page.locator(".members.project .member")).toHaveCount(0);
+  await expect(page.locator(".project-page-wrap .ybtn")).toHaveCount(0);
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs")).toHaveCount(0);
+
+  expect(await organizationForbiddenMetrics(page)).toEqual({
+    errorPaddingBlock: 200,
+    iconClass: "ico ico-err2",
+    iconTextAlign: "center",
+    messageFontSize: "16px",
+    messageFontWeight: "700",
+    messageMarginTop: 30,
+    messageTextAlign: "center",
+    menuHasSettingLink: true,
+    pageWrapChildCount: 1,
+  });
+});
+
 test("organization members mutation controls preserve legacy data hooks", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const requests = await mockOrganizationMembers(page);
@@ -170,7 +203,7 @@ test("organization members menu board link preserves legacy href with SPA transi
   await expect(page.locator("#option_form")).toBeVisible();
 });
 
-async function mockOrganizationMembers(page: Page) {
+async function mockOrganizationMembers(page: Page, options: { adminStatus?: number } = {}) {
   const requests = {
     acceptedUserIds: [] as string[],
     addedLoginIds: [] as string[],
@@ -194,7 +227,33 @@ async function mockOrganizationMembers(page: Page) {
       }),
     });
   });
+  await page.route("**/api/v1/organizations/weblabs", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        description: "Web labs group",
+        id: 42,
+        logoUrl: "/assets/images/organization_default_logo.png",
+        organizationName: "weblabs",
+        viewerCanUpdate: true,
+      }),
+    });
+  });
   await page.route("**/api/v1/organizations/weblabs/admin", async (route) => {
+    if (options.adminStatus === 403) {
+      await route.fulfill({
+        contentType: "application/json",
+        status: 403,
+        body: JSON.stringify({
+          error: {
+            code: "forbidden",
+            message: "You are not authorized",
+            status: 403,
+          },
+        }),
+      });
+      return;
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(organizationAdminPayload()),
@@ -384,6 +443,42 @@ async function organizationMemberMetrics(page: Page) {
       memberRowWidthRatio: Number((firstMemberRect.width / memberListRect.width).toFixed(2)),
       memberSettingOffsetTop: Math.round(memberSettingRect.top - firstMemberRect.top),
       roleApplyLoginId: roleApply.getAttribute("data-loginid"),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function organizationForbiddenMetrics(page: Page) {
+  return page.evaluate(() => {
+    const errorWrap = requireElement(".project-page-wrap > .error-wrap");
+    const icon = requireElement(".project-page-wrap > .error-wrap .ico.ico-err2");
+    const message = requireElement(".project-page-wrap > .error-wrap p");
+    const pageWrap = requireElement(".project-page-wrap");
+    const errorStyle = getComputedStyle(errorWrap);
+    const messageStyle = getComputedStyle(message);
+
+    return {
+      errorPaddingBlock:
+        Math.round(parseFloat(errorStyle.paddingTop)) +
+        Math.round(parseFloat(errorStyle.paddingBottom)),
+      iconClass: icon.getAttribute("class"),
+      iconTextAlign: getComputedStyle(icon).textAlign,
+      messageFontSize: messageStyle.fontSize,
+      messageFontWeight: messageStyle.fontWeight,
+      messageMarginTop: Math.round(parseFloat(messageStyle.marginTop)),
+      messageTextAlign: messageStyle.textAlign,
+      menuHasSettingLink:
+        document.querySelector(
+          '.project-setting a[href$="/organizations/weblabs/settingform"] .yobicon-cog',
+        ) !== null,
+      pageWrapChildCount: pageWrap.children.length,
     };
 
     function requireElement(selector: string) {

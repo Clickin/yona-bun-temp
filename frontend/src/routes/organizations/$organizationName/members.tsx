@@ -13,10 +13,12 @@ import {
   addOrganizationMemberRest,
   deleteOrganizationMemberRest,
   readOrganizationAdminRest,
+  readOrganizationDetailRest,
   updateOrganizationMemberRoleRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationAdminView, YonaRecord, YonaUserItem } from "../../../api/types";
+import { RestApiError } from "../../../api/rest-client";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
@@ -47,12 +49,56 @@ function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
     queryFn: () => readOrganizationAdminRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "admin"],
   });
+  const detailQuery = useQuery({
+    queryFn: () => readOrganizationDetailRest(runtimeConfig, organizationName),
+    queryKey: apiQueryKeys.organization.base(organizationName),
+  });
+
+  if (query.error instanceof RestApiError && query.error.status === 403) {
+    if (!detailQuery.data) {
+      return null;
+    }
+    const logoUrl =
+      stringField(detailQuery.data.logoUrl, "") || "/assets/images/organization_default_logo.png";
+    const detailOrganizationName = stringField(detailQuery.data.organizationName, organizationName);
+
+    return (
+      <>
+        <OrganizationHeader
+          basePath={runtimeConfig.basePath}
+          logoUrl={logoUrl}
+          organizationName={detailOrganizationName}
+        />
+        <OrganizationMenu
+          basePath={runtimeConfig.basePath}
+          organizationName={detailOrganizationName}
+          viewerCanUpdate={booleanField(detailQuery.data.viewerCanUpdate)}
+        />
+        <OrganizationMembersErrorBody messageKey="error.forbidden" />
+      </>
+    );
+  }
 
   if (!query.data) {
     return null;
   }
 
   return <OrganizationMembersBody organization={query.data} runtimeConfig={runtimeConfig} />;
+}
+
+function OrganizationMembersErrorBody({ messageKey }: { messageKey: string }) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t(messageKey)}</p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function OrganizationMembersBody({
