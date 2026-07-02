@@ -5,6 +5,7 @@ import {
   useEffect,
   useEffectEvent,
   useRef,
+  useState,
   type CSSProperties,
   type FormEvent as ReactFormEvent,
   type HTMLAttributes,
@@ -1802,6 +1803,33 @@ function stringFormValue(data: FormData, name: string) {
   return String(data.get(name) ?? "");
 }
 
+function isValidIssueDueDate(value: string) {
+  const trimmed = value.trim();
+  return trimmed === "" || !Number.isNaN(Date.parse(trimmed));
+}
+
+function YobiToast({ message, noticeKey }: { message: string; noticeKey: number }) {
+  if (noticeKey === 0) {
+    return null;
+  }
+
+  return (
+    <div className="yobiToasts" key={noticeKey}>
+      <div className="toast" tabIndex={-1} key={noticeKey}>
+        <div className="btn-dismiss">
+          <button type="button" className="btn-transparent">
+            &times;
+          </button>
+        </div>
+        <div className="center-text">
+          <span className="v"></span>
+          <div className="msg">{message}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function pushSearchParam(queryPairs: string[], name: string, value: string) {
   if (value) {
     queryPairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(value)}`);
@@ -1847,12 +1875,22 @@ function IssueSearchForm({
 }) {
   const { t } = useLegacyMessages();
   const formRef = useRef<HTMLFormElement>(null);
+  const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
   const hasMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
   const selectedMilestone = selectedSearchMilestone(search.milestoneId, milestones);
   const handleSubmit = (event: ReactFormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const dueDateInput = event.currentTarget.querySelector<HTMLInputElement>(
+      "[data-toggle='calendar']",
+    );
+    if (dueDateInput && !isValidIssueDueDate(dueDateInput.value)) {
+      setInvalidDueDateNoticeKey((currentKey) => currentKey + 1);
+      dueDateInput.focus();
+      return;
+    }
+
     onSearchSubmit(projectIssuesSearchFromForm(event.currentTarget, search));
   };
   const handleSearchFieldChange = useEffectEvent((event: Event) => {
@@ -1878,7 +1916,6 @@ function IssueSearchForm({
       form.removeEventListener("change", handleSearchFieldChange);
     };
   }, []);
-
   return (
     <form
       id="search"
@@ -1888,6 +1925,7 @@ function IssueSearchForm({
       onSubmit={handleSubmit}
       ref={formRef}
     >
+      <YobiToast noticeKey={invalidDueDateNoticeKey} message={t("issue.error.invalid.duedate")} />
       <input type="hidden" name="orderBy" value={search.orderBy} />
       <input type="hidden" name="orderDir" value={search.orderDir} />
       <input type="hidden" name="state" value={search.state} />

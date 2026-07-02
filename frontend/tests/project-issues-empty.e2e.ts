@@ -725,6 +725,24 @@ test("project issue search button submits route like legacy partial_searchform.s
   ).toBe("issue-search-submit");
 });
 
+test("project issue search blocks invalid due date like legacy issue.List submit validation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug&pageNum=3`);
+  await page.locator("#issueDueDate").fill("not-a-date");
+  await page.locator("#search [data-submit='submit']").click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("bug");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "").toBe("3");
+  await expect(page.locator("#issueDueDate")).toBeFocused();
+  await expect(page.locator(".yobiToasts .toast .msg").first()).toHaveText(
+    "Issue due date is not valid date type.",
+  );
+});
+
 test("project issue search field change submits route like legacy issue.List data-search change", async ({
   page,
 }) => {
