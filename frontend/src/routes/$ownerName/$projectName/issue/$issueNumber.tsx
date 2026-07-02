@@ -4,11 +4,12 @@ import { Fragment, useState, type AnchorHTMLAttributes, type ComponentType } fro
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacyMarkdownHelpTemplate from "../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
+import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { RestApiError } from "../../../../api/rest-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
-import type { ProjectContainer, ProjectMilestone } from "../../../../api/types";
+import type { ProjectContainer, ProjectMilestone, YonaRecord } from "../../../../api/types";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import {
@@ -70,6 +71,9 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     queryFn: () => readIssueDetail(runtimeConfig, ownerName, projectName, numericIssueNumber),
     queryKey: ["project-issue-detail", ownerName, projectName, numericIssueNumber],
   });
+  const labelsQuery = useQuery(
+    listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
   const openMilestonesQuery = useQuery({
     queryFn: () =>
       listProjectMilestones(runtimeConfig, ownerName, projectName, {
@@ -107,7 +111,12 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     );
   }
 
-  if (!issueQuery.data || !openMilestonesQuery.data || !closedMilestonesQuery.data) {
+  if (
+    !issueQuery.data ||
+    !labelsQuery.data ||
+    !openMilestonesQuery.data ||
+    !closedMilestonesQuery.data
+  ) {
     return null;
   }
 
@@ -123,6 +132,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       <IssueDetailBody
         basePath={runtimeConfig.basePath}
         issue={issueQuery.data}
+        labels={labelsQuery.data.labels}
         milestones={{
           closed: closedMilestonesQuery.data.milestones,
           open: openMilestonesQuery.data.milestones,
@@ -288,12 +298,14 @@ function ProjectIssueNotFoundBody({
 function IssueDetailBody({
   basePath,
   issue,
+  labels: projectLabels,
   milestones,
   project,
   runtimeConfig,
 }: {
   basePath: string;
   issue: RestIssueDetailResponse;
+  labels: YonaRecord[];
   milestones: {
     closed: ProjectMilestone[];
     open: ProjectMilestone[];
@@ -321,7 +333,10 @@ function IssueDetailBody({
   const canComment = booleanField(issue.viewerCanComment);
   const hasVoted = booleanField(issue.hasVoted);
   const labels = (issue.labels ?? []).slice().sort(compareLabels);
+  const selectableLabels = (projectLabels ?? []).slice().sort(compareLabels);
+  const canManageProjectLabels = booleanField(project.viewerCanUpdate);
   const hasProjectMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
+  const showIssue = projectMenuEnabled(project, "issue");
   const showMilestone = projectMenuEnabled(project, "milestone");
   const voters = issue.issueVoters ?? [];
   const parentIssueId = stringField(issue.parentIssueId, issueId);
@@ -588,11 +603,13 @@ function IssueDetailBody({
               >
                 <input type="hidden" name="issues[0].id" value={issueId} />
                 <dl>
-                  <dd className="project-btn-item">
-                    <LegacyInternalLink to={newSubtaskPath} className="ybtn ybtn-success">
-                      New subtask
-                    </LegacyInternalLink>
-                  </dd>
+                  {showIssue ? (
+                    <dd className="project-btn-item">
+                      <LegacyInternalLink to={newSubtaskPath} className="ybtn ybtn-success">
+                        New subtask
+                      </LegacyInternalLink>
+                    </dd>
+                  ) : null}
                   <dt>Assignee</dt>
                   <dd>
                     {canUpdate ? (
@@ -703,14 +720,16 @@ function IssueDetailBody({
                     )}
                   </dd>
                 </dl>
-                {canUpdate ? (
+                {selectableLabels.length > 0 && canUpdate ? (
                   <IssueLabelSelect
                     basePath={basePath}
-                    labels={labels}
+                    canManageLabels={canManageProjectLabels}
+                    labels={selectableLabels}
                     ownerName={ownerName}
                     projectName={projectName}
+                    selectedLabelIds={new Set(labels.map((label) => stringField(label.id)))}
                   />
-                ) : (
+                ) : selectableLabels.length > 0 ? (
                   <IssueSelectedLabels
                     basePath={basePath}
                     issueState={issueState}
@@ -718,7 +737,7 @@ function IssueDetailBody({
                     ownerName={ownerName}
                     projectName={projectName}
                   />
-                )}
+                ) : null}
                 <div className="act-row right-menu-icons">
                   <IssueActionButtons
                     canDelete={canDelete}
@@ -1057,28 +1076,34 @@ function IssueMilestoneSelect({
 
 function IssueLabelSelect({
   basePath,
+  canManageLabels,
   labels,
   ownerName,
   projectName,
+  selectedLabelIds,
 }: {
   basePath: string;
-  labels: RestIssueDetailResponse["labels"];
+  canManageLabels: boolean;
+  labels: YonaRecord[];
   ownerName: string;
   projectName: string;
+  selectedLabelIds: Set<string>;
 }) {
-  const optionsHtml = labelSelectOptionsHtml(labels);
+  const optionsHtml = labelSelectOptionsHtml(labels, selectedLabelIds);
 
   return (
     <dl>
       <dt>
         Label{" "}
-        <a
-          href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
-          target="_blank"
-          className="label-edit"
-        >
-          [Edit]
-        </a>
+        {canManageLabels ? (
+          <a
+            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
+            target="_blank"
+            className="label-edit"
+          >
+            [Edit]
+          </a>
+        ) : null}
       </dt>
       <dd>
         <select
@@ -1110,7 +1135,7 @@ function IssueSelectedLabels({
 }: {
   basePath: string;
   issueState: string;
-  labels: RestIssueDetailResponse["labels"];
+  labels: YonaRecord[];
   ownerName: string;
   projectName: string;
 }) {
@@ -2577,23 +2602,23 @@ function CommentDeleteConfirm({
 }
 
 function compareLabels(
-  left: { categoryName?: unknown; name: string },
-  right: { categoryName?: unknown; name: string },
+  left: { categoryName?: unknown; name?: unknown },
+  right: { categoryName?: unknown; name?: unknown },
 ) {
   const categoryOrder = stringField(left.categoryName).localeCompare(
     stringField(right.categoryName),
   );
-  return categoryOrder || left.name.localeCompare(right.name);
+  return categoryOrder || stringField(left.name).localeCompare(stringField(right.name));
 }
 
-function labelSelectOptionsHtml(labels: RestIssueDetailResponse["labels"]) {
+function labelSelectOptionsHtml(labels: YonaRecord[], selectedLabelIds: Set<string>) {
   const categoryGroups = new Map<
     string,
     {
       categoryId: string;
       categoryIsExclusive: string;
       categoryName: string;
-      labels: RestIssueDetailResponse["labels"];
+      labels: YonaRecord[];
     }
   >();
   for (const label of labels) {
@@ -2615,7 +2640,7 @@ function labelSelectOptionsHtml(labels: RestIssueDetailResponse["labels"]) {
         `<optgroup label="${escapeHtml(group.categoryName)}" data-category-id="${escapeHtml(group.categoryId)}" data-category-is-exclusive="${escapeHtml(group.categoryIsExclusive)}">${group.labels
           .map(
             (label) =>
-              `<option value="${escapeHtml(String(label.id))}" data-category-id="${escapeHtml(stringField(label.categoryId))}" data-category-is-exclusive="${escapeHtml(String(booleanField(label.categoryIsExclusive)))}" selected>${escapeHtml(label.name)}</option>`,
+              `<option value="${escapeHtml(stringField(label.id))}" data-category-id="${escapeHtml(stringField(label.categoryId))}" data-category-is-exclusive="${escapeHtml(String(booleanField(label.categoryIsExclusive)))}"${selectedLabelIds.has(stringField(label.id)) ? " selected" : ""}>${escapeHtml(stringField(label.name))}</option>`,
           )
           .join("")}</optgroup>`,
     ),
