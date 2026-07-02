@@ -737,7 +737,6 @@ async function pullRequestSearchMetrics(page: Page) {
     }
 
     const advancedStyle = window.getComputedStyle(advanced);
-    const buttonStyle = window.getComputedStyle(button);
     const inputStyle = window.getComputedStyle(input);
     const leftMenuStyle = window.getComputedStyle(leftMenu);
     return {
