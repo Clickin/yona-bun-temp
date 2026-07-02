@@ -207,6 +207,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
               <a
                 href="#"
+                ref={(node) => node?.setAttribute("href", "javascript:void(0)")}
                 onClick={(event) => {
                   event.preventDefault();
                   setSelectedProjects((current) =>

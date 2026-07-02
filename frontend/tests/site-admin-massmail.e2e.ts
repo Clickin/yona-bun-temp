@@ -186,6 +186,10 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   await page.locator("#input-project").fill("admin/projectYobi");
   await page.locator("#select-project").click();
   await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
+  await expect(page.locator("#selected-projects .label a")).toHaveAttribute(
+    "href",
+    "javascript:void(0)",
+  );
   expect(await massMailProjectMetrics(page)).toEqual({
     addButtonHeight: 30,
     inputMarginBottom: 0,
