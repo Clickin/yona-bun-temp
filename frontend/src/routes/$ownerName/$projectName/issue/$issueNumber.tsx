@@ -2383,6 +2383,8 @@ function IssueCommentRow({
   const canVote = booleanField(issue.viewerCanComment);
   const [translatedContentsMarkdown, setTranslatedContentsMarkdown] = useState<string | null>(null);
   const [translatePending, setTranslatePending] = useState(false);
+  const [replyVisible, setReplyVisible] = useState(false);
+  const [childFormOpen, setChildFormOpen] = useState(false);
   const translationApiEnabled = booleanField(issue.translationApiEnabled);
   const contentsMarkdown = translatedContentsMarkdown ?? stringField(comment.contentsMarkdown);
   const voters = comment.voters ?? [];
@@ -2410,7 +2412,16 @@ function IssueCommentRow({
   }
 
   return (
-    <li className="comment " id={`comment-${commentId}`}>
+    <li
+      className="comment "
+      id={`comment-${commentId}`}
+      onMouseEnter={() => setReplyVisible(true)}
+      onMouseLeave={() => {
+        if (!childFormOpen) {
+          setReplyVisible(false);
+        }
+      }}
+    >
       <ChildCommentAnchors childComments={childComments} />
       <div className="comment-avatar">
         <a
@@ -2512,6 +2523,10 @@ function IssueCommentRow({
                 data-toggle="comment-edit"
                 data-comment-id={commentId}
                 title="Edit comment"
+                onClick={() => {
+                  setChildFormOpen(false);
+                  setReplyVisible(false);
+                }}
               >
                 <i className="yobicon-edit-2"></i>
               </button>
@@ -2558,8 +2573,14 @@ function IssueCommentRow({
       <ChildComments
         basePath={basePath}
         childComments={childComments}
+        formOpen={childFormOpen}
         issue={issue}
         parentCommentId={commentId}
+        replyVisible={replyVisible}
+        toggleForm={() => {
+          setChildFormOpen((current) => !current);
+          setReplyVisible(true);
+        }}
       />
     </li>
   );
@@ -2578,13 +2599,19 @@ function ChildCommentAnchors({ childComments }: { childComments: IssueChildComme
 function ChildComments({
   basePath,
   childComments,
+  formOpen,
   issue,
   parentCommentId,
+  replyVisible,
+  toggleForm,
 }: {
   basePath: string;
   childComments: IssueChildComment[];
+  formOpen: boolean;
   issue: RestIssueDetailResponse;
   parentCommentId: string;
+  replyVisible: boolean;
+  toggleForm: () => void;
 }) {
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
@@ -2593,10 +2620,18 @@ function ChildComments({
     basePath,
     `/${ownerName}/${projectName}/issue/${issueNumber}/comments`,
   );
+  const [notificationVisible, setNotificationVisible] = useState(false);
 
   return (
     <>
-      <div className="add-a-comment pull-right">Reply</div>
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+      <div
+        className="add-a-comment pull-right"
+        onClick={toggleForm}
+        style={replyVisible ? { display: "block" } : undefined}
+      >
+        Reply
+      </div>
       <div className="subcomment-media-body">
         <div className="child-comments">
           {childComments.map((comment) => (
@@ -2609,7 +2644,10 @@ function ChildComments({
           ))}
         </div>
         {booleanField(issue.viewerCanComment) ? (
-          <div className="child-comment-input-form">
+          <div
+            className="child-comment-input-form"
+            style={formOpen ? { display: "block", visibility: "visible" } : undefined}
+          >
             <form action={newCommentAction} method="post" encType="multipart/form-data">
               <input
                 className="parentCommentId"
@@ -2623,13 +2661,17 @@ function ChildComments({
                   name="contents"
                   rows={1}
                   placeholder="Reply (CTRL + ENTER)"
+                  onFocus={() => setNotificationVisible(true)}
                   {...{ markdown: "true" }}
                 ></textarea>
                 <button type="submit" className="ybtn ybtn-success">
                   OK
                 </button>
               </div>
-              <div className="notification-receiver">
+              <div
+                className="notification-receiver"
+                style={notificationVisible ? { display: "block" } : undefined}
+              >
                 <span className="notification-receiver-title">Notification receivers </span>
                 <span className="notification-receiver-list"></span>
               </div>

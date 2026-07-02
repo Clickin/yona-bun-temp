@@ -530,6 +530,30 @@ test("project issue detail shows notification receiver on editor focus", async (
   );
 });
 
+test("project issue detail shows child reply notification receiver on editor focus", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const comment = page.locator(".span-left-pane #comment-77");
+  const receiver = comment.locator(".child-comment-input-form .notification-receiver");
+  await expect(comment.locator(".child-comment-input-form")).toBeHidden();
+  await expect(receiver).toBeHidden();
+
+  await comment.hover();
+  await expect(comment.locator(".add-a-comment")).toBeVisible();
+  await comment.locator(".add-a-comment").click();
+  await expect(comment.locator(".child-comment-input-form")).toBeVisible();
+  await comment.locator(".child-comment-input-form .editorSeries").focus();
+  await expect(receiver).toBeVisible();
+  await expect(receiver).toHaveCSS("display", "block");
+  await expect(receiver.locator(".notification-receiver-title")).toHaveText(
+    "Notification receivers",
+  );
+});
+
 test("project issue detail toggles legacy comment update form through comment-edit", async ({
   page,
 }) => {
