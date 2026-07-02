@@ -5809,6 +5809,7 @@ div.markdown-preview {
 
 .commit-wrap {
   overflow-x: auto;
+  background-color: #fff;
 }
 
 .code-table {
@@ -5855,8 +5856,56 @@ div.markdown-preview {
   color: #555;
 }
 
-.btn-copy-commitId {
-  margin-right: 6px;
+.commit-wrap .code-table.commits .commit-id {
+  width: 70px;
+  padding: 0;
+  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace;
+  font-size: 12px;
+  text-align: center;
+  vertical-align: top;
+}
+
+.commit-wrap .code-table.commits .tbody td {
+  padding: 10px 15px 10px 5px;
+  vertical-align: top;
+}
+
+.commit-wrap .code-table.commits .tbody .commit-id {
+  position: relative;
+  padding: 12px 3px;
+}
+
+.commit-wrap .code-table.commits .tbody .commit-id a {
+  color: #51aacc;
+}
+
+.commit-wrap .code-table.commits .tbody .commit-id .btn-copy-commitId {
+  display: none;
+}
+
+.commit-wrap .code-table.commits .tbody .commit-id:hover .btn-copy-commitId {
+  position: absolute;
+  top: 15px;
+  left: -15px;
+  display: block;
+  color: #51aacc;
+}
+
+.commit-wrap .code-table.commits .messages {
+  vertical-align: top;
+}
+
+.commit-wrap .code-table.commits .date {
+  width: 100px;
+  font-size: 12px;
+  vertical-align: top;
+}
+
+.commit-wrap .code-table.commits .author {
+  width: 40px;
+  line-height: 1 !important;
+  text-align: right;
+  vertical-align: top;
 }
 
 .number-of-comments {
@@ -5864,9 +5913,48 @@ div.markdown-preview {
   color: #666;
 }
 
+.commitMsg.short {
+  padding: 5px;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: pre-line;
+  word-break: break-word;
+}
+
 .commitMsg.desc {
-  margin: 6px 0 0;
-  white-space: pre-wrap;
+  color: #666;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  background: transparent;
+  border: none;
+  border-left: 3px solid #f1f1f1;
+  border-radius: 0;
+  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace;
+  font-size: 12px;
+}
+
+.commitMsg.moreBtn {
+  position: relative;
+  top: -1px;
+  display: inline-block;
+  margin-left: 3px;
+  line-height: 0;
+  background-color: transparent;
+  border: 0;
+  outline: none;
+}
+
+.commitMsg.moreBtn span {
+  display: inline-block;
+  height: 12px;
+  padding: 2px 7px;
+  color: #fff;
+  vertical-align: middle;
+  background-color: #bbb;
+  border-radius: 2px;
+  font-size: 12px;
+  line-height: 6px;
 }
 
 .codediff-wrap {

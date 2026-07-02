@@ -15,7 +15,128 @@ test("project code history matches legacy code/history.scala.html DOM", async ({
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_HISTORY_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await historyLayoutMetrics(page)).toEqual({
+    authorLineHeight: "13.3333px",
+    authorTextAlign: "right",
+    authorWidth: 62,
+    bodyCellPadding: "10px 15px 10px 5px",
+    commitIdFontFamily: 'Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace',
+    commitIdFontSize: "12px",
+    commitIdPadding: "12px 3px",
+    commitIdPosition: "relative",
+    commitIdTextAlign: "center",
+    commitIdVerticalAlign: "top",
+    commitIdWidth: 77,
+    commitLinkColor: "rgb(81, 170, 204)",
+    copyButtonDisplay: "none",
+    dateFontSize: "12px",
+    dateWidth: 120,
+    descBackground: "rgba(0, 0, 0, 0)",
+    descBorderLeftWidth: "3px",
+    descBorderRadius: "0px",
+    descColor: "rgb(102, 102, 102)",
+    descFontSize: "12px",
+    historyBackground: "rgb(255, 255, 255)",
+    messagesVerticalAlign: "top",
+    moreButtonBackground: "rgba(0, 0, 0, 0)",
+    moreButtonBorderWidth: "0px",
+    moreButtonLineHeight: "0px",
+    moreButtonMarginLeft: "3px",
+    moreButtonTop: "-1px",
+    moreSpanBackground: "rgb(187, 187, 187)",
+    moreSpanBorderRadius: "2px",
+    moreSpanHeight: "12px",
+    moreSpanLineHeight: "6px",
+    moreSpanPadding: "2px 7px",
+    shortFontSize: "14px",
+    shortPadding: "5px",
+    shortWhiteSpace: "pre-line",
+    tableWidth: 1260,
+  });
 });
+
+async function historyLayoutMetrics(page: Page) {
+  return page.locator("#history.commit-wrap").evaluate((history) => {
+    const table = history.querySelector<HTMLElement>(".code-table.commits");
+    const bodyCell = history.querySelector<HTMLElement>(".tbody .messages");
+    const commitId = history.querySelector<HTMLElement>(".tbody .commit-id");
+    const commitLink = history.querySelector<HTMLElement>(".tbody .commit-id a");
+    const copyButton = history.querySelector<HTMLElement>(".tbody .btn-copy-commitId");
+    const messages = history.querySelector<HTMLElement>(".tbody .messages");
+    const date = history.querySelector<HTMLElement>(".tbody .date");
+    const author = history.querySelector<HTMLElement>(".tbody .author");
+    const short = history.querySelector<HTMLElement>(".commitMsg.short");
+    const moreButton = history.querySelector<HTMLElement>(".commitMsg.moreBtn");
+    const moreSpan = history.querySelector<HTMLElement>(".commitMsg.moreBtn span");
+    const desc = history.querySelector<HTMLElement>(".commitMsg.desc");
+    const missing = Object.entries({
+      author,
+      bodyCell,
+      commitId,
+      commitLink,
+      copyButton,
+      date,
+      desc,
+      messages,
+      moreButton,
+      moreSpan,
+      short,
+      table,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected code history metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const authorStyle = window.getComputedStyle(author);
+    const bodyCellStyle = window.getComputedStyle(bodyCell);
+    const commitIdStyle = window.getComputedStyle(commitId);
+    const dateStyle = window.getComputedStyle(date);
+    const descStyle = window.getComputedStyle(desc);
+    const moreButtonStyle = window.getComputedStyle(moreButton);
+    const moreSpanStyle = window.getComputedStyle(moreSpan);
+    const shortStyle = window.getComputedStyle(short);
+    return {
+      authorLineHeight: authorStyle.lineHeight,
+      authorTextAlign: authorStyle.textAlign,
+      authorWidth: Math.round(author.getBoundingClientRect().width),
+      bodyCellPadding: bodyCellStyle.padding,
+      commitIdFontFamily: commitIdStyle.fontFamily,
+      commitIdFontSize: commitIdStyle.fontSize,
+      commitIdPadding: commitIdStyle.padding,
+      commitIdPosition: commitIdStyle.position,
+      commitIdTextAlign: commitIdStyle.textAlign,
+      commitIdVerticalAlign: commitIdStyle.verticalAlign,
+      commitIdWidth: Math.round(commitId.getBoundingClientRect().width),
+      commitLinkColor: window.getComputedStyle(commitLink).color,
+      copyButtonDisplay: window.getComputedStyle(copyButton).display,
+      dateFontSize: dateStyle.fontSize,
+      dateWidth: Math.round(date.getBoundingClientRect().width),
+      descBackground: descStyle.backgroundColor,
+      descBorderLeftWidth: descStyle.borderLeftWidth,
+      descBorderRadius: descStyle.borderRadius,
+      descColor: descStyle.color,
+      descFontSize: descStyle.fontSize,
+      historyBackground: window.getComputedStyle(history).backgroundColor,
+      messagesVerticalAlign: window.getComputedStyle(messages).verticalAlign,
+      moreButtonBackground: moreButtonStyle.backgroundColor,
+      moreButtonBorderWidth: moreButtonStyle.borderTopWidth,
+      moreButtonLineHeight: moreButtonStyle.lineHeight,
+      moreButtonMarginLeft: moreButtonStyle.marginLeft,
+      moreButtonTop: moreButtonStyle.top,
+      moreSpanBackground: moreSpanStyle.backgroundColor,
+      moreSpanBorderRadius: moreSpanStyle.borderRadius,
+      moreSpanHeight: moreSpanStyle.height,
+      moreSpanLineHeight: moreSpanStyle.lineHeight,
+      moreSpanPadding: moreSpanStyle.padding,
+      shortFontSize: shortStyle.fontSize,
+      shortPadding: shortStyle.padding,
+      shortWhiteSpace: shortStyle.whiteSpace,
+      tableWidth: Math.round(table.getBoundingClientRect().width),
+    };
+  });
+}
 
 async function mockProjectCodeHistory(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
