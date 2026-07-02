@@ -614,6 +614,8 @@ function AuthenticatedSiteUserMenu({
   const avatarUrl = stringField(session, "avatarUrl", "/assets/images/default-avatar-32.png");
   const isSiteAdmin = booleanField(session, "isSiteAdmin", false);
   const isGuest = booleanField(session, "isGuest", false);
+  const navbarCustomLinkName = runtimeConfig.navbarCustomLinkName?.trim() ?? "";
+  const navbarCustomLinkUrl = runtimeConfig.navbarCustomLinkUrl?.trim() ?? "";
   const legacyVoidHrefRef = React.useCallback((node: HTMLAnchorElement | null) => {
     node?.setAttribute("href", "javascript:void(0);");
   }, []);
@@ -690,6 +692,13 @@ function AuthenticatedSiteUserMenu({
         </div>
       </div>
       <ul className="gnb-usermenu">
+        {navbarCustomLinkName ? (
+          <li className="gnb-usermenu-item">
+            <a href={navbarCustomLinkUrl} className="user-item-btn loggged-in">
+              {navbarCustomLinkName}
+            </a>
+          </li>
+        ) : null}
         <li
           className="gnb-usermenu-item"
           data-toggle="tooltip"

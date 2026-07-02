@@ -421,6 +421,33 @@ test("authenticated home empty notifications matches legacy index notifications 
   });
 });
 
+test("authenticated shell renders legacy custom navbar link before my issues", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    (
+      window as Window & {
+        __YONA_RUNTIME_CONFIG__?: Record<string, unknown>;
+      }
+    ).__YONA_RUNTIME_CONFIG__ = {
+      basePath: "/yona",
+      navbarCustomLinkName: "Docs",
+      navbarCustomLinkUrl: "https://docs.example.test/yona",
+    };
+  });
+  await mockAuthenticatedEmptyNotifications(page);
+
+  await page.goto(`${basePath}/`);
+
+  const menuItems = page.locator(".gnb-usermenu > li.gnb-usermenu-item");
+  await expect(menuItems.nth(0).locator("a.user-item-btn.loggged-in")).toHaveText("Docs");
+  await expect(menuItems.nth(0).locator("a.user-item-btn.loggged-in")).toHaveAttribute(
+    "href",
+    "https://docs.example.test/yona",
+  );
+  await expect(menuItems.nth(1).locator("a.user-item-btn.loggged-in")).toHaveText("My Issues");
+  await expect(menuItems.nth(1)).toHaveAttribute("title", "Shortcut (A)");
+});
+
 test("authenticated root sidebar favorite tab matches legacy index/myOrganizationList DOM", async ({
   page,
 }) => {
