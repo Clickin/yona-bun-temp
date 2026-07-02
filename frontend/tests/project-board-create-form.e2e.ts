@@ -18,6 +18,27 @@ test("project board create form matches legacy board/create.scala.html core form
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_CREATE_FORM_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await readBoardCreateFormMetrics(page)).toEqual({
+    actionsDisplay: "block",
+    actionsMarginTop: "20px",
+    actionsTextAlign: "center",
+    ddMargin: "0px",
+    ddPadding: "0px",
+    editorPosition: "relative",
+    formMargin: "0px",
+    noticeRowMarginBottom: "10px",
+    noticeRowMarginTop: "10px",
+    noticeRowTextAlign: "right",
+    titleBorderBottomWidth: "1px",
+    titleBorderRadius: "0px",
+    titleFontSize: "18px",
+    titleMarginBottom: "15px",
+    titleMarginTop: "15px",
+    titleWidthPercent: 97,
+    uploadBackground: "rgb(245, 245, 245)",
+    uploadBorderRadius: "5px",
+    uploadPadding: "10px 20px",
+  });
 
   await page.fill("#title", "Board draft");
   await page.fill("#editor-body-content-body", "Body **markdown**");
@@ -167,6 +188,58 @@ async function mockProjectBoardCreateForm(page: Page, postRequests: unknown[]) {
       return;
     }
     await route.fallback();
+  });
+}
+
+async function readBoardCreateFormMetrics(page: Page) {
+  return page.locator(".content-wrap.frm-wrap").evaluate((contentWrap) => {
+    const form = contentWrap.closest<HTMLElement>("form.nm");
+    const firstDd = contentWrap.querySelector<HTMLElement>("dd");
+    const title = contentWrap.querySelector<HTMLElement>("#title");
+    const editorDd = contentWrap.querySelector<HTMLElement>('dd[style*="position"]');
+    const upload = contentWrap.querySelector<HTMLElement>(".upload-wrap.content-footer");
+    const noticeRow = contentWrap.querySelector<HTMLElement>(".right-txt.mt10.mb10");
+    const actions = contentWrap.querySelector<HTMLElement>(".actions");
+    const missing = Object.entries({ actions, editorDd, firstDd, form, noticeRow, title, upload })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected board create metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const formStyle = getComputedStyle(form!);
+    const ddStyle = getComputedStyle(firstDd!);
+    const titleStyle = getComputedStyle(title!);
+    const editorStyle = getComputedStyle(editorDd!);
+    const uploadStyle = getComputedStyle(upload!);
+    const noticeRowStyle = getComputedStyle(noticeRow!);
+    const actionsStyle = getComputedStyle(actions!);
+    const titleWidthPercent =
+      Math.round(
+        (title!.getBoundingClientRect().width / contentWrap.getBoundingClientRect().width) * 1000,
+      ) / 10;
+
+    return {
+      actionsDisplay: actionsStyle.display,
+      actionsMarginTop: actionsStyle.marginTop,
+      actionsTextAlign: actionsStyle.textAlign,
+      ddMargin: ddStyle.margin,
+      ddPadding: ddStyle.padding,
+      editorPosition: editorStyle.position,
+      formMargin: formStyle.margin,
+      noticeRowMarginBottom: noticeRowStyle.marginBottom,
+      noticeRowMarginTop: noticeRowStyle.marginTop,
+      noticeRowTextAlign: noticeRowStyle.textAlign,
+      titleBorderBottomWidth: titleStyle.borderBottomWidth,
+      titleBorderRadius: titleStyle.borderRadius,
+      titleFontSize: titleStyle.fontSize,
+      titleMarginBottom: titleStyle.marginBottom,
+      titleMarginTop: titleStyle.marginTop,
+      titleWidthPercent,
+      uploadBackground: uploadStyle.backgroundColor,
+      uploadBorderRadius: uploadStyle.borderRadius,
+      uploadPadding: uploadStyle.padding,
+    };
   });
 }
 
