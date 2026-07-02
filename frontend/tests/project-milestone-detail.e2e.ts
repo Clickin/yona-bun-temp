@@ -12,6 +12,10 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await expectMilestoneDetailAssets(page, basePath);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestone/5`,
+  );
   await expect(page.locator(".badge-issue-open")).toHaveText("Open");
   await expect(page.locator(".progress .bar")).toHaveAttribute("style", "width: 50%;");
   await expect(page.locator(".milestone-desc .markdown-wrap")).toContainText("Release scope");
@@ -28,7 +32,17 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await expect(page.locator('.actrow [data-request-uri$="/milestone/5/close"]')).toHaveText(
     "Close milestone",
   );
+  await expect(page.locator(".actrow .ybtn.pull-left")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestones`,
+  );
+  await expect(page.locator('.actrow .ybtn[href$="/milestone/5/editform"]')).toHaveText("Edit");
+  await expect(page.locator('.actrow a[href="#deleteConfirm"]')).toHaveCount(0);
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Open1");
+  await expect(page.locator('#issues .nav-tabs a:has-text("Closed")')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestone/5?state=closed#issues`,
+  );
   await expect(page.locator("#mass-update-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/issues`,
@@ -39,9 +53,13 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   );
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
   await expect(page.locator("#issue-item-41")).toContainText("#11Open milestone issue");
+  await expect(page.locator('#issue-item-41 .title[href$="/issue/11"]')).toHaveCount(2);
   await expect(page.locator('.issue-label[data-category-id="3"][data-label-id="8"]')).toHaveText(
     "bug",
   );
+  await expect(
+    page.locator('.issue-label[data-category-id="3"][data-label-id="8"]'),
+  ).toHaveAttribute("href", `${basePath}/admin/sample/issues?state=open&labelIds=8`);
   expect(await milestoneDetailMetrics(page)).toEqual({
     descBackgroundColor: "rgb(247, 247, 247)",
     descBorderBottomWidth: "1px",
@@ -57,6 +75,14 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   expect(await issueLabelColorMetrics(page, ".post-list-wrap .issue-label")).toEqual({
     backgroundColor: "rgb(81, 170, 204)",
   });
+  await page.click('#issues .nav-tabs a:has-text("Closed")');
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5?state=closed#issues`);
+  await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Closed1");
+  await expect(page.locator("#issue-item-42")).toContainText("#12Closed milestone issue");
+  await page.click('#issues .nav-tabs a:has-text("Open")');
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5?state=open#issues`);
+  await expect(page.locator("#issue-item-41")).toContainText("#11Open milestone issue");
+
   await page.fill('.search-bar input[name="filter"]', "no-match");
   await expect(page.locator("#issue-item-41")).toBeHidden();
 
@@ -70,6 +96,8 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   expect(stateRequests).toEqual([{ state: "closed" }]);
 
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
+  await page.click('.actrow button.ybtn-danger:has-text("Delete")');
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/modal fade in/u);
   await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete milestone");
   await expect(page.locator("#deleteConfirm [data-request-method='delete']")).toHaveAttribute(
     "data-request-uri",
@@ -107,16 +135,23 @@ async function expectMilestoneDetailAssets(page: Page, basePath: string) {
     await expect(script).toHaveAttribute("defer", "");
   }
 
-  const inlineScript = await page.evaluate(() => {
+  await expect(page.locator('meta[name="yona-current-user-login-id"]')).toHaveAttribute(
+    "content",
+    "admin",
+  );
+
+  const legacyInlineScript = await page.evaluate(() => {
     return [...document.scripts]
       .filter((script) => script.type === "text/javascript")
       .map((script) => script.textContent ?? "")
-      .find((text) => text.includes('$yobi.loadModule("milestone.View"'));
+      .find(
+        (text) =>
+          text.includes('$yobi.loadModule("milestone.View"') ||
+          text.includes('$(".title-prefix").on') ||
+          text.includes(".user-link:contains"),
+      );
   });
-  expect(inlineScript).toContain('"sMilestoneId" : "5"');
-  expect(inlineScript).toContain(`"sURLLabels"   : "${basePath}/admin/sample/issues"`);
-  expect(inlineScript).toContain('$(".title-prefix").on');
-  expect(inlineScript).toContain('$(".user-link:contains(\'admin\')").addClass("me")');
+  expect(legacyInlineScript).toBeUndefined();
 }
 
 async function mockProjectMilestoneDetail(

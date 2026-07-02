@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import { useMemo, useState, type AnchorHTMLAttributes, type ComponentType } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -18,6 +18,15 @@ import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    hash?: string;
+    params?: Record<string, string>;
+    search?: Record<string, unknown>;
+    to: string;
+  }
+>;
 
 type MilestoneDetailSearch = {
   state: "all" | "closed" | "open";
@@ -85,7 +94,6 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
       <MilestoneDetailAssets
         basePath={runtimeConfig.basePath}
         currentUserLoginId={stringField(sessionQuery.data.loginId)}
-        milestoneId={milestoneId}
         ownerName={ownerName}
         projectName={projectName}
       />
@@ -100,18 +108,15 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
 function MilestoneDetailAssets({
   basePath,
   currentUserLoginId,
-  milestoneId,
   ownerName,
   projectName,
 }: {
   basePath: string;
   currentUserLoginId: string;
-  milestoneId: string;
   ownerName: string;
   projectName: string;
 }) {
   const projectPath = `/${ownerName}/${projectName}`;
-  const escapedCurrentUserLoginId = currentUserLoginId.replace(/["\\]/gu, "\\$&");
   return (
     <>
       <link
@@ -134,27 +139,7 @@ function MilestoneDetailAssets({
         type="text/css"
         href={prefixBasePath(basePath, `${projectPath}/issue/labels.css`)}
       />
-      <script
-        type="text/javascript"
-        dangerouslySetInnerHTML={{
-          __html: `$(document).ready(function(){
-        // when a user click head of title, it works like issue filter
-        $(".title-prefix").on('click', function () {
-            $(".textbox").val($(this).text());
-            $(".post-item").hide();
-            $("li[data-value*='"+$(".textbox").val() + "']").show();
-            $(".textbox").focus();
-        });
-        $yobi.loadModule("milestone.View", {
-            "sMilestoneId" : "${milestoneId}",
-            "sURLLabels"   : "${prefixBasePath(basePath, `${projectPath}/issues`)}"
-        });
-
-        // detect links contains mention at me
-        $(".user-link:contains('${escapedCurrentUserLoginId}')").addClass("me");
-    });`,
-        }}
-      ></script>
+      <meta name="yona-current-user-login-id" content={currentUserLoginId} />
     </>
   );
 }
@@ -172,6 +157,7 @@ function ProjectMilestoneDetailBody({
   const { ownerName, projectName, milestoneId } = Route.useParams();
   const search = Route.useSearch();
   const [filter, setFilter] = useState("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const projectPath = `/${ownerName}/${projectName}`;
   const milestonePath = `${projectPath}/milestone/${milestoneId}`;
   const isClosed = stringField(milestone.state) === "closed";
@@ -213,7 +199,7 @@ function ProjectMilestoneDetailBody({
       queryClient.invalidateQueries({
         queryKey: ["project", ownerName, projectName, "milestones"],
       });
-      router.history.push(prefixBasePath(runtimeConfig.basePath, `${projectPath}/milestones`));
+      router.navigate({ to: `/${ownerName}/${projectName}/milestones` });
     },
   });
 
@@ -222,9 +208,14 @@ function ProjectMilestoneDetailBody({
       <div className="project-page-wrap">
         <div className="milesion-wrap">
           <h4>
-            <a href={prefixBasePath(runtimeConfig.basePath, milestonePath)} className="title">
+            <LegacyInternalLink
+              to="/$ownerName/$projectName/milestone/$milestoneId"
+              params={{ ownerName, projectName, milestoneId }}
+              search={{}}
+              className="title"
+            >
               {stringField(milestone.title)}
-            </a>
+            </LegacyInternalLink>
             <small className="ml10">
               {stringField(milestone.dueDateLabel) ? (
                 <>
@@ -260,28 +251,33 @@ function ProjectMilestoneDetailBody({
           )}
 
           <div className="actrow right-txt row-fluid" style={{ clear: "both", padding: "15px 0" }}>
-            <a
-              href={prefixBasePath(runtimeConfig.basePath, `${projectPath}/milestones`)}
+            <LegacyInternalLink
+              to="/$ownerName/$projectName/milestones"
+              params={{ ownerName, projectName }}
               className="ybtn pull-left"
             >
               {t("button.list")}
-            </a>
+            </LegacyInternalLink>
             {booleanField(milestone.viewerCanDelete) ? (
-              <a href="#deleteConfirm" data-toggle="modal" className="ybtn ybtn-danger">
+              <button
+                type="button"
+                className="ybtn ybtn-danger"
+                onClick={() => {
+                  setDeleteConfirmOpen(true);
+                }}
+              >
                 {t("button.delete")}
-              </a>
+              </button>
             ) : null}
             {booleanField(milestone.viewerCanUpdate) ? (
               <>
-                <a
-                  href={prefixBasePath(
-                    runtimeConfig.basePath,
-                    `${projectPath}/milestone/${milestoneId}/editform`,
-                  )}
+                <LegacyInternalLink
+                  to="/$ownerName/$projectName/milestone/$milestoneId/editform"
+                  params={{ ownerName, projectName, milestoneId }}
                   className="ybtn"
                 >
                   {t("button.edit")}
-                </a>
+                </LegacyInternalLink>
                 {isClosed ? (
                   <button
                     type="button"
@@ -317,11 +313,11 @@ function ProjectMilestoneDetailBody({
             <ul className="nav nav-tabs">
               {(["open", "closed", "all"] as const).map((state) => (
                 <li key={state} className={search.state === state ? "active" : ""}>
-                  <a
-                    href={prefixBasePath(
-                      runtimeConfig.basePath,
-                      `${milestonePath}?state=${state}#issues`,
-                    )}
+                  <LegacyInternalLink
+                    to="/$ownerName/$projectName/milestone/$milestoneId"
+                    params={{ ownerName, projectName, milestoneId }}
+                    search={{ state }}
+                    hash="issues"
                   >
                     {t(`issue.state.${state}`)}
                     <span className="num-badge">
@@ -331,7 +327,7 @@ function ProjectMilestoneDetailBody({
                           ? closedIssues.length
                           : allIssues.length}
                     </span>
-                  </a>
+                  </LegacyInternalLink>
                 </li>
               ))}
             </ul>
@@ -364,7 +360,6 @@ function ProjectMilestoneDetailBody({
                     filter={filter}
                     issue={issue}
                     projectPath={projectPath}
-                    runtimeConfig={runtimeConfig}
                   />
                 ))}
               </ul>
@@ -373,9 +368,19 @@ function ProjectMilestoneDetailBody({
         </div>
       </div>
 
-      <div id="deleteConfirm" className="modal hide fade">
+      <div
+        id="deleteConfirm"
+        className={deleteConfirmOpen ? "modal fade in" : "modal hide fade"}
+        style={deleteConfirmOpen ? { display: "block" } : undefined}
+      >
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal">
+          <button
+            type="button"
+            className="close"
+            onClick={() => {
+              setDeleteConfirmOpen(false);
+            }}
+          >
             x
           </button>
           <h3>{t("milestone.delete")}</h3>
@@ -393,7 +398,13 @@ function ProjectMilestoneDetailBody({
           >
             {t("button.yes")}
           </button>
-          <button type="button" className="ybtn" data-dismiss="modal">
+          <button
+            type="button"
+            className="ybtn"
+            onClick={() => {
+              setDeleteConfirmOpen(false);
+            }}
+          >
             {t("button.no")}
           </button>
         </div>
@@ -432,16 +443,14 @@ function MassUpdateShell({
           </button>
           <ul className="dropdown-menu mass-update-list">
             <li data-value="OPEN">
-              <a href={prefixBasePath(runtimeConfig.basePath, `${projectPath}/issues?state=open`)}>
+              <LegacyInternalLink to={`${projectPath}/issues`} search={{ state: "open" }}>
                 {t("issue.state.open")}
-              </a>
+              </LegacyInternalLink>
             </li>
             <li data-value="CLOSED">
-              <a
-                href={prefixBasePath(runtimeConfig.basePath, `${projectPath}/issues?state=closed`)}
-              >
+              <LegacyInternalLink to={`${projectPath}/issues`} search={{ state: "closed" }}>
                 {t("issue.state.closed")}
-              </a>
+              </LegacyInternalLink>
             </li>
           </ul>
         </div>
@@ -454,18 +463,15 @@ function MilestoneIssueRow({
   filter,
   issue,
   projectPath,
-  runtimeConfig,
 }: {
   filter: string;
   issue: ProjectMilestoneIssue;
   projectPath: string;
-  runtimeConfig: RuntimeConfig;
 }) {
   const issueId = stringField(issue.id, stringField(issue.issueNumber));
   const issueNumber = stringField(issue.issueNumber);
   const title = stringField(issue.title);
   const isClosed = stringField(issue.state) === "closed";
-  const issueHref = prefixBasePath(runtimeConfig.basePath, `${projectPath}/issue/${issueNumber}`);
   const normalizedFilter = filter.toLowerCase().trim();
   const hidden = normalizedFilter.length > 0 && !issueSearchText(issue).includes(normalizedFilter);
   const labels = sortLabels(issue.labels ?? []);
@@ -476,7 +482,6 @@ function MilestoneIssueRow({
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${stringField(issue.authorLoginId)} ${issueNumber} ${title}`}
-      {...{ href: issueHref }}
       style={hidden ? { display: "none" } : undefined}
     >
       <div className="span9 span-hard-wrap">
@@ -501,12 +506,12 @@ function MilestoneIssueRow({
           className="issue-item-row"
         >
           <div className="title-wrap">
-            <a href={issueHref} className="title">
+            <LegacyInternalLink to={`${projectPath}/issue/${issueNumber}`} className="title">
               <span className="post-id">#{issueNumber}</span>
-            </a>
-            <a href={issueHref} className="title">
+            </LegacyInternalLink>
+            <LegacyInternalLink to={`${projectPath}/issue/${issueNumber}`} className="title">
               {title}
-            </a>
+            </LegacyInternalLink>
           </div>
           <div className="infos">
             <span className={isClosed ? "state-label closed" : "state-label open"}>
@@ -516,19 +521,18 @@ function MilestoneIssueRow({
               <span className="infos-item">{stringField(issue.assigneeLabel)}</span>
             ) : null}
             {labels.map((label) => (
-              <a
+              <LegacyInternalLink
                 key={stringField(label.id)}
-                href={prefixBasePath(
-                  runtimeConfig.basePath,
-                  `${projectPath}/issues?state=open&labelIds=${stringField(label.id)}`,
-                )}
+                to={`${projectPath}/issues?state=open&labelIds=${encodeURIComponent(
+                  stringField(label.id),
+                )}`}
                 className="label issue-label list-label active"
                 data-category-id={stringField(label.categoryId)}
                 data-label-id={stringField(label.id)}
                 style={{ background: cssBackgroundColor(stringField(label.color)) }}
               >
                 {stringField(label.name)}
-              </a>
+              </LegacyInternalLink>
             ))}
             <div className="child-issue-list hide"></div>
           </div>
