@@ -304,6 +304,19 @@ test("standalone UI kit root shell mounts legacy anonymous login dialog", async 
     "href",
     `${basePath}/users/signupform`,
   );
+  expect(await readLoginDialogHiddenMetrics(page)).toEqual({
+    dialogDisplay: "none",
+    dialogMarginLeft: "-230px",
+    dialogWidth: "460px",
+    errorDisplay: "none",
+    errorMarginBottom: "20px",
+    formMarginBottom: "20px",
+    formMarginTop: "20px",
+    inputBoxShadow: "none",
+    loginButtonWidth: "100%",
+    rememberCheckboxMarginTop: "4px",
+    rememberLabelDisplay: "inline-block",
+  });
 });
 
 test("standalone UI kit root shell opens legacy login dialog from data-login required", async ({
@@ -627,6 +640,45 @@ async function readLoginDialogOpenMetrics(page: Page) {
       formMarginTop: formStyle.marginTop,
       inputBoxShadow: getComputedStyle(input).boxShadow,
       loginButtonWidth: getComputedStyle(loginButton).width,
+      rememberLabelDisplay: getComputedStyle(rememberLabel).display,
+    };
+  });
+}
+
+async function readLoginDialogHiddenMetrics(page: Page) {
+  return page.evaluate(() => {
+    const dialog = document.querySelector<HTMLElement>("#loginDialog");
+    const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");
+    const input = document.querySelector<HTMLElement>("#loginIdOrEmailD");
+    const error = document.querySelector<HTMLElement>("#loginDialog .error");
+    const loginButton = document.querySelector<HTMLElement>("#loginDialog .fullsize");
+    const rememberCheckbox = document.querySelector<HTMLElement>("#remember-meD");
+    const rememberLabel = document.querySelector<HTMLElement>("#loginDialog .bg-checkbox");
+    if (
+      !dialog ||
+      !form ||
+      !input ||
+      !error ||
+      !loginButton ||
+      !rememberCheckbox ||
+      !rememberLabel
+    ) {
+      throw new Error("Expected hidden login dialog metric targets are missing.");
+    }
+    const dialogStyle = getComputedStyle(dialog);
+    const formStyle = getComputedStyle(form);
+    const errorStyle = getComputedStyle(error);
+    return {
+      dialogDisplay: dialogStyle.display,
+      dialogMarginLeft: dialogStyle.marginLeft,
+      dialogWidth: dialogStyle.width,
+      errorDisplay: errorStyle.display,
+      errorMarginBottom: errorStyle.marginBottom,
+      formMarginBottom: formStyle.marginBottom,
+      formMarginTop: formStyle.marginTop,
+      inputBoxShadow: getComputedStyle(input).boxShadow,
+      loginButtonWidth: getComputedStyle(loginButton).width,
+      rememberCheckboxMarginTop: getComputedStyle(rememberCheckbox).marginTop,
       rememberLabelDisplay: getComputedStyle(rememberLabel).display,
     };
   });
