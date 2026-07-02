@@ -4,6 +4,7 @@ const FRONTEND_ROUTE_PATTERN = /^frontend\/src\/routes\/.+\.tsx$/u;
 const FRONTEND_SUPPORT_PATTERN =
   /^frontend\/src\/(api|auth-workspace-client|i18n|query-client|runtime-config|routeTree\.gen)\b/u;
 const UI_PARITY_REPORT_PATTERN = /^docs\/provenance\/ui-parity-reports\/.+\.md$/u;
+const SCALA_HTML_AUDIT_FILE = "docs/provenance/frontend-scala-html-goal-violation-audit.md";
 
 function isFrontendImplementation(file) {
   if (!FRONTEND_IMPLEMENTATION_PATTERN.test(file)) {
@@ -39,6 +40,8 @@ export function evaluateScalaHtmlGoalGuard({ changedFiles, env = process.env }) 
     frontendEvidenceFiles.includes("frontend/src/app.css");
   const implementationTouchesRuntime = frontendRouteImplementationFiles.length > 0;
   const allowEvidenceOnly = env.YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY === "1";
+  const auditUpdated = changedFiles.includes(SCALA_HTML_AUDIT_FILE);
+  const allowUndocumentedRoute = env.YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE === "1";
 
   if (
     frontendEvidenceFiles.length > 0 &&
@@ -52,6 +55,16 @@ export function evaluateScalaHtmlGoalGuard({ changedFiles, env = process.env }) 
       frontendImplementationFiles,
       message:
         "Scala HTML goal guard blocked evidence-only frontend work. Frontend E2E/CSS/UI parity evidence changed without a TSX route implementation change. Rebuild the target screen from yona-original Scala HTML in the same change, or set YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY=1 for an explicitly intentional audit-only commit.",
+    };
+  }
+
+  if (implementationTouchesRuntime && !auditUpdated && !allowUndocumentedRoute) {
+    return {
+      blocked: true,
+      frontendEvidenceFiles,
+      frontendImplementationFiles,
+      message:
+        "Scala HTML goal guard blocked undocumented frontend route work. Route TSX changed without updating docs/provenance/frontend-scala-html-goal-violation-audit.md. Record the target route/screen state, legacy Scala HTML root, included partials, and focused verification, or set YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE=1 for an explicitly intentional non-goal route change.",
     };
   }
 

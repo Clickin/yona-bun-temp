@@ -32,6 +32,13 @@ UI parity reports without changing a TSX route implementation in the same
 staged change. Intentional audit-only exceptions require the explicit
 `YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY=1` environment marker.
 
+It also blocks frontend route TSX commits that do not update this audit memo in
+the same staged change. Each route/screen rebuild must leave a `Rebuilt From
+This Audit` row or an explicit candidate/status update with the target
+route/screen state, legacy Scala HTML root, included partials, TSX write scope,
+and focused verification. Intentional non-goal route exceptions require the
+explicit `YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE=1` environment marker.
+
 The mandatory workflow remains:
 
 1. Start each frontend goal turn by reading `AGENTS.md`,

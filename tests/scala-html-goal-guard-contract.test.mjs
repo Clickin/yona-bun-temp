@@ -37,8 +37,40 @@ test("passes frontend evidence when a route TSX implementation changes too", () 
       "frontend/src/routes/$ownerName/$projectName/issues.tsx",
       "frontend/tests/project-issues-empty.e2e.ts",
       "docs/provenance/ui-parity-reports/template-first-p3-issues-editor-comments.md",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
     ],
     env: {},
+  });
+
+  assert.equal(result.blocked, false);
+});
+
+test("blocks frontend route TSX work without the Scala HTML audit memo", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: ["frontend/src/routes/$ownerName/$projectName/issues.tsx"],
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /undocumented frontend route work/u);
+});
+
+test("passes frontend route TSX work when the Scala HTML audit memo is updated", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    env: {},
+  });
+
+  assert.equal(result.blocked, false);
+});
+
+test("allows explicitly marked non-goal frontend route commits", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: ["frontend/src/routes/__root.tsx"],
+    env: { YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE: "1" },
   });
 
   assert.equal(result.blocked, false);
