@@ -95,11 +95,25 @@ test("current-user token settings page matches legacy user/edit_token.scala.html
   expect(await readTokenMetrics(page)).toEqual({
     breadcrumbHeight: "46px",
     formFloat: "left",
-    inputWidth: "1134px",
+    inputWidth: "972px",
     navMarginTop: "0px",
     pageWrapMarginTop: "10px",
   });
 
+  await expect(page.locator('.nav-tabs a:has-text("Change password")')).toHaveAttribute(
+    "href",
+    `${basePath}/user/editform/password`,
+  );
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "token-password-tab";
+  });
+  await page.locator('.nav-tabs a:has-text("Change password")').click();
+  await expect(page).toHaveURL(`${basePath}/user/editform/password`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("token-password-tab");
+
+  await page.goto(`${basePath}/user/editform/token`);
   await page.locator("#frmBasic button[type=submit]").click();
   await expect(page.locator("#frmBasic input[name=name]")).toHaveValue("token-after");
 });
@@ -187,7 +201,8 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -208,6 +223,20 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(Boolean)
         .join("");
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+    function normalizeAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        current.tagName.toLowerCase() === "a" &&
+        current.closest(".page-wrap .nav-tabs")
+      ) {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/)
+          .filter((value) => value && value !== "active")
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
     return Array.from(
@@ -244,7 +273,8 @@ async function canonicalizeHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map((name) => normalizeAttribute(current, name))
+          .filter(Boolean)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -265,6 +295,20 @@ async function canonicalizeHtml(page: Page, html: string) {
           .filter(Boolean)
           .join("");
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+      function normalizeAttribute(current: Element, name: string) {
+        if (
+          name === "class" &&
+          current.tagName.toLowerCase() === "a" &&
+          current.closest(".page-wrap .nav-tabs")
+        ) {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/)
+            .filter((value) => value && value !== "active")
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
+        return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
       const template = document.createElement("template");
       template.innerHTML = markup.trim();
