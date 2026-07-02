@@ -642,6 +642,10 @@ function MassUpdateToolbar({
   const milestones = projectMilestoneOptions(openMilestones);
   const labels = projectIssueLabelOptions(projectLabels, issues);
   const users = projectAssignableUserOptions(assignableUsers, issues, currentUserId);
+  const massUpdateAction = prefixBasePath(
+    runtimeConfig.basePath,
+    `/${ownerName}/${projectName}/issues`,
+  );
   const { mutate: mutateMassUpdate } = useMutation({
     mutationFn: async (input: Record<string, unknown>) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -781,99 +785,145 @@ function MassUpdateToolbar({
   }, [issues, mutateMassUpdate, ownerName, projectName, users]);
 
   return (
-    <div className="mass-update-wrap hide-in-mobile">
-      <form
-        id="mass-update-form"
-        className="mass-update-form pull-left"
-        action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/issues`)}
-        method="post"
-        ref={formRef}
-      >
-        <div className="btn-group check-all">
-          {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update wraps this checkbox in a label. */}
-          <label htmlFor="check-all">
-            <input type="checkbox" id="check-all" data-target="checked-issue" />
-          </label>
-        </div>
-        <MassUpdateDropdown
-          id="state"
-          label={t("issue.update.state")}
-          name="state"
-          options={[
-            { label: t("issue.state.open"), value: "OPEN" },
-            { label: t("issue.state.closed"), value: "CLOSED" },
-          ]}
-        />
-        <div id="assignee" className="btn-group" data-name="assignee.id">
-          <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled>
-            <span className="d-label">{t("issue.update.assignee.id")}</span>
-            <span className="d-caret">
-              <span className="caret"></span>
-            </span>
-          </button>
-          <ul className="dropdown-menu mass-update-list">
-            <li data-value="0">
-              {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
-              <a>{t("issue.noAssignee")}</a>
-            </li>
-            <li data-value={currentUserId}>
-              {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
-              <a>{t("issue.assignToMe")}</a>
-            </li>
-            {users.length ? <li className="divider"></li> : null}
-            {users.map((user) => (
-              <li data-value={user.id} key={user.id}>
-                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
-                <a className="usf-group">
-                  <span className="avatar-wrap smaller">
-                    <img src={user.avatarUrl} width="20" height="20" alt="" />
-                  </span>
-                  <strong className="name">{user.label}</strong>
-                  <span className="loginid">
-                    {" "}
-                    <strong>@</strong>
-                    {user.loginId}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-        {showMilestone && milestones.length ? (
+    <>
+      <MassUpdateLabelTemplates />
+      <div className="mass-update-wrap hide-in-mobile">
+        <form
+          id="mass-update-form"
+          className="mass-update-form pull-left"
+          action={massUpdateAction}
+          method="post"
+          ref={formRef}
+        >
+          <div className="btn-group check-all">
+            {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update wraps this checkbox in a label. */}
+            <label htmlFor="check-all">
+              <input type="checkbox" id="check-all" data-target="checked-issue" />
+            </label>
+          </div>
           <MassUpdateDropdown
-            id="milestone"
-            label={t("issue.update.milestone.id")}
-            name="milestone.id"
+            id="state"
+            label={t("issue.update.state")}
+            name="state"
             options={[
-              { label: t("issue.noMilestone"), value: "-1" },
-              { divider: true, value: "__divider" },
-              ...milestones.map((milestone) => ({
-                label: milestone.title,
-                value: milestone.id,
-              })),
+              { label: t("issue.state.open"), value: "OPEN" },
+              { label: t("issue.state.closed"), value: "CLOSED" },
             ]}
           />
-        ) : null}
-        {labels.length ? (
-          <>
-            <LabelMassUpdateDropdown
-              id="attaching-label"
-              label={t("issue.update.attachLabel")}
-              listId="attach-label-list"
-              name="attachingLabelIds"
-              options={labels}
+          <div id="assignee" className="btn-group" data-name="assignee.id">
+            <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled>
+              <span className="d-label">{t("issue.update.assignee.id")}</span>
+              <span className="d-caret">
+                <span className="caret"></span>
+              </span>
+            </button>
+            <ul className="dropdown-menu mass-update-list">
+              <li data-value="0">
+                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
+                <a>{t("issue.noAssignee")}</a>
+              </li>
+              <li data-value={currentUserId}>
+                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
+                <a>{t("issue.assignToMe")}</a>
+              </li>
+              {users.length ? <li className="divider"></li> : null}
+              {users.map((user) => (
+                <li data-value={user.id} key={user.id}>
+                  {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
+                  <a className="usf-group">
+                    <span className="avatar-wrap smaller">
+                      <img src={user.avatarUrl} width="20" height="20" alt="" />
+                    </span>
+                    <strong className="name">{user.label}</strong>
+                    <span className="loginid">
+                      {" "}
+                      <strong>@</strong>
+                      {user.loginId}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {showMilestone && milestones.length ? (
+            <MassUpdateDropdown
+              id="milestone"
+              label={t("issue.update.milestone.id")}
+              name="milestone.id"
+              options={[
+                { label: t("issue.noMilestone"), value: "-1" },
+                { divider: true, value: "__divider" },
+                ...milestones.map((milestone) => ({
+                  label: milestone.title,
+                  value: milestone.id,
+                })),
+              ]}
             />
-            <LabelMassUpdateDropdown
-              id="detaching-label"
-              label={t("issue.update.detachLabel")}
-              listId="delete-label-list"
-              name="detachingLabelIds"
-              options={labels}
-            />
-          </>
-        ) : null}
-      </form>
-    </div>
+          ) : null}
+          {labels.length ? (
+            <>
+              <LabelMassUpdateDropdown
+                id="attaching-label"
+                label={t("issue.update.attachLabel")}
+                listId="attach-label-list"
+                name="attachingLabelIds"
+                options={labels}
+              />
+              <LabelMassUpdateDropdown
+                id="detaching-label"
+                label={t("issue.update.detachLabel")}
+                listId="delete-label-list"
+                name="detachingLabelIds"
+                options={labels}
+              />
+            </>
+          ) : null}
+        </form>
+      </div>
+      <script
+        type="text/javascript"
+        dangerouslySetInnerHTML={{
+          __html: `$(document).ready(function(){
+        //issueList
+        $yobi.loadModule("issue.MassUpdate", {
+            "sURL": "${massUpdateAction}",
+            "welMassUpdateForm": $('#mass-update-form'),
+            "welMassUpdateButtons": $('#mass-update-form button'),
+            "welState": $("#state"),
+            "welMilestone": $("#milestone"),
+            "welAssignee": $("#assignee"),
+            "welAttachingLabel": $("#attaching-label"),
+            "welDetachingLabel": $("#detaching-label"),
+            "welDeleteButton": $("#delete"),
+            "sIssueCheckBoxesSelector": "[type=checkbox][name=checked-issue]",
+        });
+    });`,
+        }}
+      />
+    </>
+  );
+}
+
+function MassUpdateLabelTemplates() {
+  return (
+    <>
+      <script
+        id="labelListItem"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html:
+            '<li data-value="${id}" data-category="${category}">\n    <a><span class="issue-label active list-label" data-label-id="${id}">${name}</span></a>\n</li>',
+        }}
+      />
+      <script
+        id="labelCatetoryItem"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html:
+            '<li class="disabled" data-category="${category}"><span>${category}</span></li>\n<li data-value="${id}" data-category="${category}">\n    <a>\n        <span class="issue-label active list-label" data-label-id="${id}">${name}</span>\n    </a>\n</li>\n<li class="divider" data-category="${category}"></li>',
+        }}
+      />
+    </>
   );
 }
 
