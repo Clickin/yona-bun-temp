@@ -405,6 +405,7 @@ function ProjectIssuesBody({
 }) {
   const { t } = useLegacyMessages();
   const navigate = useNavigate();
+  const issueListRef = useRef<HTMLUListElement>(null);
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const hasIssues = issues.items.length > 0;
   const draftItems = shouldShowDraftItems(search)
@@ -431,6 +432,40 @@ function ProjectIssuesBody({
       }),
     });
   };
+  const handleIssueListClick = useEffectEvent((event: MouseEvent) => {
+    const target =
+      event.target instanceof Element
+        ? event.target.closest<HTMLAnchorElement>("a[data-label-id][data-category-id]")
+        : null;
+    if (!target) {
+      return;
+    }
+
+    event.preventDefault();
+    const labelId = target.dataset.labelId ?? "";
+    if (!labelId) {
+      return;
+    }
+
+    void navigate({
+      to: projectIssuesRoutePath(ownerName, projectName, {
+        ...search,
+        labelIds: [...search.labelIds, labelId],
+        pageNum: 1,
+      }),
+    });
+  });
+  useEffect(() => {
+    const issueList = issueListRef.current;
+    if (!issueList) {
+      return;
+    }
+
+    issueList.addEventListener("click", handleIssueListClick);
+    return () => {
+      issueList.removeEventListener("click", handleIssueListClick);
+    };
+  }, []);
   const showMilestone = projectMilestoneMenuEnabled(project);
   const showMassUpdateControls = projectMemberControlsEnabled(project);
   const showLabelManagement = projectIssueLabelCreatable(project);
@@ -538,7 +573,7 @@ function ProjectIssuesBody({
                     />
                   ) : null}
                 </div>
-                <ul className="post-list-wrap row-fluid">
+                <ul className="post-list-wrap row-fluid" ref={issueListRef}>
                   {draftItems.map((issue) => (
                     <ProjectIssueItem
                       basePath={runtimeConfig.basePath}

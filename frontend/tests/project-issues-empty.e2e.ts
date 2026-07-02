@@ -733,6 +733,28 @@ test("project issue sort filter updates route like legacy partial_list_wrap.scal
   ).toBe("issue-sort-filter");
 });
 
+test("project issue row label updates route like legacy partial_list.scala.html label filter", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug&pageNum=3`);
+  await expect(page.locator(".post-list-wrap .issue-label[data-label-id='8']")).toBeVisible();
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-label-filter";
+  });
+
+  await page.locator(".post-list-wrap .issue-label[data-label-id='8']").click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.getAll("labelIds").join(",")).toBe("8");
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("bug");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("issue-label-filter");
+});
+
 test("project issue list sorts labels like legacy partial_list.scala.html", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "labels-unsorted");
