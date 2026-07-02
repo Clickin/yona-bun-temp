@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Fragment,
   useEffect,
@@ -110,6 +110,7 @@ function ProjectIssuesRoute() {
 function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
+  const location = useLocation();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -233,6 +234,7 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
         isAnonymous={Boolean(sessionQuery.data.isAnonymous)}
         currentUserLoginId={stringField(sessionQuery.data.loginId, "")}
+        currentSearchString={location.searchStr}
         issues={issuesQuery.data}
         issueAssignees={issueAssigneesQuery.data.items}
         issueAuthors={issueAuthorsQuery.data.items}
@@ -385,6 +387,7 @@ function ProjectIssuesBody({
   assignableUsers,
   currentUserId,
   currentUserLoginId,
+  currentSearchString,
   isAnonymous,
   issues,
   issueAssignees,
@@ -400,6 +403,7 @@ function ProjectIssuesBody({
   assignableUsers: ProjectAssignableUserOptionSource[];
   currentUserId: string;
   currentUserLoginId: string;
+  currentSearchString: string;
   isAnonymous: boolean;
   issues: ProjectIssueListRestResponse;
   issueAssignees: ProjectIssueSearchUserOptionSource[];
@@ -772,7 +776,12 @@ function ProjectIssuesBody({
                 </ul>
                 <div className="pull-left" style={{ padding: "10px" }}>
                   <a
-                    href={excelHref(runtimeConfig.basePath, ownerName, projectName, search)}
+                    href={excelHref(
+                      runtimeConfig.basePath,
+                      ownerName,
+                      projectName,
+                      currentSearchString,
+                    )}
                     className="ybtn small"
                   >
                     <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}
@@ -2701,17 +2710,58 @@ function excelHref(
   basePath: string,
   ownerName: string,
   projectName: string,
-  search: ProjectIssuesSearch,
+  currentSearchString: string,
 ) {
-  const params = new URLSearchParams();
-  if (search.filter) {
-    params.set("filter", search.filter);
+  const params = new URLSearchParams(currentSearchString);
+  params.delete("pageNum");
+  const routeDefaultParams = [];
+  for (const [name, value] of params) {
+    if (
+      value === "" ||
+      (name === "labelIds" && value === "[]") ||
+      (name === "orderBy" && value === "updatedDate") ||
+      (name === "orderDir" && value === "desc") ||
+      (name === "state" && value === "open")
+    ) {
+      routeDefaultParams.push(name);
+    }
   }
-  if (search.state === "closed") {
-    params.set("state", "closed");
+  for (const name of routeDefaultParams) {
+    params.delete(name);
   }
-  params.set("format", "xls");
-  return `${prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}?${params.toString()}`;
+  const labelIds = legacyExcelLabelIds(params.getAll("labelIds"));
+  const queryPairs: string[] = [];
+  for (const [name, value] of params) {
+    if (name !== "labelIds") {
+      pushSearchParam(queryPairs, name, value);
+    }
+  }
+  if (labelIds.length > 0) {
+    for (const labelId of labelIds) {
+      pushSearchParam(queryPairs, "labelIds", labelId);
+    }
+  }
+  pushSearchParam(queryPairs, "format", "xls");
+  return `${prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}?${queryPairs.join("&")}`;
+}
+
+function legacyExcelLabelIds(values: string[]) {
+  return values.flatMap((value) => {
+    if (!value || value === "[]") {
+      return [];
+    }
+    if (!value.startsWith("[")) {
+      return [value];
+    }
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return Array.isArray(parsed)
+        ? parsed.flatMap((item) => (item ? [String(item)] : []))
+        : [value];
+    } catch {
+      return [value];
+    }
+  });
 }
 
 function sortedIssueLabels(issue: RestIssueListItem) {

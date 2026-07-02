@@ -732,6 +732,24 @@ test("project issue pagination input clamps and routes like legacy yobi.Paginati
   ).toBe("issue-page-input");
 });
 
+test("project issue Excel export href removes pageNum like legacy partial_list_wrap.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(
+    `${basePath}/admin/sample/issues?filter=bug&pageNum=3&orderBy=createdDate&orderDir=asc&state=closed&labelIds=8`,
+  );
+
+  await expect(
+    page.locator('.pull-left a.ybtn.small:has-text("Download as Excel file")'),
+  ).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issues?filter=bug&orderBy=createdDate&orderDir=asc&state=closed&labelIds=8&format=xls`,
+  );
+});
+
 test("project issue row hover matches legacy issue.List hover effect", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "populated");
