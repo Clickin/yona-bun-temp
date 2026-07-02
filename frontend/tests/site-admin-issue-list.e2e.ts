@@ -155,6 +155,36 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   );
 
   expect(actual).toEqual(expected);
+  expect(await issueListMetrics(page)).toEqual({
+    avatarImageHeight: 86,
+    avatarImageWidth: 45,
+    avatarWrapHeight: 45,
+    avatarWrapMarginRight: 10,
+    avatarWrapMarginTop: 3,
+    avatarWrapWidth: 45,
+    contentWidthRatio: 0.83,
+    firstRowLineHeight: 70,
+    firstRowPaddingBlock: 20,
+    metaAvatarHeight: 14,
+    metaAvatarWidth: 14,
+    metaFontSize: 11,
+    metaItemMarginInline: 10,
+    metaLineHeight: 20,
+    postInfoLineHeight: 20,
+    postInfoMarginTop: 5,
+    postProjectColor: "rgb(0, 136, 204)",
+    postProjectDisplay: "inline-block",
+    postProjectFontSize: 15,
+    postProjectFontWeight: "700",
+    postTitleFontSize: 15,
+    postTitleFontWeight: "700",
+    separatorFontSize: 15,
+    separatorFontWeight: "700",
+    separatorPaddingInline: 10,
+    sidebarWidthRatio: 0.15,
+    tabHeight: 38,
+    titleAreaHeight: 39,
+  });
 });
 
 async function mockSiteAdminSession(page: Page) {
@@ -211,6 +241,80 @@ async function mockIssues(page: Page) {
         totalPages: 1,
       }),
     });
+  });
+}
+
+async function issueListMetrics(page: Page) {
+  return page.evaluate(() => {
+    const row = requireElement(".site-setting-wrap > .row-fluid");
+    const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
+    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const titleArea = requireElement(".title_area");
+    const tabs = requireElement(".span10 > .nav.nav-tabs");
+    const firstRow = requireElement(".post-list-wrap .listitem");
+    const avatarWrap = requireElement(".post-list-wrap .list-avatar");
+    const avatarImage = requireElement(".post-list-wrap .list-avatar img");
+    const postInfo = requireElement(".post-info-wrap");
+    const postProject = requireElement(".post-project");
+    const separator = requireElement(".post-info-separator");
+    const postTitle = requireElement(".post-title");
+    const meta = requireElement(".post-meta-wrap");
+    const metaAvatar = requireElement(".post-meta-wrap .avatar-wrap");
+    const metaItem = requireElement(".post-meta-item");
+    const rowRect = row.getBoundingClientRect();
+    const firstRowStyle = getComputedStyle(firstRow);
+    const avatarWrapStyle = getComputedStyle(avatarWrap);
+    const postInfoStyle = getComputedStyle(postInfo);
+    const postProjectStyle = getComputedStyle(postProject);
+    const separatorStyle = getComputedStyle(separator);
+    const postTitleStyle = getComputedStyle(postTitle);
+    const metaStyle = getComputedStyle(meta);
+    const metaItemStyle = getComputedStyle(metaItem);
+
+    return {
+      avatarImageHeight: Math.round(avatarImage.getBoundingClientRect().height),
+      avatarImageWidth: Math.round(avatarImage.getBoundingClientRect().width),
+      avatarWrapHeight: Math.round(avatarWrap.getBoundingClientRect().height),
+      avatarWrapMarginRight: Math.round(parseFloat(avatarWrapStyle.marginRight)),
+      avatarWrapMarginTop: Math.round(parseFloat(avatarWrapStyle.marginTop)),
+      avatarWrapWidth: Math.round(avatarWrap.getBoundingClientRect().width),
+      contentWidthRatio: Number((content.getBoundingClientRect().width / rowRect.width).toFixed(2)),
+      firstRowLineHeight: Math.round(parseFloat(firstRowStyle.lineHeight)),
+      firstRowPaddingBlock:
+        Math.round(parseFloat(firstRowStyle.paddingTop)) +
+        Math.round(parseFloat(firstRowStyle.paddingBottom)),
+      metaAvatarHeight: Math.round(metaAvatar.getBoundingClientRect().height),
+      metaAvatarWidth: Math.round(metaAvatar.getBoundingClientRect().width),
+      metaFontSize: Math.round(parseFloat(metaStyle.fontSize)),
+      metaItemMarginInline:
+        Math.round(parseFloat(metaItemStyle.marginLeft)) +
+        Math.round(parseFloat(metaItemStyle.marginRight)),
+      metaLineHeight: Math.round(parseFloat(metaStyle.lineHeight)),
+      postInfoLineHeight: Math.round(parseFloat(postInfoStyle.lineHeight)),
+      postInfoMarginTop: Math.round(parseFloat(postInfoStyle.marginTop)),
+      postProjectColor: postProjectStyle.color,
+      postProjectDisplay: postProjectStyle.display,
+      postProjectFontSize: Math.round(parseFloat(postProjectStyle.fontSize)),
+      postProjectFontWeight: postProjectStyle.fontWeight,
+      postTitleFontSize: Math.round(parseFloat(postTitleStyle.fontSize)),
+      postTitleFontWeight: postTitleStyle.fontWeight,
+      separatorFontSize: Math.round(parseFloat(separatorStyle.fontSize)),
+      separatorFontWeight: separatorStyle.fontWeight,
+      separatorPaddingInline:
+        Math.round(parseFloat(separatorStyle.paddingLeft)) +
+        Math.round(parseFloat(separatorStyle.paddingRight)),
+      sidebarWidthRatio: Number((sidebar.getBoundingClientRect().width / rowRect.width).toFixed(2)),
+      tabHeight: Math.round(tabs.getBoundingClientRect().height),
+      titleAreaHeight: Math.round(titleArea.getBoundingClientRect().height),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
   });
 }
 
