@@ -212,22 +212,22 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `common/loginDialog.scala.html` | P0 global shell | hidden/open modal and REST failure states covered by `frontend/tests/ui-kit.e2e.ts` | 5 |
 | `common/usermenu_tab_content_list.scala.html` | P0 global shell | authenticated sidebar tab content covered by `frontend/tests/authenticated-home-empty-notifications.e2e.ts` | 5 |
 | `common/usermenu.scala.html` | P0 global shell | anonymous/authenticated/guest user-menu states covered by public/authenticated route guards | 5 |
-| `partial_update_notification.scala.html` | P0 global shell | included PR/diff partial; verify through PR/review routes | 1 |
+| `partial_update_notification.scala.html` | P0 global shell | site-admin watched-update notice metric-covered by `frontend/tests/authenticated-home-empty-notifications.e2e.ts` | 1 |
 | `sidebar.scala.html` | P0 global shell | root SPA sidebar surface | 5 |
-| `error/badrequest_default.scala.html` | P1 auth/public/home/help | error route state | 21 |
-| `error/badrequest.scala.html` | P1 auth/public/home/help | error route state | 21 |
-| `error/forbidden_default.scala.html` | P1 auth/public/home/help | error route state | 21 |
-| `error/forbidden_organization.scala.html` | P1 auth/public/home/help | error route state | 21 |
-| `error/forbidden.scala.html` | P1 auth/public/home/help | error route state | 21 |
-| `error/internalServerError_default.scala.html` | P1 auth/public/home/help | error route state | 21 |
-| `error/notfound_default.scala.html` | P1 auth/public/home/help | error route state | 21 |
-| `error/notfound.scala.html` | P1 auth/public/home/help | error route state | 21 |
-| `help/toc.scala.html` | P1 auth/public/home/help | /-/help or /-/UIKit | 21 |
-| `index/partial_intro.scala.html` | P1 auth/public/home/help | / and directory/workspace routes | 21 |
-| `site/lostPassword.scala.html` | P1 auth/public/home/help | /sites/:pageName | 21 |
-| `user/login.scala.html` | P1 auth/public/home/help | /login or /users/loginform | 21 |
-| `user/resetPassword.scala.html` | P1 auth/public/home/help | /resetPassword or /reset-password | 21 |
-| `user/signup.scala.html` | P1 auth/public/home/help | /register or /users/signupform | 21 |
+| `error/badrequest_default.scala.html` | P1 auth/public/home/help | default bad-request shell metric-covered by `frontend/tests/reset-password.e2e.ts` | 21 |
+| `error/badrequest.scala.html` | P1 auth/public/home/help | project bad-request caller metric-covered by `frontend/tests/project-members-form.e2e.ts` | 21 |
+| `error/forbidden_default.scala.html` | P1 auth/public/home/help | default forbidden shell metric-covered by `frontend/tests/search-global.e2e.ts` | 21 |
+| `error/forbidden_organization.scala.html` | P1 auth/public/home/help | organization forbidden caller metric-covered by `frontend/tests/organization-members-form.e2e.ts` | 21 |
+| `error/forbidden.scala.html` | P1 auth/public/home/help | project forbidden caller metric-covered by `frontend/tests/project-members-form.e2e.ts` | 21 |
+| `error/internalServerError_default.scala.html` | P1 auth/public/home/help | default internal-server-error shell metric-covered by `frontend/tests/search-global.e2e.ts` | 21 |
+| `error/notfound_default.scala.html` | P1 auth/public/home/help | default not-found shell metric-covered by `frontend/tests/not-found.e2e.ts` | 21 |
+| `error/notfound.scala.html` | P1 auth/public/home/help | project not-found caller metric-covered by `frontend/tests/project-issue-detail.e2e.ts` | 21 |
+| `help/toc.scala.html` | P1 auth/public/home/help | help TOC screen metric-covered by `frontend/tests/help-toc.e2e.ts` | 21 |
+| `index/partial_intro.scala.html` | P1 auth/public/home/help | public landing intro metric-covered by `frontend/tests/public-landing-parity.e2e.ts` | 21 |
+| `site/lostPassword.scala.html` | P1 auth/public/home/help | lost-password screen metric-covered by `frontend/tests/lost-password.e2e.ts` | 21 |
+| `user/login.scala.html` | P1 auth/public/home/help | login screen metric-covered by `frontend/tests/loginform.e2e.ts` | 21 |
+| `user/resetPassword.scala.html` | P1 auth/public/home/help | reset-password screen metric-covered by `frontend/tests/reset-password.e2e.ts` | 21 |
+| `user/signup.scala.html` | P1 auth/public/home/help | signup screen metric-covered by `frontend/tests/signupform.e2e.ts` | 21 |
 | `user/verified.scala.html` | P1 auth/public/home/help | covered by `frontend/tests/verify-user.e2e.ts`: `/verify/door/ok-code` renders the legacy `.page.full > .center-wrap.tag-line-wrap.reset-password` success branch and invalid verification branch | 21 |
 | `project/change_vcs.scala.html` | P2 project | covered by `frontend/tests/project-change-vcs-form.e2e.ts`: `/admin/sample/changeVCS` renders the legacy settings shell, active repository type submenu, VCS transition warning bubble, agreement checkbox, change button, and hidden confirmation modal layout metrics | 57 |
 | `project/delete.scala.html` | P2 project | covered by `frontend/tests/project-delete-form.e2e.ts`: `/admin/sample/deleteform` renders the legacy settings shell, active delete submenu, warning bubble, agreement checkbox, delete button, and hidden confirmation modal layout metrics | 57 |
@@ -280,10 +280,10 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `git/partial_state.scala.html` | P5 code/pr/review | PR overview and changes state branches metric-covered by `frontend/tests/project-pullrequest-overview.e2e.ts` and `frontend/tests/project-pullrequest-changes.e2e.ts` | 30 |
 | `git/view.scala.html` | P5 code/pr/review | PR overview screen metric-covered by `frontend/tests/project-pullrequest-overview.e2e.ts` | 30 |
 | `git/viewChanges.scala.html` | P5 code/pr/review | PR changes default and commit-scoped screens metric-covered by `frontend/tests/project-pullrequest-changes.e2e.ts` plus overview-tab SPA transition coverage in `frontend/tests/project-pullrequest-overview.e2e.ts` | 30 |
-| `partial_comment_form_on_thread.scala.html` | P5 code/pr/review | included PR/diff partial; verify through PR/review routes | 30 |
-| `partial_diff_line.scala.html` | P5 code/pr/review | included PR/diff partial; verify through PR/review routes | 30 |
-| `reviewthread/list.scala.html` | P5 code/pr/review | /:owner/:projectName/reviews | 30 |
-| `reviewthread/partial_list.scala.html` | P5 code/pr/review | /:owner/:projectName/reviews | 30 |
+| `partial_comment_form_on_thread.scala.html` | P5 code/pr/review | thread reply form callers metric-covered by `frontend/tests/project-code-commit-detail.e2e.ts` and `frontend/tests/project-pullrequest-changes.e2e.ts` | 30 |
+| `partial_diff_line.scala.html` | P5 code/pr/review | commit diff line caller metric-covered by `frontend/tests/project-code-commit-detail.e2e.ts` | 30 |
+| `reviewthread/list.scala.html` | P5 code/pr/review | reviews shell metric-covered by `frontend/tests/project-reviews.e2e.ts` | 30 |
+| `reviewthread/partial_list.scala.html` | P5 code/pr/review | review rows metric-covered by `frontend/tests/project-reviews.e2e.ts` | 30 |
 | `common/mySeriesMenuTab.scala.html` | P6 directory/workspace | notifications, my-issues, and user-files callers covered by `frontend/tests/authenticated-home-empty-notifications.e2e.ts`, `frontend/tests/user-issues.e2e.ts`, and `frontend/tests/user-files.e2e.ts` | 39 |
 | `organization/deleteForm.scala.html` | P6 directory/workspace | delete settings screen metric-covered by `frontend/tests/organization-delete-form.e2e.ts` | 39 |
 | `organization/group_board_list_partial.scala.html` | P6 directory/workspace | organization board row partial metric-covered by `frontend/tests/organization-boards.e2e.ts` | 39 |
