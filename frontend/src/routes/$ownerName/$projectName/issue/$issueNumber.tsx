@@ -1461,6 +1461,8 @@ function IssueChildIssues({
   const childOpenCount = numberField(issue.childOpenCount);
   const childClosedCount = numberField(issue.childClosedCount);
   const totalCount = childOpenCount + childClosedCount;
+  const isDirectSharedChildIssue =
+    booleanField(issue.viewerIsDirectSharer) && issue.parentIssueId != null;
   const children = issue.childIssues ?? [];
   const visibleChildren = [
     ...(booleanField(issue.isDraft)
@@ -1476,7 +1478,7 @@ function IssueChildIssues({
     ...children.filter((child) => stringField(child.state) === "closed"),
   ];
 
-  if (!totalCount && visibleChildren.length === 0) {
+  if (isDirectSharedChildIssue || (!totalCount && visibleChildren.length === 0)) {
     return <div className="subtasks"></div>;
   }
 

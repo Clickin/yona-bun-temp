@@ -1112,6 +1112,35 @@ test("project issue detail hides foreign draft child issues like legacy partial_
   );
 });
 
+test("project issue detail hides subtasks for directly shared child issue like legacy view.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    childClosedCount: 1,
+    childIssues: [
+      {
+        assigneeLabel: "QA One",
+        createdLabel: "Jul 3, 2026",
+        issueNumber: 12,
+        labels: [],
+        state: "open",
+        title: "Hidden open child",
+      },
+    ],
+    childOpenCount: 1,
+    parentIssueId: 99,
+    viewerIsDirectSharer: true,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  await expect(page.locator(".span-left-pane > .subtasks")).toHaveCount(1);
+  await expect(page.locator(".span-left-pane > .subtasks")).toBeEmpty();
+  await expect(page.locator(".span-left-pane > .subtasks .child-issues")).toHaveCount(0);
+  await expect(page.locator(".span-left-pane > .subtasks")).not.toContainText("Hidden open child");
+});
+
 test("project issue detail renders legacy unauthorized comment form", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, { viewerCanComment: false });
