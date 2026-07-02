@@ -2953,6 +2953,10 @@ h1 {
   font-weight: 700;
 }
 
+.markdown-help {
+  margin: 5px 0 0;
+}
+
 .markdown-help .markdown-help-nav {
   list-style: none;
   background-color: #f7f7f7;

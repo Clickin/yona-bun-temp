@@ -236,6 +236,33 @@ test("standalone UI kit root shell applies legacy markdown help tab selection", 
     /active/,
   );
   await expect(page.locator(".markdown-help-wrap > .markdownLists")).toHaveClass(/active/);
+  expect(await markdownHelpMetrics(page)).toEqual({
+    activeBorderBottomWidth: "0px",
+    activeBorderTopWidth: "0px",
+    activePadding: "10px",
+    activeTextColor: "rgb(51, 51, 51)",
+    firstHelpNavColor: "rgb(158, 158, 158)",
+    firstHelpNavCursor: "pointer",
+    firstHelpNavLineHeight: "20px",
+    firstHelpNavPadding: "5px 7px",
+    inactiveHeight: "0px",
+    inactiveOverflow: "hidden",
+    labelBackground: "rgb(199, 201, 201)",
+    labelTextShadow: "none",
+    markdownHelpMarginTop: "5px",
+    navBackground: "rgb(247, 247, 247)",
+    navBorderBottomWidth: "0px",
+    navBorderTopWidth: "1px",
+    navListStyleType: "none",
+    syntaxBorderTopWidth: "1px",
+    syntaxPadding: "10px",
+    theadBackground: "rgb(247, 247, 247)",
+    theadBorderTopWidth: "1px",
+    theadCellFontWeight: "700",
+    theadCellLineHeight: "30px",
+    wrapBackground: "rgb(255, 255, 255)",
+    wrapListStyleType: "none",
+  });
 
   await page.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
   await expect(page.locator('.markdown-help-nav [data-target="markdownLists"]')).not.toHaveClass(
@@ -716,6 +743,83 @@ async function canonicalizeHtml(page: Page, html: string) {
 
 async function normalizedOuterHtml(page: Page, selector: string) {
   return page.locator(selector).evaluate((root) => root.outerHTML);
+}
+
+async function markdownHelpMetrics(page: Page) {
+  return page.locator(".markdown-help").evaluate((root) => {
+    const nav = root.querySelector<HTMLElement>(".markdown-help-nav");
+    const firstHelpNav = root.querySelector<HTMLElement>(".markdown-help-nav .help-nav");
+    const activeHelpNav = root.querySelector<HTMLElement>(".markdown-help-nav .help-nav.active");
+    const label = root.querySelector<HTMLElement>(".markdown-help-nav .label");
+    const wrap = root.querySelector<HTMLElement>(".markdown-help-wrap");
+    const activeItem = root.querySelector<HTMLElement>(".markdown-help-wrap > .active");
+    const inactiveItem = root.querySelector<HTMLElement>(
+      ".markdown-help-wrap > .markdown-help-item:not(.active)",
+    );
+    const thead = activeItem?.querySelector<HTMLElement>(".thead");
+    const theadCell = thead?.querySelector<HTMLElement>("div");
+    const syntaxWrap = activeItem?.querySelector<HTMLElement>(".markdwon-syntax-wrap");
+    const syntax = activeItem?.querySelector<HTMLElement>(".markdwon-syntax");
+    const missing = Object.entries({
+      activeHelpNav,
+      activeItem,
+      firstHelpNav,
+      inactiveItem,
+      label,
+      nav,
+      syntax,
+      syntaxWrap,
+      thead,
+      theadCell,
+      wrap,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected markdown help metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const rootStyle = getComputedStyle(root);
+    const navStyle = getComputedStyle(nav!);
+    const firstHelpNavStyle = getComputedStyle(firstHelpNav!);
+    const activeHelpNavStyle = getComputedStyle(activeHelpNav!);
+    const labelStyle = getComputedStyle(label!);
+    const wrapStyle = getComputedStyle(wrap!);
+    const activeStyle = getComputedStyle(activeItem!);
+    const inactiveStyle = getComputedStyle(inactiveItem!);
+    const theadStyle = getComputedStyle(thead!);
+    const theadCellStyle = getComputedStyle(theadCell!);
+    const syntaxWrapStyle = getComputedStyle(syntaxWrap!);
+    const syntaxStyle = getComputedStyle(syntax!);
+
+    return {
+      activeBorderBottomWidth: activeStyle.borderBottomWidth,
+      activeBorderTopWidth: activeStyle.borderTopWidth,
+      activePadding: activeStyle.padding,
+      activeTextColor: activeHelpNavStyle.color,
+      firstHelpNavColor: firstHelpNavStyle.color,
+      firstHelpNavCursor: firstHelpNavStyle.cursor,
+      firstHelpNavLineHeight: firstHelpNavStyle.lineHeight,
+      firstHelpNavPadding: firstHelpNavStyle.padding,
+      inactiveHeight: inactiveStyle.height,
+      inactiveOverflow: inactiveStyle.overflow,
+      labelBackground: labelStyle.backgroundColor,
+      labelTextShadow: labelStyle.textShadow,
+      markdownHelpMarginTop: rootStyle.marginTop,
+      navBackground: navStyle.backgroundColor,
+      navBorderBottomWidth: navStyle.borderBottomWidth,
+      navBorderTopWidth: navStyle.borderTopWidth,
+      navListStyleType: navStyle.listStyleType,
+      syntaxBorderTopWidth: syntaxWrapStyle.borderTopWidth,
+      syntaxPadding: syntaxStyle.padding,
+      theadBackground: theadStyle.backgroundColor,
+      theadBorderTopWidth: theadStyle.borderTopWidth,
+      theadCellFontWeight: theadCellStyle.fontWeight,
+      theadCellLineHeight: theadCellStyle.lineHeight,
+      wrapBackground: wrapStyle.backgroundColor,
+      wrapListStyleType: wrapStyle.listStyleType,
+    };
+  });
 }
 
 async function normalizedFragmentOuterHtml(page: Page, html: string, selector: string) {
