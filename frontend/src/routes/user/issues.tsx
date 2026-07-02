@@ -369,7 +369,9 @@ function UserIssuesBody({
                     orderBy={search.orderBy}
                     orderDir={search.orderDir}
                   />
-                ) : null}
+                ) : (
+                  <div className="filter-wrap small-heights"></div>
+                )}
                 <ul className="post-list-wrap my-issues">
                   {issues.items.map((issue) => (
                     <UserIssueItem
