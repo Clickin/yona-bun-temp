@@ -284,7 +284,7 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `partial_diff_line.scala.html` | P5 code/pr/review | included PR/diff partial; verify through PR/review routes | 30 |
 | `reviewthread/list.scala.html` | P5 code/pr/review | /:owner/:projectName/reviews | 30 |
 | `reviewthread/partial_list.scala.html` | P5 code/pr/review | /:owner/:projectName/reviews | 30 |
-| `common/mySeriesMenuTab.scala.html` | P6 directory/workspace | included partial; verify through each caller route | 39 |
+| `common/mySeriesMenuTab.scala.html` | P6 directory/workspace | notifications, my-issues, and user-files callers covered by `frontend/tests/authenticated-home-empty-notifications.e2e.ts`, `frontend/tests/user-issues.e2e.ts`, and `frontend/tests/user-files.e2e.ts` | 39 |
 | `organization/deleteForm.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
 | `organization/group_board_list_partial.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
 | `organization/group_issue_list.scala.html` | P6 directory/workspace | /organizations/:organizationName/* | 39 |
