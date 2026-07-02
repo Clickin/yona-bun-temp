@@ -188,16 +188,26 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   expect(actual).toEqual(expected);
   expect(await projectListMetrics(page)).toEqual({
     avatarHeight: 40,
+    avatarWrapHeight: 45,
+    avatarWrapMarginRight: 10,
+    avatarWrapMarginTop: 3,
+    avatarWrapWidth: 45,
     avatarWidth: 45,
     contentWidthRatio: 0.83,
     deleteButtonHeight: 30,
     filterInputWidth: 350,
     firstHeaderColumnRatio: 0.4,
     firstRowColumnRatio: 0.4,
+    firstRowLineHeight: 70,
     listHeadHeight: 41,
+    listItemColumnFontSize: 12,
+    listItemColumnLineHeight: 20,
+    listItemColumnPaddingBlock: 20,
     modalFooterButtonGap: 32,
     modalWidth: 562,
     paginationOffsetTop: 16,
+    projectNameFontSize: 14,
+    projectNameFontWeight: "700",
     projectNameOffsetTop: -2,
     searchFormOffsetTop: 0,
     sidebarWidthRatio: 0.15,
@@ -373,6 +383,7 @@ async function projectListMetrics(page: Page) {
     const firstHeaderColumn = requireElement(".listhead .span5");
     const firstRowColumn = requireElement(".project-list-wrap .listitem .span5");
     const firstRow = requireElement(".project-list-wrap .listitem");
+    const avatarWrap = requireElement(".project-list-wrap .list-avatar");
     const avatar = requireElement(".project-list-wrap .list-avatar img");
     const projectName = requireElement(".project-list-wrap .project-name");
     const deleteButton = requireElement('[data-toggle="delete-project"]');
@@ -391,7 +402,12 @@ async function projectListMetrics(page: Page) {
     const firstHeaderColumnRect = firstHeaderColumn.getBoundingClientRect();
     const firstRowColumnRect = firstRowColumn.getBoundingClientRect();
     const firstRowRect = firstRow.getBoundingClientRect();
+    const firstRowStyle = getComputedStyle(firstRow);
+    const firstRowColumnStyle = getComputedStyle(firstRowColumn);
+    const avatarWrapStyle = getComputedStyle(avatarWrap);
+    const avatarWrapRect = avatarWrap.getBoundingClientRect();
     const avatarRect = avatar.getBoundingClientRect();
+    const projectNameStyle = getComputedStyle(projectName);
     const projectNameRect = projectName.getBoundingClientRect();
     const deleteButtonRect = deleteButton.getBoundingClientRect();
     const paginationRect = pagination.getBoundingClientRect();
@@ -401,16 +417,28 @@ async function projectListMetrics(page: Page) {
 
     return {
       avatarHeight: Math.round(avatarRect.height),
+      avatarWrapHeight: Math.round(avatarWrapRect.height),
+      avatarWrapMarginRight: Math.round(parseFloat(avatarWrapStyle.marginRight)),
+      avatarWrapMarginTop: Math.round(parseFloat(avatarWrapStyle.marginTop)),
+      avatarWrapWidth: Math.round(avatarWrapRect.width),
       avatarWidth: Math.round(avatarRect.width),
       contentWidthRatio: Number((contentRect.width / rowRect.width).toFixed(2)),
       deleteButtonHeight: Math.round(deleteButtonRect.height),
       filterInputWidth: Math.round(filterInputRect.width),
       firstHeaderColumnRatio: Number((firstHeaderColumnRect.width / listHeadRect.width).toFixed(2)),
       firstRowColumnRatio: Number((firstRowColumnRect.width / firstRowRect.width).toFixed(2)),
+      firstRowLineHeight: Math.round(parseFloat(firstRowStyle.lineHeight)),
       listHeadHeight: Math.round(listHeadRect.height),
+      listItemColumnFontSize: Math.round(parseFloat(firstRowColumnStyle.fontSize)),
+      listItemColumnLineHeight: Math.round(parseFloat(firstRowColumnStyle.lineHeight)),
+      listItemColumnPaddingBlock:
+        Math.round(parseFloat(firstRowColumnStyle.paddingTop)) +
+        Math.round(parseFloat(firstRowColumnStyle.paddingBottom)),
       modalFooterButtonGap: Math.round(modalNoRect.left - modalYesRect.right),
       modalWidth: Math.round(modalRect.width),
       paginationOffsetTop: Math.round(paginationRect.top - firstRowRect.bottom),
+      projectNameFontSize: Math.round(parseFloat(projectNameStyle.fontSize)),
+      projectNameFontWeight: projectNameStyle.fontWeight,
       projectNameOffsetTop: Math.round(projectNameRect.top - avatarRect.top),
       searchFormOffsetTop: Math.round(searchFormRect.top - titleRect.top),
       sidebarWidthRatio: Number((sidebarRect.width / rowRect.width).toFixed(2)),
