@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState, type AnchorHTMLAttributes, type ComponentType } from "react";
-import { readSiteMailListRest } from "../../api/site-admin";
+import { readSiteMailListRest, siteUpdateQueryOptions } from "../../api/site-admin";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
@@ -39,6 +39,8 @@ function SiteMassMailRoute() {
 }
 
 function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
+
   return (
     <>
       <div className="site-breadcrumb-outer">
@@ -52,7 +54,7 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         <div className="site-setting-wrap">
           <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar />
+              <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
               <div className="title_area">
@@ -69,7 +71,7 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   );
 }
 
-function SiteAdminSidebar() {
+function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   const navItems = [
     { href: "/sites/userList", labelKey: "site.sidebar.userList" },
     { href: "/sites/postList", labelKey: "site.sidebar.postList" },
@@ -77,7 +79,7 @@ function SiteAdminSidebar() {
     { href: "/sites/projectList", labelKey: "site.sidebar.projectList" },
     { href: "/sites/mail", labelKey: "site.sidebar.mailSend" },
     { href: "/sites/massmail", labelKey: "site.sidebar.massMail", active: true },
-    { href: "/sites/update", labelKey: "site.sidebar.update" },
+    { href: "/sites/update", labelKey: "site.sidebar.update", badge: showUpdateBadge },
     { href: "/sites/diagnostic", labelKey: "site.sidebar.diagnostics" },
   ];
 
@@ -87,6 +89,7 @@ function SiteAdminSidebar() {
         <li className={item.active ? "active" : ""} key={item.href}>
           <LegacyInternalLink activeProps={{ className: undefined }} to={item.href}>
             <LegacyMessage messageKey={item.labelKey} />
+            {item.badge ? <span className="notification-badge">1</span> : null}
           </LegacyInternalLink>
         </li>
       ))}

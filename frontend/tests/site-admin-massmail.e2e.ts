@@ -232,6 +232,18 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
     ]);
 });
 
+test("site admin mass mail renders legacy update notification badge", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockAvailableUpdate(page);
+
+  await page.goto(`${basePath}/sites/massmail`);
+  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
+  await expect(updateLink).toHaveText("Software Update1");
+  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
+});
+
 async function massMailDefaultMetrics(page: Page) {
   return page.evaluate(() => {
     const requireElement = (selector: string) => {
@@ -312,6 +324,21 @@ async function massMailProjectMetrics(page: Page) {
         Math.round(parseFloat(selectedLabelStyle.paddingLeft)) +
         Math.round(parseFloat(selectedLabelStyle.paddingRight)),
     };
+  });
+}
+
+async function mockAvailableUpdate(page: Page) {
+  await page.route("**/api/v1/site/update", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        currentVersion: "1.0.0",
+        error: null,
+        message: "site.update.isAvailable",
+        releaseUrl: "https://example.test/yona-1.1.0",
+        versionToUpdate: "1.1.0",
+      }),
+    });
   });
 }
 
