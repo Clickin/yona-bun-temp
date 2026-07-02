@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import type { AnchorHTMLAttributes, ComponentType } from "react";
-import { useState } from "react";
+import { useState, type AnchorHTMLAttributes, type ComponentType, type ReactNode } from "react";
 import {
   deleteSiteUserRest,
   resetSiteUserPasswordRest,
@@ -19,7 +18,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { SitePagination } from "./-pagination";
 
 type UserListSearch = {
   pageNum: number;
@@ -34,6 +32,7 @@ const USER_STATES: SiteUserState[] = ["ACTIVE", "LOCKED", "DELETED", "GUEST", "S
 const LegacyInternalLink = Link as ComponentType<
   AnchorHTMLAttributes<HTMLAnchorElement> & {
     activeProps?: { className?: string | undefined };
+    children?: ReactNode;
     search?: Record<string, number | string | undefined>;
     to: string;
   }
@@ -225,18 +224,10 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 ))}
               </ul>
 
-              <SitePagination
+              <UserListPagination
                 currentPage={response?.page ?? search.pageNum}
-                pageHref={(pageNum) => {
-                  const params = new URLSearchParams({
-                    pageNum: String(pageNum),
-                    state: search.state,
-                  });
-                  if (search.query) {
-                    params.set("query", search.query);
-                  }
-                  return prefixBasePath(runtimeConfig.basePath, `/sites/userList?${params}`);
-                }}
+                query={search.query}
+                state={search.state}
                 totalPages={response?.totalPages ?? 0}
               />
 
@@ -306,6 +297,87 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         </div>
       </div>
     </>
+  );
+}
+
+function UserListPagination({
+  currentPage,
+  query,
+  state,
+  totalPages,
+}: {
+  currentPage: number;
+  query: string;
+  state: SiteUserState;
+  totalPages: number;
+}) {
+  if (totalPages <= 0) {
+    return <div id="pagination"></div>;
+  }
+
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+  const search = (pageNum: number) => ({
+    pageNum,
+    query: query || undefined,
+    state,
+  });
+
+  return (
+    <div id="pagination" className="page-navigation-wrap">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <LegacyInternalLink
+              activeProps={{ className: undefined }}
+              search={search(currentPage - 1)}
+              to="/sites/userList"
+              {...{ "pjax-page": "" }}
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>PREV</span>
+            </LegacyInternalLink>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">PREV</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            max={totalPages}
+            min={1}
+            name="pageNum"
+            pattern="[0-9]*"
+            readOnly
+            type="number"
+            value={currentPage}
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <LegacyInternalLink
+              activeProps={{ className: undefined }}
+              search={search(currentPage + 1)}
+              to="/sites/userList"
+              {...{ "pjax-page": "" }}
+            >
+              <span>NEXT</span>
+              <i className="ico btn-pg-next"></i>
+            </LegacyInternalLink>
+          ) : (
+            <>
+              <span className="off">NEXT</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
+    </div>
   );
 }
 

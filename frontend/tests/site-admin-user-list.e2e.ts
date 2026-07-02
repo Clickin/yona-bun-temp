@@ -131,10 +131,10 @@ const EXPECTED_USER_LIST_SCREEN = `
         <div id="pagination" class="page-navigation-wrap">
           <ul class="page-nums">
             <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">PREV</span></li>
-            <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="1" min="1" pattern="[0-9]*"></li>
+            <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
             <li class="page-num delimiter">/</li>
-            <li class="page-num">1</li>
-            <li class="page-num ikon"><span class="off">NEXT</span><i class="ico btn-pg-next off"></i></li>
+            <li class="page-num">2</li>
+            <li class="page-num ikon"><a href="__BASE_PATH__/sites/userList?pageNum=2&amp;state=ACTIVE"><span>NEXT</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
         <div id="alertDeletionWrap" class="modal fade">
@@ -181,9 +181,15 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
   await expect(page.locator("#pagination .page-nums .page-num")).toHaveCount(5);
   await expect(page.locator("#pagination.pagination")).toHaveCount(0);
-  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "1");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("min", "1");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  const nextPageLink = page.locator("#pagination a", { hasText: "NEXT" });
+  await expect(nextPageLink).toHaveAttribute(
+    "href",
+    `${basePath}/sites/userList?pageNum=2&state=ACTIVE`,
+  );
+  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
   const lockedTab = page.getByRole("link", { exact: true, name: "Locked user" });
   await expect(lockedTab).toHaveAttribute("href", `${basePath}/sites/userList?state=LOCKED`);
   expect(await siteLayoutRootOrder(page)).toEqual([
@@ -236,6 +242,19 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     userNameMarginTop: 8,
     userSearchInputWidth: 350,
   });
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-users-pagination";
+  });
+  await nextPageLink.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("ACTIVE");
+  await expect(page.locator(".site-setting-wrap .nav-tabs li.active a")).toHaveText(
+    "Unlocked user",
+  );
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-users-pagination");
 
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-users-tabs";
@@ -358,16 +377,18 @@ async function mockSiteUsers(page: Page) {
   };
 
   await page.route("**/api/v1/site/users?*", async (route) => {
+    const url = new URL(route.request().url());
+    const pageNum = Number(url.searchParams.get("pageNum") ?? "1") || 1;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        page: 1,
+        page: pageNum,
         pageSize: 20,
         query: "",
         siteAdminCount: 2,
         state: "ACTIVE",
-        total: 1,
-        totalPages: 1,
+        total: 2,
+        totalPages: 2,
         users: [
           {
             avatarUrl: "/avatars/doortts.png",
