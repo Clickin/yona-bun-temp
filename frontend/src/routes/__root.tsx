@@ -600,7 +600,7 @@ function RootLoginDialog({ basePath }: { basePath: string }) {
   );
 }
 
-function RootAliasNotFound() {
+export function RootAliasNotFound() {
   const { runtimeConfig } = Route.useRouteContext();
   const basePath = runtimeConfig.basePath === "/" ? "" : runtimeConfig.basePath;
   const pathname =

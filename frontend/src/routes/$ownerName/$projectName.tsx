@@ -19,9 +19,11 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { RootAliasNotFound } from "../__root";
 
 export const Route = createFileRoute("/$ownerName/$projectName")({
   component: ProjectHomeRoute,
+  notFoundComponent: RootAliasNotFound,
   validateSearch(search) {
     return {
       ...(legacyQueryString(search.commentId)

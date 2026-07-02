@@ -1,7 +1,7 @@
 # Template-First UI Parity Report: P1 Auth/Public/Home
 
 Status: current reset baseline
-Date: 2026-06-27
+Date: 2026-07-02
 Owner packet: P1 auth/public/home
 Mode: template-first mapper baseline; implementation evidence reviewed
 
@@ -65,7 +65,6 @@ JavaScript or Play form handlers.
 | `frontend/tests/public-landing-parity.e2e.ts`                                                                                                                                | Whole rendered DOM parity proof for anonymous `/`; compares unsupported/nav/intro/footer roots, signup CTA, feature rows, and legacy footer links. It also browser-proves the shared `layout.scala.html` shell anchors: `body#html-body > #root > #main.main`, exact viewport/content-type/`X-UA-Compatible`, OpenGraph/Twitter meta names, favicon, and legacy stylesheet order. The route metric guard proves desktop legacy LESS proportions for `.gnb-outer`, `.gnb-inner`, `.logo-letter`, `.siteintro-cover`, `.site-heading`, `.signup-btn`, `.feature`, `.feature-wrap li`, `.feature-image`, `.feature-info`, `.page-footer-outer`, `.page-footer`, and `.provider`, plus the legacy `_responsive.less` mobile intro/feature/footer rules for inherited hero width, `22px` heading, `95%` feature cells, `10px` feature offsets, `10px` nav/footer min-width, and footer padding at a 390px viewport. |
 | `frontend/tests/authenticated-home-empty-notifications.e2e.ts`                                                                                                               | Whole rendered DOM parity proof for authenticated `/` and `/notifications` with zero notifications plus a direct `/notifications` one-row populated state; compares unsupported/nav/page/footer roots, authenticated `common.usermenu` sidenav/GNB issue/admin/avatar/create menu controls, welcome guide, notification tabs, empty notification copy, and legacy stream row DOM. It also browser-proves the legacy desktop proportions for `.gnb-outer`, `.gnb-inner`, `.logo-letter`, `.guide-toggle`, `.main-stream`, `.activity-streams`, `.warning-none`, `.nav-tabs`, `.page-footer-outer`, `.page-footer`, `.provider`, and populated `.notification-stream` rows, plus the legacy `_responsive.less` mobile authenticated-home rules for full-width `.main-stream` and `40px` guide margin on `/`, direct `/notifications` `#setDefaultLoginPage.hide-in-mobile`, and populated notification row stream/message proportions at a 390px viewport. |
 | `frontend/tests/verify-user.e2e.ts`                                                                                                                                          | Whole rendered DOM parity proof for `/verify/:loginId/:verificationCode` success; mocks only the verify REST result and preserves the legacy verified-user site shell. The success state also browser-proves the legacy desktop LESS proportions for `.gnb-outer`, `.gnb-inner`, `.logo-letter`, `.tag-line-wrap.reset-password`, `.title`, `.tag-line`, `.page-footer-outer`, `.page-footer`, and `.provider`, plus the legacy `_responsive.less` mobile `10px` nav/footer min-width, `0 10px` nav padding, `10px` footer padding, and rendered `363px` nav-inner width rules at a 390px viewport.                                                                                                                                                                                                                                   |
-| `frontend/src/auth-workspace-shell.spec.tsx`, `wave1-auth-workspace-parity.spec.tsx`, `help-route-parity.spec.tsx`                                                           | Static selector/source proof.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `frontend/tests/auth-aliases.e2e.ts`                                                                                                                                         | Browser proof that `/login`, `/register`, `/forgot-password`, and `/reset-password` redirect to canonical legacy public auth routes while preserving base path and route state, then render the same stable `.unsupported`, `.gnb-outer`, `.page.full`, and `.page-footer-outer` roots as the canonical target state; also proves legacy `GET /users/login` stays on the original URL and renders the same stable index roots plus desktop and 390px mobile layout metrics as `/`.                                                                                                                                                                                                                                                                                                  |
 | `frontend/tests/not-found.e2e.ts`                                                                                                                                            | Whole rendered DOM parity proof for an unmatched route against `error/notfound_default.scala.html`; compares `.gnb-outer`, `.page-wrap-outer`, and `.page-footer-outer` roots, including the default logo, project-list/help/feedback nav links, the anonymous `common/usermenu.scala.html` sidenav/Login/Signup fragment, `.error-wrap`, `.ico.ico-err2`, Page not found copy, Home action, and D2 footer. It also browser-proves the legacy desktop proportions for `.gnb-outer`, `.gnb-inner`, `.gnb-inner .logo`, `.page-wrap-outer`, `.project-page-wrap`, `.error-wrap`, `.ico-err2`, error text, Home button, `.page-footer-outer`, `.page-footer`, and `.provider`, plus the legacy `_responsive.less` mobile nav/page/project/footer shell rules and unchanged mobile error icon/text/button/footer metrics at a 390px viewport.                                                                                                               |
 
@@ -103,12 +102,6 @@ JavaScript or Play form handlers.
 
 ## Verifier Evidence
 
-Static/component proof:
-
-- `frontend/src/auth-workspace-shell.spec.tsx`
-- `frontend/src/wave1-auth-workspace-parity.spec.tsx`
-- `frontend/src/help-route-parity.spec.tsx`
-
 Browser proof:
 
 - `frontend/tests/auth-aliases.e2e.ts`
@@ -116,19 +109,20 @@ Browser proof:
 - `frontend/tests/loginform.e2e.ts`
 - `frontend/tests/help-toc.e2e.ts`
 - `frontend/tests/lost-password.e2e.ts`
+- `frontend/tests/not-found.e2e.ts`
 - `frontend/tests/public-landing-parity.e2e.ts`
 - `frontend/tests/restart.e2e.ts`
 - `frontend/tests/reset-password.e2e.ts`
-- `frontend/tests/loginform.e2e.ts`
 - `frontend/tests/restricted.e2e.ts`
 - `frontend/tests/secret-setup.e2e.ts`
 - `frontend/tests/signupform.e2e.ts`
+- `frontend/tests/ui-kit.e2e.ts`
 - `frontend/tests/verify-user.e2e.ts`
 
-Prior focused browser verification recorded in `ui-parity-auth-public-entry.md`:
+Current focused browser verification:
 
-- `pnpm --dir frontend test:e2e -- auth-aliases.e2e.ts loginform.e2e.ts signupform.e2e.ts lost-password.e2e.ts reset-password.e2e.ts verify-user.e2e.ts secret-setup.e2e.ts restart.e2e.ts help-toc.e2e.ts ui-kit.e2e.ts`
-- Result recorded there: `30` Playwright tests passed on `2026-06-26`.
+- `pnpm --dir frontend test:e2e -- public-landing-parity.e2e.ts authenticated-home-empty-notifications.e2e.ts auth-aliases.e2e.ts loginform.e2e.ts signupform.e2e.ts lost-password.e2e.ts reset-password.e2e.ts verify-user.e2e.ts secret-setup.e2e.ts restart.e2e.ts help-toc.e2e.ts ui-kit.e2e.ts restricted.e2e.ts not-found.e2e.ts`
+- Result: `58` Playwright tests passed on `2026-07-02`.
 
 P1 has no integrated desktop sweep status deltas in
 `output/playwright/visual-sweep/latest.json` checked at

@@ -56,7 +56,7 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
-  await page.goto(`${basePath}/missing-legacy-route`);
+  await page.goto(`${basePath}/missing-legacy-route/unknown/screen`);
   await expect(page.locator(".gnb-outer")).toBeVisible();
   await expect(page.locator(".error-wrap")).toBeVisible();
   await expect(page.locator(".page-footer-outer")).toBeVisible();
@@ -103,7 +103,7 @@ test("unmatched route keeps legacy mobile error shell proportions", async ({ pag
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
   await page.setViewportSize({ width: 390, height: 900 });
-  await page.goto(`${basePath}/missing-legacy-route`);
+  await page.goto(`${basePath}/missing-legacy-route/unknown/screen`);
   await expect(page.locator(".error-wrap")).toBeVisible();
 
   expect(await readMobileNotFoundMetrics(page)).toEqual({
