@@ -969,6 +969,10 @@ export function ProjectHeader({
   const originalProjectName =
     stringField(recordField(project).originalProjectName, "") ||
     stringField(recordField(project).originProjectName, "");
+  const canWatchProject = projectCanWatch(project);
+  const isWatchingProject = projectIsWatching(project);
+  const watchingCount = projectWatchingCount(project);
+  const projectIdValueForLinks = projectIdValue || projectId(project);
 
   return (
     <div
@@ -1020,7 +1024,81 @@ export function ProjectHeader({
             ) : null}
           </div>
           <div className="project-util-wrap">
-            <ul className="project-util"></ul>
+            <ul className="project-util">
+              {canWatchProject ? (
+                <li>
+                  <div className="btn-group dropdown watch-btn">
+                    <a
+                      className={`btn watcher-count no-border ${isWatchingProject ? "watch-on" : ""}`}
+                      data-toggle="tooltip"
+                      title={t("project.watcher.number")}
+                      href={prefixBasePath(basePath, `/${ownerName}/${projectName}/watchers`)}
+                    >
+                      {watchingCount}
+                    </a>
+                    <div className="dropdown-menu flat right title">
+                      <div className="pop-title">
+                        {t(
+                          isWatchingProject
+                            ? "project.you.are.watching"
+                            : "project.you.are.not.watching",
+                          { args: [projectName] },
+                        )}
+                      </div>
+                      <div className="pop-content">
+                        <p>{t("notification.help")}</p>
+                        <ul className="icons-ul">
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.new")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.new.comment")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.update.issue")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.update.pullrequest")}
+                          </li>
+                        </ul>
+                      </div>
+                      <div className="pop-content btn-wrap">
+                        <a
+                          className="ybtn"
+                          href={prefixBasePath(
+                            basePath,
+                            `/user/editform/notifications#${projectIdValueForLinks}`,
+                          )}
+                        >
+                          <i className="yobicon-alert2"></i> {t("userinfo.changeNotifications")}
+                        </a>
+                        <a
+                          className="ybtn ybtn-watching watchBtn"
+                          href={prefixBasePath(
+                            basePath,
+                            `/${ownerName}/${projectName}/${isWatchingProject ? "unwatch" : "watch"}`,
+                          )}
+                        >
+                          <i className={isWatchingProject ? "yobicon-eye-off" : "yobicon-eye"}></i>{" "}
+                          {t(isWatchingProject ? "project.unwatch" : "project.watch")}
+                        </a>
+                      </div>
+                    </div>
+                    <button
+                      className="btn nofocus no-border down-arrow"
+                      type="button"
+                      data-toggle="dropdown"
+                    >
+                      {t(isWatchingProject ? "project.unwatch" : "project.watch")}
+                    </button>
+                  </div>
+                </li>
+              ) : null}
+            </ul>
           </div>
         </div>
       </div>
@@ -1190,6 +1268,25 @@ function projectLogoUrl(project: ProjectContainer) {
 function projectFavorited(project: ProjectContainer) {
   return (
     booleanField(recordField(project).isFavorite) || booleanField(recordField(project).isFavorited)
+  );
+}
+
+function projectCanWatch(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.viewerCanWatch) || booleanField(record.canWatch);
+}
+
+function projectIsWatching(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.isWatching) || booleanField(record.viewerIsWatching);
+}
+
+function projectWatchingCount(project: ProjectContainer) {
+  const record = recordField(project);
+  return (
+    numberField(record.watchingCount) ||
+    numberField(record.watchCount) ||
+    numberField(record.watcherCount)
   );
 }
 

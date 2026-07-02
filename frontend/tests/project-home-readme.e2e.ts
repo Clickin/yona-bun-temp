@@ -131,11 +131,34 @@ test("project home clone URL copy button writes URL and shows legacy toast", asy
   await expect(page.locator("#yobiToasts .toast .msg")).toHaveText("URL is copied");
 });
 
+test("project home header renders legacy watch utility for watchable projects", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    project: {
+      isWatching: false,
+      viewerCanWatch: true,
+      watchingCount: 5,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample`);
+
+  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">5</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><a class="ybtn ybtn-watching watchBtn" href="${basePath}/admin/sample/watch"><i class="yobicon-eye"></i> Watch</a></div></div><button class="btn nofocus no-border down-arrow" type="button" data-toggle="dropdown">Watch</button></div></li></ul>`,
+    ),
+  );
+});
+
 async function mockProjectHome(
   page: Page,
   overrides: Partial<{
     leaveRequests: { hasCsrfToken: boolean; method: string }[];
     overviewRequests: { hasCsrfToken: boolean; method: string; overview: string }[];
+    project: Record<string, unknown>;
     readmeFile: unknown;
   }> = {},
 ) {
@@ -248,6 +271,7 @@ async function mockProjectHome(
         viewerCanCreateCommitResource: true,
         viewerCanLeave: true,
         viewerCanUpdate: true,
+        ...overrides.project,
       }),
     });
   });
@@ -264,6 +288,42 @@ async function selectedInputValue(page: Page, selector: string) {
 
 async function copiedText(page: Page) {
   return page.evaluate(() => (window as unknown as { __copiedText?: string }).__copiedText ?? "");
+}
+
+async function canonicalizeLocator(page: Page, selector: string) {
+  return page.locator(selector).evaluate((root) => {
+    return visit(root);
+
+    function visit(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return normalizeText(node.textContent ?? "");
+      }
+      if (!(node instanceof Element)) {
+        return "";
+      }
+      const attrs = Array.from(node.attributes)
+        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .join(" ");
+      const open = attrs
+        ? `<${node.tagName.toLowerCase()} ${attrs}>`
+        : `<${node.tagName.toLowerCase()}>`;
+      return `${open}${Array.from(node.childNodes)
+        .map((child) => visit(child))
+        .join("")}</${node.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeText(text: string) {
+      return text.replace(/\s+/g, " ").trim();
+    }
+
+    function normalizeAttr(attr: Attr) {
+      return attr.name === "style"
+        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        : attr.value;
+    }
+  });
 }
 
 async function canonicalizeScreenRoots(page: Page) {
