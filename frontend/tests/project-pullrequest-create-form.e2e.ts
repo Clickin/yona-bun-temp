@@ -47,6 +47,27 @@ test("project pull request create form matches legacy git/create.scala.html core
       ),
     ),
   );
+  expect(await createFormMetrics(page)).toEqual({
+    actionDisplay: "block",
+    actionMarginTop: "20px",
+    actionTextAlign: "center",
+    arrowColor: "rgb(126, 126, 126)",
+    arrowFontSize: "32px",
+    arrowLeft: 614,
+    arrowMarginLeft: "-16px",
+    arrowPosition: "absolute",
+    arrowTop: "20px",
+    branchWrapDisplay: "block",
+    branchWrapMarginBottom: "20px",
+    branchWrapMinHeight: "55px",
+    branchWrapPosition: "relative",
+    contentWidth: 1260,
+    fieldTitleDisplay: "block",
+    fieldTitleFontWeight: "700",
+    mergeTableWidth: 1260,
+    mergeWrapWidth: 1260,
+    titleWidth: 1222,
+  });
 
   await page.fill("#title", "Improve UI");
   await page.fill("#editor-body-body", "Body text");
@@ -67,6 +88,62 @@ test("project pull request create form matches legacy git/create.scala.html core
     ]);
   await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequests`);
 });
+
+async function createFormMetrics(page: Page) {
+  return page.locator(".content-wrap.frm-wrap").evaluate((content) => {
+    const branchWrap = content.querySelector<HTMLElement>(".pull-request-wrap");
+    const arrow = content.querySelector<HTMLElement>(".pull-request-wrap .arrow");
+    const fieldTitle = content.querySelector<HTMLElement>(".pull-request-wrap .field-title");
+    const title = content.querySelector<HTMLElement>("input#title.text");
+    const actions = content.querySelector<HTMLElement>(".actions");
+    const mergeWrap = content.querySelector<HTMLElement>("#mergeResult.code-browser-wrap");
+    const mergeTable = content.querySelector<HTMLElement>("#mergeResult .code-table.commits");
+    const missing = Object.entries({
+      actions,
+      arrow,
+      branchWrap,
+      fieldTitle,
+      mergeTable,
+      mergeWrap,
+      title,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected pull request create metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const actionStyle = window.getComputedStyle(actions);
+    const arrowStyle = window.getComputedStyle(arrow);
+    const branchWrapStyle = window.getComputedStyle(branchWrap);
+    const fieldTitleStyle = window.getComputedStyle(fieldTitle);
+    return {
+      actionDisplay: actionStyle.display,
+      actionMarginTop: actionStyle.marginTop,
+      actionTextAlign: actionStyle.textAlign,
+      arrowColor: arrowStyle.color,
+      arrowFontSize: arrowStyle.fontSize,
+      arrowLeft: Math.round(
+        arrow.getBoundingClientRect().left - branchWrap.getBoundingClientRect().left,
+      ),
+      arrowMarginLeft: arrowStyle.marginLeft,
+      arrowPosition: arrowStyle.position,
+      arrowTop: arrowStyle.top,
+      branchWrapDisplay: branchWrapStyle.display,
+      branchWrapMarginBottom: branchWrapStyle.marginBottom,
+      branchWrapMinHeight: branchWrapStyle.minHeight,
+      branchWrapPosition: branchWrapStyle.position,
+      contentWidth: Math.round(content.getBoundingClientRect().width),
+      fieldTitleDisplay: fieldTitleStyle.display,
+      fieldTitleFontWeight: fieldTitleStyle.fontWeight,
+      mergeTableWidth: Math.round(mergeTable.getBoundingClientRect().width),
+      mergeWrapWidth: Math.round(mergeWrap.getBoundingClientRect().width),
+      titleWidth: Math.round(title.getBoundingClientRect().width),
+    };
+  });
+}
 
 async function mockProjectPullRequestCreateForm(page: Page, postRequests: unknown[]) {
   await page.route("**/api/v1/session", async (route) => {
