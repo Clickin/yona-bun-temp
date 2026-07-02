@@ -267,6 +267,7 @@ impl AppRepositoryImpl<'_> {
                 assignee_label,
                 comment_count: row.num_of_comments.unwrap_or_default().max(0) as u32,
                 created_label: format_workspace_date_label(row.created_date),
+                id: row.id,
                 is_draft,
                 issue_number: row.number.unwrap_or_default(),
                 labels: self.list_issue_labels(row.id).await?,

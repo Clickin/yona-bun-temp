@@ -228,6 +228,7 @@ fn workspace_issue_child_item_from_record(
         assignee_label: record.assignee_label.clone(),
         comment_count: record.comment_count,
         created_label: record.created_label.clone(),
+        id: record.id,
         is_draft: record.is_draft,
         issue_number: record.issue_number,
         labels: record

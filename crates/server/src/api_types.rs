@@ -783,6 +783,8 @@ pub struct WorkspaceIssueChildItem {
     #[serde(default)]
     pub created_label: String,
     #[serde(default)]
+    pub id: i64,
+    #[serde(default)]
     pub is_draft: bool,
     #[serde(default)]
     pub issue_number: i64,

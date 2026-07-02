@@ -95,6 +95,18 @@ Mode: read-only audit, no files edited by the explorer
 - Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` now applies the same visible-condition gate from `partial_list_wrap.scala.html` (`pageNum == 1`, open state, no active filters) before rendering draft rows.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the RED-to-GREEN `/admin/sample/issues` whole-screen DOM comparison proving draft-before-normal ordering, row id/data hooks, and the `#Draft` marker.
 
+## 2026-07-02 Project Issue Child Selected Row Follow-Up
+
+- Restored the `issue/partial_view_child.scala.html` `selected-child` branch in
+  the flat project issue list child-row state.
+- Scope: `crates/persistence` now preserves child issue ids in
+  `IssueChildRecord`, `crates/server` exposes that id on issue/workspace child
+  REST projections, and `frontend/src/routes/$ownerName/$projectName/issues.tsx`
+  compares it with the parent row id before rendering `selected-child`.
+- Verification: `frontend/tests/project-issues-empty.e2e.ts` includes the
+  `/admin/sample/issues?filter=children` whole-screen DOM comparison and asserts
+  the selected child row class.
+
 ## 2026-06-27 Issue Detail Layout Follow-Up
 
 - Current project issue detail shell lives in

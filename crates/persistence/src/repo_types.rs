@@ -131,6 +131,7 @@ pub struct IssueChildRecord {
     pub assignee_label: String,
     pub comment_count: u32,
     pub created_label: String,
+    pub id: i64,
     pub is_draft: bool,
     pub issue_number: i64,
     pub labels: Vec<IssueLabelRecord>,

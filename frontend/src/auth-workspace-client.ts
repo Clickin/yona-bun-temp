@@ -239,6 +239,7 @@ export type RestIssueListItem = ListProjectIssuesResponse["items"][number] & {
     assigneeLabel: string;
     commentCount?: number;
     createdLabel: string;
+    id?: bigint | number;
     isDraft?: boolean;
     issueNumber: bigint | number;
     labels: Array<{

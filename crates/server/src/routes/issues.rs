@@ -705,6 +705,7 @@ struct RestIssueChildIssue {
     assignee_label: String,
     comment_count: u32,
     created_label: String,
+    id: i64,
     is_draft: bool,
     issue_number: i64,
     labels: Vec<IssueLabel>,
@@ -3966,6 +3967,7 @@ fn rest_issue_child_issue_from_record(
         assignee_label: record.assignee_label.clone(),
         comment_count: record.comment_count,
         created_label: record.created_label.clone(),
+        id: record.id,
         is_draft: record.is_draft,
         issue_number: record.issue_number,
         labels: record

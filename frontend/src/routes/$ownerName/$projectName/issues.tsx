@@ -1227,6 +1227,7 @@ function ProjectIssueItem({
                 basePath={basePath}
                 issues={issue.childIssues ?? []}
                 ownerName={ownerName}
+                parentIssueId={issueId}
                 projectName={projectName}
               />
             </div>
@@ -1282,11 +1283,13 @@ function IssueChildRows({
   basePath,
   issues,
   ownerName,
+  parentIssueId,
   projectName,
 }: {
   basePath: string;
   issues: RestIssueChildItem[];
   ownerName: string;
+  parentIssueId: string;
   projectName: string;
 }) {
   const openIssues = issues.filter((issue) => issue.state !== "closed");
@@ -1301,6 +1304,7 @@ function IssueChildRows({
           issue={issue}
           key={`${issue.state}-${issue.issueNumber}`}
           ownerName={ownerName}
+          parentIssueId={parentIssueId}
           projectName={projectName}
         />
       ))}
@@ -1312,20 +1316,27 @@ function IssueChildRow({
   basePath,
   issue,
   ownerName,
+  parentIssueId,
   projectName,
 }: {
   basePath: string;
   issue: RestIssueChildItem;
   ownerName: string;
+  parentIssueId: string;
   projectName: string;
 }) {
   const issueNumber = stringField(issue.issueNumber, "");
+  const issueId = stringField(issue.id, "");
   const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
   const isClosed = issue.state === "closed";
   const labels = issue.labels.slice().sort(compareIssueLabels);
+  const childClassName =
+    issueId && issueId === parentIssueId
+      ? "issue-item selected-child child-issue"
+      : "issue-item  child-issue";
 
   return (
-    <div className="issue-item  child-issue">
+    <div className={childClassName}>
       <span className={`state-label ${isClosed ? "closed" : "open"}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
       </span>

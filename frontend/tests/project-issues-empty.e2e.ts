@@ -304,7 +304,7 @@ const EXPECTED_PROJECT_ISSUES_WEIGHTED_CLOSED = EXPECTED_PROJECT_ISSUES_EMPTY.re
     `${WEIGHTED_SPAN10}</div></div></div></div>\n<footer`,
   );
 
-const CHILD_ISSUES = `<div class="child-issues"><div class="issue-item  child-issue"><span class="state-label open"></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/13"><span class="item-name"><span class="subtask-number">#13</span><span>Open child issue</span><span> - Dev Member</span></span></a><span class="font12 no-border-at-child"></span><a href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label active twoColumeModeTarget" data-category-id="3" data-label-id="8" style="${BUG_CHILD_LABEL_STYLE}">bug</a><span class="child-issue-date" title="Jul 3, 2026">Jul 3, 2026</span></div><div class="issue-item  child-issue"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/14"><span class="item-name"><span class="subtask-number">#14</span><span>Closed child issue</span><span></span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="Jul 4, 2026">Jul 4, 2026</span></div></div>`;
+const CHILD_ISSUES = `<div class="child-issues"><div class="issue-item selected-child child-issue"><span class="state-label open"></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/13"><span class="item-name"><span class="subtask-number">#13</span><span>Open child issue</span><span> - Dev Member</span></span></a><span class="font12 no-border-at-child"></span><a href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label active twoColumeModeTarget" data-category-id="3" data-label-id="8" style="${BUG_CHILD_LABEL_STYLE}">bug</a><span class="child-issue-date" title="Jul 3, 2026">Jul 3, 2026</span></div><div class="issue-item  child-issue"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/14"><span class="item-name"><span class="subtask-number">#14</span><span>Closed child issue</span><span></span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="Jul 4, 2026">Jul 4, 2026</span></div></div>`;
 const CHILDREN_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<div class="child-issue-list hide"></div>',
   `<div class="child-issue-list hide">${CHILD_ISSUES}</div>`,
@@ -1080,6 +1080,7 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
     "#14Closed child issue",
   );
   const firstChild = page.locator(".child-issue-list .issue-item.child-issue").first();
+  await expect(firstChild).toHaveClass("issue-item selected-child child-issue");
   await expect(firstChild.locator(".state-label.open")).toHaveCount(1);
   await expect(firstChild.locator("a.twoColumeModeTarget").first()).toHaveAttribute(
     "href",
@@ -1727,6 +1728,7 @@ async function mockProjectIssues(
                                   {
                                     assigneeLabel: "Dev Member",
                                     createdLabel: "Jul 3, 2026",
+                                    id: 42,
                                     issueNumber: 13,
                                     labels: [
                                       {
@@ -1744,6 +1746,7 @@ async function mockProjectIssues(
                                   {
                                     assigneeLabel: "",
                                     createdLabel: "Jul 4, 2026",
+                                    id: 43,
                                     issueNumber: 14,
                                     labels: [],
                                     state: "closed",
