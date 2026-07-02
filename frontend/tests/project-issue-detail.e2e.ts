@@ -189,6 +189,40 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
       `#comment-form + script[src="${basePath}/assets/javascripts/common/yobi.CommentForm.js"]`,
     ),
   ).toHaveAttribute("type", "text/javascript");
+
+  const issueViewBootstrap = await inlineScriptContaining(page, '$yobi.loadModule("issue.View"');
+  expect(issueViewBootstrap).toContain('$yobi.loadModule("issue.View"');
+  expect(issueViewBootstrap).toContain('"issueId"  : "42"');
+  expect(issueViewBootstrap).toContain('"nextState": "closed"');
+  expect(issueViewBootstrap).toContain(
+    `"watch"     : "${basePath}/watch?resource.type=issue_post&resource.id=42"`,
+  );
+  expect(issueViewBootstrap).toContain(
+    `"unwatch"   : "${basePath}/unwatch?resource.type=issue_post&resource.id=42"`,
+  );
+  expect(issueViewBootstrap).toContain(
+    `"timeline"  : "${basePath}/admin/sample/issue/11/timeline"`,
+  );
+  expect(issueViewBootstrap).toContain(
+    `"nextState" : "${basePath}/admin/sample/issue/11/nextstate"`,
+  );
+  expect(issueViewBootstrap).toContain(`"massUpdate": "${basePath}/admin/sample/issues"`);
+  expect(issueViewBootstrap).toContain(`"L": "${basePath}/admin/sample/issues?state=open"`);
+  expect(issueViewBootstrap).toContain(`,"N": "${basePath}/admin/sample/issueform"`);
+  expect(issueViewBootstrap).toContain(`,"E": "${basePath}/admin/sample/issue/11/editform"`);
+  expect(issueViewBootstrap).toContain("\"target\": 'textarea[id^=editor-], .editorSeries'");
+  expect(issueViewBootstrap).toContain(
+    `"url"   : "${basePath}/admin/sample/mentionList?number=11&resourceType=issue_post"`,
+  );
+  expect(issueViewBootstrap).toContain(`$(".comment-body:contains('Site Admin')`);
+  expect(issueViewBootstrap).toContain(`$(".user-link:contains('Site Admin')`);
+}
+
+async function inlineScriptContaining(page: Page, text: string) {
+  return page.locator("script:not([src])").evaluateAll((scripts, needle) => {
+    const found = scripts.find((script) => (script.textContent ?? "").includes(String(needle)));
+    return found?.textContent ?? "";
+  }, text);
 }
 
 test("project issue detail not found renders legacy project error shell", async ({ page }) => {

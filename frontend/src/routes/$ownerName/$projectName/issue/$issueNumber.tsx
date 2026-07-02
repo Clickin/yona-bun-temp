@@ -141,6 +141,12 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         runtimeConfig={runtimeConfig}
       />
       <CommentDeleteModalScripts basePath={runtimeConfig.basePath} />
+      <IssueViewBootstrapScript
+        basePath={runtimeConfig.basePath}
+        currentUserName={stringField(sessionQuery.data.userLabel, sessionQuery.data.loginId)}
+        issue={issueQuery.data}
+        project={projectQuery.data}
+      />
     </>
   );
 }
@@ -832,6 +838,101 @@ function CommentDeleteModalScripts({ basePath }: { basePath: string }) {
         }}
       ></script>
     </>
+  );
+}
+
+function IssueViewBootstrapScript({
+  basePath,
+  currentUserName,
+  issue,
+  project,
+}: {
+  basePath: string;
+  currentUserName: string;
+  issue: RestIssueDetailResponse;
+  project: ProjectContainer;
+}) {
+  const ownerName = stringField(issue.ownerName);
+  const projectName = stringField(issue.projectName);
+  const issueNumber = stringField(issue.issueNumber);
+  const issueId = stringField(issue.issueId, issueNumber);
+  const issueState = stringField(issue.state, "open").toLowerCase();
+  const nextState = issueState === "open" ? "closed" : "open";
+  const canUpdate = booleanField(issue.viewerCanUpdate);
+  const showIssue = projectMenuEnabled(project, "issue");
+  const keymapEntries = [
+    `"L": ${jsString(prefixBasePath(basePath, `/${ownerName}/${projectName}/issues?state=open`))}`,
+  ];
+
+  if (showIssue) {
+    keymapEntries.push(
+      `,"N": ${jsString(prefixBasePath(basePath, `/${ownerName}/${projectName}/issueform`))}`,
+    );
+  }
+
+  if (canUpdate) {
+    keymapEntries.push(
+      `,"E": ${jsString(
+        prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}/editform`),
+      )}`,
+    );
+  }
+
+  const watchQuery = `resource.type=issue_post&resource.id=${encodeURIComponent(issueId)}`;
+  const script = `
+    $(function(){
+        // yobi.issue.View
+        $yobi.loadModule("issue.View", {
+            "issueId"  : ${jsString(issueId)},
+            "nextState": ${jsString(nextState)},
+            "urls"     : {
+                "watch"     : ${jsString(prefixBasePath(basePath, `/watch?${watchQuery}`))},
+                "unwatch"   : ${jsString(prefixBasePath(basePath, `/unwatch?${watchQuery}`))},
+                "timeline"  : ${jsString(
+                  prefixBasePath(
+                    basePath,
+                    `/${ownerName}/${projectName}/issue/${issueNumber}/timeline`,
+                  ),
+                )},
+                "nextState" : ${jsString(
+                  prefixBasePath(
+                    basePath,
+                    `/${ownerName}/${projectName}/issue/${issueNumber}/nextstate`,
+                  ),
+                )},
+                "massUpdate": ${jsString(prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`))}
+            }
+        });
+
+        // yobi.ShortcutKey
+        yobi.ShortcutKey.setKeymapLink({
+            ${keymapEntries.join("\n            ")}
+        });
+
+        // yobi.Mention
+        yobi.Mention({
+            "target": 'textarea[id^=editor-], .editorSeries',
+            "url"   : ${jsString(
+              prefixBasePath(
+                basePath,
+                `/${ownerName}/${projectName}/mentionList?number=${issueNumber}&resourceType=issue_post`,
+              ),
+            )}
+        });
+
+        // detect comment which contains mention at me
+        $(".comment-body:contains('${escapeJqueryContains(currentUserName)}')").closest(".comment").addClass("mentioned");
+        $(".user-link:contains('${escapeJqueryContains(currentUserName)}')").addClass("me");
+    });
+`;
+
+  return (
+    <script
+      type="text/javascript"
+      dangerouslySetInnerHTML={{
+        __html: script,
+      }}
+    ></script>
   );
 }
 
@@ -2798,6 +2899,14 @@ function stringField(value: unknown, fallback = "") {
     : typeof value === "number" || typeof value === "bigint"
       ? String(value)
       : fallback;
+}
+
+function jsString(value: string) {
+  return JSON.stringify(value);
+}
+
+function escapeJqueryContains(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
 function projectMenuEnabled(project: ProjectContainer, key: string) {
