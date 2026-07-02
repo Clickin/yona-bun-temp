@@ -1,12 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import {
-  useEffect,
-  useRef,
-  type HTMLAttributes,
-  type LiHTMLAttributes,
-  type MouseEvent,
-} from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useEffect, useState, type HTMLAttributes, type LiHTMLAttributes } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
   projectPullRequestListQueryOptions,
@@ -15,6 +9,7 @@ import {
   type PullRequestPushedBranch,
   type PullRequestListResponse,
 } from "../../../api/pull-requests";
+import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectContainer } from "../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
@@ -148,6 +143,52 @@ function ProjectPullRequestsBody({
   const isForked = booleanField(project.isForkedFromOrigin);
   const searchAction =
     requestType === "closed" ? closedAction : requestType === "sent" ? sentAction : openAction;
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [filterValue, setFilterValue] = useState(search.filter);
+  const [contributorIdValue, setContributorIdValue] = useState(
+    search.contributorId ? String(search.contributorId) : "",
+  );
+
+  useEffect(() => {
+    setFilterValue(search.filter);
+    setContributorIdValue(search.contributorId ? String(search.contributorId) : "");
+  }, [search.contributorId, search.filter]);
+
+  const searchFor = (filter = filterValue, contributorId = contributorIdValue) =>
+    pullRequestSearchObject({
+      contributorId: requestType === "sent" ? "" : contributorId,
+      filter,
+    });
+  const searchNavigationMutation = useMutation({
+    mutationFn: async ({
+      action,
+      contributorId,
+      filter,
+    }: {
+      action: string;
+      contributorId: number | string;
+      filter: string;
+    }) =>
+      pullRequestSearchHref({
+        action,
+        contributorId: requestType === "sent" ? "" : contributorId,
+        filter,
+      }),
+    onSuccess(href) {
+      void queryClient.invalidateQueries({
+        queryKey: [...apiQueryKeys.project.base(ownerName, projectName), "pull-requests"],
+      });
+      router.navigate({ to: stripBasePath(runtimeConfig.basePath, href) });
+    },
+  });
+  const submitPullRequestSearch = (action = searchAction) => {
+    searchNavigationMutation.mutate({
+      action,
+      contributorId: contributorIdValue,
+      filter: filterValue,
+    });
+  };
 
   return (
     <div className="page-wrap-outer">
@@ -161,16 +202,18 @@ function ProjectPullRequestsBody({
               method="get"
               onSubmit={(event) => {
                 event.preventDefault();
-                submitLegacyPullRequestSearch(event.currentTarget);
+                submitPullRequestSearch(event.currentTarget.action);
               }}
             >
               <div className="search">
                 <div className="search-bar">
                   <input
+                    key={`filter:${search.filter}`}
                     name="filter"
                     className="textbox full"
                     type="text"
                     defaultValue={search.filter}
+                    onChange={(event) => setFilterValue(event.currentTarget.value)}
                   />
                   <button type="submit" className="search-btn">
                     <i className="yobicon-search"></i>
@@ -183,13 +226,20 @@ function ProjectPullRequestsBody({
                     <dt>{t("pullRequest.sender")}</dt>
                     <dd>
                       <select
+                        key={`contributor:${search.contributorId || ""}`}
                         id="contributors"
                         name="contributorId"
                         data-format="user"
                         defaultValue={search.contributorId ? String(search.contributorId) : ""}
-                        onChange={(event) =>
-                          submitLegacyPullRequestSearch(event.currentTarget.form)
-                        }
+                        onChange={(event) => {
+                          const nextContributorId = event.currentTarget.value;
+                          setContributorIdValue(nextContributorId);
+                          searchNavigationMutation.mutate({
+                            action: searchAction,
+                            contributorId: nextContributorId,
+                            filter: filterValue,
+                          });
+                        }}
                       >
                         <option value="">{t("common.order.all")}</option>
                         {pullRequests.contributors.some(
@@ -234,28 +284,37 @@ function ProjectPullRequestsBody({
             </div>
             <ul className="nav nav-tabs nm pullrequeset-tab-menu">
               <li className={requestType === "open" ? "active" : ""}>
-                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                <a href="#" data-url={openAction} data-type="state" onClick={handleStateTabClick}>
+                <Link
+                  to="/$ownerName/$projectName/pullRequests"
+                  params={{ ownerName, projectName }}
+                  search={searchFor()}
+                >
                   {t("pullRequest.state.open")}
                   <span className="num-badge">{pullRequests.openCount}</span>
-                </a>
+                </Link>
               </li>
               <li className={requestType === "closed" ? "active" : ""}>
-                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                <a href="#" data-url={closedAction} data-type="state" onClick={handleStateTabClick}>
+                <Link
+                  to="/$ownerName/$projectName/closedPullRequests"
+                  params={{ ownerName, projectName }}
+                  search={searchFor()}
+                >
                   {t("pullRequest.state.closed")}
                   <span className="num-badge">{pullRequests.closedCount}</span>
-                </a>
+                </Link>
               </li>
               {isForked ? (
                 <li className={requestType === "sent" ? "active" : ""}>
-                  {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                  <a href="#" data-url={sentAction} data-type="state" onClick={handleStateTabClick}>
+                  <Link
+                    to="/$ownerName/$projectName/sentPullRequests"
+                    params={{ ownerName, projectName }}
+                    search={searchFor(filterValue, "")}
+                  >
                     {t("pullRequest.sent")}
                     <span className="num-badge">
                       {pullRequests.acceptedCount} / {pullRequests.sentCount}
                     </span>
-                  </a>
+                  </Link>
                 </li>
               ) : null}
               <li>
@@ -270,8 +329,11 @@ function ProjectPullRequestsBody({
                   defaultBranch={stringField(recordField(project).defaultBranch, "main")}
                   isUsingReviewerCount={booleanField(recordField(project).isUsingReviewerCount)}
                   listAction={searchAction}
+                  ownerName={ownerName}
                   pullRequests={pullRequests}
+                  projectName={projectName}
                   search={search}
+                  titlePrefixSearch={(prefix) => searchFor(prefix)}
                 />
               </div>
             </div>
@@ -280,16 +342,6 @@ function ProjectPullRequestsBody({
       </div>
     </div>
   );
-}
-
-function handleStateTabClick(event: MouseEvent<HTMLAnchorElement>) {
-  event.preventDefault();
-  const form = document.querySelector<HTMLFormElement>("form#search");
-  const action = event.currentTarget.getAttribute("data-url");
-  if (form && action) {
-    form.action = action;
-    submitLegacyPullRequestSearch(form);
-  }
 }
 
 function ProjectRecentlyPushedBranches({
@@ -355,16 +407,22 @@ function ProjectPullRequestRows({
   defaultBranch,
   isUsingReviewerCount,
   listAction,
+  ownerName,
   pullRequests,
+  projectName,
   search,
+  titlePrefixSearch,
 }: {
   basePath: string;
   currentUserLabel: string;
   defaultBranch: string;
   isUsingReviewerCount: boolean;
   listAction: string;
+  ownerName: string;
   pullRequests: PullRequestListResponse;
+  projectName: string;
   search: ProjectPullRequestsSearch;
+  titlePrefixSearch: (prefix: string) => ProjectPullRequestsSearch;
 }) {
   const { t } = useLegacyMessages();
 
@@ -388,7 +446,10 @@ function ProjectPullRequestRows({
           defaultBranch={defaultBranch}
           isUsingReviewerCount={isUsingReviewerCount}
           key={pullRequest.id || pullRequest.pullRequestNumber}
+          ownerName={ownerName}
           pullRequest={pullRequest}
+          projectName={projectName}
+          titlePrefixSearch={titlePrefixSearch}
         />
       ))}
       <ProjectPullRequestPagination
@@ -427,13 +488,19 @@ function ProjectPullRequestRow({
   currentUserLabel,
   defaultBranch,
   isUsingReviewerCount,
+  ownerName,
   pullRequest,
+  projectName,
+  titlePrefixSearch,
 }: {
   basePath: string;
   currentUserLabel: string;
   defaultBranch: string;
   isUsingReviewerCount: boolean;
+  ownerName: string;
   pullRequest: PullRequestListItem;
+  projectName: string;
+  titlePrefixSearch: (prefix: string) => ProjectPullRequestsSearch;
 }) {
   const { t } = useLegacyMessages();
   const projectHref = prefixBasePath(
@@ -469,7 +536,14 @@ function ProjectPullRequestRow({
         <div className="title-wrap">
           <span className="post-id">{pullRequest.pullRequestNumber}</span>
           {titleParts.prefixes.map((prefix) => (
-            <LegacyTitlePrefixAnchor key={prefix}>{prefix}</LegacyTitlePrefixAnchor>
+            <LegacyTitlePrefixLink
+              key={prefix}
+              ownerName={ownerName}
+              projectName={projectName}
+              search={titlePrefixSearch(prefix)}
+            >
+              {prefix}
+            </LegacyTitlePrefixLink>
           ))}
           <a href={pullRequestHref} className={`title ${pullRequest.conflict ? "conflict" : ""}`}>
             {titleParts.title}
@@ -548,44 +622,71 @@ function ProjectPullRequestRow({
   );
 }
 
-function LegacyTitlePrefixAnchor({ children }: { children: string }) {
-  const anchorRef = useRef<HTMLAnchorElement>(null);
-  useEffect(() => {
-    anchorRef.current?.setAttribute("href", "javascript:void(0)");
-  }, []);
+function LegacyTitlePrefixLink({
+  children,
+  ownerName,
+  projectName,
+  search,
+}: {
+  children: string;
+  ownerName: string;
+  projectName: string;
+  search: ProjectPullRequestsSearch;
+}) {
   return (
-    <a
-      ref={anchorRef}
-      href="/"
+    <Link
+      to="/$ownerName/$projectName/pullRequests"
+      params={{ ownerName, projectName }}
+      search={search}
       className="title-prefix"
-      onClick={(event) => {
-        event.preventDefault();
-        const input = document.querySelector<HTMLInputElement>('form#search input[name="filter"]');
-        if (input?.form) {
-          input.value = children;
-          submitLegacyPullRequestSearch(input.form);
-        }
-      }}
     >
       {children}
-    </a>
+    </Link>
   );
 }
 
-function submitLegacyPullRequestSearch(form: HTMLFormElement | null) {
-  if (!form) {
-    return;
-  }
+function pullRequestSearchHref({
+  action,
+  contributorId,
+  filter,
+}: {
+  action: string;
+  contributorId: number | string;
+  filter: string;
+}) {
   const params = new URLSearchParams();
-  const filter = form.elements.namedItem("filter");
-  const contributor = form.elements.namedItem("contributorId");
-  if (filter instanceof HTMLInputElement && filter.value) {
-    params.set("filter", filter.value);
+  const normalizedFilter = filter.trim();
+  const normalizedContributorId = String(contributorId || "").trim();
+  if (normalizedFilter) {
+    params.set("filter", normalizedFilter);
   }
-  if (contributor instanceof HTMLSelectElement && contributor.value) {
-    params.set("contributorId", contributor.value);
+  if (normalizedContributorId) {
+    params.set("contributorId", normalizedContributorId);
   }
-  window.location.href = params.size ? `${form.action}?${params.toString()}` : form.action;
+  return params.size ? `${action}?${params.toString()}` : action;
+}
+
+function pullRequestSearchObject({
+  contributorId,
+  filter,
+}: {
+  contributorId: number | string;
+  filter: string;
+}): ProjectPullRequestsSearch {
+  const normalizedContributorId = Number(contributorId) || 0;
+  const normalizedFilter = filter.trim();
+  return {
+    contributorId: normalizedContributorId,
+    filter: normalizedFilter,
+    pageNum: 1,
+  };
+}
+
+function stripBasePath(basePath: string, href: string) {
+  if (basePath && basePath !== "/" && href.startsWith(basePath)) {
+    return href.slice(basePath.length) || "/";
+  }
+  return href;
 }
 
 function TwoColumnModeCheckbox() {
@@ -623,7 +724,9 @@ function pullRequestPageHref(
   if (search.filter) {
     params.set("filter", search.filter);
   }
-  params.set("pageNum", String(pageNum));
+  if (pageNum > 1) {
+    params.set("pageNum", String(pageNum));
+  }
   return `${listAction}?${params.toString()}`;
 }
 

@@ -159,6 +159,117 @@ test("allows frontend route TSX work that uses React events and TanStack Query m
   assert.equal(result.blocked, false);
 });
 
+test("blocks frontend route TSX work that adds raw anchor tags", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-pullrequests.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [
+        routeFile,
+        '+  return <a href="#" onClick={handleStateTabClick}>Open</a>;\n' +
+          '+  return <a href="javascript:void(0)" className="title-prefix">[API]</a>;\n',
+      ],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /anchor tag work/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /TanStack Router Link/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /TanStack Query useMutation/u);
+});
+
+test("blocks frontend route TSX work that adds direct window navigation", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-pullrequests.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [routeFile, "+  window.location.href = `${form.action}?${params.toString()}`;\n"],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /legacy jQuery\/DOM escape work/u);
+});
+
+test("allows frontend route TSX work that uses Link for internal navigation", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-pullrequests.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [
+        routeFile,
+        '+  return <Link to="/$ownerName/$projectName/pullRequests" params={params} search={search}>Open</Link>;\n',
+      ],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, false);
+});
+
+test("allows frontend route TSX work that uses Link href for external navigation", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-pullrequests.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [routeFile, '+  return <Link href="https://example.com/docs">Docs</Link>;\n'],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, false);
+});
+
+test("blocks frontend route TSX work that adds legacy custom attributes to Link", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-pullrequests.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [
+        routeFile,
+        '+  return <Link to="/$ownerName/$projectName/pullRequests" data-url={openAction} data-type="state">Open</Link>;\n',
+      ],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /noisy Link custom attribute work/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /data-url/u);
+});
+
 test("blocks frontend route TSX work when the focused E2E file is not changed", () => {
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [

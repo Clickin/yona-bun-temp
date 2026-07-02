@@ -16,7 +16,10 @@ const SCALA_HTML_SOURCE_PATTERN =
   /\b(?:yona-original\/app\/views\/)?([A-Za-z0-9_.$/-]+\.scala\.html)\b/gu;
 const LEGACY_VIEW_ROOT = "yona-original/app/views";
 const ADDED_REACT_DOM_ESCAPE_PATTERN =
-  /^\+(?!\+\+).*(?:\$\s*\(|jQuery\s*\(|window\.\$|<script\b|dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document\.(?:querySelector|getElementById|getElementsByClassName|getElementsByTagName)|\.(?:html|append|prepend|before|after)\s*\()/imu;
+  /^\+(?!\+\+).*(?:\$\s*\(|jQuery\s*\(|window\.\$|window\.location|<script\b|dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document\.(?:querySelector|getElementById|getElementsByClassName|getElementsByTagName)|\.(?:html|append|prepend|before|after)\s*\()/imu;
+const ADDED_ANCHOR_TAG_PATTERN = /^\+(?!\+\+).*<a\b/imu;
+const ADDED_LINK_CUSTOM_ATTRIBUTE_PATTERN =
+  /^\+(?!\+\+).*<Link\b(?=[^>]*(?:data-(?:url|type|action|href)|pjax-[\w-]*|data-request-(?:method|uri)|data-toggle=))/imu;
 
 function fileStatus(file, changedFileStatuses) {
   return changedFileStatuses?.get(file) ?? "M";
@@ -105,6 +108,18 @@ function routeFilesWithReactDomEscapes(routePatches) {
     .map(([file]) => file);
 }
 
+function routeFilesWithAddedAnchorTags(routePatches) {
+  return [...routePatches.entries()]
+    .filter(([, patch]) => ADDED_ANCHOR_TAG_PATTERN.test(patch))
+    .map(([file]) => file);
+}
+
+function routeFilesWithLinkCustomAttributes(routePatches) {
+  return [...routePatches.entries()]
+    .filter(([, patch]) => ADDED_LINK_CUSTOM_ATTRIBUTE_PATTERN.test(patch))
+    .map(([file]) => file);
+}
+
 export function evaluateScalaHtmlGoalGuard({
   changedFiles,
   changedFileStatuses = new Map(),
@@ -142,6 +157,32 @@ export function evaluateScalaHtmlGoalGuard({
         frontendEvidenceFiles,
         frontendImplementationFiles,
         message: `Scala HTML goal guard blocked legacy jQuery/DOM escape work. Route TSX must not port legacy jQuery, inline scripts, or direct DOM mutation; implement behavior with React state/events and TanStack Query useMutation/cache updates instead. Offending route files: ${routeFilesWithDomEscapes.join(", ")}.`,
+      };
+    }
+  }
+
+  if (implementationTouchesRuntime && !allowReactDomEscape) {
+    const addedAnchorTagFiles = routeFilesWithAddedAnchorTags(routePatches);
+
+    if (addedAnchorTagFiles.length > 0) {
+      return {
+        blocked: true,
+        frontendEvidenceFiles,
+        frontendImplementationFiles,
+        message: `Scala HTML goal guard blocked anchor tag work. Route TSX must not add raw <a> tags; use TanStack Router Link for internal and external navigation so href rendering stays declarative. Form submits must use React form state plus TanStack Query useMutation/cache updates and perform redirects from mutation success side effects. Offending route files: ${addedAnchorTagFiles.join(", ")}.`,
+      };
+    }
+  }
+
+  if (implementationTouchesRuntime && !allowReactDomEscape) {
+    const linkCustomAttributeFiles = routeFilesWithLinkCustomAttributes(routePatches);
+
+    if (linkCustomAttributeFiles.length > 0) {
+      return {
+        blocked: true,
+        frontendEvidenceFiles,
+        frontendImplementationFiles,
+        message: `Scala HTML goal guard blocked noisy Link custom attribute work. Modernized TanStack Router Link usage must not carry legacy JS-only custom attributes such as data-url, data-type, data-action, pjax-*, data-request-*, or data-toggle. Keep Link props declarative and let TanStack Router render its default href/active attributes. Offending route files: ${linkCustomAttributeFiles.join(", ")}.`,
       };
     }
   }

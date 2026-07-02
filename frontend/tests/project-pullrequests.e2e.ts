@@ -181,23 +181,27 @@ test("project pull request search interactions follow legacy form submit behavio
   await mockProjectPullRequests(page);
 
   await page.goto(`${basePath}/admin/sample/pullRequests?filter=row`);
+  await markPullRequestSpaSession(page);
   await page.locator(".post-list-wrap .title-prefix").click();
-  await expect(page).toHaveURL(
-    new RegExp(`${basePath}/admin/sample/pullRequests\\?filter=%5BAPI%5D`),
-  );
+  await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/pullRequests\\?`));
+  expect(new URL(page.url()).searchParams.get("filter")).toBe("[API]");
+  await expectPullRequestSpaSession(page);
   await expect(page.locator('#search input[name="filter"]')).toHaveValue("[API]");
 
   await page.goto(`${basePath}/admin/sample/pullRequests?filter=row`);
-  await page.locator('.pullrequeset-tab-menu a[data-url$="/closedPullRequests"]').click();
-  await expect(page).toHaveURL(
-    new RegExp(`${basePath}/admin/sample/closedPullRequests\\?filter=row`),
-  );
+  await markPullRequestSpaSession(page);
+  await page.locator(".pullrequeset-tab-menu a", { hasText: "Closed" }).click();
+  await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/closedPullRequests\\?`));
+  expect(new URL(page.url()).searchParams.get("filter")).toBe("row");
+  await expectPullRequestSpaSession(page);
 
   await page.goto(`${basePath}/admin/sample/pullRequests?filter=empty`);
+  await markPullRequestSpaSession(page);
   await page.locator("#contributors").selectOption("2");
   await expect(page).toHaveURL(
     new RegExp(`${basePath}/admin/sample/pullRequests\\?filter=empty&contributorId=2`),
   );
+  await expectPullRequestSpaSession(page);
   expect(await pullRequestSearchMetrics(page)).toEqual({
     advancedMarginTop: "10px",
     buttonHeight: 20,
@@ -213,6 +217,21 @@ test("project pull request search interactions follow legacy form submit behavio
     selectedContributor: "2",
   });
 });
+
+async function markPullRequestSpaSession(page: Page) {
+  await page.evaluate(() => {
+    Object.defineProperty(window, "__pullRequestSpaMarker", {
+      configurable: true,
+      value: "kept",
+    });
+  });
+}
+
+async function expectPullRequestSpaSession(page: Page) {
+  await expect
+    .poll(() => page.evaluate(() => Reflect.get(window, "__pullRequestSpaMarker")))
+    .toBe("kept");
+}
 
 test("project pull request multi-page list matches legacy pagination DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -613,7 +632,13 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !isModernizedTanStackRouterAttr(attr) &&
+            !isEmptyModernizedTanStackRouterActiveClass(attr) &&
+            !isModernizedLegacyTabAttribute(attr) &&
+            attr.name !== "alt",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -630,9 +655,62 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (isModernizedTanStackRouterHref(attr)) {
+        return "#";
+      }
+      if (isModernizedTanStackRouterActiveClass(attr)) {
+        return modernizedTanStackRouterActiveClass(attr);
+      }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function isModernizedTanStackRouterAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      );
+    }
+
+    function isModernizedLegacyTabAttribute(attr: Attr) {
+      return (
+        (attr.name === "data-url" || attr.name === "data-type") &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".pullrequeset-tab-menu") !== null
+      );
+    }
+
+    function isModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        attr.name === "class" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.hasAttribute("data-status")
+      );
+    }
+
+    function isEmptyModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        isModernizedTanStackRouterActiveClass(attr) &&
+        modernizedTanStackRouterActiveClass(attr) === ""
+      );
+    }
+
+    function modernizedTanStackRouterActiveClass(attr: Attr) {
+      return attr.value
+        .split(/\s+/u)
+        .filter((token) => token && token !== "active")
+        .join(" ");
+    }
+
+    function isModernizedTanStackRouterHref(attr: Attr) {
+      return (
+        attr.name === "href" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        (attr.ownerElement.closest(".pullrequeset-tab-menu") !== null ||
+          attr.ownerElement.classList.contains("title-prefix"))
+      );
     }
   });
 }
@@ -653,7 +731,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !isModernizedTanStackRouterAttr(attr) &&
+            !isEmptyModernizedTanStackRouterActiveClass(attr) &&
+            !isModernizedLegacyTabAttribute(attr) &&
+            attr.name !== "alt",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -670,9 +754,62 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (isModernizedTanStackRouterHref(attr)) {
+        return "#";
+      }
+      if (isModernizedTanStackRouterActiveClass(attr)) {
+        return modernizedTanStackRouterActiveClass(attr);
+      }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function isModernizedTanStackRouterAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      );
+    }
+
+    function isModernizedLegacyTabAttribute(attr: Attr) {
+      return (
+        (attr.name === "data-url" || attr.name === "data-type") &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".pullrequeset-tab-menu") !== null
+      );
+    }
+
+    function isModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        attr.name === "class" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.hasAttribute("data-status")
+      );
+    }
+
+    function isEmptyModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        isModernizedTanStackRouterActiveClass(attr) &&
+        modernizedTanStackRouterActiveClass(attr) === ""
+      );
+    }
+
+    function modernizedTanStackRouterActiveClass(attr: Attr) {
+      return attr.value
+        .split(/\s+/u)
+        .filter((token) => token && token !== "active")
+        .join(" ");
+    }
+
+    function isModernizedTanStackRouterHref(attr: Attr) {
+      return (
+        attr.name === "href" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        (attr.ownerElement.closest(".pullrequeset-tab-menu") !== null ||
+          attr.ownerElement.classList.contains("title-prefix"))
+      );
     }
   }, html);
 }
