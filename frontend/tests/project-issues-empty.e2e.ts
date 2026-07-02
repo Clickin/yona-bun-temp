@@ -1475,6 +1475,27 @@ test("project issue two-column mode toggle follows legacy yona.twoColumnMode loc
     .toBe("false");
 });
 
+test("project issue two-column title click highlights row and changes history like legacy pageslide branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  await page.locator("#two-column-mode").click();
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-two-column-title";
+  });
+
+  await page.locator("#issue-item-42 .title-wrap > a.title").last().click();
+
+  await expect(page.locator("#issue-item-42")).toHaveClass(/highlightBg/);
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/admin/sample/issue/11`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("issue-two-column-title");
+});
+
 async function issueListShellMetrics(page: Page) {
   return page.locator(".issue-list-wrap").evaluate((wrap) => {
     const leftMenu = wrap.querySelector(".left-menu") as HTMLElement;

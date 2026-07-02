@@ -497,6 +497,31 @@ function ProjectIssuesBody({
       return;
     }
 
+    const twoColumnTarget = target.closest<HTMLAnchorElement>("a.title, a.twoColumeModeTarget");
+    if (useTwoColumnMode && twoColumnTarget) {
+      event.preventDefault();
+      issueListRef.current
+        ?.querySelectorAll(".post-item.highlightBg")
+        .forEach((row) => row.classList.remove("highlightBg"));
+      target.closest(".post-item")?.classList.add("highlightBg");
+      if (twoColumnTarget.href) {
+        if (!history.state) {
+          history.pushState(
+            { startPath: location.pathname },
+            twoColumnTarget.textContent ?? "",
+            twoColumnTarget.href,
+          );
+        } else {
+          history.replaceState(
+            history.state,
+            twoColumnTarget.textContent ?? "",
+            twoColumnTarget.href,
+          );
+        }
+      }
+      return;
+    }
+
     if (target.closest(".title-wrap > .title")) {
       return;
     }
