@@ -66,9 +66,11 @@
 - 작업 전 이 문서의 변환 원칙, 관련 `SPEC.md` 섹션, `docs/agents/*` mirror를 먼저 확인한다.
 - 구현 전 대응 legacy route/test/model과 UI 기준을 `yona-original/`에서 식별한다.
 - `/goal` 또는 사용자가 `docs/plans/2026-06-30-scala-html-goal-workflow.md` 기반 frontend 작업을 지시한 turn에서는 **기존 React DOM을 기준으로 보정하지 않는다.** 반드시 대상 화면의 `yona-original/app/views/**/*.scala.html` 및 포함 partial/LESS/JS/messages를 먼저 식별하고, 그 legacy 구조를 TSX로 구현한다.
+- Scala HTML/legacy JS는 **출력 DOM/UX의 source of truth**이지 내부 구현 방식의 source of truth가 아니다. jQuery, inline script, `document.*`, `addEventListener`, `classList`, `style.display`, HTML fragment fetch/insert(htmx식 동작), `dangerouslySetInnerHTML` 기반 동적 조립, legacy template script tag는 React 구현으로 직역하지 않는다. 동일 DOM/UX가 렌더링되도록 React state/events/components와 TanStack Router/Query navigation, mutation, cache update로 번역 구현한다.
+- `/goal` 기반 frontend route TSX/E2E 구현은 main agent가 직접 개발하지 않고 subagent를 spawn해서 맡긴다. main agent의 역할은 대상 선정, legacy 근거와 지시문 전달, 산출물 검수, 필요한 최소 통합/검증/커밋이다. 사용자가 명시적으로 main agent 직접 구현을 지시하지 않는 한, main agent는 route TSX/E2E 구현 패치를 먼저 작성하지 않는다.
 - 같은 goal turn에서 E2E metric, CSS, provenance만 추가하고 TSX 화면 구현을 바꾸지 않는 작업은 금지한다. 단, 이미 해당 화면이 이번 turn에서 legacy Scala HTML 기준으로 재구축된 뒤 검증을 보강하는 경우는 허용한다.
 - 기존 TSX가 legacy Scala HTML과 다르면 기존 TSX를 보존하려고 부분 패치하지 말고, 화면 단위로 legacy template skeleton을 다시 만든다. 잘못 만든 구현은 삭제하거나 대체한다.
-- subagent가 frontend 화면을 구현할 때도 동일하다. subagent 산출물이 legacy Scala HTML source-of-truth를 먼저 대조하지 않았거나 기존 React DOM에 맞춘 보정이면 통합하지 말고 폐기한다.
+- subagent가 frontend 화면을 구현할 때도 동일하다. subagent 지시문에는 반드시 "legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다"를 포함한다. subagent 산출물이 legacy Scala HTML source-of-truth를 먼저 대조하지 않았거나, 기존 React DOM에 맞춘 보정이거나, legacy DOM 제어 JS를 내부 구현으로 복사하면 통합하지 말고 폐기한다.
 - multi-day unattended frontend goal turn을 resume할 때는 구현 대상을 고르기 전에 `pnpm agent:scala-html-goal-automation`을 실행한다. 이 명령은 `YONA_SCALA_HTML_GOAL_HISTORY_RANGE` 또는 `.agent/scala-html-goal-history-range`가 없거나 range audit이 실패하면 중단해야 한다.
 - `YONA_ALLOW_SCALA_HTML_*` 예외 marker는 unattended `pnpm agent:turn-commit` 경로에서 사용하지 않는다. 사람이 감독하는 수동 예외 commit에만 쓰고, route/reason/follow-up 감사 note를 남긴다.
 - frontend component design 또는 화면 styling 작업 전에는 [`DESIGN.md`](/G:/programming/yona/DESIGN.md)를 확인하고, `yona-original/`의 view/LESS 근거를 우선한다.

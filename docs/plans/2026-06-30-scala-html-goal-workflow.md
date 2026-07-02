@@ -13,6 +13,19 @@ Every resumed goal turn must restate this directive before choosing work:
 
 - Legacy Scala HTML is the UI source of truth.
 - Existing React DOM is not implementation evidence.
+- Legacy Scala HTML and legacy JavaScript define the required rendered DOM and
+  user-visible behavior, not the internal implementation strategy. Do not copy
+  jQuery, inline scripts, direct DOM mutation, `document.*`, native delegated
+  event listeners, `classList`/`style.display` control, htmx-like HTML fragment
+  fetch/insert flows, or dynamic `dangerouslySetInnerHTML` assembly into route
+  TSX. Translate those behaviors into React state/events/components plus
+  TanStack Router navigation and TanStack Query mutations/cache updates while
+  preserving the same output DOM/UX.
+- Frontend route TSX/E2E implementation for this goal must be delegated to a
+  spawned subagent. The main agent selects the target, supplies the legacy
+  sources and rules, reviews the patch, integrates only accepted work, runs
+  verification, and commits. Unless the user explicitly requests main-agent
+  implementation, the main agent must not author the route TSX/E2E patch first.
 - If a prior implementation was built by patching the existing DOM instead of
   porting the owning Scala template, delete or replace that screen path.
 - Every frontend route TSX change must update
@@ -120,6 +133,13 @@ Target screen:
 Rules:
 - Treat yona-original/app/views/** and rendered legacy HTML as the UI SOT.
 - Ignore existing/deleted/archived TSX as UI evidence.
+- Treat legacy JS as behavior evidence only. Render the same DOM and UX through
+  React state/events/components plus TanStack Router/Query; do not implement
+  route behavior by copying legacy jQuery, direct DOM control, or fetched HTML
+  fragment insertion.
+- Spawn a subagent for route TSX/E2E implementation. Main agent work is target
+  selection, instruction handoff, review, integration, verification, and commit
+  unless the user explicitly asks the main agent to implement directly.
 - Do not create or use view-model layers for page shape.
 - Keep REST API clients, TanStack Query setup, i18n helpers, runtime config, and
   generated router plumbing only when they are DOM-neutral support boundaries.
@@ -143,6 +163,33 @@ Rules:
 ```
 
 ## Required Work Loop
+
+### 0. Delegate The Implementation
+
+For frontend route TSX/E2E implementation work, the main agent must spawn a
+subagent before authoring implementation edits.
+
+The main agent must give the subagent:
+
+- target route and screen/user/session/data state
+- legacy root Scala template and included partials
+- related legacy JS/CSS/messages
+- the rule that legacy JS is behavior evidence only and must be translated to
+  React state/events/components plus TanStack Router/Query
+- expected E2E file and required provenance row
+- exact verification command expected for the focused route
+
+The main agent must discard the subagent result if it:
+
+- does not identify the legacy Scala HTML source of truth first
+- patches current React DOM/CSS/tests instead of translating the legacy screen
+- copies legacy jQuery/direct DOM/HTML-fragment behavior into route TSX
+- omits the focused E2E or provenance row
+- changes unrelated screens or ownership boundaries
+
+If no subagent tool is available, stop and report that the frontend goal turn
+cannot proceed under the current execution rule unless the user explicitly
+allows main-agent implementation.
 
 ### 1. Identify The Legacy Screen
 
@@ -210,6 +257,21 @@ later step after the rendered screen passes parity.
 ### 4. Convert Stack Boundaries
 
 Apply only the stack changes required by the Rust + React frontend.
+
+Legacy dynamic behavior:
+
+- Preserve the legacy DOM structure, class names, ids, form fields, labels, and
+  visible behavior.
+- Replace jQuery event delegation, imperative DOM reads/writes, inline scripts,
+  and dynamic HTML fragment injection with React component state, props, event
+  handlers, conditional rendering, and TanStack Query mutation/cache updates.
+- Use TanStack Router for SPA navigation and redirects. Programmatic navigation
+  is allowed for mutation success or legacy imperative flows, but not through
+  `window.location` in route TSX.
+- `dangerouslySetInnerHTML` is only acceptable for static legacy HTML artifacts
+  that are already explicitly documented and cannot affect route behavior; it
+  must not be used as a substitute for React components when legacy JS fetched
+  or inserted an HTML fragment.
 
 TanStack Router:
 
@@ -286,6 +348,9 @@ A screen rebuild goal is complete only when all are true:
 - server data flows through REST API client plus TanStack Query
 - forms account for React submit, REST mutation, and CSRF differences from the
   first test version
+- legacy JS/DOM-control behavior is translated to React state/events/components
+  and TanStack Router/Query rather than copied as jQuery, direct DOM mutation,
+  or HTML fragment insertion
 - no view-model layer decides page DOM shape
 - component decomposition is done after GREEN or documented as unnecessary
 - focused checks pass
