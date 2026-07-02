@@ -80,9 +80,23 @@ test("rendered evidence summary counts match manifest row statuses", () => {
       continue;
     }
     const priority = columns[0];
+    const legacyTemplate = columns[1];
     const primaryStatus = columns[3];
     const evidenceStatus = columns[4];
+    const evidenceFiles = columns[6];
     detailRows += 1;
+    if (legacyTemplate.startsWith("search/partial_")) {
+      assert.match(
+        evidenceFiles,
+        /frontend\/tests\/search-global\.e2e\.ts/,
+        `${legacyTemplate} must cite current global search evidence`,
+      );
+      assert.doesNotMatch(
+        evidenceFiles,
+        /frontend\/tests\/search-parity\.e2e\.ts/,
+        `${legacyTemplate} must not cite historical search-parity evidence`,
+      );
+    }
     prioritySummaryCounts.set(
       `__actual:${priority}`,
       (prioritySummaryCounts.get(`__actual:${priority}`) ?? 0) + 1,
