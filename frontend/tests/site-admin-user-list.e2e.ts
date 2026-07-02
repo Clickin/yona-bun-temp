@@ -109,7 +109,7 @@ const EXPECTED_USER_LIST_SCREEN = `
         <ul class="user-list-wrap">
           <li class="row-fluid listitem">
             <div class="span3 listitem-col">
-              <a href="__BASE_PATH__/doortts" class="avatar-wrap list-avatar"><img src="/avatars/doortts.png"></a>
+              <a href="__BASE_PATH__/doortts" class="avatar-wrap list-avatar"><img src="/avatars/doortts.png" alt="Door TTS" width="32" height="32"></a>
               <a href="__BASE_PATH__/doortts" class="user-name">Door TTS</a>
               <a href="__BASE_PATH__/doortts" class="user-id">@doortts</a>
             </div>
@@ -177,6 +177,9 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
   await expect(page.locator('.site-setting-nav a[href$="/sites/setting"]')).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).not.toContainText("TODO");
+  await expect(page.locator(".user-list-wrap .list-avatar img")).toHaveAttribute("alt", "Door TTS");
+  await expect(page.locator(".user-list-wrap .list-avatar img")).toHaveAttribute("width", "32");
+  await expect(page.locator(".user-list-wrap .list-avatar img")).toHaveAttribute("height", "32");
   await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
   await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
   await expect(page.locator("#pagination .page-nums .page-num")).toHaveCount(5);
@@ -375,6 +378,16 @@ async function mockSiteUsers(page: Page) {
     resetLoginIds: [] as string[],
     toggledActions: [] as string[],
   };
+
+  await page.route("**/avatars/doortts.png", async (route) => {
+    await route.fulfill({
+      body: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADgwGdrZtEwwAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+      contentType: "image/png",
+    });
+  });
 
   await page.route("**/api/v1/site/users?*", async (route) => {
     const url = new URL(route.request().url());

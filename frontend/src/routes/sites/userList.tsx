@@ -467,7 +467,12 @@ function UserListItem({
     <li className="row-fluid listitem">
       <div className="span3 listitem-col">
         <a href={userPath} className="avatar-wrap list-avatar">
-          <img src={user.avatarUrl} alt="" />
+          {isDefaultUserAvatar(user.avatarUrl) ? (
+            /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes. */
+            <img src={user.avatarUrl} />
+          ) : (
+            <img src={user.avatarUrl} alt={user.displayName} width="32" height="32" />
+          )}
         </a>
         <a href={userPath} className="user-name">
           {user.displayName}
@@ -559,6 +564,10 @@ function UserListItem({
       )}
     </li>
   );
+}
+
+function isDefaultUserAvatar(avatarUrl: string) {
+  return avatarUrl.includes("gravatar.com/avatar/");
 }
 
 function PasswordResetAlert({ newPassword }: { newPassword: string }) {
