@@ -135,6 +135,21 @@ test("blocks frontend route TSX work when the audit row names a nonexistent Scal
   assert.match(formatScalaHtmlGoalGuardSummary(result), /nonexistent legacy source work/u);
 });
 
+test("checks only the legacy source column for Scala HTML source existence", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/issues` | `issue/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` mentions legacy helper common.calendar.scala.html in prose | `frontend/tests/project-issues-empty.e2e.ts` E2E |\n",
+    env: {},
+  });
+
+  assert.equal(result.blocked, false);
+});
+
 test("blocks frontend route TSX work when the audit row does not name the route file", () => {
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [

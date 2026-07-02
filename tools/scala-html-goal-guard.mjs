@@ -57,9 +57,18 @@ function routeFileHasCompleteAuditRow(routeFile, auditPatch) {
 }
 
 function addedScalaHtmlSources(auditPatch) {
-  return addedAuditRows(auditPatch).flatMap((row) =>
-    [...row.matchAll(SCALA_HTML_SOURCE_PATTERN)].map((match) => match[1]),
-  );
+  return addedAuditRows(auditPatch).flatMap((row) => {
+    const sourceCell = legacySourceCell(row);
+    return [...sourceCell.matchAll(SCALA_HTML_SOURCE_PATTERN)].map((match) => match[1]);
+  });
+}
+
+function legacySourceCell(row) {
+  const cells = row.split("|").map((cell) => cell.trim());
+  if (/^P\d\b/u.test(cells[0] ?? "")) {
+    return cells[3] ?? "";
+  }
+  return cells[2] ?? "";
 }
 
 function missingLegacyScalaHtmlSources(auditPatch, repoRoot) {
