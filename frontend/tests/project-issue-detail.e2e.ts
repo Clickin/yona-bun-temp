@@ -248,9 +248,13 @@ test("project issue detail toggles legacy comment update form through comment-ed
   await expect(comment.locator(".add-a-comment")).toBeHidden();
   expect(await commentUpdateFormMetrics(page)).toEqual({
     bodyDisplay: "none",
+    buttonLineMarginTop: "10px",
     formDisplay: "block",
     replyDisplay: "none",
+    textareaBoxMarginBottom: "10px",
+    textareaBoxPaddingRight: "2px",
     textareaValue: "Comment **markdown**",
+    writeCommentBoxPadding: "10px",
   });
 
   await comment.locator("#comment-editform-77 .ybtn-cancel").click();
@@ -1391,11 +1395,21 @@ async function commentUpdateFormMetrics(page: Page) {
     const body = comment.querySelector<HTMLElement>("#comment-body-77");
     const reply = document.querySelector<HTMLElement>(".add-a-comment");
     const textarea = comment.querySelector<HTMLTextAreaElement>("#editor-contents-77");
+    const textareaBox = form?.querySelector<HTMLElement>(".textarea-box");
+    const writeCommentBox = form?.querySelector<HTMLElement>(".write-comment-box");
+    const buttonLine = form?.querySelector<HTMLElement>(".comment-update-button");
+    const textareaBoxStyle = textareaBox ? window.getComputedStyle(textareaBox) : null;
+    const writeCommentBoxStyle = writeCommentBox ? window.getComputedStyle(writeCommentBox) : null;
+    const buttonLineStyle = buttonLine ? window.getComputedStyle(buttonLine) : null;
     return {
       bodyDisplay: body ? window.getComputedStyle(body).display : null,
+      buttonLineMarginTop: buttonLineStyle?.marginTop ?? null,
       formDisplay: form ? window.getComputedStyle(form).display : null,
       replyDisplay: reply ? window.getComputedStyle(reply).display : null,
+      textareaBoxMarginBottom: textareaBoxStyle?.marginBottom ?? null,
+      textareaBoxPaddingRight: textareaBoxStyle?.paddingRight ?? null,
       textareaValue: textarea?.value,
+      writeCommentBoxPadding: writeCommentBoxStyle?.padding ?? null,
     };
   });
 }

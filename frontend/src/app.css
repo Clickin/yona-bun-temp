@@ -4740,6 +4740,18 @@ div.markdown-preview {
   margin-bottom: 10px;
 }
 
+.board-view .board-comment-wrap .comment-update-form .write-comment-box,
+.code-browse-wrap .board-comment-wrap .comment-update-form .write-comment-box,
+.issue-detail-page .board-comment-wrap .comment-update-form .write-comment-box {
+  padding: 10px;
+}
+
+.board-view .board-comment-wrap .comment-update-form .comment-update-button,
+.code-browse-wrap .board-comment-wrap .comment-update-form .comment-update-button,
+.issue-detail-page .board-comment-wrap .comment-update-form .comment-update-button {
+  margin-top: 10px;
+}
+
 .board-view .board-comment-wrap .write-comment-box {
   padding: 10px;
 }
