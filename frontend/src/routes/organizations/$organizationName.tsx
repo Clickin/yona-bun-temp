@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { leaveOrganizationRest, readOrganizationContainerRest } from "../../api/org-project";
@@ -59,6 +59,8 @@ function OrganizationHomeBody({
   const { t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [projectFilter, setProjectFilter] = useState("");
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const organizationName = stringField(organization.organizationName, "organization");
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
@@ -69,7 +71,13 @@ function OrganizationHomeBody({
     },
     onSuccess(response) {
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.organization.base(organizationName) });
-      router.history.push(stringField(response.redirectPath, `/organizations/${organizationName}`));
+      const redirectPath = stringField(response.redirectPath, `/organizations/${organizationName}`);
+      router.history.push(
+        redirectPath.startsWith(`${runtimeConfig.basePath}/`) ||
+          redirectPath === runtimeConfig.basePath
+          ? redirectPath
+          : prefixBasePath(runtimeConfig.basePath, redirectPath),
+      );
     },
   });
 
@@ -107,6 +115,7 @@ function OrganizationHomeBody({
                       data-toggle="item-search"
                       data-items="project-item"
                       placeholder={t("title.type.name")}
+                      onChange={(event) => setProjectFilter(event.currentTarget.value)}
                     />
                     <button type="button" className="search-btn">
                       <i className="yobicon-search"></i>
@@ -131,6 +140,7 @@ function OrganizationHomeBody({
                 {organization.visibleProjects.map((project) => (
                   <OrganizationProject
                     basePath={runtimeConfig.basePath}
+                    filter={projectFilter}
                     key={`${stringField(project.ownerName, "")}/${stringField(project.projectName, "")}`}
                     project={project}
                   />
@@ -141,6 +151,7 @@ function OrganizationHomeBody({
               <MemberPanel
                 basePath={runtimeConfig.basePath}
                 members={organization.adminMembers}
+                onLeaveClick={() => setLeaveModalOpen(true)}
                 organizationName={organizationName}
                 showLeave={booleanField(organization.viewerCanLeave)}
                 title={t("user.role.org_admin")}
@@ -149,6 +160,7 @@ function OrganizationHomeBody({
                 basePath={runtimeConfig.basePath}
                 className="bubble-wrap gray project-home mt10"
                 members={organization.memberMembers}
+                onLeaveClick={() => setLeaveModalOpen(true)}
                 organizationName={organizationName}
                 showLeave={false}
                 title={t("user.role.org_member")}
@@ -157,9 +169,18 @@ function OrganizationHomeBody({
           </div>
         </div>
       </div>
-      <div id="alertLeave" className="modal hide">
+      <div
+        id="alertLeave"
+        className={leaveModalOpen ? "modal" : "modal hide"}
+        style={leaveModalOpen ? { display: "block" } : undefined}
+      >
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal">
+          <button
+            type="button"
+            className="close"
+            data-dismiss="modal"
+            onClick={() => setLeaveModalOpen(false)}
+          >
             ×
           </button>
           <h3>{t("organization.member.leave")}</h3>
@@ -176,7 +197,12 @@ function OrganizationHomeBody({
           >
             {t("button.yes")}
           </button>
-          <button type="button" className="ybtn ybtn-mini" data-dismiss="modal">
+          <button
+            type="button"
+            className="ybtn ybtn-mini"
+            data-dismiss="modal"
+            onClick={() => setLeaveModalOpen(false)}
+          >
             {t("button.no")}
           </button>
         </div>
@@ -185,19 +211,31 @@ function OrganizationHomeBody({
   );
 }
 
-function OrganizationProject({ basePath, project }: { basePath: string; project: YonaRecord }) {
+function OrganizationProject({
+  basePath,
+  filter,
+  project,
+}: {
+  basePath: string;
+  filter: string;
+  project: YonaRecord;
+}) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "");
   const projectName = stringField(project.projectName, "");
   const projectHref = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
   const createdLabel = stringField(project.createdLabel, "");
   const lastPushedLabel = stringField(project.lastPushedLabel, "");
+  const dataValue = `${projectName} ${stringField(project.overview, "")}`;
+  const normalizedFilter = filter.trim().toLowerCase();
+  const hidden = normalizedFilter ? !dataValue.toLowerCase().includes(normalizedFilter) : false;
 
   return (
     <li
       className="project"
       data-item="project-item"
-      data-value={`${projectName} ${stringField(project.overview, "")}`}
+      data-value={dataValue}
+      style={hidden ? { display: "none" } : undefined}
     >
       <div className="info-wrap">
         <div className="owner-avatar-wrap hide-in-mobile">
@@ -260,6 +298,7 @@ function MemberPanel({
   basePath,
   className = "bubble-wrap gray project-home",
   members,
+  onLeaveClick,
   organizationName,
   showLeave,
   title,
@@ -267,6 +306,7 @@ function MemberPanel({
   basePath: string;
   className?: string;
   members: YonaUserItem[];
+  onLeaveClick: () => void;
   organizationName: string;
   showLeave: boolean;
   title: string;
@@ -284,6 +324,7 @@ function MemberPanel({
               className="ybtn ybtn-minimum ybtn-danger pull-right"
               id="groupLeaveBtn"
               data-href={prefixBasePath(basePath, `/organizations/${organizationName}/leave`)}
+              onClick={onLeaveClick}
             >
               {t("organization.member.leave")}
             </button>

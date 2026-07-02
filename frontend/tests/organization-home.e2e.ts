@@ -81,10 +81,48 @@ test("organization home menu board link preserves legacy href with SPA transitio
   await expect(page.locator("#option_form")).toBeVisible();
 });
 
-async function mockOrganizationHome(page: Page) {
+test("organization home filters projects like legacy item-search", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationHome(page);
+
+  await page.goto(`${basePath}/organizations/weblabs`);
+  await expect(page.locator(".all-projects .project")).toBeVisible();
+
+  await page.locator("#mylist-filter").fill("missing");
+  await expect(page.locator(".all-projects .project")).toBeHidden();
+
+  await page.locator("#mylist-filter").fill("sample");
+  await expect(page.locator(".all-projects .project")).toBeVisible();
+});
+
+test("organization home leave modal posts legacy leave action", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const leaveRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockOrganizationHome(page, { leaveRequests });
+
+  await page.goto(`${basePath}/organizations/weblabs`);
+  await page.locator("#groupLeaveBtn").click();
+  await expect(page.locator("#alertLeave")).not.toHaveClass(/hide/);
+
+  await page.locator('#alertLeave [data-dismiss="modal"]').last().click();
+  await expect(page.locator("#alertLeave")).toHaveClass(/hide/);
+  expect(leaveRequests).toEqual([]);
+
+  await page.locator("#groupLeaveBtn").click();
+  await expect(page.locator("#alertLeave")).not.toHaveClass(/hide/);
+  await page.locator("#leaveBtn").click();
+  await expect(page).toHaveURL(`${basePath}/organizations`);
+  expect(leaveRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+});
+
+async function mockOrganizationHome(
+  page: Page,
+  options: { leaveRequests?: { hasCsrfToken: boolean; method: string }[] } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-org-home" },
       body: JSON.stringify({
         actorId: 1,
         avatarUrl: "/assets/images/default-avatar-32.png",
@@ -96,6 +134,16 @@ async function mockOrganizationHome(page: Page) {
         loginId: "admin",
         userLabel: "Site Admin",
       }),
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs/leave", async (route) => {
+    options.leaveRequests?.push({
+      hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
+      method: route.request().method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ redirectPath: "/organizations" }),
     });
   });
   await page.route("**/api/v1/organizations/weblabs/container", async (route) => {
