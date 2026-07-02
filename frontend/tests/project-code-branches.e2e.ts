@@ -17,6 +17,40 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_BRANCHES_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await readBranchListMetrics(page)).toEqual({
+    actionsMinWidth: "220px",
+    actionsTextAlign: "right",
+    actionsWidth: "220px",
+    branchLinkColor: "rgb(81, 170, 204)",
+    branchNameMinWidth: "180px",
+    branchNamePaddingTop: "13px",
+    commitDateColor: "rgb(119, 119, 119)",
+    commitDateFontSize: "11px",
+    commitDateMarginLeft: "10px",
+    commitPaddingTop: "13px",
+    commitWidth: "155px",
+    defaultBadgeBackground: "rgb(255, 255, 255)",
+    defaultBadgeBorderRadius: "3px",
+    defaultBadgeBorderTopWidth: "1px",
+    defaultBadgeColor: "rgb(0, 136, 204)",
+    defaultBadgeDisplay: "inline-block",
+    defaultBadgePadding: "3px 5px",
+    disabledPullRequestColor: "rgb(205, 205, 205)",
+    headRowBackground: "rgb(250, 250, 250)",
+    openStateDotBackground: "rgb(182, 218, 84)",
+    openStateDotBorderRadius: "10px",
+    openStateDotHeight: "10px",
+    openStateDotMarginRight: "5px",
+    openStateDotWidth: "10px",
+    pullRequestPaddingTop: "13px",
+    pullRequestWidth: "170px",
+    rowBorderBottomWidth: "1px",
+    tableHeaderBackground: "rgb(245, 245, 245)",
+    tableHeaderBorderBottomWidth: "1px",
+    tableHeaderFontSize: "12px",
+    tableHeaderLineHeight: "34px",
+    tableWidthPercent: 100,
+  });
 
   const setDefaultResponse = page.waitForResponse(
     (response) =>
@@ -138,6 +172,96 @@ function branchesPayload() {
     permissions: { canDelete: true, canUpdate: true },
     projectName: "sample",
   };
+}
+
+async function readBranchListMetrics(page: Page) {
+  return page.locator(".branch-list-wrap").evaluate((table) => {
+    const tableHeader = table.querySelector<HTMLElement>(".thead");
+    const headRow = table.querySelector<HTMLElement>("tr.head");
+    const secondRow = table.querySelector<HTMLElement>("tbody tr:not(.head)");
+    const branchName = table.querySelector<HTMLElement>("td.branchName");
+    const branchLink = branchName?.querySelector<HTMLElement>("a");
+    const defaultBadge = table.querySelector<HTMLElement>(".headBranch");
+    const commit = table.querySelector<HTMLElement>("td.commit");
+    const commitDate = commit?.querySelector<HTMLElement>(".date");
+    const pullRequest = table.querySelector<HTMLElement>("td.pullRequest");
+    const disabledPullRequest = pullRequest?.querySelector<HTMLElement>(".disabled");
+    const openPullRequest = table.querySelector<HTMLElement>(".pullrequest-state.open");
+    const actions = secondRow?.querySelector<HTMLElement>("td.actions");
+    const missing = Object.entries({
+      actions,
+      branchLink,
+      branchName,
+      commit,
+      commitDate,
+      defaultBadge,
+      disabledPullRequest,
+      headRow,
+      openPullRequest,
+      pullRequest,
+      secondRow,
+      tableHeader,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected branch list metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const headerStyle = getComputedStyle(tableHeader!);
+    const headRowStyle = getComputedStyle(headRow!);
+    const secondRowStyle = getComputedStyle(secondRow!);
+    const branchNameStyle = getComputedStyle(branchName!);
+    const branchLinkStyle = getComputedStyle(branchLink!);
+    const defaultBadgeStyle = getComputedStyle(defaultBadge!);
+    const commitStyle = getComputedStyle(commit!);
+    const commitDateStyle = getComputedStyle(commitDate!);
+    const pullRequestStyle = getComputedStyle(pullRequest!);
+    const disabledPullRequestStyle = getComputedStyle(disabledPullRequest!);
+    const actionsStyle = getComputedStyle(actions!);
+    const openDotStyle = getComputedStyle(openPullRequest!, "::before");
+    const tableWidthPercent =
+      Math.round(
+        (table.getBoundingClientRect().width /
+          table.closest<HTMLElement>(".code-browse-wrap")!.getBoundingClientRect().width) *
+          1000,
+      ) / 10;
+
+    return {
+      actionsMinWidth: actionsStyle.minWidth,
+      actionsTextAlign: actionsStyle.textAlign,
+      actionsWidth: actionsStyle.width,
+      branchLinkColor: branchLinkStyle.color,
+      branchNameMinWidth: branchNameStyle.minWidth,
+      branchNamePaddingTop: branchNameStyle.paddingTop,
+      commitDateColor: commitDateStyle.color,
+      commitDateFontSize: commitDateStyle.fontSize,
+      commitDateMarginLeft: commitDateStyle.marginLeft,
+      commitPaddingTop: commitStyle.paddingTop,
+      commitWidth: commitStyle.width,
+      defaultBadgeBackground: defaultBadgeStyle.backgroundColor,
+      defaultBadgeBorderRadius: defaultBadgeStyle.borderRadius,
+      defaultBadgeBorderTopWidth: defaultBadgeStyle.borderTopWidth,
+      defaultBadgeColor: defaultBadgeStyle.color,
+      defaultBadgeDisplay: defaultBadgeStyle.display,
+      defaultBadgePadding: defaultBadgeStyle.padding,
+      disabledPullRequestColor: disabledPullRequestStyle.color,
+      headRowBackground: headRowStyle.backgroundColor,
+      openStateDotBackground: openDotStyle.backgroundColor,
+      openStateDotBorderRadius: openDotStyle.borderRadius,
+      openStateDotHeight: openDotStyle.height,
+      openStateDotMarginRight: openDotStyle.marginRight,
+      openStateDotWidth: openDotStyle.width,
+      pullRequestPaddingTop: pullRequestStyle.paddingTop,
+      pullRequestWidth: pullRequestStyle.width,
+      rowBorderBottomWidth: secondRowStyle.borderBottomWidth,
+      tableHeaderBackground: headerStyle.backgroundColor,
+      tableHeaderBorderBottomWidth: headerStyle.borderBottomWidth,
+      tableHeaderFontSize: headerStyle.fontSize,
+      tableHeaderLineHeight: headerStyle.lineHeight,
+      tableWidthPercent,
+    };
+  });
 }
 
 async function canonicalize(page: Page, selector: string) {
