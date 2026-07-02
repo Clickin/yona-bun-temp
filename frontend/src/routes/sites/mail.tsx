@@ -5,6 +5,7 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
   sendSiteMailRest,
   siteMailOptionsQueryOptions,
+  siteUpdateQueryOptions,
   type SiteMailOptionsResponse,
 } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
@@ -62,6 +63,7 @@ function SiteMailScreen({
 }) {
   const mailOptions = siteMailOptionsQueryOptions(runtimeConfig);
   const query = useQuery(mailOptions);
+  const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
 
   return (
     <>
@@ -76,7 +78,7 @@ function SiteMailScreen({
         <div className="site-setting-wrap">
           <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar />
+              <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
               <MailBody
@@ -93,7 +95,7 @@ function SiteMailScreen({
   );
 }
 
-function SiteAdminSidebar() {
+function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   const navItems = [
     { href: "/sites/userList", labelKey: "site.sidebar.userList" },
     { href: "/sites/postList", labelKey: "site.sidebar.postList" },
@@ -101,7 +103,7 @@ function SiteAdminSidebar() {
     { href: "/sites/projectList", labelKey: "site.sidebar.projectList" },
     { href: "/sites/mail", labelKey: "site.sidebar.mailSend", active: true },
     { href: "/sites/massmail", labelKey: "site.sidebar.massMail" },
-    { href: "/sites/update", labelKey: "site.sidebar.update" },
+    { href: "/sites/update", labelKey: "site.sidebar.update", badge: showUpdateBadge },
     { href: "/sites/diagnostic", labelKey: "site.sidebar.diagnostics" },
   ];
 
@@ -111,6 +113,7 @@ function SiteAdminSidebar() {
         <li className={item.active ? "active" : ""} key={item.href}>
           <LegacyInternalLink activeProps={{ className: undefined }} to={item.href}>
             <LegacyMessage messageKey={item.labelKey} />
+            {item.badge ? <span className="notification-badge">1</span> : null}
           </LegacyInternalLink>
         </li>
       ))}
