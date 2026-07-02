@@ -77,7 +77,7 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
           <li class=""><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
           <li class=""><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
           <li class="active"><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/massMail">Send mass emails</a></li>
+          <li class=""><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
           <li class=""><a href="__BASE_PATH__/sites/update">Software Update</a></li>
           <li class=""><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
@@ -146,6 +146,8 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send email");
   await expect(page.locator("#mailForm")).toHaveAttribute("action", `${basePath}/sites/mail`);
   await expect(page.locator('input[name="from"]')).toHaveValue("noreply@example.com");
+  const massMailLink = page.locator(".site-setting-nav a", { hasText: "Send mass emails" });
+  await expect(massMailLink).toHaveAttribute("href", `${basePath}/sites/massmail`);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -178,6 +180,17 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     titleAreaPaddingBottom: 8,
     titleLineHeight: 30,
   });
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-mail-sidebar";
+  });
+  await massMailLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/massmail`);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send mass emails");
+  await expect(page.locator(".title_area h2")).toHaveText("Send mass mails");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-mail-sidebar");
 });
 
 async function mailFormMetrics(page: Page) {
