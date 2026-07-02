@@ -21,8 +21,10 @@ import {
   readSessionBootstrap,
   toggleFavoriteIssue,
   unwatchIssue,
+  unvoteIssue,
   unvoteIssueComment,
   updateIssueWeight,
+  voteIssue,
   voteIssueComment,
   watchIssue,
   type RestIssueDetailResponse,
@@ -446,6 +448,7 @@ function IssueDetailBody({
   const canComment = booleanField(issue.viewerCanComment);
   const canWatch = issue.viewerCanWatch !== false;
   const hasVoted = booleanField(issue.hasVoted);
+  const [hasVotedIssue, setHasVotedIssue] = useState(hasVoted);
   const translationApiEnabled = booleanField(issue.translationApiEnabled);
   const labels = (issue.labels ?? []).slice().sort(compareLabels);
   const selectableLabels = (projectLabels ?? []).slice().sort(compareLabels);
@@ -565,6 +568,24 @@ function IssueDetailBody({
       queryClient.setQueryData<RestIssueDetailResponse>(
         ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
         (current) => (current ? { ...current, isWatching: nextIsWatching } : current),
+      );
+    },
+  });
+  const voteIssueMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const input = { issueNumber, ownerName, projectName };
+      return hasVotedIssue
+        ? unvoteIssue(runtimeConfig, csrfToken, input)
+        : voteIssue(runtimeConfig, csrfToken, input);
+    },
+    onSuccess(response) {
+      const nextHasVoted =
+        typeof response.hasVoted === "boolean" ? response.hasVoted : !hasVotedIssue;
+      setHasVotedIssue(nextHasVoted);
+      queryClient.setQueryData<RestIssueDetailResponse>(
+        ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+        (current) => (current ? { ...current, hasVoted: nextHasVoted } : current),
       );
     },
   });
@@ -736,9 +757,10 @@ function IssueDetailBody({
               <IssueVote
                 basePath={basePath}
                 canComment={canComment}
-                hasVoted={hasVoted}
+                hasVoted={hasVotedIssue}
                 issue={issue}
                 issueHref={issueHref}
+                onIssueVote={() => voteIssueMutation.mutate()}
                 voters={voters}
               />
               {translationApiEnabled ? (
@@ -1205,6 +1227,7 @@ function IssueVote({
   hasVoted,
   issue,
   issueHref,
+  onIssueVote,
   voters,
 }: {
   basePath: string;
@@ -1212,6 +1235,7 @@ function IssueVote({
   hasVoted: boolean;
   issue: RestIssueDetailResponse;
   issueHref: string;
+  onIssueVote: () => void;
   voters: VoterLike[];
 }) {
   const ownerName = stringField(issue.ownerName);
@@ -1229,6 +1253,10 @@ function IssueVote({
             title={hasVoted ? "Unvote this issue" : "Vote this issue"}
             data-request-method="post"
             data-toggle="tooltip"
+            onClick={(event) => {
+              event.preventDefault();
+              onIssueVote();
+            }}
           >
             <span className="heart">
               <i className="yobicon-hearts"></i>

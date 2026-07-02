@@ -1274,6 +1274,31 @@ test("project issue detail renders legacy disabled vote action", async ({ page }
   );
 });
 
+test("project issue detail vote action posts and toggles legacy voted state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { issueVoteRequests } = await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const voteLink = page.locator('#vote > a[href$="/vote"]');
+  await expect(voteLink).toHaveAttribute("title", "Vote this issue");
+  await expect(voteLink).not.toHaveClass(/ybtn-watching/);
+
+  const voteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/issues/11/vote") &&
+      response.request().method() === "POST",
+  );
+  await voteLink.click();
+  await voteResponsePromise;
+
+  expect(issueVoteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(page.locator('#vote > a[href$="/unvote"]')).toHaveAttribute(
+    "title",
+    "Unvote this issue",
+  );
+  await expect(page.locator("#vote > a")).toHaveClass(/ybtn-watching/);
+});
+
 test("project issue detail renders legacy voter overflow link", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {
@@ -2491,6 +2516,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
   const commentDeleteRequests: string[] = [];
   const commentVoteRequests: { csrfToken: string | null; method: string }[] = [];
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  const issueVoteRequests: { hasCsrfToken: boolean; method: string }[] = [];
   const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
   const issueWeightRequests: { csrfToken: string | null; method: string; url: string }[] = [];
   const sessionResponse = {
@@ -2630,6 +2656,26 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
           ownerName: "admin",
           projectName: "sample",
           ...effectiveIssueOverrides,
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/admin/projects/sample/issues/${issueNumber}/vote`,
+    async (route) => {
+      const method = route.request().method();
+      issueVoteRequests.push({
+        hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
+        method,
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...effectiveIssueOverrides,
+          hasVoted: method !== "DELETE",
+          issueNumber: Number(issueNumber),
+          ownerName: "admin",
+          projectName: "sample",
         }),
       });
     },
@@ -2794,6 +2840,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
     commentVoteRequests,
     deleteRequests,
     favoriteRequests,
+    issueVoteRequests,
     issueWeightRequests,
     watchRequests,
   };
