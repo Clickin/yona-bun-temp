@@ -208,6 +208,20 @@ test("project pull request changes matches legacy git/viewChanges.scala.html emp
   await expect(page.locator(".codediff-wrap")).toHaveClass(/diffs-only/u);
   await expect(page.locator("#commits .d-label")).toHaveText("All commit changes");
 
+  expect(await pullRequestChangesShellMetrics(page)).toEqual({
+    boardBodyMarginBottom: "20px",
+    codediffClassName: "codediff-wrap mt10 diffs-only",
+    codediffMarginTop: "10px",
+    codediffPosition: "relative",
+    diffsDisplay: "block",
+    diffsMarginRight: "282px",
+    diffsPosition: "relative",
+    diffsWidthMatchesCodeWrap: true,
+    noReviewRail: true,
+    showReviewButtonCount: 0,
+    stateInsideDiffBody: true,
+  });
+
   expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtmlAll(
       page,
@@ -306,6 +320,32 @@ test("project pull request changes renders legacy review cards when threads exis
     "Dev Member",
   );
 
+  expect(await pullRequestReviewCardMetrics(page)).toEqual({
+    cardBorder: "1px solid rgb(221, 221, 221)",
+    cardBoxShadow: "rgb(182, 218, 84) 5px 0px 0px 0px inset",
+    cardDisplay: "block",
+    cardMarginBottom: "0px",
+    cardPadding: "10px 10px 10px 15px",
+    cardRadius: "0px 3px 3px 0px",
+    closedTabAfterOpenTab: true,
+    contentMaxHeight: "60px",
+    contentOverflow: "hidden",
+    contentTextAlign: "justify",
+    contentWordBreak: "break-all",
+    dateColor: "rgb(153, 153, 153)",
+    hiddenOutdatedDisplay: "none",
+    infoMarginTop: "10px",
+    infoTextAlign: "right",
+    openCardHref: `${basePath}/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91`,
+    reviewContainerWidth: "260px",
+    reviewDisplay: "block",
+    reviewListOverflow: "auto",
+    reviewPosition: "absolute",
+    reviewRight: "0px",
+    reviewTop: "0px",
+    reviewWidth: "260px",
+  });
+
   expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtmlAll(
       page,
@@ -388,6 +428,26 @@ test("project pull request changes renders legacy outdated review-card class", a
   await expect(page.locator("#reviewcards-open .review-card")).toHaveClass(
     "review-card open outdated",
   );
+  expect(
+    await page.locator(".review-card.outdated .outdated-label").evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return {
+        background: style.backgroundColor,
+        borderRadius: style.borderRadius,
+        color: style.color,
+        display: style.display,
+        padding: style.padding,
+        text: element.textContent?.trim(),
+      };
+    }),
+  ).toEqual({
+    background: "rgb(119, 119, 119)",
+    borderRadius: "3px",
+    color: "rgb(255, 255, 255)",
+    display: "inline",
+    padding: "3px 6px",
+    text: "Outdated",
+  });
 
   expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtmlAll(
@@ -526,6 +586,82 @@ function pullRequestDetail() {
     updatedLabel: "Jul 2, 2026",
     watcherCount: 0,
   };
+}
+
+async function pullRequestChangesShellMetrics(page: Page) {
+  return page.locator(".codediff-wrap").evaluate((codediff) => {
+    const boardBody = document.querySelector<HTMLElement>(".board-body.mb20");
+    const codeWrap = document.querySelector<HTMLElement>(".code-browse-wrap");
+    const diffs = codediff.querySelector<HTMLElement>("#changes.diffs-wrap");
+    const diffBody = codediff.querySelector<HTMLElement>(".diff-body");
+    const state = codediff.querySelector<HTMLElement>("#state.pullRequest-stateInfo");
+    const review = codediff.querySelector<HTMLElement>(".review-wrap");
+    const showReviewButton = codediff.querySelectorAll(".btn-show-reviewcards");
+    const codediffStyle = getComputedStyle(codediff);
+    const diffsStyle = getComputedStyle(diffs as HTMLElement);
+    return {
+      boardBodyMarginBottom: getComputedStyle(boardBody as HTMLElement).marginBottom,
+      codediffClassName: codediff.className,
+      codediffMarginTop: codediffStyle.marginTop,
+      codediffPosition: codediffStyle.position,
+      diffsDisplay: diffsStyle.display,
+      diffsMarginRight: diffsStyle.marginRight,
+      diffsPosition: diffsStyle.position,
+      diffsWidthMatchesCodeWrap:
+        Math.round((diffs as HTMLElement).getBoundingClientRect().width) ===
+        Math.round((codeWrap as HTMLElement).getBoundingClientRect().width),
+      noReviewRail: review === null,
+      showReviewButtonCount: showReviewButton.length,
+      stateInsideDiffBody: state?.parentElement === diffBody,
+    };
+  });
+}
+
+async function pullRequestReviewCardMetrics(page: Page) {
+  return page.locator(".review-wrap").evaluate((review) => {
+    const container = review.querySelector<HTMLElement>(".review-container");
+    const reviewList = review.querySelector<HTMLElement>(".review-list");
+    const openTab = review.querySelector<HTMLElement>(".nav-tabs li:first-child");
+    const closedTab = review.querySelector<HTMLElement>(".nav-tabs li:nth-child(2)");
+    const card = review.querySelector<HTMLElement>(".review-card.open");
+    const content = card?.querySelector<HTMLElement>(".content");
+    const info = card?.querySelector<HTMLElement>(".info");
+    const date = card?.querySelector<HTMLElement>(".date");
+    const hiddenOutdated = card?.querySelector<HTMLElement>(".outdated-label");
+    const reviewStyle = getComputedStyle(review);
+    const containerStyle = getComputedStyle(container as HTMLElement);
+    const reviewListStyle = getComputedStyle(reviewList as HTMLElement);
+    const cardStyle = getComputedStyle(card as HTMLElement);
+    const contentStyle = getComputedStyle(content as HTMLElement);
+    const infoStyle = getComputedStyle(info as HTMLElement);
+    const openRect = (openTab as HTMLElement).getBoundingClientRect();
+    const closedRect = (closedTab as HTMLElement).getBoundingClientRect();
+    return {
+      cardBorder: cardStyle.border,
+      cardBoxShadow: cardStyle.boxShadow,
+      cardDisplay: cardStyle.display,
+      cardMarginBottom: cardStyle.marginBottom,
+      cardPadding: cardStyle.padding,
+      cardRadius: cardStyle.borderRadius,
+      closedTabAfterOpenTab: openRect.left < closedRect.left,
+      contentMaxHeight: contentStyle.maxHeight,
+      contentOverflow: contentStyle.overflow,
+      contentTextAlign: contentStyle.textAlign,
+      contentWordBreak: contentStyle.wordBreak,
+      dateColor: getComputedStyle(date as HTMLElement).color,
+      hiddenOutdatedDisplay: getComputedStyle(hiddenOutdated as HTMLElement).display,
+      infoMarginTop: infoStyle.marginTop,
+      infoTextAlign: infoStyle.textAlign,
+      openCardHref: card?.getAttribute("href"),
+      reviewContainerWidth: containerStyle.width,
+      reviewDisplay: reviewStyle.display,
+      reviewListOverflow: reviewListStyle.overflow,
+      reviewPosition: reviewStyle.position,
+      reviewRight: reviewStyle.right,
+      reviewTop: reviewStyle.top,
+      reviewWidth: reviewStyle.width,
+    };
+  });
 }
 
 async function canonicalizeAll(page: Page, selector: string) {
