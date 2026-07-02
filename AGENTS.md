@@ -65,6 +65,10 @@
 
 - 작업 전 이 문서의 변환 원칙, 관련 `SPEC.md` 섹션, `docs/agents/*` mirror를 먼저 확인한다.
 - 구현 전 대응 legacy route/test/model과 UI 기준을 `yona-original/`에서 식별한다.
+- `/goal` 또는 사용자가 `docs/plans/2026-06-30-scala-html-goal-workflow.md` 기반 frontend 작업을 지시한 turn에서는 **기존 React DOM을 기준으로 보정하지 않는다.** 반드시 대상 화면의 `yona-original/app/views/**/*.scala.html` 및 포함 partial/LESS/JS/messages를 먼저 식별하고, 그 legacy 구조를 TSX로 구현한다.
+- 같은 goal turn에서 E2E metric, CSS, provenance만 추가하고 TSX 화면 구현을 바꾸지 않는 작업은 금지한다. 단, 이미 해당 화면이 이번 turn에서 legacy Scala HTML 기준으로 재구축된 뒤 검증을 보강하는 경우는 허용한다.
+- 기존 TSX가 legacy Scala HTML과 다르면 기존 TSX를 보존하려고 부분 패치하지 말고, 화면 단위로 legacy template skeleton을 다시 만든다. 잘못 만든 구현은 삭제하거나 대체한다.
+- subagent가 frontend 화면을 구현할 때도 동일하다. subagent 산출물이 legacy Scala HTML source-of-truth를 먼저 대조하지 않았거나 기존 React DOM에 맞춘 보정이면 통합하지 말고 폐기한다.
 - frontend component design 또는 화면 styling 작업 전에는 [`DESIGN.md`](/G:/programming/yona/DESIGN.md)를 확인하고, `yona-original/`의 view/LESS 근거를 우선한다.
 - `reference/mixed-code/**`를 구현 근거로 읽거나 사용하지 않는다. 기능/UX 근거는 `yona-original/`에서만 찾는다.
 - 새 canonical 구현이나 문서 기준선은 `repo root`를 기준으로 적는다.
@@ -96,3 +100,4 @@
 - `docs/agents/08-rust-deployment-strategy.md`
 - `docs/agents/09-llm-onboarding-checklist.md`
 - `docs/agents/10-legacy-provenance-baseline.md`
+- `docs/provenance/frontend-scala-html-goal-violation-audit.md`

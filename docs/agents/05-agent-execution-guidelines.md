@@ -17,6 +17,14 @@
 6. `repo root` ownership 경계 안에서 Green 구현을 작성한다.
 7. `deferred`, `gap`, `deviation`과 historical/banner 영향까지 함께 갱신한다.
 
+## Scala HTML Goal 강제 규칙
+
+- `/goal` 또는 사용자가 `docs/plans/2026-06-30-scala-html-goal-workflow.md` 기반 frontend 작업을 지시한 turn에서는 기존 React DOM을 기준으로 보정하지 않는다.
+- 대상 화면의 `yona-original/app/views/**/*.scala.html`, 포함 partial, 관련 LESS/JS/messages를 먼저 식별하고 그 legacy 구조를 TSX로 구현한다.
+- E2E metric, CSS, provenance만 추가하고 TSX 화면 구현을 바꾸지 않는 작업은 금지한다. 단, 같은 turn에서 해당 화면을 legacy Scala HTML 기준으로 재구축한 뒤 검증을 보강하는 경우는 허용한다.
+- 기존 TSX가 legacy Scala HTML과 다르면 기존 구현을 보존하려고 부분 패치하지 말고 화면 단위로 legacy template skeleton을 다시 만든다.
+- subagent 산출물이 legacy Scala HTML source-of-truth를 먼저 대조하지 않았거나 기존 React DOM에 맞춘 보정이면 통합하지 않고 폐기한다.
+
 ## 테스트 실행
 
 - Agent가 Rust `cargo check`, `cargo test`, `cargo build --timings`, `cargo fmt` 등 cargo/rustc/rustfmt 기반 검증을 실행할 때는 Codex sandbox 안에서 실행하지 않는다. cargo/rustc/rustfmt는 macOS seatbelt sandbox에서 파일 접근 비용이 크게 늘어 feedback loop와 polling token 사용량을 왜곡하므로, cargo를 시작하는 tool invocation 전체를 항상 `require_escalated`로 sandbox 밖에서 실행한다.
