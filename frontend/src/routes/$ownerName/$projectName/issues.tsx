@@ -424,6 +424,10 @@ function ProjectIssuesBody({
     () =>
       typeof localStorage !== "undefined" && localStorage.getItem("showSubtasksAlways") === "true",
   );
+  const [useTwoColumnMode, setUseTwoColumnMode] = useState(
+    () =>
+      typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
+  );
   const draftItems = shouldShowDraftItems(search)
     ? (issues.draftItems ?? []).filter(
         (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
@@ -603,7 +607,13 @@ function ProjectIssuesBody({
                 state="closed"
               />
               <li>
-                <TwoColumnModeCheckbox />
+                <TwoColumnModeCheckbox
+                  checked={useTwoColumnMode}
+                  onToggle={(checked) => {
+                    localStorage.setItem("useTwoColumnMode", String(checked));
+                    setUseTwoColumnMode(checked);
+                  }}
+                />
               </li>
               <li className="show-subtasks-li">
                 <ShowSubtasksCheckbox
@@ -658,6 +668,7 @@ function ProjectIssuesBody({
                       showMassUpdateControls={showMassUpdateControls}
                       showMilestone={showMilestone}
                       showSubtasksAlways={showSubtasksAlways}
+                      useTwoColumnMode={useTwoColumnMode}
                       onTitlePrefixSearch={handleTitlePrefixSearch}
                     />
                   ))}
@@ -671,6 +682,7 @@ function ProjectIssuesBody({
                       showMassUpdateControls={showMassUpdateControls}
                       showMilestone={showMilestone}
                       showSubtasksAlways={showSubtasksAlways}
+                      useTwoColumnMode={useTwoColumnMode}
                       onTitlePrefixSearch={handleTitlePrefixSearch}
                     />
                   ))}
@@ -1323,6 +1335,7 @@ function ProjectIssueItem({
   showMassUpdateControls,
   showMilestone,
   showSubtasksAlways,
+  useTwoColumnMode,
 }: {
   basePath: string;
   issue: RestIssueListItem;
@@ -1332,6 +1345,7 @@ function ProjectIssueItem({
   showMassUpdateControls: boolean;
   showMilestone: boolean;
   showSubtasksAlways: boolean;
+  useTwoColumnMode: boolean;
 }) {
   const { t } = useLegacyMessages();
   const issueId = stringField(issue.id, String(issue.issueNumber));
@@ -1363,6 +1377,7 @@ function ProjectIssueItem({
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${authorLoginId} ${issueNumber} ${issue.title}`}
+      style={useTwoColumnMode ? { cursor: "pointer" } : undefined}
       {...legacyHref}
     >
       <div className="span9 span-hard-wrap">
@@ -2442,7 +2457,13 @@ function StateTab({
   );
 }
 
-function TwoColumnModeCheckbox() {
+function TwoColumnModeCheckbox({
+  checked,
+  onToggle,
+}: {
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
+}) {
   const { t } = useLegacyMessages();
 
   return (
@@ -2455,7 +2476,14 @@ function TwoColumnModeCheckbox() {
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
       <label className="checkbox">
         <div className="two-column-icon-border">
-          <input id="two-column-mode" type="checkbox" />
+          <input
+            id="two-column-mode"
+            type="checkbox"
+            checked={checked}
+            onChange={(event) => {
+              onToggle(event.currentTarget.checked);
+            }}
+          />
           <span className="two-column-mode-text">{t("common.two.column.view")}</span>
         </div>
       </label>
