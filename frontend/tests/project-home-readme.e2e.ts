@@ -99,6 +99,16 @@ test("project home description edit mirrors legacy toggle and save", async ({ pa
   ]);
 });
 
+test("project home clone URL input selects the full URL on click", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page);
+
+  await page.goto(`${basePath}/admin/sample`);
+  await page.locator("#cloneURL").click();
+
+  expect(await selectedInputValue(page, "#cloneURL")).toBe("https://example.com/admin/sample.git");
+});
+
 async function mockProjectHome(
   page: Page,
   overrides: Partial<{
@@ -218,6 +228,15 @@ async function mockProjectHome(
         viewerCanUpdate: true,
       }),
     });
+  });
+}
+
+async function selectedInputValue(page: Page, selector: string) {
+  return page.locator(selector).evaluate((element) => {
+    if (!(element instanceof HTMLInputElement)) {
+      return "";
+    }
+    return element.value.slice(element.selectionStart ?? 0, element.selectionEnd ?? 0);
   });
 }
 

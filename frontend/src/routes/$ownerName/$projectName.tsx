@@ -246,6 +246,7 @@ function ProjectHomeBody({
                 id="cloneURL"
                 readOnly
                 value={cloneUrl}
+                onClick={(event) => event.currentTarget.select()}
               />
               <button
                 className="ybtn project-clone-button"
