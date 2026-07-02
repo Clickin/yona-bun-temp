@@ -49,6 +49,13 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     ["site/update.scala.html", "frontend/tests/site-admin-update.e2e.ts"],
     ["site/userList.scala.html", "frontend/tests/site-admin-user-list.e2e.ts"],
   ]);
+  const projectPullRequestEvidence = new Map([
+    ["git/list.scala.html", "frontend/tests/project-pullrequests.e2e.ts"],
+    [
+      "git/partial_recently_pushed_branches.scala.html",
+      "frontend/tests/project-pullrequests.e2e.ts",
+    ],
+  ]);
   let inSummary = false;
   let inPrioritySummary = false;
   let manifestDetailRows;
@@ -180,6 +187,18 @@ test("rendered evidence summary counts match manifest row statuses", () => {
         evidenceFiles,
         /frontend\/tests\/site-admin-[a-z-]+-parity\.e2e\.ts/,
         "site/siteMngLayout.scala.html must not cite historical site-admin parity evidence",
+      );
+    }
+    const expectedProjectPullRequestEvidence = projectPullRequestEvidence.get(legacyTemplate);
+    if (expectedProjectPullRequestEvidence) {
+      assert.ok(
+        evidenceFiles.includes(expectedProjectPullRequestEvidence),
+        `${legacyTemplate} must cite current project pull request evidence`,
+      );
+      assert.doesNotMatch(
+        evidenceFiles,
+        /frontend\/tests\/pull-request-(?:review-read|interaction)-parity\.e2e\.ts/,
+        `${legacyTemplate} must not cite historical pull request parity evidence`,
       );
     }
     prioritySummaryCounts.set(
