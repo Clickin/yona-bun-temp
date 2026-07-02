@@ -143,6 +143,30 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
     page.locator("#comment-form .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),
   ).toHaveCount(1);
   expect(detailRequests).toEqual(["branch=main"]);
+  expect(await readCommitDiffShellMetrics(page)).toEqual({
+    btnShowDisplay: "none",
+    codediffPosition: "relative",
+    commitAuthorFloat: "right",
+    commitAuthorMarginTop: "5px",
+    commitIdWrapPadding: "10px 5px",
+    commitInfoBackground: "rgba(0, 0, 0, 0)",
+    commitInfoBorderTopWidth: "0px",
+    commitInfoPadding: "0px",
+    commitMsgDescFontFamily: 'Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace',
+    commitMsgDescMargin: "5px",
+    commitMsgShortFontSize: "18px",
+    commitMsgShortWhiteSpace: "normal",
+    diffsDisplay: "block",
+    diffsMarginRight: "282px",
+    diffsPosition: "relative",
+    reviewContainerWidth: "260px",
+    reviewDisplay: "block",
+    reviewMinHeight: "30px",
+    reviewPosition: "absolute",
+    reviewRight: "0px",
+    reviewTop: "0px",
+    reviewWidth: "260px",
+  });
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
       page,
@@ -709,6 +733,23 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
     "Index: README.md",
   );
   expect(detailRequests).toEqual(["branch=trunk"]);
+  expect(await readSvnCommitShellMetrics(page)).toEqual({
+    branchActivate: "manual",
+    branchClassName: "btn-group branches pull-right",
+    branchFloat: "right",
+    branchName: "branch",
+    branchSelectedText: "trunk",
+    branchTopNotBelowTabs: true,
+    commitDiffHidden: true,
+    commitInfoBackground: "rgba(0, 0, 0, 0)",
+    commitInfoBorderTopWidth: "0px",
+    commitInfoPadding: "0px",
+    commitMessageDisplay: "block",
+    commitMessageFontFamily: 'Monaco, Menlo, Consolas, "Courier New", monospace',
+    diffWrapMarginBottom: "20px",
+    diffWrapOverflowX: "auto",
+    diffWrapFillsCodeWrap: true,
+  });
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
       page,
@@ -716,6 +757,131 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
     ),
   );
 });
+
+async function readCommitDiffShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const codediff = document.querySelector<HTMLElement>(".codediff-wrap");
+    const showButton = document.querySelector<HTMLElement>(".btn-show-reviewcards");
+    const diffs = document.querySelector<HTMLElement>(".diffs-wrap");
+    const review = document.querySelector<HTMLElement>(".review-wrap");
+    const reviewContainer = document.querySelector<HTMLElement>(".review-container");
+    const commitInfo = document.querySelector<HTMLElement>(".diffs-wrap .commitInfo");
+    const commitAuthor = document.querySelector<HTMLElement>(".commitAuthor");
+    const shortMessage = document.querySelector<HTMLElement>(".commitMsg.short");
+    const descMessage = document.querySelector<HTMLElement>(".commitMsg.desc");
+    const commitIdWrap = document.querySelector<HTMLElement>(".commitId-wrap");
+    const missing = Object.entries({
+      codediff,
+      commitAuthor,
+      commitIdWrap,
+      commitInfo,
+      descMessage,
+      diffs,
+      review,
+      reviewContainer,
+      shortMessage,
+      showButton,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected commit diff shell metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const codediffStyle = getComputedStyle(codediff);
+    const commitAuthorStyle = getComputedStyle(commitAuthor);
+    const commitIdWrapStyle = getComputedStyle(commitIdWrap);
+    const commitInfoStyle = getComputedStyle(commitInfo);
+    const descStyle = getComputedStyle(descMessage);
+    const diffsStyle = getComputedStyle(diffs);
+    const reviewContainerStyle = getComputedStyle(reviewContainer);
+    const reviewStyle = getComputedStyle(review);
+    const shortStyle = getComputedStyle(shortMessage);
+
+    return {
+      btnShowDisplay: getComputedStyle(showButton).display,
+      codediffPosition: codediffStyle.position,
+      commitAuthorFloat: commitAuthorStyle.cssFloat,
+      commitAuthorMarginTop: commitAuthorStyle.marginTop,
+      commitIdWrapPadding: commitIdWrapStyle.padding,
+      commitInfoBackground: commitInfoStyle.backgroundColor,
+      commitInfoBorderTopWidth: commitInfoStyle.borderTopWidth,
+      commitInfoPadding: commitInfoStyle.padding,
+      commitMsgDescFontFamily: descStyle.fontFamily,
+      commitMsgDescMargin: descStyle.margin,
+      commitMsgShortFontSize: shortStyle.fontSize,
+      commitMsgShortWhiteSpace: shortStyle.whiteSpace,
+      diffsDisplay: diffsStyle.display,
+      diffsMarginRight: diffsStyle.marginRight,
+      diffsPosition: diffsStyle.position,
+      reviewContainerWidth: reviewContainerStyle.width,
+      reviewDisplay: reviewStyle.display,
+      reviewMinHeight: reviewStyle.minHeight,
+      reviewPosition: reviewStyle.position,
+      reviewRight: reviewStyle.right,
+      reviewTop: reviewStyle.top,
+      reviewWidth: reviewStyle.width,
+    };
+  });
+}
+
+async function readSvnCommitShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const branches = document.querySelector<HTMLElement>("#branches");
+    const selected = document.querySelector<HTMLElement>("#branches .d-label");
+    const tabs = document.querySelector<HTMLElement>("#code-browse-wrap > .nav-tabs");
+    const commitInfo = document.querySelector<HTMLElement>("#code-browse-wrap > .commitInfo");
+    const commitMessage = document.querySelector<HTMLElement>("#code-browse-wrap > .commitMsg");
+    const diffWrap = document.querySelector<HTMLElement>(".diff-wrap");
+    const commitDiff = document.querySelector<HTMLElement>("#commit.diff-body");
+    const missing = Object.entries({
+      branches,
+      commitDiff,
+      commitInfo,
+      commitMessage,
+      diffWrap,
+      selected,
+      tabs,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected SVN commit shell metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const branchStyle = getComputedStyle(branches);
+    const commitInfoStyle = getComputedStyle(commitInfo);
+    const commitMessageStyle = getComputedStyle(commitMessage);
+    const diffWrapStyle = getComputedStyle(diffWrap);
+    const codeWrap = document.querySelector<HTMLElement>("#code-browse-wrap");
+    const branchRect = branches.getBoundingClientRect();
+    const tabsRect = tabs.getBoundingClientRect();
+
+    return {
+      branchActivate: branches.dataset.activate,
+      branchClassName: branches.className,
+      branchFloat: branchStyle.cssFloat,
+      branchName: branches.dataset.name,
+      branchSelectedText: selected.textContent?.trim(),
+      branchTopNotBelowTabs: branchRect.top <= tabsRect.top,
+      commitDiffHidden: commitDiff.classList.contains("hide"),
+      commitInfoBackground: commitInfoStyle.backgroundColor,
+      commitInfoBorderTopWidth: commitInfoStyle.borderTopWidth,
+      commitInfoPadding: commitInfoStyle.padding,
+      commitMessageDisplay: commitMessageStyle.display,
+      commitMessageFontFamily: commitMessageStyle.fontFamily,
+      diffWrapMarginBottom: diffWrapStyle.marginBottom,
+      diffWrapOverflowX: diffWrapStyle.overflowX,
+      diffWrapFillsCodeWrap:
+        Math.round(diffWrap.getBoundingClientRect().width) ===
+        Math.round(codeWrap?.getBoundingClientRect().width ?? -1),
+    };
+  });
+}
 
 async function commentDeleteModalMetrics(page: Page) {
   return page.locator("#comment-delete-modal").evaluate((modal) => {

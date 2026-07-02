@@ -6290,26 +6290,23 @@ div.markdown-preview {
 }
 
 .codediff-wrap {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
-  gap: 18px;
-  margin-top: 18px;
+  position: relative;
 }
 
 .btn-show-reviewcards {
-  grid-column: 1 / -1;
-  justify-self: end;
+  display: none;
 }
 
 .diffs-wrap {
-  min-width: 0;
+  position: relative;
+  display: block;
+  margin-right: 282px;
 }
 
-.commitInfo {
-  padding: 12px;
-  margin-bottom: 12px;
-  background: #fff;
-  border: 1px solid #ddd;
+.code-browse-wrap .commitInfo {
+  padding: 0;
+  background: transparent;
+  border: 0;
 }
 
 .code-browse-wrap > .commitInfo {
@@ -6319,10 +6316,57 @@ div.markdown-preview {
   border: 0;
 }
 
+.code-browse-wrap .commitInfo .commitAuthor {
+  float: right;
+  margin-top: 5px;
+}
+
+.code-browse-wrap .commitInfo .commitAuthor .avatar-wrap {
+  margin-right: 5px;
+}
+
+.code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.short {
+  font-size: 18px;
+  white-space: normal;
+}
+
+.code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.desc {
+  margin: 5px;
+  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace;
+}
+
+.code-browse-wrap .commitInfo .commitId-wrap {
+  padding: 10px 5px;
+}
+
 .code-browse-wrap > .commitInfo .commitId {
   color: #666;
   margin-top: 5px;
   font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace;
+}
+
+.code-browse-wrap .diff-wrap {
+  width: 100%;
+  margin-bottom: 20px;
+  overflow: auto;
+}
+
+.codediff-wrap .review-wrap {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: block;
+  width: 260px;
+  min-height: 30px;
+}
+
+.codediff-wrap .review-container {
+  position: relative;
+  width: 260px;
+}
+
+.codediff-wrap .review-list {
+  overflow: auto;
 }
 
 .commitAuthor,
