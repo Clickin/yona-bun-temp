@@ -848,15 +848,15 @@ function UserIssueItem({
               <IssueSubtaskSummary issue={issue} />
             </span>
             {issue.labels.map((label) => (
-              <a
-                href={`${projectHref}/issues?state=${search.state}&labelIds=${label.id}`}
+              <LegacyInternalLink
+                to={`${projectRoutePath}/issues?state=open&labelIds=${label.id}`}
                 className={`label issue-label list-label twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
                 data-label-id={label.id}
                 style={{ background: label.color }}
                 key={String(label.id)}
               >
                 {label.name}
-              </a>
+              </LegacyInternalLink>
             ))}
             <div
               className="child-issue-list hide"

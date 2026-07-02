@@ -617,6 +617,19 @@ test("current-user issues label text contrast follows legacy labelTextColorAdjus
   );
 });
 
+test("current-user issues row label links follow legacy my_partial_list open-state URL", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForFilterLinks(page);
+
+  await page.goto(`${basePath}/user/issues?state=closed`);
+
+  await expect(
+    page.locator('#issue-item-42 .title-cell > .label[data-label-id="8"]'),
+  ).toHaveAttribute("href", `${basePath}/admin/sample/issues?state=open&labelIds=8`);
+});
+
 test("current-user issues pagination follows legacy yobi.Pagination pjax-page and input behavior", async ({
   page,
 }) => {
