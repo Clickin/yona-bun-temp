@@ -1,7 +1,9 @@
 import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import process from "node:process";
 
 const DEFAULT_MESSAGE = "chore: checkpoint agent turn";
+const LOCAL_SCALA_HTML_GOAL_HISTORY_RANGE_FILE = ".agent/scala-html-goal-history-range";
 
 export function parseArgs(argv) {
   const options = {
@@ -58,16 +60,31 @@ function git(args, options = {}) {
 function runScalaHtmlGoalHistory(range) {
   run(
     "node",
-    [
-      "./scripts/audit-scala-html-goal-history.mjs",
-      "--",
-      "--range",
-      range,
-      "--fail-on-violation",
-    ],
+    ["./scripts/audit-scala-html-goal-history.mjs", "--", "--range", range, "--fail-on-violation"],
     {
       errorMessage: `Agent turn Scala HTML goal history audit failed for ${range}.`,
     },
+  );
+}
+
+export function unattendedScalaHtmlGoalHistoryRange({
+  env = process.env,
+  rangeFile = LOCAL_SCALA_HTML_GOAL_HISTORY_RANGE_FILE,
+} = {}) {
+  const envRange = env.YONA_SCALA_HTML_GOAL_HISTORY_RANGE?.trim();
+  if (envRange) {
+    return envRange;
+  }
+
+  if (!existsSync(rangeFile)) {
+    return "";
+  }
+
+  return (
+    readFileSync(rangeFile, "utf8")
+      .split(/\r?\n/u)
+      .map((line) => line.trim())
+      .find((line) => line && !line.startsWith("#")) ?? ""
   );
 }
 
@@ -108,7 +125,7 @@ export function runAgentTurnCommit(options) {
     errorMessage: "Failed to create agent turn commit.",
   });
   runScalaHtmlGoalHistory("HEAD~1..HEAD");
-  const unattendedHistoryRange = process.env.YONA_SCALA_HTML_GOAL_HISTORY_RANGE?.trim();
+  const unattendedHistoryRange = unattendedScalaHtmlGoalHistoryRange();
   if (unattendedHistoryRange) {
     runScalaHtmlGoalHistory(unattendedHistoryRange);
   }

@@ -304,7 +304,7 @@ const EXPECTED_PROJECT_ISSUES_WEIGHTED_CLOSED = EXPECTED_PROJECT_ISSUES_EMPTY.re
     `${WEIGHTED_SPAN10}</div></div></div></div>\n<footer`,
   );
 
-const CHILD_ISSUES = `<div class="child-issues"><div class="issue-item selected-child child-issue"><span class="state-label open"></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/13"><span class="item-name"><span class="subtask-number">#13</span><span>Open child issue</span><span> - Dev Member</span></span></a><span class="font12 no-border-at-child"></span><a href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label active twoColumeModeTarget" data-category-id="3" data-label-id="8" style="${BUG_CHILD_LABEL_STYLE}">bug</a><span class="child-issue-date" title="Jul 3, 2026">Jul 3, 2026</span></div><div class="issue-item  child-issue"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/14"><span class="item-name"><span class="subtask-number">#14</span><span>Closed child issue</span><span></span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="Jul 4, 2026">Jul 4, 2026</span></div></div>`;
+const CHILD_ISSUES = `<div class="child-issues"><div class="issue-item selected-child child-issue"><span class="state-label open"></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/13"><span class="item-name"><span class="subtask-number">#13</span><span>Open child issue</span><span> - Dev Member</span></span></a><span class="font12 no-border-at-child"><span class="item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/13#comments" class="comments-count comments-count-color"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">2</span></a><a href="__BASE_PATH__/admin/sample/issue/13#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span></span><a href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label active twoColumeModeTarget" data-category-id="3" data-label-id="8" style="${BUG_CHILD_LABEL_STYLE}">bug</a><span class="child-issue-date" title="Jul 3, 2026">Jul 3, 2026</span></div><div class="issue-item  child-issue"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/14"><span class="item-name"><span class="subtask-number">#14</span><span>Closed child issue</span><span></span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="Jul 4, 2026">Jul 4, 2026</span></div></div>`;
 const CHILDREN_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<div class="child-issue-list hide"></div>',
   `<div class="child-issue-list hide">${CHILD_ISSUES}</div>`,
@@ -1087,7 +1087,18 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
     `${basePath}/admin/sample/issue/13`,
   );
   await expect(firstChild.locator(".subtask-number")).toHaveText("#13");
-  await expect(firstChild.locator(".font12.no-border-at-child")).toHaveText("");
+  const childCountPair = firstChild.locator(".font12.no-border-at-child .item-count-groups");
+  await expect(childCountPair).toHaveCount(1);
+  await expect(childCountPair.locator(".comments-count.comments-count-color")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/13#comments`,
+  );
+  await expect(childCountPair.locator(".comments-count .item-count")).toHaveText("2");
+  await expect(childCountPair.locator(".vote-count.vote-color")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/13#vote`,
+  );
+  await expect(childCountPair.locator(".vote-count .item-count.strong")).toHaveText("1");
   await expect(firstChild.locator(".child-issue-date")).toHaveAttribute("title", "Jul 3, 2026");
   const childLabel = firstChild.locator(".label.issue-label.list-label.twoColumeModeTarget");
   await expect(childLabel).toHaveAttribute(
@@ -1727,6 +1738,7 @@ async function mockProjectIssues(
                                 childIssues: [
                                   {
                                     assigneeLabel: "Dev Member",
+                                    commentCount: 2,
                                     createdLabel: "Jul 3, 2026",
                                     id: 42,
                                     issueNumber: 13,
@@ -1742,6 +1754,7 @@ async function mockProjectIssues(
                                     ],
                                     state: "open",
                                     title: "Open child issue",
+                                    voterCount: 1,
                                   },
                                   {
                                     assigneeLabel: "",

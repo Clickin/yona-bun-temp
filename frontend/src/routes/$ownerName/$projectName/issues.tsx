@@ -1349,7 +1349,9 @@ function IssueChildRow({
           <span>{issue.assigneeLabel ? ` - ${issue.assigneeLabel}` : ""}</span>
         </span>
       </a>
-      <span className="font12 no-border-at-child"></span>
+      <span className="font12 no-border-at-child">
+        <IssueChildCommentAndVotePair issue={issue} issueHref={issueHref} />
+      </span>
       {labels.map((label) => (
         <a
           href={`${prefixBasePath(basePath, `/${ownerName}/${projectName}`)}/issues?state=open&labelIds=${String(label.id)}`}
@@ -1371,6 +1373,41 @@ function IssueChildRow({
 
 function childIssueLabelStyle(color: string | undefined): CSSProperties | undefined {
   return color ? { background: color } : undefined;
+}
+
+function IssueChildCommentAndVotePair({
+  issue,
+  issueHref,
+}: {
+  issue: RestIssueChildItem;
+  issueHref: string;
+}) {
+  const commentCount = numberField(issue.commentCount);
+  const voterCount = numberField(issue.voterCount);
+  if (!commentCount && !voterCount) {
+    return null;
+  }
+
+  return (
+    <span className="item-count-groups">
+      {commentCount ? (
+        <a href={`${issueHref}#comments`} className="comments-count comments-count-color">
+          <span className="count-groups item-icon">
+            <i className="yobicon-comment2"></i>
+          </span>
+          <span className="count-groups item-count">{commentCount}</span>
+        </a>
+      ) : null}
+      {voterCount ? (
+        <a href={`${issueHref}#vote`} className="vote-count vote-color">
+          <span className="count-groups item-icon">
+            <i className="yobicon-hearts"></i>
+          </span>
+          <span className="count-groups item-count strong">{voterCount}</span>
+        </a>
+      ) : null}
+    </span>
+  );
 }
 
 function IssueSubtaskSummary({

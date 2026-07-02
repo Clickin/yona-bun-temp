@@ -33,6 +33,22 @@ test("scala html goal history audit accepts route commits with complete legacy m
   assert.equal(result.blocked, false);
 });
 
+test("scala html goal history audit rejects multi-screen route commits", () => {
+  const result = evaluateCommit({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/issues` list branch | `issue/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issues-empty.e2e.ts` focused E2E |\n" +
+      "+| 2026-07-02 | `/admin/sample/issues` search branch | `issue/partial_searchform.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issues-empty.e2e.ts` focused E2E |\n",
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(result.message, /multi-screen frontend goal work/u);
+});
+
 test("scala html goal history audit rejects memo rows naming E2E files not changed in the commit", () => {
   const result = evaluateCommit({
     changedFiles: [

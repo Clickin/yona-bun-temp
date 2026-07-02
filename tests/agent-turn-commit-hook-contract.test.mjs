@@ -3,7 +3,11 @@ import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { hasPorcelainChanges, parseArgs } from "../tools/agent-turn-commit.mjs";
+import {
+  hasPorcelainChanges,
+  parseArgs,
+  unattendedScalaHtmlGoalHistoryRange,
+} from "../tools/agent-turn-commit.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const turnCommitHookPath = path.join(repoRoot, "tools", "agent-turn-commit.mjs");
@@ -48,5 +52,22 @@ describe("agent turn commit hook contract", () => {
     assert.match(source, /YONA_SCALA_HTML_GOAL_HISTORY_RANGE/u);
     assert.match(source, /unattendedHistoryRange/u);
     assert.match(source, /runScalaHtmlGoalHistory\(unattendedHistoryRange\)/u);
+  });
+
+  it("loads unattended Scala HTML history audit range from env before local memo file", () => {
+    assert.equal(
+      unattendedScalaHtmlGoalHistoryRange({
+        env: { YONA_SCALA_HTML_GOAL_HISTORY_RANGE: "base..HEAD" },
+        rangeFile: path.join(repoRoot, "does-not-exist"),
+      }),
+      "base..HEAD",
+    );
+  });
+
+  it("loads unattended Scala HTML history audit range from ignored local memo file", () => {
+    const source = readFileSync(turnCommitHookPath, "utf8");
+
+    assert.match(source, /\.agent\/scala-html-goal-history-range/u);
+    assert.match(source, /LOCAL_SCALA_HTML_GOAL_HISTORY_RANGE_FILE/u);
   });
 });

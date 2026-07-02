@@ -37,6 +37,13 @@ Every resumed goal turn must restate this directive before choosing work:
   audits `HEAD~1..HEAD`; with this environment variable it also re-audits the
   full unattended range after every commit, so an agent cannot accumulate weak
   frontend goal commits for days before a human notices.
+- If relying on every resumed turn to export that variable is too fragile, write
+  the range into the ignored local memo file
+  `.agent/scala-html-goal-history-range`. The turn commit hook reads the first
+  non-comment line from that file when the environment variable is absent. Keep
+  the machine-checkable per-screen memory in
+  `docs/provenance/frontend-scala-html-goal-violation-audit.md`; keep the
+  unattended multi-commit audit range in `.agent/scala-html-goal-history-range`.
 
 This is enforced by `tools/scala-html-goal-guard.mjs` through the turn commit
 hook. Treat guard failures as goal failures, not as optional review comments.

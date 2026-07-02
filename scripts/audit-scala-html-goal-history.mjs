@@ -72,7 +72,9 @@ export function evaluateCommit({ changedFiles, auditPatch }) {
   return evaluateScalaHtmlGoalGuard({
     auditPatch,
     changedFiles,
-    env: {},
+    env: {
+      YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1",
+    },
   });
 }
 
