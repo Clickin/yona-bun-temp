@@ -75,6 +75,7 @@ test("rendered evidence summary counts match manifest row statuses", () => {
   const directCurrentEvidence = new Map([
     ["organization/view.scala.html", "frontend/tests/organization-home.e2e.ts"],
     ["common/commitMsg.scala.html", "frontend/tests/project-code-history.e2e.ts"],
+    ["error/badrequest_default.scala.html", "frontend/tests/reset-password.e2e.ts"],
   ]);
   let inSummary = false;
   let inPrioritySummary = false;
@@ -242,7 +243,7 @@ test("rendered evidence summary counts match manifest row statuses", () => {
       );
       assert.doesNotMatch(
         evidenceFiles,
-        /frontend\/tests\/(?:organization-directory-admin-parity|code-parity)\.e2e\.ts/,
+        /frontend\/tests\/(?:organization-directory-admin-parity|code-parity|search-parity)\.e2e\.ts/,
         `${legacyTemplate} must not cite historical broad parity evidence`,
       );
     }
