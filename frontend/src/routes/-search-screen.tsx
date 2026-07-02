@@ -1,3 +1,4 @@
+import { Fragment, type ReactNode } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { type SearchCounts, type SearchResponse, type SearchType } from "../api/search";
 import { RestApiError } from "../api/rest-client";
@@ -209,7 +210,10 @@ function SearchResultList({
             </a>
             <div className="title-wrap">
               <a href={item.href} className="title project-link">
-                {item.ownerName}/{item.projectName}
+                <HighlightedText
+                  text={`${item.ownerName}/${item.projectName}`}
+                  keyword={result.keyword}
+                />
               </a>
             </div>
             {item.originOwnerName && item.originProjectName ? (
@@ -232,7 +236,9 @@ function SearchResultList({
               </div>
             ) : null}
             <div className="search-content np">
-              <p className="search-content-body">{item.snippets[0]?.text ?? ""}</p>
+              <p className="search-content-body">
+                <HighlightedText text={item.snippets[0]?.text ?? ""} keyword={result.keyword} />
+              </p>
             </div>
             <div className="search-meta-info np">
               <span className="meta-info">
@@ -268,7 +274,10 @@ function SearchResultList({
               </a>
               <div className="title-wrap">
                 <a href={item.href} className="title user-link">
-                  {`${item.authorLabel} (@${item.authorLoginId})`}
+                  <HighlightedText
+                    text={`${item.authorLabel} (@${item.authorLoginId})`}
+                    keyword={result.keyword}
+                  />
                 </a>
               </div>
               <div className="infos nm">
@@ -303,7 +312,11 @@ function SearchResultList({
               <div className="title-wrap">
                 <span className="post-id">#{item.number}</span>
                 <a href={item.href} className={titleClassName}>
-                  {item.title}
+                  {titleClassName ? (
+                    <HighlightedText text={item.title} keyword={result.keyword} />
+                  ) : (
+                    item.title
+                  )}
                 </a>
               </div>
               <div className="search-content">
@@ -312,7 +325,7 @@ function SearchResultList({
                     className="search-content-body"
                     key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
                   >
-                    {snippet.text}
+                    <HighlightedText text={snippet.text} keyword={result.keyword} />
                     {snippet.truncated ? " ..... " : null}
                   </p>
                 ))}
@@ -340,7 +353,7 @@ function SearchResultList({
                     {item.authorLabel}
                   </a>
                 ) : (
-                  <span className="meta-item">{t("issue.noAuthor")}</span>
+                  <span className="meta-item">{t(noAuthorMessageKey(result.searchType))}</span>
                 )}
                 <span className="meta-item" title={item.createdLabel}>
                   {item.createdLabel}
@@ -362,7 +375,7 @@ function SearchResultList({
             <li className="search-list-item" key={item.id}>
               <div className="title-wrap">
                 <a href={item.href} className="title">
-                  {item.title}
+                  <HighlightedText text={item.title} keyword={result.keyword} />
                 </a>
               </div>
               <div className="search-content">
@@ -371,7 +384,7 @@ function SearchResultList({
                     className="search-content-body"
                     key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
                   >
-                    {snippet.text}
+                    <HighlightedText text={snippet.text} keyword={result.keyword} />
                     {snippet.truncated ? " ..... " : null}
                   </p>
                 ))}
@@ -465,4 +478,43 @@ function countForType(counts: SearchCounts, searchType: SearchType): number {
 function titleForType(t: ReturnType<typeof useLegacyMessages>["t"], searchType: SearchType) {
   const match = ALL_SEARCH_CATEGORIES.find((menu) => menu.type === searchType);
   return match ? t(match.labelKey) : "";
+}
+
+function noAuthorMessageKey(searchType: SearchType) {
+  return searchType === "post_comment" ? "posting.noAuthor" : "issue.noAuthor";
+}
+
+function HighlightedText({ keyword, text }: { keyword: string; text: string }) {
+  const trimmedKeyword = keyword.trim();
+  if (trimmedKeyword.length === 0) {
+    return <>{text}</>;
+  }
+
+  const keywordRegex = new RegExp(escapeRegExp(trimmedKeyword), "gi");
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+
+  for (const match of text.matchAll(keywordRegex)) {
+    const start = match.index ?? 0;
+    const matchText = match[0] ?? "";
+    if (start > cursor) {
+      nodes.push(<Fragment key={`text-${cursor}`}>{text.slice(cursor, start)}</Fragment>);
+    }
+    nodes.push(
+      <strong className="keyword" key={`keyword-${start}`}>
+        {matchText}
+      </strong>,
+    );
+    cursor = start + matchText.length;
+  }
+
+  if (cursor < text.length) {
+    nodes.push(<Fragment key={`text-${cursor}`}>{text.slice(cursor)}</Fragment>);
+  }
+
+  return <>{nodes.length > 0 ? nodes : text}</>;
+}
+
+function escapeRegExp(input: string) {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
