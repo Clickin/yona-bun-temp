@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import type { AnchorHTMLAttributes, ComponentType } from "react";
+import type { AnchorHTMLAttributes, ComponentType, ReactNode } from "react";
 import { sitePostsQueryOptions, type SitePost } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { SitePagination } from "./-pagination";
 
 type PostListSearch = {
   pageNum: number;
@@ -15,6 +14,8 @@ type PostListSearch = {
 const LegacyInternalLink = Link as ComponentType<
   AnchorHTMLAttributes<HTMLAnchorElement> & {
     activeProps?: { className?: string | undefined };
+    children?: ReactNode;
+    search?: Record<string, number | string | undefined>;
     to: string;
   }
 >;
@@ -75,11 +76,8 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 ))}
               </ul>
 
-              <SitePagination
+              <PostListPagination
                 currentPage={query.data?.page ?? pageNum}
-                pageHref={(nextPage) =>
-                  prefixBasePath(runtimeConfig.basePath, `/sites/postList?pageNum=${nextPage}`)
-                }
                 totalPages={query.data?.totalPages ?? 0}
               />
             </div>
@@ -87,6 +85,78 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         </div>
       </div>
     </>
+  );
+}
+
+function PostListPagination({
+  currentPage,
+  totalPages,
+}: {
+  currentPage: number;
+  totalPages: number;
+}) {
+  if (totalPages <= 0) {
+    return <div id="pagination"></div>;
+  }
+
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+
+  return (
+    <div id="pagination" className="page-navigation-wrap">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <LegacyInternalLink
+              activeProps={{ className: undefined }}
+              search={{ pageNum: currentPage - 1 }}
+              to="/sites/postList"
+              {...{ "pjax-page": "" }}
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>PREV</span>
+            </LegacyInternalLink>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">PREV</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            max={totalPages}
+            min={1}
+            name="pageNum"
+            pattern="[0-9]*"
+            readOnly
+            type="number"
+            value={currentPage}
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <LegacyInternalLink
+              activeProps={{ className: undefined }}
+              search={{ pageNum: currentPage + 1 }}
+              to="/sites/postList"
+              {...{ "pjax-page": "" }}
+            >
+              <span>NEXT</span>
+              <i className="ico btn-pg-next"></i>
+            </LegacyInternalLink>
+          ) : (
+            <>
+              <span className="off">NEXT</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
+    </div>
   );
 }
 
