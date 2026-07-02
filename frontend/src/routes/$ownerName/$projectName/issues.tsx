@@ -6,6 +6,7 @@ import {
   useEffectEvent,
   useRef,
   type CSSProperties,
+  type FormEvent as ReactFormEvent,
   type HTMLAttributes,
   type LiHTMLAttributes,
   type MouseEvent as ReactMouseEvent,
@@ -510,6 +511,11 @@ function ProjectIssuesBody({
               projectName={projectName}
               search={search}
               showCurrentUserOptions={showMassUpdateControls}
+              onSearchSubmit={(nextSearch) => {
+                void navigate({
+                  to: projectIssuesRoutePath(ownerName, projectName, nextSearch),
+                });
+              }}
               labelControls={{
                 showEditLink: showLabelEdit,
                 showManageLink: showLabelManagement,
@@ -1735,6 +1741,34 @@ function projectIssuesRoutePath(
   return queryString ? `${path}?${queryString}` : path;
 }
 
+function projectIssuesSearchFromForm(
+  form: HTMLFormElement,
+  search: ProjectIssuesSearch,
+): ProjectIssuesSearch {
+  const data = new FormData(form);
+  return {
+    ...search,
+    assigneeId: stringFormValue(data, "assigneeId"),
+    authorId: stringFormValue(data, "authorId"),
+    commenterId: stringFormValue(data, "commenterId"),
+    dueDate: stringFormValue(data, "dueDate"),
+    filter: stringFormValue(data, "filter"),
+    labelIds: data.getAll("labelIds").flatMap((value) => {
+      const labelId = String(value);
+      return labelId ? [labelId] : [];
+    }),
+    milestoneId: stringFormValue(data, "milestoneId"),
+    orderBy: stringFormValue(data, "orderBy"),
+    orderDir: stringFormValue(data, "orderDir"),
+    pageNum: 1,
+    state: stringFormValue(data, "state") === "closed" ? "closed" : "open",
+  };
+}
+
+function stringFormValue(data: FormData, name: string) {
+  return String(data.get(name) ?? "");
+}
+
 function pushSearchParam(queryPairs: string[], name: string, value: string) {
   if (value) {
     queryPairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(value)}`);
@@ -1752,6 +1786,7 @@ function IssueSearchForm({
   labelControls,
   milestones,
   ownerName,
+  onSearchSubmit,
   projectName,
   search,
   showCurrentUserOptions,
@@ -1772,6 +1807,7 @@ function IssueSearchForm({
     open: ProjectMilestone[];
   };
   ownerName: string;
+  onSearchSubmit: (search: ProjectIssuesSearch) => void;
   projectName: string;
   search: ProjectIssuesSearch;
   showCurrentUserOptions: boolean;
@@ -1781,6 +1817,10 @@ function IssueSearchForm({
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
   const hasMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
   const selectedMilestone = selectedSearchMilestone(search.milestoneId, milestones);
+  const handleSubmit = (event: ReactFormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onSearchSubmit(projectIssuesSearchFromForm(event.currentTarget, search));
+  };
 
   return (
     <form
@@ -1788,6 +1828,7 @@ function IssueSearchForm({
       name="search"
       action={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
       method="get"
+      onSubmit={handleSubmit}
     >
       <input type="hidden" name="orderBy" value={search.orderBy} />
       <input type="hidden" name="orderDir" value={search.orderDir} />
@@ -1808,7 +1849,12 @@ function IssueSearchForm({
             defaultValue={search.filter}
             data-search="filter"
           />
-          <button type="button" className="search-btn" data-submit="submit">
+          <button
+            type="button"
+            className="search-btn"
+            data-submit="submit"
+            onClick={(event) => event.currentTarget.form?.requestSubmit()}
+          >
             <i className="yobicon-search"></i>
           </button>
         </div>

@@ -682,6 +682,35 @@ test("project issue quick search updates route like legacy partial_list_quicksea
   ).toBe("issue-quick-search");
 });
 
+test("project issue search button submits route like legacy partial_searchform.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(
+    `${basePath}/admin/sample/issues?filter=bug&pageNum=3&state=closed&orderBy=createdDate&orderDir=asc`,
+  );
+  await expect(page.locator("#search input[name='filter']")).toHaveValue("bug");
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-search-submit";
+  });
+
+  await page.locator("#search input[name='filter']").fill("urgent");
+  await page.locator("#search [data-submit='submit']").click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("urgent");
+  await expect.poll(() => new URL(page.url()).searchParams.get("state") ?? "").toBe("closed");
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("orderBy") ?? "")
+    .toBe("createdDate");
+  await expect.poll(() => new URL(page.url()).searchParams.get("orderDir") ?? "").toBe("asc");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("issue-search-submit");
+});
+
 test("project issue state tab updates route like legacy partial_list_wrap.scala.html pjax tab", async ({
   page,
 }) => {
