@@ -165,7 +165,63 @@ test("project members renders legacy error/forbidden.scala.html shell", async ({
   });
 });
 
-async function mockProjectMembers(page: Page, options: { membersStatus?: number } = {}) {
+test("project members header favorite star posts and toggles starred class", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectMembers(page, { favoriteRequests });
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  await expect(favoriteStar).not.toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(favoriteStar).toHaveClass(/starred/);
+});
+
+test("project members header favorite star removes starred class when unfavorited", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectMembers(page, {
+    favoriteRequests,
+    favoriteResponseFavorited: false,
+    project: { isFavorite: true, isFavorited: true },
+  });
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  await expect(favoriteStar).toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(favoriteStar).not.toHaveClass(/starred/);
+});
+
+async function mockProjectMembers(
+  page: Page,
+  options: {
+    favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
+    favoriteResponseFavorited?: boolean;
+    membersStatus?: number;
+    project?: Partial<ReturnType<typeof projectContainer>>;
+  } = {},
+) {
   const requests = {
     addedLoginIds: [] as string[],
   };
@@ -186,10 +242,24 @@ async function mockProjectMembers(page: Page, options: { membersStatus?: number 
       }),
     });
   });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-members" },
+      body: JSON.stringify({
+        isAuthenticated: true,
+        user: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "admin",
+          name: "Site Admin",
+        },
+      }),
+    });
+  });
   await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(projectContainer()),
+      body: JSON.stringify({ ...projectContainer(), ...options.project }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/members", async (route) => {
@@ -273,6 +343,17 @@ async function mockProjectMembers(page: Page, options: { membersStatus?: number 
         permissions: { canDelete: true, canUpdate: true },
         projectName: "sample",
       }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
+    const request = route.request();
+    options.favoriteRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-members",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
     });
   });
 
