@@ -343,6 +343,29 @@ test("site admin user actions follow legacy confirmation and alert flow", async 
   expect(requests.resetLoginIds).toEqual(["doortts"]);
 });
 
+test("site admin user reset password failure uses legacy alert text", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockSiteUsers(page, { resetFails: true });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/userList`);
+
+  const alertPromise = page.waitForEvent("dialog");
+  await page.locator('[data-toggle="reset-password"]').click();
+  const alert = await alertPromise;
+  expect(alert.message()).toBe("password change failed: reset service unavailable");
+  await alert.accept();
+  await expect(page.locator(".action-buttons .alert-fail")).toHaveCount(0);
+  await expect(page.locator(".action-buttons .alert-success")).toHaveCount(0);
+});
+
 test("site admin user role toggles use legacy row action requests", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
@@ -414,7 +437,7 @@ async function mockSiteAdminSession(page: Page) {
   });
 }
 
-async function mockSiteUsers(page: Page) {
+async function mockSiteUsers(page: Page, options: { resetFails?: boolean } = {}) {
   const requests = {
     deletedLoginIds: [] as string[],
     resetLoginIds: [] as string[],
@@ -465,6 +488,20 @@ async function mockSiteUsers(page: Page) {
   await page.route("**/api/v1/site/users/*/password/reset", async (route) => {
     const loginId = new URL(route.request().url()).pathname.split("/").at(-3) ?? "";
     requests.resetLoginIds.push(loginId);
+    if (options.resetFails) {
+      await route.fulfill({
+        contentType: "application/json",
+        status: 500,
+        body: JSON.stringify({
+          error: {
+            code: "password_reset_failed",
+            message: "reset service unavailable",
+            status: 500,
+          },
+        }),
+      });
+      return;
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

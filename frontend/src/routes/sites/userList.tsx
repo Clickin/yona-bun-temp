@@ -102,6 +102,15 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
       setPasswordResetByLoginId((current) => ({ ...current, [loginId]: data }));
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
     },
+    onError(error, loginId) {
+      setPasswordResetByLoginId((current) => {
+        const next = { ...current };
+        delete next[loginId];
+        return next;
+      });
+      // oxlint-disable-next-line no-alert -- legacy site/userList.scala.html uses $yobi.alert for reset-password failures.
+      window.alert(`password change failed: ${error.message}`);
+    },
   });
   const toggleUserMutation = useMutation({
     mutationFn: async ({ action, loginId }: { action: UserToggleAction; loginId: string }) => {
