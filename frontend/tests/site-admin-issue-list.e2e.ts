@@ -102,7 +102,7 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
             </div>
             <div class="post-meta-wrap">
               <a href="__BASE_PATH__/alice" class="avatar-wrap">
-                <img src="/avatars/alice.png" alt="Alice" width="16" height="16">
+                <img src="https://www.gravatar.com/avatar/alice-default?s=16">
               </a>
               <a href="__BASE_PATH__/alice" class="post-meta-item">Alice</a>
               <span class="post-meta-item" title="2026-06-29 13:00">1 day ago</span>
@@ -152,6 +152,12 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect(page.locator(".post-title")).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap/issue/42`,
+  );
+  await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("alt", /.*/);
+  await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("width", /.*/);
+  await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute(
+    "height",
+    /.*/,
   );
   await expect(page.locator(".post-comments a")).toHaveAttribute(
     "href",
@@ -268,6 +274,13 @@ async function mockSiteAdminSession(page: Page) {
 }
 
 async function mockIssues(page: Page) {
+  await page.route("https://www.gravatar.com/avatar/alice-default?s=16", async (route) => {
+    await route.fulfill({
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"></svg>',
+      contentType: "image/svg+xml",
+    });
+  });
+
   await page.route("**/api/v1/site/issues?*", async (route) => {
     const url = new URL(route.request().url());
     const pageNum = Number(url.searchParams.get("pageNum") ?? "1") || 1;
@@ -277,7 +290,7 @@ async function mockIssues(page: Page) {
         issues: [
           {
             assigneeLabel: "",
-            authorAvatarUrl: "/avatars/alice.png",
+            authorAvatarUrl: "https://www.gravatar.com/avatar/alice-default?s=16",
             authorLabel: "Alice",
             authorLoginId: "alice",
             commentCount: 5,

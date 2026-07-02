@@ -243,7 +243,12 @@ function IssueListItem({
       </div>
       <div className="post-meta-wrap">
         <a href={authorPath} className="avatar-wrap">
-          <img src={issue.authorAvatarUrl} alt={issue.authorLabel} width="16" height="16" />
+          {isDefaultAuthorAvatar(issue.authorAvatarUrl) ? (
+            /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default author avatar branch renders no alt/size attributes. */
+            <img src={issue.authorAvatarUrl} />
+          ) : (
+            <img src={issue.authorAvatarUrl} alt={issue.authorLabel} width="16" height="16" />
+          )}
         </a>
         <a href={authorPath} className="post-meta-item">
           {issue.authorLabel}
@@ -265,4 +270,8 @@ function IssueListItem({
 function LegacyMessage({ messageKey }: { messageKey: string }) {
   const { t } = useLegacyMessages();
   return <>{t(messageKey)}</>;
+}
+
+function isDefaultAuthorAvatar(avatarUrl: string) {
+  return avatarUrl.includes("gravatar.com/avatar/");
 }
