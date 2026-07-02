@@ -761,6 +761,11 @@ function UserIssueItem({
   const authorRoutePath = `/${issue.authorLoginId}`;
   const assigneeRoutePath = `/${issue.assigneeLoginId}`;
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
+  const updatedLabel = stringField(issue.updatedLabel, createdLabel);
+  const dateTooltipTitle =
+    updatedLabel && updatedLabel !== createdLabel
+      ? `Last Updated ${updatedLabel}`
+      : `Created at ${createdLabel}`;
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
   const showAuthor = search.filter !== "authored";
   const showAssignee = search.filter !== "assigned" && issue.assigneeLoginId;
@@ -887,7 +892,12 @@ function UserIssueItem({
                 <span className="infos-item">{t("issue.noAuthor")}</span>
               ) : null}
             </span>
-            <span className="infos-item" title={createdLabel}>
+            <span
+              className="infos-item"
+              data-toggle="tooltip"
+              data-placement="bottom"
+              title={dateTooltipTitle}
+            >
               {createdLabel}
             </span>
             {issue.milestoneId ? (
