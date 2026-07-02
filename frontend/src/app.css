@@ -2437,6 +2437,82 @@ h1 {
   display: inline-block;
 }
 
+.page-wrap-outer > .project-page-wrap {
+  margin-top: 20px !important;
+}
+
+.project-home-header {
+  position: relative;
+  padding: 5px 0;
+  margin-bottom: 20px;
+}
+
+.project-home-header .project-overview {
+  padding: 0 10px;
+  border-left: 3px solid #fc491e;
+}
+
+.project-home-header .project-overview h3 {
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 30px;
+}
+
+.project-home-header .project-overview h3 .markdown-wrap p {
+  display: inline-block;
+  margin: 0;
+}
+
+.project-home-header .project-description-edit input {
+  margin: 0;
+}
+
+.project-home-header .project-clone-wrap {
+  position: relative;
+  padding: 5px 0;
+  border-radius: 6px;
+}
+
+.project-home-header .project-clone-wrap .project-clone-url {
+  position: absolute;
+  right: 86px;
+  float: left;
+  width: 175px !important;
+  max-width: none !important;
+  margin-bottom: 0;
+  text-align: right;
+  cursor: pointer;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-right: none;
+  border-radius: 3px 0 0 3px;
+  outline: 0;
+  transition: width 0.15s;
+}
+
+.project-home-header .project-clone-wrap .project-clone-url:focus {
+  width: 450px !important;
+}
+
+.project-home-header .project-clone-wrap .project-clone-button {
+  position: absolute;
+  right: 0;
+  float: left;
+  width: 86px;
+  padding: 4px 0 !important;
+  margin-left: 0;
+  border-radius: 0 3px 3px 0;
+}
+
+.readme {
+  padding: 5px;
+}
+
+.readme .default {
+  padding: 20px;
+  text-align: center;
+}
+
 .clearfix::before,
 .clearfix::after {
   display: table;
@@ -3303,8 +3379,22 @@ h1 {
     margin-top: 5px !important;
   }
 
+  .page-wrap-outer > .project-page-wrap {
+    margin-top: 5px !important;
+  }
+
   .project-header-outer {
     height: 70px;
+  }
+
+  .project-home-header .project-clone-wrap .project-clone-url {
+    width: 100px !important;
+    max-width: 125px;
+  }
+
+  .project-home-header .project-clone-wrap:hover .project-clone-url {
+    width: 100% !important;
+    max-width: 250px;
   }
 
   .project-header-avatar {
@@ -3365,6 +3455,10 @@ h1 {
 
   .span-right-pane {
     display: none !important;
+  }
+
+  .readme .readme-wrap .readme-body {
+    padding: 0 !important;
   }
 }
 
@@ -4004,7 +4098,7 @@ h1 {
 }
 
 .readme .readme-wrap .readme-body {
-  padding: 25px;
+  padding: 25px !important;
   font-size: 1.2em;
 }
 
@@ -4911,6 +5005,10 @@ div.markdown-preview {
 
   .issue-detail-page .right-menu {
     margin-top: 18px;
+  }
+
+  .readme .readme-wrap .readme-body {
+    padding: 0 !important;
   }
 }
 

@@ -23,6 +23,51 @@ test("project home README tab matches legacy project/home.scala.html DOM", async
   );
 });
 
+test("project home README tab keeps legacy desktop and mobile proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    readmeFile: {
+      bodyHtml: "<p>Server HTML should not render</p>",
+      bodyMarkdown: "Project **README**",
+      name: "README.md",
+    },
+  });
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample`);
+  await expect(page.locator(".project-home-header")).toBeVisible();
+
+  const desktop = await projectHomeLayoutMetrics(page);
+  expect(desktop.viewportWidth).toBe(1280);
+  expect(desktop.mobileMediaMatches).toBe(false);
+  expect(desktop.pageWrapMarginTop).toBe(20);
+  expect(desktop.homeHeaderPaddingTop).toBe(5);
+  expect(desktop.homeHeaderPaddingBottom).toBe(5);
+  expect(desktop.homeHeaderMarginBottom).toBe(20);
+  expect(desktop.overviewBorderLeftWidth).toBe(3);
+  expect(desktop.overviewPaddingLeft).toBe(10);
+  expect(desktop.descriptionFontSize).toBe(14);
+  expect(desktop.descriptionLineHeight).toBe(30);
+  expect(desktop.cloneUrlWidth).toBe(175);
+  expect(desktop.readmePadding).toBe(5);
+  expect(desktop.readmeHeaderPadding).toBe("10px 25px");
+  expect(desktop.readmeBodyPadding).toBe("25px");
+  expect(desktop.leftPanePercent).toBeCloseTo(74.47, 1);
+  expect(desktop.rightPanePercent).toBeCloseTo(23.4, 1);
+  expect(desktop.rightPaneDisplay).not.toBe("none");
+
+  await page.setViewportSize({ width: 390, height: 720 });
+  await page.goto(`${basePath}/admin/sample`);
+  await expect(page.locator(".project-home-header")).toBeVisible();
+
+  const mobile = await projectHomeLayoutMetrics(page);
+  expect(mobile.pageWrapMarginTop).toBe(5);
+  expect(mobile.pageWrapWidth).toBe(390);
+  expect(mobile.leftPanePercent).toBeCloseTo(100, 1);
+  expect(mobile.rightPaneDisplay).toBe("none");
+  expect(mobile.readmeBodyPadding).toBe("0px");
+});
+
 test("project home README tab renders README Markdown instead of compatibility HTML", async ({
   page,
 }) => {
@@ -520,6 +565,41 @@ async function selectedInputValue(page: Page, selector: string) {
 
 async function copiedText(page: Page) {
   return page.evaluate(() => (window as unknown as { __copiedText?: string }).__copiedText ?? "");
+}
+
+async function projectHomeLayoutMetrics(page: Page) {
+  return page.evaluate(() => {
+    const numberStyle = (selector: string, property: string) =>
+      Number.parseFloat(style(selector).getPropertyValue(property));
+    const style = (selector: string) =>
+      getComputedStyle(document.querySelector(selector) as Element);
+    const rect = (selector: string) =>
+      (document.querySelector(selector) as HTMLElement).getBoundingClientRect();
+    const pageWrap = rect(".project-page-wrap");
+    const leftPane = rect(".span-left-pane");
+    const rightPane = rect(".span-right-pane");
+
+    return {
+      cloneUrlWidth: rect("#cloneURL").width,
+      descriptionFontSize: numberStyle(".project-overview h3", "font-size"),
+      descriptionLineHeight: numberStyle(".project-overview h3", "line-height"),
+      homeHeaderMarginBottom: numberStyle(".project-home-header", "margin-bottom"),
+      homeHeaderPaddingBottom: numberStyle(".project-home-header", "padding-bottom"),
+      homeHeaderPaddingTop: numberStyle(".project-home-header", "padding-top"),
+      leftPanePercent: (leftPane.width / pageWrap.width) * 100,
+      overviewBorderLeftWidth: numberStyle(".project-overview", "border-left-width"),
+      overviewPaddingLeft: numberStyle(".project-overview", "padding-left"),
+      pageWrapMarginTop: numberStyle(".project-page-wrap", "margin-top"),
+      pageWrapWidth: pageWrap.width,
+      readmeBodyPadding: style(".readme .readme-wrap .readme-body").padding,
+      readmeHeaderPadding: style(".readme .readme-wrap header").padding,
+      readmePadding: numberStyle(".bubble-wrap.gray.readme", "padding-top"),
+      rightPaneDisplay: style(".span-right-pane").display,
+      rightPanePercent: (rightPane.width / pageWrap.width) * 100,
+      mobileMediaMatches: window.matchMedia("(max-width: 900px)").matches,
+      viewportWidth: window.innerWidth,
+    };
+  });
 }
 
 async function canonicalizeLocator(page: Page, selector: string) {
