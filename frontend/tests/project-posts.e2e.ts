@@ -519,6 +519,19 @@ test("project board detail opens legacy posting history modal", async ({ page })
   await expect(page.locator("#-yona-posting-history")).not.toHaveClass(/hide/);
   await expect(page.locator("#-yona-posting-history")).toHaveClass(/in/);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  expect(await postingHistoryMetrics(page)).toEqual({
+    backdropDisplay: "block",
+    bodyPadding: "15px",
+    confirmText: "Confirm",
+    display: "block",
+    footerTextAlign: "right",
+    headerBorderBottomWidth: "1px",
+    historyDisplay: "inline-block",
+    historyMarginLeft: "10px",
+    title: "Change history",
+    top: 10,
+    width: 562,
+  });
 
   await page.locator('#-yona-posting-history [data-dismiss="modal"]').last().click();
   await expect(page.locator("#-yona-posting-history")).toHaveClass(/hide/);
@@ -924,6 +937,31 @@ async function keymapModalMetrics(page: Page) {
       firstColumnTitle: element.querySelector(".span3 h5")?.textContent?.trim(),
       left: Math.round(rect.left),
       top: Math.round(rect.top),
+      width: Math.round(rect.width),
+    };
+  });
+}
+
+async function postingHistoryMetrics(page: Page) {
+  return page.locator("#-yona-posting-history").evaluate((modal) => {
+    const rect = modal.getBoundingClientRect();
+    const backdrop = document.querySelector<HTMLElement>(".modal-backdrop");
+    const body = modal.querySelector<HTMLElement>(".modal-body");
+    const button = modal.querySelector<HTMLButtonElement>(".modal-footer [data-dismiss='modal']");
+    const footer = modal.querySelector<HTMLElement>(".modal-footer");
+    const header = modal.querySelector<HTMLElement>(".modal-header");
+    const history = document.querySelector<HTMLElement>(".posting-history");
+    return {
+      backdropDisplay: backdrop ? window.getComputedStyle(backdrop).display : null,
+      bodyPadding: body ? window.getComputedStyle(body).padding : null,
+      confirmText: button?.textContent?.trim() ?? null,
+      display: window.getComputedStyle(modal).display,
+      footerTextAlign: footer ? window.getComputedStyle(footer).textAlign : null,
+      headerBorderBottomWidth: header ? window.getComputedStyle(header).borderBottomWidth : null,
+      historyDisplay: history ? window.getComputedStyle(history).display : null,
+      historyMarginLeft: history ? window.getComputedStyle(history).marginLeft : null,
+      title: header?.querySelector("h5")?.textContent?.trim() ?? null,
+      top: Math.round((rect.top / window.innerHeight) * 100),
       width: Math.round(rect.width),
     };
   });
