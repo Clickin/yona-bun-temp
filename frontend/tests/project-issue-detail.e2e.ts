@@ -53,7 +53,7 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     "Site Admin <admin@example.com>;Dev Member <dev@example.com>;",
   );
   await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
-  await expectIssueDetailStylesheets(page, basePath);
+  await expectIssueDetailAssets(page, basePath);
 
   const emptyTimeline =
     '<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div>';
@@ -122,7 +122,7 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   });
 });
 
-async function expectIssueDetailStylesheets(page: Page, basePath: string) {
+async function expectIssueDetailAssets(page: Page, basePath: string) {
   const hrefs = [
     `${basePath}/admin/sample/issue/labels.css`,
     `${basePath}/assets/javascripts/lib/atjs/jquery.atwho.css`,
@@ -130,11 +130,40 @@ async function expectIssueDetailStylesheets(page: Page, basePath: string) {
     `${basePath}/assets/javascripts/lib/videojs/video-js.min.css`,
   ];
 
+  const markdownLink = page.locator(
+    `link[href="${basePath}/assets/javascripts/lib/highlight/styles/default.css"]`,
+  );
+  await expect(markdownLink).toHaveAttribute("rel", "stylesheet");
+  await expect(markdownLink).toHaveAttribute("type", "text/css");
+
   for (const href of hrefs) {
     const link = page.locator(`link[href="${href}"]`);
     await expect(link).toHaveAttribute("rel", "stylesheet");
     await expect(link).toHaveAttribute("type", "text/css");
     await expect(link).toHaveAttribute("media", "screen");
+  }
+
+  const scriptSources = [
+    `${basePath}/assets/javascripts/lib/highlight/highlight.pack.js`,
+    `${basePath}/assets/javascripts/lib/marked.js`,
+    `${basePath}/assets/javascripts/lib/atjs/jquery.caret.min.js`,
+    `${basePath}/assets/javascripts/lib/atjs/jquery.atwho.js`,
+    `${basePath}/assets/javascripts/lib/elevator/jquery.elevator.js`,
+    `${basePath}/assets/javascripts/lib/videojs/video.min.js`,
+    `${basePath}/assets/javascripts/lib/favico/favico.min.js`,
+    `${basePath}/assets/javascripts/service/yona.issue.Assginee.js`,
+    `${basePath}/assets/javascripts/service/yona.issue.Sharer.js`,
+    `${basePath}/assets/javascripts/service/yona.detectChange.js`,
+    `${basePath}/assets/javascripts/common/yona.Sha1.js`,
+    `${basePath}/assets/javascripts/common/yona.Tasklist.js`,
+    `${basePath}/assets/javascripts/common/yona.SubComment.js`,
+    `${basePath}/assets/javascripts/common/yona.CommentAttachmentsUpdate.js`,
+    `${basePath}/assets/javascripts/common/yona.ReceiverList.js`,
+  ];
+  for (const src of scriptSources) {
+    const script = page.locator(`script[src="${src}"]`);
+    await expect(script).toHaveAttribute("type", "text/javascript");
+    await expect(script).toHaveAttribute("defer", "");
   }
 }
 

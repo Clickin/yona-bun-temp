@@ -96,7 +96,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <IssueDetailStylesheets
+      <IssueDetailAssets
         basePath={runtimeConfig.basePath}
         ownerName={ownerName}
         projectName={projectName}
@@ -111,7 +111,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   );
 }
 
-function IssueDetailStylesheets({
+function IssueDetailAssets({
   basePath,
   ownerName,
   projectName,
@@ -122,6 +122,21 @@ function IssueDetailStylesheets({
 }) {
   return (
     <>
+      <link
+        rel="stylesheet"
+        type="text/css"
+        href={prefixBasePath(basePath, "/assets/javascripts/lib/highlight/styles/default.css")}
+      />
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/highlight/highlight.pack.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/marked.js")}
+      ></script>
       <link
         rel="stylesheet"
         type="text/css"
@@ -146,6 +161,74 @@ function IssueDetailStylesheets({
         media="screen"
         href={prefixBasePath(basePath, "/assets/javascripts/lib/videojs/video-js.min.css")}
       />
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/atjs/jquery.caret.min.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/atjs/jquery.atwho.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/elevator/jquery.elevator.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/videojs/video.min.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/favico/favico.min.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/service/yona.issue.Assginee.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/service/yona.issue.Sharer.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/service/yona.detectChange.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/common/yona.Sha1.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/common/yona.Tasklist.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/common/yona.SubComment.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(
+          basePath,
+          "/assets/javascripts/common/yona.CommentAttachmentsUpdate.js",
+        )}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/common/yona.ReceiverList.js")}
+      ></script>
     </>
   );
 }
