@@ -110,6 +110,43 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   });
 });
 
+test("project issue detail not found renders legacy project error shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, { __issueNumber: 999, __issueStatus: 404 });
+
+  await page.goto(`${basePath}/admin/sample/issue/999`);
+
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
+  await expect(page.locator(".project-page-wrap > .error-wrap")).toBeVisible();
+  await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
+    "Issue does not exist",
+  );
+  await expect(page.locator(".project-page-wrap > .error-wrap .ybtn.ybtn-primary")).toHaveText(
+    "List",
+  );
+  await expect(page.locator(".project-page-wrap > .error-wrap .ybtn.ybtn-primary")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issues?state=all`,
+  );
+  await expect(page.locator(".board-view")).toHaveCount(0);
+  await expect(page.locator("#issueUpdateForm")).toHaveCount(0);
+  await expect(page.locator("#comment-form")).toHaveCount(0);
+
+  expect(await issueNotFoundMetrics(page)).toEqual({
+    buttonDisplay: "inline-block",
+    buttonHeight: 30,
+    buttonLineHeight: "20px",
+    errorPaddingBlock: 200,
+    iconClass: "ico ico-err2",
+    messageFontSize: "16px",
+    messageFontWeight: "700",
+    messageMarginBottom: 30,
+    messageMarginTop: 30,
+    pageWrapChildCount: 1,
+  });
+});
+
 test("project issue detail new subtask link preserves legacy href with SPA transition", async ({
   page,
 }) => {
@@ -1689,6 +1726,11 @@ async function keymapModalMetrics(page: Page) {
 }
 
 async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string, unknown> = {}) {
+  const issueStatus = Number(issueOverrides.__issueStatus ?? 200);
+  const issueNumber = String(issueOverrides.__issueNumber ?? 11);
+  const effectiveIssueOverrides = { ...issueOverrides };
+  delete effectiveIssueOverrides.__issueStatus;
+  delete effectiveIssueOverrides.__issueNumber;
   const deleteRequests: string[] = [];
   const commentDeleteRequests: string[] = [];
   const commentVoteRequests: { csrfToken: string | null; method: string }[] = [];
@@ -1777,10 +1819,24 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       }),
     });
   });
-  await page.route("**/api/v1/projects/admin/sample/issues/11", async (route) => {
+  await page.route(`**/api/v1/projects/admin/sample/issues/${issueNumber}`, async (route) => {
     if (route.request().method() === "DELETE") {
       deleteRequests.push(route.request().method());
       await route.fulfill({ status: 204 });
+      return;
+    }
+    if (issueStatus === 404) {
+      await route.fulfill({
+        contentType: "application/json",
+        status: 404,
+        body: JSON.stringify({
+          error: {
+            code: "not_found",
+            message: "Issue does not exist",
+            status: 404,
+          },
+        }),
+      });
       return;
     }
     const issue = {
@@ -1876,7 +1932,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       voterCount: 2,
       watcherCount: 0,
       weight: 2,
-      ...issueOverrides,
+      ...effectiveIssueOverrides,
     };
     await route.fulfill({
       contentType: "application/json",
@@ -1905,6 +1961,43 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
     },
   );
   return { commentDeleteRequests, commentVoteRequests, deleteRequests };
+}
+
+async function issueNotFoundMetrics(page: Page) {
+  return page.evaluate(() => {
+    const errorWrap = requireElement(".project-page-wrap > .error-wrap");
+    const icon = requireElement(".project-page-wrap > .error-wrap .ico.ico-err2");
+    const message = requireElement(".project-page-wrap > .error-wrap p");
+    const button = requireElement(".project-page-wrap > .error-wrap .ybtn.ybtn-primary");
+    const pageWrap = requireElement(".project-page-wrap");
+    const errorStyle = getComputedStyle(errorWrap);
+    const messageStyle = getComputedStyle(message);
+    const buttonStyle = getComputedStyle(button);
+    const buttonRect = button.getBoundingClientRect();
+
+    return {
+      buttonDisplay: buttonStyle.display,
+      buttonHeight: Math.round(buttonRect.height),
+      buttonLineHeight: buttonStyle.lineHeight,
+      errorPaddingBlock:
+        Math.round(parseFloat(errorStyle.paddingTop)) +
+        Math.round(parseFloat(errorStyle.paddingBottom)),
+      iconClass: icon.getAttribute("class"),
+      messageFontSize: messageStyle.fontSize,
+      messageFontWeight: messageStyle.fontWeight,
+      messageMarginBottom: Math.round(parseFloat(messageStyle.marginBottom)),
+      messageMarginTop: Math.round(parseFloat(messageStyle.marginTop)),
+      pageWrapChildCount: pageWrap.children.length,
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
 }
 
 async function commentDeleteModalMetrics(page: Page) {

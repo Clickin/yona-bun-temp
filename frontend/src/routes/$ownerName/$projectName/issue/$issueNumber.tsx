@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
+import { RestApiError } from "../../../../api/rest-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import type { ProjectContainer } from "../../../../api/types";
 import { YonaQueryProvider } from "../../../../query-client";
@@ -61,7 +62,25 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     queryKey: ["project-issue-detail", ownerName, projectName, numericIssueNumber],
   });
 
-  if (!projectQuery.data || !issueQuery.data || !sessionQuery.data) {
+  if (!projectQuery.data || !sessionQuery.data) {
+    return null;
+  }
+
+  if (issueQuery.error instanceof RestApiError && issueQuery.error.status === 404) {
+    return (
+      <>
+        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+        <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+        <ProjectIssueNotFoundBody
+          basePath={runtimeConfig.basePath}
+          ownerName={ownerName}
+          projectName={projectName}
+        />
+      </>
+    );
+  }
+
+  if (!issueQuery.data) {
     return null;
   }
 
@@ -76,6 +95,35 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         runtimeConfig={runtimeConfig}
       />
     </>
+  );
+}
+
+function ProjectIssueNotFoundBody({
+  basePath,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t("error.notfound.issue_post")}</p>
+          <a
+            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues?state=all`)}
+            className="ybtn ybtn-primary"
+          >
+            {t("button.list")}
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }
 
