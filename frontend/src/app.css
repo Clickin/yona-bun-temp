@@ -1362,6 +1362,14 @@ pre code {
   background: #f9f9f9;
 }
 
+.dimgray {
+  color: dimgray;
+}
+
+.white {
+  color: #fff;
+}
+
 .issue-label:last-of-type {
   margin: 0;
 }

@@ -678,7 +678,7 @@ function UserIssueItem({
             {issue.labels.map((label) => (
               <a
                 href={`${projectHref}/issues?state=${search.state}&labelIds=${label.id}`}
-                className="label issue-label list-label twoColumeModeTarget"
+                className={`label issue-label list-label twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
                 data-label-id={label.id}
                 style={{ background: label.color }}
                 key={String(label.id)}
@@ -856,7 +856,7 @@ function UserIssueChildRow({
       </span>
       {labels.map((label) => (
         <LegacyInternalLink
-          className="label issue-label list-label active twoColumeModeTarget"
+          className={`label issue-label list-label active twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
           data-category-id={String(label.categoryId ?? "")}
           data-label-id={String(label.id)}
           key={String(label.id)}
@@ -917,6 +917,46 @@ function compareIssueLabels(left: RestIssueChildLabel, right: RestIssueChildLabe
   return `${left.categoryName ?? ""}\u0000${left.name}`.localeCompare(
     `${right.categoryName ?? ""}\u0000${right.name}`,
   );
+}
+
+function contrastClassForLabelColor(color: string | undefined) {
+  const rgb = parseLabelColor(color);
+  if (!rgb) {
+    return "white";
+  }
+  const y709 = rgb.r * 0.21 + rgb.g * 0.72 + rgb.b * 0.07;
+  return y709 > 192 ? "dimgray" : "white";
+}
+
+function parseLabelColor(color: string | undefined) {
+  const value = color?.trim();
+  if (!value) {
+    return null;
+  }
+  const hex = value.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/iu)?.[1];
+  if (hex) {
+    const normalized =
+      hex.length === 3
+        ? hex
+            .split("")
+            .map((char) => `${char}${char}`)
+            .join("")
+        : hex;
+    return {
+      b: Number.parseInt(normalized.slice(4, 6), 16),
+      g: Number.parseInt(normalized.slice(2, 4), 16),
+      r: Number.parseInt(normalized.slice(0, 2), 16),
+    };
+  }
+
+  const rgb = value.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/iu);
+  return rgb
+    ? {
+        b: Number(rgb[3]),
+        g: Number(rgb[2]),
+        r: Number(rgb[1]),
+      }
+    : null;
 }
 
 function CommentVoteCounts({ issue, issueHref }: { issue: RestIssueListItem; issueHref: string }) {
