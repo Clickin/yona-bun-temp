@@ -3,11 +3,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Fragment,
   useEffect,
+  useEffectEvent,
   useRef,
   type CSSProperties,
   type HTMLAttributes,
   type LiHTMLAttributes,
-  type MouseEvent,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
@@ -420,6 +421,16 @@ function ProjectIssuesBody({
       }),
     });
   };
+  const handleSortChange = (orderBy: string, orderDir: string) => {
+    void navigate({
+      to: projectIssuesRoutePath(ownerName, projectName, {
+        ...search,
+        orderBy,
+        orderDir,
+        pageNum: 1,
+      }),
+    });
+  };
   const showMilestone = projectMilestoneMenuEnabled(project);
   const showMassUpdateControls = projectMemberControlsEnabled(project);
   const showLabelManagement = projectIssueLabelCreatable(project);
@@ -520,7 +531,11 @@ function ProjectIssuesBody({
                     />
                   ) : null}
                   {issues.items.length > 1 ? (
-                    <IssueFilters orderBy={search.orderBy} orderDir={search.orderDir} />
+                    <IssueFilters
+                      onSortChange={handleSortChange}
+                      orderBy={search.orderBy}
+                      orderDir={search.orderDir}
+                    />
                   ) : null}
                 </div>
                 <ul className="post-list-wrap row-fluid">
@@ -566,7 +581,15 @@ function ProjectIssuesBody({
   );
 }
 
-function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string }) {
+function IssueFilters({
+  onSortChange,
+  orderBy,
+  orderDir,
+}: {
+  onSortChange: (orderBy: string, orderDir: string) => void;
+  orderBy: string;
+  orderDir: string;
+}) {
   const { t } = useLegacyMessages();
   const filters = [
     { field: "dueDate", label: t("common.order.dueDate") },
@@ -585,6 +608,7 @@ function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string
             field={filter.field}
             key={filter.field}
             label={filter.label}
+            onSortChange={onSortChange}
             orderDir={active && orderDir === "desc" ? "asc" : "desc"}
           >
             <i className={`ico btn-gray-arrow${!active || orderDir === "desc" ? " down" : ""}`}></i>
@@ -600,19 +624,33 @@ function IssueSortFilter({
   children,
   field,
   label,
+  onSortChange,
   orderDir,
 }: {
   active: boolean;
   children: ReactNode;
   field: string;
   label: string;
+  onSortChange: (orderBy: string, orderDir: string) => void;
   orderDir: string;
 }) {
   const linkRef = useRef<HTMLAnchorElement>(null);
+  const handleClick = useEffectEvent((event: MouseEvent) => {
+    event.preventDefault();
+    onSortChange(field, orderDir);
+  });
 
   useEffect(() => {
-    linkRef.current?.setAttribute("orderBy", field);
-    linkRef.current?.setAttribute("orderDir", orderDir);
+    const link = linkRef.current;
+    if (!link) {
+      return;
+    }
+    link.setAttribute("orderBy", field);
+    link.setAttribute("orderDir", orderDir);
+    link.addEventListener("click", handleClick);
+    return () => {
+      link.removeEventListener("click", handleClick);
+    };
   }, [field, orderDir]);
 
   return (
@@ -2047,7 +2085,7 @@ function StateTab({
   state: "closed" | "open";
 }) {
   const legacyState = {
-    onClick: (event: MouseEvent<HTMLAnchorElement>) => {
+    onClick: (event: ReactMouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
       onStateChange(state);
     },
