@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
+  cancelEnrollProjectRest,
   deleteProjectMemberRest,
+  enrollProjectRest,
   readProjectContainerQueryOptions,
   toggleProjectWatchRest,
   updateProjectOverviewRest,
@@ -945,6 +947,22 @@ function ProjectMember({ basePath, member }: { basePath: string; member: YonaUse
   );
 }
 
+function toggleProjectUtilDropdown(toggle: HTMLElement) {
+  const item = toggle.closest(".project-util li");
+  const isOpen = item?.classList.contains("open") ?? false;
+  document
+    .querySelectorAll(".project-util li.open")
+    .forEach((openItem) => closeProjectUtilDropdown(openItem));
+  item?.classList.toggle("open", !isOpen);
+}
+
+function closeProjectUtilDropdown(item: Element) {
+  item.classList.remove("open");
+  if (item.getAttribute("class") === "") {
+    item.removeAttribute("class");
+  }
+}
+
 export function ProjectHeader({
   basePath,
   project,
@@ -972,12 +990,34 @@ export function ProjectHeader({
   const originalProjectName =
     stringField(recordField(project).originalProjectName, "") ||
     stringField(recordField(project).originProjectName, "");
+  const canEnrollProject = projectCanEnroll(project);
+  const [enrollmentRequested, setEnrollmentRequested] = useState(() =>
+    projectEnrollmentRequested(project),
+  );
   const canWatchProject = projectCanWatch(project);
   const [watchState, setWatchState] = useState({
     count: projectWatchingCount(project),
     isWatching: projectIsWatching(project),
   });
   const projectIdValueForLinks = projectIdValue || projectId(project);
+  const enrollmentMutation = useMutation({
+    mutationFn: async (nextRequested: boolean) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return nextRequested
+        ? enrollProjectRest(runtimeConfig, csrfToken, ownerName, projectName)
+        : cancelEnrollProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
+    },
+    onSuccess(response, nextRequested) {
+      setEnrollmentRequested(
+        typeof response.enrollmentRequested === "boolean"
+          ? response.enrollmentRequested
+          : nextRequested,
+      );
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.container(ownerName, projectName),
+      });
+    },
+  });
   const watchMutation = useMutation({
     mutationFn: async (nextWatching: boolean) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -1047,6 +1087,85 @@ export function ProjectHeader({
           </div>
           <div className="project-util-wrap">
             <ul className="project-util">
+              {canEnrollProject ? (
+                <li>
+                  {enrollmentRequested ? (
+                    <>
+                      <button
+                        className="ybtn ybtn-small ybtn-info dropdown-toggle"
+                        type="button"
+                        data-toggle="dropdown"
+                        onClick={(event) => toggleProjectUtilDropdown(event.currentTarget)}
+                      >
+                        <i className="yobicon-addfriend"></i>
+                      </button>
+                      <div className="dropdown-menu flat right title">
+                        <div className="pop-title">
+                          {t("project.you.want.to.be.a.member", { args: [projectName] })}
+                        </div>
+                        <div className="pop-content">{t("project.member.enrollment.help")}</div>
+                        <div className="pop-content btn-wrap">
+                          <a
+                            className="ybtn enrollBtn"
+                            href={prefixBasePath(
+                              basePath,
+                              `/${ownerName}/${projectName}/cancel/enroll`,
+                            )}
+                            id="enrollBtn"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              const item = event.currentTarget.closest(".project-util li");
+                              if (item) {
+                                closeProjectUtilDropdown(item);
+                              }
+                              enrollmentMutation.mutate(false);
+                            }}
+                          >
+                            <i className="yobicon-removefriend"></i> {t("button.cancel.enrollment")}
+                          </a>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="ybtn ybtn-small dropdown-toggle"
+                        type="button"
+                        data-toggle="dropdown"
+                        onClick={(event) => toggleProjectUtilDropdown(event.currentTarget)}
+                      >
+                        <i className="yobicon-addfriend"></i>
+                        {t("organization.member.enrollment.title")}
+                      </button>
+                      <div className="dropdown-menu flat right title">
+                        <div className="pop-title">
+                          {t("project.you.may.want.to.be.a.member", { args: [projectName] })}
+                        </div>
+                        <div className="pop-content">
+                          {t("project.member.enrollment.will.help")}
+                        </div>
+                        <div className="pop-content btn-wrap">
+                          <a
+                            className="ybtn ybtn-info enrollBtn"
+                            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/enroll`)}
+                            id="enrollBtn"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              const item = event.currentTarget.closest(".project-util li");
+                              if (item) {
+                                closeProjectUtilDropdown(item);
+                              }
+                              enrollmentMutation.mutate(true);
+                            }}
+                          >
+                            <i className="yobicon-addfriend"></i> {t("button.new.enrollment")}
+                          </a>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </li>
+              ) : null}
               {canWatchProject ? (
                 <li>
                   <div className="btn-group dropdown watch-btn">
@@ -1303,6 +1422,20 @@ function projectFavorited(project: ProjectContainer) {
 function projectCanWatch(project: ProjectContainer) {
   const record = recordField(project);
   return booleanField(record.viewerCanWatch) || booleanField(record.canWatch);
+}
+
+function projectCanEnroll(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.viewerCanEnroll) || booleanField(record.canEnroll);
+}
+
+function projectEnrollmentRequested(project: ProjectContainer) {
+  const record = recordField(project);
+  return (
+    booleanField(record.enrollmentRequested) ||
+    booleanField(record.viewerEnrollmentRequested) ||
+    booleanField(record.isEnrolled)
+  );
 }
 
 function projectIsWatching(project: ProjectContainer) {

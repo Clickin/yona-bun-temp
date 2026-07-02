@@ -153,6 +153,80 @@ test("project home header renders legacy watch utility for watchable projects", 
   );
 });
 
+test("project home header renders and posts legacy enrollment utility for guest projects", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const enrollRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectHome(page, {
+    enrollRequests,
+    project: {
+      enrollmentRequested: false,
+      viewerCanEnroll: true,
+      viewerCanLeave: false,
+      viewerCanWatch: false,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample`);
+
+  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button" data-toggle="dropdown"><i class="yobicon-addfriend"></i>Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You can send a sign-up request for the sample project.</div><div class="pop-content">The project manager or other members of this project will check your sign-up request.</div><div class="pop-content btn-wrap"><a class="ybtn ybtn-info enrollBtn" href="${basePath}/admin/sample/enroll" id="enrollBtn"><i class="yobicon-addfriend"></i> Send sign-up request</a></div></div></li></ul>`,
+    ),
+  );
+
+  await page.locator(".project-util .dropdown-toggle").click();
+  const enrollResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/enroll") &&
+      response.request().method() === "POST",
+  );
+  await page.locator("#enrollBtn").click();
+  await enrollResponsePromise;
+
+  expect(enrollRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<ul class="project-util"><li><button class="ybtn ybtn-small ybtn-info dropdown-toggle" type="button" data-toggle="dropdown"><i class="yobicon-addfriend"></i></button><div class="dropdown-menu flat right title"><div class="pop-title">You have sent a sign-up request for the sample project.</div><div class="pop-content">You will be a member of this project when the project manager or other members accept your request.</div><div class="pop-content btn-wrap"><a class="ybtn enrollBtn" href="${basePath}/admin/sample/cancel/enroll" id="enrollBtn"><i class="yobicon-removefriend"></i> Cancel sign-up request</a></div></div></li></ul>`,
+    ),
+  );
+});
+
+test("project home header enrollment utility cancels pending guest request", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const enrollRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectHome(page, {
+    enrollRequests,
+    project: {
+      enrollmentRequested: true,
+      viewerCanEnroll: true,
+      viewerCanLeave: false,
+      viewerCanWatch: false,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample`);
+  await page.locator(".project-util .dropdown-toggle").click();
+  const enrollResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/enroll") &&
+      response.request().method() === "DELETE",
+  );
+  await page.locator("#enrollBtn").click();
+  await enrollResponsePromise;
+
+  expect(enrollRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button" data-toggle="dropdown"><i class="yobicon-addfriend"></i>Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You can send a sign-up request for the sample project.</div><div class="pop-content">The project manager or other members of this project will check your sign-up request.</div><div class="pop-content btn-wrap"><a class="ybtn ybtn-info enrollBtn" href="${basePath}/admin/sample/enroll" id="enrollBtn"><i class="yobicon-addfriend"></i> Send sign-up request</a></div></div></li></ul>`,
+    ),
+  );
+});
+
 test("project home header watch action posts and renders watching branch", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
@@ -221,6 +295,7 @@ test("project home header unwatch action deletes and renders not-watching branch
 async function mockProjectHome(
   page: Page,
   overrides: Partial<{
+    enrollRequests: { hasCsrfToken: boolean; method: string }[];
     leaveRequests: { hasCsrfToken: boolean; method: string }[];
     overviewRequests: { hasCsrfToken: boolean; method: string; overview: string }[];
     project: Record<string, unknown>;
@@ -263,6 +338,19 @@ async function mockProjectHome(
           loginId: "admin",
           name: "Site Admin",
         },
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/enroll", async (route) => {
+    const request = route.request();
+    overrides.enrollRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        enrollmentRequested: request.method() === "POST",
       }),
     });
   });
