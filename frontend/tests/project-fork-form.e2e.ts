@@ -78,6 +78,21 @@ test("project fork submit renders legacy git/clone.scala.html progress state", a
       EXPECTED_PROJECT_FORK_CLONE_BODY.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  expect(await forkCloneProgressMetrics(page)).toEqual({
+    contentMargin: "0px",
+    contentPadding: "0px",
+    contentWidth: 1260,
+    firstMessageMargin: "0px",
+    firstMessageText:
+      "Please wait. This process may take a long time depending on the number of files and the history of the original project.",
+    legendBorderBottomWidth: "1px",
+    legendFontSize: "21px",
+    legendLineHeight: "40px",
+    legendMarginBottom: "20px",
+    legendText: "Forking admin / sample project into admin / sample-fork project",
+    outerMinHeight: "450px",
+    projectWrapMarginTop: "5px",
+  });
 });
 
 async function mockForkSubmit(page: Page) {
@@ -306,6 +321,40 @@ async function canonicalizePageWrap(page: Page) {
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
     }
+  });
+}
+
+async function forkCloneProgressMetrics(page: Page) {
+  return page.locator(".page-wrap-outer").evaluate((outer) => {
+    const projectWrap = outer.querySelector<HTMLElement>(".project-page-wrap");
+    const content = outer.querySelector<HTMLElement>(".content-wrap.frm-wrap");
+    const legend = outer.querySelector<HTMLElement>("legend");
+    const firstMessage = outer.querySelector<HTMLElement>("p");
+    const missing = Object.entries({ content, firstMessage, legend, projectWrap })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected fork clone metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const contentStyle = getComputedStyle(content);
+    const legendStyle = getComputedStyle(legend);
+    const messageStyle = getComputedStyle(firstMessage);
+    const outerStyle = getComputedStyle(outer);
+    return {
+      contentMargin: contentStyle.margin,
+      contentPadding: contentStyle.padding,
+      contentWidth: Math.round(content.getBoundingClientRect().width),
+      firstMessageMargin: messageStyle.margin,
+      firstMessageText: firstMessage.textContent?.trim(),
+      legendBorderBottomWidth: legendStyle.borderBottomWidth,
+      legendFontSize: legendStyle.fontSize,
+      legendLineHeight: legendStyle.lineHeight,
+      legendMarginBottom: legendStyle.marginBottom,
+      legendText: legend.textContent?.trim(),
+      outerMinHeight: outerStyle.minHeight,
+      projectWrapMarginTop: getComputedStyle(projectWrap).marginTop,
+    };
   });
 }
 
