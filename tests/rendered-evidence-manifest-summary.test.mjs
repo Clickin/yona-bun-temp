@@ -56,6 +56,22 @@ test("rendered evidence summary counts match manifest row statuses", () => {
       "frontend/tests/project-pullrequests.e2e.ts",
     ],
   ]);
+  const projectCodeCommitDetailEvidence = new Map([
+    [
+      "code/partial_nonrange_codecomment_thread.scala.html",
+      "frontend/tests/project-code-commit-detail.e2e.ts",
+    ],
+    ["code/svnDiff.scala.html", "frontend/tests/project-code-commit-detail.e2e.ts"],
+    ["partial_comment_thread.scala.html", "frontend/tests/project-code-commit-detail.e2e.ts"],
+    ["partial_diff_comment_on_line.scala.html", "frontend/tests/project-code-commit-detail.e2e.ts"],
+    [
+      "partial_comment_form_on_thread.scala.html",
+      "frontend/tests/project-code-commit-detail.e2e.ts",
+    ],
+    ["partial_diff_line.scala.html", "frontend/tests/project-code-commit-detail.e2e.ts"],
+    ["common/branchItem.scala.html", "frontend/tests/project-code-commit-detail.e2e.ts"],
+    ["common/reviewForm.scala.html", "frontend/tests/project-code-commit-detail.e2e.ts"],
+  ]);
   let inSummary = false;
   let inPrioritySummary = false;
   let manifestDetailRows;
@@ -199,6 +215,19 @@ test("rendered evidence summary counts match manifest row statuses", () => {
         evidenceFiles,
         /frontend\/tests\/pull-request-(?:review-read|interaction)-parity\.e2e\.ts/,
         `${legacyTemplate} must not cite historical pull request parity evidence`,
+      );
+    }
+    const expectedProjectCodeCommitDetailEvidence =
+      projectCodeCommitDetailEvidence.get(legacyTemplate);
+    if (expectedProjectCodeCommitDetailEvidence) {
+      assert.ok(
+        evidenceFiles.includes(expectedProjectCodeCommitDetailEvidence),
+        `${legacyTemplate} must cite current project code commit detail evidence`,
+      );
+      assert.doesNotMatch(
+        evidenceFiles,
+        /frontend\/tests\/project-code-comment-upload-parity\.e2e\.ts/,
+        `${legacyTemplate} must not cite historical code comment upload parity evidence`,
       );
     }
     prioritySummaryCounts.set(
