@@ -202,12 +202,22 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(await userListMetrics(page)).toEqual({
     actionColumnRatio: 0.4,
     actionRowButtonCount: 5,
-    avatarHeight: 0,
-    avatarWidth: 0,
+    avatarHeight: 32,
+    avatarWrapHeight: 45,
+    avatarWrapMarginRight: 10,
+    avatarWrapMarginTop: 3,
+    avatarWrapWidth: 45,
+    avatarWidth: 32,
     contentWidthRatio: 0.83,
+    emailFontSize: 13,
+    emailLineHeight: 43,
     firstHeaderColumnRatio: 0.23,
     firstRowColumnRatio: 0.23,
+    firstRowLineHeight: 70,
     listHeadHeight: 41,
+    listItemColumnFontSize: 12,
+    listItemColumnLineHeight: 20,
+    listItemColumnPaddingBlock: 20,
     modalWidth: 562,
     nameIdGap: 0,
     paginationOffsetTop: 16,
@@ -215,6 +225,13 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     sidebarWidthRatio: 0.15,
     tabHeight: 38,
     titleAreaHeight: 39,
+    userIdColor: "rgb(153, 153, 153)",
+    userIdFontSize: 13,
+    userIdFontStyle: "italic",
+    userNameColor: "rgb(0, 136, 204)",
+    userNameFontSize: 14,
+    userNameFontWeight: "700",
+    userNameMarginTop: 8,
     userSearchInputWidth: 350,
   });
 });
@@ -487,9 +504,11 @@ async function userListMetrics(page: Page) {
     const firstRow = requireElement(".user-list-wrap .listitem");
     const firstRowColumn = requireElement(".user-list-wrap .listitem .span3");
     const actionColumn = requireElement(".user-list-wrap .action-buttons");
+    const avatarWrap = requireElement(".user-list-wrap .list-avatar");
     const avatar = requireElement(".user-list-wrap .list-avatar img");
     const userName = requireElement(".user-list-wrap .user-name");
     const userId = requireElement(".user-list-wrap .user-id");
+    const email = requireElement(".user-list-wrap .email");
     const pagination = requireElement("#pagination");
     const modal = requireElement("#alertDeletionWrap");
     const titleAreaRect = titleArea.getBoundingClientRect();
@@ -505,7 +524,14 @@ async function userListMetrics(page: Page) {
     const firstRowRect = firstRow.getBoundingClientRect();
     const firstRowColumnRect = firstRowColumn.getBoundingClientRect();
     const actionColumnRect = actionColumn.getBoundingClientRect();
+    const avatarWrapStyle = getComputedStyle(avatarWrap);
+    const avatarWrapRect = avatarWrap.getBoundingClientRect();
     const avatarRect = avatar.getBoundingClientRect();
+    const firstRowStyle = getComputedStyle(firstRow);
+    const firstRowColumnStyle = getComputedStyle(firstRowColumn);
+    const userNameStyle = getComputedStyle(userName);
+    const userIdStyle = getComputedStyle(userId);
+    const emailStyle = getComputedStyle(email);
     const userNameRect = userName.getBoundingClientRect();
     const userIdRect = userId.getBoundingClientRect();
     const paginationRect = pagination.getBoundingClientRect();
@@ -515,11 +541,23 @@ async function userListMetrics(page: Page) {
       actionColumnRatio: Number((actionColumnRect.width / firstRowRect.width).toFixed(2)),
       actionRowButtonCount: actionColumn.querySelectorAll(".ybtn").length,
       avatarHeight: Math.round(avatarRect.height),
+      avatarWrapHeight: Math.round(avatarWrapRect.height),
+      avatarWrapMarginRight: Math.round(parseFloat(avatarWrapStyle.marginRight)),
+      avatarWrapMarginTop: Math.round(parseFloat(avatarWrapStyle.marginTop)),
+      avatarWrapWidth: Math.round(avatarWrapRect.width),
       avatarWidth: Math.round(avatarRect.width),
       contentWidthRatio: Number((contentRect.width / rowRect.width).toFixed(2)),
+      emailFontSize: Math.round(parseFloat(emailStyle.fontSize)),
+      emailLineHeight: Math.round(parseFloat(emailStyle.lineHeight)),
       firstHeaderColumnRatio: Number((firstHeaderColumnRect.width / listHeadRect.width).toFixed(2)),
       firstRowColumnRatio: Number((firstRowColumnRect.width / firstRowRect.width).toFixed(2)),
+      firstRowLineHeight: Math.round(parseFloat(firstRowStyle.lineHeight)),
       listHeadHeight: Math.round(listHeadRect.height),
+      listItemColumnFontSize: Math.round(parseFloat(firstRowColumnStyle.fontSize)),
+      listItemColumnLineHeight: Math.round(parseFloat(firstRowColumnStyle.lineHeight)),
+      listItemColumnPaddingBlock:
+        Math.round(parseFloat(firstRowColumnStyle.paddingTop)) +
+        Math.round(parseFloat(firstRowColumnStyle.paddingBottom)),
       modalWidth: Math.round(modalRect.width),
       nameIdGap: Math.round(userIdRect.top - userNameRect.bottom),
       paginationOffsetTop: Math.round(paginationRect.top - firstRowRect.bottom),
@@ -527,6 +565,13 @@ async function userListMetrics(page: Page) {
       sidebarWidthRatio: Number((sidebarRect.width / rowRect.width).toFixed(2)),
       tabHeight: Math.round(tabsRect.height),
       titleAreaHeight: Math.round(titleAreaRect.height),
+      userIdColor: userIdStyle.color,
+      userIdFontSize: Math.round(parseFloat(userIdStyle.fontSize)),
+      userIdFontStyle: userIdStyle.fontStyle,
+      userNameColor: userNameStyle.color,
+      userNameFontSize: Math.round(parseFloat(userNameStyle.fontSize)),
+      userNameFontWeight: userNameStyle.fontWeight,
+      userNameMarginTop: Math.round(parseFloat(userNameStyle.marginTop)),
       userSearchInputWidth: Math.round(searchInputRect.width),
     };
 

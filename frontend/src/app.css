@@ -3172,6 +3172,91 @@ h1 {
   margin: 0;
 }
 
+.site-setting-wrap .listhead {
+  padding: 5px 0;
+  margin-bottom: 5px;
+  line-height: 30px;
+  background: #f7f7f7;
+  border-bottom: 1px solid #efefef;
+}
+
+.site-setting-wrap .listhead .listhead-title {
+  padding: 0 20px;
+}
+
+.site-setting-wrap .listitem {
+  line-height: 70px;
+  border-bottom: 1px solid #efefef;
+}
+
+.site-setting-wrap .listitem:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.site-setting-wrap .listitem .avatar-wrap.list-avatar {
+  float: left;
+  width: 45px;
+  height: 45px;
+  margin-top: 3px;
+  margin-right: 10px;
+}
+
+.site-setting-wrap .listitem .avatar-wrap.list-avatar img {
+  width: 32px;
+  height: 32px;
+}
+
+.site-setting-wrap .listitem .listitem-col {
+  padding: 10px 0;
+  font-size: 12px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  word-break: break-all;
+}
+
+.site-setting-wrap .listitem .listitem-col.action-buttons {
+  padding-top: 0;
+}
+
+.site-setting-wrap .listitem .listitem-col.action-buttons a {
+  margin: 2px !important;
+}
+
+.site-setting-wrap .user-list-wrap {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.site-setting-wrap .user-name {
+  display: block;
+  margin-top: 8px;
+  margin-left: 5px;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 20px;
+  color: #0088cc;
+}
+
+.site-setting-wrap .user-id {
+  display: block;
+  margin-left: 5px;
+  font-size: 13px;
+  font-style: italic;
+  line-height: 20px;
+  color: #999;
+}
+
+.site-setting-wrap .email {
+  font-size: 13px;
+  line-height: 43px;
+}
+
+.site-setting-wrap .created-date {
+  padding: 0;
+  line-height: 30px;
+}
+
 .filter-wrap {
   position: relative;
   display: block;
