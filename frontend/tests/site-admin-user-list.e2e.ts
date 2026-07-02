@@ -343,6 +343,36 @@ test("site admin user actions follow legacy confirmation and alert flow", async 
   expect(requests.resetLoginIds).toEqual(["doortts"]);
 });
 
+test("site admin user delete forbidden reloads legacy page", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockSiteUsers(page, { deleteForbidden: true });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/userList`);
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "delete-forbidden";
+  });
+
+  await page.locator('[data-toggle="account-delete"]').click();
+  await expect(page.locator("#userInfo")).toHaveText("Door TTS(doortts)");
+
+  const reloadPromise = page.waitForEvent("framenavigated");
+  await page.locator("#accountToggleBtn").click();
+  await reloadPromise;
+
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBeUndefined();
+});
+
 test("site admin user reset password failure uses legacy alert text", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
@@ -462,7 +492,7 @@ async function mockSiteAdminSession(page: Page) {
 
 async function mockSiteUsers(
   page: Page,
-  options: { resetFails?: boolean; resetLogicalFailure?: boolean } = {},
+  options: { deleteForbidden?: boolean; resetFails?: boolean; resetLogicalFailure?: boolean } = {},
 ) {
   const requests = {
     deletedLoginIds: [] as string[],
@@ -582,6 +612,20 @@ async function mockSiteUsers(
     }
     if (route.request().method() === "DELETE") {
       requests.deletedLoginIds.push(loginId);
+      if (options.deleteForbidden) {
+        await route.fulfill({
+          contentType: "application/json",
+          status: 403,
+          body: JSON.stringify({
+            error: {
+              code: "forbidden",
+              message: "delete forbidden",
+              status: 403,
+            },
+          }),
+        });
+        return;
+      }
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({

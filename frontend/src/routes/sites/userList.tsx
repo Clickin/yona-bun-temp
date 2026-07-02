@@ -14,6 +14,7 @@ import {
   type SiteUserState,
 } from "../../api/site-admin";
 import { apiQueryKeys } from "../../api/query-keys";
+import { RestApiError } from "../../api/rest-client";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
@@ -88,6 +89,11 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     },
     onSuccess() {
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
+    },
+    onError(error) {
+      if (error instanceof RestApiError && error.status === 403) {
+        router.history.go(0);
+      }
     },
   });
   const resetPasswordMutation = useMutation({
