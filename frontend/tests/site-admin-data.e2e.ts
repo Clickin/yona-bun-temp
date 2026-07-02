@@ -140,6 +140,34 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
   );
 
   expect(actual).toEqual(expected);
+  expect(await readSiteDataMetrics(page)).toEqual({
+    contentColumnWidthRatio: 0.83,
+    cuDescDisplay: "inline-block",
+    exportButtonBackground: "rgb(255, 115, 50)",
+    exportButtonBorderRadius: 3,
+    exportButtonLineHeight: 20,
+    exportButtonPaddingBlock: 8,
+    exportButtonPaddingInline: 24,
+    navAnchorDisplay: "block",
+    navAnchorPaddingBlock: 10,
+    navAnchorPaddingInline: 20,
+    navFirstItemMarginTop: 0,
+    navItemBorderLeftColor: "rgb(238, 238, 238)",
+    navItemBorderLeftWidth: 4,
+    navItemFontSize: 14,
+    navItemLineHeight: 30,
+    noticeColor: "rgb(219, 58, 103)",
+    sidebarWidthRatio: 0.15,
+    siteBreadcrumbHeadingLineHeight: 30,
+    siteBreadcrumbHeadingPaddingBottom: 5,
+    siteBreadcrumbHeadingPaddingTop: 10,
+    titleAreaBorderBottomWidth: 1,
+    titleAreaMarginBottom: 29,
+    titleAreaPaddingBottom: 8,
+    titleColor: "rgb(76, 76, 76)",
+    titleFontSize: 19.5,
+    titleLineHeight: 30,
+  });
 });
 
 async function mockSiteAdminSession(page: Page) {
@@ -159,6 +187,78 @@ async function mockSiteAdminSession(page: Page) {
         userLabel: "Site Boss",
       }),
     });
+  });
+}
+
+async function readSiteDataMetrics(page: Page) {
+  return page.evaluate(() => {
+    const row = requireElement(".site-setting-wrap > .row-fluid");
+    const sidebar = requireElement(".site-setting-wrap .span2");
+    const content = requireElement(".site-setting-wrap .span10");
+    const breadcrumbHeading = requireElement(".site-breadcrumb-inner h3");
+    const cuDesc = requireElement(".cu-desc");
+    const navItem = requireElement(".site-setting-nav li");
+    const navAnchor = requireElement(".site-setting-nav li a");
+    const notice = requireElement(".cu-desc .notice");
+    const titleArea = requireElement(".title_area");
+    const title = requireElement(".title_area h2");
+    const exportButton = requireElement("a.ybtn.ybtn-primary");
+    const rowRect = row.getBoundingClientRect();
+    const breadcrumbHeadingStyle = getComputedStyle(breadcrumbHeading);
+    const navItemStyle = getComputedStyle(navItem);
+    const navAnchorStyle = getComputedStyle(navAnchor);
+    const titleAreaStyle = getComputedStyle(titleArea);
+    const titleStyle = getComputedStyle(title);
+    const exportButtonStyle = getComputedStyle(exportButton);
+
+    return {
+      contentColumnWidthRatio: Number(
+        (content.getBoundingClientRect().width / rowRect.width).toFixed(2),
+      ),
+      cuDescDisplay: getComputedStyle(cuDesc).display,
+      exportButtonBackground: exportButtonStyle.backgroundColor,
+      exportButtonBorderRadius: Math.round(parseFloat(exportButtonStyle.borderTopLeftRadius)),
+      exportButtonLineHeight: Math.round(parseFloat(exportButtonStyle.lineHeight)),
+      exportButtonPaddingBlock:
+        Math.round(parseFloat(exportButtonStyle.paddingTop)) +
+        Math.round(parseFloat(exportButtonStyle.paddingBottom)),
+      exportButtonPaddingInline:
+        Math.round(parseFloat(exportButtonStyle.paddingLeft)) +
+        Math.round(parseFloat(exportButtonStyle.paddingRight)),
+      navAnchorDisplay: navAnchorStyle.display,
+      navAnchorPaddingBlock:
+        Math.round(parseFloat(navAnchorStyle.paddingTop)) +
+        Math.round(parseFloat(navAnchorStyle.paddingBottom)),
+      navAnchorPaddingInline:
+        Math.round(parseFloat(navAnchorStyle.paddingLeft)) +
+        Math.round(parseFloat(navAnchorStyle.paddingRight)),
+      navFirstItemMarginTop: Math.round(parseFloat(navItemStyle.marginTop)),
+      navItemBorderLeftColor: navItemStyle.borderLeftColor,
+      navItemBorderLeftWidth: Math.round(parseFloat(navItemStyle.borderLeftWidth)),
+      navItemFontSize: Math.round(parseFloat(navItemStyle.fontSize)),
+      navItemLineHeight: Math.round(parseFloat(navItemStyle.lineHeight)),
+      noticeColor: getComputedStyle(notice).color,
+      sidebarWidthRatio: Number((sidebar.getBoundingClientRect().width / rowRect.width).toFixed(2)),
+      siteBreadcrumbHeadingLineHeight: Math.round(parseFloat(breadcrumbHeadingStyle.lineHeight)),
+      siteBreadcrumbHeadingPaddingBottom: Math.round(
+        parseFloat(breadcrumbHeadingStyle.paddingBottom),
+      ),
+      siteBreadcrumbHeadingPaddingTop: Math.round(parseFloat(breadcrumbHeadingStyle.paddingTop)),
+      titleAreaBorderBottomWidth: Math.round(parseFloat(titleAreaStyle.borderBottomWidth)),
+      titleAreaMarginBottom: Math.round(parseFloat(titleAreaStyle.marginBottom)),
+      titleAreaPaddingBottom: Math.round(parseFloat(titleAreaStyle.paddingBottom)),
+      titleColor: titleStyle.color,
+      titleFontSize: Number(parseFloat(titleStyle.fontSize).toFixed(1)),
+      titleLineHeight: Math.round(parseFloat(titleStyle.lineHeight)),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
   });
 }
 

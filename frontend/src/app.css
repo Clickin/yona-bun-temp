@@ -3105,6 +3105,73 @@ h1 {
   display: inline-block;
 }
 
+.cu-desc .note {
+  font-size: 12px;
+  color: #777;
+}
+
+.cu-desc .notice {
+  color: #db3a67;
+}
+
+.site-setting-wrap {
+  margin: 0 auto;
+}
+
+.site-setting-wrap .site-setting-nav {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.site-setting-wrap .site-setting-nav li {
+  margin-top: 3px;
+  font-size: 14px;
+  line-height: 30px;
+  border-left: 4px solid #eee;
+}
+
+.site-setting-wrap .site-setting-nav li:first-child {
+  margin-top: 0;
+}
+
+.site-setting-wrap .site-setting-nav a {
+  display: block;
+  padding: 5px 10px;
+}
+
+.site-setting-wrap .site-setting-nav a:hover {
+  text-decoration: none;
+  background-color: #eee;
+}
+
+.site-setting-wrap .site-setting-nav li.active {
+  font-weight: bold;
+  border-left-color: #f36c22;
+}
+
+.site-setting-wrap .site-setting-nav li.active a:hover {
+  background: none;
+}
+
+.site-setting-wrap .title_area {
+  padding-bottom: 8px;
+  margin-bottom: 29px;
+  overflow: hidden;
+  border-bottom: 1px solid #ddd;
+}
+
+.site-setting-wrap .title_area h2 {
+  margin: 0;
+  font-size: 1.5em;
+  line-height: 30px;
+  color: #4c4c4c;
+}
+
+.site-setting-wrap .title_area .form-search {
+  margin: 0;
+}
+
 .filter-wrap {
   position: relative;
   display: block;
