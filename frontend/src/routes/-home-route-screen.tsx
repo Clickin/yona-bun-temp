@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate } from "@tanstack/react-router";
+import type { AnchorHTMLAttributes, ComponentType } from "react";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
 import { currentSessionQueryOptions } from "../api/session";
 import { readWorkspaceOverviewRest } from "../api/workspace";
@@ -8,6 +9,12 @@ import type { YonaRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    to: string;
+  }
+>;
 
 export function HomeRouteScreen({
   flashMessageKey = "",
@@ -201,19 +208,17 @@ function HomeScreen({
                 <div className="span8 main-stream">
                   <ul className="nav nav-tabs">
                     <li className="active">
-                      <a href={prefixBasePath(runtimeConfig.basePath, "/notifications")}>
+                      <LegacyInternalLink to="/notifications">
                         {t("notification")}
-                      </a>
+                      </LegacyInternalLink>
                     </li>
                     <li>
-                      <a href={prefixBasePath(runtimeConfig.basePath, "/issues")}>
+                      <LegacyInternalLink to="/user/issues">
                         {t("issue.myIssue")}
-                      </a>
+                      </LegacyInternalLink>
                     </li>
                     <li>
-                      <a href={prefixBasePath(runtimeConfig.basePath, "/user/files")}>
-                        {t("user.files")}
-                      </a>
+                      <LegacyInternalLink to="/user/files">{t("user.files")}</LegacyInternalLink>
                     </li>
                     <li>
                       {shouldShowDefaultLandingButton ? (

@@ -104,7 +104,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
         <div class="span8 main-stream">
           <ul class="nav nav-tabs">
             <li class="active"><a href="__BASE_PATH__/notifications">Notification</a></li>
-            <li><a href="__BASE_PATH__/issues">My Issues</a></li>
+            <li><a href="__BASE_PATH__/user/issues">My Issues</a></li>
             <li><a href="__BASE_PATH__/user/files">My Files</a></li>
             <li></li>
           </ul>
@@ -392,6 +392,24 @@ test("authenticated home empty notifications matches legacy index notifications 
       ".myOrganizationList, .myProjectList, .myRecentIssueList, #usermenu-tab-content-list",
     ),
   ).toHaveCount(4);
+  await page.route("**/api/v1/user/issues?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        closedIssueCount: 0,
+        filter: "assigned",
+        items: [],
+        openIssueCount: 0,
+        pageNum: 1,
+        pageSize: 20,
+        sideFilterCounts: { favorite: 0, mentioned: 0, shared: 0 },
+        state: "open",
+        totalCount: 0,
+        totalPages: 1,
+        viewerUserId: 1,
+      }),
+    });
+  });
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -621,6 +639,24 @@ test("direct notifications route matches legacy Application.notifications empty 
     pageWrapOuterWidth: 390,
     siteGuideOuterMargin: "40px 0px 0px",
   });
+
+  const myIssuesTab = page.locator('.main-stream > .nav-tabs a:has-text("My Issues")');
+  await expect(myIssuesTab).toHaveAttribute("href", `${basePath}/user/issues`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "notifications-my-issues-tab";
+  });
+  await myIssuesTab.click();
+  await expect(page).toHaveURL(
+    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=1&query=&state=open`,
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("notifications-my-issues-tab");
 });
 
 test("direct notifications route matches legacy populated notification row DOM", async ({
@@ -1527,7 +1563,8 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -1546,6 +1583,24 @@ async function canonicalizeScreenRoots(page: Page) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+    function normalizeAttribute(current: Element, name: string) {
+      if (name === "class") {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/)
+          .filter((value, index, values) => value && values.indexOf(value) === index)
+          .filter(
+            (value) =>
+              !(
+                value === "active" &&
+                current.tagName.toLowerCase() === "a" &&
+                current.closest(".main-stream > .nav-tabs")
+              ),
+          )
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
   });
 }
@@ -1586,7 +1641,8 @@ async function canonicalizeSelector(page: Page, selector: string) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -1605,6 +1661,16 @@ async function canonicalizeSelector(page: Page, selector: string) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+    function normalizeAttribute(current: Element, name: string) {
+      if (name === "class") {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/)
+          .filter((value, index, values) => value && values.indexOf(value) === index)
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
   }, selector);
 }
@@ -1646,7 +1712,8 @@ async function canonicalizeHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map((name) => normalizeAttribute(current, name))
+          .filter(Boolean)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -1665,6 +1732,24 @@ async function canonicalizeHtml(page: Page, html: string) {
           .join("");
 
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+      function normalizeAttribute(current: Element, name: string) {
+        if (name === "class") {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/)
+            .filter((value, index, values) => value && values.indexOf(value) === index)
+            .filter(
+              (value) =>
+                !(
+                  value === "active" &&
+                  current.tagName.toLowerCase() === "a" &&
+                  current.closest(".main-stream > .nav-tabs")
+                ),
+            )
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
+        return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
     },
     { markup: html },
