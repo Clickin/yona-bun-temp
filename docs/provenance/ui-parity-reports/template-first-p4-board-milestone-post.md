@@ -1,7 +1,7 @@
 # Template-First UI Parity Report: P4 Board/Milestone/Post
 
 Status: current reset baseline
-Date: 2026-06-27
+Date: 2026-07-02
 Owner packet: P4 board/milestone/post
 Mode: template-first mapper baseline; implementation evidence reviewed
 
@@ -84,6 +84,14 @@ Browser interaction proof:
 - `frontend/tests/project-milestone-create-form.e2e.ts`
 - `frontend/tests/project-milestone-edit-form.e2e.ts`
 - `frontend/tests/project-milestone-detail.e2e.ts`
+
+Focused P4 verifier run on 2026-07-02:
+
+```bash
+pnpm --dir frontend test:e2e -- organization-boards.e2e.ts project-posts.e2e.ts project-board-create-form.e2e.ts project-board-edit-form.e2e.ts project-milestones.e2e.ts project-milestone-create-form.e2e.ts project-milestone-edit-form.e2e.ts project-milestone-detail.e2e.ts
+```
+
+Result: 25 passed.
 
 Integrated browser sweep evidence:
 
