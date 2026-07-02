@@ -125,12 +125,18 @@ const EXPECTED_MASSMAIL_SCREEN = `
 test("site admin mass mail matches legacy site/massMail.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
+  await mockMailOptions(page);
 
   await page.goto(`${basePath}/sites/massmail`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send mass emails");
   await expect(page.locator("#mailtoAll")).toBeChecked();
   await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
+  const mailLink = page.locator(".site-setting-nav a", { hasText: "Send email" });
+  await expect(mailLink).toHaveAttribute("href", `${basePath}/sites/mail`);
+  await expect(
+    page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
+  ).toHaveAttribute("href", `${basePath}/sites/massmail`);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -152,6 +158,17 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
     titleLineHeight: 30,
     writeButtonHeight: 30,
   });
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-massmail-sidebar";
+  });
+  await mailLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/mail`);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send email");
+  await expect(page.locator(".title_area h2")).toHaveText("Send email");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-massmail-sidebar");
 });
 
 test("site admin mass mail project selection and mailto follow legacy JS flow", async ({
@@ -340,6 +357,19 @@ async function mockMailList(page: Page) {
   });
 
   return requests;
+}
+
+async function mockMailOptions(page: Page) {
+  await page.route("**/api/v1/site/mail", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        notConfiguredItems: ["smtp.host", "smtp.port"],
+        sender: "noreply@example.com",
+        sent: false,
+      }),
+    });
+  });
 }
 
 async function captureSubmittedForms(page: Page) {

@@ -1,17 +1,24 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useRef, useState, type AnchorHTMLAttributes, type ComponentType } from "react";
 import { readSiteMailListRest } from "../../api/site-admin";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import type { RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type SelectedProject = {
   id: number;
   name: string;
 };
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeProps?: { className?: string | undefined };
+    to: string;
+  }
+>;
 
 export const Route = createFileRoute("/sites/massmail")({
   component: SiteMassMailRoute,
@@ -45,7 +52,7 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         <div className="site-setting-wrap">
           <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar runtimeConfig={runtimeConfig} />
+              <SiteAdminSidebar />
             </div>
             <div className="span10">
               <div className="title_area">
@@ -62,7 +69,7 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   );
 }
 
-function SiteAdminSidebar({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function SiteAdminSidebar() {
   const navItems = [
     { href: "/sites/userList", labelKey: "site.sidebar.userList" },
     { href: "/sites/postList", labelKey: "site.sidebar.postList" },
@@ -78,9 +85,9 @@ function SiteAdminSidebar({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     <ul className="site-setting-nav">
       {navItems.map((item) => (
         <li className={item.active ? "active" : ""} key={item.href}>
-          <a href={prefixBasePath(runtimeConfig.basePath, item.href)}>
+          <LegacyInternalLink activeProps={{ className: undefined }} to={item.href}>
             <LegacyMessage messageKey={item.labelKey} />
-          </a>
+          </LegacyInternalLink>
         </li>
       ))}
     </ul>
