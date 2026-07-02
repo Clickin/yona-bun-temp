@@ -337,6 +337,16 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   );
   await expect(page.locator("#milestoneId optgroup[label='Open'] option")).toHaveText("v1.0");
   await expect(page.locator("#milestoneId optgroup[label='Closed'] option")).toHaveText("v0.9");
+  expect(await issueListAssetSources(page, basePath)).toEqual([
+    `${basePath}/assets/javascripts/lib/moment-with-langs.min.js`,
+    `${basePath}/assets/javascripts/lib/pikaday/pikaday.js`,
+    `${basePath}/assets/javascripts/common/yobi.ui.Calendar.js`,
+    `${basePath}/assets/javascripts/lib/jquery.pageslide.js`,
+    `${basePath}/assets/javascripts/service/yona.twoColumnMode.js`,
+    `${basePath}/assets/javascripts/service/yona.showSubtask.js`,
+  ]);
+  expect(await scriptTextContains(page, '$yobi.loadModule("issue.List")')).toBe(true);
+  expect(await scriptTextContains(page, "yobi.ShortcutKey.setKeymapLink")).toBe(true);
 
   expect(await issueListShellMetrics(page)).toEqual({
     wrapClear: "both",
@@ -359,6 +369,61 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
       EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("project issue list search form renders legacy partial_select_label when project labels exist", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "project-labels");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=empty&labelIds=8`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await expect(page.locator(".labels-wrap dl.issue-option dt")).toContainText("Label");
+  await expect(page.locator(".labels-wrap .label-edit")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/labelsform`,
+  );
+  await expect(page.locator("#labelIds")).toHaveAttribute("multiple", "");
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-search", "labelIds");
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-format", "issuelabel");
+  await expect(page.locator("#labelIds")).toHaveAttribute(
+    "data-dropdown-css-class",
+    "issue-labels",
+  );
+  await expect(page.locator("#labelIds")).toHaveAttribute(
+    "data-container-css-class",
+    "issue-labels bordered fullsize",
+  );
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-placeholder", "Select label");
+  await expect(page.locator("#labelIds optgroup")).toHaveAttribute("label", "bug");
+  await expect(page.locator("#labelIds optgroup")).toHaveAttribute("data-category-id", "3");
+  await expect(page.locator("#labelIds optgroup")).toHaveAttribute(
+    "data-category-is-exclusive",
+    "false",
+  );
+  await expect(page.locator('#labelIds option[value="8"]')).toHaveAttribute(
+    "data-category-id",
+    "3",
+  );
+  await expect(page.locator('#labelIds option[value="8"]')).toHaveText("bug");
+});
+
+test("anonymous project issue list hides current-user quick search links like legacy partial_list_quicksearch.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "anonymous");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=empty`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await expect(page.locator(".left-menu .lst-stacked li")).toHaveCount(1);
+  await expect(page.locator('.left-menu .lst-stacked a[data-assignee-id=""]')).toContainText(
+    "Open",
+  );
+  await expect(page.locator(".left-menu .lst-stacked", { hasText: "Assigned" })).toHaveCount(0);
+  await expect(page.locator(".left-menu .lst-stacked", { hasText: "Created" })).toHaveCount(0);
+  await expect(page.locator(".left-menu .lst-stacked", { hasText: "Commented" })).toHaveCount(0);
 });
 
 test("populated project issue list matches legacy partial_list.scala.html DOM", async ({
@@ -1104,9 +1169,38 @@ async function issueVoteCountMetrics(page: Page) {
   });
 }
 
+async function issueListAssetSources(page: Page, basePath: string) {
+  const sourceSuffixes = [
+    "/assets/javascripts/lib/moment-with-langs.min.js",
+    "/assets/javascripts/lib/pikaday/pikaday.js",
+    "/assets/javascripts/common/yobi.ui.Calendar.js",
+    "/assets/javascripts/lib/jquery.pageslide.js",
+    "/assets/javascripts/service/yona.twoColumnMode.js",
+    "/assets/javascripts/service/yona.showSubtask.js",
+  ];
+  return page.evaluate(
+    ({ basePath, sourceSuffixes }) =>
+      Array.from(document.querySelectorAll<HTMLScriptElement>("script[src][defer]"))
+        .map((script) => script.getAttribute("src") ?? "")
+        .filter((source) => sourceSuffixes.some((suffix) => source === `${basePath}${suffix}`)),
+    { basePath, sourceSuffixes },
+  );
+}
+
+async function scriptTextContains(page: Page, text: string) {
+  return page.evaluate(
+    (text) =>
+      Array.from(document.querySelectorAll("script")).some((script) =>
+        (script.textContent ?? "").includes(text),
+      ),
+    text,
+  );
+}
+
 async function mockProjectIssues(
   page: Page,
   state:
+    | "anonymous"
     | "bulk"
     | "children"
     | "draft"
@@ -1117,6 +1211,7 @@ async function mockProjectIssues(
     | "non-member"
     | "populated"
     | "prefix"
+    | "project-labels"
     | "sharer"
     | "subtask"
     | "upcoming"
@@ -1129,15 +1224,15 @@ async function mockProjectIssues(
         "x-csrf-token": "csrf-token",
       },
       body: JSON.stringify({
-        actorId: 1,
+        actorId: state === "anonymous" ? 0 : 1,
         avatarUrl: "/assets/images/default-avatar-32.png",
         defaultLandingPath: "/",
-        emailAddress: "admin@example.com",
-        isAnonymous: false,
-        isConfirmed: true,
-        isSiteAdmin: true,
-        loginId: "admin",
-        userLabel: "Site Admin",
+        emailAddress: state === "anonymous" ? "" : "admin@example.com",
+        isAnonymous: state === "anonymous",
+        isConfirmed: state !== "anonymous",
+        isSiteAdmin: state !== "anonymous",
+        loginId: state === "anonymous" ? "anonymous" : "admin",
+        userLabel: state === "anonymous" ? "Anonymous" : "Site Admin",
       }),
     });
   });
@@ -1190,6 +1285,26 @@ async function mockProjectIssues(
                   title: "v1.0",
                 },
               ],
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/labels", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        labels:
+          state === "project-labels"
+            ? [
+                {
+                  categoryId: 3,
+                  categoryIsExclusive: false,
+                  categoryName: "bug",
+                  color: "#51aacc",
+                  id: 8,
+                  name: "bug",
+                },
+              ]
+            : [],
       }),
     });
   });

@@ -10,6 +10,7 @@ import {
 } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
+import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
@@ -131,13 +132,17 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       }),
     queryKey: ["project", ownerName, projectName, "milestones", "closed", "issue-search"],
   });
+  const labelsQuery = useQuery(
+    listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
 
   if (
     !projectQuery.data ||
     !sessionQuery.data ||
     !issuesQuery.data ||
     !openMilestonesQuery.data ||
-    !closedMilestonesQuery.data
+    !closedMilestonesQuery.data ||
+    !labelsQuery.data
   ) {
     return null;
   }
@@ -154,10 +159,17 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         )}
         type="text/css"
       />
+      <IssueListAssets
+        basePath={runtimeConfig.basePath}
+        ownerName={ownerName}
+        projectName={projectName}
+      />
       <ProjectIssuesBody
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
+        isAnonymous={Boolean(sessionQuery.data.isAnonymous)}
         currentUserLoginId={stringField(sessionQuery.data.loginId, "")}
         issues={issuesQuery.data}
+        labels={labelsQuery.data.labels}
         milestones={{
           closed: closedMilestonesQuery.data.milestones,
           open: openMilestonesQuery.data.milestones,
@@ -172,10 +184,71 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   );
 }
 
+function IssueListAssets({
+  basePath,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  ownerName: string;
+  projectName: string;
+}) {
+  return (
+    <>
+      <script
+        defer
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/moment-with-langs.min.js")}
+      ></script>
+      <script
+        defer
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/pikaday/pikaday.js")}
+      ></script>
+      <script
+        defer
+        src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.ui.Calendar.js")}
+      ></script>
+      <script
+        defer
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/jquery.pageslide.js")}
+      ></script>
+      <script
+        defer
+        src={prefixBasePath(basePath, "/assets/javascripts/service/yona.twoColumnMode.js")}
+      ></script>
+      <script
+        defer
+        src={prefixBasePath(basePath, "/assets/javascripts/service/yona.showSubtask.js")}
+      ></script>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+$(function(){
+  $yobi.loadModule("issue.List");
+  yobi.ShortcutKey.setKeymapLink({
+    "N": "${prefixBasePath(basePath, `/${ownerName}/${projectName}/issueform`)}"
+  });
+  var $titlePrefix = $(".title-prefix");
+  $titlePrefix
+    .on("mouseover", function (e) {
+      $(".title-prefix:contains('" + e.target.innerText + "')").addClass("title-prefix-hover");
+    })
+    .on("mouseleave", function () {
+      $titlePrefix.removeClass("title-prefix-hover");
+    });
+});
+`,
+        }}
+      ></script>
+    </>
+  );
+}
+
 function ProjectIssuesBody({
   currentUserId,
   currentUserLoginId,
+  isAnonymous,
   issues,
+  labels,
   milestones,
   ownerName,
   project,
@@ -185,7 +258,9 @@ function ProjectIssuesBody({
 }: {
   currentUserId: string;
   currentUserLoginId: string;
+  isAnonymous: boolean;
   issues: ProjectIssueListRestResponse;
+  labels: Array<Record<string, unknown>>;
   milestones: {
     closed: ProjectMilestone[];
     open: ProjectMilestone[];
@@ -214,6 +289,7 @@ function ProjectIssuesBody({
           <div className="left-menu span2 span-hard-wrap">
             <QuickSearch
               currentUserId={currentUserId}
+              isAnonymous={isAnonymous}
               issues={issues}
               search={search}
               state={search.state}
@@ -222,6 +298,8 @@ function ProjectIssuesBody({
               basePath={runtimeConfig.basePath}
               currentUserId={currentUserId}
               issues={issues.items}
+              isAnonymous={isAnonymous}
+              labels={labels}
               milestones={milestones}
               ownerName={ownerName}
               projectName={projectName}
@@ -1147,11 +1225,13 @@ function IssueSubtaskSummary({
 
 function QuickSearch({
   currentUserId,
+  isAnonymous,
   issues,
   search,
   state,
 }: {
   currentUserId: string;
+  isAnonymous: boolean;
   issues: ProjectIssueListRestResponse;
   search: ProjectIssuesSearch;
   state: "closed" | "open";
@@ -1181,48 +1261,58 @@ function QuickSearch({
           <span className="num-badge pull-right">{allCount}</span>
         </a>
       </li>
-      <li className={search.assigneeId === currentUserId ? "active" : undefined}>
-        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter attrs. */}
-        <a
-          {...pjaxFilter}
-          href="#"
-          data-assignee-id={currentUserId}
-          data-author-id=""
-          data-commenter-id=""
-          data-milestone-id={search.milestoneId}
-        >
-          {t("issue.list.assignedToMe")}
-          <span className="num-badge pull-right">{countField(issues, "assignedToMeCount")}</span>
-        </a>
-      </li>
-      <li className={search.authorId === currentUserId ? "active" : undefined}>
-        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter attrs. */}
-        <a
-          {...pjaxFilter}
-          href="#"
-          data-assignee-id=""
-          data-author-id={currentUserId}
-          data-commenter-id=""
-          data-milestone-id={search.milestoneId}
-        >
-          {t("issue.list.authoredByMe")}
-          <span className="num-badge pull-right">{countField(issues, "authoredByMeCount")}</span>
-        </a>
-      </li>
-      <li className={search.commenterId === currentUserId ? "active" : undefined}>
-        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter attrs. */}
-        <a
-          {...pjaxFilter}
-          href="#"
-          data-assignee-id=""
-          data-author-id=""
-          data-commenter-id={currentUserId}
-          data-milestone-id={search.milestoneId}
-        >
-          {t("issue.list.commentedByMe")}
-          <span className="num-badge pull-right">{countField(issues, "commentedByMeCount")}</span>
-        </a>
-      </li>
+      {!isAnonymous ? (
+        <>
+          <li className={search.assigneeId === currentUserId ? "active" : undefined}>
+            {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter attrs. */}
+            <a
+              {...pjaxFilter}
+              href="#"
+              data-assignee-id={currentUserId}
+              data-author-id=""
+              data-commenter-id=""
+              data-milestone-id={search.milestoneId}
+            >
+              {t("issue.list.assignedToMe")}
+              <span className="num-badge pull-right">
+                {countField(issues, "assignedToMeCount")}
+              </span>
+            </a>
+          </li>
+          <li className={search.authorId === currentUserId ? "active" : undefined}>
+            {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter attrs. */}
+            <a
+              {...pjaxFilter}
+              href="#"
+              data-assignee-id=""
+              data-author-id={currentUserId}
+              data-commenter-id=""
+              data-milestone-id={search.milestoneId}
+            >
+              {t("issue.list.authoredByMe")}
+              <span className="num-badge pull-right">
+                {countField(issues, "authoredByMeCount")}
+              </span>
+            </a>
+          </li>
+          <li className={search.commenterId === currentUserId ? "active" : undefined}>
+            {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter attrs. */}
+            <a
+              {...pjaxFilter}
+              href="#"
+              data-assignee-id=""
+              data-author-id=""
+              data-commenter-id={currentUserId}
+              data-milestone-id={search.milestoneId}
+            >
+              {t("issue.list.commentedByMe")}
+              <span className="num-badge pull-right">
+                {countField(issues, "commentedByMeCount")}
+              </span>
+            </a>
+          </li>
+        </>
+      ) : null}
     </ul>
   );
 }
@@ -1231,6 +1321,8 @@ function IssueSearchForm({
   basePath,
   currentUserId,
   issues,
+  isAnonymous,
+  labels,
   milestones,
   ownerName,
   projectName,
@@ -1240,6 +1332,8 @@ function IssueSearchForm({
   basePath: string;
   currentUserId: string;
   issues: RestIssueListItem[];
+  isAnonymous: boolean;
+  labels: Array<Record<string, unknown>>;
   milestones: {
     closed: ProjectMilestone[];
     open: ProjectMilestone[];
@@ -1300,7 +1394,9 @@ function IssueSearchForm({
               defaultValue={search.authorId}
             >
               <option value="">{t("common.order.all")}</option>
-              <option value={currentUserId}>{t("issue.list.authoredByMe")}</option>
+              {!isAnonymous ? (
+                <option value={currentUserId}>{t("issue.list.authoredByMe")}</option>
+              ) : null}
               {authors.map((author) => (
                 <option
                   key={author.id}
@@ -1328,7 +1424,9 @@ function IssueSearchForm({
             >
               <option value="">{t("common.order.all")}</option>
               <option value="0">{t("issue.noAssignee")}</option>
-              <option value={currentUserId}>{t("issue.list.assignedToMe")}</option>
+              {!isAnonymous ? (
+                <option value={currentUserId}>{t("issue.list.assignedToMe")}</option>
+              ) : null}
               {assignees.map((assignee) => (
                 <option
                   key={assignee.id}
@@ -1411,9 +1509,90 @@ function IssueSearchForm({
               </span>
             </a>
           ) : null}
+          <IssueSearchLabelSelect
+            basePath={basePath}
+            labels={labels}
+            ownerName={ownerName}
+            projectName={projectName}
+            search={search}
+          />
         </div>
       </div>
     </form>
+  );
+}
+
+function IssueSearchLabelSelect({
+  basePath,
+  labels,
+  ownerName,
+  projectName,
+  search,
+}: {
+  basePath: string;
+  labels: Array<Record<string, unknown>>;
+  ownerName: string;
+  projectName: string;
+  search: ProjectIssuesSearch;
+}) {
+  const { t } = useLegacyMessages();
+  const groupedLabels = groupProjectLabels(labels);
+
+  if (groupedLabels.length === 0) {
+    return null;
+  }
+
+  return (
+    <dl className="issue-option">
+      <dt>
+        {t("label")}{" "}
+        <a
+          href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
+          target="_blank"
+          className="label-edit"
+          rel="noreferrer"
+        >
+          [{t("button.edit")}]
+        </a>
+      </dt>
+      <dd>
+        <select
+          id="labelIds"
+          name="labelIds"
+          multiple
+          data-search="labelIds"
+          data-toggle="select2"
+          data-format="issuelabel"
+          data-allow-clear="true"
+          data-dropdown-css-class="issue-labels"
+          data-container-css-class="issue-labels bordered fullsize"
+          data-placeholder={t("label.select")}
+          className="hide"
+          defaultValue={search.labelIds}
+        >
+          <option></option>
+          {groupedLabels.map((category) => (
+            <optgroup
+              label={category.name}
+              data-category-id={category.id}
+              data-category-is-exclusive={String(category.isExclusive)}
+              key={category.id}
+            >
+              {category.labels.map((label) => (
+                <option
+                  value={label.id}
+                  data-category-id={category.id}
+                  data-category-is-exclusive={String(category.isExclusive)}
+                  key={label.id}
+                >
+                  {label.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </dd>
+    </dl>
   );
 }
 
@@ -1602,6 +1781,51 @@ function compareIssueLabels(
     stringField(right.categoryName, ""),
   );
   return categoryOrder || left.name.localeCompare(right.name);
+}
+
+function groupProjectLabels(labels: Array<Record<string, unknown>>) {
+  const categories = new Map<
+    string,
+    {
+      id: string;
+      isExclusive: boolean;
+      labels: Array<{ id: string; name: string }>;
+      name: string;
+    }
+  >();
+
+  for (const label of labels) {
+    const categoryId = stringField(label.categoryId, "0");
+    const categoryName = stringField(label.categoryName, stringField(label.category, ""));
+    const categoryKey = `${categoryId}\u0000${categoryName}`;
+    const category = categories.get(categoryKey) ?? {
+      id: categoryId,
+      isExclusive: Boolean(label.categoryIsExclusive),
+      labels: [],
+      name: categoryName,
+    };
+    category.labels.push({
+      id: stringField(label.id, ""),
+      name: stringField(label.name, ""),
+    });
+    categories.set(categoryKey, category);
+  }
+
+  const groupedLabels = [];
+  for (const category of categories.values()) {
+    const categoryLabels = [];
+    for (const label of category.labels) {
+      if (label.id && label.name) {
+        categoryLabels.push(label);
+      }
+    }
+    categoryLabels.sort((left, right) => left.name.localeCompare(right.name));
+    if (categoryLabels.length > 0) {
+      groupedLabels.push({ ...category, labels: categoryLabels });
+    }
+  }
+
+  return groupedLabels.sort((left, right) => left.name.localeCompare(right.name));
 }
 
 function issueLabelData(labels: RestIssueListItem["labels"]) {
