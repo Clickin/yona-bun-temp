@@ -216,6 +216,39 @@ test("site admin mail renders legacy sended=true success state", async ({ page }
   ]);
 });
 
+test("site admin mail renders legacy errorMessage alert state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockMailOptions(page, {
+    notConfiguredItems: [],
+    sender: "site-admin@yona.local",
+    sent: false,
+  });
+
+  await page.goto(`${basePath}/sites/mail?errorMessage=validation.invalidEmail`);
+  await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator(".span10 > .alert-error p")).toHaveText([
+    "Failed to send mail.",
+    "Enter valid email address!",
+  ]);
+  await expect(page.locator(".span10 > .alert-success")).toHaveCount(0);
+  await expect(page.locator("#mailForm")).toHaveAttribute("action", `${basePath}/sites/mail`);
+  expect(await mailErrorStateOrder(page)).toEqual([
+    "title_area",
+    "alert alert-error",
+    "form-horizontal",
+  ]);
+});
+
+async function mailErrorStateOrder(page: Page) {
+  return page.evaluate(() =>
+    Array.from(
+      document.querySelectorAll(".site-setting-wrap .span10 > *"),
+      (element) => element.getAttribute("class") ?? element.tagName.toLowerCase(),
+    ),
+  );
+}
+
 async function mailSuccessStateOrder(page: Page) {
   return page.evaluate(() =>
     Array.from(

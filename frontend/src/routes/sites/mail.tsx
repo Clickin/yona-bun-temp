@@ -13,6 +13,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 interface SiteMailSearch {
+  errorMessage: string;
   sended: boolean;
 }
 
@@ -26,19 +27,24 @@ const LegacyInternalLink = Link as ComponentType<
 export const Route = createFileRoute("/sites/mail")({
   component: SiteMailRoute,
   validateSearch: (search: Record<string, unknown>): SiteMailSearch => ({
+    errorMessage: typeof search.errorMessage === "string" ? search.errorMessage : "",
     sended: search.sended === true || search.sended === "true",
   }),
 });
 
 function SiteMailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const { sended } = Route.useSearch();
+  const { errorMessage, sended } = Route.useSearch();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <SiteMailScreen runtimeConfig={runtimeConfig} sentBySearch={sended} />
+          <SiteMailScreen
+            errorMessageBySearch={errorMessage}
+            runtimeConfig={runtimeConfig}
+            sentBySearch={sended}
+          />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
@@ -46,9 +52,11 @@ function SiteMailRoute() {
 }
 
 function SiteMailScreen({
+  errorMessageBySearch,
   runtimeConfig,
   sentBySearch,
 }: {
+  errorMessageBySearch: string;
   runtimeConfig: RuntimeConfig;
   sentBySearch: boolean;
 }) {
@@ -72,6 +80,7 @@ function SiteMailScreen({
             </div>
             <div className="span10">
               <MailBody
+                errorMessageBySearch={errorMessageBySearch}
                 response={query.data}
                 runtimeConfig={runtimeConfig}
                 sentBySearch={sentBySearch}
@@ -110,10 +119,12 @@ function SiteAdminSidebar() {
 }
 
 function MailBody({
+  errorMessageBySearch,
   response,
   runtimeConfig,
   sentBySearch,
 }: {
+  errorMessageBySearch: string;
   response: SiteMailOptionsResponse | undefined;
   runtimeConfig: RuntimeConfig;
   sentBySearch: boolean;
@@ -134,16 +145,17 @@ function MailBody({
   }
 
   const sent = sentBySearch || response.sent || mutation.data?.sent === true;
+  const mutationErrorMessage = mutation.error instanceof Error ? mutation.error.message : "";
 
   return (
     <>
       <div className="title_area">
         <h2 className="pull-left">{t("site.sidebar.mailSend")}</h2>
       </div>
-      {mutation.isError ? (
+      {errorMessageBySearch || mutation.isError ? (
         <div className="alert alert-error">
           <p>{t("site.mail.fail")}</p>
-          <p>{mutation.error instanceof Error ? mutation.error.message : ""}</p>
+          <p>{errorMessageBySearch ? t(errorMessageBySearch) : mutationErrorMessage}</p>
         </div>
       ) : null}
       {sent ? <div className="alert alert-success">{t("site.mail.sended")}</div> : null}
