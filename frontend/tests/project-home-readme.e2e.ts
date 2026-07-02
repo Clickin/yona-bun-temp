@@ -69,10 +69,41 @@ test("project home leave modal posts legacy leave action", async ({ page }) => {
   expect(leaveRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
 });
 
+test("project home description edit mirrors legacy toggle and save", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const overviewRequests: { hasCsrfToken: boolean; method: string; overview: string }[] = [];
+  await mockProjectHome(page, { overviewRequests });
+
+  await page.goto(`${basePath}/admin/sample`);
+  await expect(page.locator(".project-description")).not.toHaveClass(/hidden/);
+  await expect(page.locator(".project-description-edit")).toHaveClass(/hidden/);
+
+  await page.locator('[data-toggle="description-edit"]').click();
+  await expect(page.locator(".project-description")).toHaveClass(/hidden/);
+  await expect(page.locator(".project-description-edit")).not.toHaveClass(/hidden/);
+  await expect(page.locator("#project-description-input")).toBeFocused();
+
+  await page.locator('[data-toggle="description-cancel"]').click();
+  await expect(page.locator(".project-description")).not.toHaveClass(/hidden/);
+  await expect(page.locator(".project-description-edit")).toHaveClass(/hidden/);
+  expect(overviewRequests).toEqual([]);
+
+  await page.locator('[data-toggle="description-edit"]').click();
+  await page.locator("#project-description-input").fill("Updated overview");
+  await page.locator("#descriptionSaveBtn").click();
+  await expect(page.locator(".project-description")).not.toHaveClass(/hidden/);
+  await expect(page.locator(".project-description-edit")).toHaveClass(/hidden/);
+  await expect(page.locator("#project-description")).toHaveText("Updated overview");
+  expect(overviewRequests).toEqual([
+    { hasCsrfToken: true, method: "PATCH", overview: "Updated overview" },
+  ]);
+});
+
 async function mockProjectHome(
   page: Page,
   overrides: Partial<{
     leaveRequests: { hasCsrfToken: boolean; method: string }[];
+    overviewRequests: { hasCsrfToken: boolean; method: string; overview: string }[];
     readmeFile: unknown;
   }> = {},
 ) {
@@ -122,6 +153,21 @@ async function mockProjectHome(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ redirectPath: "/admin" }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/overview", async (route) => {
+    const request = route.request();
+    const body = request.postDataJSON() as { overview?: string };
+    overrides.overviewRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
+      method: request.method(),
+      overview: body.overview ?? "",
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        overview: body.overview ?? "",
+      }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {

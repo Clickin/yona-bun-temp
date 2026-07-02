@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   deleteProjectMemberRest,
   readProjectContainerQueryOptions,
-  updateProjectRest,
+  updateProjectOverviewRest,
 } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
 import type { ProjectContainer, YonaUserItem } from "../../api/types";
@@ -97,7 +97,11 @@ function ProjectHomeBody({
   const { ownerName, projectName } = Route.useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const initialOverview = stringField(project.overview, "");
+  const [descriptionEditing, setDescriptionEditing] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [overviewText, setOverviewText] = useState(initialOverview);
+  const descriptionInputRef = useRef<HTMLInputElement>(null);
   const projectRecord = recordField(project);
   const menuSetting = projectMenuSetting(project);
   const members = arrayField(projectRecord.members) as YonaUserItem[];
@@ -135,20 +139,11 @@ function ProjectHomeBody({
   const overviewMutation = useMutation({
     mutationFn: async (overview: string) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return updateProjectRest(runtimeConfig, csrfToken, ownerName, projectName, {
-        board: booleanField(menuSetting.board),
-        code: booleanField(menuSetting.code),
-        issue: booleanField(menuSetting.issue),
-        milestone: booleanField(menuSetting.milestone),
-        overview,
-        ownerName,
-        projectName,
-        projectScope: stringField(project.projectScope, "PUBLIC"),
-        pullRequest: booleanField(menuSetting.pullRequest),
-        review: booleanField(menuSetting.review),
-      });
+      return updateProjectOverviewRest(runtimeConfig, csrfToken, ownerName, projectName, overview);
     },
-    onSuccess() {
+    onSuccess(response, overview) {
+      setOverviewText(stringField(response.overview, overview));
+      setDescriptionEditing(false);
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.container(ownerName, projectName),
       });
@@ -174,23 +169,35 @@ function ProjectHomeBody({
         </div>
         <div className="project-home-header row-fluid">
           <div className="project-overview span9 span-hard-wrap">
-            <div className="project-description" data-toggle="project-description-tab">
+            <div
+              className={descriptionEditing ? "project-description hidden" : "project-description"}
+              data-toggle="project-description-tab"
+            >
               <h3>
                 <span id="project-description" className="markdown-wrap">
-                  {stringField(project.overview, "") || t("project.description.placeholder")}
+                  {overviewText || t("project.description.placeholder")}
                 </span>
                 {booleanField(project.viewerCanUpdate) ? (
                   <button
                     type="button"
                     className="ybtn ybtn-minimum"
                     data-toggle="description-edit"
+                    onClick={() => {
+                      setDescriptionEditing(true);
+                      window.setTimeout(() => descriptionInputRef.current?.focus());
+                    }}
                   >
                     <i className="yobicon-edit"></i>
                   </button>
                 ) : null}
               </h3>
             </div>
-            <div className="project-description-edit hidden" data-toggle="project-description-tab">
+            <div
+              className={
+                descriptionEditing ? "project-description-edit" : "project-description-edit hidden"
+              }
+              data-toggle="project-description-tab"
+            >
               <form
                 action={prefixBasePath(
                   runtimeConfig.basePath,
@@ -201,9 +208,10 @@ function ProjectHomeBody({
                 <input
                   type="text"
                   id="project-description-input"
+                  ref={descriptionInputRef}
                   className="span6"
                   placeholder={t("project.description.placeholder")}
-                  defaultValue={stringField(project.overview, "")}
+                  defaultValue={overviewText}
                 />
                 <button
                   type="button"
@@ -219,7 +227,12 @@ function ProjectHomeBody({
                 >
                   {t("button.save")}
                 </button>{" "}
-                <button type="button" className="ybtn" data-toggle="description-cancel">
+                <button
+                  type="button"
+                  className="ybtn"
+                  data-toggle="description-cancel"
+                  onClick={() => setDescriptionEditing(false)}
+                >
                   {t("button.cancel")}
                 </button>
               </form>
