@@ -148,7 +148,7 @@ test("site admin diagnostics renders legacy error pre blocks", async ({ page }) 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   await mockDiagnostics(page, {
-    errorCount: 2,
+    errorCount: 99,
     errors: ["database probe failed", "repository path is unavailable"],
   });
 
