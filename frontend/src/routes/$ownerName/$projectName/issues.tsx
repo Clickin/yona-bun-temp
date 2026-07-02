@@ -746,6 +746,7 @@ function ProjectIssuesBody({
                       <ProjectIssueItem
                         basePath={runtimeConfig.basePath}
                         currentUserLoginId={currentUserLoginId}
+                        draftNumberSource="draft-list"
                         issue={issue}
                         key={`draft-${issue.id || issue.issueNumber}`}
                         ownerName={ownerName}
@@ -764,6 +765,7 @@ function ProjectIssuesBody({
                     <ProjectIssueItem
                       basePath={runtimeConfig.basePath}
                       currentUserLoginId={currentUserLoginId}
+                      draftNumberSource="normal-list"
                       issue={issue}
                       key={issue.id || issue.issueNumber}
                       ownerName={ownerName}
@@ -1423,6 +1425,7 @@ function LabelMassUpdateGroup({
 function ProjectIssueItem({
   basePath,
   currentUserLoginId,
+  draftNumberSource,
   issue,
   onTitlePrefixSearch,
   ownerName,
@@ -1434,6 +1437,7 @@ function ProjectIssueItem({
 }: {
   basePath: string;
   currentUserLoginId: string;
+  draftNumberSource: "draft-list" | "normal-list";
   issue: RestIssueListItem;
   onTitlePrefixSearch: (filter: string) => void;
   ownerName: string;
@@ -1494,8 +1498,12 @@ function ProjectIssueItem({
           <div className="title-wrap">
             <a href={issueHref} className="title">
               <span className="post-id">
-                {issue.isDraft ? (
+                {issue.isDraft && draftNumberSource === "draft-list" ? (
                   <span className="draft-number">#{t("issue.state.draft")}</span>
+                ) : issue.isDraft ? (
+                  <>
+                    #<span className="draft-number">{t("issue.state.draft")}</span>
+                  </>
                 ) : (
                   `#${issueNumber}`
                 )}
