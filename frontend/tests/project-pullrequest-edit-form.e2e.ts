@@ -50,6 +50,30 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
       ),
     ),
   );
+  expect(await editFormMetrics(page)).toEqual({
+    actionDisplay: "block",
+    actionMarginTop: "20px",
+    actionTextAlign: "center",
+    arrowColor: "rgb(126, 126, 126)",
+    arrowFontSize: "32px",
+    arrowLeft: 614,
+    arrowMarginLeft: "-16px",
+    arrowPosition: "absolute",
+    arrowTop: "20px",
+    branchWrapDisplay: "block",
+    branchWrapMarginBottom: "20px",
+    branchWrapMinHeight: "55px",
+    branchWrapPosition: "relative",
+    commitsPaneWidth: 1260,
+    contentWidth: 1260,
+    fieldTitleDisplay: "block",
+    fieldTitleFontWeight: "700",
+    fromBranchDisabled: true,
+    fromProjectDisabled: true,
+    titleWidth: 1222,
+    toBranchDisabled: true,
+    toProjectDisabled: true,
+  });
 
   await page.fill("#title", "Updated title");
   await page.fill("#editor-body-body", "Updated body");
@@ -60,6 +84,71 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
     .toEqual([{ attachmentIds: [], bodyMarkdown: "Updated body", title: "Updated title" }]);
   await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequests`);
 });
+
+async function editFormMetrics(page: Page) {
+  return page.locator(".content-wrap.frm-wrap").evaluate((content) => {
+    const branchWrap = content.querySelector<HTMLElement>(".pull-request-wrap");
+    const arrow = content.querySelector<HTMLElement>(".pull-request-wrap .arrow");
+    const fieldTitle = content.querySelector<HTMLElement>(".pull-request-wrap .field-title");
+    const title = content.querySelector<HTMLElement>("input#title.text");
+    const actions = content.querySelector<HTMLElement>(".actions");
+    const commitsPane = content.querySelector<HTMLElement>("#__commits.code-browse-wrap");
+    const fromProject = content.querySelector<HTMLSelectElement>("#fromProjectId");
+    const fromBranch = content.querySelector<HTMLSelectElement>("#fromBranch");
+    const toProject = content.querySelector<HTMLSelectElement>("#toProjectId");
+    const toBranch = content.querySelector<HTMLSelectElement>("#toBranch");
+    const missing = Object.entries({
+      actions,
+      arrow,
+      branchWrap,
+      commitsPane,
+      fieldTitle,
+      fromBranch,
+      fromProject,
+      title,
+      toBranch,
+      toProject,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected pull request edit metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const actionStyle = window.getComputedStyle(actions);
+    const arrowStyle = window.getComputedStyle(arrow);
+    const branchWrapStyle = window.getComputedStyle(branchWrap);
+    const fieldTitleStyle = window.getComputedStyle(fieldTitle);
+    return {
+      actionDisplay: actionStyle.display,
+      actionMarginTop: actionStyle.marginTop,
+      actionTextAlign: actionStyle.textAlign,
+      arrowColor: arrowStyle.color,
+      arrowFontSize: arrowStyle.fontSize,
+      arrowLeft: Math.round(
+        arrow.getBoundingClientRect().left - branchWrap.getBoundingClientRect().left,
+      ),
+      arrowMarginLeft: arrowStyle.marginLeft,
+      arrowPosition: arrowStyle.position,
+      arrowTop: arrowStyle.top,
+      branchWrapDisplay: branchWrapStyle.display,
+      branchWrapMarginBottom: branchWrapStyle.marginBottom,
+      branchWrapMinHeight: branchWrapStyle.minHeight,
+      branchWrapPosition: branchWrapStyle.position,
+      commitsPaneWidth: Math.round(commitsPane.getBoundingClientRect().width),
+      contentWidth: Math.round(content.getBoundingClientRect().width),
+      fieldTitleDisplay: fieldTitleStyle.display,
+      fieldTitleFontWeight: fieldTitleStyle.fontWeight,
+      fromBranchDisabled: fromBranch.disabled,
+      fromProjectDisabled: fromProject.disabled,
+      titleWidth: Math.round(title.getBoundingClientRect().width),
+      toBranchDisabled: toBranch.disabled,
+      toProjectDisabled: toProject.disabled,
+    };
+  });
+}
 
 async function mockProjectPullRequestEditForm(page: Page, patchRequests: unknown[]) {
   await page.route("**/api/v1/session", async (route) => {
