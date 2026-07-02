@@ -1397,6 +1397,38 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
   );
 });
 
+test("project issue show-subtasks toggle follows legacy yona.showSubtask localStorage behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "children");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=children`);
+  const toggle = page.locator("#toggle-show-subtasks");
+  const childList = page.locator("#issue-item-42 .child-issue-list");
+  await expect(toggle).not.toBeChecked();
+  await expect(childList).not.toBeVisible();
+
+  await toggle.click();
+  await expect(toggle).toBeChecked();
+  await expect(childList).toBeVisible();
+  await expect(childList).toHaveAttribute("style", "display: block;");
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("showSubtasksAlways")))
+    .toBe("true");
+
+  await page.reload();
+  await expect(page.locator("#toggle-show-subtasks")).toBeChecked();
+  await expect(page.locator("#issue-item-42 .child-issue-list")).toBeVisible();
+
+  await page.locator("#toggle-show-subtasks").click();
+  await expect(page.locator("#toggle-show-subtasks")).not.toBeChecked();
+  await expect(page.locator("#issue-item-42 .child-issue-list")).not.toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("showSubtasksAlways")))
+    .toBe("false");
+});
+
 async function issueListShellMetrics(page: Page) {
   return page.locator(".issue-list-wrap").evaluate((wrap) => {
     const leftMenu = wrap.querySelector(".left-menu") as HTMLElement;

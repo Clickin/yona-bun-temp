@@ -420,6 +420,10 @@ function ProjectIssuesBody({
   const issueListRef = useRef<HTMLUListElement>(null);
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const hasIssues = issues.items.length > 0;
+  const [showSubtasksAlways, setShowSubtasksAlways] = useState(
+    () =>
+      typeof localStorage !== "undefined" && localStorage.getItem("showSubtasksAlways") === "true",
+  );
   const draftItems = shouldShowDraftItems(search)
     ? (issues.draftItems ?? []).filter(
         (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
@@ -602,7 +606,13 @@ function ProjectIssuesBody({
                 <TwoColumnModeCheckbox />
               </li>
               <li className="show-subtasks-li">
-                <ShowSubtasksCheckbox />
+                <ShowSubtasksCheckbox
+                  checked={showSubtasksAlways}
+                  onToggle={(checked) => {
+                    localStorage.setItem("showSubtasksAlways", String(checked));
+                    setShowSubtasksAlways(checked);
+                  }}
+                />
               </li>
             </ul>
             {!hasIssues ? (
@@ -647,6 +657,7 @@ function ProjectIssuesBody({
                       projectName={projectName}
                       showMassUpdateControls={showMassUpdateControls}
                       showMilestone={showMilestone}
+                      showSubtasksAlways={showSubtasksAlways}
                       onTitlePrefixSearch={handleTitlePrefixSearch}
                     />
                   ))}
@@ -659,6 +670,7 @@ function ProjectIssuesBody({
                       projectName={projectName}
                       showMassUpdateControls={showMassUpdateControls}
                       showMilestone={showMilestone}
+                      showSubtasksAlways={showSubtasksAlways}
                       onTitlePrefixSearch={handleTitlePrefixSearch}
                     />
                   ))}
@@ -1310,6 +1322,7 @@ function ProjectIssueItem({
   projectName,
   showMassUpdateControls,
   showMilestone,
+  showSubtasksAlways,
 }: {
   basePath: string;
   issue: RestIssueListItem;
@@ -1318,6 +1331,7 @@ function ProjectIssueItem({
   projectName: string;
   showMassUpdateControls: boolean;
   showMilestone: boolean;
+  showSubtasksAlways: boolean;
 }) {
   const { t } = useLegacyMessages();
   const issueId = stringField(issue.id, String(issue.issueNumber));
@@ -1497,7 +1511,10 @@ function ProjectIssueItem({
                 {label.name}
               </a>
             ))}
-            <div className="child-issue-list hide">
+            <div
+              className="child-issue-list hide"
+              style={showSubtasksAlways ? { display: "block" } : undefined}
+            >
               <IssueChildRows
                 basePath={basePath}
                 issues={issue.childIssues ?? []}
@@ -2446,7 +2463,13 @@ function TwoColumnModeCheckbox() {
   );
 }
 
-function ShowSubtasksCheckbox() {
+function ShowSubtasksCheckbox({
+  checked,
+  onToggle,
+}: {
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
+}) {
   const { t } = useLegacyMessages();
 
   return (
@@ -2462,7 +2485,14 @@ function ShowSubtasksCheckbox() {
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
       <label className="checkbox">
         <div className="show-subtasks-button-border">
-          <input id="toggle-show-subtasks" type="checkbox" />
+          <input
+            id="toggle-show-subtasks"
+            type="checkbox"
+            checked={checked}
+            onChange={(event) => {
+              onToggle(event.currentTarget.checked);
+            }}
+          />
           <span className="show-subtasks-text">{t("common.show.subtasks")}</span>
         </div>
       </label>
