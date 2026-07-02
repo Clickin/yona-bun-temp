@@ -417,7 +417,7 @@ function ProjectIssuesBody({
 }) {
   const { t } = useLegacyMessages();
   const navigate = useNavigate();
-  const issueListRef = useRef<HTMLUListElement>(null);
+  const issueListRef = useRef<HTMLDivElement>(null);
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const hasIssues = issues.items.length > 0;
   const [showSubtasksAlways, setShowSubtasksAlways] = useState(
@@ -428,11 +428,10 @@ function ProjectIssuesBody({
     () =>
       typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
   );
-  const draftItems = shouldShowDraftItems(search)
-    ? (issues.draftItems ?? []).filter(
-        (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
-      )
-    : [];
+  const rawDraftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
+  const draftItems = rawDraftItems.filter(
+    (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
+  );
   const handleStateChange = (nextState: "closed" | "open") => {
     void navigate({
       to: projectIssuesRoutePath(ownerName, projectName, {
@@ -654,7 +653,7 @@ function ProjectIssuesBody({
               }}
             />
           </div>
-          <div className="span10 span-hard-wrap" id="span10">
+          <div className="span10 span-hard-wrap" id="span10" ref={issueListRef}>
             <div className="pull-right">
               <a
                 href={prefixBasePath(
@@ -737,21 +736,25 @@ function ProjectIssuesBody({
                     />
                   ) : null}
                 </div>
-                <ul className="post-list-wrap row-fluid" ref={issueListRef}>
-                  {draftItems.map((issue) => (
-                    <ProjectIssueItem
-                      basePath={runtimeConfig.basePath}
-                      issue={issue}
-                      key={`draft-${issue.id || issue.issueNumber}`}
-                      ownerName={ownerName}
-                      projectName={projectName}
-                      showMassUpdateControls={showMassUpdateControls}
-                      showMilestone={showMilestone}
-                      showSubtasksAlways={showSubtasksAlways}
-                      useTwoColumnMode={useTwoColumnMode}
-                      onTitlePrefixSearch={handleTitlePrefixSearch}
-                    />
-                  ))}
+                {rawDraftItems.length > 0 ? (
+                  <ul className="post-list-wrap row-fluid">
+                    {draftItems.map((issue) => (
+                      <ProjectIssueItem
+                        basePath={runtimeConfig.basePath}
+                        issue={issue}
+                        key={`draft-${issue.id || issue.issueNumber}`}
+                        ownerName={ownerName}
+                        projectName={projectName}
+                        showMassUpdateControls={showMassUpdateControls}
+                        showMilestone={showMilestone}
+                        showSubtasksAlways={showSubtasksAlways}
+                        useTwoColumnMode={useTwoColumnMode}
+                        onTitlePrefixSearch={handleTitlePrefixSearch}
+                      />
+                    ))}
+                  </ul>
+                ) : null}
+                <ul className="post-list-wrap row-fluid">
                   {issues.items.map((issue) => (
                     <ProjectIssueItem
                       basePath={runtimeConfig.basePath}

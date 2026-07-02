@@ -207,7 +207,7 @@ const SORT_FILTERS = `<div class="filters pull-right"><a href="#" orderBy="dueDa
 const DRAFT_ISSUE_ROW = `<li class="post-item title" id="issue-item-41" data-item="issue-item" data-value="admin 10 Draft issue" href="__BASE_PATH__/admin/sample/issue/10"><div class="span9 span-hard-wrap"><label for="issue-41" class="mass-update-check hide-in-mobile"><input id="issue-41" type="checkbox" name="checked-issue" data-toggle="issue-checkbox" data-issue-id="41" data-issue-labels=""></label><div for="issue-41" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/10" class="title"><span class="post-id"><span class="draft-number">#Draft</span></span></a><a href="__BASE_PATH__/admin/sample/issue/10" class="title">Draft issue</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="admin">Site Admin</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 1, 2026">Jul 1, 2026</span><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><div class="empty-avatar-wrap">&nbsp;</div></div></div></li>`;
 const DRAFT_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<ul class="post-list-wrap row-fluid">',
-  `<ul class="post-list-wrap row-fluid">${DRAFT_ISSUE_ROW}`,
+  `<ul class="post-list-wrap row-fluid">${DRAFT_ISSUE_ROW}</ul><ul class="post-list-wrap row-fluid">`,
 )
   .replace("filter=bug&amp;format=xls", "format=xls")
   .replace(POPULATED_PAGINATION, SINGLE_PAGE_PAGINATION);
@@ -1053,6 +1053,13 @@ test("project issue draft row renders before normal list like legacy partial_lis
 
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(2);
+  await expect(page.locator("#span10 > .post-list-wrap.row-fluid")).toHaveCount(2);
+  await expect(page.locator("#span10 > .post-list-wrap.row-fluid").first()).toContainText(
+    "Draft issue",
+  );
+  await expect(page.locator("#span10 > .post-list-wrap.row-fluid").nth(1)).toContainText(
+    "Fix flaky issue",
+  );
   const draftRow = page.locator("#issue-item-41");
   await expect(draftRow).toHaveAttribute("data-item", "issue-item");
   await expect(draftRow).toHaveAttribute("data-value", "admin 10 Draft issue");
@@ -1085,6 +1092,11 @@ test("project issue list hides other users' draft rows like legacy partial_list_
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator("#issue-item-44")).toHaveCount(0);
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator("#span10 > .post-list-wrap.row-fluid")).toHaveCount(2);
+  await expect(page.locator("#span10 > .post-list-wrap.row-fluid").first()).toBeEmpty();
+  await expect(page.locator("#span10 > .post-list-wrap.row-fluid").nth(1)).toContainText(
+    "Fix flaky issue",
+  );
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
