@@ -47,7 +47,66 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_CODE_FILE_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await fileViewMetrics(page)).toEqual({
+    breadcrumbDisplay: "block",
+    breadcrumbFontSize: "15px",
+    breadcrumbFontWeight: "700",
+    breadcrumbLineHeight: "30px",
+    breadcrumbPadding: "0px 10px 0px 0px",
+    codeBorderStyle: "none",
+    codeBorderRadius: "0px",
+    codeLineHeight: "16px",
+    codeMargin: "0px",
+    codePadding: "0px",
+    headerDisplay: "block",
+    headerHeight: "34px",
+    headerMarginBottom: "10px",
+    headerMarginTop: "10px",
+    viewerOverflow: "auto",
+    viewerWidth: 1260,
+    wrapPosition: "relative",
+  });
 });
+
+async function fileViewMetrics(page: Page) {
+  return page.locator(".code-browse-wrap").evaluate((wrap) => {
+    const header = wrap.querySelector<HTMLElement>(".code-browse-header");
+    const breadcrumb = wrap.querySelector<HTMLElement>(".code-breadcrumb-wrap");
+    const viewer = wrap.querySelector<HTMLElement>(".code-viewer-wrap");
+    const code = wrap.querySelector<HTMLElement>("#showCode.code-wrap");
+    const missing = Object.entries({ breadcrumb, code, header, viewer })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected file view metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const breadcrumbStyle = window.getComputedStyle(breadcrumb);
+    const codeStyle = window.getComputedStyle(code);
+    const headerStyle = window.getComputedStyle(header);
+    const viewerStyle = window.getComputedStyle(viewer);
+    const wrapStyle = window.getComputedStyle(wrap);
+    return {
+      breadcrumbDisplay: breadcrumbStyle.display,
+      breadcrumbFontSize: breadcrumbStyle.fontSize,
+      breadcrumbFontWeight: breadcrumbStyle.fontWeight,
+      breadcrumbLineHeight: breadcrumbStyle.lineHeight,
+      breadcrumbPadding: breadcrumbStyle.padding,
+      codeBorderRadius: codeStyle.borderRadius,
+      codeBorderStyle: codeStyle.borderTopStyle,
+      codeLineHeight: codeStyle.lineHeight,
+      codeMargin: codeStyle.margin,
+      codePadding: codeStyle.padding,
+      headerDisplay: headerStyle.display,
+      headerHeight: headerStyle.height,
+      headerMarginBottom: headerStyle.marginBottom,
+      headerMarginTop: headerStyle.marginTop,
+      viewerOverflow: viewerStyle.overflow,
+      viewerWidth: Math.round(viewer.getBoundingClientRect().width),
+      wrapPosition: wrapStyle.position,
+    };
+  });
+}
 
 test("project code text file keeps nested legacy path segments", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";

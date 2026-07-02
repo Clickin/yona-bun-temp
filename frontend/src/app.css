@@ -5816,7 +5816,7 @@ div.markdown-preview {
 }
 
 .code-browse-wrap {
-  margin-top: 18px;
+  position: relative;
 }
 
 .code-browse-wrap:has(> .commitInfo + .diff-wrap) {
@@ -5824,36 +5824,92 @@ div.markdown-preview {
   margin-top: 0;
 }
 
-.code-browse-header,
-.file-header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid #ddd;
+.code-browse-header {
+  display: block;
+  height: 34px;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .code-breadcrumb-wrap {
-  display: inline-flex;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  gap: 4px;
-  min-width: 180px;
+  display: inline-block;
+  padding: 0 10px 0 0;
+  color: #555;
+  font-size: 15px;
+  font-weight: bold;
+  line-height: 30px;
 }
 
-.file-info {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+.code-breadcrumb-wrap a {
+  margin: 0 2px;
+}
+
+.code-breadcrumb-wrap a::after {
+  margin-left: 4px;
+  content: "/";
+}
+
+.code-breadcrumb-wrap a:first-of-type {
+  margin-left: 0;
+}
+
+.code-breadcrumb-wrap a:last-of-type {
+  color: #2c3e50;
+}
+
+.code-breadcrumb-wrap a:last-of-type::after {
+  display: inline-block;
+  content: "";
 }
 
 .code-wrap {
-  margin: 0;
   overflow: auto;
   background: #fff;
+}
+
+.code-viewer-wrap {
+  width: 100%;
+  overflow: auto;
+  zoom: 1;
+}
+
+.code-viewer-wrap .file-wrap {
+  display: block;
+  width: 100%;
+}
+
+.code-viewer-wrap .file-wrap p .filename {
+  display: block;
+  font-size: 20px;
+}
+
+.code-viewer-wrap .file-wrap p .filesize {
+  display: block;
+  margin-bottom: 20px;
+  color: #999;
+  font-size: 13px;
+}
+
+.code-viewer-wrap .image-wrap {
+  padding: 10px;
+}
+
+.code-viewer-wrap .image-wrap img {
+  max-width: 100%;
+}
+
+.code-viewer-wrap .code-wrap {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none;
+  border-radius: 0;
+  line-height: 16px;
+}
+
+.code-viewer-wrap .codebrowser-markdown {
+  padding: 0 20px 15px;
+  border: 1px solid #ccc;
+  border-top: none;
 }
 
 .commit-wrap {
