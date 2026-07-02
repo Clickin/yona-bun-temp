@@ -14,6 +14,11 @@ const manifestPath = path.join(
 
 test("rendered evidence summary counts match manifest row statuses", () => {
   const source = readFileSync(manifestPath, "utf8");
+  assert.doesNotMatch(
+    source,
+    /frontend\/tests\/(?:issue-detail-parity|board-posting-parity)\.e2e\.ts/,
+    "historical detail-route E2E filenames must not be cited as active evidence",
+  );
   const summaryCounts = new Map();
   const prioritySummaryCounts = new Map();
   const primaryStatusCounts = new Map();
