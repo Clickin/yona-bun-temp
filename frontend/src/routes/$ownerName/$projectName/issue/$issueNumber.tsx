@@ -20,9 +20,11 @@ import {
   listProjectMilestones,
   readSessionBootstrap,
   toggleFavoriteIssue,
+  unwatchIssue,
   unvoteIssueComment,
   updateIssueWeight,
   voteIssueComment,
+  watchIssue,
   type RestIssueDetailResponse,
 } from "../../../../auth-workspace-client";
 import { SiteLayoutShell } from "../../../-home-route-screen";
@@ -435,6 +437,7 @@ function IssueDetailBody({
   const createdLabel = stringField(issue.createdLabel);
   const isDraft = booleanField(issue.isDraft);
   const isWatching = booleanField(issue.isWatching);
+  const [isWatchingIssue, setIsWatchingIssue] = useState(isWatching);
   const isFavorited = booleanField(issue.isFavorited);
   const [isFavoritedIssue, setIsFavoritedIssue] = useState(isFavorited);
   const canUpdate = booleanField(issue.viewerCanUpdate);
@@ -544,6 +547,24 @@ function IssueDetailBody({
       queryClient.setQueryData<RestIssueDetailResponse>(
         ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
         (current) => (current ? { ...current, isFavorited: nextIsFavorited } : current),
+      );
+    },
+  });
+  const watchIssueMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const input = { issueNumber, ownerName, projectName };
+      return isWatchingIssue
+        ? unwatchIssue(runtimeConfig, csrfToken, input)
+        : watchIssue(runtimeConfig, csrfToken, input);
+    },
+    onSuccess(response) {
+      const nextIsWatching =
+        typeof response.isWatching === "boolean" ? response.isWatching : !isWatchingIssue;
+      setIsWatchingIssue(nextIsWatching);
+      queryClient.setQueryData<RestIssueDetailResponse>(
+        ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+        (current) => (current ? { ...current, isWatching: nextIsWatching } : current),
       );
     },
   });
@@ -674,13 +695,14 @@ function IssueDetailBody({
                     <button
                       id="watch-button"
                       type="button"
-                      className={`ybtn ${isWatching ? "ybtn-watching" : ""}`}
+                      className={`ybtn ${isWatchingIssue ? "ybtn-watching" : ""}`}
                       data-toggle="tooltip"
                       data-placement="top"
                       title="Watch this issue"
-                      data-watching={String(isWatching)}
+                      data-watching={String(isWatchingIssue)}
+                      onClick={() => watchIssueMutation.mutate()}
                     >
-                      {isWatching ? "Unwatch" : "Watch"}
+                      {isWatchingIssue ? "Unwatch" : "Watch"}
                     </button>
                   ) : null}
                   {canUpdate ? (

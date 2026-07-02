@@ -696,6 +696,32 @@ test("project issue detail hides watch button when legacy WATCH is not allowed",
   await expect(page.locator(".board-actrow .issue-weight")).toHaveCount(1);
 });
 
+test("project issue detail watch button posts and toggles legacy watching state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { watchRequests } = await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const watchButton = page.locator(".board-actrow #watch-button");
+  await expect(watchButton).toHaveText("Watch");
+  await expect(watchButton).toHaveAttribute("data-watching", "false");
+  await expect(watchButton).not.toHaveClass(/ybtn-watching/);
+
+  const watchResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/issues/11/watch") &&
+      response.request().method() === "POST",
+  );
+  await watchButton.click();
+  await watchResponsePromise;
+
+  expect(watchRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(watchButton).toHaveText("Unwatch");
+  await expect(watchButton).toHaveAttribute("data-watching", "true");
+  await expect(watchButton).toHaveClass(/ybtn-watching/);
+});
+
 test("project issue detail reveals legacy sharer list from share button", async ({ page }) => {
   await mockProjectIssueDetail(page);
 
@@ -2465,6 +2491,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
   const commentDeleteRequests: string[] = [];
   const commentVoteRequests: { csrfToken: string | null; method: string }[] = [];
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
   const issueWeightRequests: { csrfToken: string | null; method: string; url: string }[] = [];
   const sessionResponse = {
     actorId: 1,
@@ -2580,6 +2607,26 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
         body: JSON.stringify({
           issueNumber: Number(issueNumber),
           isFavorited: true,
+          ownerName: "admin",
+          projectName: "sample",
+          ...effectiveIssueOverrides,
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/admin/projects/sample/issues/${issueNumber}/watch`,
+    async (route) => {
+      const method = route.request().method();
+      watchRequests.push({
+        hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
+        method,
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          issueNumber: Number(issueNumber),
+          isWatching: method !== "DELETE",
           ownerName: "admin",
           projectName: "sample",
           ...effectiveIssueOverrides,
@@ -2748,6 +2795,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
     deleteRequests,
     favoriteRequests,
     issueWeightRequests,
+    watchRequests,
   };
 }
 
