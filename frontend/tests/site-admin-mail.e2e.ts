@@ -154,7 +154,109 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
   );
 
   expect(actual).toEqual(expected);
+  expect(await mailFormMetrics(page)).toEqual({
+    alertBackground: "rgb(242, 222, 222)",
+    alertBorderTopWidth: 1,
+    alertMarginBottom: 20,
+    alertPaddingBlock: 16,
+    alertPaddingInline: 49,
+    bodyTextareaRows: 16,
+    buttonHeight: 30,
+    buttonOffsetFromCenter: 0,
+    contentWidthRatio: 0.83,
+    controlGap: 20,
+    controlGroupMarginBottom: 20,
+    controlLabelPaddingTop: 5,
+    controlLabelTextAlign: "right",
+    controlLabelWidth: 160,
+    controlsMarginLeft: 180,
+    fromInputHeight: 30,
+    fromInputWidthRatio: 0.32,
+    sidebarWidthRatio: 0.15,
+    subjectInputWidthRatio: 0.99,
+    titleAreaMarginBottom: 29,
+    titleAreaPaddingBottom: 8,
+    titleLineHeight: 30,
+  });
 });
+
+async function mailFormMetrics(page: Page) {
+  return page.evaluate(() => {
+    const requireElement = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing element: ${selector}`);
+      }
+      return element;
+    };
+
+    const row = requireElement(".site-setting-wrap .row-fluid");
+    const sidebar = requireElement(".site-setting-wrap .span2");
+    const content = requireElement(".site-setting-wrap .span10");
+    const titleArea = requireElement(".site-setting-wrap .title_area");
+    const title = requireElement(".site-setting-wrap .title_area h2");
+    const alert = requireElement(".site-setting-wrap .alert-error");
+    const firstControlGroup = requireElement("#mailForm .control-group");
+    const secondControlGroup = requireElement("#mailForm .control-group:nth-of-type(2)");
+    const firstControlLabel = requireElement("#mailForm .control-label");
+    const firstControls = requireElement("#mailForm .controls");
+    const fromInput = requireElement('#mailForm input[name="from"]');
+    const subjectInput = requireElement('#mailForm input[name="subject"]');
+    const bodyTextarea = requireElement("#body");
+    const buttonWrap = requireElement(".mail-btn-wrap");
+    const button = requireElement(".mail-btn-wrap .ybtn-primary");
+
+    const rowRect = row.getBoundingClientRect();
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const titleAreaStyle = getComputedStyle(titleArea);
+    const titleStyle = getComputedStyle(title);
+    const alertStyle = getComputedStyle(alert);
+    const firstControlGroupStyle = getComputedStyle(firstControlGroup);
+    const firstControlGroupRect = firstControlGroup.getBoundingClientRect();
+    const secondControlGroupRect = secondControlGroup.getBoundingClientRect();
+    const firstControlLabelStyle = getComputedStyle(firstControlLabel);
+    const firstControlsStyle = getComputedStyle(firstControls);
+    const firstControlsRect = firstControls.getBoundingClientRect();
+    const fromInputRect = fromInput.getBoundingClientRect();
+    const subjectInputRect = subjectInput.getBoundingClientRect();
+    const buttonWrapRect = buttonWrap.getBoundingClientRect();
+    const buttonRect = button.getBoundingClientRect();
+
+    return {
+      alertBackground: alertStyle.backgroundColor,
+      alertBorderTopWidth: Math.round(parseFloat(alertStyle.borderTopWidth)),
+      alertMarginBottom: Math.round(parseFloat(alertStyle.marginBottom)),
+      alertPaddingBlock:
+        Math.round(parseFloat(alertStyle.paddingTop)) +
+        Math.round(parseFloat(alertStyle.paddingBottom)),
+      alertPaddingInline:
+        Math.round(parseFloat(alertStyle.paddingLeft)) +
+        Math.round(parseFloat(alertStyle.paddingRight)),
+      bodyTextareaRows: Number(bodyTextarea.getAttribute("rows")),
+      buttonHeight: Math.round(buttonRect.height),
+      buttonOffsetFromCenter: Math.abs(
+        Math.round(
+          buttonRect.left + buttonRect.width / 2 - (buttonWrapRect.left + buttonWrapRect.width / 2),
+        ),
+      ),
+      contentWidthRatio: Number((contentRect.width / rowRect.width).toFixed(2)),
+      controlGap: Math.round(secondControlGroupRect.top - firstControlGroupRect.bottom),
+      controlGroupMarginBottom: Math.round(parseFloat(firstControlGroupStyle.marginBottom)),
+      controlLabelPaddingTop: Math.round(parseFloat(firstControlLabelStyle.paddingTop)),
+      controlLabelTextAlign: firstControlLabelStyle.textAlign,
+      controlLabelWidth: Math.round(firstControlLabel.getBoundingClientRect().width),
+      controlsMarginLeft: Math.round(parseFloat(firstControlsStyle.marginLeft)),
+      fromInputHeight: Math.round(fromInputRect.height),
+      fromInputWidthRatio: Number((fromInputRect.width / firstControlsRect.width).toFixed(2)),
+      sidebarWidthRatio: Number((sidebarRect.width / rowRect.width).toFixed(2)),
+      subjectInputWidthRatio: Number((subjectInputRect.width / firstControlsRect.width).toFixed(2)),
+      titleAreaMarginBottom: Math.round(parseFloat(titleAreaStyle.marginBottom)),
+      titleAreaPaddingBottom: Math.round(parseFloat(titleAreaStyle.paddingBottom)),
+      titleLineHeight: Math.round(parseFloat(titleStyle.lineHeight)),
+    };
+  });
+}
 
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
