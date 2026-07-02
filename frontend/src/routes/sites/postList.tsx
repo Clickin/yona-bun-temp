@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import type { AnchorHTMLAttributes, ComponentType, ReactNode } from "react";
-import { sitePostsQueryOptions, type SitePost } from "../../api/site-admin";
+import { sitePostsQueryOptions, siteUpdateQueryOptions, type SitePost } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
@@ -44,6 +44,7 @@ function SitePostListRoute() {
 function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { pageNum } = Route.useSearch();
   const query = useQuery(sitePostsQueryOptions(runtimeConfig, { page: pageNum }));
+  const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
 
   return (
     <>
@@ -58,7 +59,7 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         <div className="site-setting-wrap">
           <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar />
+              <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
               <div className="title_area">
@@ -160,7 +161,7 @@ function PostListPagination({
   );
 }
 
-function SiteAdminSidebar() {
+function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   const navItems = [
     { href: "/sites/userList", labelKey: "site.sidebar.userList" },
     { href: "/sites/postList", labelKey: "site.sidebar.postList", active: true },
@@ -168,7 +169,7 @@ function SiteAdminSidebar() {
     { href: "/sites/projectList", labelKey: "site.sidebar.projectList" },
     { href: "/sites/mail", labelKey: "site.sidebar.mailSend" },
     { href: "/sites/massmail", labelKey: "site.sidebar.massMail" },
-    { href: "/sites/update", labelKey: "site.sidebar.update" },
+    { href: "/sites/update", labelKey: "site.sidebar.update", badge: showUpdateBadge },
     { href: "/sites/diagnostic", labelKey: "site.sidebar.diagnostics" },
   ];
 
@@ -178,6 +179,7 @@ function SiteAdminSidebar() {
         <li className={item.active ? "active" : ""} key={item.href}>
           <LegacyInternalLink activeProps={{ className: undefined }} to={item.href}>
             <LegacyMessage messageKey={item.labelKey} />
+            {item.badge ? <span className="notification-badge">1</span> : null}
           </LegacyInternalLink>
         </li>
       ))}
