@@ -21,8 +21,9 @@ Every resumed goal turn must restate this directive before choosing work:
   focused verification.
 - The audit update must add a table row that names each changed
   `frontend/src/routes/**/*.tsx` file, at least one legacy `.scala.html` source,
-  and the focused `frontend/tests/*.e2e.ts` file. This is the durable memo that
-  survives resumed multi-day goal turns and is enforced by the commit hook.
+  and the focused `frontend/tests/*.e2e.ts` file changed in the same commit.
+  This is the durable memo that survives resumed multi-day goal turns and is
+  enforced by the commit hook.
 - Every frontend E2E/CSS/UI parity evidence change must include a route TSX
   implementation change unless the turn is explicitly marked evidence-only.
 - For long-running unattended work, run

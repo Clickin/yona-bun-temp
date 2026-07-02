@@ -58,7 +58,7 @@ function commitsForRange(range) {
 }
 
 function changedFilesForCommit(sha) {
-  return git(["diff-tree", "--no-commit-id", "--name-only", "-r", "--diff-filter=ACMR", sha])
+  return git(["diff-tree", "--no-commit-id", "--name-only", "-r", "--diff-filter=ACMRD", sha])
     .split("\n")
     .map((file) => file.trim())
     .filter(Boolean);

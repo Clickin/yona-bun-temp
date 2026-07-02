@@ -17,7 +17,7 @@ import {
   formatScalaHtmlGoalGuardSummary,
 } from "./scala-html-goal-guard.mjs";
 
-const STAGED_CMD = ["diff", "--cached", "--name-only", "--diff-filter=ACMR"];
+const STAGED_CMD = ["diff", "--cached", "--name-only", "--diff-filter=ACMRD"];
 const IGNORED_PREFIXES = [
   ".svelte-kit/",
   "node_modules/",

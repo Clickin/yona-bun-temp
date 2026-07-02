@@ -363,6 +363,7 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   ]);
   expect(await scriptTextContains(page, '$yobi.loadModule("issue.List")')).toBe(true);
   expect(await scriptTextContains(page, "yobi.ShortcutKey.setKeymapLink")).toBe(true);
+  await expectIssueListSelect2Partial(page, basePath);
 
   expect(await issueListShellMetrics(page)).toEqual({
     wrapClear: "both",
@@ -386,6 +387,47 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
     ),
   );
 });
+
+async function expectIssueListSelect2Partial(page: Page, basePath: string) {
+  const select2Scripts = [
+    `${basePath}/assets/javascripts/lib/select2/select2.js`,
+    `${basePath}/assets/javascripts/common/yobi.ui.Select2.js`,
+  ];
+  for (const src of select2Scripts) {
+    const scripts = page.locator(`script[src="${src}"]`);
+    await expect(scripts).toHaveCount(2);
+    await expect(scripts.nth(1)).toHaveAttribute("defer", "");
+  }
+
+  const templates = [
+    {
+      id: "tplSelect2FormatUser",
+      text: '<div class="usf-group" title="${name} ${loginId}">',
+    },
+    {
+      id: "tplSelect2FormatMilestone",
+      text: '<div title="[${stateLabel}] ${name}">',
+    },
+    {
+      id: "tplSelect2Projects",
+      text: '<span class="avatar-wrap smaller"><img src="${avatarURL}" width="16" height="16"></span>',
+    },
+    {
+      id: "tplSelect2ProjectsWithoutAvatar",
+      text: '<span class="width25px"></span>',
+    },
+    {
+      id: "tplSelect2FormatIssues",
+      text: '<div title="${name}">',
+    },
+  ];
+
+  for (const template of templates) {
+    const nodes = page.locator(`script#${template.id}[type="text/x-jquery-tmpl"]`);
+    await expect(nodes).toHaveCount(2);
+    expect(await nodes.nth(1).textContent()).toContain(template.text);
+  }
+}
 
 test("project issue list search form renders legacy partial_select_label when project labels exist", async ({
   page,

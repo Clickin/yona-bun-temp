@@ -66,6 +66,7 @@ test("pre-commit hook points at the canonical root verification tool", () => {
 test("pre-commit verification runs the Scala HTML goal guard", () => {
   const verifySource = readFileSync(verifyToolPath, "utf8");
 
+  assert.match(verifySource, /--diff-filter=ACMRD/u);
   assert.match(verifySource, /from "\.\/scala-html-goal-guard\.mjs"/u);
   assert.match(verifySource, /evaluateScalaHtmlGoalGuard/u);
   assert.match(verifySource, /formatScalaHtmlGoalGuardSummary/u);

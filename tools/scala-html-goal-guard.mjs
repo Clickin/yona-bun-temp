@@ -11,6 +11,7 @@ const SCALA_HTML_AUDIT_FILE = "docs/provenance/frontend-scala-html-goal-violatio
 const ADDED_SCALA_HTML_SOURCE_PATTERN = /^\+(?!\+\+).*\.scala\.html\b/mu;
 const ADDED_AUDIT_ROW_PATTERN = /^\+\|(?! --- )(.*)$/gmu;
 const E2E_VERIFICATION_PATTERN = /frontend\/tests\/.+\.e2e\.ts\b/u;
+const E2E_VERIFICATION_GLOBAL_PATTERN = /frontend\/tests\/.+?\.e2e\.ts\b/gu;
 const SCALA_HTML_SOURCE_PATTERN =
   /\b(?:yona-original\/app\/views\/)?([A-Za-z0-9_.$/-]+\.scala\.html)\b/gu;
 const LEGACY_VIEW_ROOT = "yona-original/app/views";
@@ -49,10 +50,17 @@ function addedAuditRows(auditPatch) {
   return [...auditPatch.matchAll(ADDED_AUDIT_ROW_PATTERN)].map((match) => match[1]);
 }
 
-function routeFileHasCompleteAuditRow(routeFile, auditPatch) {
+function rowNamesChangedFocusedE2E(row, frontendE2EFiles) {
+  const rowE2EFiles = [...row.matchAll(E2E_VERIFICATION_GLOBAL_PATTERN)].map((match) => match[0]);
+  return rowE2EFiles.some((file) => frontendE2EFiles.includes(file));
+}
+
+function routeFileHasCompleteAuditRow(routeFile, auditPatch, frontendE2EFiles) {
   return addedAuditRows(auditPatch).some(
     (row) =>
-      row.includes(routeFile) && /\.scala\.html\b/u.test(row) && E2E_VERIFICATION_PATTERN.test(row),
+      row.includes(routeFile) &&
+      /\.scala\.html\b/u.test(row) &&
+      rowNamesChangedFocusedE2E(row, frontendE2EFiles),
   );
 }
 
@@ -92,6 +100,7 @@ export function evaluateScalaHtmlGoalGuard({
   const frontendRouteImplementationFiles = frontendImplementationFiles.filter(
     isFrontendRouteImplementation,
   );
+  const frontendE2EFiles = frontendEvidenceFiles.filter((file) => FRONTEND_E2E_PATTERN.test(file));
 
   const evidenceTouchesRuntime =
     frontendEvidenceFiles.some((file) => FRONTEND_E2E_PATTERN.test(file)) ||
@@ -181,7 +190,7 @@ export function evaluateScalaHtmlGoalGuard({
     !allowUndocumentedRoute
   ) {
     const routeFilesMissingCompleteAudit = frontendRouteImplementationFiles.filter(
-      (file) => !routeFileHasCompleteAuditRow(file, auditPatch),
+      (file) => !routeFileHasCompleteAuditRow(file, auditPatch, frontendE2EFiles),
     );
 
     if (routeFilesMissingCompleteAudit.length > 0) {
@@ -190,7 +199,7 @@ export function evaluateScalaHtmlGoalGuard({
         frontendEvidenceFiles,
         frontendImplementationFiles,
         message:
-          "Scala HTML goal guard blocked incomplete audit row work. Each changed route TSX file must be named in a newly added audit table row that also names a legacy .scala.html source and a focused frontend E2E verification file.",
+          "Scala HTML goal guard blocked incomplete audit row work. Each changed route TSX file must be named in a newly added audit table row that also names a legacy .scala.html source and a focused frontend E2E verification file changed in the same commit.",
       };
     }
   }

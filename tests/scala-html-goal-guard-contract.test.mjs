@@ -182,6 +182,22 @@ test("blocks frontend route TSX work when the audit row lacks focused E2E verifi
   assert.match(formatScalaHtmlGoalGuardSummary(result), /incomplete audit row work/u);
 });
 
+test("blocks frontend route TSX work when the audit row names an unchanged E2E file", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/issues` | `issue/list.scala.html`, `issue/partial_list.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issue-detail.e2e.ts` E2E |\n",
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /incomplete audit row work/u);
+});
+
 test("allows explicitly marked non-goal frontend route commits", () => {
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: ["frontend/src/routes/__root.tsx"],
