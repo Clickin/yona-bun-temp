@@ -429,6 +429,7 @@ function IssueDetailBody({
   const canUpdate = booleanField(issue.viewerCanUpdate);
   const canDelete = booleanField(issue.viewerCanDelete);
   const canComment = booleanField(issue.viewerCanComment);
+  const canWatch = issue.viewerCanWatch !== false;
   const hasVoted = booleanField(issue.hasVoted);
   const labels = (issue.labels ?? []).slice().sort(compareLabels);
   const selectableLabels = (projectLabels ?? []).slice().sort(compareLabels);
@@ -598,17 +599,19 @@ function IssueDetailBody({
             <div className="board-actrow right-txt">
               <div className="pull-left">
                 <div>
-                  <button
-                    id="watch-button"
-                    type="button"
-                    className={`ybtn ${isWatching ? "ybtn-watching" : ""}`}
-                    data-toggle="tooltip"
-                    data-placement="top"
-                    title="Watch this issue"
-                    data-watching={String(isWatching)}
-                  >
-                    {isWatching ? "Unwatch" : "Watch"}
-                  </button>
+                  {canWatch ? (
+                    <button
+                      id="watch-button"
+                      type="button"
+                      className={`ybtn ${isWatching ? "ybtn-watching" : ""}`}
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Watch this issue"
+                      data-watching={String(isWatching)}
+                    >
+                      {isWatching ? "Unwatch" : "Watch"}
+                    </button>
+                  ) : null}
                   {canUpdate ? (
                     <button
                       id="issue-share-button"

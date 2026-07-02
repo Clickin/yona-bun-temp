@@ -534,6 +534,19 @@ test("project issue detail renders legacy draft header state", async ({ page }) 
   );
 });
 
+test("project issue detail hides watch button when legacy WATCH is not allowed", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, { viewerCanWatch: false });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  await expect(page.locator(".board-actrow #watch-button")).toHaveCount(0);
+  await expect(page.locator(".board-actrow #issue-share-button")).toHaveCount(1);
+  await expect(page.locator(".board-actrow .issue-weight")).toHaveCount(1);
+});
+
 test("project issue detail renders legacy read-only selected labels", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, { viewerCanUpdate: false });
