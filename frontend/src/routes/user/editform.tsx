@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
+import type { AnchorHTMLAttributes, ComponentType } from "react";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
   readWorkspaceOverviewRest,
@@ -10,6 +11,10 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
+>;
 
 export const Route = createFileRoute("/user/editform")({
   component: UserProfileSettingsRoute,
@@ -75,7 +80,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       </div>
       <div className="page-wrap-outer">
         <div className="page-wrap">
-          <EditTabMenu active="profile" basePath={runtimeConfig.basePath} />
+          <EditTabMenu active="profile" />
 
           <form
             id="frmBasic"
@@ -202,7 +207,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
   );
 }
 
-function EditTabMenu({ active, basePath }: { active: string; basePath: string }) {
+function EditTabMenu({ active }: { active: string }) {
   const { t } = useLegacyMessages();
   const tabs = [
     ["/user/editform", "profile", "userinfo.editProfile"],
@@ -216,7 +221,7 @@ function EditTabMenu({ active, basePath }: { active: string; basePath: string })
     <ul className="nav nav-tabs mt20">
       {tabs.map(([href, id, messageKey]) => (
         <li key={id} className={active === id ? "active" : undefined}>
-          <a href={prefixBasePath(basePath, href)}>{t(messageKey)}</a>
+          <LegacyInternalLink to={href}>{t(messageKey)}</LegacyInternalLink>
         </li>
       ))}
     </ul>

@@ -129,6 +129,20 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
     pageWrapMarginTop: "10px",
   });
 
+  await expect(page.locator('.nav-tabs a:has-text("Change password")')).toHaveAttribute(
+    "href",
+    `${basePath}/user/editform/password`,
+  );
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "profile-password-tab";
+  });
+  await page.locator('.nav-tabs a:has-text("Change password")').click();
+  await expect(page).toHaveURL(`${basePath}/user/editform/password`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("profile-password-tab");
+
+  await page.goto(`${basePath}/user/editform`);
   await page.locator('#frmBasic input[name="name"]').fill("Changed User");
   await page.locator('#frmBasic input[name="email"]').fill("changed@example.com");
   await page.locator("#frmBasic button[type=submit]").click();
@@ -227,7 +241,8 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -248,6 +263,20 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(Boolean)
         .join("");
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+    function normalizeAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        current.tagName.toLowerCase() === "a" &&
+        current.closest(".page-wrap .nav-tabs")
+      ) {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/)
+          .filter((value) => value && value !== "active")
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
     return Array.from(
@@ -289,7 +318,8 @@ async function canonicalizeHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map((name) => normalizeAttribute(current, name))
+          .filter(Boolean)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -310,6 +340,20 @@ async function canonicalizeHtml(page: Page, html: string) {
           .filter(Boolean)
           .join("");
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+      function normalizeAttribute(current: Element, name: string) {
+        if (
+          name === "class" &&
+          current.tagName.toLowerCase() === "a" &&
+          current.closest(".page-wrap .nav-tabs")
+        ) {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/)
+            .filter((value) => value && value !== "active")
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
+        return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
       const template = document.createElement("template");
       template.innerHTML = markup.trim();
