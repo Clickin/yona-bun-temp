@@ -131,6 +131,54 @@ test("project home clone URL copy button writes URL and shows legacy toast", asy
   await expect(page.locator("#yobiToasts .toast .msg")).toHaveText("URL is copied");
 });
 
+test("project home header favorite star posts and toggles starred class", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectHome(page, { favoriteRequests });
+
+  await page.goto(`${basePath}/admin/sample`);
+  await expect(page.locator(".project-breadcrumb .user-project-list i")).not.toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(page.locator(".project-breadcrumb .user-project-list i")).toHaveClass(/starred/);
+});
+
+test("project home header favorite star removes starred class when unfavorited", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectHome(page, {
+    favoriteRequests,
+    favoriteResponseFavorited: false,
+    project: {
+      isFavorited: true,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample`);
+  await expect(page.locator(".project-breadcrumb .user-project-list i")).toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(page.locator(".project-breadcrumb .user-project-list i")).not.toHaveClass(/starred/);
+});
+
 test("project home header renders legacy watch utility for watchable projects", async ({
   page,
 }) => {
@@ -296,6 +344,8 @@ async function mockProjectHome(
   page: Page,
   overrides: Partial<{
     enrollRequests: { hasCsrfToken: boolean; method: string }[];
+    favoriteResponseFavorited: boolean;
+    favoriteRequests: { hasCsrfToken: boolean; method: string }[];
     leaveRequests: { hasCsrfToken: boolean; method: string }[];
     overviewRequests: { hasCsrfToken: boolean; method: string; overview: string }[];
     project: Record<string, unknown>;
@@ -338,6 +388,19 @@ async function mockProjectHome(
           loginId: "admin",
           name: "Site Admin",
         },
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
+    const request = route.request();
+    overrides.favoriteRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favorited: overrides.favoriteResponseFavorited ?? true,
       }),
     });
   });

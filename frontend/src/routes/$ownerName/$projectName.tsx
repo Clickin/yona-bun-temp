@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -8,6 +8,7 @@ import {
   deleteProjectMemberRest,
   enrollProjectRest,
   readProjectContainerQueryOptions,
+  toggleFavoriteProjectRest,
   toggleProjectWatchRest,
   updateProjectOverviewRest,
 } from "../../api/org-project";
@@ -976,6 +977,8 @@ export function ProjectHeader({
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const projectIdValue = projectId(project);
+  const favoriteToggleRef = useRef<HTMLSpanElement | null>(null);
+  const [isFavoritedProject, setIsFavoritedProject] = useState(() => projectFavorited(project));
   const logoUrl = projectLogoUrl(project);
   const backgroundImageUrl =
     stringField(recordField(project).backgroundImageUrl, "") ||
@@ -1018,6 +1021,34 @@ export function ProjectHeader({
       });
     },
   });
+  const favoriteMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return toggleFavoriteProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
+    },
+    onSuccess(response) {
+      setIsFavoritedProject((current) =>
+        typeof response.favorited === "boolean" ? response.favorited : !current,
+      );
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.container(ownerName, projectName),
+      });
+    },
+  });
+  useEffect(() => {
+    const favoriteToggle = favoriteToggleRef.current;
+    if (!favoriteToggle) {
+      return;
+    }
+    const handleFavoriteToggle = (event: MouseEvent) => {
+      event.stopPropagation();
+      favoriteMutation.mutate();
+    };
+    favoriteToggle.addEventListener("mousedown", handleFavoriteToggle);
+    return () => {
+      favoriteToggle.removeEventListener("mousedown", handleFavoriteToggle);
+    };
+  }, [favoriteMutation]);
   const watchMutation = useMutation({
     mutationFn: async (nextWatching: boolean) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -1055,9 +1086,13 @@ export function ProjectHeader({
               <span className="project-name">
                 <a href={projectHref(basePath, ownerName, projectName)}>{projectName}</a>
               </span>
-              <span className="user-project-list" data-project-id={projectIdValue}>
+              <span
+                className="user-project-list"
+                data-project-id={projectIdValue}
+                ref={favoriteToggleRef}
+              >
                 <i
-                  className={`${projectFavorited(project) ? "starred" : ""} star material-icons va-text-top`}
+                  className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
                 >
                   star
                 </i>
