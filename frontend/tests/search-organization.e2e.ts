@@ -68,7 +68,7 @@ test("organization search without required query renders legacy badrequest_defau
   await expect(page.locator(".error-wrap p")).toHaveText(
     "The request cannot be fulfilled due to bad syntax",
   );
-  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", `${basePath}/`);
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
   await expect(page.locator("#searchInnerForm")).toHaveCount(0);
   expect(searchApi.count).toBe(0);
@@ -160,7 +160,13 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !isModernizedTanStackRouterAttr(attr) &&
+            !isEmptyModernizedTanStackRouterActiveClass(attr) &&
+            !isModernizedLegacySearchCategoryAttribute(attr) &&
+            attr.name !== "alt",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -177,9 +183,61 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (isModernizedTanStackRouterHref(attr)) {
+        return "#";
+      }
+      if (isModernizedTanStackRouterActiveClass(attr)) {
+        return modernizedTanStackRouterActiveClass(attr);
+      }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function isModernizedTanStackRouterAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      );
+    }
+
+    function isModernizedLegacySearchCategoryAttribute(attr: Attr) {
+      return (
+        (attr.name === "data-toggle" || attr.name === "data-type") &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedTanStackRouterHref(attr: Attr) {
+      return (
+        attr.name === "href" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        attr.name === "class" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isEmptyModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        isModernizedTanStackRouterActiveClass(attr) &&
+        modernizedTanStackRouterActiveClass(attr) === ""
+      );
+    }
+
+    function modernizedTanStackRouterActiveClass(attr: Attr) {
+      return attr.value
+        .split(/\s+/u)
+        .filter((token) => token && token !== "active")
+        .join(" ");
     }
   });
 }
@@ -200,7 +258,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !isModernizedTanStackRouterAttr(attr) &&
+            !isEmptyModernizedTanStackRouterActiveClass(attr) &&
+            !isModernizedLegacySearchCategoryAttribute(attr) &&
+            attr.name !== "alt",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -217,9 +281,61 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (isModernizedTanStackRouterHref(attr)) {
+        return "#";
+      }
+      if (isModernizedTanStackRouterActiveClass(attr)) {
+        return modernizedTanStackRouterActiveClass(attr);
+      }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function isModernizedTanStackRouterAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      );
+    }
+
+    function isModernizedLegacySearchCategoryAttribute(attr: Attr) {
+      return (
+        (attr.name === "data-toggle" || attr.name === "data-type") &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedTanStackRouterHref(attr: Attr) {
+      return (
+        attr.name === "href" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        attr.name === "class" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isEmptyModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        isModernizedTanStackRouterActiveClass(attr) &&
+        modernizedTanStackRouterActiveClass(attr) === ""
+      );
+    }
+
+    function modernizedTanStackRouterActiveClass(attr: Attr) {
+      return attr.value
+        .split(/\s+/u)
+        .filter((token) => token && token !== "active")
+        .join(" ");
     }
   }, html);
 }

@@ -353,15 +353,16 @@ test("global project search renders legacy partial_projects.scala.html populated
   );
 });
 
-test("global search category link preserves legacy href with SPA transition", async ({ page }) => {
+test("global search category link uses React SPA navigation", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockGlobalSearch(page);
 
   await page.goto(`${basePath}/search?keyword=missing&searchType=project`);
   const issueCategory = page.locator(".search-category-wrap a").filter({ hasText: "Issues" });
-  await expect(issueCategory).toHaveAttribute("href", "#");
-  await expect(issueCategory).toHaveAttribute("data-toggle", "search-category");
-  await expect(issueCategory).toHaveAttribute("data-type", "issue");
+  const issueCategoryHref = new URL((await issueCategory.getAttribute("href")) ?? "", page.url());
+  expect(issueCategoryHref.pathname).toBe(`${basePath}/search`);
+  expect(issueCategoryHref.searchParams.get("keyword")).toBe("missing");
+  expect(issueCategoryHref.searchParams.get("searchType")).toBe("issue");
   await page.locator("#searchKeyword").fill("fresh");
 
   await page.evaluate(() => {
@@ -369,7 +370,9 @@ test("global search category link preserves legacy href with SPA transition", as
   });
   await issueCategory.click();
 
-  await expect(page).toHaveURL(`${basePath}/search?keyword=fresh&searchType=issue`);
+  await expect(page).toHaveURL(new RegExp(`${basePath}/search\\?`));
+  expect(new URL(page.url()).searchParams.get("keyword")).toBe("fresh");
+  expect(new URL(page.url()).searchParams.get("searchType")).toBe("issue");
   await expect
     .poll(() =>
       page.evaluate(
@@ -393,7 +396,7 @@ test("global search without required query renders legacy badrequest_default.sca
   await expect(page.locator(".error-wrap p")).toHaveText(
     "The request cannot be fulfilled due to bad syntax",
   );
-  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", `${basePath}/`);
   await expect(page.locator("#searchInnerForm")).toHaveCount(0);
   expect(searchApi.count).toBe(0);
 
@@ -593,7 +596,10 @@ test("global search renders legacy error/forbidden_default.scala.html shell", as
   await page.goto(`${basePath}/search?keyword=forbidden&searchType=issue&pageNum=1`);
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
   await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
-  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute(
+    "href",
+    `${basePath}/`,
+  );
   await expect(page.locator(".search-box-wrap")).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
@@ -640,7 +646,10 @@ test("global search renders legacy error/internalServerError_default.scala.html 
   await expect(page.locator(".error-wrap p")).toHaveText(
     "Server error occurred; service is not available",
   );
-  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute(
+    "href",
+    `${basePath}/`,
+  );
   await expect(page.locator(".search-box-wrap")).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
@@ -1413,7 +1422,7 @@ function expectedDefaultSearchErrorScreen({
     <ul class="gnb-usermenu"><li class="gnb-usermenu-item" id="required-logged-in"><a href="${basePath}/users/loginform" class="user-item-btn" data-login="required">Log in</a></li><li class="divider"></li><li><a href="${basePath}/users/signupform" class="ybtn ybtn-success">Sign up</a></li></ul>
   </div>
 </header>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="${iconClass}"></i><p>${message}</p><a href="${basePath}" class="${buttonClass}">Home</a></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="${iconClass}"></i><p>${message}</p><a href="${basePath}/" class="${buttonClass}">Home</a></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 }
@@ -1435,7 +1444,13 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !isModernizedTanStackRouterAttr(attr) &&
+            !isEmptyModernizedTanStackRouterActiveClass(attr) &&
+            !isModernizedLegacySearchCategoryAttribute(attr) &&
+            attr.name !== "alt",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
         .join(" ");
@@ -1452,7 +1467,59 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (isModernizedTanStackRouterHref(attr)) {
+        return "#";
+      }
+      if (isModernizedTanStackRouterActiveClass(attr)) {
+        return modernizedTanStackRouterActiveClass(attr);
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+    }
+
+    function isModernizedTanStackRouterAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      );
+    }
+
+    function isModernizedLegacySearchCategoryAttribute(attr: Attr) {
+      return (
+        (attr.name === "data-toggle" || attr.name === "data-type") &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedTanStackRouterHref(attr: Attr) {
+      return (
+        attr.name === "href" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        attr.name === "class" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isEmptyModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        isModernizedTanStackRouterActiveClass(attr) &&
+        modernizedTanStackRouterActiveClass(attr) === ""
+      );
+    }
+
+    function modernizedTanStackRouterActiveClass(attr: Attr) {
+      return attr.value
+        .split(/\s+/u)
+        .filter((token) => token && token !== "active")
+        .join(" ");
     }
   });
 }
@@ -1473,7 +1540,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !isModernizedTanStackRouterAttr(attr) &&
+            !isEmptyModernizedTanStackRouterActiveClass(attr) &&
+            !isModernizedLegacySearchCategoryAttribute(attr) &&
+            attr.name !== "alt",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
         .join(" ");
@@ -1490,7 +1563,59 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (isModernizedTanStackRouterHref(attr)) {
+        return "#";
+      }
+      if (isModernizedTanStackRouterActiveClass(attr)) {
+        return modernizedTanStackRouterActiveClass(attr);
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+    }
+
+    function isModernizedTanStackRouterAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      );
+    }
+
+    function isModernizedLegacySearchCategoryAttribute(attr: Attr) {
+      return (
+        (attr.name === "data-toggle" || attr.name === "data-type") &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedTanStackRouterHref(attr: Attr) {
+      return (
+        attr.name === "href" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        attr.name === "class" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isEmptyModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        isModernizedTanStackRouterActiveClass(attr) &&
+        modernizedTanStackRouterActiveClass(attr) === ""
+      );
+    }
+
+    function modernizedTanStackRouterActiveClass(attr: Attr) {
+      return attr.value
+        .split(/\s+/u)
+        .filter((token) => token && token !== "active")
+        .join(" ");
     }
   }, html);
 }

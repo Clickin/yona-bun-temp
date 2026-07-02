@@ -1,7 +1,9 @@
-import { Fragment, useEffect, useRef, type ReactNode } from "react";
-import { useRouter } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link, useRouter } from "@tanstack/react-router";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { type SearchCounts, type SearchResponse, type SearchType } from "../api/search";
 import { RestApiError } from "../api/rest-client";
+import { apiQueryKeys } from "../api/query-keys";
 import { useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
@@ -60,9 +62,9 @@ export function DefaultSearchErrorBody({
         <div className="error-wrap">
           <i className={iconClassName}></i>
           <p>{t(messageKey)}</p>
-          <a href={prefixBasePath(runtimeConfig.basePath, "/")} className={ybtnClassName}>
+          <Link to="/" className={ybtnClassName}>
             {t("menu.home")}
-          </a>
+          </Link>
         </div>
       </div>
     </div>
@@ -93,22 +95,35 @@ export function LegacySearchBody({
 }: SearchBodyInput) {
   const { t } = useLegacyMessages();
   const router = useRouter();
-  const searchFormRef = useRef<HTMLFormElement>(null);
+  const queryClient = useQueryClient();
   const activeType = result.searchType === "auto" ? "issue" : result.searchType;
   const activeCount = countForType(result.counts, activeType);
   const activeTitle = titleForType(t, activeType);
   const resultTitleHtml = t("search.result.title", { args: [activeCount, activeTitle] });
+  const [keywordValue, setKeywordValue] = useState(result.keyword);
   const categories = includeProjectCategory
     ? ALL_SEARCH_CATEGORIES
     : ALL_SEARCH_CATEGORIES.filter((category) => category.type !== "project");
-  const categoryHref = (nextSearchType: SearchType) => {
-    const formData = searchFormRef.current ? new FormData(searchFormRef.current) : null;
-    const liveKeyword = String(formData?.get("keyword") ?? result.keyword);
-    const params = new URLSearchParams();
-    params.set("keyword", liveKeyword);
-    params.set("searchType", nextSearchType);
-    return `${prefixBasePath(runtimeConfig.basePath, searchPath)}?${params.toString()}`;
-  };
+  const searchTarget = (nextSearchType: SearchType, keyword: string) => ({
+    search: {
+      keyword,
+      pageNum: 1,
+      searchType: nextSearchType,
+    },
+    to: searchPath,
+  });
+  const navigationMutation = useMutation({
+    mutationFn: async ({ keyword, searchType }: { keyword: string; searchType: SearchType }) =>
+      searchTarget(searchType, keyword),
+    onSuccess(target) {
+      void queryClient.invalidateQueries({ queryKey: searchQueryKey(result) });
+      router.navigate(target);
+    },
+  });
+
+  useEffect(() => {
+    setKeywordValue(result.keyword);
+  }, [result.keyword]);
 
   return (
     <>
@@ -132,24 +147,10 @@ export function LegacySearchBody({
                         }`}
                         key={menu.type}
                       >
-                        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy search categories use href="#" plus JS submit behavior. */}
-                        <a
-                          href="#"
-                          data-toggle="search-category"
-                          data-type={menu.type}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            const searchTypeInput =
-                              searchFormRef.current?.elements.namedItem("searchType");
-                            if (searchTypeInput instanceof HTMLInputElement) {
-                              searchTypeInput.value = menu.type;
-                            }
-                            router.history.push(categoryHref(menu.type));
-                          }}
-                        >
+                        <Link to={searchPath} search={searchTarget(menu.type, keywordValue).search}>
                           {t(menu.labelKey)}
                           <span className="num-badge pull-right">{count}</span>
-                        </a>
+                        </Link>
                       </li>
                     );
                   })}
@@ -161,7 +162,13 @@ export function LegacySearchBody({
                     id="searchInnerForm"
                     method="get"
                     action={prefixBasePath(runtimeConfig.basePath, searchPath)}
-                    ref={searchFormRef}
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      navigationMutation.mutate({
+                        keyword: keywordValue,
+                        searchType: activeType,
+                      });
+                    }}
                   >
                     <input type="hidden" name="searchType" value={activeType} />
                     <input
@@ -169,7 +176,10 @@ export function LegacySearchBody({
                       id="searchKeyword"
                       name="keyword"
                       className="span11"
-                      defaultValue={result.keyword}
+                      value={keywordValue}
+                      onChange={(event) => {
+                        setKeywordValue(event.currentTarget.value);
+                      }}
                     />
                     <button type="submit" className="ybtn">
                       {t("title.search")}
@@ -507,6 +517,19 @@ function titleForType(t: ReturnType<typeof useLegacyMessages>["t"], searchType: 
 
 function noAuthorMessageKey(searchType: SearchType) {
   return searchType === "post_comment" ? "posting.noAuthor" : "issue.noAuthor";
+}
+
+function searchQueryKey(result: SearchResponse) {
+  if (result.scope === "project") {
+    return [
+      ...apiQueryKeys.project.base(result.context.ownerName, result.context.projectName),
+      "search",
+    ] as const;
+  }
+  if (result.scope === "organization") {
+    return [...apiQueryKeys.organization.base(result.context.organizationName), "search"] as const;
+  }
+  return apiQueryKeys.search.all();
 }
 
 function HighlightedText({ keyword, text }: { keyword: string; text: string }) {
