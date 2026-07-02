@@ -77,7 +77,7 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
           <li class=""><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
           <li class="active"><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
           <li class=""><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/massMail">Send mass emails</a></li>
+          <li class=""><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
           <li class=""><a href="__BASE_PATH__/sites/update">Software Update</a></li>
           <li class=""><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
@@ -165,6 +165,9 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     "data-href",
     `${basePath}/sites/project/delete/77`,
   );
+  await expect(
+    page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
+  ).toHaveAttribute("href", `${basePath}/sites/massmail`);
   await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
   await expect(page.locator("#pagination .page-nums .page-num")).toHaveCount(5);
   await expect(page.locator("#pagination.pagination")).toHaveCount(0);
@@ -213,6 +216,20 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     sidebarWidthRatio: 0.15,
     titleAreaHeight: 39,
   });
+
+  await mockPosts(page);
+  const postsLink = page.locator(".site-setting-nav a", { hasText: "Posts" });
+  await expect(postsLink).toHaveAttribute("href", `${basePath}/sites/postList`);
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-posts-nav";
+  });
+  await postsLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/postList`);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Posts");
+  await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-posts-nav");
 });
 
 test("site admin project delete waits for legacy confirmation modal", async ({ page }) => {
@@ -296,6 +313,39 @@ async function mockProjects(page: Page) {
   });
 
   return requests;
+}
+
+async function mockPosts(page: Page) {
+  await page.route("**/api/v1/site/posts?*", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        page: 1,
+        pageSize: 20,
+        posts: [
+          {
+            authorAvatarUrl: "/avatars/alice.png",
+            authorLabel: "Alice",
+            authorLoginId: "alice",
+            commentCount: 3,
+            createdLabel: "1 day ago",
+            createdTitle: "2026-06-29 14:30",
+            labels: [],
+            notice: false,
+            ownerName: "acme",
+            postNumber: "7",
+            projectLogoUrl: "/assets/images/default-project-logo.png",
+            projectName: "roadmap",
+            readme: false,
+            title: "Release checklist",
+            updatedLabel: "1 day ago",
+          },
+        ],
+        total: 1,
+        totalPages: 1,
+      }),
+    });
+  });
 }
 
 async function canonicalizeScreenRoots(page: Page) {
