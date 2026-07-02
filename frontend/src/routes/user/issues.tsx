@@ -771,6 +771,7 @@ function UserIssueItem({
       : `Created at ${createdLabel}`;
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
   const showAuthor = search.filter !== "authored";
+  const showAuthorLink = Boolean(issue.authorLoginId && issue.authorLabel);
   const showAssignee = search.filter !== "assigned" && issue.assigneeLoginId;
   const issueWeight = issue.weight ?? 0;
   const [isChildListVisible, setIsChildListVisible] = useState(false);
@@ -871,10 +872,10 @@ function UserIssueItem({
         </div>
         {showAuthor ? (
           <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
-            {issue.authorLoginId ? (
+            {showAuthorLink ? (
               <UserIssueAuthorLink
-                label={issue.authorLabel}
-                loginId={issue.authorLoginId}
+                label={issue.authorLabel ?? ""}
+                loginId={issue.authorLoginId ?? ""}
                 to={authorRoutePath}
               />
             ) : (
@@ -885,10 +886,10 @@ function UserIssueItem({
         <div className={showAssignee ? "infos span2 meta" : "infos span3 meta"}>
           <span className="meta-cell">
             <span className="hide show-in-mobile">
-              {showAuthor && issue.authorLoginId ? (
+              {showAuthor && showAuthorLink ? (
                 <UserIssueAuthorLink
-                  label={issue.authorLabel}
-                  loginId={issue.authorLoginId}
+                  label={issue.authorLabel ?? ""}
+                  loginId={issue.authorLoginId ?? ""}
                   to={authorRoutePath}
                 />
               ) : showAuthor ? (

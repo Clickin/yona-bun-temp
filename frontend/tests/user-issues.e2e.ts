@@ -587,6 +587,23 @@ test("current-user issues row project and meta wrappers follow legacy my_partial
   await expect(updatedMetaCell).toHaveAttribute("title", "Last Updated 2026-07-01");
 });
 
+test("current-user issues missing author follows legacy issue.noAuthor branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForNoAuthor(page);
+
+  await page.goto(`${basePath}/user/issues`);
+
+  const desktopAuthor = page.locator("#issue-item-42 > .span12 > .author");
+  await expect(desktopAuthor.locator("> .infos-item")).toHaveText("No author");
+  await expect(desktopAuthor.locator("a.author-cell")).toHaveCount(0);
+
+  const mobileAuthor = page.locator("#issue-item-42 .infos.meta .hide.show-in-mobile");
+  await expect(mobileAuthor.locator("> .infos-item")).toHaveText("No author");
+  await expect(mobileAuthor.locator("a.author-cell")).toHaveCount(0);
+});
+
 test("current-user issues assignee avatar column follows legacy authored-tab branch", async ({
   page,
 }) => {
@@ -840,6 +857,56 @@ async function mockUserIssuesForSingleItem(page: Page) {
             projectName: "sample",
             state: "open",
             title: "Only issue",
+            voterCount: 0,
+          },
+        ],
+        openIssueCount: 1,
+        pageNum: 1,
+        pageSize: 20,
+        sideFilterCounts: { favorite: 0, mentioned: 0, shared: 0 },
+        state: "open",
+        totalCount: 1,
+        totalPages: 1,
+        viewerUserId: 1,
+      }),
+    });
+  });
+}
+
+async function mockUserIssuesForNoAuthor(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        isAnonymous: false,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/user/issues?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        closedIssueCount: 0,
+        filter: "assigned",
+        items: [
+          {
+            assigneeLoginId: "admin",
+            authorLabel: "",
+            authorLoginId: "ghost",
+            commentCount: 0,
+            createdLabel: "2026-06-30",
+            id: 42,
+            issueNumber: 11,
+            labels: [],
+            ownerName: "admin",
+            projectName: "sample",
+            state: "open",
+            title: "No author issue",
             voterCount: 0,
           },
         ],
