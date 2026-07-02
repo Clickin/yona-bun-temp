@@ -136,6 +136,32 @@ test("blocks frontend route TSX work that adds inline scripts or direct DOM look
   assert.match(formatScalaHtmlGoalGuardSummary(result), /legacy jQuery\/DOM escape work/u);
 });
 
+test("blocks frontend route TSX work that adds imperative DOM event and style control", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-issue-detail.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-03 | `/admin/sample/issue/11` | `issue/view.scala.html` | `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx` rebuild | `frontend/tests/project-issue-detail.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [
+        routeFile,
+        "+  modal.addEventListener('click', handleClick);\n" +
+          "+  modal.classList.add('hide');\n" +
+          "+  modal.style.display = 'none';\n",
+      ],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /legacy jQuery\/DOM escape work/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /React state\/events/u);
+});
+
 test("allows frontend route TSX work that uses React events and TanStack Query mutation", () => {
   const routeFile = "frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx";
   const result = evaluateScalaHtmlGoalGuard({

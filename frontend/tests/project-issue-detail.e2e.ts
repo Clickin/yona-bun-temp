@@ -1194,12 +1194,14 @@ test("project issue detail deletes comments through legacy confirmation modal", 
 
   await page.locator('#comment-delete-modal [data-dismiss="modal"]').last().click();
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   expect(commentDeleteRequests).toEqual([]);
 
   await page.locator('#comment-77 .media-body > .meta-info [data-toggle="comment-delete"]').click();
   await page.locator("#comment-delete-confirm").click();
   await expect.poll(() => commentDeleteRequests).toEqual(["DELETE"]);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
 test("project issue detail votes comments through legacy agree action", async ({ page }) => {

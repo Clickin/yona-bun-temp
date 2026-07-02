@@ -481,6 +481,7 @@ function IssueDetailBody({
     : stringField(issue.dueDateUntilLabel);
   const shouldShowDueDateStatus = dueDateLabel !== "" && issueState === "open";
   const weight = numberField(issue.weight);
+  const [commentDeleteRequestUri, setCommentDeleteRequestUri] = useState<string | null>(null);
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -508,14 +509,7 @@ function IssueDetailBody({
       queryClient.invalidateQueries({
         queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
       });
-      const modal = document.getElementById("comment-delete-modal");
-      if (modal) {
-        modal.classList.add("hide");
-        modal.classList.remove("in");
-        modal.style.display = "none";
-        modal.setAttribute("aria-hidden", "true");
-      }
-      document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
+      setCommentDeleteRequestUri(null);
     },
   });
   const commentVoteMutation = useMutation({
@@ -839,6 +833,7 @@ function IssueDetailBody({
               <IssueMainTimeline
                 basePath={basePath}
                 issue={issue}
+                onCommentDeleteRequest={setCommentDeleteRequestUri}
                 onCommentVote={(commentId, voted) =>
                   commentVoteMutation.mutate({ commentId, hasVoted: voted })
                 }
@@ -1029,12 +1024,15 @@ function IssueDetailBody({
       <CommentDeleteConfirm
         confirmLabel={t("button.yes")}
         message={t("common.comment.delete.confirm")}
+        onCancel={() => setCommentDeleteRequestUri(null)}
         onConfirm={(requestUri) => {
           const commentId = requestUri.match(/\/comment\/(\d+)(?:\/delete)?(?:[?#].*)?$/u)?.[1];
           if (commentId) {
             commentDeleteMutation.mutate(commentId);
           }
         }}
+        open={commentDeleteRequestUri !== null}
+        requestUri={commentDeleteRequestUri}
         title={t("common.comment.delete")}
         cancelLabel={t("button.no")}
       />
@@ -1951,11 +1949,13 @@ type VoterLike = {
 function IssueMainTimeline({
   basePath,
   issue,
+  onCommentDeleteRequest,
   onCommentVote,
   runtimeConfig,
 }: {
   basePath: string;
   issue: RestIssueDetailResponse;
+  onCommentDeleteRequest: (requestUri: string) => void;
   onCommentVote: (commentId: string, hasVoted: boolean) => void;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -1983,6 +1983,7 @@ function IssueMainTimeline({
                     comment={item.comment}
                     issue={issue}
                     key={`comment-${stringField(item.comment.id)}`}
+                    onCommentDeleteRequest={onCommentDeleteRequest}
                     onCommentVote={onCommentVote}
                     runtimeConfig={runtimeConfig}
                   />
@@ -2360,12 +2361,14 @@ function IssueCommentRow({
   basePath,
   comment,
   issue,
+  onCommentDeleteRequest,
   onCommentVote,
   runtimeConfig,
 }: {
   basePath: string;
   comment: IssueComment;
   issue: RestIssueDetailResponse;
+  onCommentDeleteRequest: (requestUri: string) => void;
   onCommentVote: (commentId: string, hasVoted: boolean) => void;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -2376,6 +2379,10 @@ function IssueCommentRow({
   const issueNumber = stringField(issue.issueNumber);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
+  const deleteUri = prefixBasePath(
+    basePath,
+    `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}`,
+  );
   const canUpdate = booleanField(comment.viewerCanUpdate);
   const canRead = comment.viewerCanRead !== false;
   const canDelete = booleanField(comment.viewerCanDelete);
@@ -2536,11 +2543,13 @@ function IssueCommentRow({
                 type="button"
                 className="btn-transparent-with-fontsize-lineheight ml6"
                 data-toggle="comment-delete"
-                data-request-uri={prefixBasePath(
-                  basePath,
-                  `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}`,
-                )}
+                data-request-uri={deleteUri}
                 title="Delete comment"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onCommentDeleteRequest(deleteUri);
+                }}
               >
                 <i className="yobicon-trash"></i>
               </button>
@@ -3176,45 +3185,60 @@ function CommentDeleteConfirm({
   cancelLabel,
   confirmLabel,
   message,
+  onCancel,
   onConfirm,
+  open,
+  requestUri,
   title,
 }: {
   cancelLabel: string;
   confirmLabel: string;
   message: string;
+  onCancel: () => void;
   onConfirm: (requestUri: string) => void;
+  open: boolean;
+  requestUri: string | null;
   title: string;
 }) {
   return (
-    <div id="comment-delete-modal" className="modal hide fade">
-      <div className="modal-header">
-        <button type="button" className="close" data-dismiss="modal">
-          ×
-        </button>
-        <h3>{title}</h3>
+    <>
+      <div
+        id="comment-delete-modal"
+        className={`modal ${open ? "in " : "hide "}fade`}
+        style={open ? { display: "block" } : undefined}
+        aria-hidden={open ? "false" : undefined}
+      >
+        <div className="modal-header">
+          <button type="button" className="close" data-dismiss="modal" onClick={onCancel}>
+            ×
+          </button>
+          <h3>{title}</h3>
+        </div>
+        <div className="modal-body">
+          <p>{message}</p>
+        </div>
+        <div className="modal-footer">
+          <button
+            id="comment-delete-confirm"
+            type="button"
+            className="ybtn ybtn-danger"
+            data-request-method={requestUri ? "delete" : undefined}
+            data-request-uri={requestUri ?? undefined}
+            onClick={() => {
+              if (requestUri) {
+                onConfirm(requestUri);
+              }
+            }}
+          >
+            {confirmLabel}
+          </button>
+          <button type="button" className="ybtn" data-dismiss="modal" onClick={onCancel}>
+            {cancelLabel}
+          </button>
+        </div>
       </div>
-      <div className="modal-body">
-        <p>{message}</p>
-      </div>
-      <div className="modal-footer">
-        <button
-          id="comment-delete-confirm"
-          type="button"
-          className="ybtn ybtn-danger"
-          onClick={(event) => {
-            const requestUri = event.currentTarget.dataset.requestUri;
-            if (requestUri) {
-              onConfirm(requestUri);
-            }
-          }}
-        >
-          {confirmLabel}
-        </button>
-        <button type="button" className="ybtn" data-dismiss="modal">
-          {cancelLabel}
-        </button>
-      </div>
-    </div>
+      {open ? <div className="modal-backdrop fade in"></div> : null}
+    </>
   );
 }
 
