@@ -148,7 +148,127 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
       EXPECTED_PULL_REQUEST_OVERVIEW.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  expect(await pullRequestOverviewMetrics(page)).toEqual({
+    alertColor: "rgb(70, 136, 71)",
+    alertFontSize: "13px",
+    alertFontWeight: "700",
+    alertPadding: "15px",
+    authorInfoMargin: "20px 20px 10px",
+    badgeBackground: "rgb(182, 218, 84)",
+    badgeBorderRadius: "15px",
+    badgeLineHeight: "20px",
+    badgePadding: "5px 15px",
+    boardBodyContentMinHeight: "150px",
+    boardBodyContentPadding: "0px 20px",
+    boardFooterMarginTop: "20px",
+    boardFooterOverflow: "auto",
+    boardFooterPaddingRight: "15px",
+    boardFooterTextAlign: "right",
+    branchIconColor: "rgb(42, 127, 143)",
+    branchIconFontSize: "12px",
+    branchLinkColor: "rgb(81, 170, 204)",
+    branchOwnerColor: "rgb(42, 127, 143)",
+    branchPadding: "0px",
+    branchWrapDisplay: "block",
+    headerClear: "both",
+    headerMargin: "15px 0px",
+    headerTitleBackground: "rgb(242, 242, 242)",
+    headerTitleBorderRadius: "10px",
+    headerTitleLineHeight: "30px",
+    headerTitlePadding: "10px 20px",
+    stateMarginTop: "15px",
+    titleIdColor: "rgb(147, 147, 147)",
+    titleIdFontSize: "14px",
+    titleIdPaddingRight: "10px",
+  });
 });
+
+async function pullRequestOverviewMetrics(page: Page) {
+  return page.locator(".page-wrap-outer").evaluate((root) => {
+    const header = root.querySelector<HTMLElement>(".board-header.issue");
+    const title = root.querySelector<HTMLElement>(".board-header .title");
+    const boardId = root.querySelector<HTMLElement>(".board-id");
+    const badge = root.querySelector<HTMLElement>(".badge-issue-open");
+    const authorInfo = root.querySelector<HTMLElement>(".board-body .author-info");
+    const content = root.querySelector<HTMLElement>(".board-body .content");
+    const branchWrap = root.querySelector<HTMLElement>(".pullRequest-branchInfo");
+    const branchIcon = root.querySelector<HTMLElement>(".pullRequest-branchInfo i");
+    const branchCode = root.querySelector<HTMLElement>(".pullRequest-branchInfo code");
+    const branchOwner = root.querySelector<HTMLElement>(".pullRequest-branchInfo code a");
+    const branchLink = root.querySelector<HTMLElement>(".pullRequest-branchInfo .branchName");
+    const state = root.querySelector<HTMLElement>("#state.pullRequest-stateInfo");
+    const alert = root.querySelector<HTMLElement>("#state .alert");
+    const footer = root.querySelector<HTMLElement>(".board-footer");
+    const missing = Object.entries({
+      alert,
+      authorInfo,
+      badge,
+      boardId,
+      branchCode,
+      branchIcon,
+      branchLink,
+      branchOwner,
+      branchWrap,
+      content,
+      footer,
+      header,
+      state,
+      title,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected pull request overview metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const alertStyle = window.getComputedStyle(alert);
+    const authorInfoStyle = window.getComputedStyle(authorInfo);
+    const badgeStyle = window.getComputedStyle(badge);
+    const boardIdStyle = window.getComputedStyle(boardId);
+    const branchCodeStyle = window.getComputedStyle(branchCode);
+    const branchIconStyle = window.getComputedStyle(branchIcon);
+    const contentStyle = window.getComputedStyle(content);
+    const footerStyle = window.getComputedStyle(footer);
+    const headerStyle = window.getComputedStyle(header);
+    const stateStyle = window.getComputedStyle(state);
+    const titleStyle = window.getComputedStyle(title);
+    return {
+      alertColor: alertStyle.color,
+      alertFontSize: alertStyle.fontSize,
+      alertFontWeight: alertStyle.fontWeight,
+      alertPadding: alertStyle.padding,
+      authorInfoMargin: authorInfoStyle.margin,
+      badgeBackground: badgeStyle.backgroundColor,
+      badgeBorderRadius: badgeStyle.borderRadius,
+      badgeLineHeight: badgeStyle.lineHeight,
+      badgePadding: badgeStyle.padding,
+      boardBodyContentMinHeight: contentStyle.minHeight,
+      boardBodyContentPadding: contentStyle.padding,
+      boardFooterMarginTop: footerStyle.marginTop,
+      boardFooterOverflow: footerStyle.overflow,
+      boardFooterPaddingRight: footerStyle.paddingRight,
+      boardFooterTextAlign: footerStyle.textAlign,
+      branchIconColor: branchIconStyle.color,
+      branchIconFontSize: branchIconStyle.fontSize,
+      branchLinkColor: window.getComputedStyle(branchLink).color,
+      branchOwnerColor: window.getComputedStyle(branchOwner).color,
+      branchPadding: branchCodeStyle.padding,
+      branchWrapDisplay: window.getComputedStyle(branchWrap).display,
+      headerClear: headerStyle.clear,
+      headerMargin: headerStyle.margin,
+      headerTitleBackground: titleStyle.backgroundColor,
+      headerTitleBorderRadius: titleStyle.borderRadius,
+      headerTitleLineHeight: titleStyle.lineHeight,
+      headerTitlePadding: titleStyle.padding,
+      stateMarginTop: stateStyle.marginTop,
+      titleIdColor: boardIdStyle.color,
+      titleIdFontSize: boardIdStyle.fontSize,
+      titleIdPaddingRight: boardIdStyle.paddingRight,
+    };
+  });
+}
 
 test("project pull request overview changes tab uses legacy href and SPA transition", async ({
   page,

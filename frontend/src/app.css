@@ -3953,6 +3953,7 @@ h1 {
   font-size: 1.2em;
 }
 
+.board-header,
 .issue-detail-page .board-header {
   display: block;
   clear: both;
@@ -3960,6 +3961,7 @@ h1 {
   border: none;
 }
 
+.board-header .title,
 .issue-detail-page .board-header .title {
   padding: 10px 20px;
   color: #000;
@@ -3977,12 +3979,14 @@ h1 {
   line-height: inherit;
 }
 
+.board-id,
 .issue-detail-page .board-id {
   color: #939393;
   font-size: 14px;
   padding-right: 10px;
 }
 
+.board-header .date,
 .issue-detail-page .board-header .date {
   display: inline-block;
   margin-right: 20px;
@@ -4340,16 +4344,34 @@ div.markdown-preview {
   padding: 0 5px 0 0;
 }
 
+.board-body .author-info {
+  display: block;
+  margin: 10px 20px;
+}
+
+.board-body .content {
+  min-height: 150px;
+  padding: 0 20px;
+  margin-bottom: 20px;
+}
+
+.board-body .content.markdown-wrap {
+  padding: 0 20px !important;
+}
+
+.board-body textarea.content,
 .issue-detail-page .board-body textarea.content {
   padding: 6px;
 }
 
+.board-actrow,
 .issue-detail-page .board-actrow {
   padding-right: 15px;
   margin: 20px 0;
   overflow: auto;
 }
 
+.board-footer,
 .issue-detail-page .board-footer {
   margin-top: 20px;
   font-size: 0;
@@ -4967,7 +4989,27 @@ div.markdown-preview {
   width: 100%;
 }
 
-.pullRequest-branchInfo,
+.pullRequest-branchInfo code {
+  padding: 0;
+  color: #2a7f8f;
+  background: transparent;
+  border: none;
+}
+
+.pullRequest-branchInfo code a {
+  color: #2a7f8f;
+}
+
+.pullRequest-branchInfo code a.branchName {
+  color: #51aacc;
+}
+
+.pullRequest-branchInfo i {
+  margin: 0 5px;
+  color: #2a7f8f;
+  font-size: 12px;
+}
+
 .infos {
   display: flex;
   flex-wrap: wrap;
@@ -4976,24 +5018,33 @@ div.markdown-preview {
 }
 
 .pullRequest-stateInfo {
-  display: inline-block;
-  padding: 1px 7px;
-  font-size: 12px;
-  line-height: 18px;
-  color: #666;
-  background: #eee;
+  margin-top: 15px;
+}
+
+.pullRequest-stateInfo .alert {
+  padding: 15px;
+  font-size: 13px;
+  font-weight: bold;
   border-radius: 3px;
 }
 
-.pullRequest-stateInfo.open {
-  color: #2f6f36;
-  background: #eef8ef;
+.pullRequest-stateInfo .alert i {
+  margin-top: -2px;
+  font-size: 15px;
+  vertical-align: middle;
 }
 
-.pullRequest-stateInfo.closed,
-.pullRequest-stateInfo.conflict {
-  color: #b13427;
-  background: #fbe9e7;
+.pullRequest-stateInfo .alert.alert-success {
+  color: #468847;
+}
+
+.pullRequest-stateInfo .alert.alert-error {
+  color: #b94a48;
+}
+
+.pullRequest-stateInfo .alert.alert-warning,
+.pullRequest-stateInfo .alert.alert-warnning {
+  color: #c09853;
 }
 
 .pull-request-conflict-guide {
