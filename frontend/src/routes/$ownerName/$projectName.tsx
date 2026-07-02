@@ -100,6 +100,7 @@ function ProjectHomeBody({
   const initialOverview = stringField(project.overview, "");
   const [descriptionEditing, setDescriptionEditing] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [cloneCopyNoticeKey, setCloneCopyNoticeKey] = useState(0);
   const [overviewText, setOverviewText] = useState(initialOverview);
   const descriptionInputRef = useRef<HTMLInputElement>(null);
   const projectRecord = recordField(project);
@@ -252,9 +253,22 @@ function ProjectHomeBody({
                 className="ybtn project-clone-button"
                 data-clipboard-target="cloneURL"
                 id="cloneURLBtn"
+                onClick={async () => {
+                  await navigator.clipboard?.writeText(cloneUrl);
+                  setCloneCopyNoticeKey((key) => key + 1);
+                  window.setTimeout(() => document.dispatchEvent(new Event("yobi:notify-scan")));
+                }}
               >
                 {t("code.copyUrl")}
               </button>
+              {cloneCopyNoticeKey > 0 ? (
+                <span
+                  key={cloneCopyNoticeKey}
+                  data-toggle="yobi-notify"
+                  data-message={t("code.copyUrl.copied")}
+                  hidden
+                />
+              ) : null}
             </div>
           ) : null}
         </div>

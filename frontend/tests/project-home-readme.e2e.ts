@@ -109,6 +109,28 @@ test("project home clone URL input selects the full URL on click", async ({ page
   expect(await selectedInputValue(page, "#cloneURL")).toBe("https://example.com/admin/sample.git");
 });
 
+test("project home clone URL copy button writes URL and shows legacy toast", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText(text: string) {
+          (window as unknown as { __copiedText?: string }).__copiedText = text;
+          return Promise.resolve();
+        },
+      },
+    });
+  });
+  await mockProjectHome(page);
+
+  await page.goto(`${basePath}/admin/sample`);
+  await page.locator("#cloneURLBtn").click();
+
+  expect(await copiedText(page)).toBe("https://example.com/admin/sample.git");
+  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText("URL is copied");
+});
+
 async function mockProjectHome(
   page: Page,
   overrides: Partial<{
@@ -238,6 +260,10 @@ async function selectedInputValue(page: Page, selector: string) {
     }
     return element.value.slice(element.selectionStart ?? 0, element.selectionEnd ?? 0);
   });
+}
+
+async function copiedText(page: Page) {
+  return page.evaluate(() => (window as unknown as { __copiedText?: string }).__copiedText ?? "");
 }
 
 async function canonicalizeScreenRoots(page: Page) {
