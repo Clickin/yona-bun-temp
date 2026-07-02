@@ -187,6 +187,18 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
   ).toBe("site-data-sidebar");
 });
 
+test("site admin data renders legacy update notification badge", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockAvailableUpdate(page);
+
+  await page.goto(`${basePath}/sites/data`);
+  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
+  await expect(updateLink).toHaveText("Software Update1");
+  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
+});
+
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -202,6 +214,21 @@ async function mockSiteAdminSession(page: Page) {
         isSiteAdmin: true,
         loginId: "siteboss",
         userLabel: "Site Boss",
+      }),
+    });
+  });
+}
+
+async function mockAvailableUpdate(page: Page) {
+  await page.route("**/api/v1/site/update", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        currentVersion: "1.0.0",
+        error: null,
+        message: "site.update.isAvailable",
+        releaseUrl: "https://example.test/yona-1.1.0",
+        versionToUpdate: "1.1.0",
       }),
     });
   });
