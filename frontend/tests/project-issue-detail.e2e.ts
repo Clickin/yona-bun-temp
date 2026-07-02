@@ -580,10 +580,15 @@ test("project issue detail toggles legacy comment update form through comment-ed
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   const comment = page.locator(".span-left-pane #comment-77");
+  const editButton = comment.locator('[data-toggle="comment-edit"][data-comment-id="77"]');
+  const cancelButton = comment.locator('.comment-update-form .ybtn-cancel[data-comment-id="77"]');
   await expect(comment.locator("#comment-editform-77")).toBeHidden();
   await expect(comment.locator("#comment-body-77")).toBeVisible();
+  await expect(editButton).toHaveClass(/btn-transparent-with-fontsize-lineheight/);
+  await expect(editButton).toHaveClass(/ml10/);
+  await expect(cancelButton).toHaveText("Cancel");
 
-  await comment.locator('[data-toggle="comment-edit"][data-comment-id="77"]').click();
+  await editButton.click();
   await expect(comment.locator("#comment-editform-77")).toBeVisible();
   await expect(comment.locator("#comment-body-77")).toBeHidden();
   await expect(comment.locator(".add-a-comment")).toBeHidden();
@@ -598,9 +603,13 @@ test("project issue detail toggles legacy comment update form through comment-ed
     writeCommentBoxPadding: "10px",
   });
 
-  await comment.locator("#comment-editform-77 .ybtn-cancel").click();
+  await cancelButton.click();
   await expect(comment.locator("#comment-editform-77")).toBeHidden();
   await expect(comment.locator("#comment-body-77")).toBeVisible();
+  expect(await commentUpdateFormMetrics(page)).toMatchObject({
+    bodyDisplay: "block",
+    formDisplay: "none",
+  });
 });
 
 test("project issue detail keeps legacy comment edit trigger for readable comments", async ({

@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, useRef, useState, type AnchorHTMLAttributes, type ComponentType } from "react";
+import {
+  Fragment,
+  useRef,
+  useState,
+  type AnchorHTMLAttributes,
+  type ComponentType,
+  type MouseEvent,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacyMarkdownHelpTemplate from "../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
@@ -2392,6 +2399,7 @@ function IssueCommentRow({
   const [translatePending, setTranslatePending] = useState(false);
   const [replyVisible, setReplyVisible] = useState(false);
   const [childFormOpen, setChildFormOpen] = useState(false);
+  const [commentEditOpen, setCommentEditOpen] = useState(false);
   const translationApiEnabled = booleanField(issue.translationApiEnabled);
   const contentsMarkdown = translatedContentsMarkdown ?? stringField(comment.contentsMarkdown);
   const voters = comment.voters ?? [];
@@ -2530,7 +2538,10 @@ function IssueCommentRow({
                 data-toggle="comment-edit"
                 data-comment-id={commentId}
                 title="Edit comment"
-                onClick={() => {
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setCommentEditOpen(true);
                   setChildFormOpen(false);
                   setReplyVisible(false);
                 }}
@@ -2561,9 +2572,18 @@ function IssueCommentRow({
           canUpdate={canUpdate}
           comment={comment}
           contentsMarkdown={contentsMarkdown}
+          formOpen={commentEditOpen}
           issue={issue}
+          onCancel={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setCommentEditOpen(false);
+          }}
         />
-        <div id={`comment-body-${commentId}`}>
+        <div
+          id={`comment-body-${commentId}`}
+          style={commentEditOpen ? { display: "none" } : undefined}
+        >
           <TasklistBar />
           <div
             className="comment-body markdown-wrap"
@@ -2764,13 +2784,17 @@ function CommentUpdateForm({
   canUpdate,
   comment,
   contentsMarkdown,
+  formOpen,
   issue,
+  onCancel,
 }: {
   basePath: string;
   canUpdate: boolean;
   comment: IssueComment;
   contentsMarkdown: string;
+  formOpen: boolean;
   issue: RestIssueDetailResponse;
+  onCancel: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   const commentId = stringField(comment.id);
   const ownerName = stringField(issue.ownerName);
@@ -2780,7 +2804,11 @@ function CommentUpdateForm({
   const attachments = attachmentItems(comment.attachments);
 
   return (
-    <div id={`comment-editform-${commentId}`} className="comment-update-form">
+    <div
+      id={`comment-editform-${commentId}`}
+      className="comment-update-form"
+      style={formOpen ? { display: "block" } : undefined}
+    >
       <form
         action={prefixBasePath(
           basePath,
@@ -2830,7 +2858,12 @@ function CommentUpdateForm({
                   </label>
                 </span>
               ) : null}
-              <button type="button" className="ybtn ybtn-cancel" data-comment-id={commentId}>
+              <button
+                type="button"
+                className="ybtn ybtn-cancel"
+                data-comment-id={commentId}
+                onClick={onCancel}
+              >
                 Cancel
               </button>
               {canUpdate ? (
