@@ -2584,6 +2584,7 @@ function CommentUpdateForm({
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
   const showNotification = booleanField(comment.viewerIsAuthor);
+  const attachments = attachmentItems(comment.attachments);
 
   return (
     <div id={`comment-editform-${commentId}`} className="comment-update-form">
@@ -2653,7 +2654,29 @@ function CommentUpdateForm({
             value=""
           />
           <div className={`preview-${commentId}`}></div>
-          <div className="attachment-files"></div>
+          <div className="attachment-files">
+            {attachments.map((file) => {
+              const fileId = stringField(file.id);
+              return (
+                <div
+                  className="attached-file attached-file-marker"
+                  data-name={stringField(file.name)}
+                  data-href={stringField(file.url)}
+                  data-mime={stringField(file.mimeType)}
+                  key={fileId}
+                >
+                  <i className="mimetype"></i>
+                  <strong className="name">{stringField(file.name)}</strong>
+                  <span className="size">
+                    {stringField(file.sizeLabel, stringField(file.size))}
+                  </span>
+                  <button type="button" className="btn-transparent btn-delete" data-id={fileId}>
+                    &times;
+                  </button>
+                </div>
+              );
+            })}
+          </div>
           <div
             id={`upload-${commentId}`}
             data-resourcetype="ISSUE_COMMENT"
@@ -3032,7 +3055,7 @@ function attachedFilesHtml(
     | RestIssueDetailResponse["attachments"]
     | { attachments?: RestIssueDetailResponse["attachments"] },
 ): string {
-  const files = Array.isArray(attachments) ? attachments : (attachments?.attachments ?? []);
+  const files = attachmentItems(attachments);
 
   return files
     .map((file) => {
@@ -3045,6 +3068,19 @@ function attachedFilesHtml(
       return `<li class="attached-file" data-name="${escapeHtml(name)}" data-href="${escapeHtml(href)}" data-mime="${escapeHtml(mimeType)}" data-size="${escapeHtml(size)}"><strong>${escapeHtml(name)}(${escapeHtml(sizeReadable)})</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li>`;
     })
     .join("");
+}
+
+function attachmentItems(value: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(value)) {
+    return value as Array<Record<string, unknown>>;
+  }
+  if (value && typeof value === "object") {
+    const nested = (value as { attachments?: unknown }).attachments;
+    if (Array.isArray(nested)) {
+      return nested as Array<Record<string, unknown>>;
+    }
+  }
+  return [];
 }
 
 function escapeHtml(value: string) {

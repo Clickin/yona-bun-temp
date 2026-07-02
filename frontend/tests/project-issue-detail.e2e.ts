@@ -1179,6 +1179,15 @@ test("project issue detail renders legacy attachment file items", async ({ page 
   expect(await canonicalize(page, "#comment-body-77 > .attachments")).toEqual(
     await canonicalizeHtml(page, expectedCommentAttachments),
   );
+
+  const expectedCommentUpdateAttachments =
+    `<div class="attachment-files"><div class="attached-file attached-file-marker" data-name="comment-shot.png" data-href="__BASE_PATH__/files/502" data-mime="image/png"><i class="mimetype"></i><strong class="name">comment-shot.png</strong><span class="size">4.1 kB</span><button type="button" class="btn-transparent btn-delete" data-id="502">×</button></div></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, "#comment-editform-77 > form .attachment-files")).toEqual(
+    await canonicalizeHtml(page, expectedCommentUpdateAttachments),
+  );
 });
 
 test("project issue detail preserves legacy attachment template", async ({ page }) => {
