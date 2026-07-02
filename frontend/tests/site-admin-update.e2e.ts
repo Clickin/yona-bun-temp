@@ -165,6 +165,9 @@ test("site admin update renders the legacy available-version branch", async ({ p
 
   await page.goto(`${basePath}/sites/update`);
   await expect(page.locator("strong")).toHaveText("Yona 1.1.0 is available");
+  const updateSidebarLink = page.locator(".site-setting-nav li.active a");
+  await expect(updateSidebarLink).toHaveText("Software Update1");
+  await expect(updateSidebarLink.locator(".notification-badge")).toHaveText("1");
   await expect(page.locator("a.ybtn.ybtn-success")).toHaveText("Download");
   await expect(page.locator("a.ybtn.ybtn-success")).toHaveAttribute(
     "href",
