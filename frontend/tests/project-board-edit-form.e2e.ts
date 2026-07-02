@@ -18,6 +18,32 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_EDIT_FORM_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await readBoardEditFormMetrics(page)).toEqual({
+    actionsDisplay: "block",
+    actionsMarginTop: "20px",
+    actionsTextAlign: "center",
+    ddMargin: "0px",
+    ddPadding: "0px",
+    dtLabelFontWeight: "700",
+    dtLabelMarginRight: "5px",
+    dtMargin: "3px 0px 1px",
+    dtPadding: "0px",
+    editorPosition: "relative",
+    formMargin: "0px",
+    notificationCheckboxDisplay: "inline-block",
+    noticeRowMarginBottom: "10px",
+    noticeRowMarginTop: "10px",
+    noticeRowTextAlign: "right",
+    titleBorderBottomWidth: "1px",
+    titleBorderRadius: "0px",
+    titleFontSize: "18px",
+    titleMarginBottom: "15px",
+    titleMarginTop: "15px",
+    titleWidthPercent: 97,
+    uploadBackground: "rgb(245, 245, 245)",
+    uploadBorderRadius: "5px",
+    uploadPadding: "10px 20px",
+  });
 
   await page.fill("#title", "Release note patched");
   await page.fill("#editor-body-content-body", "Patched **body**");
@@ -144,6 +170,80 @@ function boardPostDetail() {
     updatedLabel: "Jul 2, 2026",
     watcherCount: 0,
   };
+}
+
+async function readBoardEditFormMetrics(page: Page) {
+  return page.locator(".content-wrap.frm-wrap").evaluate((contentWrap) => {
+    const form = contentWrap.closest<HTMLElement>("form.nm");
+    const dt = contentWrap.querySelector<HTMLElement>("dt");
+    const dtLabel = contentWrap.querySelector<HTMLElement>("dt label");
+    const firstDd = contentWrap.querySelector<HTMLElement>("dd");
+    const title = contentWrap.querySelector<HTMLElement>("#title");
+    const editorDd = contentWrap.querySelector<HTMLElement>('dd[style*="position"]');
+    const upload = contentWrap.querySelector<HTMLElement>(".upload-wrap.content-footer");
+    const noticeRow = contentWrap.querySelector<HTMLElement>(".right-txt.mt10.mb10");
+    const actions = contentWrap.querySelector<HTMLElement>(".actions");
+    const notificationCheckbox = actions?.querySelector<HTMLElement>(".checkbox.inline");
+    const missing = Object.entries({
+      actions,
+      dt,
+      dtLabel,
+      editorDd,
+      firstDd,
+      form,
+      noticeRow,
+      notificationCheckbox,
+      title,
+      upload,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected board edit metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const formStyle = getComputedStyle(form!);
+    const dtStyle = getComputedStyle(dt!);
+    const dtLabelStyle = getComputedStyle(dtLabel!);
+    const ddStyle = getComputedStyle(firstDd!);
+    const titleStyle = getComputedStyle(title!);
+    const editorStyle = getComputedStyle(editorDd!);
+    const uploadStyle = getComputedStyle(upload!);
+    const noticeRowStyle = getComputedStyle(noticeRow!);
+    const actionsStyle = getComputedStyle(actions!);
+    const notificationCheckboxStyle = getComputedStyle(notificationCheckbox!);
+    const titleWidthPercent =
+      Math.round(
+        (title!.getBoundingClientRect().width / contentWrap.getBoundingClientRect().width) * 1000,
+      ) / 10;
+
+    return {
+      actionsDisplay: actionsStyle.display,
+      actionsMarginTop: actionsStyle.marginTop,
+      actionsTextAlign: actionsStyle.textAlign,
+      ddMargin: ddStyle.margin,
+      ddPadding: ddStyle.padding,
+      dtLabelFontWeight: dtLabelStyle.fontWeight,
+      dtLabelMarginRight: dtLabelStyle.marginRight,
+      dtMargin: dtStyle.margin,
+      dtPadding: dtStyle.padding,
+      editorPosition: editorStyle.position,
+      formMargin: formStyle.margin,
+      notificationCheckboxDisplay: notificationCheckboxStyle.display,
+      noticeRowMarginBottom: noticeRowStyle.marginBottom,
+      noticeRowMarginTop: noticeRowStyle.marginTop,
+      noticeRowTextAlign: noticeRowStyle.textAlign,
+      titleBorderBottomWidth: titleStyle.borderBottomWidth,
+      titleBorderRadius: titleStyle.borderRadius,
+      titleFontSize: titleStyle.fontSize,
+      titleMarginBottom: titleStyle.marginBottom,
+      titleMarginTop: titleStyle.marginTop,
+      titleWidthPercent,
+      uploadBackground: uploadStyle.backgroundColor,
+      uploadBorderRadius: uploadStyle.borderRadius,
+      uploadPadding: uploadStyle.padding,
+    };
+  });
 }
 
 async function canonicalize(page: Page, selector: string) {
