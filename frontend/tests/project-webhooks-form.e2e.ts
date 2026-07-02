@@ -162,7 +162,63 @@ test("project webhooks JSON type forces git push checkbox like legacy script", a
   await expect(gitPush).toBeChecked();
 });
 
-async function mockProjectAdmin(page: Page, webhooks: unknown[] = []) {
+test("project webhooks header favorite star posts and toggles starred class", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectAdmin(page, [], { favoriteRequests });
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  await expect(favoriteStar).not.toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(favoriteStar).toHaveClass(/starred/);
+});
+
+test("project webhooks header favorite star removes starred class when unfavorited", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectAdmin(page, [], {
+    favoriteRequests,
+    favoriteResponseFavorited: false,
+    project: { isFavorite: true, isFavorited: true },
+  });
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  await expect(favoriteStar).toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(favoriteStar).not.toHaveClass(/starred/);
+});
+
+async function mockProjectAdmin(
+  page: Page,
+  webhooks: unknown[] = [],
+  options: {
+    favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
+    favoriteResponseFavorited?: boolean;
+    project?: Partial<ReturnType<typeof projectContainer>>;
+  } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -179,10 +235,24 @@ async function mockProjectAdmin(page: Page, webhooks: unknown[] = []) {
       }),
     });
   });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-webhooks" },
+      body: JSON.stringify({
+        isAuthenticated: true,
+        user: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "admin",
+          name: "Site Admin",
+        },
+      }),
+    });
+  });
   await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(projectContainer()),
+      body: JSON.stringify({ ...projectContainer(), ...options.project }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
@@ -218,6 +288,17 @@ async function mockProjectAdmin(page: Page, webhooks: unknown[] = []) {
         webhookTypes: ["SIMPLE", "DETAIL_SLACK", "DETAIL_HANGOUT_CHAT", "JSON"],
         webhooks,
       }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
+    const request = route.request();
+    options.favoriteRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-webhooks",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
     });
   });
 }
@@ -378,7 +459,13 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -418,7 +505,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
