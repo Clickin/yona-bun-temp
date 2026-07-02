@@ -77,7 +77,7 @@ const EXPECTED_DATA_SCREEN = `
           <li class=""><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
           <li class=""><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
           <li class=""><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/massMail">Send mass emails</a></li>
+          <li class=""><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
           <li class=""><a href="__BASE_PATH__/sites/update">Software Update</a></li>
           <li class=""><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
@@ -119,10 +119,16 @@ const EXPECTED_DATA_SCREEN = `
 test("site admin data matches legacy site/data.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
+  await mockMailOptions(page);
 
   await page.goto(`${basePath}/sites/data`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".span10 h2")).toHaveText("Data");
+  const mailLink = page.locator(".site-setting-nav a", { hasText: "Send email" });
+  await expect(mailLink).toHaveAttribute("href", `${basePath}/sites/mail`);
+  await expect(
+    page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
+  ).toHaveAttribute("href", `${basePath}/sites/massmail`);
   await expect(page.locator("a.ybtn.ybtn-primary")).toHaveAttribute(
     "href",
     `${basePath}/sites/export`,
@@ -168,6 +174,17 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
     titleFontSize: 19.5,
     titleLineHeight: 30,
   });
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-data-sidebar";
+  });
+  await mailLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/mail`);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send email");
+  await expect(page.locator(".title_area h2")).toHaveText("Send email");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-data-sidebar");
 });
 
 async function mockSiteAdminSession(page: Page) {
@@ -185,6 +202,19 @@ async function mockSiteAdminSession(page: Page) {
         isSiteAdmin: true,
         loginId: "siteboss",
         userLabel: "Site Boss",
+      }),
+    });
+  });
+}
+
+async function mockMailOptions(page: Page) {
+  await page.route("**/api/v1/site/mail", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        notConfiguredItems: ["smtp.host", "smtp.port"],
+        sender: "noreply@example.com",
+        sent: false,
       }),
     });
   });
