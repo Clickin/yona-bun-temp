@@ -184,6 +184,8 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "1");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("min", "1");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  const lockedTab = page.getByRole("link", { exact: true, name: "Locked user" });
+  await expect(lockedTab).toHaveAttribute("href", `${basePath}/sites/userList?state=LOCKED`);
   expect(await siteLayoutRootOrder(page)).toEqual([
     "unsupported hidden",
     "gnb-outer",
@@ -234,6 +236,16 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     userNameMarginTop: 8,
     userSearchInputWidth: 350,
   });
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-users-tabs";
+  });
+  await lockedTab.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("LOCKED");
+  await expect(page.locator(".site-setting-wrap .nav-tabs li.active a")).toHaveText("Locked user");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-users-tabs");
 
   await mockPosts(page);
   const postsLink = page.locator(".site-setting-nav a", { hasText: "Posts" });

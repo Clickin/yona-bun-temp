@@ -34,6 +34,7 @@ const USER_STATES: SiteUserState[] = ["ACTIVE", "LOCKED", "DELETED", "GUEST", "S
 const LegacyInternalLink = Link as ComponentType<
   AnchorHTMLAttributes<HTMLAnchorElement> & {
     activeProps?: { className?: string | undefined };
+    search?: Record<string, number | string | undefined>;
     to: string;
   }
 >;
@@ -157,7 +158,6 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               </div>
               <UserStateTabs
                 currentState={search.state}
-                runtimeConfig={runtimeConfig}
                 siteAdminCount={response?.siteAdminCount ?? 0}
               />
               <div className="row-fluid listhead">
@@ -318,11 +318,9 @@ function SiteAdminSidebar({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
 function UserStateTabs({
   currentState,
-  runtimeConfig,
   siteAdminCount,
 }: {
   currentState: SiteUserState;
-  runtimeConfig: RuntimeConfig;
   siteAdminCount: number;
 }) {
   const items: Array<{ labelKey: string; state: SiteUserState }> = [
@@ -337,12 +335,16 @@ function UserStateTabs({
     <ul className="nav nav-tabs">
       {items.map((item) => (
         <li className={item.state === currentState ? "active" : ""} key={item.state}>
-          <a href={prefixBasePath(runtimeConfig.basePath, `/sites/userList?state=${item.state}`)}>
+          <LegacyInternalLink
+            activeProps={{ className: undefined }}
+            search={{ state: item.state }}
+            to="/sites/userList"
+          >
             <LegacyMessage messageKey={item.labelKey} />
             {item.state === "SITE_ADMIN" ? (
               <span className="num-badge">{siteAdminCount}</span>
             ) : null}
-          </a>
+          </LegacyInternalLink>
         </li>
       ))}
     </ul>
