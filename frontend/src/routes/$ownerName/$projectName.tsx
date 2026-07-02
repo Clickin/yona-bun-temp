@@ -986,7 +986,8 @@ export function ProjectHeader({
     onSuccess(response, nextWatching) {
       setWatchState((current) => ({
         count:
-          projectWatchingCount(response) || Math.max(0, current.count + (nextWatching ? 1 : -1)),
+          projectWatchingCountValue(response) ??
+          Math.max(0, current.count + (nextWatching ? 1 : -1)),
         isWatching: nextWatching,
       }));
       queryClient.invalidateQueries({
@@ -1310,12 +1311,23 @@ function projectIsWatching(project: ProjectContainer) {
 }
 
 function projectWatchingCount(project: ProjectContainer) {
+  return projectWatchingCountValue(project) ?? 0;
+}
+
+function projectWatchingCountValue(project: ProjectContainer) {
   const record = recordField(project);
-  return (
-    numberField(record.watchingCount) ||
-    numberField(record.watchCount) ||
-    numberField(record.watcherCount)
-  );
+  for (const value of [record.watchingCount, record.watchCount, record.watcherCount]) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+  return undefined;
 }
 
 function normalizeHistoryHref(basePath: string, href: string) {
