@@ -155,6 +155,21 @@ test("site admin update renders the legacy available-version branch", async ({ p
   );
   await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
   await expect(page.getByText("You are using the latest version")).toHaveCount(0);
+  expect(await updateAvailableMetrics(page)).toEqual({
+    contentWidthRatio: 0.83,
+    downloadButtonBackground: "rgb(255, 115, 50)",
+    downloadButtonBorderColor: "rgb(233, 94, 1)",
+    downloadButtonHeight: 30,
+    downloadButtonMarginLeft: 0,
+    downloadButtonPaddingInline: 24,
+    downloadButtonTextColor: "rgb(255, 255, 255)",
+    firstParagraphLineHeight: 20,
+    sidebarWidthRatio: 0.15,
+    strongFontWeight: "700",
+    titleAreaMarginBottom: 29,
+    titleAreaPaddingBottom: 8,
+    titleLineHeight: 30,
+  });
 });
 
 test("site admin update renders the legacy error branch", async ({ page }) => {
@@ -175,7 +190,102 @@ test("site admin update renders the legacy error branch", async ({ page }) => {
   await expect(page.locator(".span10 pre")).toHaveText(
     "java.lang.IllegalStateException: update feed failed",
   );
+  expect(await updateErrorMetrics(page)).toEqual({
+    errorMessageLineHeight: 20,
+    preBackground: "rgb(245, 245, 245)",
+    preBorderRadius: 4,
+    preBorderTopWidth: 1,
+    preFontSize: 13,
+    preLineHeight: 20,
+    preMarginBottom: 10,
+    prePaddingBlock: 20,
+    prePaddingInline: 20,
+    preWhiteSpace: "pre-wrap",
+  });
 });
+
+async function updateAvailableMetrics(page: Page) {
+  return page.evaluate(() => {
+    const requireElement = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing element: ${selector}`);
+      }
+      return element;
+    };
+
+    const row = requireElement(".site-setting-wrap .row-fluid");
+    const sidebar = requireElement(".site-setting-wrap .span2");
+    const content = requireElement(".site-setting-wrap .span10");
+    const titleArea = requireElement(".site-setting-wrap .title_area");
+    const title = requireElement(".site-setting-wrap .title_area h2");
+    const firstParagraph = requireElement(".site-setting-wrap .span10 > p");
+    const strong = requireElement(".site-setting-wrap .span10 > p strong");
+    const downloadButton = requireElement(".site-setting-wrap a.ybtn.ybtn-success");
+
+    const rowRect = row.getBoundingClientRect();
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const titleAreaStyle = getComputedStyle(titleArea);
+    const titleStyle = getComputedStyle(title);
+    const firstParagraphStyle = getComputedStyle(firstParagraph);
+    const strongStyle = getComputedStyle(strong);
+    const downloadButtonStyle = getComputedStyle(downloadButton);
+    const downloadButtonRect = downloadButton.getBoundingClientRect();
+
+    return {
+      contentWidthRatio: Number((contentRect.width / rowRect.width).toFixed(2)),
+      downloadButtonBackground: downloadButtonStyle.backgroundColor,
+      downloadButtonBorderColor: downloadButtonStyle.borderTopColor,
+      downloadButtonHeight: Math.round(downloadButtonRect.height),
+      downloadButtonMarginLeft: Math.round(parseFloat(downloadButtonStyle.marginLeft)),
+      downloadButtonPaddingInline:
+        Math.round(parseFloat(downloadButtonStyle.paddingLeft)) +
+        Math.round(parseFloat(downloadButtonStyle.paddingRight)),
+      downloadButtonTextColor: downloadButtonStyle.color,
+      firstParagraphLineHeight: Math.round(parseFloat(firstParagraphStyle.lineHeight)),
+      sidebarWidthRatio: Number((sidebarRect.width / rowRect.width).toFixed(2)),
+      strongFontWeight: strongStyle.fontWeight,
+      titleAreaMarginBottom: Math.round(parseFloat(titleAreaStyle.marginBottom)),
+      titleAreaPaddingBottom: Math.round(parseFloat(titleAreaStyle.paddingBottom)),
+      titleLineHeight: Math.round(parseFloat(titleStyle.lineHeight)),
+    };
+  });
+}
+
+async function updateErrorMetrics(page: Page) {
+  return page.evaluate(() => {
+    const requireElement = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing element: ${selector}`);
+      }
+      return element;
+    };
+
+    const message = requireElement(".site-setting-wrap .span10 > p");
+    const pre = requireElement(".site-setting-wrap .span10 pre");
+    const messageStyle = getComputedStyle(message);
+    const preStyle = getComputedStyle(pre);
+
+    return {
+      errorMessageLineHeight: Math.round(parseFloat(messageStyle.lineHeight)),
+      preBackground: preStyle.backgroundColor,
+      preBorderRadius: Math.round(parseFloat(preStyle.borderTopLeftRadius)),
+      preBorderTopWidth: Math.round(parseFloat(preStyle.borderTopWidth)),
+      preFontSize: Math.round(parseFloat(preStyle.fontSize)),
+      preLineHeight: Math.round(parseFloat(preStyle.lineHeight)),
+      preMarginBottom: Math.round(parseFloat(preStyle.marginBottom)),
+      prePaddingBlock:
+        Math.round(parseFloat(preStyle.paddingTop)) +
+        Math.round(parseFloat(preStyle.paddingBottom)),
+      prePaddingInline:
+        Math.round(parseFloat(preStyle.paddingLeft)) +
+        Math.round(parseFloat(preStyle.paddingRight)),
+      preWhiteSpace: preStyle.whiteSpace,
+    };
+  });
+}
 
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
