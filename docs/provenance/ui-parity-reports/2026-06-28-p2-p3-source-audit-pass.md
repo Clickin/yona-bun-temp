@@ -13,13 +13,14 @@ P3 row count: 134
 
 | status | count | meaning |
 | --- | ---: | --- |
-| manual-caller-route-check-needed | 1 | Partial or helper template with no direct page; verify through caller routes. |
+| manual-caller-route-check-needed | 0 | Partial or helper template with no direct page; verify through caller routes. |
 | manual-error-state-check-needed | 0 | Error template needs rendered error-state route evidence. |
 | manual-vcs-flow-check-needed | 0 | VCS flow template needs concrete route/state evidence. |
 | manual-render-check-needed | 0 | Manual rendered route evidence is required. |
 | rendered-interaction-guard-passed | 3 | Route-level browser guard now covers the former manual follow-up. |
 | rendered-metric-guard-passed | 2 | Route-level browser metric guard now covers the former manual follow-up. |
 | targeted-absence-guard-passed | 1 | Source and rendered guards prove the legacy fragment has no active caller and does not leak into React routes. |
+| non-browser-mail-template-recorded | 1 | Legacy template is rendered by the backend notification mail pipeline, not a browser route. |
 
 ## P3 Confirmation Tag Summary
 
@@ -54,7 +55,7 @@ P3 row count: 134
 | `error/requestTextEntityTooLarge.scala.html` | P1 auth/public/home/help | `rendered-interaction-guard-passed` | owners 21; ids 0/0; names 0/0; data 0/0; classes 5/5; messages 0/3 | `/search?keyword=too-large&searchType=issue&pageNum=1` 413 search state | `frontend/tests/search-global.e2e.ts` asserts the legacy site-layout error shell with `.page-wrap-outer > .project-page-wrap > .error-wrap`, `.ico.ico-err2`, resolved title, legacy 102400 byte limit copy, no admin-only paragraph for the non-site-manager viewer, no search-result form, and whole-root DOM parity. |
 | `git/clone.scala.html` | P5 code/pr/review | `rendered-interaction-guard-passed`, `copy-i18n-confirmed` | owners 30; ids 0/0; names 0/0; data 0/0; classes 4/4; messages 0/4 | `/admin/sample/newFork` submit success state | `frontend/tests/project-fork-form.e2e.ts` submits the fork form, then asserts the legacy `git/clone.scala.html` progress body: `.page-wrap-outer > .project-page-wrap > .content-wrap.frm-wrap`, `legend` `fork.forking` with original/target owners/projects, both waiting/auto-move paragraphs, form absence, and the REST/TanStack fork mutation boundary before delayed redirect. |
 | `partial_diff.scala.html` | P5 code/pr/review | `rendered-interaction-guard-passed` | owners 30; ids 0/0; names 0/0; data 0/0; classes 1/1; messages 0/1 | `/admin/sample/commit/abcdef1234567890?branch=main` commit detail caller | `frontend/tests/project-code-commit-detail.e2e.ts` asserts the legacy commit detail caller renders the normal no-limit-alert `.diff-body` file-diff list through the `partial_filediff.scala.html` loop, including file headers, `.btnPop`, line rows, placement after `p.commitInfo`, and placement before the commit comment form. |
-| `common/notificationMail.scala.html` | P6 directory/workspace | `manual-caller-route-check-needed` | owners 39; ids 0/0; names 0/0; data 0/0; classes 0/0; messages 2/4 | included partial; verify through each caller route | expand caller template graph; render concrete caller route; assert visible DOM/copy and any helper output |
+| `common/notificationMail.scala.html` | backend notification mail | `non-browser-mail-template-recorded` | owners 39; ids 0/0; names 0/0; data 0/0; classes 0/0; messages 2/4 | backend `NotificationMail.java` caller | Legacy `NotificationMail.java` renders this outbound HTML email body with inline font/footer/link styles. It is not a React browser route or shared DOM partial; React visual metric closure does not apply, and server mail HTML parity is tracked through `crates/server/src/notification_mail.rs::notification_mail_legacy_body`. |
 | `common/calendar.scala.html` | shared partials | `rendered-metric-guard-passed` | owners 10; ids 0/0; names 0/0; data 0/0; classes 0/0; messages 0/0 | issue list/create/edit callers | `frontend/tests/project-issues-empty.e2e.ts`, `frontend/tests/project-issue-form.e2e.ts`, and `frontend/tests/project-issue-edit-form.e2e.ts` assert the legacy issue callers keep `#issueDueDate[data-toggle=calendar][name=dueDate]`, `.btn-calendar .yobicon-calendar2`, due-date placement and metrics, and no direct legacy moment/pikaday/yobi calendar script injection in React. |
 | `common/markdown.scala.html` | shared partials | `rendered-metric-guard-passed` | owners 10; ids 0/0; names 0/0; data 0/0; classes 0/0; messages 0/0 | issue detail caller | `frontend/tests/project-issue-detail.e2e.ts` and the markdown parity node test cover the issue detail markdown body/help/editor caller, no direct legacy highlight/marked/yobi.Markdown script injection, markdown/task-list metrics, and marked-compatible parser behavior. |
 
