@@ -1066,6 +1066,52 @@ test("project issue detail renders legacy child issue list", async ({ page }) =>
   });
 });
 
+test("project issue detail hides foreign draft child issues like legacy partial_view_child", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    childIssues: [
+      {
+        authorLoginId: "dev",
+        createdLabel: "Jul 3, 2026",
+        isDraft: true,
+        issueNumber: 12,
+        labels: [],
+        state: "draft",
+        title: "Foreign draft child",
+      },
+      {
+        authorLoginId: "admin",
+        createdLabel: "Jul 4, 2026",
+        isDraft: true,
+        issueNumber: 13,
+        labels: [],
+        state: "draft",
+        title: "Own draft child",
+      },
+    ],
+    childClosedCount: 0,
+    childOpenCount: 0,
+    isDraft: true,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  await expect(page.locator(".span-left-pane > .subtasks .issue-item.child-issue")).toHaveCount(1);
+  await expect(page.locator(".span-left-pane > .subtasks")).not.toContainText(
+    "Foreign draft child",
+  );
+  const visibleDraft = page.locator(".span-left-pane > .subtasks .issue-item.child-issue").first();
+  await expect(visibleDraft).toContainText("#DraftOwn draft child");
+  await expect(visibleDraft.locator(".state-label.draft")).toHaveCount(1);
+  await expect(visibleDraft.locator(".draft-number")).toHaveText("#Draft");
+  await expect(visibleDraft.locator("a.twoColumeModeTarget")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/13`,
+  );
+});
+
 test("project issue detail renders legacy unauthorized comment form", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, { viewerCanComment: false });

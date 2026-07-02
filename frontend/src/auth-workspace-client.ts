@@ -237,6 +237,7 @@ export type RestIssueListItem = ListProjectIssuesResponse["items"][number] & {
   childClosedCount?: number;
   childIssues?: Array<{
     assigneeLabel: string;
+    authorLoginId?: string;
     commentCount?: number;
     createdLabel: string;
     id?: bigint | number;
@@ -304,6 +305,7 @@ export type RestIssueDetailResponse = ReadIssueDetailResponse & {
   childClosedCount?: number;
   childIssues?: Array<{
     assigneeLabel: string;
+    authorLoginId?: string;
     commentCount?: number;
     createdLabel: string;
     isDraft?: boolean;

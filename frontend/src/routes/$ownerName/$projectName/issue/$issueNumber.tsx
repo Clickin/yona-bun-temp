@@ -133,6 +133,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       />
       <IssueDetailBody
         basePath={runtimeConfig.basePath}
+        currentUserLoginId={stringField(sessionQuery.data.loginId)}
         issue={issueQuery.data}
         labels={labelsQuery.data.labels}
         milestones={{
@@ -392,6 +393,7 @@ function ProjectIssueNotFoundBody({
 
 function IssueDetailBody({
   basePath,
+  currentUserLoginId,
   issue,
   labels: projectLabels,
   milestones,
@@ -399,6 +401,7 @@ function IssueDetailBody({
   runtimeConfig,
 }: {
   basePath: string;
+  currentUserLoginId: string;
   issue: RestIssueDetailResponse;
   labels: YonaRecord[];
   milestones: {
@@ -684,7 +687,11 @@ function IssueDetailBody({
               </dd>
             </dl>
             <div className="watcher-list"></div>
-            <IssueChildIssues basePath={basePath} issue={issue} />
+            <IssueChildIssues
+              basePath={basePath}
+              currentUserLoginId={currentUserLoginId}
+              issue={issue}
+            />
             {!isDraft ? (
               <IssueMainTimeline
                 basePath={basePath}
@@ -1441,9 +1448,11 @@ type IssueDetailChildItem = NonNullable<RestIssueDetailResponse["childIssues"]>[
 
 function IssueChildIssues({
   basePath,
+  currentUserLoginId,
   issue,
 }: {
   basePath: string;
+  currentUserLoginId: string;
   issue: RestIssueDetailResponse;
 }) {
   const ownerName = stringField(issue.ownerName);
@@ -1454,7 +1463,13 @@ function IssueChildIssues({
   const totalCount = childOpenCount + childClosedCount;
   const children = issue.childIssues ?? [];
   const visibleChildren = [
-    ...(booleanField(issue.isDraft) ? children.filter((child) => booleanField(child.isDraft)) : []),
+    ...(booleanField(issue.isDraft)
+      ? children.filter(
+          (child) =>
+            booleanField(child.isDraft) &&
+            stringField(child.authorLoginId, "") === currentUserLoginId,
+        )
+      : []),
     ...children.filter(
       (child) => !booleanField(child.isDraft) && stringField(child.state) !== "closed",
     ),
