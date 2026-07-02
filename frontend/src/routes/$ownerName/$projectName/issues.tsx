@@ -1016,11 +1016,7 @@ function LabelMassUpdateGroup({
         <li data-value={label.id} data-category={group.categoryId} key={label.id}>
           {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
           <a>
-            <span
-              className="issue-label active list-label"
-              data-label-id={label.id}
-              style={issueLabelStyle(label.color)}
-            >
+            <span className="issue-label active list-label" data-label-id={label.id}>
               {label.name}
             </span>
           </a>
@@ -1217,7 +1213,6 @@ function ProjectIssueItem({
                 data-category-id={label.categoryId ?? ""}
                 data-label-id={label.id}
                 key={String(label.id)}
-                style={issueLabelStyle(label.color)}
               >
                 {label.name}
               </a>
