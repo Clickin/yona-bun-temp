@@ -26,10 +26,13 @@ The root `AGENTS.md` and `docs/agents/05-agent-execution-guidelines.md` now
 explicitly forbid goal turns that only add E2E metrics, CSS, or provenance
 without rebuilding the target TSX screen from `yona-original/app/views/**`.
 
-The existing precommit parity gate only checks that implementation changes have
-parity evidence. It does not know whether the active work is a `/goal` turn, so
-it cannot reliably block metric-only goal turns without a separate goal-aware
-mode. Until such a mode exists, the mandatory enforcement is:
+`tools/scala-html-goal-guard.mjs` is wired into `tools/precommit-verify.mjs`.
+It blocks commits that change frontend E2E files, `frontend/src/app.css`, or
+UI parity reports without changing a TSX route implementation in the same
+staged change. Intentional audit-only exceptions require the explicit
+`YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY=1` environment marker.
+
+The mandatory workflow remains:
 
 1. Start each frontend goal turn by reading `AGENTS.md`,
    `docs/plans/2026-06-30-scala-html-goal-workflow.md`, and this audit.

@@ -12,6 +12,10 @@ import {
   formatDesignHarnessSummary,
   shouldBlockDesignHarness,
 } from "./yona-design-harness.mjs";
+import {
+  evaluateScalaHtmlGoalGuard,
+  formatScalaHtmlGoalGuardSummary,
+} from "./scala-html-goal-guard.mjs";
 
 const STAGED_CMD = ["diff", "--cached", "--name-only", "--diff-filter=ACMR"];
 const IGNORED_PREFIXES = [
@@ -186,6 +190,14 @@ const designResult = evaluateDesignHarness({
 });
 console.log(formatDesignHarnessSummary(designResult));
 if (shouldBlockDesignHarness(designResult)) {
+  process.exit(1);
+}
+
+const scalaHtmlGoalResult = evaluateScalaHtmlGoalGuard({
+  changedFiles: stagedFiles,
+});
+console.log(formatScalaHtmlGoalGuardSummary(scalaHtmlGoalResult));
+if (scalaHtmlGoalResult.blocked) {
   process.exit(1);
 }
 

@@ -7,6 +7,7 @@ const repoRoot = path.resolve(import.meta.dirname, "..");
 const hookPath = path.join(repoRoot, ".husky", "pre-commit");
 const verifyToolPath = path.join(repoRoot, "tools", "precommit-verify.mjs");
 const designHarnessPath = path.join(repoRoot, "tools", "yona-design-harness.mjs");
+const scalaHtmlGoalGuardPath = path.join(repoRoot, "tools", "scala-html-goal-guard.mjs");
 const serverSourcePath = path.join(repoRoot, "crates", "server", "src", "lib.rs");
 const serverRoutesPath = path.join(repoRoot, "crates", "server", "src", "routes");
 const specPath = path.join(repoRoot, "SPEC.md");
@@ -50,11 +51,24 @@ test("pre-commit hook points at the canonical root verification tool", () => {
   assert.equal(existsSync(hookPath), true, ".husky/pre-commit must exist");
   assert.equal(existsSync(verifyToolPath), true, "tools/precommit-verify.mjs must exist");
   assert.equal(existsSync(designHarnessPath), true, "tools/yona-design-harness.mjs must exist");
+  assert.equal(
+    existsSync(scalaHtmlGoalGuardPath),
+    true,
+    "tools/scala-html-goal-guard.mjs must exist",
+  );
 
   const hookSource = readFileSync(hookPath, "utf8");
 
   assert.match(hookSource, /node\s+\.\/tools\/precommit-verify\.mjs/);
   assert.doesNotMatch(hookSource, /bun\s+run\s+precommit:verify/);
+});
+
+test("pre-commit verification runs the Scala HTML goal guard", () => {
+  const verifySource = readFileSync(verifyToolPath, "utf8");
+
+  assert.match(verifySource, /from "\.\/scala-html-goal-guard\.mjs"/u);
+  assert.match(verifySource, /evaluateScalaHtmlGoalGuard/u);
+  assert.match(verifySource, /formatScalaHtmlGoalGuardSummary/u);
 });
 
 test("pre-commit verification runs the legacy Yona design harness", () => {
