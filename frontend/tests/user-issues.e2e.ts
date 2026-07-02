@@ -31,7 +31,7 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
       </div>
       <div class="span10 span-hard-wrap" id="span10">
         <ul class="nav nav-tabs nm">
-          <li class="active"><a href="#" state="open">Open<span class="num-badge">2</span></a></li><li class=""><a href="#" state="closed">Closed<span class="num-badge">1</span></a></li>
+          <li class="active" data-pjax=""><a href="#" state="open">Open<span class="num-badge">2</span></a></li><li class="" data-pjax=""><a href="#" state="closed">Closed<span class="num-badge">1</span></a></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
           <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
@@ -83,7 +83,7 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
       </div>
       <div class="span10 span-hard-wrap" id="span10">
         <ul class="nav nav-tabs nm">
-          <li class=""><a href="#" state="open">Open<span class="num-badge">0</span></a></li><li class="active"><a href="#" state="closed">Closed<span class="num-badge">0</span></a></li>
+          <li class="" data-pjax=""><a href="#" state="open">Open<span class="num-badge">0</span></a></li><li class="active" data-pjax=""><a href="#" state="closed">Closed<span class="num-badge">0</span></a></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
           <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
@@ -311,6 +311,7 @@ test("current-user issues state tab preserves legacy href with SPA transition", 
   const closedTab = page.locator('#span10 .nav.nav-tabs a[state="closed"]');
   await expect(closedTab).toHaveAttribute("href", "#");
   await expect(closedTab).toHaveAttribute("state", "closed");
+  await expect(closedTab.locator("..")).toHaveAttribute("data-pjax", "");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -927,6 +928,7 @@ async function canonicalizePageWrap(page: Page) {
         "data-search",
         "data-total",
         "data-url",
+        "data-pjax",
         "data-trigger",
         "data-toggle",
         "data-placement",
@@ -1012,6 +1014,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "data-search",
           "data-total",
           "data-url",
+          "data-pjax",
           "data-trigger",
           "data-toggle",
           "data-placement",

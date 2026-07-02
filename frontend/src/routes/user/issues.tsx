@@ -680,9 +680,10 @@ function StateTab({
   state: "closed" | "open";
 }) {
   const legacyState = { state } as unknown as HTMLAttributes<HTMLAnchorElement>;
+  const pjaxItem = { "data-pjax": "" } as unknown as HTMLAttributes<HTMLLIElement>;
 
   return (
-    <li className={active ? "active" : ""}>
+    <li className={active ? "active" : ""} {...pjaxItem}>
       {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus state attr. */}
       <a href="#" {...legacyState} onClick={(event) => onNavigate(event, state)}>
         {label}
