@@ -219,54 +219,11 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
   expect(issueViewBootstrap).toContain(`$(".comment-body:contains('Site Admin')`);
   expect(issueViewBootstrap).toContain(`$(".user-link:contains('Site Admin')`);
 
-  const inlineHandlers = await inlineScriptContaining(page, "yonaAssgineeModule(");
-  expect(inlineHandlers).toContain("yonaAssgineeModule(");
-  expect(inlineHandlers).toContain(
-    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/assignableUsers"`,
+  await expect(page.locator("script", { hasText: "yonaAssgineeModule(" })).toHaveCount(0);
+  await expect(page.locator("script", { hasText: '$(".markdown-wrap").first().html' })).toHaveCount(
+    0,
   );
-  expect(inlineHandlers).toContain(
-    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/assignees"`,
-  );
-  expect(inlineHandlers).toContain('"Assignee"');
-  expect(inlineHandlers).toContain("yonaIssueSharerModule(");
-  expect(inlineHandlers).toContain(
-    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/findSharer"`,
-  );
-  expect(inlineHandlers).toContain(
-    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/sharableUsers"`,
-  );
-  expect(inlineHandlers).toContain(
-    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/share"`,
-  );
-  expect(inlineHandlers).toContain('"Issue Sharer"');
-  expect(inlineHandlers).toContain("$('#issue-share-button').on('click'");
-  expect(inlineHandlers).toContain("$('#sharer-list').show();");
-  expect(inlineHandlers).toContain("$('#translate').one('click'");
-  expect(inlineHandlers).toContain(`url: "${basePath}/-_-api/v1/translation"`);
-  expect(inlineHandlers).toContain('type: "issue"');
-  expect(inlineHandlers).toContain('type: "issue-comment"');
-  expect(inlineHandlers).toContain("new ClipboardJS('#copyEmailBtn')");
-  expect(inlineHandlers).toContain('$yobi.alert("Copying email was successful.")');
-  expect(inlineHandlers).toContain(
-    '$yobi.notify("Your browser doesnt support the clipboard feature.", 1500)',
-  );
-  expect(inlineHandlers).toContain('$(".event > .label").each(function()');
-  expect(inlineHandlers).toContain("$.elevator({");
-  expect(inlineHandlers).toContain('$("#upvote-issue-weight").on("click"');
-  expect(inlineHandlers).toContain(
-    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/upvoteWeight"`,
-  );
-  expect(inlineHandlers).toContain('$("#down-vote-issue-weight").on("click"');
-  expect(inlineHandlers).toContain(
-    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/downvoteWeight"`,
-  );
-  expect(inlineHandlers).toContain(
-    `"${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/commentNotiReceivers"`,
-  );
-  expect(inlineHandlers).toContain('$(".index-comment").on("click"');
-  expect(inlineHandlers).toContain(
-    `detectPageChange("${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/detectChange")`,
-  );
+  await expect(page.locator("script", { hasText: '$(".weight-number").html' })).toHaveCount(0);
 }
 
 async function expectIssueDetailSelect2Partial(page: Page, basePath: string) {
@@ -874,6 +831,21 @@ test("project issue detail votes comments through legacy agree action", async ({
       })),
     )
     .toEqual([{ hasCsrfToken: true, method: "POST" }]);
+});
+
+test("project issue detail updates issue weight through React mutation", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { issueWeightRequests } = await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator(".weight-number")).toHaveText("2");
+
+  await page.locator("#upvote-issue-weight").click();
+  await expect(page.locator(".weight-number")).toHaveText("3");
+  await page.locator("#down-vote-issue-weight").click();
+  await expect(page.locator(".weight-number")).toHaveText("2");
+  expect(issueWeightRequests.map((request) => request.method)).toEqual(["POST", "POST"]);
+  expect(issueWeightRequests.every((request) => Boolean(request.csrfToken))).toBe(true);
 });
 
 test("project issue detail unvotes comments through legacy agree action", async ({ page }) => {
@@ -2029,6 +2001,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
   const deleteRequests: string[] = [];
   const commentDeleteRequests: string[] = [];
   const commentVoteRequests: { csrfToken: string | null; method: string }[] = [];
+  const issueWeightRequests: { csrfToken: string | null; method: string; url: string }[] = [];
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -2280,7 +2253,20 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       });
     },
   );
-  return { commentDeleteRequests, commentVoteRequests, deleteRequests };
+  await page.route("**/api/v1/projects/admin/sample/issues/11/*voteWeight", async (route) => {
+    issueWeightRequests.push({
+      csrfToken: route.request().headers()["x-csrf-token"] ?? null,
+      method: route.request().method(),
+      url: route.request().url(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        weight: route.request().url().includes("upvoteWeight") ? 3 : 2,
+      }),
+    });
+  });
+  return { commentDeleteRequests, commentVoteRequests, deleteRequests, issueWeightRequests };
 }
 
 async function issueNotFoundMetrics(page: Page) {

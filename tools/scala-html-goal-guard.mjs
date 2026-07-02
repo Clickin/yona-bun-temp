@@ -15,6 +15,8 @@ const E2E_VERIFICATION_GLOBAL_PATTERN = /frontend\/tests\/.+?\.e2e\.ts\b/gu;
 const SCALA_HTML_SOURCE_PATTERN =
   /\b(?:yona-original\/app\/views\/)?([A-Za-z0-9_.$/-]+\.scala\.html)\b/gu;
 const LEGACY_VIEW_ROOT = "yona-original/app/views";
+const ADDED_REACT_DOM_ESCAPE_PATTERN =
+  /^\+(?!\+\+).*(?:\$\s*\(|jQuery\s*\(|window\.\$|<script\b|dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document\.(?:querySelector|getElementById|getElementsByClassName|getElementsByTagName)|\.(?:html|append|prepend|before|after)\s*\()/imu;
 
 function fileStatus(file, changedFileStatuses) {
   return changedFileStatuses?.get(file) ?? "M";
@@ -97,11 +99,18 @@ function missingLegacyScalaHtmlSources(auditPatch, repoRoot) {
   });
 }
 
+function routeFilesWithReactDomEscapes(routePatches) {
+  return [...routePatches.entries()]
+    .filter(([, patch]) => ADDED_REACT_DOM_ESCAPE_PATTERN.test(patch))
+    .map(([file]) => file);
+}
+
 export function evaluateScalaHtmlGoalGuard({
   changedFiles,
   changedFileStatuses = new Map(),
   env = process.env,
   auditPatch = null,
+  routePatches = new Map(),
   repoRoot = process.cwd(),
 }) {
   const nonDeletedChangedFiles = nonDeletedFiles(changedFiles, changedFileStatuses);
@@ -120,8 +129,22 @@ export function evaluateScalaHtmlGoalGuard({
   const auditUpdated = changedFiles.includes(SCALA_HTML_AUDIT_FILE);
   const allowUndocumentedRoute = env.YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE === "1";
   const allowMultiScreen = env.YONA_ALLOW_SCALA_HTML_MULTI_SCREEN === "1";
+  const allowReactDomEscape = env.YONA_ALLOW_REACT_DOM_ESCAPE === "1";
   const enforceSingleAuditRow = env.YONA_ENFORCE_SCALA_HTML_SINGLE_ROW === "1";
   const auditRows = auditPatch === null ? [] : addedAuditRows(auditPatch);
+
+  if (implementationTouchesRuntime && !allowReactDomEscape) {
+    const routeFilesWithDomEscapes = routeFilesWithReactDomEscapes(routePatches);
+
+    if (routeFilesWithDomEscapes.length > 0) {
+      return {
+        blocked: true,
+        frontendEvidenceFiles,
+        frontendImplementationFiles,
+        message: `Scala HTML goal guard blocked legacy jQuery/DOM escape work. Route TSX must not port legacy jQuery, inline scripts, or direct DOM mutation; implement behavior with React state/events and TanStack Query useMutation/cache updates instead. Offending route files: ${routeFilesWithDomEscapes.join(", ")}.`,
+      };
+    }
+  }
 
   if (implementationTouchesRuntime && frontendE2EFiles.length === 0 && !allowUndocumentedRoute) {
     return {

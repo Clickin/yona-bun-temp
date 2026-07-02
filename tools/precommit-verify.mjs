@@ -217,6 +217,11 @@ const scalaHtmlGoalResult = evaluateScalaHtmlGoalGuard({
   changedFiles: stagedFiles,
   changedFileStatuses: stagedFileStatuses,
   auditPatch: readStagedPatch("docs/provenance/frontend-scala-html-goal-violation-audit.md"),
+  routePatches: new Map(
+    stagedFiles
+      .filter((file) => /^frontend\/src\/routes\/.+\.tsx$/u.test(file))
+      .map((file) => [file, readStagedPatch(file)]),
+  ),
   env: {
     ...process.env,
     YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1",

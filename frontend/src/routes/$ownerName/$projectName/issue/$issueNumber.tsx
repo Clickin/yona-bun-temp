@@ -19,6 +19,7 @@ import {
   listProjectMilestones,
   readSessionBootstrap,
   unvoteIssueComment,
+  updateIssueWeight,
   voteIssueComment,
   type RestIssueDetailResponse,
 } from "../../../../auth-workspace-client";
@@ -148,7 +149,6 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         issue={issueQuery.data}
         project={projectQuery.data}
       />
-      <IssueViewInlineHandlersScript basePath={runtimeConfig.basePath} issue={issueQuery.data} />
     </>
   );
 }
@@ -624,7 +624,13 @@ function IssueDetailBody({
                       New subtask
                     </LegacyInternalLink>
                   </span>
-                  <IssueWeight weight={weight} />
+                  <IssueWeight
+                    issueNumber={issueNumber}
+                    ownerName={ownerName}
+                    projectName={projectName}
+                    runtimeConfig={runtimeConfig}
+                    weight={weight}
+                  />
                 </div>
               </div>
               <IssueVote
@@ -1009,155 +1015,6 @@ function IssueViewBootstrapScript({
   );
 }
 
-function IssueViewInlineHandlersScript({
-  basePath,
-  issue,
-}: {
-  basePath: string;
-  issue: RestIssueDetailResponse;
-}) {
-  const { t } = useLegacyMessages();
-  const ownerName = stringField(issue.ownerName);
-  const projectName = stringField(issue.projectName);
-  const issueNumber = stringField(issue.issueNumber);
-  const issueApiBase = prefixBasePath(
-    basePath,
-    `/-_-api/v1/owners/${ownerName}/projects/${projectName}/issues/${issueNumber}`,
-  );
-  const script = `
-        $(function () {
-            yonaAssgineeModule(
-                    ${jsString(`${issueApiBase}/assignableUsers`)},
-                    ${jsString(`${issueApiBase}/assignees`)},
-                    ${jsString(t("issue.assignee"))}
-            );
-
-            yonaIssueSharerModule(
-                    ${jsString(`${issueApiBase}/findSharer`)},
-                    ${jsString(`${issueApiBase}/sharableUsers`)},
-                    ${jsString(`${issueApiBase}/share`)},
-                    ${jsString(t("issue.sharer"))}
-            );
-
-            $('#issue-share-button').on('click', function () {
-                $('#sharer-list').show();
-                $('.sharer-list').show().addClass("sharer-list-border");
-                $('#sharer-list .select2-search-field > input').focus();
-            });
-
-            $('#translate').one('click', function (e) {
-                var data = {
-                    owner: ${jsString(ownerName)},
-                    projectName: ${jsString(projectName)},
-                    type: "issue",
-                    number: ${jsString(issueNumber)}
-                };
-                $.ajax({
-                    url: ${jsString(prefixBasePath(basePath, "/-_-api/v1/translation"))},
-                    data: JSON.stringify(data),
-                    type: "POST",
-                    dataType: "json",
-                    contentType: "application/json"
-                }).done(function (data) {
-                    $(".markdown-wrap").first().html(data.translated);
-                    $(this).attr("disabled", true);
-                });
-            });
-
-            $('.comment-translate').one('click', function (e) {
-                var payload = {
-                    owner: ${jsString(ownerName)},
-                    projectName: ${jsString(projectName)},
-                    type: "issue-comment",
-                    number: $(this).data("commentId")
-                };
-                $.ajax({
-                    url: ${jsString(prefixBasePath(basePath, "/-_-api/v1/translation"))},
-                    data: JSON.stringify(payload),
-                    type: "POST",
-                    dataType: "json",
-                    contentType: "application/json"
-                }).done(function (data) {
-                    $("#comment-body-" + payload.number).find(".markdown-wrap").html(data.translated)
-                    $(this).attr("disabled", true);
-                });
-            });
-
-            if (ClipboardJS.isSupported()) {
-                var clipboard = new ClipboardJS('#copyEmailBtn');
-
-                clipboard.on('success', function(e) {
-                    $yobi.alert(${jsString(t("button.copy.email.success.message"))});
-                });
-            } else {
-                $yobi.notify(${jsString(t("site.features.error.clipboard"))}, 1500);
-            }
-
-            // timeline label text color adjusting
-            $(".event > .label").each(function() {
-                var $this = $(this);
-                $this.removeClass("dimgray white")
-                        .addClass($yobi.getContrastColor($this.css('background-color')))
-            });
-
-            $.elevator({
-                shape: 'rounded',
-                tooltips: true
-            });
-
-            $("#upvote-issue-weight").on("click", function () {
-                $.ajax({
-                    url: ${jsString(`${issueApiBase}/upvoteWeight`)},
-                    type: "POST",
-                }).done(function (data) {
-                    $(".weight-number").html(data.weight);
-                });
-            });
-
-            $("#down-vote-issue-weight").on("click", function () {
-                $.ajax({
-                    url: ${jsString(`${issueApiBase}/downvoteWeight`)},
-                    type: "POST",
-                }).done(function (data) {
-                    $(".weight-number").html(data.weight);
-                });
-            });
-
-            $(".editorSeries")
-                .on("focus", function () {
-                    $(this).closest("form").find(".notification-receiver").show()
-                    findNotiReceiversHandler(
-                            $(this),
-                            ${jsString(`${issueApiBase}/commentNotiReceivers`)}
-                    )
-                })
-                .on("focusout", function () {
-                    unbindFindNotiReceiversHandler($(this))
-                });
-
-            $(".index-comment").on("click", function(){
-                window.location = $(this).data("location");
-                if (!history.state) {
-                    window.parent.history.pushState({ startPath: location.pathname }, document.title, window.location);
-                } else {
-                    window.parent.history.replaceState(history.state, document.title, window.location);
-                }
-            });
-
-            detectPageChange(${jsString(`${issueApiBase}/detectChange`)})
-        })
-`;
-
-  return (
-    <script
-      type="text/javascript"
-      dangerouslySetInnerHTML={{
-        __html: script,
-      }}
-    ></script>
-  );
-}
-
 function IssuePostingHistory({
   historyMarkdown,
   updatedByAuthorLabel,
@@ -1365,7 +1222,45 @@ function IssueVoterListDialog({
   );
 }
 
-function IssueWeight({ weight }: { weight: number }) {
+function IssueWeight({
+  issueNumber,
+  ownerName,
+  projectName,
+  runtimeConfig,
+  weight,
+}: {
+  issueNumber: string;
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+  weight: number;
+}) {
+  const queryClient = useQueryClient();
+  const [currentWeight, setCurrentWeight] = useState(weight);
+  const weightMutation = useMutation({
+    mutationFn: async (direction: "downvote" | "upvote") => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updateIssueWeight(
+        runtimeConfig,
+        csrfToken,
+        {
+          issueNumber,
+          ownerName,
+          projectName,
+        },
+        direction === "upvote" ? 1 : -1,
+      );
+    },
+    onSuccess(payload) {
+      if (typeof payload.weight === "number") {
+        setCurrentWeight(payload.weight);
+      }
+      queryClient.invalidateQueries({
+        queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+      });
+    },
+  });
+
   return (
     <span className="issue-weight">
       <span className="divider">|</span>
@@ -1373,6 +1268,7 @@ function IssueWeight({ weight }: { weight: number }) {
         id="upvote-issue-weight"
         className="ybtn ybtn-small"
         data-toggle="tooltip"
+        onClick={() => weightMutation.mutate("upvote")}
         title="Issue weight: Upvote"
       >
         <i className="yobicon-arrow-up-alt"></i>
@@ -1381,6 +1277,7 @@ function IssueWeight({ weight }: { weight: number }) {
         className="ybtn ybtn-small"
         id="down-vote-issue-weight"
         data-toggle="tooltip"
+        onClick={() => weightMutation.mutate("downvote")}
         title="Issue weight: Down vote"
       >
         <i className="yobicon-arrow-down-alt"></i>
@@ -1392,7 +1289,7 @@ function IssueWeight({ weight }: { weight: number }) {
         data-placement="top"
         data-content="Issue weight description"
       >
-        {weight}
+        {currentWeight}
       </span>
     </span>
   );
