@@ -965,6 +965,21 @@ test("project issue detail renders legacy read-only action buttons", async ({ pa
   );
 });
 
+test("project issue detail edit buttons navigate to legacy edit form route", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await page.locator('.span-left-pane > .board-actrow button[title="Edit"]').click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11/editform`);
+  await expect(page.locator("#issue-form")).toBeVisible();
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await page.locator('.issue-info .right-menu-icons button[title="Edit"]').click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11/editform`);
+  await expect(page.locator("#issue-form")).toBeVisible();
+});
+
 test("project issue detail deletes through legacy confirmation modal", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const { deleteRequests } = await mockProjectIssueDetail(page);

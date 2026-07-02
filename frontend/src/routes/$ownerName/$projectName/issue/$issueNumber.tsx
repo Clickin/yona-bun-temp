@@ -423,6 +423,8 @@ function IssueDetailBody({
   const issueNumber = stringField(issue.issueNumber);
   const issueId = stringField(issue.issueId, issueNumber);
   const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
+  const editIssuePath = `/${ownerName}/${projectName}/issue/${issueNumber}/editform`;
+  const editIssueHref = prefixBasePath(basePath, editIssuePath);
   const issueState = stringField(issue.state, "open").toLowerCase();
   const stateLabel = issueState === "closed" ? "Closed" : "Open";
   const createdLabel = stringField(issue.createdLabel);
@@ -687,10 +689,8 @@ function IssueDetailBody({
                 canBeDeleted={canBeDeleted}
                 canDelete={canDelete}
                 canUpdate={canUpdate}
-                editHref={prefixBasePath(
-                  basePath,
-                  `/${ownerName}/${projectName}/issue/${issueNumber}/editform`,
-                )}
+                editHref={editIssueHref}
+                onEditClick={() => void router.navigate({ to: editIssuePath })}
                 onDeleteClick={() => setDeleteModalOpen(true)}
               />
             </div>
@@ -892,10 +892,8 @@ function IssueDetailBody({
                     canBeDeleted={canBeDeleted}
                     canDelete={canDelete}
                     canUpdate={canUpdate}
-                    editHref={prefixBasePath(
-                      basePath,
-                      `/${ownerName}/${projectName}/issue/${issueNumber}/editform`,
-                    )}
+                    editHref={editIssueHref}
+                    onEditClick={() => void router.navigate({ to: editIssuePath })}
                     onDeleteClick={() => setDeleteModalOpen(true)}
                     wrap={false}
                   />
@@ -1751,6 +1749,7 @@ function IssueActionButtons({
   canDelete,
   canUpdate,
   editHref,
+  onEditClick,
   onDeleteClick,
   wrap = true,
 }: {
@@ -1758,6 +1757,7 @@ function IssueActionButtons({
   canDelete: boolean;
   canUpdate: boolean;
   editHref: string;
+  onEditClick: () => void;
   onDeleteClick: () => void;
   wrap?: boolean;
 }) {
@@ -1769,6 +1769,7 @@ function IssueActionButtons({
           className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
           data-toggle="tooltip"
           title="Edit"
+          onClick={onEditClick}
         >
           <i className="yobicon-edit-2"></i>
         </button>
