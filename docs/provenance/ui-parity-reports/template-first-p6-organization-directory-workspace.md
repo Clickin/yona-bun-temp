@@ -1,7 +1,7 @@
 # Template-First UI Parity Report: P6 Organization/Directory/Workspace
 
 Status: current reset baseline
-Date: 2026-06-27
+Date: 2026-07-02
 Owner packet: P6 organization/directory/workspace
 Mode: template-first mapper baseline; implementation evidence reviewed
 
@@ -96,6 +96,19 @@ are implemented as REST JSON/API-return plus React-rendered legacy DOM.
 | Public/current-user route auth gates | `/me`, `/user/editform/**`, `/user/files`, notification routes. | route guards and session REST | permission | covered in current follow-up | P6 | none | Existing auth/workspace specs and e2e prove anonymous guard/loading states, authenticated render, guest stream hiding, private/public ACL filters, and direct legacy alias compatibility. |
 | Raw visible i18n keys in P6 surfaces | All P6 templates resolve `Messages(...)` labels; raw keys are failures. | Browser proof across P6 files | copy | covered in current follow-up | P6 | none | The P6 whole-screen E2E files listed below include raw-key absence checks across organization, directory, workspace/profile, account settings, user files/issues, search, and notification surfaces. |
 
+## 2026-07-02 Public Profile Width Follow-Up
+
+- Restored legacy `user/view.scala.html` profile proportions by exempting
+  `.page-wrap:has(.user-box)` from the generic breadcrumb fixed-width rule in
+  `frontend/src/app.css`.
+- Legacy source: `_page.less` leaves `.page-wrap` fluid for profile pages while
+  `.user-info-box` floats at `200px` and `.user-stream-box` consumes the
+  remaining width with `20px` left padding.
+- Focused failure before the fix: `frontend/tests/user-public-profile.e2e.ts`
+  measured `.user-stream-box` at `880px` instead of the legacy `1060px`.
+- Verification after the fix: `pnpm --dir frontend test:e2e -- user-public-profile.e2e.ts`
+  passed 7 tests; the P6 representative verifier listed below passed 62 tests.
+
 ## Verifier Evidence
 
 Route/source proof:
@@ -140,6 +153,14 @@ Browser proof:
 - `frontend/tests/user-email-settings.e2e.ts`
 - `frontend/tests/user-token-settings.e2e.ts`
 - `frontend/tests/authenticated-home-empty-notifications.e2e.ts` for notification stream/load-more; `frontend/tests/search-global.e2e.ts` and `frontend/tests/search-organization.e2e.ts` for scoped search chrome.
+
+Focused P6 verifier run on 2026-07-02:
+
+```bash
+pnpm --dir frontend test:e2e -- projects-list.e2e.ts organizations-list.e2e.ts organizations-new.e2e.ts project-create.e2e.ts project-import.e2e.ts organization-home.e2e.ts organization-members-form.e2e.ts organization-issues.e2e.ts organization-boards.e2e.ts organization-pullrequests.e2e.ts organization-settings-form.e2e.ts organization-delete-form.e2e.ts user-public-profile.e2e.ts user-issues.e2e.ts user-files.e2e.ts authenticated-home-empty-notifications.e2e.ts search-organization.e2e.ts
+```
+
+Result: 62 passed.
 
 The integrated desktop sweep status in
 `output/playwright/visual-sweep/latest.json` checked at

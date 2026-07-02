@@ -588,6 +588,10 @@ button[type="submit"]:focus {
   body:has(.site-breadcrumb-outer) .page-wrap {
     width: 1080px;
   }
+
+  body:has(.site-breadcrumb-outer) .page-wrap:has(.user-box) {
+    width: auto;
+  }
 }
 
 .gnb-inner .logo {
