@@ -69,7 +69,11 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     evidenceStatusCounts.set(evidenceStatus, (evidenceStatusCounts.get(evidenceStatus) ?? 0) + 1);
   }
 
-  for (const status of ["targeted-absence-guard-passed", "non-browser-mail-template-recorded"]) {
+  for (const status of [
+    "targeted-absence-guard-passed",
+    "intentional-deviation-recorded",
+    "non-browser-mail-template-recorded",
+  ]) {
     assert.equal(
       summaryCounts.get(status),
       primaryStatusCounts.get(status),
