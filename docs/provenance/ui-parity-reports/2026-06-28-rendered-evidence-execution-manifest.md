@@ -4,11 +4,11 @@ Status: active rendered-evidence plan
 Date: 2026-06-28
 Sources: P0/P1/P2/P3 source-pass reports, `output/playwright/visual-sweep/latest.json`
 
-This manifest maps all 242 source-pass rows to concrete rendered evidence collection units. Existing visual sweep data can prove that a route opened without screenshot diff failure, but it does not by itself close template parity. Each row still needs selector/copy/form/data-hook assertions plus size/position/alignment evidence, or a precise `gap`, `deviation`, or `deferred` record.
+This manifest maps the P0/P1/P2/P3 source-pass reports to concrete rendered evidence collection units. Existing visual sweep data can prove that a route opened without screenshot diff failure, but it does not by itself close template parity. Each row still needs selector/copy/form/data-hook assertions plus size/position/alignment evidence, or a precise `gap`, `deviation`, or `deferred` record.
 
 2026-07-01 current-state correction, refreshed after detail-route restoration: rows that cite deleted detail-route guards such as `frontend/tests/issue-detail-parity.e2e.ts` or `frontend/tests/board-posting-parity.e2e.ts` are historical evidence only unless the current tree contains the named route and test. Active detail coverage now lives in `frontend/tests/project-issue-detail.e2e.ts` and `frontend/tests/project-posts.e2e.ts`.
 
-Source-pass rows mapped: 242
+Manifest detail rows: 257
 Existing sweep: 2026-06-28T07:48:07.381Z; local 174/174; compared 96; diffFailures 0; localFailures 0
 Framed absence guard: `pnpm --dir frontend test:e2e -- tests/authenticated-home-empty-notifications.e2e.ts -g "framed shell absent"` asserts `layout_framed.scala.html` and `siteLayout_framed.scala.html` legacy iframe anchors are intentionally absent from the active SPA root/sidebar surface.
 Project settings guard: `pnpm --dir frontend test:e2e -- project-settings-form.e2e.ts` covers `project/header.scala.html` through a rendered settings caller, including `.user-project-list[data-project-id]`, full root DOM comparison, and header/menu/avatar layout metrics. Earlier focused project selector guards cover create/import/members/settings form anchors.

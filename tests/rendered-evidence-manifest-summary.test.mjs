@@ -28,9 +28,16 @@ test("rendered evidence summary counts match manifest row statuses", () => {
   ]);
   let inSummary = false;
   let inPrioritySummary = false;
+  let manifestDetailRows;
+  let detailRows = 0;
   let visualLayoutMetricsNeeded = 0;
 
   for (const line of source.split("\n")) {
+    const manifestDetailRowsMatch = /^Manifest detail rows: (\d+)$/.exec(line);
+    if (manifestDetailRowsMatch) {
+      manifestDetailRows = Number(manifestDetailRowsMatch[1]);
+      continue;
+    }
     if (line.startsWith("## ")) {
       inSummary = false;
       inPrioritySummary = false;
@@ -70,6 +77,7 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     const priority = columns[0];
     const primaryStatus = columns[3];
     const evidenceStatus = columns[4];
+    detailRows += 1;
     prioritySummaryCounts.set(
       `__actual:${priority}`,
       (prioritySummaryCounts.get(`__actual:${priority}`) ?? 0) + 1,
@@ -81,6 +89,7 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     }
   }
 
+  assert.equal(manifestDetailRows, detailRows, "manifest detail row count drifted");
   for (const status of [
     "targeted-absence-guard-passed",
     "intentional-deviation-recorded",
