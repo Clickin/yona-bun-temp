@@ -89,6 +89,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     },
     onSuccess() {
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
+      router.history.go(0);
     },
     onError(error) {
       if (error instanceof RestApiError && error.status === 403) {
@@ -133,6 +134,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     },
     onSuccess() {
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
+      router.history.go(0);
     },
   });
 

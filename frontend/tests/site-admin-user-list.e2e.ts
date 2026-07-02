@@ -333,7 +333,9 @@ test("site admin user actions follow legacy confirmation and alert flow", async 
   expect(requests.deletedLoginIds).toEqual([]);
 
   await page.locator('[data-toggle="account-delete"]').click();
+  const deleteReloadPromise = page.waitForEvent("framenavigated");
   await page.locator("#accountToggleBtn").click();
+  await deleteReloadPromise;
   await expect.poll(() => requests.deletedLoginIds).toEqual(["doortts"]);
 
   await page.locator('[data-toggle="reset-password"]').click();
@@ -419,7 +421,7 @@ test("site admin user reset password logical failure uses legacy alert text", as
   await expect(page.locator(".action-buttons .alert-success")).toHaveCount(0);
 });
 
-test("site admin user role toggles use legacy row action requests", async ({ page }) => {
+test("site admin user role toggle success reloads like legacy requestAs", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   const requests = await mockSiteUsers(page);
@@ -432,14 +434,19 @@ test("site admin user role toggles use legacy row action requests", async ({ pag
   });
 
   await page.goto(`${basePath}/sites/userList`);
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "toggle-success";
+  });
 
+  const reloadPromise = page.waitForEvent("framenavigated");
   await page.locator('[data-request-uri$="/guest/toggle?state=ACTIVE"]').click();
-  await page.locator('[data-request-uri$="/account-lock/toggle?state=ACTIVE"]').click();
-  await page.locator('[data-request-uri$="/site-admin/toggle"]').click();
+  await reloadPromise;
 
-  await expect
-    .poll(() => requests.toggledActions)
-    .toEqual(["doortts:guest", "doortts:account-lock", "doortts:site-admin"]);
+  await expect.poll(() => requests.toggledActions).toEqual(["doortts:guest"]);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBeUndefined();
 });
 
 test("site admin user list renders legacy update notification badge", async ({ page }) => {
