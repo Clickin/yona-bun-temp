@@ -640,6 +640,11 @@ function ProjectIssuesBody({
                   checked={useTwoColumnMode}
                   onToggle={(checked) => {
                     localStorage.setItem("useTwoColumnMode", String(checked));
+                    if (!checked) {
+                      issueListRef.current
+                        ?.querySelectorAll(".post-item.highlightBg")
+                        .forEach((row) => row.classList.remove("highlightBg"));
+                    }
                     setUseTwoColumnMode(checked);
                   }}
                 />

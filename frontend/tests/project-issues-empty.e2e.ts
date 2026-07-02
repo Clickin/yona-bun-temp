@@ -1452,6 +1452,8 @@ test("project issue two-column mode toggle follows legacy yona.twoColumnMode loc
   await mockProjectIssues(page, "populated");
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
+  await page.reload();
   const toggle = page.locator("#two-column-mode");
   const row = page.locator("#issue-item-42");
   await expect(toggle).not.toBeChecked();
@@ -1468,8 +1470,12 @@ test("project issue two-column mode toggle follows legacy yona.twoColumnMode loc
   await expect(page.locator("#two-column-mode")).toBeChecked();
   await expect(page.locator("#issue-item-42")).toHaveCSS("cursor", "pointer");
 
+  await page.locator("#issue-item-42 .title-wrap > a.title").last().click();
+  await expect(page.locator("#issue-item-42")).toHaveClass(/highlightBg/);
   await page.locator("#two-column-mode").click();
   await expect(page.locator("#two-column-mode")).not.toBeChecked();
+  await expect(page.locator("#issue-item-42")).not.toHaveClass(/highlightBg/);
+  await expect(page.locator("#issue-item-42")).not.toHaveCSS("cursor", "pointer");
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))
     .toBe("false");
@@ -1482,6 +1488,8 @@ test("project issue two-column title click highlights row and changes history li
   await mockProjectIssues(page, "populated");
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
+  await page.reload();
   await page.locator("#two-column-mode").click();
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-two-column-title";
