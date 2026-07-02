@@ -416,6 +416,7 @@ function IssueDetailBody({
   const queryClient = useQueryClient();
   const { t } = useLegacyMessages();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [sharerListOpen, setSharerListOpen] = useState(false);
   const [translatedBodyMarkdown, setTranslatedBodyMarkdown] = useState<string | null>(null);
   const [translatePending, setTranslatePending] = useState(false);
   const ownerName = stringField(issue.ownerName);
@@ -450,6 +451,15 @@ function IssueDetailBody({
   const assigneeLoginId = stringField(issue.assigneeLoginId);
   const sharers = issue.sharers ?? [];
   const sharerValue = sharers.map((sharer) => stringField(sharer.loginId)).join(",");
+  const sharerListVisible = sharers.length > 0 || sharerListOpen;
+  const sharerListClassName = [
+    "sharer-list",
+    sharers.length ? "" : "hideFromDisplayOnly",
+    sharerListOpen ? "sharer-list-border" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const sharerListStyle = sharerListOpen ? { display: "block" } : undefined;
   const bodyMarkdown = translatedBodyMarkdown ?? stringField(issue.bodyMarkdown);
   const bodyChecksum = stringField(issue.bodyChecksum, "body-sha1");
   const historyMarkdown = stringField(issue.historyMarkdown);
@@ -645,9 +655,10 @@ function IssueDetailBody({
                       data-toggle="popover"
                       data-trigger="hover"
                       data-placement="top"
-                      data-content="Share this issue"
+                      data-content="You can share this issue with a user or all members of a project. If this project is private, then shared users can only access this issue and its subtasks."
+                      onClick={() => setSharerListOpen(true)}
                     >
-                      Share issue
+                      Issue Sharing
                     </button>
                   ) : null}
                   <span className="project-btn-item hide show-in-mobile-inline ml4">
@@ -694,21 +705,25 @@ function IssueDetailBody({
                 onDeleteClick={() => setDeleteModalOpen(true)}
               />
             </div>
-            <dl className={sharers.length ? "sharer-list" : "sharer-list hideFromDisplayOnly"}>
+            <dl className={sharerListClassName} style={sharerListStyle}>
               <dt className="issue-share-title mb10">
                 Issue Sharer{" "}
                 <span className="num issue-sharer-count">
                   {sharers.length ? ` ${String(sharers.length)}` : ""}
                 </span>
               </dt>
-              <dd id="sharer-list" className={sharers.length ? "" : "hideFromDisplayOnly"}>
+              <dd
+                id="sharer-list"
+                className={sharerListVisible ? "" : "hideFromDisplayOnly"}
+                style={sharerListStyle}
+              >
                 {canUpdate ? (
                   <input
                     type="hidden"
                     className="bigdrop width100p"
                     id="issueSharer"
                     name="issueSharer"
-                    placeholder="Select sharer"
+                    placeholder="Select Issue Sharer"
                     defaultValue={sharerValue}
                     title=""
                   />
