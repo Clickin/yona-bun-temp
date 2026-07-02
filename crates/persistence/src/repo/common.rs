@@ -130,6 +130,21 @@ pub(super) fn issue_assignable_user_record(user: n4user::Model) -> IssueAssignab
     }
 }
 
+pub(super) fn project_issue_search_user_record(
+    user: n4user::Model,
+) -> ProjectIssueSearchUserRecord {
+    let login_id = user.login_id.unwrap_or_default();
+    let display_name = user.name.unwrap_or_else(|| login_id.clone());
+    let pure_name_only = pure_user_name(&display_name);
+    ProjectIssueSearchUserRecord {
+        avatar_url: String::new(),
+        display_name,
+        login_id,
+        pure_name_only,
+        user_id: user.id,
+    }
+}
+
 pub(super) fn issue_assignable_custom_user_record(
     user: &n4user::Model,
     display_name: &str,

@@ -2534,6 +2534,18 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `frontend/src/issue-detail-shell.spec.tsx`,
   `pnpm agent:cargo -- --outside-sandbox check -p yoram-server`, and full
   `pnpm --dir frontend test`.
+- 2026-07-02 issue list search-user source restoration:
+  `crates/persistence/src/repo/issue_picker.rs`,
+  `crates/server/src/routes/issues/lookups.rs`, and
+  `frontend/src/routes/$ownerName/$projectName/issues.tsx` now expose and use a
+  narrow project issue search-user REST lookup matching
+  `issue/partial_searchform.scala.html` calls to
+  `User.findIssueAuthorsByProjectIdAndMe` and
+  `User.findIssueAssigneeByProjectIdAndMe`, keeping this source distinct from
+  project-wide assignable-users used by `partial_massupdate.scala.html`.
+  Focused coverage:
+  `pnpm agent:cargo-test -- --outside-sandbox --package yoram-server --test issue_assignable_contract project_issue_search_users_follow_legacy_author_and_assignee_sources`
+  and `pnpm --dir frontend test:e2e -- project-issues-empty.e2e.ts`.
 - 2026-06-25 initial admin bootstrap route guard:
   `frontend/src/route-parity.spec.tsx` now pins `/secret` and `/restart` as
   real React routes, requires the `/secret` screen submit path to call

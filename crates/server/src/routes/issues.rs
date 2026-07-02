@@ -85,7 +85,8 @@ use lookups::{
     rest_list_issue_assignable_users, rest_list_issue_mention_users,
     rest_list_issue_parent_options, rest_list_issue_sharable_users,
     rest_list_project_assignable_users, rest_list_project_issue_references,
-    RestIssueMentionUsersQuery, RestIssueParentOptionsQuery, RestProjectIssueReferencesQuery,
+    rest_list_project_issue_search_users, RestIssueMentionUsersQuery, RestIssueParentOptionsQuery,
+    RestProjectIssueReferencesQuery, RestProjectIssueSearchUsersQuery,
 };
 use meta::{
     direct_issue_participation, rest_assign_issue, rest_issue_comment_participation,
@@ -1258,6 +1259,27 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                     let service = service.clone();
                     async move {
                         rest_list_project_assignable_users(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issue-search-users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestProjectIssueSearchUsersQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_list_project_issue_search_users(
                             headers,
                             owner_name,
                             project_name,

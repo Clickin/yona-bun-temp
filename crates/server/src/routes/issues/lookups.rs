@@ -49,6 +49,28 @@ pub(super) struct RestIssueAssignableUsersResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+pub(super) struct RestProjectIssueSearchUsersQuery {
+    role: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectIssueSearchUserItem {
+    avatar_url: String,
+    display_name: String,
+    login_id: String,
+    pure_name_only: String,
+    user_id: i64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct RestProjectIssueSearchUsersResponse {
+    items: Vec<RestProjectIssueSearchUserItem>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub(super) struct RestIssueMentionUsersQuery {
     context: String,
     query: String,
@@ -196,6 +218,56 @@ pub(super) async fn rest_list_project_assignable_users(
         .ok_or_else(|| RestRouteError::not_found("pilot project not found"))?;
 
     Ok(Json(rest_issue_assignable_users_response(record)))
+}
+
+pub(super) async fn rest_list_project_issue_search_users(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestProjectIssueSearchUsersQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestProjectIssueSearchUsersResponse>, RestRouteError> {
+    if owner_name.trim().is_empty()
+        || project_name.trim().is_empty()
+        || !matches!(query.role.as_str(), "author" | "assignee")
+    {
+        return Err(RestRouteError::bad_request(
+            "invalid project issue search users request",
+        ));
+    }
+
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project issue search users require repository backend",
+        ));
+    };
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    require_project_read(repository, &owner_name, &project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let record = repository
+        .list_project_issue_search_users(&owner_name, &project_name, actor_id, &query.role)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot project not found"))?;
+
+    Ok(Json(RestProjectIssueSearchUsersResponse {
+        items: record
+            .items
+            .into_iter()
+            .map(|item| RestProjectIssueSearchUserItem {
+                avatar_url: item.avatar_url,
+                display_name: item.display_name,
+                login_id: item.login_id,
+                pure_name_only: item.pure_name_only,
+                user_id: item.user_id,
+            })
+            .collect(),
+    }))
 }
 
 pub(super) async fn rest_list_issue_assignable_users(

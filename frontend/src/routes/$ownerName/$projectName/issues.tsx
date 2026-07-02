@@ -19,6 +19,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   listProjectIssues,
   listProjectMilestones,
+  listProjectIssueSearchUsers,
   massUpdateIssues,
   readSessionBootstrap,
   searchProjectAssignableUsers,
@@ -48,6 +49,14 @@ type ProjectAssignableUserOptionSource = {
   loginId?: string;
   pureNameOnly?: string;
   type?: string;
+  userId?: string;
+};
+
+type ProjectIssueSearchUserOptionSource = {
+  avatarUrl?: string;
+  displayName?: string;
+  loginId?: string;
+  pureNameOnly?: string;
   userId?: string;
 };
 
@@ -154,6 +163,24 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       }),
     queryKey: ["project", ownerName, projectName, "assignable-users", "issue-list", ""],
   });
+  const issueAuthorsQuery = useQuery({
+    queryFn: () =>
+      listProjectIssueSearchUsers(runtimeConfig, {
+        ownerName,
+        projectName,
+        role: "author",
+      }),
+    queryKey: ["project", ownerName, projectName, "issue-search-users", "author"],
+  });
+  const issueAssigneesQuery = useQuery({
+    queryFn: () =>
+      listProjectIssueSearchUsers(runtimeConfig, {
+        ownerName,
+        projectName,
+        role: "assignee",
+      }),
+    queryKey: ["project", ownerName, projectName, "issue-search-users", "assignee"],
+  });
 
   if (
     !projectQuery.data ||
@@ -162,7 +189,9 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     !openMilestonesQuery.data ||
     !closedMilestonesQuery.data ||
     !labelsQuery.data ||
-    !assignableUsersQuery.data
+    !assignableUsersQuery.data ||
+    !issueAuthorsQuery.data ||
+    !issueAssigneesQuery.data
   ) {
     return null;
   }
@@ -190,6 +219,8 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         isAnonymous={Boolean(sessionQuery.data.isAnonymous)}
         currentUserLoginId={stringField(sessionQuery.data.loginId, "")}
         issues={issuesQuery.data}
+        issueAssignees={issueAssigneesQuery.data.items}
+        issueAuthors={issueAuthorsQuery.data.items}
         labels={labelsQuery.data.labels}
         milestones={{
           closed: closedMilestonesQuery.data.milestones,
@@ -270,6 +301,8 @@ function ProjectIssuesBody({
   currentUserLoginId,
   isAnonymous,
   issues,
+  issueAssignees,
+  issueAuthors,
   labels,
   milestones,
   ownerName,
@@ -283,6 +316,8 @@ function ProjectIssuesBody({
   currentUserLoginId: string;
   isAnonymous: boolean;
   issues: ProjectIssueListRestResponse;
+  issueAssignees: ProjectIssueSearchUserOptionSource[];
+  issueAuthors: ProjectIssueSearchUserOptionSource[];
   labels: Array<Record<string, unknown>>;
   milestones: {
     closed: ProjectMilestone[];
@@ -320,6 +355,8 @@ function ProjectIssuesBody({
             <IssueSearchForm
               basePath={runtimeConfig.basePath}
               currentUserId={currentUserId}
+              issueAssignees={issueAssignees}
+              issueAuthors={issueAuthors}
               issues={issues.items}
               isAnonymous={isAnonymous}
               labels={labels}
@@ -327,6 +364,7 @@ function ProjectIssuesBody({
               ownerName={ownerName}
               projectName={projectName}
               search={search}
+              showCurrentUserOptions={showMassUpdateControls}
               showLabelManagement={showMassUpdateControls}
             />
           </div>
@@ -1352,6 +1390,8 @@ function QuickSearch({
 function IssueSearchForm({
   basePath,
   currentUserId,
+  issueAssignees,
+  issueAuthors,
   issues,
   isAnonymous,
   labels,
@@ -1359,10 +1399,13 @@ function IssueSearchForm({
   ownerName,
   projectName,
   search,
+  showCurrentUserOptions,
   showLabelManagement,
 }: {
   basePath: string;
   currentUserId: string;
+  issueAssignees: ProjectIssueSearchUserOptionSource[];
+  issueAuthors: ProjectIssueSearchUserOptionSource[];
   issues: RestIssueListItem[];
   isAnonymous: boolean;
   labels: Array<Record<string, unknown>>;
@@ -1373,11 +1416,12 @@ function IssueSearchForm({
   ownerName: string;
   projectName: string;
   search: ProjectIssuesSearch;
+  showCurrentUserOptions: boolean;
   showLabelManagement: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const authors = uniqueIssueUsers(issues, "author");
-  const assignees = uniqueIssueUsers(issues, "assignee");
+  const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
+  const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
   const hasMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
 
   return (
@@ -1426,7 +1470,7 @@ function IssueSearchForm({
               defaultValue={search.authorId}
             >
               <option value="">{t("common.order.all")}</option>
-              {!isAnonymous ? (
+              {!isAnonymous && showCurrentUserOptions ? (
                 <option value={currentUserId}>{t("issue.list.authoredByMe")}</option>
               ) : null}
               {authors.map((author) => (
@@ -1456,7 +1500,7 @@ function IssueSearchForm({
             >
               <option value="">{t("common.order.all")}</option>
               <option value="0">{t("issue.noAssignee")}</option>
-              {!isAnonymous ? (
+              {!isAnonymous && showCurrentUserOptions ? (
                 <option value={currentUserId}>{t("issue.list.assignedToMe")}</option>
               ) : null}
               {assignees.map((assignee) => (
@@ -2013,6 +2057,31 @@ function projectAssignableUserOptions(
   }
 
   return Array.from(users.values());
+}
+
+function projectIssueSearchUserOptions(
+  searchUsers: ProjectIssueSearchUserOptionSource[],
+  issues: RestIssueListItem[],
+  role: "assignee" | "author",
+) {
+  if (searchUsers.length === 0) {
+    return uniqueIssueUsers(issues, role);
+  }
+
+  const users: Array<{ avatarUrl: string; id: string; label: string; loginId: string }> = [];
+  for (const item of searchUsers) {
+    const loginId = stringField(item.loginId, "");
+    const id = stringField(item.userId, "");
+    if (id && loginId) {
+      users.push({
+        avatarUrl: stringField(item.avatarUrl, "/assets/images/default-avatar-32.png"),
+        id,
+        label: stringField(item.displayName, stringField(item.pureNameOnly, "")),
+        loginId,
+      });
+    }
+  }
+  return users;
 }
 
 function uniqueUsers(issues: RestIssueListItem[], currentUserId: string) {

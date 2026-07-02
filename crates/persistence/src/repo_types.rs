@@ -203,6 +203,20 @@ pub struct IssueAssignableUserSearchRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectIssueSearchUserRecord {
+    pub avatar_url: String,
+    pub display_name: String,
+    pub login_id: String,
+    pub pure_name_only: String,
+    pub user_id: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectIssueSearchUserListRecord {
+    pub items: Vec<ProjectIssueSearchUserRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueMentionUserRecord {
     pub avatar_url: String,
     pub display_name: String,

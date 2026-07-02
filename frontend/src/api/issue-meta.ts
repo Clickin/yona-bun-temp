@@ -45,6 +45,10 @@ export type ProjectAssignableUsersInput = ProjectScopeInput & {
   type?: IssueAssignableUserSearchType | string;
 };
 
+export type ProjectIssueSearchUsersInput = ProjectScopeInput & {
+  role: "assignee" | "author";
+};
+
 export type ProjectIssueReferencesInput = ProjectScopeInput & {
   query: string;
 };
@@ -62,6 +66,18 @@ export type IssueAssignableUsersResponse = {
   items: IssueAssignableUserItem[];
   total: number;
   truncated: boolean;
+};
+
+export type ProjectIssueSearchUserItem = {
+  avatarUrl: string;
+  displayName: string;
+  loginId: string;
+  pureNameOnly: string;
+  userId: string;
+};
+
+export type ProjectIssueSearchUsersResponse = {
+  items: ProjectIssueSearchUserItem[];
 };
 
 export type IssueMentionUserSearchContext = "issue-body" | "issue-comment";
@@ -255,6 +271,20 @@ function normalizeIssueMentionUsersResponse(
     items,
     total: response.total ?? items.length,
     truncated: response.truncated ?? false,
+  };
+}
+
+function normalizeProjectIssueSearchUsersResponse(
+  response: Partial<ProjectIssueSearchUsersResponse>,
+): ProjectIssueSearchUsersResponse {
+  return {
+    items: (response.items ?? []).map((item) => ({
+      avatarUrl: item.avatarUrl ?? "",
+      displayName: item.displayName ?? "",
+      loginId: item.loginId ?? "",
+      pureNameOnly: item.pureNameOnly ?? "",
+      userId: String(item.userId ?? ""),
+    })),
   };
 }
 
@@ -477,6 +507,22 @@ export function searchProjectAssignableUsersRest(
       fetchImpl,
     },
   ).then(normalizeIssueAssignableUsersResponse);
+}
+
+export function listProjectIssueSearchUsersRest(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectIssueSearchUsersInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectIssueSearchUsersResponse> {
+  const query = new URLSearchParams();
+  query.set("role", input.role);
+  return restFetch<Partial<ProjectIssueSearchUsersResponse>>(
+    runtimeConfig,
+    `${projectPath(input)}/issue-search-users?${query.toString()}`,
+    {
+      fetchImpl,
+    },
+  ).then(normalizeProjectIssueSearchUsersResponse);
 }
 
 export function searchProjectIssueReferencesRest(

@@ -39,6 +39,7 @@ import {
   searchIssueAssignableUsersRest,
   searchIssueMentionUsersRest,
   searchIssueSharableUsersRest,
+  listProjectIssueSearchUsersRest,
   searchProjectAssignableUsersRest,
   searchProjectIssueReferencesRest,
   shareIssueRest,
@@ -56,6 +57,8 @@ import {
   type IssueMentionUsersResponse,
   type IssueSharableUsersInput,
   type ProjectAssignableUsersInput,
+  type ProjectIssueSearchUsersInput,
+  type ProjectIssueSearchUsersResponse,
   type ProjectIssueReferencesInput,
   type ProjectIssueReferencesResponse,
 } from "./api/issue-meta";
@@ -1110,6 +1113,14 @@ export async function searchProjectAssignableUsers(
   fetchImpl: typeof fetch = fetch,
 ): Promise<IssueAssignableUsersResponse> {
   return searchProjectAssignableUsersRest(runtimeConfig, input, fetchImpl);
+}
+
+export async function listProjectIssueSearchUsers(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectIssueSearchUsersInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectIssueSearchUsersResponse> {
+  return listProjectIssueSearchUsersRest(runtimeConfig, input, fetchImpl);
 }
 
 export async function searchProjectIssueReferences(

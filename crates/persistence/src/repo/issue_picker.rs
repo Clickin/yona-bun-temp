@@ -137,6 +137,58 @@ impl AppRepositoryImpl<'_> {
         .map(Some)
     }
 
+    pub async fn list_project_issue_search_users(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        actor_id: Option<i64>,
+        role: &str,
+    ) -> Result<Option<ProjectIssueSearchUserListRecord>, DbErr> {
+        let Some(project_record) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+
+        let user_ids = match role {
+            "author" => issue::Entity::find()
+                .filter(issue::Column::ProjectId.eq(Some(project_record.id)))
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .filter_map(|issue| issue.author_id)
+                .collect::<HashSet<_>>(),
+            "assignee" => assignee::Entity::find()
+                .filter(assignee::Column::ProjectId.eq(Some(project_record.id)))
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .filter_map(|assignee| assignee.user_id)
+                .collect::<HashSet<_>>(),
+            _ => return Ok(Some(ProjectIssueSearchUserListRecord { items: Vec::new() })),
+        };
+
+        let mut users = n4user::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter(|user| user_ids.contains(&user.id) || actor_id == Some(user.id))
+            .map(project_issue_search_user_record)
+            .collect::<Vec<_>>();
+
+        users.sort_by(|left, right| {
+            normalize_identity(&left.display_name)
+                .cmp(&normalize_identity(&right.display_name))
+                .then_with(|| {
+                    normalize_identity(&left.login_id).cmp(&normalize_identity(&right.login_id))
+                })
+        });
+        users.dedup_by_key(|user| user.user_id);
+
+        Ok(Some(ProjectIssueSearchUserListRecord { items: users }))
+    }
+
     pub async fn list_issue_assignable_users(
         &self,
         owner_name: &str,

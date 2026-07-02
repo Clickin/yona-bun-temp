@@ -290,6 +290,73 @@ async fn project_assignable_users_blank_query_preserves_legacy_default_rows() {
 }
 
 #[tokio::test]
+async fn project_issue_search_users_follow_legacy_author_and_assignee_sources() {
+    let (app, repo, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    repo.add_project_membership(project.id, member_id, "member")
+        .await
+        .unwrap();
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "Search user issue",
+    )
+    .await;
+    assign_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "member",
+    )
+    .await;
+
+    let authors = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issue-search-users?role=author",
+            Some(&member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(login_ids(&authors), vec!["member", "owner"]);
+
+    let assignees = response_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issue-search-users?role=assignee",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(login_ids(&assignees), vec!["member", "owner"]);
+    assert_eq!(assignees["items"][0]["userId"].as_i64(), Some(member_id));
+}
+
+#[tokio::test]
 async fn issue_assignable_users_blank_query_preserves_legacy_pseudo_rows() {
     // Guards the issues/lookups.rs and issues/legacy_external.rs assignable-users adapters.
     let (app, repo, _db) = build_app_with_repository().await;
