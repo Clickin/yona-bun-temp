@@ -174,6 +174,8 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
     await expect(script).toHaveAttribute("defer", "");
   }
 
+  await expectIssueDetailSelect2Partial(page, basePath);
+
   expect(
     await page
       .locator("script:not([src])")
@@ -265,6 +267,47 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
   expect(inlineHandlers).toContain(
     `detectPageChange("${basePath}/-_-api/v1/owners/admin/projects/sample/issues/11/detectChange")`,
   );
+}
+
+async function expectIssueDetailSelect2Partial(page: Page, basePath: string) {
+  const select2Scripts = [
+    `${basePath}/assets/javascripts/lib/select2/select2.js`,
+    `${basePath}/assets/javascripts/common/yobi.ui.Select2.js`,
+  ];
+  for (const src of select2Scripts) {
+    const scripts = page.locator(`script[src="${src}"]`);
+    await expect(scripts).toHaveCount(2);
+    await expect(scripts.nth(1)).toHaveAttribute("defer", "");
+  }
+
+  const templates = [
+    {
+      id: "tplSelect2FormatUser",
+      text: '<div class="usf-group" title="${name} ${loginId}">',
+    },
+    {
+      id: "tplSelect2FormatMilestone",
+      text: '<div title="[${stateLabel}] ${name}">',
+    },
+    {
+      id: "tplSelect2Projects",
+      text: '<span class="avatar-wrap smaller"><img src="${avatarURL}" width="16" height="16"></span>',
+    },
+    {
+      id: "tplSelect2ProjectsWithoutAvatar",
+      text: '<span class="width25px"></span>',
+    },
+    {
+      id: "tplSelect2FormatIssues",
+      text: '<div title="${name}">',
+    },
+  ];
+
+  for (const template of templates) {
+    const nodes = page.locator(`script#${template.id}[type="text/x-jquery-tmpl"]`);
+    await expect(nodes).toHaveCount(2);
+    expect(await nodes.nth(1).textContent()).toContain(template.text);
+  }
 }
 
 async function inlineScriptContaining(page: Page, text: string) {

@@ -8,7 +8,7 @@ import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { RestApiError } from "../../../../api/rest-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
+import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../../../../i18n";
 import type { ProjectContainer, ProjectMilestone, YonaRecord } from "../../../../api/types";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
@@ -128,6 +128,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         basePath={runtimeConfig.basePath}
         ownerName={ownerName}
         projectName={projectName}
+        supportedLanguages={runtimeConfig.supportedLanguages}
       />
       <IssueDetailBody
         basePath={runtimeConfig.basePath}
@@ -156,10 +157,12 @@ function IssueDetailAssets({
   basePath,
   ownerName,
   projectName,
+  supportedLanguages,
 }: {
   basePath: string;
   ownerName: string;
   projectName: string;
+  supportedLanguages?: string[];
 }) {
   return (
     <>
@@ -178,6 +181,7 @@ function IssueDetailAssets({
         type="text/javascript"
         src={prefixBasePath(basePath, "/assets/javascripts/lib/marked.js")}
       ></script>
+      <IssueDetailSelect2Partial basePath={basePath} supportedLanguages={supportedLanguages} />
       <script
         defer
         type="text/javascript"
@@ -285,6 +289,74 @@ function IssueDetailAssets({
         type="text/javascript"
         src={prefixBasePath(basePath, "/assets/javascripts/common/yona.ReceiverList.js")}
       ></script>
+    </>
+  );
+}
+
+function IssueDetailSelect2Partial({
+  basePath,
+  supportedLanguages,
+}: {
+  basePath: string;
+  supportedLanguages?: string[];
+}) {
+  const language = resolveInitialLanguage(supportedLanguages);
+  const localeScript =
+    language === "ko-KR"
+      ? "/assets/javascripts/lib/select2/select2_locale_ko.js"
+      : language === "ja-JP"
+        ? "/assets/javascripts/lib/select2/select2_locale_ja.js"
+        : "";
+
+  return (
+    <>
+      <script
+        defer
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/select2/select2.js")}
+      ></script>
+      <script
+        defer
+        src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.ui.Select2.js")}
+      ></script>
+      {localeScript ? <script defer src={prefixBasePath(basePath, localeScript)}></script> : null}
+      <script
+        id="tplSelect2FormatUser"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html:
+            '<div class="usf-group" title="${name} ${loginId}">\n    <span class="avatar-wrap smaller"><img src="${avatarURL}" width="20" height="20"></span>\n    <strong class="name">${name}</strong>\n    <span class="loginid">${loginId}</span>\n</div>',
+        }}
+      />
+      <script
+        id="tplSelect2FormatMilestone"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html: '<div title="[${stateLabel}] ${name}">\n    ${name}\n</div>',
+        }}
+      />
+      <script
+        id="tplSelect2Projects"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html:
+            '<div class="usf-group" title="${name}">\n    <span class="avatar-wrap smaller"><img src="${avatarURL}" width="16" height="16"></span>\n    <span class="loginid">${owner}</span>\n    <span class="name">${name}</span>\n</div>',
+        }}
+      />
+      <script
+        id="tplSelect2ProjectsWithoutAvatar"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html:
+            '<div class="usf-group" title="${name}">\n    <span class="width25px"></span>\n    <span class="loginid">${owner}</span>\n    <span class="name">${name}</span>\n</div>',
+        }}
+      />
+      <script
+        id="tplSelect2FormatIssues"
+        type="text/x-jquery-tmpl"
+        dangerouslySetInnerHTML={{
+          __html: '<div title="${name}">\n    ${name}\n</div>',
+        }}
+      />
     </>
   );
 }
