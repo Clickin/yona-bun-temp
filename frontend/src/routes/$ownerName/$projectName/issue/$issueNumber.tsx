@@ -2850,9 +2850,7 @@ function IssueIndexTimeline({
   issue: RestIssueDetailResponse;
 }) {
   const comments = issue.comments ?? [];
-  if (!comments.length) {
-    return <EmptyTimeline />;
-  }
+  const hasTimelineItems = comments.length + (issue.timeline ?? []).length > 0;
 
   return (
     <div id="comments" className="board-comment-wrap">
@@ -2861,16 +2859,18 @@ function IssueIndexTimeline({
           <div className="comment-header">
             <strong>Comment</strong> <strong className="num">{comments.length}</strong>
           </div>
-          <ul className="comments">
-            {comments.map((comment) => (
-              <IssueIndexComment
-                basePath={basePath}
-                comment={comment}
-                currentUserLoginId={currentUserLoginId}
-                key={stringField(comment.id)}
-              />
-            ))}
-          </ul>
+          {hasTimelineItems ? (
+            <ul className="comments">
+              {comments.map((comment) => (
+                <IssueIndexComment
+                  basePath={basePath}
+                  comment={comment}
+                  currentUserLoginId={currentUserLoginId}
+                  key={stringField(comment.id)}
+                />
+              ))}
+            </ul>
+          ) : null}
         </div>
       </div>
     </div>

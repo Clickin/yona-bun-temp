@@ -626,6 +626,12 @@ test("project issue detail renders legacy draft header state", async ({ page }) 
   expect(await canonicalize(page, ".board-header.issue")).toEqual(
     await canonicalizeHtml(page, expectedHeader),
   );
+  expect(await canonicalize(page, ".span-right-pane #comments")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><strong>Comment</strong> <strong class="num">0</strong></div></div></div></div>`,
+    ),
+  );
 });
 
 test("project issue detail hides watch button when legacy WATCH is not allowed", async ({
@@ -1427,6 +1433,12 @@ test("project issue detail renders legacy state-change timeline event", async ({
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#event-88 .state.closed")).toHaveText("Closed");
   await expect(page.locator(".span-right-pane #comments li.event-index")).toHaveCount(0);
+  expect(await canonicalize(page, ".span-right-pane #comments")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><strong>Comment</strong> <strong class="num">0</strong></div><ul class="comments"></ul></div></div></div>`,
+    ),
+  );
 
   expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
     await canonicalizeHtml(page, LEFT_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath)),
