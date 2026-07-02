@@ -121,6 +121,20 @@ are implemented as REST JSON/API-return plus React-rendered legacy DOM.
 - Verification: `pnpm --dir frontend test:e2e -- organization-home.e2e.ts`
   passed 6 tests.
 
+## 2026-07-02 Organization Settings Layout Metrics Follow-Up
+
+- Reinstated current browser metric proof for `organization/setting.scala.html`
+  in `frontend/tests/organization-settings-form.e2e.ts`; no TSX/CSS structure
+  change was required because the route already renders the legacy
+  `.box-wrap`, `.setting-box`, `.logo-wrap`, and `.logo-desc` styling.
+- The metric guard covers the settings submenu spacing, `#saveSetting` form
+  margin, gray bubble radius/background, top/bottom box padding, rendered
+  420px left/right settings columns with legacy 399px content width plus
+  padding/border, 260x188 logo area, 120px logo description rail, uppercase
+  point styling, 380x80 description textarea, and centered save row.
+- Verification: `pnpm --dir frontend test:e2e -- organization-settings-form.e2e.ts`
+  passed 5 tests.
+
 ## Verifier Evidence
 
 Route/source proof:

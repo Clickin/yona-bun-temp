@@ -163,6 +163,50 @@ test("organization settings form matches legacy organization/setting.scala.html 
   );
 });
 
+test("organization settings form keeps legacy setting.scala.html layout metrics", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationSettings(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/settingform`);
+  await expect(page.locator("#saveSetting")).toBeVisible();
+
+  const metrics = await organizationSettingsMetrics(page);
+
+  expect(metrics.pageWrap.marginTop).toBe("20px");
+  expect(metrics.settingMenu.marginBottom).toBe("15px");
+  expect(metrics.form.margin).toBe("0px");
+  expect(metrics.bubble.backgroundColor).toBe("rgb(247, 247, 247)");
+  expect(metrics.bubble.borderRadius).toBe("5px");
+  expect(metrics.topBox.paddingTop).toBe("20px");
+  expect(metrics.topBox.paddingBottom).toBe("20px");
+  expect(metrics.leftBox.width).toBe(420);
+  expect(metrics.leftBox.paddingRight).toBe("20px");
+  expect(metrics.leftBox.borderRight).toBe("1px solid rgb(255, 255, 255)");
+  expect(metrics.rightBox.width).toBe(420);
+  expect(metrics.rightBox.paddingLeft).toBe("20px");
+  expect(metrics.rightBox.borderLeft).toBe("1px solid rgb(212, 212, 212)");
+  expect(metrics.rightBox.xGapFromLeft).toBe(0);
+  expect(metrics.logo.width).toBe(260);
+  expect(metrics.logo.height).toBe(188);
+  expect(metrics.logo.borderRadius).toBe("10px");
+  expect(metrics.logoDesc.width).toBe(120);
+  expect(metrics.logoDesc.marginLeft).toBe("10px");
+  expect(metrics.logoDesc.fontSize).toBe("12px");
+  expect(metrics.logoPoint.color).toBe("rgb(81, 170, 204)");
+  expect(metrics.logoPoint.textTransform).toBe("uppercase");
+  expect(metrics.logoUploadRow.marginTop).toBe("25px");
+  expect(metrics.nameLabel.fontWeight).toBe("700");
+  expect(metrics.nameRow.margin).toBe("3px 0px 1px");
+  expect(metrics.textarea.width).toBe("380px");
+  expect(metrics.textarea.height).toBe("80px");
+  expect(metrics.textarea.resize).toBe("vertical");
+  expect(metrics.bottomBox.padding).toBe("20px 0px 12px");
+  expect(metrics.bottomBox.textAlign).toBe("center");
+  expect(metrics.saveButton.height).toBeGreaterThanOrEqual(30);
+});
+
 test("organization settings menu members link preserves legacy href with SPA transition", async ({
   page,
 }) => {
@@ -245,6 +289,118 @@ test("organization settings menu board link preserves legacy href with SPA trans
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Board");
   await expect(page.locator("#option_form")).toBeVisible();
 });
+
+async function organizationSettingsMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrap = mustElement(".page-wrap-outer > .project-page-wrap");
+    const settingMenu = mustElement(".project-page-wrap > .nav.nav-tabs");
+    const form = mustElement("#saveSetting");
+    const bubble = mustElement("#saveSetting > .bubble-wrap.gray");
+    const topBox = mustElement("#saveSetting .box-wrap.top.frm-wrap");
+    const leftBox = mustElement("#saveSetting .setting-box.left");
+    const rightBox = mustElement("#saveSetting .setting-box.right");
+    const logo = mustElement("#saveSetting .logo-wrap");
+    const logoDesc = mustElement("#saveSetting .logo-desc");
+    const logoPoint = mustElement("#saveSetting .logo-desc .point");
+    const logoUploadRow = mustElement("#saveSetting .logo-desc .descs li:last-of-type");
+    const nameLabel = mustElement('label[for="project-name"]');
+    const nameRow = mustElement("#saveSetting .setting-box.right dt");
+    const textarea = mustElement("#project-desc");
+    const bottomBox = mustElement("#saveSetting .box-wrap.bottom");
+    const saveButton = mustElement("#save");
+    const leftBoxRect = leftBox.getBoundingClientRect();
+    const rightBoxRect = rightBox.getBoundingClientRect();
+    const pageWrapStyle = getComputedStyle(pageWrap);
+    const settingMenuStyle = getComputedStyle(settingMenu);
+    const formStyle = getComputedStyle(form);
+    const bubbleStyle = getComputedStyle(bubble);
+    const topBoxStyle = getComputedStyle(topBox);
+    const leftBoxStyle = getComputedStyle(leftBox);
+    const rightBoxStyle = getComputedStyle(rightBox);
+    const logoStyle = getComputedStyle(logo);
+    const logoDescStyle = getComputedStyle(logoDesc);
+    const logoPointStyle = getComputedStyle(logoPoint);
+    const logoUploadRowStyle = getComputedStyle(logoUploadRow);
+    const nameLabelStyle = getComputedStyle(nameLabel);
+    const nameRowStyle = getComputedStyle(nameRow);
+    const textareaStyle = getComputedStyle(textarea);
+    const bottomBoxStyle = getComputedStyle(bottomBox);
+
+    return {
+      pageWrap: {
+        marginTop: pageWrapStyle.marginTop,
+      },
+      settingMenu: {
+        marginBottom: settingMenuStyle.marginBottom,
+      },
+      form: {
+        margin: formStyle.margin,
+      },
+      bubble: {
+        backgroundColor: bubbleStyle.backgroundColor,
+        borderRadius: bubbleStyle.borderRadius,
+      },
+      topBox: {
+        paddingBottom: topBoxStyle.paddingBottom,
+        paddingTop: topBoxStyle.paddingTop,
+      },
+      leftBox: {
+        borderRight: `${leftBoxStyle.borderRightWidth} ${leftBoxStyle.borderRightStyle} ${leftBoxStyle.borderRightColor}`,
+        paddingRight: leftBoxStyle.paddingRight,
+        width: Math.round(leftBoxRect.width),
+      },
+      rightBox: {
+        borderLeft: `${rightBoxStyle.borderLeftWidth} ${rightBoxStyle.borderLeftStyle} ${rightBoxStyle.borderLeftColor}`,
+        paddingLeft: rightBoxStyle.paddingLeft,
+        width: Math.round(rightBoxRect.width),
+        xGapFromLeft: Math.round(rightBoxRect.left - leftBoxRect.right),
+      },
+      logo: {
+        borderRadius: logoStyle.borderRadius,
+        height: Math.round(logo.getBoundingClientRect().height),
+        width: Math.round(logo.getBoundingClientRect().width),
+      },
+      logoDesc: {
+        fontSize: logoDescStyle.fontSize,
+        marginLeft: logoDescStyle.marginLeft,
+        width: Math.round(logoDesc.getBoundingClientRect().width),
+      },
+      logoPoint: {
+        color: logoPointStyle.color,
+        textTransform: logoPointStyle.textTransform,
+      },
+      logoUploadRow: {
+        marginTop: logoUploadRowStyle.marginTop,
+      },
+      nameLabel: {
+        fontWeight: nameLabelStyle.fontWeight,
+      },
+      nameRow: {
+        margin: nameRowStyle.margin,
+      },
+      textarea: {
+        height: textareaStyle.height,
+        resize: textareaStyle.resize,
+        width: textareaStyle.width,
+      },
+      bottomBox: {
+        padding: bottomBoxStyle.padding,
+        textAlign: bottomBoxStyle.textAlign,
+      },
+      saveButton: {
+        height: Math.round(saveButton.getBoundingClientRect().height),
+      },
+    };
+
+    function mustElement(selector: string) {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing selector: ${selector}`);
+      }
+      return element;
+    }
+  });
+}
 
 async function mockOrganizationSettings(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
