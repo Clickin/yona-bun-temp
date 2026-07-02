@@ -209,6 +209,54 @@ test("project delete menu settings link preserves legacy href with SPA transitio
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 
+test("project delete header favorite star posts and toggles starred class", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectAdmin(page, { favoriteRequests });
+
+  await page.goto(`${basePath}/admin/sample/deleteform`);
+  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  await expect(favoriteStar).not.toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(favoriteStar).toHaveClass(/starred/);
+});
+
+test("project delete header favorite star removes starred class when unfavorited", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectAdmin(page, {
+    favoriteRequests,
+    favoriteResponseFavorited: false,
+    project: { isFavorite: true, isFavorited: true },
+  });
+
+  await page.goto(`${basePath}/admin/sample/deleteform`);
+  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  await expect(favoriteStar).toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(favoriteStar).not.toHaveClass(/starred/);
+});
+
 async function readDesktopDeleteMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = requireElement(".page-wrap-outer");
@@ -276,7 +324,14 @@ async function readDesktopDeleteMetrics(page: Page) {
   });
 }
 
-async function mockProjectAdmin(page: Page) {
+async function mockProjectAdmin(
+  page: Page,
+  options: {
+    favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
+    favoriteResponseFavorited?: boolean;
+    project?: Partial<ReturnType<typeof projectSettings>>;
+  } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -293,10 +348,24 @@ async function mockProjectAdmin(page: Page) {
       }),
     });
   });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-delete" },
+      body: JSON.stringify({
+        isAuthenticated: true,
+        user: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "admin",
+          name: "Site Admin",
+        },
+      }),
+    });
+  });
   await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(projectSettings()),
+      body: JSON.stringify({ ...projectSettings(), ...options.project }),
     });
   });
   await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
@@ -313,6 +382,17 @@ async function mockProjectAdmin(page: Page) {
         permissions: { canDelete: true, canUpdate: true },
         projectName: "sample",
       }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
+    const request = route.request();
+    options.favoriteRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-delete",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
     });
   });
 }
