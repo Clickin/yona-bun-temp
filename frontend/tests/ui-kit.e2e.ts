@@ -483,6 +483,16 @@ test("standalone UI kit root shell mounts legacy select2 formatter templates", a
 
   await page.goto(`${basePath}/_UIKit`);
 
+  await expect(
+    page.locator('link[href$="/legacy-assets/javascripts/lib/select2/select2.css"]'),
+  ).toHaveAttribute("rel", "stylesheet");
+  expect(await readSelect2ScriptOrder(page, basePath)).toEqual([
+    `${basePath}/assets/javascripts/lib/select2/select2.js`,
+    `${basePath}/assets/javascripts/common/yobi.ui.Select2.js`,
+    "tplSelect2FormatUser",
+  ]);
+  await expect(page.locator('script[src$="/select2_locale_ko.js"]')).toHaveCount(0);
+  await expect(page.locator('script[src$="/select2_locale_ja.js"]')).toHaveCount(0);
   expect(await readRenderedScriptTemplates(page, SELECT2_TEMPLATE_IDS)).toEqual(expectedTemplates);
   expect(await readRenderedScriptTemplateMetrics(page, SELECT2_TEMPLATE_IDS)).toEqual({
     displays: ["none", "none", "none", "none", "none"],
@@ -498,6 +508,40 @@ test("standalone UI kit root shell mounts legacy select2 formatter templates", a
     ],
     widths: [0, 0, 0, 0, 0],
   });
+});
+
+test("standalone UI kit root shell emits legacy select2 Korean locale script", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await setBrowserLanguage(page, "ko-KR");
+
+  await page.goto(`${basePath}/_UIKit`);
+
+  await expect(page.locator('script[src$="/select2_locale_ko.js"]')).toHaveCount(1);
+  await expect(page.locator('script[src$="/select2_locale_ja.js"]')).toHaveCount(0);
+  expect(await readSelect2ScriptOrder(page, basePath)).toEqual([
+    `${basePath}/assets/javascripts/lib/select2/select2.js`,
+    `${basePath}/assets/javascripts/common/yobi.ui.Select2.js`,
+    `${basePath}/assets/javascripts/lib/select2/select2_locale_ko.js`,
+    "tplSelect2FormatUser",
+  ]);
+});
+
+test("standalone UI kit root shell emits legacy select2 Japanese locale script", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await setBrowserLanguage(page, "ja-JP");
+
+  await page.goto(`${basePath}/_UIKit`);
+
+  await expect(page.locator('script[src$="/select2_locale_ja.js"]')).toHaveCount(1);
+  await expect(page.locator('script[src$="/select2_locale_ko.js"]')).toHaveCount(0);
+  expect(await readSelect2ScriptOrder(page, basePath)).toEqual([
+    `${basePath}/assets/javascripts/lib/select2/select2.js`,
+    `${basePath}/assets/javascripts/common/yobi.ui.Select2.js`,
+    `${basePath}/assets/javascripts/lib/select2/select2_locale_ja.js`,
+    "tplSelect2FormatUser",
+  ]);
 });
 
 test("standalone UI kit root shell dismisses legacy modal buttons", async ({ page }) => {
@@ -963,6 +1007,35 @@ async function readRenderedScriptTemplates(page: Page, ids: string[]) {
       }),
     );
   }, ids);
+}
+
+async function readSelect2ScriptOrder(page: Page, basePath: string) {
+  return page.evaluate((expectedBasePath) => {
+    const relevantScripts = [...document.scripts]
+      .map((script) => script.id || script.getAttribute("src") || "")
+      .filter(
+        (value) =>
+          value === "tplSelect2FormatUser" ||
+          value === `${expectedBasePath}/assets/javascripts/lib/select2/select2.js` ||
+          value === `${expectedBasePath}/assets/javascripts/common/yobi.ui.Select2.js` ||
+          value === `${expectedBasePath}/assets/javascripts/lib/select2/select2_locale_ko.js` ||
+          value === `${expectedBasePath}/assets/javascripts/lib/select2/select2_locale_ja.js`,
+      );
+    return relevantScripts.slice(0, relevantScripts.indexOf("tplSelect2FormatUser") + 1);
+  }, basePath);
+}
+
+async function setBrowserLanguage(page: Page, language: string) {
+  await page.addInitScript((nextLanguage) => {
+    Object.defineProperty(navigator, "language", {
+      configurable: true,
+      get: () => nextLanguage,
+    });
+    Object.defineProperty(navigator, "languages", {
+      configurable: true,
+      get: () => [nextLanguage],
+    });
+  }, language);
 }
 
 async function readRenderedScriptTemplateMetrics(page: Page, ids: string[]) {

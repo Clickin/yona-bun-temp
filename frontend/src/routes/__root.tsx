@@ -3,7 +3,7 @@ import { Link, Outlet, createRootRouteWithContext, useRouterState } from "@tanst
 import { readAuthUiCapabilitiesRest, signInWithPasswordRest } from "../api/auth";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
 import { readSessionBootstrap } from "../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
+import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
 export interface AppRouterContext {
@@ -447,6 +447,7 @@ function RootResetShell() {
               '<div class="toast" tabindex="-1"><div class="btn-dismiss"><button type="button" class="btn-transparent">&times;</button></div><div class="center-text"><span class="v"></span><div class="msg"></div></div></div>'
             }
           </script>
+          <LegacySelect2Assets runtimeConfig={runtimeConfig} />
           <LegacySelect2Templates />
           {rendersStandaloneLoginState ? null : (
             <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
@@ -490,6 +491,35 @@ async function submitLoginDialogForm(formData: FormData, runtimeConfig: RuntimeC
     password: String(formData.get("password") ?? ""),
     rememberMe: formData.get("rememberMe") === "on",
   });
+}
+
+function LegacySelect2Assets({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const language = resolveInitialLanguage(runtimeConfig.supportedLanguages);
+  const localeScript =
+    language === "ko-KR"
+      ? "/assets/javascripts/lib/select2/select2_locale_ko.js"
+      : language === "ja-JP"
+        ? "/assets/javascripts/lib/select2/select2_locale_ja.js"
+        : "";
+
+  return (
+    <>
+      <script
+        defer
+        src={prefixBasePath(runtimeConfig.basePath, "/assets/javascripts/lib/select2/select2.js")}
+      ></script>
+      <script
+        defer
+        src={prefixBasePath(
+          runtimeConfig.basePath,
+          "/assets/javascripts/common/yobi.ui.Select2.js",
+        )}
+      ></script>
+      {localeScript ? (
+        <script defer src={prefixBasePath(runtimeConfig.basePath, localeScript)}></script>
+      ) : null}
+    </>
+  );
 }
 
 function LegacySelect2Templates() {
