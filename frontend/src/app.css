@@ -4257,12 +4257,15 @@ div.markdown-preview {
 }
 
 .issue-detail-page .board-actrow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 14px;
+  padding-right: 15px;
+  margin: 20px 0;
+  overflow: auto;
+}
+
+.issue-detail-page .board-footer {
+  margin-top: 20px;
+  font-size: 0;
+  text-align: right;
 }
 
 .issue-detail-page .vote-wrap,

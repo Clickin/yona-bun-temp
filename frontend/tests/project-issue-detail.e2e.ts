@@ -57,6 +57,30 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, expected),
   );
+  expect(await issueDetailShellMetrics(page)).toEqual({
+    actionMargin: "20px 0px",
+    actionOverflow: "auto",
+    actionPaddingRight: "15px",
+    bodyMarginTop: "0px",
+    contentMarginBottom: "20px",
+    contentMinHeight: "150px",
+    contentPadding: "15px 20px",
+    footerFontSize: "0px",
+    footerMarginTop: "20px",
+    footerTextAlign: "right",
+    headerMargin: "15px 0px",
+    issueInfoPadding: "15px 0px 0px 10px",
+    leftPaneWidth: 938,
+    outerMarginTop: "10px",
+    outerMinHeight: "450px",
+    projectMarginTop: "5px",
+    rightPaneWidth: 295,
+    titleBackground: "rgb(242, 242, 242)",
+    titleBorderRadius: "10px",
+    titleFontSize: "18px",
+    titleLineHeight: "30px",
+    titlePadding: "10px 20px",
+  });
   expect(await indexCommentMetrics(page)).toEqual({
     authorDisplay: "block",
     bodyPadding: "5px 20px",
@@ -1397,6 +1421,74 @@ async function commentVoterModalMetrics(page: Page) {
       rowCount: modal.querySelectorAll(".modal-body li").length,
       rowDisplay: firstRow ? window.getComputedStyle(firstRow).display : null,
       width: Math.round(rect.width),
+    };
+  });
+}
+
+async function issueDetailShellMetrics(page: Page) {
+  return page.locator(".page-wrap-outer").evaluate((outer) => {
+    const project = outer.querySelector<HTMLElement>(".project-page-wrap.board-view");
+    const header = outer.querySelector<HTMLElement>(".board-header.issue");
+    const title = outer.querySelector<HTMLElement>(".board-header.issue .title");
+    const body = outer.querySelector<HTMLElement>(".board-body.row-fluid");
+    const leftPane = outer.querySelector<HTMLElement>(".span-left-pane");
+    const rightPane = outer.querySelector<HTMLElement>(".span-right-pane");
+    const content = outer.querySelector<HTMLElement>("#issue-body-11 .content");
+    const action = outer.querySelector<HTMLElement>(".board-actrow");
+    const issueInfo = outer.querySelector<HTMLElement>(".issue-info");
+    const footer = outer.querySelector<HTMLElement>(".board-footer");
+    const missing = Object.entries({
+      action,
+      body,
+      content,
+      footer,
+      header,
+      issueInfo,
+      leftPane,
+      project,
+      rightPane,
+      title,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected issue detail shell metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const actionStyle = window.getComputedStyle(action);
+    const bodyStyle = window.getComputedStyle(body);
+    const contentStyle = window.getComputedStyle(content);
+    const footerStyle = window.getComputedStyle(footer);
+    const headerStyle = window.getComputedStyle(header);
+    const issueInfoStyle = window.getComputedStyle(issueInfo);
+    const outerStyle = window.getComputedStyle(outer);
+    const projectStyle = window.getComputedStyle(project);
+    const titleStyle = window.getComputedStyle(title);
+    return {
+      actionMargin: actionStyle.margin,
+      actionOverflow: actionStyle.overflow,
+      actionPaddingRight: actionStyle.paddingRight,
+      bodyMarginTop: bodyStyle.marginTop,
+      contentMarginBottom: contentStyle.marginBottom,
+      contentMinHeight: contentStyle.minHeight,
+      contentPadding: contentStyle.padding,
+      footerFontSize: footerStyle.fontSize,
+      footerMarginTop: footerStyle.marginTop,
+      footerTextAlign: footerStyle.textAlign,
+      headerMargin: headerStyle.margin,
+      issueInfoPadding: issueInfoStyle.padding,
+      leftPaneWidth: Math.round(leftPane.getBoundingClientRect().width),
+      outerMarginTop: outerStyle.marginTop,
+      outerMinHeight: outerStyle.minHeight,
+      projectMarginTop: projectStyle.marginTop,
+      rightPaneWidth: Math.round(rightPane.getBoundingClientRect().width),
+      titleBackground: titleStyle.backgroundColor,
+      titleBorderRadius: titleStyle.borderRadius,
+      titleFontSize: titleStyle.fontSize,
+      titleLineHeight: titleStyle.lineHeight,
+      titlePadding: titleStyle.padding,
     };
   });
 }
