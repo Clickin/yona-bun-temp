@@ -436,6 +436,9 @@ function ProjectIssuesBody({
   const draftItems = rawDraftItems.filter(
     (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
   );
+  const normalItems = issues.items.filter(
+    (issue) => !issue.isDraft || stringField(issue.authorLoginId, "") === currentUserLoginId,
+  );
   const handleStateChange = (nextState: "closed" | "open") => {
     void navigate({
       to: projectIssuesRoutePath(ownerName, projectName, {
@@ -761,7 +764,7 @@ function ProjectIssuesBody({
                   </ul>
                 ) : null}
                 <ul className="post-list-wrap row-fluid">
-                  {issues.items.map((issue) => (
+                  {normalItems.map((issue) => (
                     <ProjectIssueItem
                       basePath={runtimeConfig.basePath}
                       currentUserLoginId={currentUserLoginId}

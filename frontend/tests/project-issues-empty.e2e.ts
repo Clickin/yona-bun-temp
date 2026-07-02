@@ -689,6 +689,21 @@ test("project issue normal list draft marker matches legacy partial_list.scala.h
   });
 });
 
+test("project issue normal list hides other users' drafts like legacy partial_list.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "normal-foreign-draft");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=normal-foreign-draft`);
+
+  await expect(page.locator("#issue-item-48")).toHaveCount(0);
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
+  await expect(page.locator("#span10 > .post-list-wrap.row-fluid")).toHaveCount(1);
+  await expect(page.locator("#span10 > .post-list-wrap.row-fluid")).toBeEmpty();
+  await expect(page.locator(".error-wrap")).toHaveCount(0);
+});
+
 test("project issue quick search updates route like legacy partial_list_quicksearch.scala.html pjax filter", async ({
   page,
 }) => {
@@ -1903,6 +1918,7 @@ async function mockProjectIssues(
     | "no-milestone-menu"
     | "non-member"
     | "normal-draft"
+    | "normal-foreign-draft"
     | "populated"
     | "prefix"
     | "project-labels"
@@ -2183,205 +2199,211 @@ async function mockProjectIssues(
                 totalCount: 1,
                 totalPages: 1,
               }
-            : state === "labels-unsorted"
+            : state === "normal-foreign-draft"
               ? {
                   ...populatedIssueResponse(),
+                  closedIssueCount: 0,
                   items: [
                     {
                       ...populatedIssueResponse().items[0],
-                      labels: [
-                        {
-                          categoryId: 4,
-                          categoryIsExclusive: true,
-                          categoryName: "priority",
-                          color: "#f66",
-                          id: 9,
-                          name: "P1",
-                        },
-                        {
-                          categoryId: 3,
-                          categoryIsExclusive: false,
-                          categoryName: "bug",
-                          color: "#51aacc",
-                          id: 8,
-                          name: "bug",
-                        },
-                      ],
+                      assigneeAvatarUrl: "",
+                      assigneeLabel: "",
+                      assigneeLoginId: "",
+                      assigneeUserId: undefined,
+                      authorLabel: "Dev Member",
+                      authorLoginId: "dev",
+                      authorUserId: 2,
+                      commentCount: 0,
+                      dueDateLabel: "",
+                      dueDateOverdue: false,
+                      dueDateText: "",
+                      id: 48,
+                      isDraft: true,
+                      issueNumber: 18,
+                      labels: [],
+                      milestoneId: undefined,
+                      milestoneTitle: undefined,
+                      title: "Foreign inline draft issue",
+                      voterCount: 0,
                     },
                   ],
+                  openIssueCount: 1,
+                  totalCount: 1,
+                  totalPages: 1,
                 }
-              : state === "prefix"
+              : state === "labels-unsorted"
                 ? {
                     ...populatedIssueResponse(),
                     items: [
                       {
                         ...populatedIssueResponse().items[0],
-                        title: "[P1] Fix flaky issue",
+                        labels: [
+                          {
+                            categoryId: 4,
+                            categoryIsExclusive: true,
+                            categoryName: "priority",
+                            color: "#f66",
+                            id: 9,
+                            name: "P1",
+                          },
+                          {
+                            categoryId: 3,
+                            categoryIsExclusive: false,
+                            categoryName: "bug",
+                            color: "#51aacc",
+                            id: 8,
+                            name: "bug",
+                          },
+                        ],
                       },
                     ],
                   }
-                : state === "sharer"
+                : state === "prefix"
                   ? {
                       ...populatedIssueResponse(),
                       items: [
                         {
                           ...populatedIssueResponse().items[0],
-                          sharerCount: 2,
+                          title: "[P1] Fix flaky issue",
                         },
                       ],
                     }
-                  : state === "upcoming"
+                  : state === "sharer"
                     ? {
                         ...populatedIssueResponse(),
                         items: [
                           {
                             ...populatedIssueResponse().items[0],
-                            dueDateLabel: "Jul 5, 2026",
-                            dueDateOverdue: false,
-                            dueDateText: "4 days left",
+                            sharerCount: 2,
                           },
                         ],
                       }
-                    : state === "subtask"
+                    : state === "upcoming"
                       ? {
                           ...populatedIssueResponse(),
                           items: [
                             {
                               ...populatedIssueResponse().items[0],
-                              childClosedCount: 1,
-                              childOpenCount: 2,
-                              parentIssueNumber: 9,
-                              parentIssueTitle: "Parent issue title",
+                              dueDateLabel: "Jul 5, 2026",
+                              dueDateOverdue: false,
+                              dueDateText: "4 days left",
                             },
                           ],
                         }
-                      : state === "weighted"
+                      : state === "subtask"
                         ? {
                             ...populatedIssueResponse(),
-                            closedIssueCount: 1,
                             items: [
                               {
                                 ...populatedIssueResponse().items[0],
-                                dueDateLabel: "Jul 5, 2026",
-                                dueDateOverdue: false,
-                                dueDateText: "Jul 5, 2026",
-                                state: "closed",
-                                weight: 4,
+                                childClosedCount: 1,
+                                childOpenCount: 2,
+                                parentIssueNumber: 9,
+                                parentIssueTitle: "Parent issue title",
                               },
                             ],
-                            openIssueCount: 0,
-                            totalCount: 1,
-                            totalPages: 1,
                           }
-                        : state === "children" || state === "child-draft"
+                        : state === "weighted"
                           ? {
                               ...populatedIssueResponse(),
+                              closedIssueCount: 1,
                               items: [
                                 {
                                   ...populatedIssueResponse().items[0],
-                                  childIssues:
-                                    state === "child-draft"
-                                      ? [
-                                          {
-                                            authorLoginId: "dev",
-                                            createdLabel: "Jul 3, 2026",
-                                            id: 45,
-                                            isDraft: true,
-                                            issueNumber: 15,
-                                            labels: [],
-                                            state: "open",
-                                            title: "Foreign draft child",
-                                          },
-                                          {
-                                            authorLoginId: "admin",
-                                            createdLabel: "Jul 4, 2026",
-                                            id: 46,
-                                            isDraft: true,
-                                            issueNumber: 16,
-                                            labels: [],
-                                            state: "open",
-                                            title: "Own draft child",
-                                          },
-                                        ]
-                                      : [
-                                          {
-                                            assigneeLabel: "Dev Member",
-                                            commentCount: 2,
-                                            createdLabel: "Jul 3, 2026",
-                                            id: 42,
-                                            issueNumber: 13,
-                                            labels: [
-                                              {
-                                                categoryId: 3,
-                                                categoryIsExclusive: false,
-                                                categoryName: "bug",
-                                                color: "#51aacc",
-                                                id: 8,
-                                                name: "bug",
-                                              },
-                                            ],
-                                            state: "open",
-                                            title: "Open child issue",
-                                            voterCount: 1,
-                                          },
-                                          {
-                                            assigneeLabel: "",
-                                            createdLabel: "Jul 4, 2026",
-                                            id: 43,
-                                            issueNumber: 14,
-                                            labels: [],
-                                            state: "closed",
-                                            title: "Closed child issue",
-                                          },
-                                        ],
+                                  dueDateLabel: "Jul 5, 2026",
+                                  dueDateOverdue: false,
+                                  dueDateText: "Jul 5, 2026",
+                                  state: "closed",
+                                  weight: 4,
                                 },
                               ],
+                              openIssueCount: 0,
+                              totalCount: 1,
+                              totalPages: 1,
                             }
-                          : state === "draft"
+                          : state === "children" || state === "child-draft"
                             ? {
                                 ...populatedIssueResponse(),
-                                draftItems: [
+                                items: [
                                   {
-                                    authorAvatarUrl: "/assets/images/default-avatar-32.png",
-                                    authorLabel: "Site Admin",
-                                    authorLoginId: "admin",
-                                    authorUserId: 1,
-                                    commentCount: 0,
-                                    createdLabel: "Jul 1, 2026",
-                                    id: 41,
-                                    isDraft: true,
-                                    issueNumber: 10,
-                                    labels: [],
-                                    ownerName: "admin",
-                                    projectName: "sample",
-                                    state: "open",
-                                    title: "Draft issue",
-                                    updatedLabel: "Jul 1, 2026",
-                                    voterCount: 0,
+                                    ...populatedIssueResponse().items[0],
+                                    childIssues:
+                                      state === "child-draft"
+                                        ? [
+                                            {
+                                              authorLoginId: "dev",
+                                              createdLabel: "Jul 3, 2026",
+                                              id: 45,
+                                              isDraft: true,
+                                              issueNumber: 15,
+                                              labels: [],
+                                              state: "open",
+                                              title: "Foreign draft child",
+                                            },
+                                            {
+                                              authorLoginId: "admin",
+                                              createdLabel: "Jul 4, 2026",
+                                              id: 46,
+                                              isDraft: true,
+                                              issueNumber: 16,
+                                              labels: [],
+                                              state: "open",
+                                              title: "Own draft child",
+                                            },
+                                          ]
+                                        : [
+                                            {
+                                              assigneeLabel: "Dev Member",
+                                              commentCount: 2,
+                                              createdLabel: "Jul 3, 2026",
+                                              id: 42,
+                                              issueNumber: 13,
+                                              labels: [
+                                                {
+                                                  categoryId: 3,
+                                                  categoryIsExclusive: false,
+                                                  categoryName: "bug",
+                                                  color: "#51aacc",
+                                                  id: 8,
+                                                  name: "bug",
+                                                },
+                                              ],
+                                              state: "open",
+                                              title: "Open child issue",
+                                              voterCount: 1,
+                                            },
+                                            {
+                                              assigneeLabel: "",
+                                              createdLabel: "Jul 4, 2026",
+                                              id: 43,
+                                              issueNumber: 14,
+                                              labels: [],
+                                              state: "closed",
+                                              title: "Closed child issue",
+                                            },
+                                          ],
                                   },
                                 ],
-                                totalCount: 1,
-                                totalPages: 1,
                               }
-                            : state === "foreign-draft"
+                            : state === "draft"
                               ? {
                                   ...populatedIssueResponse(),
                                   draftItems: [
                                     {
                                       authorAvatarUrl: "/assets/images/default-avatar-32.png",
-                                      authorLabel: "Dev Member",
-                                      authorLoginId: "dev",
-                                      authorUserId: 2,
+                                      authorLabel: "Site Admin",
+                                      authorLoginId: "admin",
+                                      authorUserId: 1,
                                       commentCount: 0,
                                       createdLabel: "Jul 1, 2026",
-                                      id: 44,
+                                      id: 41,
                                       isDraft: true,
-                                      issueNumber: 15,
+                                      issueNumber: 10,
                                       labels: [],
                                       ownerName: "admin",
                                       projectName: "sample",
                                       state: "open",
-                                      title: "Foreign draft issue",
+                                      title: "Draft issue",
                                       updatedLabel: "Jul 1, 2026",
                                       voterCount: 0,
                                     },
@@ -2389,48 +2411,74 @@ async function mockProjectIssues(
                                   totalCount: 1,
                                   totalPages: 1,
                                 }
-                              : state === "bulk"
+                              : state === "foreign-draft"
                                 ? {
-                                    closedIssueCount: 2,
-                                    draftItems: [],
-                                    items: [
-                                      populatedIssueResponse().items[0],
+                                    ...populatedIssueResponse(),
+                                    draftItems: [
                                       {
                                         authorAvatarUrl: "/assets/images/default-avatar-32.png",
-                                        authorLabel: "Site Admin",
-                                        authorLoginId: "admin",
+                                        authorLabel: "Dev Member",
+                                        authorLoginId: "dev",
+                                        authorUserId: 2,
                                         commentCount: 0,
-                                        createdLabel: "Jul 2, 2026",
-                                        id: 43,
-                                        issueNumber: 12,
+                                        createdLabel: "Jul 1, 2026",
+                                        id: 44,
+                                        isDraft: true,
+                                        issueNumber: 15,
                                         labels: [],
                                         ownerName: "admin",
                                         projectName: "sample",
                                         state: "open",
-                                        title: "Follow up issue",
-                                        updatedLabel: "Jul 2, 2026",
+                                        title: "Foreign draft issue",
+                                        updatedLabel: "Jul 1, 2026",
                                         voterCount: 0,
                                       },
                                     ],
-                                    openIssueCount: 2,
-                                    ownerName: "admin",
-                                    pageNum: 1,
-                                    pageSize: 15,
-                                    projectName: "sample",
-                                    totalCount: 2,
+                                    totalCount: 1,
                                     totalPages: 1,
                                   }
-                                : {
-                                    closedIssueCount: 0,
-                                    draftItems: [],
-                                    items: [],
-                                    openIssueCount: 0,
-                                    ownerName: "admin",
-                                    pageNum: 1,
-                                    pageSize: 15,
-                                    projectName: "sample",
-                                    totalCount: 0,
-                                  },
+                                : state === "bulk"
+                                  ? {
+                                      closedIssueCount: 2,
+                                      draftItems: [],
+                                      items: [
+                                        populatedIssueResponse().items[0],
+                                        {
+                                          authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                                          authorLabel: "Site Admin",
+                                          authorLoginId: "admin",
+                                          commentCount: 0,
+                                          createdLabel: "Jul 2, 2026",
+                                          id: 43,
+                                          issueNumber: 12,
+                                          labels: [],
+                                          ownerName: "admin",
+                                          projectName: "sample",
+                                          state: "open",
+                                          title: "Follow up issue",
+                                          updatedLabel: "Jul 2, 2026",
+                                          voterCount: 0,
+                                        },
+                                      ],
+                                      openIssueCount: 2,
+                                      ownerName: "admin",
+                                      pageNum: 1,
+                                      pageSize: 15,
+                                      projectName: "sample",
+                                      totalCount: 2,
+                                      totalPages: 1,
+                                    }
+                                  : {
+                                      closedIssueCount: 0,
+                                      draftItems: [],
+                                      items: [],
+                                      openIssueCount: 0,
+                                      ownerName: "admin",
+                                      pageNum: 1,
+                                      pageSize: 15,
+                                      projectName: "sample",
+                                      totalCount: 0,
+                                    },
       ),
     });
   });
