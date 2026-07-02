@@ -21,6 +21,30 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_CODE_FOLDER_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await folderViewMetrics(page)).toEqual({
+    commitDateColor: "rgb(126, 126, 126)",
+    commitDateFontSize: "10.6667px",
+    commitDatePaddingRight: "5px",
+    commitDateTextAlign: "right",
+    commitDateWhiteSpace: "nowrap",
+    commitMsgColor: "rgb(126, 126, 126)",
+    commitMsgFontSize: "13.3333px",
+    commitMsgOverflow: "hidden",
+    commitMsgTextOverflow: "ellipsis",
+    filenameFontSize: "13.3333px",
+    filenameOverflow: "hidden",
+    filenameWhiteSpace: "nowrap",
+    headerBackground: "rgb(247, 247, 247)",
+    headerBorderBottomWidth: "2px",
+    headerFilenamePaddingLeft: "5px",
+    headerHeight: "40px",
+    headerLineHeight: "40px",
+    headerMarginBottom: "5px",
+    iconMargin: "0px 3px 1px 5px",
+    listWidth: 1260,
+    rowBorderBottomWidth: "1px",
+    rowLineHeight: "40px",
+  });
 });
 
 test("project SVN code branch root folder matches legacy code/view.scala.html DOM", async ({
@@ -45,7 +69,71 @@ test("project SVN code branch root folder matches legacy code/view.scala.html DO
       EXPECTED_SVN_CODE_FOLDER_BODY.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  expect(await folderViewMetrics(page)).toMatchObject({
+    headerHeight: "40px",
+    headerMarginBottom: "5px",
+    listWidth: 1260,
+    rowLineHeight: "40px",
+  });
 });
+
+async function folderViewMetrics(page: Page) {
+  return page.locator(".code-viewer-wrap .list-wrap").evaluate((list) => {
+    const header = list.querySelector<HTMLElement>(".listhead");
+    const headerFilename = list.querySelector<HTMLElement>(".listhead .filename");
+    const row = list.querySelector<HTMLElement>(".listitem");
+    const filename = list.querySelector<HTMLElement>(".listitem .filename");
+    const commitMsg = list.querySelector<HTMLElement>(".listitem .commitMsg");
+    const commitDate = list.querySelector<HTMLElement>(".listitem .commitDate");
+    const icon = list.querySelector<HTMLElement>(".listitem .dynatree-icon");
+    const missing = Object.entries({
+      commitDate,
+      commitMsg,
+      filename,
+      header,
+      headerFilename,
+      icon,
+      row,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected folder view metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const commitDateStyle = window.getComputedStyle(commitDate);
+    const commitMsgStyle = window.getComputedStyle(commitMsg);
+    const filenameStyle = window.getComputedStyle(filename);
+    const headerFilenameStyle = window.getComputedStyle(headerFilename);
+    const headerStyle = window.getComputedStyle(header);
+    const iconStyle = window.getComputedStyle(icon);
+    const rowStyle = window.getComputedStyle(row);
+    return {
+      commitDateColor: commitDateStyle.color,
+      commitDateFontSize: commitDateStyle.fontSize,
+      commitDatePaddingRight: commitDateStyle.paddingRight,
+      commitDateTextAlign: commitDateStyle.textAlign,
+      commitDateWhiteSpace: commitDateStyle.whiteSpace,
+      commitMsgColor: commitMsgStyle.color,
+      commitMsgFontSize: commitMsgStyle.fontSize,
+      commitMsgOverflow: commitMsgStyle.overflow,
+      commitMsgTextOverflow: commitMsgStyle.textOverflow,
+      filenameFontSize: filenameStyle.fontSize,
+      filenameOverflow: filenameStyle.overflow,
+      filenameWhiteSpace: filenameStyle.whiteSpace,
+      headerBackground: headerStyle.backgroundColor,
+      headerBorderBottomWidth: headerStyle.borderBottomWidth,
+      headerFilenamePaddingLeft: headerFilenameStyle.paddingLeft,
+      headerHeight: headerStyle.height,
+      headerLineHeight: headerStyle.lineHeight,
+      headerMarginBottom: headerStyle.marginBottom,
+      iconMargin: iconStyle.margin,
+      listWidth: Math.round(list.getBoundingClientRect().width),
+      rowBorderBottomWidth: rowStyle.borderBottomWidth,
+      rowLineHeight: rowStyle.lineHeight,
+    };
+  });
+}
 
 async function mockProjectCodeFolder(
   page: Page,
