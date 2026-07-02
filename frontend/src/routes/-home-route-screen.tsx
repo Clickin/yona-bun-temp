@@ -12,6 +12,7 @@ import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
 const LegacyInternalLink = Link as ComponentType<
   AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeProps?: { className?: string | undefined };
     to: string;
   }
 >;
@@ -719,6 +720,7 @@ function AuthenticatedSiteUserMenu({
           <>
             <li className="gnb-usermenu-item">
               <LegacyInternalLink
+                activeProps={{ className: undefined }}
                 to="/sites/userList"
                 data-toggle="tooltip"
                 title={t("menu.siteAdmin")}

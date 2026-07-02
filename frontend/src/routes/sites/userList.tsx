@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
+import type { AnchorHTMLAttributes, ComponentType } from "react";
 import { useState } from "react";
 import {
   deleteSiteUserRest,
@@ -29,6 +30,13 @@ type UserListSearch = {
 type UserToggleAction = "account-lock" | "guest" | "site-admin";
 
 const USER_STATES: SiteUserState[] = ["ACTIVE", "LOCKED", "DELETED", "GUEST", "SITE_ADMIN"];
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeProps?: { className?: string | undefined };
+    to: string;
+  }
+>;
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -299,9 +307,9 @@ function SiteAdminSidebar({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     <ul className="site-setting-nav">
       {navItems.map((item) => (
         <li className={item.active ? "active" : ""} key={item.href}>
-          <a href={prefixBasePath(runtimeConfig.basePath, item.href)}>
+          <LegacyInternalLink activeProps={{ className: undefined }} to={item.href}>
             <LegacyMessage messageKey={item.labelKey} />
-          </a>
+          </LegacyInternalLink>
         </li>
       ))}
     </ul>
