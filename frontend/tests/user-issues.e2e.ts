@@ -492,6 +492,26 @@ test("current-user issues subtask summary follows legacy partial_list_subtask", 
   await expect(childSummary).toHaveText("#11 Parent iss...");
 });
 
+test("current-user issues weight arrows follow legacy my_partial_list markup", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForFilterLinks(page);
+
+  await page.goto(`${basePath}/user/issues`);
+
+  const upWeight = page.locator("#issue-item-42 .title-cell .weight-up-arrow");
+  await expect(upWeight).toHaveAttribute("data-toggle", "tooltip");
+  await expect(upWeight).toHaveAttribute("data-placement", "right");
+  await expect(upWeight).toHaveAttribute("title", "Issue weight 2");
+  await expect(upWeight.locator(".yobicon-angle-circled-up")).toBeVisible();
+
+  const downWeight = page.locator("#issue-item-43 .title-cell .weight-down-arrow");
+  await expect(downWeight).toHaveAttribute("data-toggle", "tooltip");
+  await expect(downWeight).toHaveAttribute("data-placement", "right");
+  await expect(downWeight).toHaveAttribute("title", "Issue weight -1");
+  await expect(downWeight.locator(".yobicon-angle-circled-down")).toBeVisible();
+  await expect(page.locator(".title-cell .issue-weight")).toHaveCount(0);
+});
+
 test("current-user issues set-default-login-page button follows legacy success branch", async ({
   page,
 }) => {
@@ -746,6 +766,7 @@ async function mockUserIssuesForFilterLinks(page: Page) {
             state: "open",
             title: `First ${orderBy} ${orderDir}`,
             voterCount: 0,
+            weight: 2,
           },
           {
             assigneeLoginId: "admin",
@@ -763,6 +784,7 @@ async function mockUserIssuesForFilterLinks(page: Page) {
             state: "open",
             title: "Second issue",
             voterCount: 0,
+            weight: -1,
           },
         ],
         openIssueCount: 2,

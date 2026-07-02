@@ -763,6 +763,7 @@ function UserIssueItem({
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
   const showAuthor = search.filter !== "authored";
   const showAssignee = search.filter !== "assigned" && issue.assigneeLoginId;
+  const issueWeight = issue.weight ?? 0;
   const [isChildListVisible, setIsChildListVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -805,13 +806,25 @@ function UserIssueItem({
         </div>
         <div className="title-wrap span6">
           <span className="title-cell">
-            {issue.weight ? (
-              <i
-                className={`yobicon-${issue.weight > 0 ? "up" : "down"}-vote issue-weight`}
+            {issueWeight > 0 ? (
+              <span
+                className="weight-up-arrow"
                 data-toggle="tooltip"
-                data-placement="top"
-                title={t("issue.weight")}
-              ></i>
+                data-placement="right"
+                title={`${t("issue.weight")} ${issueWeight}`}
+              >
+                <i className="yobicon-angle-circled-up"></i>
+              </span>
+            ) : null}
+            {issueWeight < 0 ? (
+              <span
+                className="weight-down-arrow"
+                data-toggle="tooltip"
+                data-placement="right"
+                title={`${t("issue.weight")} ${issueWeight}`}
+              >
+                <i className="yobicon-angle-circled-down"></i>
+              </span>
             ) : null}
             <LegacyInternalLink
               to={issueRoutePath}
