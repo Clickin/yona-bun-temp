@@ -163,23 +163,21 @@ function ProjectIssuesBody({
       <div className="project-page-wrap">
         <div {...pjaxContainer} className="row-fluid issue-list-wrap">
           <div className="left-menu span2 span-hard-wrap">
-            <div className="inner advanced">
-              <QuickSearch
-                currentUserId={currentUserId}
-                issues={issues}
-                search={search}
-                state={search.state}
-              />
-              <IssueSearchForm
-                basePath={runtimeConfig.basePath}
-                currentUserId={currentUserId}
-                issues={issues.items}
-                ownerName={ownerName}
-                projectName={projectName}
-                search={search}
-                showLabelManagement={showMassUpdateControls}
-              />
-            </div>
+            <QuickSearch
+              currentUserId={currentUserId}
+              issues={issues}
+              search={search}
+              state={search.state}
+            />
+            <IssueSearchForm
+              basePath={runtimeConfig.basePath}
+              currentUserId={currentUserId}
+              issues={issues.items}
+              ownerName={ownerName}
+              projectName={projectName}
+              search={search}
+              showLabelManagement={showMassUpdateControls}
+            />
           </div>
           <div className="span10 span-hard-wrap" id="span10">
             <div className="pull-right">
