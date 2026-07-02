@@ -72,6 +72,10 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     ["common/branchItem.scala.html", "frontend/tests/project-code-commit-detail.e2e.ts"],
     ["common/reviewForm.scala.html", "frontend/tests/project-code-commit-detail.e2e.ts"],
   ]);
+  const directCurrentEvidence = new Map([
+    ["organization/view.scala.html", "frontend/tests/organization-home.e2e.ts"],
+    ["common/commitMsg.scala.html", "frontend/tests/project-code-history.e2e.ts"],
+  ]);
   let inSummary = false;
   let inPrioritySummary = false;
   let manifestDetailRows;
@@ -228,6 +232,18 @@ test("rendered evidence summary counts match manifest row statuses", () => {
         evidenceFiles,
         /frontend\/tests\/project-code-comment-upload-parity\.e2e\.ts/,
         `${legacyTemplate} must not cite historical code comment upload parity evidence`,
+      );
+    }
+    const expectedDirectCurrentEvidence = directCurrentEvidence.get(legacyTemplate);
+    if (expectedDirectCurrentEvidence) {
+      assert.ok(
+        evidenceFiles.includes(expectedDirectCurrentEvidence),
+        `${legacyTemplate} must cite current direct evidence`,
+      );
+      assert.doesNotMatch(
+        evidenceFiles,
+        /frontend\/tests\/(?:organization-directory-admin-parity|code-parity)\.e2e\.ts/,
+        `${legacyTemplate} must not cite historical broad parity evidence`,
       );
     }
     prioritySummaryCounts.set(
