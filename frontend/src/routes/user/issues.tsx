@@ -755,9 +755,10 @@ function UserIssueItem({
 }) {
   const { t } = useLegacyMessages();
   const issueRoutePath = `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`;
-  const projectHref = prefixBasePath(basePath, `/${issue.ownerName}/${issue.projectName}`);
+  const projectRoutePath = `/${issue.ownerName}/${issue.projectName}`;
+  const projectHref = prefixBasePath(basePath, projectRoutePath);
   const issueHref = prefixBasePath(basePath, issueRoutePath);
-  const authorHref = prefixBasePath(basePath, `/${issue.authorLoginId}`);
+  const authorRoutePath = `/${issue.authorLoginId}`;
   const assigneeHref = prefixBasePath(basePath, `/${issue.assigneeLoginId}`);
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
@@ -793,15 +794,17 @@ function UserIssueItem({
     >
       <div className="span12 span-hard-wrap">
         <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
-          <a
-            href={projectHref}
-            className="title project"
-            data-toggle="tooltip"
-            data-placement="bottom"
-            title={t("project.name")}
-          >
-            {issue.projectName}
-          </a>
+          <span className="infos-item project-name">
+            <LegacyInternalLink
+              to={projectRoutePath}
+              className="title project"
+              data-toggle="tooltip"
+              data-placement="bottom"
+              title={t("project.name")}
+            >
+              {issue.projectName}
+            </LegacyInternalLink>
+          </span>
           <span className="infos-item post-id">#{issue.issueNumber}</span>
         </div>
         <div className="title-wrap span6">
@@ -861,49 +864,58 @@ function UserIssueItem({
         {showAuthor ? (
           <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
             {issue.authorLoginId ? (
-              <a
-                href={authorHref}
-                className="infos-link-item author-cell"
-                data-toggle="tooltip"
-                data-placement="top"
-                title={issue.authorLoginId}
-              >
-                {issue.authorLabel}
-              </a>
+              <UserIssueAuthorLink
+                label={issue.authorLabel}
+                loginId={issue.authorLoginId}
+                to={authorRoutePath}
+              />
             ) : (
               <span className="infos-item">{t("issue.noAuthor")}</span>
             )}
           </div>
         ) : null}
         <div className={showAssignee ? "infos span2 meta" : "infos span3 meta"}>
-          <span className="infos-item" title={createdLabel}>
-            {createdLabel}
-          </span>
-          {issue.milestoneId ? (
-            <span className="infos-item mileston-tag">
-              <a
-                href={`${projectHref}/milestone/${issue.milestoneId}`}
+          <span className="meta-cell">
+            <span className="hide show-in-mobile">
+              {showAuthor && issue.authorLoginId ? (
+                <UserIssueAuthorLink
+                  label={issue.authorLabel}
+                  loginId={issue.authorLoginId}
+                  to={authorRoutePath}
+                />
+              ) : showAuthor ? (
+                <span className="infos-item">{t("issue.noAuthor")}</span>
+              ) : null}
+            </span>
+            <span className="infos-item" title={createdLabel}>
+              {createdLabel}
+            </span>
+            {issue.milestoneId ? (
+              <span className="mileston-tag">
+                <LegacyInternalLink
+                  to={`${projectRoutePath}/milestone/${issue.milestoneId}`}
+                  data-toggle="tooltip"
+                  data-placement="bottom"
+                  title={t("milestone")}
+                >
+                  {issue.milestoneTitle}
+                </LegacyInternalLink>
+              </span>
+            ) : null}
+            {issue.dueDateLabel ? (
+              <span
+                className={`pull-right${issue.dueDateOverdue ? " overdue" : ""}`}
                 data-toggle="tooltip"
                 data-placement="top"
-                title={t("milestone")}
+                title={issue.dueDateLabel}
               >
-                {issue.milestoneTitle}
-              </a>
-            </span>
-          ) : null}
-          {issue.dueDateLabel ? (
-            <span
-              className={`infos-item due-date${issue.dueDateOverdue ? " overdue" : ""}`}
-              data-toggle="tooltip"
-              data-placement="top"
-              title={issue.dueDateLabel}
-            >
-              <i className="yobicon-clock2"></i>
-              {issue.state === "open" && issue.dueDateOverdue
-                ? t("issue.dueDate.overdue")
-                : issue.dueDateText || issue.dueDateLabel}
-            </span>
-          ) : null}
+                <i className="yobicon-clock2"></i>
+                {issue.state === "open" && issue.dueDateOverdue
+                  ? t("issue.dueDate.overdue")
+                  : issue.dueDateText || issue.dueDateLabel}
+              </span>
+            ) : null}
+          </span>
         </div>
         {showAssignee ? (
           <div className="span1 hide-in-mobile">
@@ -927,6 +939,28 @@ function UserIssueItem({
         ) : null}
       </div>
     </li>
+  );
+}
+
+function UserIssueAuthorLink({
+  label,
+  loginId,
+  to,
+}: {
+  label: string | undefined;
+  loginId: string;
+  to: string;
+}) {
+  return (
+    <LegacyInternalLink
+      to={to}
+      className="infos-item infos-link-item author-cell"
+      data-toggle="tooltip"
+      data-placement="bottom"
+      title={loginId}
+    >
+      {label}
+    </LegacyInternalLink>
   );
 }
 
