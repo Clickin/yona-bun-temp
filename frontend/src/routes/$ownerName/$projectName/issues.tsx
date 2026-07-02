@@ -4,6 +4,7 @@ import {
   Fragment,
   useEffect,
   useRef,
+  type CSSProperties,
   type HTMLAttributes,
   type LiHTMLAttributes,
   type ReactNode,
@@ -14,7 +15,6 @@ import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
 import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
-import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   listProjectIssues,
@@ -1346,7 +1346,7 @@ function IssueChildRow({
           data-category-id={String(label.categoryId ?? "")}
           data-label-id={String(label.id)}
           key={String(label.id)}
-          style={issueLabelStyle(label.color)}
+          style={childIssueLabelStyle(label.color)}
         >
           {label.name}
         </a>
@@ -1356,6 +1356,10 @@ function IssueChildRow({
       </span>
     </div>
   );
+}
+
+function childIssueLabelStyle(color: string | undefined): CSSProperties | undefined {
+  return color ? { background: color } : undefined;
 }
 
 function IssueSubtaskSummary({
