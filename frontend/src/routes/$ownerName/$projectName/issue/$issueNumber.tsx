@@ -19,6 +19,7 @@ import {
   readIssueDetail,
   listProjectMilestones,
   readSessionBootstrap,
+  toggleFavoriteIssue,
   unvoteIssueComment,
   updateIssueWeight,
   voteIssueComment,
@@ -435,6 +436,7 @@ function IssueDetailBody({
   const isDraft = booleanField(issue.isDraft);
   const isWatching = booleanField(issue.isWatching);
   const isFavorited = booleanField(issue.isFavorited);
+  const [isFavoritedIssue, setIsFavoritedIssue] = useState(isFavorited);
   const canUpdate = booleanField(issue.viewerCanUpdate);
   const canDelete = booleanField(issue.viewerCanDelete);
   const canBeDeleted = issue.canBeDeleted !== false;
@@ -524,6 +526,27 @@ function IssueDetailBody({
       });
     },
   });
+  const favoriteIssueMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return toggleFavoriteIssue(runtimeConfig, csrfToken, {
+        issueNumber,
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess(response) {
+      const nextIsFavorited =
+        typeof response.isFavorited === "boolean" ? response.isFavorited : !isFavoritedIssue;
+      setIsFavoritedIssue((current) =>
+        typeof response.isFavorited === "boolean" ? response.isFavorited : !current,
+      );
+      queryClient.setQueryData<RestIssueDetailResponse>(
+        ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+        (current) => (current ? { ...current, isFavorited: nextIsFavorited } : current),
+      );
+    },
+  });
   async function translateIssueBody() {
     if (translatePending || translatedBodyMarkdown !== null) {
       return;
@@ -559,8 +582,16 @@ function IssueDetailBody({
               {isDraft ? <span className="draft-number">#Draft</span> : issueNumber}
             </strong>
             {issue.title}
-            <span className="favorite-issue" data-issue-id={issueId}>
-              <i className={`${isFavorited ? "starred " : ""}star material-icons va-text-top`}>
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+            <span
+              className="favorite-issue"
+              data-issue-id={issueId}
+              onClick={(event) => {
+                event.stopPropagation();
+                favoriteIssueMutation.mutate();
+              }}
+            >
+              <i className={`${isFavoritedIssue ? "starred " : ""}star material-icons va-text-top`}>
                 star
               </i>
             </span>

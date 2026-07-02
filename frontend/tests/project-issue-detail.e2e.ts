@@ -443,6 +443,25 @@ test("project issue detail renders legacy anonymous posting history login link",
   await expect(page.locator("#-yona-posting-history")).toHaveCount(0);
 });
 
+test("project issue detail favorite star posts and toggles starred class", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { favoriteRequests } = await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator(".board-header .favorite-issue i")).not.toHaveClass(/starred/);
+
+  const favoriteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/issues/11/favorite") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".board-header .favorite-issue").click();
+  await favoriteResponsePromise;
+
+  expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(page.locator(".board-header .favorite-issue i")).toHaveClass(/starred/);
+});
+
 test("project issue detail opens legacy keymap modal through data-toggle modal", async ({
   page,
 }) => {
@@ -2445,6 +2464,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
   const deleteRequests: string[] = [];
   const commentDeleteRequests: string[] = [];
   const commentVoteRequests: { csrfToken: string | null; method: string }[] = [];
+  const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
   const issueWeightRequests: { csrfToken: string | null; method: string; url: string }[] = [];
   const sessionResponse = {
     actorId: 1,
@@ -2548,6 +2568,25 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       }),
     });
   });
+  await page.route(
+    `**/api/v1/owners/admin/projects/sample/issues/${issueNumber}/favorite`,
+    async (route) => {
+      favoriteRequests.push({
+        hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
+        method: route.request().method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          issueNumber: Number(issueNumber),
+          isFavorited: true,
+          ownerName: "admin",
+          projectName: "sample",
+          ...effectiveIssueOverrides,
+        }),
+      });
+    },
+  );
   await page.route(`**/api/v1/projects/admin/sample/issues/${issueNumber}`, async (route) => {
     if (route.request().method() === "DELETE") {
       deleteRequests.push(route.request().method());
@@ -2703,7 +2742,13 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       }),
     });
   });
-  return { commentDeleteRequests, commentVoteRequests, deleteRequests, issueWeightRequests };
+  return {
+    commentDeleteRequests,
+    commentVoteRequests,
+    deleteRequests,
+    favoriteRequests,
+    issueWeightRequests,
+  };
 }
 
 async function issueNotFoundMetrics(page: Page) {
