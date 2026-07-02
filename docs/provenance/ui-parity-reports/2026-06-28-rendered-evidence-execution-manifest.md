@@ -97,7 +97,7 @@ Project change-VCS/statistics/label-settings metric guards: `pnpm --dir frontend
 | --- | ---: |
 | P0 | 12 |
 | P1 | 89 |
-| P2/P3 | 141 |
+| P2/P3 | 156 |
 
 ## Route Execution Buckets
 
