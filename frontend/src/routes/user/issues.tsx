@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import type {
@@ -122,6 +122,12 @@ function UserIssuesBody({
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const activeFilterIds = quickFilterIds(search.filter, currentUserId);
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [defaultLoginNotice, setDefaultLoginNotice] = useState<{
+    key: number;
+    message: string;
+  } | null>(null);
+  const [isDefaultLoginPageSet, setIsDefaultLoginPageSet] = useState(false);
   const [useTwoColumnMode, setUseTwoColumnMode] = useState(
     () =>
       typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
@@ -130,6 +136,29 @@ function UserIssuesBody({
     () =>
       typeof localStorage !== "undefined" && localStorage.getItem("showSubtasksAlways") === "true",
   );
+  const setDefaultLoginPage = useMutation({
+    mutationFn: async (path: string) => {
+      const response = await fetch(
+        `${prefixBasePath(basePath, "/user/defultLoginPage")}?path=${encodeURIComponent(`/${path}`)}`,
+        { method: "POST" },
+      );
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      return response.json() as Promise<{ defaultLoginPage: string }>;
+    },
+    onError(error) {
+      window.alert(`set Default page failed: ${error instanceof Error ? error.message : error}`);
+    },
+    onSuccess(_data, path) {
+      void queryClient.invalidateQueries({ queryKey: apiQueryKeys.session() });
+      setDefaultLoginNotice({
+        key: Date.now(),
+        message: `Set to default: ${path}`,
+      });
+      setIsDefaultLoginPageSet(true);
+    },
+  });
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -210,7 +239,10 @@ function UserIssuesBody({
   return (
     <div className="page-wrap-outer">
       <div className="page-wrap">
-        <MySeriesMenuTabs />
+        <MySeriesMenuTabs
+          hideDefaultLoginPageButton={isDefaultLoginPageSet}
+          onSetDefaultLoginPage={(path) => setDefaultLoginPage.mutate(path)}
+        />
         <div {...pjaxContainer} className="row-fluid issue-list-wrap">
           <div className="left-menu span2 span-hard-wrap">
             <div className="inner advanced">
@@ -355,12 +387,20 @@ function UserIssuesBody({
           </div>
         </div>
       </div>
+      <YobiToast notice={defaultLoginNotice} />
     </div>
   );
 }
 
-function MySeriesMenuTabs() {
+function MySeriesMenuTabs({
+  hideDefaultLoginPageButton,
+  onSetDefaultLoginPage,
+}: {
+  hideDefaultLoginPageButton: boolean;
+  onSetDefaultLoginPage: (path: string) => void;
+}) {
   const { t } = useLegacyMessages();
+  const defaultLoginPagePath = "user/issues";
 
   return (
     <ul className="nav nav-tabs">
@@ -378,17 +418,41 @@ function MySeriesMenuTabs() {
           type="button"
           className="ybtn hide-in-mobile"
           id="setDefaultLoginPage"
-          data-url="user/issues"
+          data-url={defaultLoginPagePath}
           title={t("button.setDefaultLoginPage")}
           data-trigger="hover"
           data-placement="bottom"
           data-toggle="popover"
           data-content={t("button.setDefaultLoginPage.desc")}
+          style={hideDefaultLoginPageButton ? { display: "none" } : undefined}
+          onClick={() => onSetDefaultLoginPage(defaultLoginPagePath)}
         >
           {t("button.setDefaultLoginPage")}
         </button>
       </li>
     </ul>
+  );
+}
+
+function YobiToast({ notice }: { notice: { key: number; message: string } | null }) {
+  if (!notice) {
+    return null;
+  }
+
+  return (
+    <div className="yobiToasts" key={notice.key}>
+      <div className="toast" tabIndex={-1}>
+        <div className="btn-dismiss">
+          <button type="button" className="btn-transparent">
+            &times;
+          </button>
+        </div>
+        <div className="center-text">
+          <span className="v"></span>
+          <div className="msg">{notice.message}</div>
+        </div>
+      </div>
+    </div>
   );
 }
 

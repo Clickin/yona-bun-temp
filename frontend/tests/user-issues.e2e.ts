@@ -470,6 +470,37 @@ test("current-user issues show-subtasks toggle follows legacy yona.showSubtask l
     .toBe("false");
 });
 
+test("current-user issues set-default-login-page button follows legacy success branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForFilterLinks(page);
+  const setDefaultRequest = page.waitForRequest((request) => {
+    const url = new URL(request.url());
+    return (
+      request.method() === "POST" &&
+      url.pathname === `${basePath}/user/defultLoginPage` &&
+      url.searchParams.get("path") === "/user/issues"
+    );
+  });
+  await page.route("**/user/defultLoginPage?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ defaultLoginPage: "/user/issues" }),
+    });
+  });
+
+  await page.goto(`${basePath}/user/issues`);
+  const setDefaultButton = page.locator("#setDefaultLoginPage");
+  await expect(setDefaultButton).toBeVisible();
+  await expect(setDefaultButton).toHaveAttribute("data-url", "user/issues");
+  await setDefaultButton.click();
+  await setDefaultRequest;
+
+  await expect(setDefaultButton).not.toBeVisible();
+  await expect(page.locator(".yobiToasts .toast .msg")).toHaveText("Set to default: user/issues");
+});
+
 async function mockUserIssuesForStateTabs(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
