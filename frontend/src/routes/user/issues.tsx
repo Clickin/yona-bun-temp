@@ -762,6 +762,7 @@ function UserIssueItem({
   const assigneeRoutePath = `/${issue.assigneeLoginId}`;
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
   const updatedLabel = stringField(issue.updatedLabel, createdLabel);
+  const dateLabel = updatedLabel && updatedLabel !== createdLabel ? updatedLabel : createdLabel;
   const dateTooltipTitle =
     updatedLabel && updatedLabel !== createdLabel
       ? `Last Updated ${updatedLabel}`
@@ -898,7 +899,7 @@ function UserIssueItem({
               data-placement="bottom"
               title={dateTooltipTitle}
             >
-              {createdLabel}
+              {dateLabel}
             </span>
             {issue.milestoneId ? (
               <span className="mileston-tag">

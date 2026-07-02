@@ -542,6 +542,10 @@ test("current-user issues row project and meta wrappers follow legacy my_partial
   await expect(metaCell.locator("> .mileston-tag > a")).toHaveAttribute("data-placement", "bottom");
   await expect(metaCell.locator("> .pull-right")).toHaveAttribute("title", "Due date: 2026-07-05");
   await expect(metaCell.locator("> .pull-right")).toHaveText("5 days left");
+
+  const updatedMetaCell = page.locator("#issue-item-43 .infos.meta > .meta-cell > .infos-item");
+  await expect(updatedMetaCell).toHaveText("2026-07-01");
+  await expect(updatedMetaCell).toHaveAttribute("title", "Last Updated 2026-07-01");
 });
 
 test("current-user issues assignee avatar column follows legacy authored-tab branch", async ({
@@ -862,6 +866,7 @@ async function mockUserIssuesForFilterLinks(page: Page) {
             projectName: "sample",
             state: "open",
             title: "Second issue",
+            updatedLabel: "2026-07-01",
             voterCount: 0,
             weight: -1,
           },
