@@ -293,7 +293,7 @@ const EXPECTED_GLOBAL_INLINE_REVIEW_SEARCH = `
   </div>
 </header>
 <div class="site-breadcrumb-outer"><div class="site-breadcrumb-inner"><h3>Search</h3></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="project-page-wrap"><div class="row-fluid"><div class="span2"><ul class="lst-stacked unstyled search-category-wrap"><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue">Issues<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="user">Users<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="project">Projects<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post">Posts<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="milestone">Milestones<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue_comment">Issue Comments<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post_comment">Post Comments<span class="num-badge pull-right">0</span></a></li><li class="active "><a href="#" data-toggle="search-category" data-type="review">Code Reviews<span class="num-badge pull-right">1</span></a></li></ul></div><div class="span10"><div class="search-box-wrap"><form id="searchInnerForm" method="get" action="__BASE_PATH__/search"><input type="hidden" name="searchType" value="review"><input type="text" id="searchKeyword" name="keyword" class="span11" value="inline"><button type="submit" class="ybtn">Search</button></form><h3 class="search-result-title">Found <strong>1</strong> result(s) in Code Reviews</h3></div><div class="search-result-wrap"><ul class="search-list-wrap"><li class="search-list-item"><div class="search-content"><a href="__BASE_PATH__/admin/sample/code/main/src/App.ts#comment-100"><p class="search-content-body"><strong class="keyword">Inline</strong> review body.....</p></a></div><div class="search-meta-info"><a href="__BASE_PATH__/admin/sample" class="project-link meta-item">admin/sample</a><a href="__BASE_PATH__/dave" class="meta-item" data-toggle="tooltip" data-placement="top" title="dave">Dave</a><span class="meta-item" title="Jun 27, 2026">Jun 27, 2026</span></div></li></ul><div id="pagination"></div></div></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="project-page-wrap"><div class="row-fluid"><div class="span2"><ul class="lst-stacked unstyled search-category-wrap"><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue">Issues<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="user">Users<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="project">Projects<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post">Posts<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="milestone">Milestones<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue_comment">Issue Comments<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post_comment">Post Comments<span class="num-badge pull-right">0</span></a></li><li class="active "><a href="#" data-toggle="search-category" data-type="review">Code Reviews<span class="num-badge pull-right">1</span></a></li></ul></div><div class="span10"><div class="search-box-wrap"><form id="searchInnerForm" method="get" action="__BASE_PATH__/search"><input type="hidden" name="searchType" value="review"><input type="text" id="searchKeyword" name="keyword" class="span11" value="inline"><button type="submit" class="ybtn">Search</button></form><h3 class="search-result-title">Found <strong>1</strong> result(s) in Code Reviews</h3></div><div class="search-result-wrap"><ul class="search-list-wrap"><li class="search-list-item"><div class="search-content"><a href="__BASE_PATH__/admin/sample/code/main/src/App.ts#thread-100"><p class="search-content-body"><strong class="keyword">Inline</strong> review body.....</p></a></div><div class="search-meta-info"><a href="__BASE_PATH__/admin/sample" class="project-link meta-item">admin/sample</a><a href="__BASE_PATH__/dave" class="meta-item" data-toggle="tooltip" data-placement="top" title="dave">Dave</a><span class="meta-item" title="Jun 27, 2026">Jun 27, 2026</span></div></li></ul><div id="pagination"></div></div></div></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -537,7 +537,7 @@ test("global inline review search renders legacy partial_reviews.scala.html non-
   );
   await expect(page.locator(".search-content > a")).toHaveAttribute(
     "href",
-    `${basePath}/admin/sample/code/main/src/App.ts#comment-100`,
+    `${basePath}/admin/sample/code/main/src/App.ts#thread-100`,
   );
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
@@ -1286,6 +1286,7 @@ async function mockGlobalSearch(page: Page) {
               number: "3",
               ownerName: "admin",
               projectName: "sample",
+              reviewThreadOnPullRequest: true,
               snippets: [{ highlights: [], text: "Review body", truncated: true }],
               state: "open",
               title: "Re) Refactor auth flow",
@@ -1329,11 +1330,12 @@ async function mockGlobalSearch(page: Page) {
               authorLabel: "Dave",
               authorLoginId: "dave",
               createdLabel: "Jun 27, 2026",
-              href: `${basePath}/admin/sample/code/main/src/App.ts#comment-100`,
+              href: `${basePath}/admin/sample/code/main/src/App.ts#thread-100`,
               id: "100",
               number: "",
               ownerName: "admin",
               projectName: "sample",
+              reviewThreadOnPullRequest: false,
               snippets: [{ highlights: [], text: "Inline review body", truncated: true }],
               state: "open",
               title: "",

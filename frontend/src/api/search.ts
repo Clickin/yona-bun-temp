@@ -48,6 +48,7 @@ export type SearchItem = {
   ownerName: string;
   projectName: string;
   projectLogoUrl?: string;
+  reviewThreadOnPullRequest?: boolean;
   snippets: SearchSnippet[];
   state: string;
   title: string;

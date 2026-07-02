@@ -1396,6 +1396,7 @@ pub struct SearchItemRecord {
     pub owner_name: String,
     pub project_name: String,
     pub project_logo_url: String,
+    pub review_thread_on_pull_request: bool,
     pub snippets: Vec<SearchSnippet>,
     pub state: String,
     pub title: String,

@@ -317,7 +317,7 @@ function SearchResultList({
         <ul className="search-list-wrap">
           {result.items.map((item) => {
             const reviewThreadOnPullRequest =
-              result.searchType !== "review" || item.number.trim().length > 0;
+              result.searchType !== "review" || item.reviewThreadOnPullRequest === true;
             const snippets = item.snippets.map((snippet) => (
               <p
                 className="search-content-body"

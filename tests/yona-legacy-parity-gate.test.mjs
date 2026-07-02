@@ -718,6 +718,24 @@ test("maps pull request persistence payload changes to PR evidence", () => {
   );
 });
 
+test("maps search persistence payload changes to search evidence", () => {
+  const result = runGate([
+    "crates/persistence/src/repo/search.rs",
+    "crates/persistence/src/repo_types.rs",
+    "frontend/src/api/search.ts",
+    "frontend/src/routes/-search-screen.tsx",
+    "frontend/tests/search-global.e2e.ts",
+    "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["search", "parity"]],
+  );
+});
+
 test("maps organization pull request routes before generic organization routes", () => {
   const result = runGate([
     "frontend/src/routes/organizations/$organizationName/pullrequests/route.tsx",

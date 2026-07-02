@@ -612,7 +612,11 @@ const DOMAIN_BUCKETS = [
       /^crates\/(?:search|persistence|server|domain)\/.*search/i,
     ],
     testKeywords: ["search", "snippet"],
-    provenanceDocs: ["docs/provenance/phase-0b/search.md", "docs/provenance/core-parity-audit.md"],
+    provenanceDocs: [
+      "docs/provenance/phase-0b/search.md",
+      "docs/provenance/core-parity-audit.md",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
   },
   {
     id: "site-admin-core",
@@ -871,6 +875,18 @@ function classifyCapability(filePath, changedFiles = [], repoRoot = DEFAULT_REPO
     return pullRequestReviewBucket;
   }
 
+  const searchBucket = [...PARITY_SLICES, ...DOMAIN_BUCKETS].find(
+    (bucket) => bucket.id === "search",
+  );
+  if (
+    searchBucket &&
+    isSearchBackendSurface(filePath, changedFiles) &&
+    capabilityHasTestEvidence(searchBucket, changedFiles, repoRoot) &&
+    capabilityHasProvenanceEvidence(searchBucket, changedFiles)
+  ) {
+    return searchBucket;
+  }
+
   const markdownBucket = DOMAIN_BUCKETS.find(
     (bucket) => bucket.id === "project-markdown-rendering",
   );
@@ -929,6 +945,16 @@ function isPullRequestReviewBackendSurface(filePath) {
     "crates/persistence/src/repo/pull_request.rs",
     "crates/persistence/src/repo_types.rs",
   ].includes(filePath);
+}
+
+function isSearchBackendSurface(filePath, changedFiles) {
+  if (filePath === "crates/persistence/src/repo/search.rs") {
+    return true;
+  }
+  return (
+    filePath === "crates/persistence/src/repo_types.rs" &&
+    changedFiles.includes("crates/persistence/src/repo/search.rs")
+  );
 }
 
 function capabilityHasTestEvidence(capability, changedFiles, repoRoot) {
