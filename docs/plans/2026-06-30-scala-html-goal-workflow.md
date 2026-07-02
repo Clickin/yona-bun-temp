@@ -19,6 +19,10 @@ Every resumed goal turn must restate this directive before choosing work:
   `docs/provenance/frontend-scala-html-goal-violation-audit.md` in the same
   commit with route, screen state, legacy root template, included partials, and
   focused verification.
+- The audit update must add a table row that names each changed
+  `frontend/src/routes/**/*.tsx` file, at least one legacy `.scala.html` source,
+  and the focused `frontend/tests/*.e2e.ts` file. This is the durable memo that
+  survives resumed multi-day goal turns and is enforced by the commit hook.
 - Every frontend E2E/CSS/UI parity evidence change must include a route TSX
   implementation change unless the turn is explicitly marked evidence-only.
 

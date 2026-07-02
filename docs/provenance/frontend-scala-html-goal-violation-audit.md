@@ -42,6 +42,10 @@ The precommit hook passes the staged audit diff to the guard, and route TSX
 changes are blocked unless that diff adds at least one legacy `.scala.html`
 source line. A memo-only touch without newly recorded legacy template evidence
 does not satisfy the goal.
+The guard also requires every changed `frontend/src/routes/**/*.tsx` file to be
+named in a newly added audit table row that also names a legacy `.scala.html`
+source and a focused `frontend/tests/*.e2e.ts` verification file. This is the
+machine-checkable memo format for multi-day automated goal turns.
 
 The mandatory workflow remains:
 
@@ -51,13 +55,15 @@ The mandatory workflow remains:
 3. Record the legacy Scala HTML root and included partials before editing.
 4. Change TSX implementation for the screen unless the turn is a pure audit.
 5. Reject subagent work that skips steps 2-4.
+6. Reject any subagent patch whose audit row cannot pass the route-file,
+   `.scala.html`, and focused-E2E guard.
 
 ## High Confidence Rebuild Candidates
 
 | Priority | Route/screen | Current files | Legacy source of truth | Required action |
 | --- | --- | --- | --- | --- |
-| P0 | `/admin/sample/issues` issue list | `frontend/src/routes/$ownerName/$projectName/issues.tsx`, `frontend/tests/project-issues-empty.e2e.ts` | `issue/list.scala.html`, `issue/partial_searchform.scala.html`, `issue/partial_list_wrap.scala.html`, `issue/partial_list.scala.html`, `issue/partial_list_quicksearch.scala.html`, `issue/partial_massupdate.scala.html`, `common/showSubtasksCheckbox.scala.html`, `common/twoColumnModeCheckboxArea.scala.html` | Rebuild the issue list route from the Scala templates. Current implementation history shows empty-list first, then many branch patches. |
-| P0 | `/admin/sample/issue/11` issue detail | `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx`, `frontend/tests/project-issue-detail.e2e.ts` | `issue/view.scala.html`, `issue/partial_comments.scala.html`, `issue/partial_comment.scala.html`, `issue/partial_event_timeline.scala.html`, `issue/partial_index_comments.scala.html`, `common/commentForm.scala.html`, `common/childComments.scala.html`, `common/commentDeleteModal.scala.html`, `common/editor.scala.html`, `help/markdown.scala.html` | Rebuild the issue detail route from the Scala templates. Current implementation history appears accretive rather than template-first. |
+| P0 | `/admin/sample/issues` issue list | `frontend/src/routes/$ownerName/$projectName/issues.tsx`, `frontend/tests/project-issues-empty.e2e.ts` | `issue/list.scala.html`, `issue/partial_searchform.scala.html`, `issue/partial_list_wrap.scala.html`, `issue/partial_list.scala.html`, `issue/partial_list_quicksearch.scala.html`, `issue/partial_massupdate.scala.html`, `common/showSubtasksCheckbox.scala.html`, `common/twoColumnModeCheckboxArea.scala.html` | Rebuild the issue list route from the Scala templates. Current implementation history shows empty-list first, then many branch patches. 2026-07-02 subagent audit confirmed unresolved legacy conflicts: route-local `common.select2`, `common.calendar`, `jquery.pageslide.js`, `yona.twoColumnMode.js`, `yona.showSubtask.js`, and `issue.List` bootstrap assets are missing; `partial_searchform.scala.html` label multi-select is missing; anonymous quick-search still shows current-user links; author/assignee/mass-update options are derived from current issue rows instead of project-wide legacy sources. |
+| P0 | `/admin/sample/issue/11` issue detail | `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx`, `frontend/tests/project-issue-detail.e2e.ts` | `issue/view.scala.html`, `issue/partial_comments.scala.html`, `issue/partial_comment.scala.html`, `issue/partial_event_timeline.scala.html`, `issue/partial_index_comments.scala.html`, `common/commentForm.scala.html`, `common/childComments.scala.html`, `common/commentDeleteModal.scala.html`, `common/editor.scala.html`, `help/markdown.scala.html` | Rebuild the issue detail route from the Scala templates. Current implementation history appears accretive rather than template-first. 2026-07-02 subagent audit confirmed unresolved legacy conflicts: `common.select2`, `common.calendar`, `common.commentDeleteModal`, `yobi.Comment`, `yobi.CommentForm`, inline `issue.View`, and `tplAttachedFile` runtime/template assets are missing or replaced by direct React output; update-capable milestone UI renders an anchor/empty text instead of legacy `<select id="milestone" name="milestone.id">`; label select and edit-link gating do not match `partial_select_label.scala.html`; the right-pane New subtask action ignores the legacy `project.menuSetting.issue` condition. |
 
 ## Rebuild Or Re-verify Candidates
 

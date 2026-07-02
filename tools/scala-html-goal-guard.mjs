@@ -6,6 +6,8 @@ const FRONTEND_SUPPORT_PATTERN =
 const UI_PARITY_REPORT_PATTERN = /^docs\/provenance\/ui-parity-reports\/.+\.md$/u;
 const SCALA_HTML_AUDIT_FILE = "docs/provenance/frontend-scala-html-goal-violation-audit.md";
 const ADDED_SCALA_HTML_SOURCE_PATTERN = /^\+(?!\+\+).*\.scala\.html\b/mu;
+const ADDED_AUDIT_ROW_PATTERN = /^\+\|(?! --- )(.*)$/gmu;
+const E2E_VERIFICATION_PATTERN = /frontend\/tests\/.+\.e2e\.ts\b/u;
 
 function isFrontendImplementation(file) {
   if (!FRONTEND_IMPLEMENTATION_PATTERN.test(file)) {
@@ -31,6 +33,21 @@ function isFrontendRouteImplementation(file) {
 
 function auditPatchAddsScalaHtmlSource(auditPatch) {
   return ADDED_SCALA_HTML_SOURCE_PATTERN.test(auditPatch);
+}
+
+function addedAuditRows(auditPatch) {
+  if (auditPatch === null) {
+    return [];
+  }
+
+  return [...auditPatch.matchAll(ADDED_AUDIT_ROW_PATTERN)].map((match) => match[1]);
+}
+
+function routeFileHasCompleteAuditRow(routeFile, auditPatch) {
+  return addedAuditRows(auditPatch).some(
+    (row) =>
+      row.includes(routeFile) && /\.scala\.html\b/u.test(row) && E2E_VERIFICATION_PATTERN.test(row),
+  );
 }
 
 export function evaluateScalaHtmlGoalGuard({ changedFiles, env = process.env, auditPatch = null }) {
@@ -87,6 +104,27 @@ export function evaluateScalaHtmlGoalGuard({ changedFiles, env = process.env, au
       message:
         "Scala HTML goal guard blocked weak audit memo work. Route TSX changed, but the staged audit memo diff does not add a legacy .scala.html source. Add the target legacy Scala HTML root and included partials to docs/provenance/frontend-scala-html-goal-violation-audit.md, or set YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE=1 for an explicitly intentional non-goal route change.",
     };
+  }
+
+  if (
+    implementationTouchesRuntime &&
+    auditUpdated &&
+    auditPatch !== null &&
+    !allowUndocumentedRoute
+  ) {
+    const routeFilesMissingCompleteAudit = frontendRouteImplementationFiles.filter(
+      (file) => !routeFileHasCompleteAuditRow(file, auditPatch),
+    );
+
+    if (routeFilesMissingCompleteAudit.length > 0) {
+      return {
+        blocked: true,
+        frontendEvidenceFiles,
+        frontendImplementationFiles,
+        message:
+          "Scala HTML goal guard blocked incomplete audit row work. Each changed route TSX file must be named in a newly added audit table row that also names a legacy .scala.html source and a focused frontend E2E verification file.",
+      };
+    }
   }
 
   return {
