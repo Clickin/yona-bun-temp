@@ -4,6 +4,7 @@ import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/re
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
+import { currentSessionQueryOptions } from "../../../../api/session";
 import type { ProjectMilestone, ProjectMilestoneIssue, YonaLabel } from "../../../../api/types";
 import {
   closeProjectMilestone,
@@ -55,6 +56,10 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
     ...readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
     enabled: !isEditChildRoute,
   });
+  const sessionQuery = useQuery({
+    ...currentSessionQueryOptions(runtimeConfig),
+    enabled: !isEditChildRoute,
+  });
   const milestoneQuery = useQuery({
     enabled: !isEditChildRoute,
     queryFn: () => readProjectMilestone(runtimeConfig, ownerName, projectName, numericMilestoneId),
@@ -65,7 +70,7 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
     return <Outlet />;
   }
 
-  if (!projectQuery.data || !milestoneQuery.data?.milestone) {
+  if (!projectQuery.data || !sessionQuery.data || !milestoneQuery.data?.milestone) {
     return null;
   }
 
@@ -77,10 +82,79 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
         basePath={runtimeConfig.basePath}
         project={projectQuery.data}
       />
+      <MilestoneDetailAssets
+        basePath={runtimeConfig.basePath}
+        currentUserLoginId={stringField(sessionQuery.data.loginId)}
+        milestoneId={milestoneId}
+        ownerName={ownerName}
+        projectName={projectName}
+      />
       <ProjectMilestoneDetailBody
         milestone={milestoneQuery.data.milestone}
         runtimeConfig={runtimeConfig}
       />
+    </>
+  );
+}
+
+function MilestoneDetailAssets({
+  basePath,
+  currentUserLoginId,
+  milestoneId,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  currentUserLoginId: string;
+  milestoneId: string;
+  ownerName: string;
+  projectName: string;
+}) {
+  const projectPath = `/${ownerName}/${projectName}`;
+  const escapedCurrentUserLoginId = currentUserLoginId.replace(/["\\]/gu, "\\$&");
+  return (
+    <>
+      <link
+        rel="stylesheet"
+        type="text/css"
+        href={prefixBasePath(basePath, "/assets/javascripts/lib/highlight/styles/default.css")}
+      />
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/highlight/highlight.pack.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/lib/marked.js")}
+      ></script>
+      <link
+        rel="stylesheet"
+        type="text/css"
+        href={prefixBasePath(basePath, `${projectPath}/issue/labels.css`)}
+      />
+      <script
+        type="text/javascript"
+        dangerouslySetInnerHTML={{
+          __html: `$(document).ready(function(){
+        // when a user click head of title, it works like issue filter
+        $(".title-prefix").on('click', function () {
+            $(".textbox").val($(this).text());
+            $(".post-item").hide();
+            $("li[data-value*='"+$(".textbox").val() + "']").show();
+            $(".textbox").focus();
+        });
+        $yobi.loadModule("milestone.View", {
+            "sMilestoneId" : "${milestoneId}",
+            "sURLLabels"   : "${prefixBasePath(basePath, `${projectPath}/issues`)}"
+        });
+
+        // detect links contains mention at me
+        $(".user-link:contains('${escapedCurrentUserLoginId}')").addClass("me");
+    });`,
+        }}
+      ></script>
     </>
   );
 }

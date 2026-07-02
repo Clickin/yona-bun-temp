@@ -9,6 +9,7 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await mockProjectMilestoneDetail(page, stateRequests, deleteRequests);
 
   await page.goto(`${basePath}/admin/sample/milestone/5?state=open`);
+  await expectMilestoneDetailAssets(page, basePath);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
   await expect(page.locator(".badge-issue-open")).toHaveText("Open");
@@ -85,6 +86,38 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await deleteResponse;
   expect(deleteRequests).toEqual(["DELETE"]);
 });
+
+async function expectMilestoneDetailAssets(page: Page, basePath: string) {
+  const markdownLink = page.locator(
+    `link[href="${basePath}/assets/javascripts/lib/highlight/styles/default.css"]`,
+  );
+  await expect(markdownLink).toHaveAttribute("rel", "stylesheet");
+  await expect(markdownLink).toHaveAttribute("type", "text/css");
+
+  const labelLink = page.locator(`link[href="${basePath}/admin/sample/issue/labels.css"]`);
+  await expect(labelLink).toHaveAttribute("rel", "stylesheet");
+  await expect(labelLink).toHaveAttribute("type", "text/css");
+
+  for (const src of [
+    `${basePath}/assets/javascripts/lib/highlight/highlight.pack.js`,
+    `${basePath}/assets/javascripts/lib/marked.js`,
+  ]) {
+    const script = page.locator(`script[src="${src}"]`);
+    await expect(script).toHaveAttribute("type", "text/javascript");
+    await expect(script).toHaveAttribute("defer", "");
+  }
+
+  const inlineScript = await page.evaluate(() => {
+    return [...document.scripts]
+      .filter((script) => script.type === "text/javascript")
+      .map((script) => script.textContent ?? "")
+      .find((text) => text.includes('$yobi.loadModule("milestone.View"'));
+  });
+  expect(inlineScript).toContain('"sMilestoneId" : "5"');
+  expect(inlineScript).toContain(`"sURLLabels"   : "${basePath}/admin/sample/issues"`);
+  expect(inlineScript).toContain('$(".title-prefix").on');
+  expect(inlineScript).toContain('$(".user-link:contains(\'admin\')").addClass("me")');
+}
 
 async function mockProjectMilestoneDetail(
   page: Page,
