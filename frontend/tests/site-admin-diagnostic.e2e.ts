@@ -151,6 +151,13 @@ test("site admin diagnostics renders legacy error pre blocks", async ({ page }) 
     errorCount: 99,
     errors: ["database probe failed", "repository path is unavailable"],
   });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
 
   await page.goto(`${basePath}/sites/diagnostic`);
   await expect(page.getByText("2 errors were found")).toBeVisible();
@@ -176,6 +183,26 @@ test("site admin diagnostics renders legacy error pre blocks", async ({ page }) 
     titleAreaPaddingBottom: 8,
     titleLineHeight: 30,
   });
+});
+
+test("site admin diagnostics renders legacy update notification badge", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockDiagnostics(page, { errorCount: 0, errors: [] });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isAvailable",
+    releaseUrl: "https://example.test/yona-1.1.0",
+    versionToUpdate: "1.1.0",
+  });
+
+  await page.goto(`${basePath}/sites/diagnostic`);
+
+  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
+  await expect(updateLink).toHaveText("Software Update1");
+  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
 async function diagnosticErrorMetrics(page: Page) {
