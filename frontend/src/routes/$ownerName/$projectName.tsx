@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import {
   deleteProjectMemberRest,
   readProjectContainerQueryOptions,
+  toggleProjectWatchRest,
   updateProjectOverviewRest,
 } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
@@ -951,7 +952,9 @@ export function ProjectHeader({
   basePath: string;
   project: ProjectContainer;
 }) {
+  const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const projectIdValue = projectId(project);
@@ -970,9 +973,27 @@ export function ProjectHeader({
     stringField(recordField(project).originalProjectName, "") ||
     stringField(recordField(project).originProjectName, "");
   const canWatchProject = projectCanWatch(project);
-  const isWatchingProject = projectIsWatching(project);
-  const watchingCount = projectWatchingCount(project);
+  const [watchState, setWatchState] = useState({
+    count: projectWatchingCount(project),
+    isWatching: projectIsWatching(project),
+  });
   const projectIdValueForLinks = projectIdValue || projectId(project);
+  const watchMutation = useMutation({
+    mutationFn: async (nextWatching: boolean) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return toggleProjectWatchRest(runtimeConfig, csrfToken, ownerName, projectName, nextWatching);
+    },
+    onSuccess(response, nextWatching) {
+      setWatchState((current) => ({
+        count:
+          projectWatchingCount(response) || Math.max(0, current.count + (nextWatching ? 1 : -1)),
+        isWatching: nextWatching,
+      }));
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.container(ownerName, projectName),
+      });
+    },
+  });
 
   return (
     <div
@@ -1029,17 +1050,17 @@ export function ProjectHeader({
                 <li>
                   <div className="btn-group dropdown watch-btn">
                     <a
-                      className={`btn watcher-count no-border ${isWatchingProject ? "watch-on" : ""}`}
+                      className={`btn watcher-count no-border ${watchState.isWatching ? "watch-on" : ""}`}
                       data-toggle="tooltip"
                       title={t("project.watcher.number")}
                       href={prefixBasePath(basePath, `/${ownerName}/${projectName}/watchers`)}
                     >
-                      {watchingCount}
+                      {watchState.count}
                     </a>
                     <div className="dropdown-menu flat right title">
                       <div className="pop-title">
                         {t(
-                          isWatchingProject
+                          watchState.isWatching
                             ? "project.you.are.watching"
                             : "project.you.are.not.watching",
                           { args: [projectName] },
@@ -1080,11 +1101,18 @@ export function ProjectHeader({
                           className="ybtn ybtn-watching watchBtn"
                           href={prefixBasePath(
                             basePath,
-                            `/${ownerName}/${projectName}/${isWatchingProject ? "unwatch" : "watch"}`,
+                            `/${ownerName}/${projectName}/${watchState.isWatching ? "unwatch" : "watch"}`,
                           )}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.currentTarget.closest(".watch-btn")?.classList.remove("open");
+                            watchMutation.mutate(!watchState.isWatching);
+                          }}
                         >
-                          <i className={isWatchingProject ? "yobicon-eye-off" : "yobicon-eye"}></i>{" "}
-                          {t(isWatchingProject ? "project.unwatch" : "project.watch")}
+                          <i
+                            className={watchState.isWatching ? "yobicon-eye-off" : "yobicon-eye"}
+                          ></i>{" "}
+                          {t(watchState.isWatching ? "project.unwatch" : "project.watch")}
                         </a>
                       </div>
                     </div>
@@ -1093,7 +1121,7 @@ export function ProjectHeader({
                       type="button"
                       data-toggle="dropdown"
                     >
-                      {t(isWatchingProject ? "project.unwatch" : "project.watch")}
+                      {t(watchState.isWatching ? "project.unwatch" : "project.watch")}
                     </button>
                   </div>
                 </li>

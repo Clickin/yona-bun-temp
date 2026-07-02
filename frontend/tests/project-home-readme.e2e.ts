@@ -153,6 +153,37 @@ test("project home header renders legacy watch utility for watchable projects", 
   );
 });
 
+test("project home header watch action posts and renders watching branch", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectHome(page, {
+    project: {
+      isWatching: false,
+      viewerCanWatch: true,
+      watchingCount: 5,
+    },
+    watchRequests,
+  });
+
+  await page.goto(`${basePath}/admin/sample`);
+  await page.locator(".watch-btn .down-arrow").click();
+  const watchResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/watch") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".watchBtn").click();
+  await watchResponsePromise;
+
+  expect(watchRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border watch-on" data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">6</a><div class="dropdown-menu flat right title"><div class="pop-title">You are watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><a class="ybtn ybtn-watching watchBtn" href="${basePath}/admin/sample/unwatch"><i class="yobicon-eye-off"></i> Unwatch</a></div></div><button class="btn nofocus no-border down-arrow" type="button" data-toggle="dropdown">Unwatch</button></div></li></ul>`,
+    ),
+  );
+});
+
 async function mockProjectHome(
   page: Page,
   overrides: Partial<{
@@ -160,6 +191,7 @@ async function mockProjectHome(
     overviewRequests: { hasCsrfToken: boolean; method: string; overview: string }[];
     project: Record<string, unknown>;
     readmeFile: unknown;
+    watchRequests: { hasCsrfToken: boolean; method: string }[];
   }> = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -208,6 +240,20 @@ async function mockProjectHome(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ redirectPath: "/admin" }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/watch", async (route) => {
+    const request = route.request();
+    overrides.watchRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        isWatching: request.method() === "POST",
+        watchingCount: request.method() === "POST" ? 6 : 5,
+      }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/overview", async (route) => {
