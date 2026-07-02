@@ -4,6 +4,7 @@ import { useState } from "react";
 import type {
   AnchorHTMLAttributes,
   ComponentType,
+  CSSProperties,
   FormEvent,
   HTMLAttributes,
   LiHTMLAttributes,
@@ -124,6 +125,10 @@ function UserIssuesBody({
   const [useTwoColumnMode, setUseTwoColumnMode] = useState(
     () =>
       typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
+  );
+  const [showSubtasksAlways, setShowSubtasksAlways] = useState(
+    () =>
+      typeof localStorage !== "undefined" && localStorage.getItem("showSubtasksAlways") === "true",
   );
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
@@ -307,7 +312,13 @@ function UserIssuesBody({
                 />
               </li>
               <li className="show-subtasks-li">
-                <ShowSubtasksCheckbox />
+                <ShowSubtasksCheckbox
+                  checked={showSubtasksAlways}
+                  onToggle={(checked) => {
+                    localStorage.setItem("showSubtasksAlways", String(checked));
+                    setShowSubtasksAlways(checked);
+                  }}
+                />
               </li>
             </ul>
             {issues.items.length > 0 ? (
@@ -328,6 +339,7 @@ function UserIssuesBody({
                         issue.id || `${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`
                       }
                       search={search}
+                      showSubtasksAlways={showSubtasksAlways}
                       useTwoColumnMode={useTwoColumnMode}
                     />
                   ))}
@@ -545,11 +557,13 @@ function UserIssueItem({
   basePath,
   issue,
   search,
+  showSubtasksAlways,
   useTwoColumnMode,
 }: {
   basePath: string;
   issue: RestIssueListItem;
   search: UserIssuesSearch;
+  showSubtasksAlways: boolean;
   useTwoColumnMode: boolean;
 }) {
   const { t } = useLegacyMessages();
@@ -608,7 +622,12 @@ function UserIssueItem({
                 {label.name}
               </a>
             ))}
-            <div className="child-issue-list hide"></div>
+            <div
+              className="child-issue-list hide"
+              style={showSubtasksAlways ? { display: "block" } : undefined}
+            >
+              <UserIssueChildRows issue={issue} />
+            </div>
           </span>
         </div>
         {showAuthor ? (
@@ -683,6 +702,159 @@ function UserIssueItem({
   );
 }
 
+type RestIssueChildLabel = {
+  categoryId?: bigint | number | string | null;
+  categoryName?: string;
+  color?: string;
+  id: bigint | number | string;
+  name: string;
+};
+
+type RestIssueChildItem = {
+  assigneeLabel?: string;
+  commentCount?: number;
+  createdLabel?: string;
+  id?: bigint | number | string;
+  isDraft?: boolean;
+  issueNumber?: bigint | number | string;
+  labels?: RestIssueChildLabel[];
+  state?: string;
+  title?: string;
+  voterCount?: number;
+};
+
+function UserIssueChildRows({ issue }: { issue: RestIssueListItem }) {
+  const openIssues = (issue.childIssues ?? []).filter(
+    (childIssue) => childIssue.state !== "closed",
+  );
+  const closedIssues = (issue.childIssues ?? []).filter(
+    (childIssue) => childIssue.state === "closed",
+  );
+  const childIssues = [...openIssues, ...closedIssues];
+  if (!childIssues.length) {
+    return null;
+  }
+
+  const parentIssueId = stringField(issue.id, "");
+  return (
+    <div className="child-issues">
+      {childIssues.map((childIssue) => (
+        <UserIssueChildRow
+          issue={childIssue}
+          key={`${childIssue.state}-${String(childIssue.issueNumber)}`}
+          ownerName={issue.ownerName}
+          parentIssueId={parentIssueId}
+          projectName={issue.projectName}
+        />
+      ))}
+    </div>
+  );
+}
+
+function UserIssueChildRow({
+  issue,
+  ownerName,
+  parentIssueId,
+  projectName,
+}: {
+  issue: RestIssueChildItem;
+  ownerName: string;
+  parentIssueId: string;
+  projectName: string;
+}) {
+  const issueId = stringField(issue.id, "");
+  const issueNumber = stringField(issue.issueNumber, "");
+  const projectPath = `/${ownerName}/${projectName}`;
+  const issuePath = `${projectPath}/issue/${issueNumber}`;
+  const isClosed = issue.state === "closed";
+  const labels = (issue.labels ?? []).slice().sort(compareIssueLabels);
+  const className =
+    issueId && issueId === parentIssueId
+      ? "issue-item selected-child child-issue"
+      : "issue-item  child-issue";
+
+  return (
+    <div className={className}>
+      <span className={`state-label ${isClosed ? "closed" : "open"}`}>
+        {isClosed ? <i className=" yobicon-checkmark"></i> : null}
+      </span>
+      <LegacyInternalLink className="twoColumeModeTarget" to={issuePath}>
+        <span className="item-name">
+          <span className="subtask-number">
+            {issue.isDraft ? <span className="draft-number">#Draft</span> : `#${issueNumber}`}
+          </span>
+          <span>{issue.title}</span>
+          <span>{issue.assigneeLabel ? ` - ${issue.assigneeLabel}` : ""}</span>
+        </span>
+      </LegacyInternalLink>
+      <span className="font12 no-border-at-child">
+        <UserIssueChildCommentAndVotePair issue={issue} issuePath={issuePath} />
+      </span>
+      {labels.map((label) => (
+        <LegacyInternalLink
+          className="label issue-label list-label active twoColumeModeTarget"
+          data-category-id={String(label.categoryId ?? "")}
+          data-label-id={String(label.id)}
+          key={String(label.id)}
+          style={childIssueLabelStyle(label.color)}
+          to={`${projectPath}/issues?state=open&labelIds=${String(label.id)}`}
+        >
+          {label.name}
+        </LegacyInternalLink>
+      ))}
+      <span className="child-issue-date" title={issue.createdLabel}>
+        {issue.createdLabel}
+      </span>
+    </div>
+  );
+}
+
+function childIssueLabelStyle(color: string | undefined): CSSProperties | undefined {
+  return color ? { background: color } : undefined;
+}
+
+function UserIssueChildCommentAndVotePair({
+  issue,
+  issuePath,
+}: {
+  issue: RestIssueChildItem;
+  issuePath: string;
+}) {
+  if (!issue.commentCount && !issue.voterCount) {
+    return null;
+  }
+
+  return (
+    <span className="item-count-groups">
+      {issue.commentCount ? (
+        <LegacyInternalLink
+          className="comments-count comments-count-color"
+          to={`${issuePath}#comments`}
+        >
+          <span className="count-groups item-icon">
+            <i className="yobicon-comment2"></i>
+          </span>
+          <span className="count-groups item-count">{issue.commentCount}</span>
+        </LegacyInternalLink>
+      ) : null}
+      {issue.voterCount ? (
+        <LegacyInternalLink className="vote-count vote-color" to={`${issuePath}#vote`}>
+          <span className="count-groups item-icon">
+            <i className="yobicon-hearts"></i>
+          </span>
+          <span className="count-groups item-count strong">{issue.voterCount}</span>
+        </LegacyInternalLink>
+      ) : null}
+    </span>
+  );
+}
+
+function compareIssueLabels(left: RestIssueChildLabel, right: RestIssueChildLabel) {
+  return `${left.categoryName ?? ""}\u0000${left.name}`.localeCompare(
+    `${right.categoryName ?? ""}\u0000${right.name}`,
+  );
+}
+
 function CommentVoteCounts({ issue, issueHref }: { issue: RestIssueListItem; issueHref: string }) {
   if (!issue.commentCount && !issue.voterCount) {
     return null;
@@ -742,7 +914,13 @@ function TwoColumnModeCheckbox({
   );
 }
 
-function ShowSubtasksCheckbox() {
+function ShowSubtasksCheckbox({
+  checked,
+  onToggle,
+}: {
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
+}) {
   const { t } = useLegacyMessages();
 
   return (
@@ -758,7 +936,12 @@ function ShowSubtasksCheckbox() {
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
       <label className="checkbox">
         <div className="show-subtasks-button-border">
-          <input id="toggle-show-subtasks" type="checkbox" />
+          <input
+            checked={checked}
+            id="toggle-show-subtasks"
+            type="checkbox"
+            onChange={(event) => onToggle(event.currentTarget.checked)}
+          />
           <span className="show-subtasks-text">{t("common.show.subtasks")}</span>
         </div>
       </label>

@@ -429,6 +429,47 @@ test("current-user issues two-column mode toggle follows legacy yona.twoColumnMo
     .toBe("false");
 });
 
+test("current-user issues show-subtasks toggle follows legacy yona.showSubtask localStorage behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForFilterLinks(page);
+
+  await page.goto(`${basePath}/user/issues`);
+  await page.evaluate(() => localStorage.removeItem("showSubtasksAlways"));
+  await page.reload();
+  const toggle = page.locator("#toggle-show-subtasks");
+  const childList = page.locator("#issue-item-42 .child-issue-list");
+  await expect(toggle).not.toBeChecked();
+  await expect(childList).not.toBeVisible();
+  await expect(page.locator(".child-issue-list .issue-item.child-issue")).toHaveCount(2);
+
+  await toggle.click();
+  await expect(toggle).toBeChecked();
+  await expect(childList).toBeVisible();
+  await expect(childList).toHaveAttribute("style", "display: block;");
+  await expect(page.locator(".child-issue-list .issue-item.child-issue").first()).toContainText(
+    "Open child issue - Dev Member",
+  );
+  await expect(page.locator(".child-issue-list .issue-item.child-issue").last()).toContainText(
+    "Closed child issue",
+  );
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("showSubtasksAlways")))
+    .toBe("true");
+
+  await page.reload();
+  await expect(page.locator("#toggle-show-subtasks")).toBeChecked();
+  await expect(page.locator("#issue-item-42 .child-issue-list")).toBeVisible();
+
+  await page.locator("#toggle-show-subtasks").click();
+  await expect(page.locator("#toggle-show-subtasks")).not.toBeChecked();
+  await expect(page.locator("#issue-item-42 .child-issue-list")).not.toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("showSubtasksAlways")))
+    .toBe("false");
+});
+
 async function mockUserIssuesForStateTabs(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -529,6 +570,38 @@ async function mockUserIssuesForFilterLinks(page: Page) {
             assigneeLoginId: "admin",
             authorLabel: "Alice",
             authorLoginId: "alice",
+            childIssues: [
+              {
+                assigneeLabel: "Dev Member",
+                commentCount: 2,
+                createdLabel: "2026-07-03",
+                id: 13,
+                issueNumber: 13,
+                labels: [
+                  {
+                    categoryId: 3,
+                    categoryName: "bug",
+                    color: "#51aacc",
+                    id: 8,
+                    name: "bug",
+                  },
+                ],
+                state: "open",
+                title: "Open child issue",
+                voterCount: 1,
+              },
+              {
+                assigneeLabel: "",
+                commentCount: 0,
+                createdLabel: "2026-07-04",
+                id: 14,
+                issueNumber: 14,
+                labels: [],
+                state: "closed",
+                title: "Closed child issue",
+                voterCount: 0,
+              },
+            ],
             commentCount: 0,
             createdLabel: "2026-06-30",
             id: 42,
