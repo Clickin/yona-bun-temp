@@ -710,9 +710,9 @@ function AuthenticatedSiteUserMenu({
           data-placement="bottom"
           title={`${t("title.shortcut")} (A)`}
         >
-          <a href={prefixBasePath(basePath, "/user/issues")} className="user-item-btn loggged-in">
+          <LegacyInternalLink to="/user/issues" className="user-item-btn loggged-in">
             {t("issue.myIssue")}
-          </a>
+          </LegacyInternalLink>
         </li>
         <li className="divider"></li>
         {isSiteAdmin ? (

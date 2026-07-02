@@ -437,6 +437,27 @@ test("authenticated home empty notifications matches legacy index notifications 
     pageWrapOuterWidth: 390,
     siteGuideOuterMargin: "40px 0px 0px",
   });
+
+  await page.setViewportSize({ width: 1100, height: 720 });
+  const gnbMyIssues = page.locator(".gnb-usermenu a.user-item-btn.loggged-in", {
+    hasText: "My Issues",
+  });
+  await expect(gnbMyIssues).toHaveAttribute("href", `${basePath}/user/issues`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "gnb-my-issues";
+  });
+  await gnbMyIssues.click();
+  await expect(page).toHaveURL(
+    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=1&query=&state=open`,
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("gnb-my-issues");
 });
 
 test("authenticated shell renders legacy custom navbar link before my issues", async ({ page }) => {
