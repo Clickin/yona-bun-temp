@@ -247,6 +247,23 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-users-tabs");
 
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-users-search";
+  });
+  await page.locator('.form-search input[name="query"]').fill("door");
+  await page.locator(".form-search").evaluate((form) => {
+    if (!(form instanceof HTMLFormElement)) {
+      throw new Error("Expected user search form");
+    }
+    form.requestSubmit();
+  });
+  await expect.poll(() => new URL(page.url()).searchParams.get("query")).toBe("door");
+  await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("LOCKED");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-users-search");
+
   await mockPosts(page);
   const postsLink = page.locator(".site-setting-nav a", { hasText: "Posts" });
   await expect(postsLink).toHaveAttribute("href", `${basePath}/sites/postList`);

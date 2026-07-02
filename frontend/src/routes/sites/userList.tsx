@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import type { AnchorHTMLAttributes, ComponentType } from "react";
 import { useState } from "react";
 import {
@@ -66,6 +66,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   const search = Route.useSearch();
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [deleteUser, setDeleteUser] = useState<SiteUser | null>(null);
   const [deleteModalClosed, setDeleteModalClosed] = useState(false);
   const [passwordResetByLoginId, setPasswordResetByLoginId] = useState<
@@ -130,7 +131,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         <div className="site-setting-wrap">
           <div className="row-fluid">
             <div className="span2">
-              <SiteAdminSidebar runtimeConfig={runtimeConfig} />
+              <SiteAdminSidebar />
             </div>
             <div className="span10">
               <div className="title_area">
@@ -140,6 +141,23 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 <form
                   className="form-search pull-right"
                   action={prefixBasePath(runtimeConfig.basePath, "/sites/userList")}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const form = new FormData(event.currentTarget);
+                    const nextState = form.get("state");
+                    const nextQuery = String(form.get("query") ?? "");
+                    void queryClient.invalidateQueries({
+                      queryKey: apiQueryKeys.siteAdmin.usersBase(),
+                    });
+                    void router.navigate({
+                      search: {
+                        pageNum: 1,
+                        query: nextQuery,
+                        state: isSiteUserState(nextState) ? nextState : search.state,
+                      },
+                      to: "/sites/userList",
+                    });
+                  }}
                 >
                   <input type="hidden" name="state" value={search.state} />
                   <div className="search-bar">
@@ -291,7 +309,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   );
 }
 
-function SiteAdminSidebar({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function SiteAdminSidebar() {
   const navItems = [
     { href: "/sites/userList", labelKey: "site.sidebar.userList", active: true },
     { href: "/sites/postList", labelKey: "site.sidebar.postList" },
