@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, type InputHTMLAttributes } from "react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import {
+  useEffect,
+  useRef,
+  type AnchorHTMLAttributes,
+  type ComponentType,
+  type InputHTMLAttributes,
+} from "react";
 import legacyMarkdownHelpTemplate from "../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { createProjectMilestone, readSessionBootstrap } from "../../../auth-workspace-client";
@@ -9,6 +15,13 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    params?: Record<string, string>;
+    to: string;
+  }
+>;
 
 const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
   .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
@@ -82,12 +95,7 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
         queryKey: ["project", ownerName, projectName, "milestones"],
       });
       const createdId = stringField(created.milestone?.id, "");
-      router.history.push(
-        prefixBasePath(
-          runtimeConfig.basePath,
-          `/${ownerName}/${projectName}/milestone/${createdId}`,
-        ),
-      );
+      router.navigate({ to: `/${ownerName}/${projectName}/milestone/${createdId}` });
     },
   });
 
@@ -139,15 +147,13 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
                     <button type="submit" className="ybtn ybtn-info">
                       {t("button.save")}
                     </button>
-                    <a
-                      href={prefixBasePath(
-                        runtimeConfig.basePath,
-                        `/${ownerName}/${projectName}/milestones`,
-                      )}
+                    <LegacyInternalLink
+                      to="/$ownerName/$projectName/milestones"
+                      params={{ ownerName, projectName }}
                       className="ybtn"
                     >
                       {t("button.cancel")}
-                    </a>
+                    </LegacyInternalLink>
                   </div>
                 </div>
                 <div className="span3 span-hard-wrap">

@@ -35,6 +35,10 @@ test("project milestone create form matches legacy milestone/create.scala.html c
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
   await expect(page.locator("#tplAttachedFile")).toHaveAttribute("type", "text/x-jquery-tmpl");
+  await expect(page.locator('.actrow a.ybtn:has-text("Cancel")')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestones`,
+  );
   expect(await readMilestoneCreateFormMetrics(page)).toEqual({
     actionDisplay: "block",
     actionMarginTop: "20px",
@@ -62,6 +66,18 @@ test("project milestone create form matches legacy milestone/create.scala.html c
     uploadPadding: "10px 20px",
   });
 
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "create-cancel";
+  });
+  await page.click('.actrow a.ybtn:has-text("Cancel")');
+  await expect(page).toHaveURL(
+    `${basePath}/admin/sample/milestones?orderBy=dueDate&orderDir=asc&state=open`,
+  );
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("create-cancel");
+
+  await page.goto(`${basePath}/admin/sample/newMilestoneForm`);
   await page.fill("#title", "v3.0");
   await page.fill("#editor-contents-content-body", "Create scope");
   await page.fill("#dueDate", "2026-09-30");
@@ -81,7 +97,7 @@ test("project milestone create form matches legacy milestone/create.scala.html c
       title: "v3.0",
     },
   ]);
-  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/9`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/9?state=open`);
 });
 
 async function mockProjectMilestoneCreateForm(page: Page, postRequests: unknown[]) {
@@ -162,6 +178,12 @@ async function mockProjectMilestoneCreateForm(page: Page, postRequests: unknown[
       return;
     }
     await route.fallback();
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/milestones?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ milestones: [] }),
+    });
   });
 }
 
