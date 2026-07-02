@@ -458,6 +458,28 @@ test("authenticated home empty notifications matches legacy index notifications 
       ),
     )
     .toBe("gnb-my-issues");
+
+  await page.goto(`${basePath}/`);
+  const createProjectLink = page.locator(".gnb-usermenu .dropdown-menu a", {
+    hasText: "Create new project",
+  });
+  const newGroupLink = page.locator(".gnb-usermenu .dropdown-menu a", { hasText: "New Group" });
+  await expect(createProjectLink).toHaveAttribute("href", `${basePath}/projectform`);
+  await expect(newGroupLink).toHaveAttribute("href", `${basePath}/organizations/new`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "gnb-new-group";
+  });
+  await newGroupLink.evaluate((link) => (link as HTMLAnchorElement).click());
+  await expect(page).toHaveURL(`${basePath}/organizations/new`);
+  await expect(page.locator('form[name="new-org"] legend')).toHaveText("New Group");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("gnb-new-group");
 });
 
 test("authenticated shell renders legacy custom navbar link before my issues", async ({ page }) => {

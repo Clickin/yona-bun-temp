@@ -773,13 +773,13 @@ function AuthenticatedSiteUserMenu({
               <hr className="no-margin" />
             </li>
             <li>
-              <a href={prefixBasePath(basePath, "/projectform")}>{t("button.newProject")}</a>
+              <LegacyInternalLink to="/projectform">{t("button.newProject")}</LegacyInternalLink>
             </li>
             {!isGuest ? (
               <li>
-                <a href={prefixBasePath(basePath, "/organizations/new")}>
+                <LegacyInternalLink to="/organizations/new">
                   {t("title.newOrganization")}
-                </a>
+                </LegacyInternalLink>
               </li>
             ) : null}
           </ul>
