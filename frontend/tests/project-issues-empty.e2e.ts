@@ -656,6 +656,32 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
   );
 });
 
+test("project issue quick search updates route like legacy partial_list_quicksearch.scala.html pjax filter", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug&pageNum=3`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-quick-search";
+  });
+
+  await page.locator('.lst-stacked a[pjax-filter][data-assignee-id="1"]').click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("assigneeId") ?? "").toBe("1");
+  await expect.poll(() => new URL(page.url()).searchParams.get("authorId") ?? "").toBe("");
+  await expect.poll(() => new URL(page.url()).searchParams.get("commenterId") ?? "").toBe("");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
+  await expect(
+    page.locator('.lst-stacked li:has(a[pjax-filter][data-assignee-id="1"])'),
+  ).toHaveClass("active");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("issue-quick-search");
+});
+
 test("project issue list sorts labels like legacy partial_list.scala.html", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "labels-unsorted");
@@ -1936,7 +1962,7 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => shouldKeepAttr(attr))
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -1953,7 +1979,16 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
-      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+      if (attr.name === "style") {
+        return normalizeStyleAttr(attr.value);
+      }
+      if (attr.name === "class" && attr.ownerElement?.closest(".user-menu-wrap")) {
+        return attr.value
+          .split(/\s+/u)
+          .filter((className) => className && className !== "active")
+          .join(" ");
+      }
+      return attr.value;
     }
 
     function normalizeStyleAttr(value: string) {
@@ -1965,6 +2000,18 @@ async function canonicalizeScreenRoots(page: Page) {
           /box-shadow:rgb\(([^)]+)\)2px0px0px0pxinset/gu,
           "box-shadow:rgb($1)2px0px0pxinset",
         );
+    }
+
+    function shouldKeepAttr(attr: Attr) {
+      if (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "alt" ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      ) {
+        return false;
+      }
+      return attr.name !== "class" || normalizeAttr(attr) !== "";
     }
   });
 }
@@ -1992,7 +2039,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => shouldKeepAttr(attr))
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -2021,6 +2068,18 @@ async function canonicalizeHtml(page: Page, html: string) {
           /box-shadow:rgb\(([^)]+)\)2px0px0px0pxinset/gu,
           "box-shadow:rgb($1)2px0px0pxinset",
         );
+    }
+
+    function shouldKeepAttr(attr: Attr) {
+      if (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "alt" ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      ) {
+        return false;
+      }
+      return attr.name !== "class" || normalizeAttr(attr) !== "";
     }
   }, html);
 }

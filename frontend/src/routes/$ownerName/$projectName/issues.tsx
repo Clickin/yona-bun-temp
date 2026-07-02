@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Fragment,
   useEffect,
@@ -402,6 +402,7 @@ function ProjectIssuesBody({
   search: ProjectIssuesSearch;
 }) {
   const { t } = useLegacyMessages();
+  const navigate = useNavigate();
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const hasIssues = issues.items.length > 0;
   const draftItems = shouldShowDraftItems(search)
@@ -423,6 +424,11 @@ function ProjectIssuesBody({
               currentUserId={currentUserId}
               isAnonymous={isAnonymous}
               issues={issues}
+              onQuickSearch={(nextSearch) => {
+                void navigate({
+                  to: projectIssuesRoutePath(ownerName, projectName, nextSearch),
+                });
+              }}
               search={search}
               state={search.state}
             />
@@ -1471,12 +1477,14 @@ function QuickSearch({
   currentUserId,
   isAnonymous,
   issues,
+  onQuickSearch,
   search,
   state,
 }: {
   currentUserId: string;
   isAnonymous: boolean;
   issues: ProjectIssueListRestResponse;
+  onQuickSearch: (search: ProjectIssuesSearch) => void;
   search: ProjectIssuesSearch;
   state: "closed" | "open";
 }) {
@@ -1500,6 +1508,16 @@ function QuickSearch({
           data-author-id=""
           data-commenter-id=""
           data-milestone-id={search.milestoneId}
+          onClick={(event) => {
+            event.preventDefault();
+            onQuickSearch({
+              ...search,
+              assigneeId: "",
+              authorId: "",
+              commenterId: "",
+              pageNum: 1,
+            });
+          }}
         >
           {allLabel}
           <span className="num-badge pull-right">{allCount}</span>
@@ -1516,6 +1534,16 @@ function QuickSearch({
               data-author-id=""
               data-commenter-id=""
               data-milestone-id={search.milestoneId}
+              onClick={(event) => {
+                event.preventDefault();
+                onQuickSearch({
+                  ...search,
+                  assigneeId: currentUserId,
+                  authorId: "",
+                  commenterId: "",
+                  pageNum: 1,
+                });
+              }}
             >
               {t("issue.list.assignedToMe")}
               <span className="num-badge pull-right">
@@ -1532,6 +1560,16 @@ function QuickSearch({
               data-author-id={currentUserId}
               data-commenter-id=""
               data-milestone-id={search.milestoneId}
+              onClick={(event) => {
+                event.preventDefault();
+                onQuickSearch({
+                  ...search,
+                  assigneeId: "",
+                  authorId: currentUserId,
+                  commenterId: "",
+                  pageNum: 1,
+                });
+              }}
             >
               {t("issue.list.authoredByMe")}
               <span className="num-badge pull-right">
@@ -1548,6 +1586,16 @@ function QuickSearch({
               data-author-id=""
               data-commenter-id={currentUserId}
               data-milestone-id={search.milestoneId}
+              onClick={(event) => {
+                event.preventDefault();
+                onQuickSearch({
+                  ...search,
+                  assigneeId: "",
+                  authorId: "",
+                  commenterId: currentUserId,
+                  pageNum: 1,
+                });
+              }}
             >
               {t("issue.list.commentedByMe")}
               <span className="num-badge pull-right">
@@ -1559,6 +1607,37 @@ function QuickSearch({
       ) : null}
     </ul>
   );
+}
+
+function projectIssuesRoutePath(
+  ownerName: string,
+  projectName: string,
+  search: ProjectIssuesSearch,
+) {
+  const queryPairs: string[] = [];
+  pushSearchParam(queryPairs, "assigneeId", search.assigneeId);
+  pushSearchParam(queryPairs, "authorId", search.authorId);
+  pushSearchParam(queryPairs, "commenterId", search.commenterId);
+  pushSearchParam(queryPairs, "dueDate", search.dueDate);
+  pushSearchParam(queryPairs, "filter", search.filter);
+  for (const labelId of search.labelIds) {
+    pushSearchParam(queryPairs, "labelIds", labelId);
+  }
+  pushSearchParam(queryPairs, "milestoneId", search.milestoneId);
+  pushSearchParam(queryPairs, "orderBy", search.orderBy);
+  pushSearchParam(queryPairs, "orderDir", search.orderDir);
+  pushSearchParam(queryPairs, "pageNum", String(search.pageNum));
+  pushSearchParam(queryPairs, "state", search.state);
+
+  const queryString = queryPairs.join("&");
+  const path = `/${ownerName}/${projectName}/issues`;
+  return queryString ? `${path}?${queryString}` : path;
+}
+
+function pushSearchParam(queryPairs: string[], name: string, value: string) {
+  if (value) {
+    queryPairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(value)}`);
+  }
 }
 
 function IssueSearchForm({
