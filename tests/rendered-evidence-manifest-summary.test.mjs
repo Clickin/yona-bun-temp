@@ -38,6 +38,17 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     ["user/edit_emails.scala.html", "frontend/tests/user-email-settings.e2e.ts"],
     ["user/edit_token.scala.html", "frontend/tests/user-token-settings.e2e.ts"],
   ]);
+  const siteAdminEvidence = new Map([
+    ["site/data.scala.html", "frontend/tests/site-admin-data.e2e.ts"],
+    ["site/diagnostic.scala.html", "frontend/tests/site-admin-diagnostic.e2e.ts"],
+    ["site/issueList.scala.html", "frontend/tests/site-admin-issue-list.e2e.ts"],
+    ["site/mail.scala.html", "frontend/tests/site-admin-mail.e2e.ts"],
+    ["site/massMail.scala.html", "frontend/tests/site-admin-massmail.e2e.ts"],
+    ["site/postList.scala.html", "frontend/tests/site-admin-post-list.e2e.ts"],
+    ["site/projectList.scala.html", "frontend/tests/site-admin-project-list.e2e.ts"],
+    ["site/update.scala.html", "frontend/tests/site-admin-update.e2e.ts"],
+    ["site/userList.scala.html", "frontend/tests/site-admin-user-list.e2e.ts"],
+  ]);
   let inSummary = false;
   let inPrioritySummary = false;
   let manifestDetailRows;
@@ -144,6 +155,31 @@ test("rendered evidence summary counts match manifest row statuses", () => {
         evidenceFiles,
         /frontend\/tests\/workspace-settings-parity\.e2e\.ts/,
         "user/partial_edit_tabmenu.scala.html must not cite historical workspace settings evidence",
+      );
+    }
+    const expectedSiteAdminEvidence = siteAdminEvidence.get(legacyTemplate);
+    if (expectedSiteAdminEvidence) {
+      assert.ok(
+        evidenceFiles.includes(expectedSiteAdminEvidence),
+        `${legacyTemplate} must cite current site-admin evidence`,
+      );
+      assert.doesNotMatch(
+        evidenceFiles,
+        /frontend\/tests\/site-admin-[a-z-]+-parity\.e2e\.ts/,
+        `${legacyTemplate} must not cite historical site-admin parity evidence`,
+      );
+    }
+    if (legacyTemplate === "site/siteMngLayout.scala.html") {
+      for (const expected of siteAdminEvidence.values()) {
+        assert.ok(
+          evidenceFiles.includes(expected),
+          "site/siteMngLayout.scala.html must cite every current site-admin shell evidence",
+        );
+      }
+      assert.doesNotMatch(
+        evidenceFiles,
+        /frontend\/tests\/site-admin-[a-z-]+-parity\.e2e\.ts/,
+        "site/siteMngLayout.scala.html must not cite historical site-admin parity evidence",
       );
     }
     prioritySummaryCounts.set(
