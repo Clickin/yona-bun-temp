@@ -397,6 +397,21 @@ test("current-user issues quick filter preserves legacy pjax hooks with SPA tran
   await expect(page.locator('input[name="favoriteId"]')).toHaveValue("1");
 });
 
+test("current-user issues quick filter zero counts follow legacy blank-filter rendering", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForZeroQuickFilterCounts(page);
+
+  await page.goto(`${basePath}/user/issues`);
+
+  await expect(page.locator(".left-menu .mentioned-of-me").locator("..")).toHaveText(
+    "Mentioned(0)",
+  );
+  await expect(page.locator(".left-menu .shared-with-me").locator("..")).toHaveText("Shared(0)");
+  await expect(page.locator(".left-menu .favorite-issue").locator("..")).toHaveText("Favorite(0)");
+});
+
 test("current-user issues two-column mode toggle follows legacy yona.twoColumnMode localStorage branch", async ({
   page,
 }) => {
@@ -758,6 +773,40 @@ async function mockUserIssuesForQuickFilters(page: Page) {
         pageNum: 1,
         pageSize: 20,
         sideFilterCounts: { favorite: 1, mentioned: 2, shared: 1 },
+        state: "open",
+        totalCount: 0,
+        totalPages: 1,
+        viewerUserId: 1,
+      }),
+    });
+  });
+}
+
+async function mockUserIssuesForZeroQuickFilterCounts(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        isAnonymous: false,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/user/issues?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        closedIssueCount: 0,
+        filter: "assigned",
+        items: [],
+        openIssueCount: 0,
+        pageNum: 1,
+        pageSize: 20,
+        sideFilterCounts: { favorite: 0, mentioned: 0, shared: 0 },
         state: "open",
         totalCount: 0,
         totalPages: 1,

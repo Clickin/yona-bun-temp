@@ -657,7 +657,7 @@ function QuickSearch({
                 <i className={row.icon}></i>
                 {row.label}
               </span>
-              {!search.query && "count" in row && row.count ? `(${row.count})` : null}
+              {!search.query && "count" in row && row.count != null ? `(${row.count})` : null}
             </a>
           </li>
         );
