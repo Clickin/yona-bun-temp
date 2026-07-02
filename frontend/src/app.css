@@ -408,7 +408,7 @@ button[type="submit"]:focus {
 
 .secret-box,
 .secret-page .secret-box {
-  width: 50%;
+  width: 50vw;
   margin: 20px auto;
 }
 
@@ -574,6 +574,20 @@ button[type="submit"]:focus {
   height: 40px;
   margin: 0 auto;
   color: #788ba7;
+}
+
+@media (min-width: 901px) {
+  body:has(.siteintro-bg) .gnb-inner {
+    width: 1176px;
+  }
+
+  body:has(.site-breadcrumb-outer) .gnb-inner {
+    width: 1058px;
+  }
+
+  body:has(.site-breadcrumb-outer) .page-wrap {
+    width: 1080px;
+  }
 }
 
 .gnb-inner .logo {
@@ -1647,6 +1661,10 @@ span.issue-label {
 
   .signup-form-wrap .text {
     width: 40% !important;
+  }
+
+  .page-wrap-outer:has(.secret-wrap) .signup-form-wrap .text {
+    width: calc(95vw * 0.4) !important;
   }
 
   .signup-form-wrap dl {
@@ -3236,6 +3254,10 @@ h1 {
     box-sizing: border-box;
     width: 100%;
     padding: 0 !important;
+  }
+
+  .page-wrap-outer:has(.secret-wrap) .page-wrap {
+    width: 100%;
   }
 
   .site-breadcrumb-outer {
