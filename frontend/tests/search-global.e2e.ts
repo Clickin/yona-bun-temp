@@ -289,6 +289,28 @@ test("global search matches legacy search/result.scala.html empty project result
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_GLOBAL_SEARCH.replaceAll("__BASE_PATH__", basePath)),
   );
+  expect(await readSearchResultShellMetrics(page)).toEqual({
+    activeCategoryBackground: "rgb(81, 170, 204)",
+    activeCategoryHeight: 55,
+    buttonHeight: 30,
+    buttonWidth: 71,
+    categoryColumnWidth: 188,
+    categoryListMargin: "0px",
+    categoryPaddingLeft: "0px",
+    emptyHeight: 52,
+    formDisplay: "flex",
+    innerProjectWrapWidth: 1260,
+    keywordHeight: 30,
+    keywordPadding: "4px 6px",
+    keywordValue: "missing",
+    pageWrapOuterMinHeight: "450px",
+    resultColumnWidth: 1046,
+    resultWrapMarginTop: "0px",
+    rowWidth: 1260,
+    searchBoxMarginBottom: "16px",
+    titleFontSize: "16px",
+    titleMargin: "15px 0px 10px",
+  });
 });
 
 test("global project search renders legacy partial_projects.scala.html populated row", async ({
@@ -533,6 +555,84 @@ async function readRequestTextTooLargeMetrics(page: Page) {
       footerPaddingTop: footerOuterStyle.paddingTop,
       pageWrapOuterMinHeight: getComputedStyle(pageWrapOuter).minHeight,
       projectPageWrapMarginTop: getComputedStyle(projectPageWrap).marginTop,
+    };
+  });
+}
+
+async function readSearchResultShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const outerProjectWrap = document.querySelector<HTMLElement>(
+      ".page-wrap-outer > .project-page-wrap",
+    );
+    const innerProjectWrap = document.querySelector<HTMLElement>(
+      ".page-wrap-outer > .project-page-wrap > .project-page-wrap",
+    );
+    const row = document.querySelector<HTMLElement>(".page-wrap-outer .row-fluid");
+    const categoryColumn = document.querySelector<HTMLElement>(".row-fluid > .span2");
+    const resultColumn = document.querySelector<HTMLElement>(".row-fluid > .span10");
+    const categories = document.querySelector<HTMLElement>(".search-category-wrap");
+    const activeCategory = document.querySelector<HTMLElement>(".search-category-wrap li.active");
+    const searchBox = document.querySelector<HTMLElement>(".search-box-wrap");
+    const form = document.querySelector<HTMLElement>("#searchInnerForm");
+    const keyword = document.querySelector<HTMLInputElement>("#searchKeyword");
+    const button = document.querySelector<HTMLElement>("#searchInnerForm .ybtn");
+    const title = document.querySelector<HTMLElement>(".search-result-title");
+    const resultWrap = document.querySelector<HTMLElement>(".search-result-wrap");
+    const empty = document.querySelector<HTMLElement>(".empty-result");
+    const missing = Object.entries({
+      activeCategory,
+      button,
+      categories,
+      categoryColumn,
+      empty,
+      form,
+      innerProjectWrap,
+      keyword,
+      outerProjectWrap,
+      pageWrapOuter,
+      resultColumn,
+      resultWrap,
+      row,
+      searchBox,
+      title,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected search result shell metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const activeCategoryStyle = getComputedStyle(activeCategory);
+    const categoryColumnStyle = getComputedStyle(categoryColumn);
+    const keywordStyle = getComputedStyle(keyword);
+    const resultColumnStyle = getComputedStyle(resultColumn);
+    const resultWrapStyle = getComputedStyle(resultWrap);
+    const searchBoxStyle = getComputedStyle(searchBox);
+    const titleStyle = getComputedStyle(title);
+    return {
+      activeCategoryBackground: activeCategoryStyle.backgroundColor,
+      activeCategoryHeight: Math.round(activeCategory.getBoundingClientRect().height),
+      buttonHeight: Math.round(button.getBoundingClientRect().height),
+      buttonWidth: Math.round(button.getBoundingClientRect().width),
+      categoryColumnWidth: Math.round(categoryColumn.getBoundingClientRect().width),
+      categoryListMargin: getComputedStyle(categories).margin,
+      categoryPaddingLeft: categoryColumnStyle.paddingLeft,
+      emptyHeight: Math.round(empty.getBoundingClientRect().height),
+      formDisplay: getComputedStyle(form).display,
+      innerProjectWrapWidth: Math.round(innerProjectWrap.getBoundingClientRect().width),
+      keywordHeight: Math.round(keyword.getBoundingClientRect().height),
+      keywordPadding: keywordStyle.padding,
+      keywordValue: keyword.value,
+      pageWrapOuterMinHeight: getComputedStyle(pageWrapOuter).minHeight,
+      resultColumnWidth: Math.round(resultColumn.getBoundingClientRect().width),
+      resultWrapMarginTop: resultWrapStyle.marginTop,
+      rowWidth: Math.round(row.getBoundingClientRect().width),
+      searchBoxMarginBottom: searchBoxStyle.marginBottom,
+      titleFontSize: titleStyle.fontSize,
+      titleMargin: titleStyle.margin,
     };
   });
 }
