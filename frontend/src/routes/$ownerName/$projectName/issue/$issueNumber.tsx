@@ -431,6 +431,7 @@ function IssueDetailBody({
   const isFavorited = booleanField(issue.isFavorited);
   const canUpdate = booleanField(issue.viewerCanUpdate);
   const canDelete = booleanField(issue.viewerCanDelete);
+  const canBeDeleted = issue.canBeDeleted !== false;
   const canComment = booleanField(issue.viewerCanComment);
   const canWatch = issue.viewerCanWatch !== false;
   const hasVoted = booleanField(issue.hasVoted);
@@ -683,6 +684,7 @@ function IssueDetailBody({
                 </button>
               ) : null}
               <IssueActionButtons
+                canBeDeleted={canBeDeleted}
                 canDelete={canDelete}
                 canUpdate={canUpdate}
                 editHref={prefixBasePath(
@@ -887,6 +889,7 @@ function IssueDetailBody({
                 ) : null}
                 <div className="act-row right-menu-icons">
                   <IssueActionButtons
+                    canBeDeleted={canBeDeleted}
                     canDelete={canDelete}
                     canUpdate={canUpdate}
                     editHref={prefixBasePath(
@@ -1744,12 +1747,14 @@ function KeymapEntry({ keys, label }: { keys: string[]; label: string }) {
 }
 
 function IssueActionButtons({
+  canBeDeleted,
   canDelete,
   canUpdate,
   editHref,
   onDeleteClick,
   wrap = true,
 }: {
+  canBeDeleted: boolean;
   canDelete: boolean;
   canUpdate: boolean;
   editHref: string;
@@ -1779,7 +1784,7 @@ function IssueActionButtons({
           </button>
         </a>
       )}
-      {canDelete ? (
+      {canBeDeleted && canDelete ? (
         <a href="#deleteConfirm" data-toggle="modal">
           <button
             type="button"
@@ -1791,7 +1796,8 @@ function IssueActionButtons({
             <i className="yobicon-trash"></i>
           </button>
         </a>
-      ) : (
+      ) : null}
+      {!canBeDeleted ? (
         <button
           type="button"
           className="icon disabled btn-transparent-with-fontsize-lineheight ml6"
@@ -1802,7 +1808,7 @@ function IssueActionButtons({
         >
           <i className="yobicon-trash"></i>
         </button>
-      )}
+      ) : null}
     </span>
   );
   return wrap ? buttons : <>{buttons.props.children}</>;

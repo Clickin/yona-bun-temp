@@ -640,6 +640,7 @@ fn pilot_issue_response(state: &str) -> ReadIssueDetailResponse {
         issue_number: 1,
         title: "Pilot issue".to_string(),
         state: state.to_string(),
+        can_be_deleted: true,
         ..Default::default()
     }
 }
@@ -3999,6 +4000,11 @@ fn issue_detail_response_from_record_with_sharer_flags_and_references(
     issue_references: &[MarkdownIssueReference],
     mention_references: &[MarkdownMentionReference],
 ) -> ReadIssueDetailResponse {
+    let can_be_deleted = issue
+        .comments
+        .iter()
+        .all(|comment| comment.author_login_id == issue.author_login_id);
+
     ReadIssueDetailResponse {
         assignee_avatar_url: if issue.assignee_login_id.is_empty() {
             String::new()
@@ -4035,6 +4041,7 @@ fn issue_detail_response_from_record_with_sharer_flags_and_references(
             })
             .collect(),
         has_voted: issue.has_voted,
+        can_be_deleted,
         issue_references: issue_references
             .iter()
             .map(issue_reference_metadata_from_resolved)

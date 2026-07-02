@@ -1130,8 +1130,8 @@ test("project issue detail unvotes comments through legacy agree action", async 
     .toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
 });
 
-test("project issue detail renders legacy disabled delete action", async ({ page }) => {
-  await mockProjectIssueDetail(page, { viewerCanDelete: false });
+test("project issue detail renders legacy unavailable delete action", async ({ page }) => {
+  await mockProjectIssueDetail(page, { canBeDeleted: false, viewerCanDelete: false });
 
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
 
@@ -1142,6 +1142,23 @@ test("project issue detail renders legacy disabled delete action", async ({ page
   expect(await canonicalize(page, ".issue-info .right-menu-icons > button.disabled")).toEqual(
     await canonicalizeHtml(page, expected),
   );
+});
+
+test("project issue detail hides unauthorized delete when issue itself can be deleted", async ({
+  page,
+}) => {
+  await mockProjectIssueDetail(page, { canBeDeleted: true, viewerCanDelete: false });
+
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
+
+  await expect(
+    page.locator('.span-left-pane > .board-actrow a[href="#deleteConfirm"]'),
+  ).toHaveCount(0);
+  await expect(page.locator(".span-left-pane > .board-actrow button.disabled")).toHaveCount(0);
+  await expect(page.locator('.issue-info .right-menu-icons a[href="#deleteConfirm"]')).toHaveCount(
+    0,
+  );
+  await expect(page.locator(".issue-info .right-menu-icons button.disabled")).toHaveCount(0);
 });
 
 test("project issue detail renders legacy disabled vote action", async ({ page }) => {
@@ -2505,6 +2522,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       bodyChecksum: "body-sha1",
       bodyHtml: "<p>Server HTML should not render</p>",
       bodyMarkdown: "Body **markdown**",
+      canBeDeleted: true,
       childClosedCount: 0,
       childIssues: [],
       childOpenCount: 0,

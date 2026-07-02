@@ -157,6 +157,7 @@ function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIs
     authorLabel: response.authorLabel ?? "",
     bodyHtml: response.bodyHtml ?? "",
     bodyMarkdown: response.bodyMarkdown ?? "",
+    canBeDeleted: response.canBeDeleted ?? true,
     commentCount: response.commentCount ?? 0,
     hasVoted: response.hasVoted ?? false,
     historyMarkdown: response.historyMarkdown ?? "",

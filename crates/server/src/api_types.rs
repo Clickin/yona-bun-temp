@@ -1823,6 +1823,8 @@ pub struct ReadIssueDetailResponse {
     #[serde(default)]
     pub has_voted: bool,
     #[serde(default)]
+    pub can_be_deleted: bool,
+    #[serde(default)]
     pub viewer_can_update: bool,
     #[serde(default)]
     pub viewer_can_delete: bool,
