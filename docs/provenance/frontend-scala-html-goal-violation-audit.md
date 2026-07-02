@@ -45,7 +45,6 @@ The mandatory workflow remains:
 
 | Priority | Route/screen | Current files | Legacy source of truth | Required action |
 | --- | --- | --- | --- | --- |
-| P0 | `/$user` missing-user not-found branch | `frontend/src/routes/$user.tsx`, `frontend/tests/user-public-profile.e2e.ts` | `error/notfound_default.scala.html`, `common/usermenu.scala.html`, `layout.scala.html` | Delete/rebuild the branch. Current branch omits the legacy `common.usermenu()` side menu shape that should appear in the not-found shell. |
 | P0 | `/admin/sample/issues` issue list | `frontend/src/routes/$ownerName/$projectName/issues.tsx`, `frontend/tests/project-issues-empty.e2e.ts` | `issue/list.scala.html`, `issue/partial_searchform.scala.html`, `issue/partial_list_wrap.scala.html`, `issue/partial_list.scala.html`, `issue/partial_list_quicksearch.scala.html`, `issue/partial_massupdate.scala.html`, `common/showSubtasksCheckbox.scala.html`, `common/twoColumnModeCheckboxArea.scala.html` | Rebuild the issue list route from the Scala templates. Current implementation history shows empty-list first, then many branch patches. |
 | P0 | `/admin/sample/issue/11` issue detail | `frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx`, `frontend/tests/project-issue-detail.e2e.ts` | `issue/view.scala.html`, `issue/partial_comments.scala.html`, `issue/partial_comment.scala.html`, `issue/partial_event_timeline.scala.html`, `issue/partial_index_comments.scala.html`, `common/commentForm.scala.html`, `common/childComments.scala.html`, `common/commentDeleteModal.scala.html`, `common/editor.scala.html`, `help/markdown.scala.html` | Rebuild the issue detail route from the Scala templates. Current implementation history appears accretive rather than template-first. |
 
@@ -80,6 +79,12 @@ must not be counted as successful Scala HTML goal implementation turns:
 - `68095b44` project home README layout metrics
 - `a0f1abe5` project home history stream metrics
 - `74c29d53` public profile legacy width
+
+## Rebuilt From This Audit
+
+| Date | Route/screen | Legacy source of truth | Implementation evidence | Verification |
+| --- | --- | --- | --- | --- |
+| 2026-07-02 | `/$user` missing-user not-found branch | `error/notfound_default.scala.html`, `common/usermenu.scala.html`, `layout.scala.html` | `frontend/src/routes/$user.tsx` now renders the not-found shell with the anonymous `#mySidenav` and `gnb-usermenu` structure from `common.usermenu()` instead of the earlier partial header-only branch. | `frontend/tests/user-public-profile.e2e.ts` whole-screen expected DOM includes the legacy side menu, error copy `user.notExists.name`, home button, and footer. |
 
 ## Not Immediate Delete Targets
 

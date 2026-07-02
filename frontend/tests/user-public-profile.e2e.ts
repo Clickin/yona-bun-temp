@@ -73,6 +73,23 @@ const EXPECTED_MISSING_USER_SCREEN = `
       <li><a href="__BASE_PATH__/_help">Help</a></li>
       <li><a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">Feedback</a></li>
     </ul>
+    <div id="mySidenav" class="sidenav">
+      <div class="span5 right-menu span-hard-wrap">
+        <div class="row-fluid user-menu-wrap">
+          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
+          <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
+          <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
+        </div>
+        <ul class="nav nav-tabs nm">
+          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
+          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
+          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+        </ul>
+        <div class="tab-content tab-box">
+          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
+        </div>
+      </div>
+    </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in"><a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a></li>
       <li class="divider"></li>
