@@ -6,6 +6,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
     <p id="unsupported-content"></p>
   </div>
 </div>
+<div class="admin-logged-in-affix" data-spy="affix" data-offset-top="30">You are Admin now! <span class="small-font">With great power comes great responsibility</span></div>
 <header class="gnb-outer">
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
@@ -1465,7 +1466,9 @@ async function mockAuthenticatedNotificationsByPage(
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
-      document.querySelectorAll(".unsupported, .gnb-outer, .page-wrap-outer, .page-footer-outer"),
+      document.querySelectorAll(
+        ".unsupported, .admin-logged-in-affix, .gnb-outer, .page-wrap-outer, .page-footer-outer",
+      ),
     );
     return roots.map((root) => visit(root)).join("");
 

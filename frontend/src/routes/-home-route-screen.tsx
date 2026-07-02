@@ -450,6 +450,9 @@ export function SiteLayoutShell({
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const session = sessionQuery.data;
   const shouldRenderAnonymousUserMenu = sessionQuery.data?.isAnonymous !== false;
+  const shouldRenderSiteAdminAffix =
+    sessionQuery.data?.isAnonymous === false &&
+    booleanField(sessionQuery.data, "isSiteAdmin", false);
   const projectSearchAction = projectSearchScope
     ? prefixBasePath(
         runtimeConfig.basePath,
@@ -464,6 +467,12 @@ export function SiteLayoutShell({
           <p id="unsupported-content" />
         </div>
       </div>
+      {shouldRenderSiteAdminAffix ? (
+        <div className="admin-logged-in-affix" data-spy="affix" data-offset-top="30">
+          {t("user.siteAdminLoggedInAffix")}{" "}
+          <span className="small-font">{t("user.siteAdminLoggedInAffix.maxim")}</span>
+        </div>
+      ) : null}
       <header className={projectSearchScope ? "gnb-outer project-header" : "gnb-outer"}>
         <div className="gnb-inner">
           <div className="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
