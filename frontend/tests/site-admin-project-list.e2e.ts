@@ -295,9 +295,19 @@ test("site admin project delete waits for legacy confirmation modal", async ({ p
   await expect(page.locator("#alertDeletionWrap")).toHaveClass(/hide/);
   expect(requests.deletedProjectIds).toEqual([]);
 
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "project-delete";
+  });
   await page.locator('[data-toggle="delete-project"]').click();
+  const reloadPromise = page.waitForEvent("framenavigated");
   await page.locator("#projectDeleteBtn").click();
+  await reloadPromise;
+
   await expect.poll(() => requests.deletedProjectIds).toEqual(["77"]);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Projects");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBeUndefined();
 });
 
 test("site admin project list renders legacy update notification badge", async ({ page }) => {

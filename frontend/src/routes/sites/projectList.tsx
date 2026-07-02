@@ -66,6 +66,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
     },
     onSuccess() {
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.projectsBase() });
+      router.history.go(0);
     },
   });
 
