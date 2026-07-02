@@ -1247,7 +1247,7 @@ function ProjectIssueItem({
                 src={issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png"}
                 width="32"
                 height="32"
-                alt=""
+                alt={issue.assigneeLabel}
               />
             </a>
           ) : (
