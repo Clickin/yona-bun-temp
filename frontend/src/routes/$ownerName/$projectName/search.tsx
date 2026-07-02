@@ -7,6 +7,7 @@ import { YonaQueryProvider } from "../../../query-client";
 import type { RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import {
+  DefaultSearchErrorBody,
   emptySearchResult,
   isRequestTextTooLargeError,
   LegacySearchBody,
@@ -17,19 +18,22 @@ import { ProjectHeader, ProjectMenu } from "../$projectName";
 type ProjectSearchRouteSearch = {
   keyword: string;
   pageNum: number;
+  routeInvalid: boolean;
   searchType: SearchType;
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/search")({
   component: ProjectSearchRoute,
   validateSearch: (search: Record<string, unknown>): ProjectSearchRouteSearch => {
-    const rawSearchType = typeof search.searchType === "string" ? search.searchType : "auto";
+    const rawSearchType = typeof search.searchType === "string" ? search.searchType : "";
+    const rawKeyword = typeof search.keyword === "string" ? search.keyword : "";
     const rawPageNum = typeof search.pageNum === "string" ? Number.parseInt(search.pageNum, 10) : 1;
+    const validSearchType = isSearchType(rawSearchType);
     return {
-      keyword: typeof search.keyword === "string" ? search.keyword : "",
+      keyword: rawKeyword,
       pageNum: Number.isFinite(rawPageNum) && rawPageNum > 0 ? rawPageNum : 1,
-      searchType:
-        isSearchType(rawSearchType) && rawSearchType !== "project" ? rawSearchType : "auto",
+      routeInvalid: rawKeyword.length === 0 || !validSearchType || rawSearchType === "project",
+      searchType: validSearchType && rawSearchType !== "project" ? rawSearchType : "auto",
     };
   },
 });
@@ -51,9 +55,10 @@ function ProjectSearchRoute() {
 function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
+  const projectQuery = useQuery({
+    ...readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+    enabled: !search.routeInvalid,
+  });
   const hasKeyword = search.keyword.trim().length > 0;
   const searchQuery = useQuery({
     ...projectSearchQueryOptions(runtimeConfig, {
@@ -61,7 +66,7 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       ownerName,
       projectName,
     }),
-    enabled: hasKeyword,
+    enabled: hasKeyword && !search.routeInvalid,
   });
   const result =
     searchQuery.data ??
@@ -72,6 +77,17 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 
   if (isRequestTextTooLargeError(searchQuery.error)) {
     return <RequestTextTooLargeErrorBody />;
+  }
+
+  if (search.routeInvalid) {
+    return (
+      <DefaultSearchErrorBody
+        iconClassName="ico-404"
+        messageKey="error.badrequest"
+        runtimeConfig={runtimeConfig}
+        ybtnClassName="ybtn ybtn-info"
+      />
+    );
   }
 
   if (!projectQuery.data) {

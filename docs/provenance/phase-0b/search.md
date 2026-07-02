@@ -36,9 +36,10 @@
 - Covered rendered state: anonymous global `/search?keyword=review&searchType=review` populated pull-request review row from `partial_reviews.scala.html`, including the post-id number, `Re)` review anchor with `#comment-<id>` fragment, snippet truncation marker, project link, author tooltip link, created-date meta, and pagination placeholder.
 - Covered rendered state: authenticated project `/admin/sample/search?keyword=missing&searchType=review` project-layout branch with `projectLayout`, `projectMenu(project, MenuType.NONE, "main-menu-only")`, no project category tab, review active category, and `<div class="empty-result"></div>`.
 - Covered rendered state: authenticated organization `/organizations/weblabs/search?keyword=missing&searchType=project` organization-layout branch with `organization.header`, `organization.menu`, project category present/active, and `<div class="empty-result"></div>`.
+- Covered rendered state: scoped invalid-query project `/admin/sample/search` and organization `/organizations/weblabs/search` branches now follow `SearchApp.searchInAProject/searchInAGroup` by rendering `error/badrequest_default.scala.html`, omitting scoped header/menu and `#searchInnerForm`, and avoiding scoped REST search calls.
 - React targets: `frontend/src/routes/search.tsx`, `frontend/src/routes/$ownerName/$projectName/search.tsx`, `frontend/src/routes/organizations/$organizationName/search.tsx`, `frontend/src/routes/-search-screen.tsx`.
 - Whole-screen evidence: `frontend/tests/search-global.e2e.ts`, `frontend/tests/search-project.e2e.ts`, `frontend/tests/search-organization.e2e.ts`.
-- Remaining frontend gap: none for populated legacy `search/partial_*.scala.html` result-row branches currently listed in this slice.
+- Remaining frontend gap: project/organization scoped populated result rows still need a one-screen Scala HTML rebuild pass over the shared `search/partial_*.scala.html` renderer. Current direct scoped evidence is strongest for empty and invalid-query states.
 
 ## Deferred Index Evidence Note
 

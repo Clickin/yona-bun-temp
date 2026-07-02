@@ -8,6 +8,7 @@ import { YonaQueryProvider } from "../../../query-client";
 import type { RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import {
+  DefaultSearchErrorBody,
   emptySearchResult,
   isRequestTextTooLargeError,
   LegacySearchBody,
@@ -18,18 +19,22 @@ import { OrganizationHeader, OrganizationMenu } from "../$organizationName";
 type OrganizationSearchRouteSearch = {
   keyword: string;
   pageNum: number;
+  routeInvalid: boolean;
   searchType: SearchType;
 };
 
 export const Route = createFileRoute("/organizations/$organizationName/search")({
   component: OrganizationSearchRoute,
   validateSearch: (search: Record<string, unknown>): OrganizationSearchRouteSearch => {
-    const rawSearchType = typeof search.searchType === "string" ? search.searchType : "auto";
+    const rawSearchType = typeof search.searchType === "string" ? search.searchType : "";
+    const rawKeyword = typeof search.keyword === "string" ? search.keyword : "";
     const rawPageNum = typeof search.pageNum === "string" ? Number.parseInt(search.pageNum, 10) : 1;
+    const validSearchType = isSearchType(rawSearchType);
     return {
-      keyword: typeof search.keyword === "string" ? search.keyword : "",
+      keyword: rawKeyword,
       pageNum: Number.isFinite(rawPageNum) && rawPageNum > 0 ? rawPageNum : 1,
-      searchType: isSearchType(rawSearchType) ? rawSearchType : "auto",
+      routeInvalid: rawKeyword.length === 0 || !validSearchType,
+      searchType: validSearchType ? rawSearchType : "auto",
     };
   },
 });
@@ -52,6 +57,7 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   const { organizationName } = Route.useParams();
   const search = Route.useSearch();
   const organizationQuery = useQuery({
+    enabled: !search.routeInvalid,
     queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
   });
@@ -61,7 +67,7 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       ...search,
       organizationName,
     }),
-    enabled: hasKeyword,
+    enabled: hasKeyword && !search.routeInvalid,
   });
   const result =
     searchQuery.data ??
@@ -72,6 +78,17 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
 
   if (isRequestTextTooLargeError(searchQuery.error)) {
     return <RequestTextTooLargeErrorBody />;
+  }
+
+  if (search.routeInvalid) {
+    return (
+      <DefaultSearchErrorBody
+        iconClassName="ico-404"
+        messageKey="error.badrequest"
+        runtimeConfig={runtimeConfig}
+        ybtnClassName="ybtn ybtn-info"
+      />
+    );
   }
 
   if (!organizationQuery.data) {

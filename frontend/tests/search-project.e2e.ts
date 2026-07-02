@@ -54,7 +54,26 @@ test("project search matches legacy search/result.scala.html project empty revie
   );
 });
 
+test("project search without required query renders legacy badrequest_default.scala.html shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const searchApi = await mockProjectSearch(page);
+
+  await page.goto(`${basePath}/admin/sample/search`);
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText(
+    "The request cannot be fulfilled due to bad syntax",
+  );
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
+  await expect(page.locator("#searchInnerForm")).toHaveCount(0);
+  expect(searchApi.count).toBe(0);
+});
+
 async function mockProjectSearch(page: Page) {
+  const apiCalls = { count: 0 };
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -78,6 +97,7 @@ async function mockProjectSearch(page: Page) {
     });
   });
   await page.route("**/api/v1/projects/admin/sample/search?**", async (route) => {
+    apiCalls.count += 1;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -107,6 +127,8 @@ async function mockProjectSearch(page: Page) {
       }),
     });
   });
+
+  return apiCalls;
 }
 
 function projectContainer() {
