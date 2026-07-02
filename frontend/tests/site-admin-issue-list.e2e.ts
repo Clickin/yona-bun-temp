@@ -138,6 +138,8 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Issues");
   await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Open");
+  const closedTab = page.getByRole("link", { exact: true, name: "Closed" });
+  await expect(closedTab).toHaveAttribute("href", `${basePath}/sites/issueList?state=closed`);
   await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
   await expect(page.locator(".post-title")).toHaveAttribute(
     "href",
@@ -188,6 +190,16 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     tabHeight: 38,
     titleAreaHeight: 39,
   });
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-issues-tabs";
+  });
+  await closedTab.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("closed");
+  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Closed");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-issues-tabs");
 
   await mockPosts(page);
   const postsLink = page.locator(".site-setting-nav a", { hasText: "Posts" });

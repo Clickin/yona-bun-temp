@@ -15,6 +15,7 @@ type IssueListSearch = {
 const LegacyInternalLink = Link as ComponentType<
   AnchorHTMLAttributes<HTMLAnchorElement> & {
     activeProps?: { className?: string | undefined };
+    search?: Record<string, string | undefined>;
     to: string;
   }
 >;
@@ -67,8 +68,8 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                 </h2>
               </div>
               <ul className="nav nav-tabs">
-                <IssueStateTab runtimeConfig={runtimeConfig} state="open" selected={state} />
-                <IssueStateTab runtimeConfig={runtimeConfig} state="closed" selected={state} />
+                <IssueStateTab state="open" selected={state} />
+                <IssueStateTab state="closed" selected={state} />
               </ul>
               <ul className="post-list-wrap">
                 {(query.data?.issues ?? []).map((issue) => (
@@ -114,22 +115,18 @@ function SiteAdminSidebar() {
   );
 }
 
-function IssueStateTab({
-  runtimeConfig,
-  selected,
-  state,
-}: {
-  runtimeConfig: RuntimeConfig;
-  selected: SiteIssueState;
-  state: SiteIssueState;
-}) {
+function IssueStateTab({ selected, state }: { selected: SiteIssueState; state: SiteIssueState }) {
   const { t } = useLegacyMessages();
 
   return (
     <li className={selected === state ? "active" : ""}>
-      <a href={prefixBasePath(runtimeConfig.basePath, `/sites/issueList?state=${state}`)}>
+      <LegacyInternalLink
+        activeProps={{ className: undefined }}
+        search={{ state }}
+        to="/sites/issueList"
+      >
         {t(`issue.state.${state}`)}
-      </a>
+      </LegacyInternalLink>
     </li>
   );
 }
