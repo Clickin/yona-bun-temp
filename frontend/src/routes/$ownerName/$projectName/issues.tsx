@@ -475,6 +475,22 @@ function ProjectIssuesBody({
       childList.style.display = "block";
     }
   });
+  const handleIssueListMouseOver = useEffectEvent((event: MouseEvent) => {
+    const row =
+      event.target instanceof Element ? event.target.closest<HTMLElement>(".post-item") : null;
+    if (!row || row.contains(event.relatedTarget as Node | null)) {
+      return;
+    }
+    row.style.backgroundColor = "#fafafa";
+  });
+  const handleIssueListMouseOut = useEffectEvent((event: MouseEvent) => {
+    const row =
+      event.target instanceof Element ? event.target.closest<HTMLElement>(".post-item") : null;
+    if (!row || row.contains(event.relatedTarget as Node | null)) {
+      return;
+    }
+    row.style.backgroundColor = "#fff";
+  });
   useEffect(() => {
     const issueList = issueListRef.current;
     if (!issueList) {
@@ -482,8 +498,12 @@ function ProjectIssuesBody({
     }
 
     issueList.addEventListener("click", handleIssueListClick);
+    issueList.addEventListener("mouseover", handleIssueListMouseOver);
+    issueList.addEventListener("mouseout", handleIssueListMouseOut);
     return () => {
       issueList.removeEventListener("click", handleIssueListClick);
+      issueList.removeEventListener("mouseover", handleIssueListMouseOver);
+      issueList.removeEventListener("mouseout", handleIssueListMouseOut);
     };
   }, []);
   const showMilestone = projectMilestoneMenuEnabled(project);

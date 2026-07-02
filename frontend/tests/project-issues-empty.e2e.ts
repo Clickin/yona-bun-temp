@@ -682,6 +682,20 @@ test("project issue quick search updates route like legacy partial_list_quicksea
   ).toBe("issue-quick-search");
 });
 
+test("project issue row hover matches legacy issue.List hover effect", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  const row = page.locator("#issue-item-42");
+  await expect(row).toBeVisible();
+
+  await row.hover();
+  await expect(row).toHaveCSS("background-color", "rgb(250, 250, 250)");
+  await page.mouse.move(0, 0);
+  await expect(row).toHaveCSS("background-color", "rgb(255, 255, 255)");
+});
+
 test("project issue search button submits route like legacy partial_searchform.scala.html", async ({
   page,
 }) => {
