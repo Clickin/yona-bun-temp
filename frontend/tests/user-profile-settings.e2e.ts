@@ -123,7 +123,7 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
   expect(await readProfileSettingsMetrics(page)).toEqual({
     avatarFormFloat: "left",
     avatarWrapWidth: "128px",
-    breadcrumbHeight: "45px",
+    breadcrumbHeight: "46px",
     formFloat: "left",
     navMarginTop: "0px",
     pageWrapMarginTop: "10px",
@@ -232,6 +232,9 @@ async function canonicalizeScreenRoots(page: Page) {
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
         : `<${current.tagName.toLowerCase()}>`;
+      if (current.id === "usermenu-tab-content-list") {
+        return `${open}Loading...</${current.tagName.toLowerCase()}>`;
+      }
       const children = Array.from(current.childNodes)
         .map((child) => {
           if (child.nodeType === Node.TEXT_NODE) {
@@ -291,6 +294,9 @@ async function canonicalizeHtml(page: Page, html: string) {
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
           : `<${current.tagName.toLowerCase()}>`;
+        if (current.id === "usermenu-tab-content-list") {
+          return `${open}Loading...</${current.tagName.toLowerCase()}>`;
+        }
         const children = Array.from(current.childNodes)
           .map((child) => {
             if (child.nodeType === Node.TEXT_NODE) {

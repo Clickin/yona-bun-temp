@@ -31,6 +31,13 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     "targeted-selector-and-inert-template-metric-guard-passed",
     "non-browser-mail-template-recorded",
   ]);
+  const userSettingsEvidence = new Map([
+    ["user/edit.scala.html", "frontend/tests/user-profile-settings.e2e.ts"],
+    ["user/edit_password.scala.html", "frontend/tests/user-password-settings.e2e.ts"],
+    ["user/edit_notifications.scala.html", "frontend/tests/user-notification-settings.e2e.ts"],
+    ["user/edit_emails.scala.html", "frontend/tests/user-email-settings.e2e.ts"],
+    ["user/edit_token.scala.html", "frontend/tests/user-token-settings.e2e.ts"],
+  ]);
   let inSummary = false;
   let inPrioritySummary = false;
   let manifestDetailRows;
@@ -112,6 +119,31 @@ test("rendered evidence summary counts match manifest row statuses", () => {
         evidenceFiles,
         /frontend\/tests\/issue-form-parity\.e2e\.ts/,
         `${legacyTemplate} must not cite historical issue-form-parity evidence`,
+      );
+    }
+    const expectedUserSettingsEvidence = userSettingsEvidence.get(legacyTemplate);
+    if (expectedUserSettingsEvidence) {
+      assert.ok(
+        evidenceFiles.includes(expectedUserSettingsEvidence),
+        `${legacyTemplate} must cite current user settings evidence`,
+      );
+      assert.doesNotMatch(
+        evidenceFiles,
+        /frontend\/tests\/workspace-settings-parity\.e2e\.ts/,
+        `${legacyTemplate} must not cite historical workspace settings evidence`,
+      );
+    }
+    if (legacyTemplate === "user/partial_edit_tabmenu.scala.html") {
+      for (const expected of userSettingsEvidence.values()) {
+        assert.ok(
+          evidenceFiles.includes(expected),
+          "user/partial_edit_tabmenu.scala.html must cite every current settings tab evidence",
+        );
+      }
+      assert.doesNotMatch(
+        evidenceFiles,
+        /frontend\/tests\/workspace-settings-parity\.e2e\.ts/,
+        "user/partial_edit_tabmenu.scala.html must not cite historical workspace settings evidence",
       );
     }
     prioritySummaryCounts.set(

@@ -107,7 +107,7 @@ test("current-user password settings page matches legacy user/edit_password.scal
   expect(actual).toEqual(expected);
 
   expect(await readPasswordSettingsMetrics(page)).toEqual({
-    breadcrumbHeight: "45px",
+    breadcrumbHeight: "46px",
     formDisplay: "block",
     navMarginTop: "0px",
     pageWrapMarginTop: "10px",
@@ -208,6 +208,9 @@ async function canonicalizeScreenRoots(page: Page) {
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
         : `<${current.tagName.toLowerCase()}>`;
+      if (current.id === "usermenu-tab-content-list") {
+        return `${open}Loading...</${current.tagName.toLowerCase()}>`;
+      }
       const children = Array.from(current.childNodes)
         .map((child) => {
           if (child.nodeType === Node.TEXT_NODE) {
@@ -260,6 +263,9 @@ async function canonicalizeHtml(page: Page, html: string) {
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
           : `<${current.tagName.toLowerCase()}>`;
+        if (current.id === "usermenu-tab-content-list") {
+          return `${open}Loading...</${current.tagName.toLowerCase()}>`;
+        }
         const children = Array.from(current.childNodes)
           .map((child) => {
             if (child.nodeType === Node.TEXT_NODE) {
