@@ -66,6 +66,20 @@ export function evaluateScalaHtmlGoalGuard({ changedFiles, env = process.env, au
   const allowUndocumentedRoute = env.YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE === "1";
 
   if (
+    implementationTouchesRuntime &&
+    frontendEvidenceFiles.filter((file) => FRONTEND_E2E_PATTERN.test(file)).length === 0 &&
+    !allowUndocumentedRoute
+  ) {
+    return {
+      blocked: true,
+      frontendEvidenceFiles,
+      frontendImplementationFiles,
+      message:
+        "Scala HTML goal guard blocked unverified frontend route work. Route TSX changed without changing a focused frontend E2E file in the same commit. Add or update the screen's frontend/tests/*.e2e.ts verification, or set YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE=1 for an explicitly intentional non-goal route change.",
+    };
+  }
+
+  if (
     frontendEvidenceFiles.length > 0 &&
     evidenceTouchesRuntime &&
     !implementationTouchesRuntime &&

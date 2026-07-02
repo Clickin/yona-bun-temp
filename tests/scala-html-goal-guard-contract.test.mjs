@@ -49,7 +49,10 @@ test("passes frontend evidence when a route TSX implementation changes too", () 
 
 test("blocks frontend route TSX work without the Scala HTML audit memo", () => {
   const result = evaluateScalaHtmlGoalGuard({
-    changedFiles: ["frontend/src/routes/$ownerName/$projectName/issues.tsx"],
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
+    ],
     env: {},
   });
 
@@ -74,6 +77,7 @@ test("passes frontend route TSX work when the Scala HTML audit memo is updated",
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [
       "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
       "docs/provenance/frontend-scala-html-goal-violation-audit.md",
     ],
     auditPatch:
@@ -84,10 +88,26 @@ test("passes frontend route TSX work when the Scala HTML audit memo is updated",
   assert.equal(result.blocked, false);
 });
 
+test("blocks frontend route TSX work when the focused E2E file is not changed", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/issues` | `issue/list.scala.html`, `issue/partial_list.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issues-empty.e2e.ts` E2E |\n",
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /unverified frontend route work/u);
+});
+
 test("blocks frontend route TSX work when the audit memo diff lacks a Scala HTML source", () => {
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [
       "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
       "docs/provenance/frontend-scala-html-goal-violation-audit.md",
     ],
     auditPatch:
@@ -103,6 +123,7 @@ test("blocks frontend route TSX work when the audit row does not name the route 
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [
       "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
       "docs/provenance/frontend-scala-html-goal-violation-audit.md",
     ],
     auditPatch:
@@ -118,6 +139,7 @@ test("blocks frontend route TSX work when the audit row lacks focused E2E verifi
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [
       "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
       "docs/provenance/frontend-scala-html-goal-violation-audit.md",
     ],
     auditPatch:
