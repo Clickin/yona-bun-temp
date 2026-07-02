@@ -77,7 +77,7 @@ const EXPECTED_POST_LIST_SCREEN = `
           <li class=""><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
           <li class=""><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
           <li class=""><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/massMail">Send mass emails</a></li>
+          <li class=""><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
           <li class=""><a href="__BASE_PATH__/sites/update">Software Update</a></li>
           <li class=""><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
@@ -142,6 +142,9 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
     "href",
     `${basePath}/acme/roadmap/post/7#comments`,
   );
+  await expect(
+    page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
+  ).toHaveAttribute("href", `${basePath}/sites/massmail`);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -179,6 +182,20 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
     sidebarWidthRatio: 0.15,
     titleAreaHeight: 39,
   });
+
+  await mockSiteUsers(page);
+  const usersLink = page.locator(".site-setting-nav a", { hasText: "Users" });
+  await expect(usersLink).toHaveAttribute("href", `${basePath}/sites/userList`);
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-users-nav";
+  });
+  await usersLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/userList`);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
+  await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-users-nav");
 });
 
 async function mockSiteAdminSession(page: Page) {
@@ -229,6 +246,37 @@ async function mockPosts(page: Page) {
         ],
         total: 1,
         totalPages: 1,
+      }),
+    });
+  });
+}
+
+async function mockSiteUsers(page: Page) {
+  await page.route("**/api/v1/site/users?*", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        page: 1,
+        pageSize: 20,
+        query: "",
+        siteAdminCount: 1,
+        state: "ACTIVE",
+        total: 1,
+        totalPages: 1,
+        users: [
+          {
+            avatarUrl: "/avatars/siteboss.png",
+            createdAt: "2026-06-28 12:00:00",
+            displayName: "Site Boss",
+            emailAddress: "siteboss@example.com",
+            id: 1,
+            isGuest: false,
+            isSiteAdmin: true,
+            lastStateModifiedAt: "",
+            loginId: "siteboss",
+            state: "ACTIVE",
+          },
+        ],
       }),
     });
   });
