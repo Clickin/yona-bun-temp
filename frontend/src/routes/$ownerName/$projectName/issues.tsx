@@ -114,6 +114,14 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <link
+        rel="stylesheet"
+        href={prefixBasePath(
+          runtimeConfig.basePath,
+          `/${ownerName}/${projectName}/issue/labels.css`,
+        )}
+        type="text/css"
+      />
       <ProjectIssuesBody
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
         currentUserLoginId={stringField(sessionQuery.data.loginId, "")}

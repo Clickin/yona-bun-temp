@@ -321,6 +321,15 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
   await expect(page.locator(".error-wrap")).toContainText("No issue found");
+  await expect(
+    page.locator(`link[href="${basePath}/admin/sample/issue/labels.css"]`),
+  ).toHaveAttribute("rel", "stylesheet");
+  await expect(
+    page.locator(`link[href="${basePath}/admin/sample/issue/labels.css"]`),
+  ).toHaveAttribute("type", "text/css");
+  await expect(
+    page.locator(`link[href="${basePath}/admin/sample/issue/labels.css"]`),
+  ).toHaveAttribute("href", `${basePath}/admin/sample/issue/labels.css`);
 
   expect(await issueListShellMetrics(page)).toEqual({
     wrapClear: "both",

@@ -43,6 +43,7 @@ Mode: read-only audit, no files edited by the explorer
 
 - Restored the flat project issue list empty-state route at `/:owner/:project/issues` using the legacy `issue/list.scala.html` caller shell plus `partial_list_wrap`, `partial_list_quicksearch`, `partial_searchform`, `common/twoColumnModeCheckboxArea`, `common/showSubtasksCheckbox`, and the issue-list keymap trigger.
 - Scope: `frontend/src/routes/$ownerName/$projectName/issues.tsx` renders the project header/menu with active Issue state, left quick-search/search controls, open/closed tabs, two-column/subtask toggles, empty `.error-wrap`, and REST-backed list loading for `/api/v1/projects/:owner/:project/issues`.
+- Continuation: the route now also preserves the root template's issue label stylesheet link, `<link rel="stylesheet" href="/:owner/:project/issue/labels.css" type="text/css">`, before the issue list body so label CSS continues to come from the legacy issue-label endpoint.
 - Verification: `frontend/tests/project-issues-empty.e2e.ts` compares the mocked `/admin/sample/issues?filter=empty` whole-screen DOM. This proof covers the empty list screen only; populated rows, mass update interaction, and the full keymap modal remain covered by existing issue-list guards or separate follow-up slices.
 
 ## 2026-07-01 Project Issue Populated Row Follow-Up
