@@ -95,7 +95,7 @@ function DiagnosticBody({ response }: { response: SiteDiagnosticsResponse | unde
       <p>
         {t("site.diagnostic.errorFound", { args: [String(response?.errorCount ?? errors.length)] })}
       </p>
-      <ul className="site-diagnostic-errors">
+      <ul>
         {errors.map((error) => (
           <li key={error}>
             <pre>{error}</pre>

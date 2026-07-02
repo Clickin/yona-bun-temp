@@ -131,11 +131,80 @@ test("site admin diagnostics renders legacy error pre blocks", async ({ page }) 
 
   await page.goto(`${basePath}/sites/diagnostic`);
   await expect(page.getByText("2 errors were found")).toBeVisible();
-  await expect(page.locator(".site-diagnostic-errors li pre")).toHaveText([
+  await expect(page.locator(".site-setting-wrap .span10 > ul li pre")).toHaveText([
     "database probe failed",
     "repository path is unavailable",
   ]);
+  expect(await diagnosticErrorMetrics(page)).toEqual({
+    contentWidthRatio: 0.83,
+    errorPreBackground: "rgb(245, 245, 245)",
+    errorPreBorderRadius: 4,
+    errorPreBorderTopWidth: 1,
+    errorPreFontSize: 13,
+    errorPreLineHeight: 20,
+    errorPreMarginBottom: 10,
+    errorPrePaddingBlock: 20,
+    errorPrePaddingInline: 20,
+    errorPreWhiteSpace: "pre-wrap",
+    messageLineHeight: 20,
+    sidebarWidthRatio: 0.15,
+    titleAreaBorderBottomWidth: 1,
+    titleAreaMarginBottom: 29,
+    titleAreaPaddingBottom: 8,
+    titleLineHeight: 30,
+  });
 });
+
+async function diagnosticErrorMetrics(page: Page) {
+  return page.evaluate(() => {
+    const requireElement = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing element: ${selector}`);
+      }
+      return element;
+    };
+
+    const row = requireElement(".site-setting-wrap .row-fluid");
+    const sidebar = requireElement(".site-setting-wrap .span2");
+    const content = requireElement(".site-setting-wrap .span10");
+    const titleArea = requireElement(".site-setting-wrap .title_area");
+    const title = requireElement(".site-setting-wrap .title_area h2");
+    const message = requireElement(".site-setting-wrap .span10 > p");
+    const pre = requireElement(".site-setting-wrap .span10 > ul li pre");
+
+    const rowRect = row.getBoundingClientRect();
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const titleAreaStyle = getComputedStyle(titleArea);
+    const titleStyle = getComputedStyle(title);
+    const messageStyle = getComputedStyle(message);
+    const preStyle = getComputedStyle(pre);
+
+    return {
+      contentWidthRatio: Number((contentRect.width / rowRect.width).toFixed(2)),
+      errorPreBackground: preStyle.backgroundColor,
+      errorPreBorderRadius: Math.round(parseFloat(preStyle.borderTopLeftRadius)),
+      errorPreBorderTopWidth: Math.round(parseFloat(preStyle.borderTopWidth)),
+      errorPreFontSize: Math.round(parseFloat(preStyle.fontSize)),
+      errorPreLineHeight: Math.round(parseFloat(preStyle.lineHeight)),
+      errorPreMarginBottom: Math.round(parseFloat(preStyle.marginBottom)),
+      errorPrePaddingBlock:
+        Math.round(parseFloat(preStyle.paddingTop)) +
+        Math.round(parseFloat(preStyle.paddingBottom)),
+      errorPrePaddingInline:
+        Math.round(parseFloat(preStyle.paddingLeft)) +
+        Math.round(parseFloat(preStyle.paddingRight)),
+      errorPreWhiteSpace: preStyle.whiteSpace,
+      messageLineHeight: Math.round(parseFloat(messageStyle.lineHeight)),
+      sidebarWidthRatio: Number((sidebarRect.width / rowRect.width).toFixed(2)),
+      titleAreaBorderBottomWidth: Math.round(parseFloat(titleAreaStyle.borderBottomWidth)),
+      titleAreaMarginBottom: Math.round(parseFloat(titleAreaStyle.marginBottom)),
+      titleAreaPaddingBottom: Math.round(parseFloat(titleAreaStyle.paddingBottom)),
+      titleLineHeight: Math.round(parseFloat(titleStyle.lineHeight)),
+    };
+  });
+}
 
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
