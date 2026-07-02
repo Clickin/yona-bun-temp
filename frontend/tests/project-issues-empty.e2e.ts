@@ -1283,6 +1283,22 @@ test("project issue list mass update label lists follow checked issue labels", a
   await expect(detachButton).toBeDisabled();
 });
 
+test("project issue mass-update checkbox click does not reveal child list like legacy two-column guard", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "children");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=children`);
+  await expect(page.locator("#issue-item-42 .child-issue-list")).not.toBeVisible();
+
+  await page.locator("#issue-42").check();
+
+  await expect(page.locator("#issue-42")).toBeChecked();
+  await expect(page.locator("#issue-item-42")).toHaveClass(/active/);
+  await expect(page.locator("#issue-item-42 .child-issue-list")).not.toBeVisible();
+});
+
 test("project issue list subtask row matches legacy partial_list_subtask.scala.html DOM", async ({
   page,
 }) => {

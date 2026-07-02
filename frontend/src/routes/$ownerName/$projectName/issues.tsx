@@ -493,6 +493,10 @@ function ProjectIssuesBody({
       return;
     }
 
+    if (target.closest(".mass-update-check")) {
+      return;
+    }
+
     if (target.closest(".title-wrap > .title")) {
       return;
     }
