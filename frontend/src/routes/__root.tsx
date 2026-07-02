@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Link, Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
-import { signInWithPasswordRest } from "../api/auth";
+import { readAuthUiCapabilitiesRest, signInWithPasswordRest } from "../api/auth";
+import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
 import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -470,7 +471,7 @@ function RootResetShell() {
           <LegacySelect2Templates />
           {rendersStandaloneLoginState ? null : (
             <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-              <RootLoginDialog basePath={runtimeConfig.basePath} />
+              <RootLoginDialog runtimeConfig={runtimeConfig} />
             </LegacyI18nProvider>
           )}
         </>
@@ -533,8 +534,34 @@ function LegacySelect2Templates() {
   );
 }
 
-function RootLoginDialog({ basePath }: { basePath: string }) {
+function RootLoginDialog({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
+  const [capabilities, setCapabilities] = React.useState<ReadAuthUiCapabilitiesResponse | null>(
+    null,
+  );
+  React.useEffect(() => {
+    let active = true;
+    readAuthUiCapabilitiesRest(runtimeConfig)
+      .then((nextCapabilities) => {
+        if (active) {
+          setCapabilities(nextCapabilities);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setCapabilities(null);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [runtimeConfig]);
+
+  const basePath = runtimeConfig.basePath;
+  const socialLoginOnly = capabilities?.socialLoginOnly === true;
+  const socialProviders = Array.isArray(capabilities?.enabledSocialProviders)
+    ? capabilities.enabledSocialProviders
+    : [];
 
   return (
     <div id="loginDialog" className="modal hide loginDialog" tabIndex={-1} role="dialog">
@@ -545,58 +572,113 @@ function RootLoginDialog({ basePath }: { basePath: string }) {
           </button>
         </div>
         <form action="/users/login" method="post" className="frm-wrap login-form-wrap">
-          <dl>
-            <dd>
-              <input
-                id="loginIdOrEmailD"
-                name="loginIdOrEmail"
-                type="text"
-                className="text email"
-                autoComplete="off"
-                placeholder={t("user.login.key")}
-              />
-            </dd>
-            <dd>
-              <input
-                id="passwordD"
-                name="password"
-                type="password"
-                className="text password"
-                autoComplete="off"
-                placeholder={t("user.password")}
-              />
-            </dd>
-          </dl>
-          <div className="error">
-            <i className="yobicon-error" />
-            <span className="error-message" />
-          </div>
+          {socialLoginOnly ? (
+            <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
+          ) : (
+            <>
+              <dl>
+                <dd>
+                  <input
+                    id="loginIdOrEmailD"
+                    name="loginIdOrEmail"
+                    type="text"
+                    className="text email"
+                    autoComplete="off"
+                    placeholder={t("user.login.key")}
+                  />
+                </dd>
+                <dd>
+                  <input
+                    id="passwordD"
+                    name="password"
+                    type="password"
+                    className="text password"
+                    autoComplete="off"
+                    placeholder={t("user.password")}
+                  />
+                </dd>
+              </dl>
+              <div className="error">
+                <i className="yobicon-error" />
+                <span className="error-message" />
+              </div>
+              <div className="btns-row nm">
+                <button type="submit" className="ybtn ybtn-primary fullsize">
+                  {t("button.login")}
+                </button>
+              </div>
+            </>
+          )}
           <div className="btns-row nm">
-            <button type="submit" className="ybtn ybtn-primary fullsize">
-              {t("button.login")}
-            </button>
-          </div>
-          <div className="btns-row nm" />
-          <div className="act-row right-txt mt20">
-            <div className="pull-left">
-              <input
-                id="remember-meD"
-                type="checkbox"
-                name="rememberMe"
-                className="checkbox"
-                defaultChecked
+            {socialProviders.length > 0 && !socialLoginOnly ? (
+              <div className="social-login-title-line"> {t("title.or")} </div>
+            ) : null}
+            {socialProviders.map((provider) => (
+              <RootOAuthProviderLink
+                basePath={basePath}
+                key={String(provider)}
+                provider={String(provider)}
               />
-              <label htmlFor="remember-meD" className="bg-checkbox">
-                {t("title.rememberMe")}
-              </label>
-            </div>
-            <a href={prefixBasePath(basePath, "/lostPassword")}>{t("title.resetPassword")}</a>
-            <span className="gray-txt ml10 mr10">|</span>
-            <a href={prefixBasePath(basePath, "/users/signupform")}>{t("title.signup")}</a>
+            ))}
           </div>
+          {!socialLoginOnly ? (
+            <div className="act-row right-txt mt20">
+              <div className="pull-left">
+                <input
+                  id="remember-meD"
+                  type="checkbox"
+                  name="rememberMe"
+                  className="checkbox"
+                  defaultChecked
+                />
+                <label htmlFor="remember-meD" className="bg-checkbox">
+                  {t("title.rememberMe")}
+                </label>
+              </div>
+              <a href={prefixBasePath(basePath, "/lostPassword")}>{t("title.resetPassword")}</a>
+              <span className="gray-txt ml10 mr10">|</span>
+              <a href={prefixBasePath(basePath, "/users/signupform")}>{t("title.signup")}</a>
+            </div>
+          ) : null}
         </form>
       </div>
     </div>
+  );
+}
+
+function RootOAuthProviderLink({ basePath, provider }: { basePath: string; provider: string }) {
+  const normalized = provider.trim().toLowerCase();
+  if (normalized !== "github" && normalized !== "google") {
+    return null;
+  }
+
+  return (
+    <a
+      href={prefixBasePath(basePath, `/authenticate/${normalized}`)}
+      className="ybtn oauth-login-btn"
+    >
+      {normalized === "github" ? (
+        <span className="auth-provider-logo">
+          <span className="github">
+            <svg aria-hidden="true" height="24" version="1.1" viewBox="0 0 16 16" width="19">
+              <path d="" />
+            </svg>
+          </span>{" "}
+          <span className="provider-name">Sign in with github</span>
+        </span>
+      ) : (
+        <span className="auth-provider-logo">
+          <img
+            src={prefixBasePath(
+              basePath,
+              "/assets/images/provider-logo/btn_google_light_normal_ios.svg",
+            )}
+            alt="login with Google"
+          />{" "}
+          Sign in with Google
+        </span>
+      )}
+    </a>
   );
 }
 

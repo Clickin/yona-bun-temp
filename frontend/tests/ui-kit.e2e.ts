@@ -319,6 +319,41 @@ test("standalone UI kit root shell mounts legacy anonymous login dialog", async 
   });
 });
 
+test("standalone UI kit root shell renders legacy social-login-only dialog branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        allowPasswordLogin: false,
+        enabledSocialProviders: ["github"],
+        secretSetupRequired: false,
+        signupMode: "PUBLIC",
+        socialLoginOnly: true,
+      },
+    });
+  });
+
+  await page.goto(`${basePath}/_UIKit`);
+  const dialog = page.locator("#loginDialog");
+  await expect(dialog.locator(".btns-row.nm").first()).toHaveText(
+    "Only allow sign-in via social login",
+  );
+  await expect(dialog.locator("#loginIdOrEmailD")).toHaveCount(0);
+  await expect(dialog.locator("#passwordD")).toHaveCount(0);
+  await expect(dialog.locator(".error")).toHaveCount(0);
+  await expect(dialog.locator("button[type=submit]")).toHaveCount(0);
+  await expect(dialog.locator(".act-row")).toHaveCount(0);
+  await expect(dialog.locator(".social-login-title-line")).toHaveCount(0);
+  await expect(dialog.locator(".oauth-login-btn")).toHaveCount(1);
+  await expect(dialog.locator(".oauth-login-btn")).toHaveAttribute(
+    "href",
+    `${basePath}/authenticate/github`,
+  );
+});
+
 test("standalone UI kit root shell opens legacy login dialog from data-login required", async ({
   page,
 }) => {
