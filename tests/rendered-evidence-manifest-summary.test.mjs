@@ -11,6 +11,13 @@ const manifestPath = path.join(
   "ui-parity-reports",
   "2026-06-28-rendered-evidence-execution-manifest.md",
 );
+const verificationQueuePath = path.join(
+  repoRoot,
+  "docs",
+  "provenance",
+  "ui-parity-reports",
+  "2026-06-28-rendered-verification-queue.md",
+);
 
 test("rendered evidence summary counts match manifest row statuses", () => {
   const source = readFileSync(manifestPath, "utf8");
@@ -305,4 +312,13 @@ test("rendered evidence summary counts match manifest row statuses", () => {
       `${priority} count drifted`,
     );
   }
+});
+
+test("rendered verification queue has no open evidence placeholders", () => {
+  const source = readFileSync(verificationQueuePath, "utf8");
+  assert.doesNotMatch(
+    source,
+    /\| P[0-9] \|[^\n]*\| legacy template \+ included partials;/,
+    "P0/P1/P2 queue rows must cite concrete rendered evidence, absence, deviation, gap, or deferred closure",
+  );
 });
