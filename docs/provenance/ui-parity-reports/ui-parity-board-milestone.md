@@ -212,5 +212,18 @@ Total rows: 20
 | `/:owner/:project/milestones?state=open` / `?state=all` | list/progress/state metadata | `.nav.nav-tabs`, empty state, `.state.nm.open`, `.state.nm.closed`, `.completion-rate`, `.progress .bar` | same selectors | switch states | milestones REST list | covered |
 | `/:owner/:project/milestones` | search | `.textbox` keyup filters rows | React keyup/change filters non-matching `.issue-link` rows | type title | client-only behavior | covered |
 | `/:owner/:project/newMilestoneForm` | invalid submit | field-level `.error` and `.message` | field-adjacent `.error` and `.message` source/rendering | submit invalid title/content/due-date and assert no REST POST | React validation before REST POST | covered |
+
 | `/:owner/:project/milestone/:id` | actions | `.actrow .ybtn`, `#deleteConfirm`, open/close | same selectors | modal, close/reopen and returned state render | REST state/delete callbacks | covered |
 | `/:owner/:project/milestone/:id#issues` | linked issues | tabs plus mass update and issue partial list rows | tabs, search, mass-update shell, legacy partial-list row selectors, populated mass-update dropdown options, and checkbox-selected mutation wiring render from REST detail/project container data | switch tabs/search/select issues/apply dropdown | REST detail issue arrays plus shared issue mass-update REST mutation | covered |
+
+Worker update, 2026-07-02 milestone form editor/uploader follow-up:
+`frontend/src/routes/$ownerName/$projectName/newMilestoneForm.tsx` and
+`frontend/src/routes/$ownerName/$projectName/milestone/$milestoneId/editform.tsx`
+now expand the legacy `common.editor("contents", ..., "content-body")`,
+`help.markdown`, `common.uploadForm`, and `common.fileUploader(ResourceType.MILESTONE, ...)`
+callers instead of the earlier simplified editor/uploader placeholders. The
+focused Playwright guards compare the create/edit form DOM and assert
+`#editor-contents-content-body[markdown=true]`, markdown help nav/items,
+`#upload[data-resource-type=MILESTONE]`, the edit `data-resource-id`, file input,
+and `tplAttachedFile`/`tplDropFilesHere` templates. Verification:
+`pnpm --dir frontend test:e2e -- project-milestone-create-form.e2e.ts project-milestone-edit-form.e2e.ts`.
