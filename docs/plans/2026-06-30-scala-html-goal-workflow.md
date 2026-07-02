@@ -31,6 +31,12 @@ Every resumed goal turn must restate this directive before choosing work:
   commits with the same Scala HTML guard rules used by the turn commit hook. Add
   `--fail-on-violation` when this should behave as a blocking CI/checkpoint
   command.
+- For multi-day automated goal runs, export
+  `YONA_SCALA_HTML_GOAL_HISTORY_RANGE=<base>..HEAD` before invoking the
+  mandatory turn commit hook. `pnpm agent:turn-commit -- -m "<summary>"` always
+  audits `HEAD~1..HEAD`; with this environment variable it also re-audits the
+  full unattended range after every commit, so an agent cannot accumulate weak
+  frontend goal commits for days before a human notices.
 
 This is enforced by `tools/scala-html-goal-guard.mjs` through the turn commit
 hook. Treat guard failures as goal failures, not as optional review comments.

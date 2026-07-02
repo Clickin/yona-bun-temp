@@ -41,4 +41,12 @@ describe("agent turn commit hook contract", () => {
     assert.match(source, /HEAD~1\.\.HEAD/u);
     assert.match(source, /--fail-on-violation/u);
   });
+
+  it("supports an unattended multi-commit Scala HTML history audit range", () => {
+    const source = readFileSync(turnCommitHookPath, "utf8");
+
+    assert.match(source, /YONA_SCALA_HTML_GOAL_HISTORY_RANGE/u);
+    assert.match(source, /unattendedHistoryRange/u);
+    assert.match(source, /runScalaHtmlGoalHistory\(unattendedHistoryRange\)/u);
+  });
 });

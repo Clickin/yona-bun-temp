@@ -70,6 +70,12 @@ agent loop gets an immediate per-commit Scala HTML goal check in addition to
 the staged precommit guard. The staged and history checks include added,
 copied, modified, renamed, and deleted files, so deleting a route TSX or
 focused E2E file is audited with the same Scala HTML goal rules.
+For unattended multi-day runs, set
+`YONA_SCALA_HTML_GOAL_HISTORY_RANGE=<base>..HEAD` in the agent environment.
+The turn commit hook will then run the normal `HEAD~1..HEAD` check and a second
+blocking history audit over the whole configured range after every commit. This
+is the durable automation memo for long runs where humans cannot inspect every
+commit as it lands.
 
 ## High Confidence Rebuild Candidates
 
@@ -86,6 +92,23 @@ focused E2E file is audited with the same Scala HTML goal rules.
 | P1 | Milestone detail | `frontend/src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx`, `frontend/tests/project-milestone-detail.e2e.ts` | `milestone/view.scala.html`, issue list partials, project layout/menu | Re-run as a one-screen Scala HTML verification. Replace selector/metric-only proof with whole-screen DOM comparison; rebuild if mismatch appears. |
 | P1 | `/:owner/:project/search` | `frontend/src/routes/$ownerName/$projectName/search.tsx`, `frontend/src/routes/-search-screen.tsx`, `frontend/tests/search-project.e2e.ts` | `search/result.scala.html`, `search/partial_search.scala.html`, result partials, `projectLayout`, `projectMenu` | Rebuild/verify as a project-scoped search screen. |
 | P1 | `/organizations/:org/search` | `frontend/src/routes/organizations/$organizationName/search.tsx`, `frontend/src/routes/-search-screen.tsx`, `frontend/tests/search-organization.e2e.ts` | `search/result.scala.html`, `search/partial_search.scala.html`, result partials, `organizationLayout`, `organization/header.scala.html`, `organization/menu.scala.html` | Rebuild/verify as an organization-scoped search screen. |
+
+## Subagent Dispatch Queue
+
+2026-07-02 history/provenance subagent audit ranked the remaining
+patch-forward candidates as follows. Treat this as a work queue for parallel
+goal turns, not as proof that every listed route must be deleted wholesale:
+
+| Priority | Route/screen group | Confidence | Legacy source of truth | Default action |
+| --- | --- | --- | --- | --- |
+| P0 | `/admin/sample/issue/11` issue detail | High: route history is an accretive chain of detail/comment/timeline/label/asset/runtime restores. | `issue/view.scala.html`, `issue/partial_comments.scala.html`, `issue/partial_comment.scala.html`, `issue/partial_event_timeline.scala.html`, `issue/partial_index_comments.scala.html`, `common/commentForm.scala.html`, `common/childComments.scala.html`, `common/commentDeleteModal.scala.html`, `common/editor.scala.html`, `common/select2.scala.html` | Reverify full screen against Scala HTML; delete/rebuild the screen path if any structural mismatch remains. |
+| P0 | `/admin/sample/issues` issue list | High: empty-list-first route followed by row/search/mass-update/label/subtask restores. | `issue/list.scala.html`, `issue/partial_searchform.scala.html`, `issue/partial_list_wrap.scala.html`, `issue/partial_list.scala.html`, `issue/partial_list_quicksearch.scala.html`, `issue/partial_massupdate.scala.html`, `issue/partial_select_label.scala.html`, `common/showSubtasksCheckbox.scala.html`, `common/twoColumnModeCheckboxArea.scala.html` | Continue full-route reverify; rebuild mismatching branches instead of preserving old React DOM. |
+| P1 | Global/project/organization search screens | Medium-high: shared `-search-screen.tsx` and row-type follow-up commits may encode React-shaped result cases. | `search/result.scala.html`, `search/partial_search.scala.html`, `search/partial_projects.scala.html`, `search/partial_users.scala.html`, `search/partial_issues.scala.html`, `search/partial_posts.scala.html`, `search/partial_milestones.scala.html`, `search/partial_issue_comments.scala.html`, `search/partial_post_comments.scala.html`, `search/partial_reviews.scala.html` | Reverify one scope at a time; rebuild shared result component if ordering/container mismatch appears. |
+| P1 | Global shell/common runtime partials | Medium-high: common scripts/dialog/select2/user-menu were restored partial by partial. | `layout.scala.html`, `common/scripts.scala.html`, `common/loginDialog.scala.html`, `common/select2.scala.html`, `common/usermenu.scala.html` | Rebuild or isolate the partial-derived shell region and document SPA/runtime deviations. |
+| P1 | Milestone detail/list | Medium: initial route restores were followed by markdown, metric, and asset patches. | `milestone/view.scala.html`, `milestone/list.scala.html`, `milestone/partial_status.scala.html`, issue list partials, `common/markdown.scala.html`, project layout/menu | Reverify full screen; rebuild if mismatch appears. |
+| P2 | Site-admin screens | Medium: later metric/CSS/test-only commits must not count as rebuild proof. | `site/siteMngLayout.scala.html`, `site/userList.scala.html`, `site/projectList.scala.html`, `site/issueList.scala.html`, `site/postList.scala.html`, `site/massMail.scala.html`, site pagination partials | Reverify route by route; do not delete wholesale without a fresh Scala diff. |
+| P2 | Project home tabs | Medium: home/readme/history/dashboard restores were followed by interaction and metric patches. | `project/home.scala.html`, `project/partial_readme.scala.html`, `project/partial_history.scala.html`, `project/partial_dashboard.scala.html`, dashboard partials, `project/header.scala.html`, project layout/menu | Reverify whole tab states; rebuild mismatching tab sections. |
+| P2 | Organization home/settings/members | Medium-low: initial route additions look more screen-oriented, but metric-only follow-ups exist. | `organization/view.scala.html`, `organization/setting.scala.html`, `organization/members.scala.html`, `organization/header.scala.html`, `organization/menu.scala.html`, `organizationLayout.scala.html` | Reverify first; do not delete by default. |
 
 ## Process Violations That Should Not Count As Rebuilds
 

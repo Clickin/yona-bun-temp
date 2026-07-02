@@ -55,6 +55,22 @@ function git(args, options = {}) {
   return run("git", args, options);
 }
 
+function runScalaHtmlGoalHistory(range) {
+  run(
+    "node",
+    [
+      "./scripts/audit-scala-html-goal-history.mjs",
+      "--",
+      "--range",
+      range,
+      "--fail-on-violation",
+    ],
+    {
+      errorMessage: `Agent turn Scala HTML goal history audit failed for ${range}.`,
+    },
+  );
+}
+
 function stagedChangesExist() {
   const result = spawnSync("git", ["diff", "--cached", "--quiet", "--exit-code"], {
     stdio: "ignore",
@@ -91,19 +107,11 @@ export function runAgentTurnCommit(options) {
   git(["commit", "-m", options.message], {
     errorMessage: "Failed to create agent turn commit.",
   });
-  run(
-    "node",
-    [
-      "./scripts/audit-scala-html-goal-history.mjs",
-      "--",
-      "--range",
-      "HEAD~1..HEAD",
-      "--fail-on-violation",
-    ],
-    {
-      errorMessage: "Agent turn Scala HTML goal history audit failed.",
-    },
-  );
+  runScalaHtmlGoalHistory("HEAD~1..HEAD");
+  const unattendedHistoryRange = process.env.YONA_SCALA_HTML_GOAL_HISTORY_RANGE?.trim();
+  if (unattendedHistoryRange) {
+    runScalaHtmlGoalHistory(unattendedHistoryRange);
+  }
   const rev = git(["rev-parse", "--short", "HEAD"], {
     capture: true,
     errorMessage: "Failed to read agent turn commit hash.",
