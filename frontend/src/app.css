@@ -1039,6 +1039,34 @@ pre code {
   border: 0;
 }
 
+.label,
+.badge {
+  display: inline-block;
+  padding: 2px 4px;
+  font-size: 11.844px;
+  font-weight: bold;
+  line-height: 14px;
+  color: #fff;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  vertical-align: baseline;
+  background-color: #999;
+}
+
+.label {
+  border-radius: 3px;
+}
+
+.label:empty,
+.badge:empty {
+  display: none;
+}
+
+.label-info,
+.badge-info {
+  background-color: #3a87ad;
+}
+
 .alert {
   padding: 8px 35px 8px 14px;
   margin-bottom: 20px;
@@ -3388,6 +3416,30 @@ h1 {
 
 .site-setting-wrap .mail-btn-wrap {
   text-align: center;
+}
+
+.site-setting-wrap .mess-mail-wrap input[type="text"] {
+  margin: 0;
+}
+
+.site-setting-wrap .mess-mail-wrap input.span3 {
+  width: 206px;
+}
+
+.site-setting-wrap .mess-mail-wrap .radio {
+  min-height: 20px;
+  padding-left: 20px;
+}
+
+.site-setting-wrap .mess-mail-wrap .radio input[type="radio"] {
+  float: left;
+  width: auto;
+  margin: 4px 0 0 -20px;
+  line-height: normal;
+}
+
+.site-setting-wrap #project-list-wrap.control-group {
+  margin-bottom: 10px;
 }
 
 .filter-wrap {

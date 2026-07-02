@@ -139,6 +139,19 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   );
 
   expect(actual).toEqual(expected);
+  expect(await massMailDefaultMetrics(page)).toEqual({
+    contentWidthRatio: 0.83,
+    firstRadioInputMarginLeft: -20,
+    firstRadioInputMarginTop: 4,
+    firstRadioMinHeight: 20,
+    firstRadioPaddingLeft: 20,
+    firstRadioTextOffset: 0,
+    sidebarWidthRatio: 0.15,
+    titleAreaMarginBottom: 29,
+    titleAreaPaddingBottom: 8,
+    titleLineHeight: 30,
+    writeButtonHeight: 30,
+  });
 });
 
 test("site admin mass mail project selection and mailto follow legacy JS flow", async ({
@@ -156,6 +169,18 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   await page.locator("#input-project").fill("admin/projectYobi");
   await page.locator("#select-project").click();
   await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
+  expect(await massMailProjectMetrics(page)).toEqual({
+    addButtonHeight: 30,
+    inputMarginBottom: 0,
+    inputWidth: 206,
+    projectWrapMarginBottom: 10,
+    selectedLabelBackground: "rgb(58, 135, 173)",
+    selectedLabelFontSize: 12,
+    selectedLabelLineHeight: 14,
+    selectedLabelMarginRight: 5,
+    selectedLabelPaddingBlock: 4,
+    selectedLabelPaddingInline: 8,
+  });
 
   await page.locator("#input-project").fill("yona/docs");
   await page.keyboard.press("Enter");
@@ -185,6 +210,89 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
       { all: true, projects: [] },
     ]);
 });
+
+async function massMailDefaultMetrics(page: Page) {
+  return page.evaluate(() => {
+    const requireElement = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing element: ${selector}`);
+      }
+      return element;
+    };
+
+    const row = requireElement(".site-setting-wrap .row-fluid");
+    const sidebar = requireElement(".site-setting-wrap .span2");
+    const content = requireElement(".site-setting-wrap .span10");
+    const titleArea = requireElement(".site-setting-wrap .title_area");
+    const title = requireElement(".site-setting-wrap .title_area h2");
+    const firstRadio = requireElement(".mess-mail-wrap .radio");
+    const firstRadioInput = requireElement("#mailtoAll");
+    const writeButton = requireElement("#write-email");
+
+    const rowRect = row.getBoundingClientRect();
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const titleAreaStyle = getComputedStyle(titleArea);
+    const titleStyle = getComputedStyle(title);
+    const firstRadioStyle = getComputedStyle(firstRadio);
+    const firstRadioInputStyle = getComputedStyle(firstRadioInput);
+    const firstRadioRect = firstRadio.getBoundingClientRect();
+    const firstRadioInputRect = firstRadioInput.getBoundingClientRect();
+
+    return {
+      contentWidthRatio: Number((contentRect.width / rowRect.width).toFixed(2)),
+      firstRadioInputMarginLeft: Math.round(parseFloat(firstRadioInputStyle.marginLeft)),
+      firstRadioInputMarginTop: Math.round(parseFloat(firstRadioInputStyle.marginTop)),
+      firstRadioMinHeight: Math.round(parseFloat(firstRadioStyle.minHeight)),
+      firstRadioPaddingLeft: Math.round(parseFloat(firstRadioStyle.paddingLeft)),
+      firstRadioTextOffset: Math.round(firstRadioInputRect.left - firstRadioRect.left),
+      sidebarWidthRatio: Number((sidebarRect.width / rowRect.width).toFixed(2)),
+      titleAreaMarginBottom: Math.round(parseFloat(titleAreaStyle.marginBottom)),
+      titleAreaPaddingBottom: Math.round(parseFloat(titleAreaStyle.paddingBottom)),
+      titleLineHeight: Math.round(parseFloat(titleStyle.lineHeight)),
+      writeButtonHeight: Math.round(writeButton.getBoundingClientRect().height),
+    };
+  });
+}
+
+async function massMailProjectMetrics(page: Page) {
+  return page.evaluate(() => {
+    const requireElement = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing element: ${selector}`);
+      }
+      return element;
+    };
+
+    const projectWrap = requireElement("#project-list-wrap");
+    const input = requireElement("#input-project");
+    const addButton = requireElement("#select-project");
+    const selectedLabel = requireElement("#selected-projects .label");
+
+    const projectWrapStyle = getComputedStyle(projectWrap);
+    const inputStyle = getComputedStyle(input);
+    const selectedLabelStyle = getComputedStyle(selectedLabel);
+
+    return {
+      addButtonHeight: Math.round(addButton.getBoundingClientRect().height),
+      inputMarginBottom: Math.round(parseFloat(inputStyle.marginBottom)),
+      inputWidth: Math.round(input.getBoundingClientRect().width),
+      projectWrapMarginBottom: Math.round(parseFloat(projectWrapStyle.marginBottom)),
+      selectedLabelBackground: selectedLabelStyle.backgroundColor,
+      selectedLabelFontSize: Math.round(parseFloat(selectedLabelStyle.fontSize)),
+      selectedLabelLineHeight: Math.round(parseFloat(selectedLabelStyle.lineHeight)),
+      selectedLabelMarginRight: Math.round(parseFloat(selectedLabelStyle.marginRight)),
+      selectedLabelPaddingBlock:
+        Math.round(parseFloat(selectedLabelStyle.paddingTop)) +
+        Math.round(parseFloat(selectedLabelStyle.paddingBottom)),
+      selectedLabelPaddingInline:
+        Math.round(parseFloat(selectedLabelStyle.paddingLeft)) +
+        Math.round(parseFloat(selectedLabelStyle.paddingRight)),
+    };
+  });
+}
 
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
