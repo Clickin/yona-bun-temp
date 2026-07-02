@@ -24,6 +24,28 @@ test("project empty svn repository matches legacy code/nohead_svn.scala.html DOM
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_NO_HEAD_SVN_BODY),
   );
+  expect(await readNoHeadSvnMetrics(page)).toEqual({
+    alertPaddingBottom: "14px",
+    alertPaddingTop: "14px",
+    alertTitleFontSize: "17.5px",
+    codeBackground: "rgba(0, 0, 0, 0)",
+    codeColor: "rgb(51, 51, 51)",
+    codePadding: "0px",
+    codeWhiteSpace: "pre-wrap",
+    firstHeadingFontSize: "14px",
+    firstHeadingMarginBottom: "10px",
+    preBackground: "rgb(245, 245, 245)",
+    preBorderRadius: "4px",
+    preBorderTopWidth: "1px",
+    preLineHeight: "20px",
+    preMarginBottom: "10px",
+    prePadding: "9.5px",
+    preWhiteSpace: "pre-wrap",
+    rowWidthPercent: 100,
+    spanMarginLeft: "0px",
+    spanMinHeight: "30px",
+    spanWidthPercent: 100,
+  });
 });
 
 async function mockProjectCodeNoHeadSvn(page: Page) {
@@ -87,6 +109,71 @@ async function mockProjectCodeNoHeadSvn(page: Page) {
         selectedBranch: "",
       }),
     });
+  });
+}
+
+async function readNoHeadSvnMetrics(page: Page) {
+  return page.locator(".page-wrap-outer").evaluate((root) => {
+    const projectWrap = root.querySelector<HTMLElement>(".project-page-wrap");
+    const row = root.querySelector<HTMLElement>(".row-fluid");
+    const span = root.querySelector<HTMLElement>(".span12");
+    const alert = root.querySelector<HTMLElement>(".alert.alert-block");
+    const alertTitle = alert?.querySelector<HTMLElement>("h4");
+    const firstHeading = root.querySelector<HTMLElement>("h5");
+    const firstPre = root.querySelector<HTMLElement>("pre");
+    const firstCode = firstPre?.querySelector<HTMLElement>("code");
+    const missing = Object.entries({
+      alert,
+      alertTitle,
+      firstCode,
+      firstHeading,
+      firstPre,
+      projectWrap,
+      row,
+      span,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected SVN no-head metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const spanStyle = getComputedStyle(span!);
+    const alertStyle = getComputedStyle(alert!);
+    const alertTitleStyle = getComputedStyle(alertTitle!);
+    const headingStyle = getComputedStyle(firstHeading!);
+    const preStyle = getComputedStyle(firstPre!);
+    const codeStyle = getComputedStyle(firstCode!);
+    const projectWidth = projectWrap!.getBoundingClientRect().width;
+    const rowWidthPercent =
+      Math.round((row!.getBoundingClientRect().width / projectWidth) * 1000) / 10;
+    const spanWidthPercent =
+      Math.round(
+        (span!.getBoundingClientRect().width / row!.getBoundingClientRect().width) * 1000,
+      ) / 10;
+
+    return {
+      alertPaddingBottom: alertStyle.paddingBottom,
+      alertPaddingTop: alertStyle.paddingTop,
+      alertTitleFontSize: alertTitleStyle.fontSize,
+      codeBackground: codeStyle.backgroundColor,
+      codeColor: codeStyle.color,
+      codePadding: codeStyle.padding,
+      codeWhiteSpace: codeStyle.whiteSpace,
+      firstHeadingFontSize: headingStyle.fontSize,
+      firstHeadingMarginBottom: headingStyle.marginBottom,
+      preBackground: preStyle.backgroundColor,
+      preBorderRadius: preStyle.borderRadius,
+      preBorderTopWidth: preStyle.borderTopWidth,
+      preLineHeight: preStyle.lineHeight,
+      preMarginBottom: preStyle.marginBottom,
+      prePadding: preStyle.padding,
+      preWhiteSpace: preStyle.whiteSpace,
+      rowWidthPercent,
+      spanMarginLeft: spanStyle.marginLeft,
+      spanMinHeight: spanStyle.minHeight,
+      spanWidthPercent,
+    };
   });
 }
 
