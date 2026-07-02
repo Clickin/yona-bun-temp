@@ -64,7 +64,7 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     bodyMarginTop: "0px",
     contentMarginBottom: "20px",
     contentMinHeight: "150px",
-    contentPadding: "15px 20px",
+    contentPadding: "0px 20px",
     footerFontSize: "0px",
     footerMarginTop: "20px",
     footerTextAlign: "right",
@@ -92,6 +92,21 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     rowLeft: 985,
     rowWidth: 285,
     shareDisplay: "none",
+  });
+  expect(await issueCommentMetrics(page)).toEqual({
+    attachmentsDisplay: "block",
+    avatarFloat: "left",
+    avatarMarginRight: "0px",
+    avatarWidth: 37,
+    bodyMinHeight: "0px",
+    bodyPadding: "15px 20px",
+    commentDisplay: "list-item",
+    commentPaddingBottom: "10px",
+    commentWidth: 938,
+    mediaBodyOverflow: "hidden",
+    metaHeight: 32,
+    metaPaddingTop: "5px",
+    replyDisplay: "none",
   });
 });
 
@@ -1513,6 +1528,44 @@ async function indexCommentMetrics(page: Page) {
       rowLeft: Math.round(rect.left),
       rowWidth: Math.round(rect.width),
       shareDisplay: share ? window.getComputedStyle(share).display : null,
+    };
+  });
+}
+
+async function issueCommentMetrics(page: Page) {
+  return page.locator(".span-left-pane #comment-77").evaluate((comment) => {
+    const avatar = comment.querySelector<HTMLElement>(":scope > .comment-avatar");
+    const mediaBody = comment.querySelector<HTMLElement>(":scope > .media-body");
+    const meta = comment.querySelector<HTMLElement>(".meta-info");
+    const body = comment.querySelector<HTMLElement>("#comment-body-77 .comment-body");
+    const attachments = comment.querySelector<HTMLElement>("#comment-body-77 .attachments");
+    const reply = comment.querySelector<HTMLElement>(":scope > .add-a-comment");
+    const missing = Object.entries({ attachments, avatar, body, mediaBody, meta, reply })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected issue comment metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const avatarStyle = window.getComputedStyle(avatar);
+    const bodyStyle = window.getComputedStyle(body);
+    const commentStyle = window.getComputedStyle(comment);
+    const mediaBodyStyle = window.getComputedStyle(mediaBody);
+    const metaStyle = window.getComputedStyle(meta);
+    return {
+      attachmentsDisplay: window.getComputedStyle(attachments).display,
+      avatarFloat: avatarStyle.float,
+      avatarMarginRight: avatarStyle.marginRight,
+      avatarWidth: Math.round(avatar.getBoundingClientRect().width),
+      bodyMinHeight: bodyStyle.minHeight,
+      bodyPadding: bodyStyle.padding,
+      commentDisplay: commentStyle.display,
+      commentPaddingBottom: commentStyle.paddingBottom,
+      commentWidth: Math.round(comment.getBoundingClientRect().width),
+      mediaBodyOverflow: mediaBodyStyle.overflow,
+      metaHeight: Math.round(meta.getBoundingClientRect().height),
+      metaPaddingTop: metaStyle.paddingTop,
+      replyDisplay: window.getComputedStyle(reply).display,
     };
   });
 }

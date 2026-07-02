@@ -113,6 +113,26 @@ test("project pull request populated list matches legacy git/partial_list.scala.
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, expectedPopulatedPullRequests(basePath)),
   );
+  expect(await pullRequestListMetrics(page)).toEqual({
+    avatarHeight: 40,
+    avatarWidth: 40,
+    infosColor: "rgb(153, 153, 153)",
+    infosFontSize: "12px",
+    itemBorderBottom: "1px",
+    itemDisplay: "block",
+    itemMinHeight: "0px",
+    itemPadding: "10px",
+    itemWidth: 1046,
+    postIdText: "7",
+    progressHeight: 7,
+    progressWidth: 30,
+    stateBackground: "rgb(182, 218, 84)",
+    stateBorderRadius: "15px",
+    statePadding: "5px 12px",
+    titleFontSize: "15px",
+    titleText: "Restore PR rows",
+    titleWrapMarginLeft: "0px",
+  });
 });
 
 test("project pull request reviewer-count row matches legacy git/partial_list.scala.html DOM", async ({
@@ -178,6 +198,20 @@ test("project pull request search interactions follow legacy form submit behavio
   await expect(page).toHaveURL(
     new RegExp(`${basePath}/admin/sample/pullRequests\\?filter=empty&contributorId=2`),
   );
+  expect(await pullRequestSearchMetrics(page)).toEqual({
+    advancedMarginTop: "10px",
+    buttonHeight: 20,
+    buttonWidth: 38,
+    formAction: `${basePath}/admin/sample/pullRequests`,
+    inputHeight: 30,
+    inputPadding: "0px 5px",
+    inputValue: "empty",
+    leftMenuPaddingTop: "0px",
+    leftMenuWidth: 188,
+    searchBarDisplay: "block",
+    searchMargin: "0px",
+    selectedContributor: "2",
+  });
 });
 
 test("project pull request multi-page list matches legacy pagination DOM", async ({ page }) => {
@@ -641,4 +675,84 @@ async function canonicalizeHtml(page: Page, html: string) {
         : attr.value;
     }
   }, html);
+}
+
+async function pullRequestListMetrics(page: Page) {
+  return page.locator(".post-list-wrap .post-item").evaluate((item) => {
+    const avatar = item.querySelector<HTMLElement>(".avatar-wrap.mlarge");
+    const titleWrap = item.querySelector<HTMLElement>(".title-wrap");
+    const postId = item.querySelector<HTMLElement>(".post-id");
+    const title = item.querySelector<HTMLElement>(".title");
+    const infos = item.querySelector<HTMLElement>(".infos");
+    const progress = item.querySelector<HTMLElement>(".upload-progress");
+    const state = item.querySelector<HTMLElement>(".state.open");
+    const missing = Object.entries({ avatar, infos, postId, progress, state, title, titleWrap })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected PR list metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const itemStyle = window.getComputedStyle(item);
+    const infosStyle = window.getComputedStyle(infos);
+    const stateStyle = window.getComputedStyle(state);
+    const titleStyle = window.getComputedStyle(title);
+    return {
+      avatarHeight: Math.round(avatar.getBoundingClientRect().height),
+      avatarWidth: Math.round(avatar.getBoundingClientRect().width),
+      infosColor: infosStyle.color,
+      infosFontSize: infosStyle.fontSize,
+      itemBorderBottom: itemStyle.borderBottomWidth,
+      itemDisplay: itemStyle.display,
+      itemMinHeight: itemStyle.minHeight,
+      itemPadding: itemStyle.padding,
+      itemWidth: Math.round(item.getBoundingClientRect().width),
+      postIdText: postId.textContent?.trim(),
+      progressHeight: Math.round(progress.getBoundingClientRect().height),
+      progressWidth: Math.round(progress.getBoundingClientRect().width),
+      stateBackground: stateStyle.backgroundColor,
+      stateBorderRadius: stateStyle.borderRadius,
+      statePadding: stateStyle.padding,
+      titleFontSize: titleStyle.fontSize,
+      titleText: title.textContent?.trim(),
+      titleWrapMarginLeft: window.getComputedStyle(titleWrap).marginLeft,
+    };
+  });
+}
+
+async function pullRequestSearchMetrics(page: Page) {
+  return page.locator("#search").evaluate((form) => {
+    const leftMenu = form.closest<HTMLElement>(".left-menu.search-wrap");
+    const search = form.querySelector<HTMLElement>(".search");
+    const searchBar = form.querySelector<HTMLElement>(".search-bar");
+    const input = form.querySelector<HTMLInputElement>('input[name="filter"]');
+    const button = form.querySelector<HTMLElement>(".search-btn");
+    const advanced = form.querySelector<HTMLElement>("#advanced-search-form");
+    const select = form.querySelector<HTMLSelectElement>("#contributors");
+    const missing = Object.entries({ advanced, button, input, leftMenu, search, searchBar, select })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected PR search metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    const advancedStyle = window.getComputedStyle(advanced);
+    const buttonStyle = window.getComputedStyle(button);
+    const inputStyle = window.getComputedStyle(input);
+    const leftMenuStyle = window.getComputedStyle(leftMenu);
+    return {
+      advancedMarginTop: advancedStyle.marginTop,
+      buttonHeight: Math.round(button.getBoundingClientRect().height),
+      buttonWidth: Math.round(button.getBoundingClientRect().width),
+      formAction: form.getAttribute("action"),
+      inputHeight: Math.round(input.getBoundingClientRect().height),
+      inputPadding: inputStyle.padding,
+      inputValue: input.value,
+      leftMenuPaddingTop: leftMenuStyle.paddingTop,
+      leftMenuWidth: Math.round(leftMenu.getBoundingClientRect().width),
+      searchBarDisplay: window.getComputedStyle(searchBar).display,
+      searchMargin: window.getComputedStyle(search).margin,
+      selectedContributor: select.value,
+    };
+  });
 }
