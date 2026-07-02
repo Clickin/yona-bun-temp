@@ -78,6 +78,8 @@ test("rendered evidence summary counts match manifest row statuses", () => {
     ["error/badrequest_default.scala.html", "frontend/tests/reset-password.e2e.ts"],
     ["error/forbidden_default.scala.html", "frontend/tests/search-global.e2e.ts"],
     ["error/internalServerError_default.scala.html", "frontend/tests/search-global.e2e.ts"],
+    ["error/badrequest.scala.html", "frontend/tests/project-members-form.e2e.ts"],
+    ["error/forbidden.scala.html", "frontend/tests/project-members-form.e2e.ts"],
   ]);
   let inSummary = false;
   let inPrioritySummary = false;
@@ -247,6 +249,16 @@ test("rendered evidence summary counts match manifest row statuses", () => {
         evidenceFiles,
         /frontend\/tests\/(?:organization-directory-admin-parity|code-parity|search-parity)\.e2e\.ts/,
         `${legacyTemplate} must not cite historical broad parity evidence`,
+      );
+    }
+    if (
+      legacyTemplate === "error/badrequest.scala.html" ||
+      legacyTemplate === "error/forbidden.scala.html"
+    ) {
+      assert.doesNotMatch(
+        evidenceFiles,
+        /frontend\/tests\/project-members-parity\.e2e\.ts/,
+        `${legacyTemplate} must not cite historical project members parity evidence`,
       );
     }
     prioritySummaryCounts.set(

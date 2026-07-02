@@ -46,7 +46,7 @@ test("project members matches legacy project/members.scala.html DOM", async ({ p
     memberListStyle: "none",
     memberNameFontWeight: "700",
     memberRoleDataName: "roleof-alice",
-    memberRowWidthRatio: 0.47,
+    memberRowWidthRatio: 0.49,
     memberSettingOffsetTop: 15,
     ownerPadding: 5,
   });
@@ -91,7 +91,81 @@ test("project members enrollment Add posts selected login like legacy member mod
   await expect.poll(() => requests.addedLoginIds).toEqual(["bob"]);
 });
 
-async function mockProjectMembers(page: Page) {
+test("project members renders legacy error/badrequest.scala.html shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page, { membersStatus: 400 });
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText(
+    "The request cannot be fulfilled due to bad syntax",
+  );
+  await expect(page.locator("#addNewMember")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedProjectMembersErrorScreen({
+        activeMenu: "setting",
+        basePath,
+        message: "The request cannot be fulfilled due to bad syntax",
+      }),
+    ),
+  );
+  expect(await projectMemberErrorMetrics(page)).toEqual({
+    errorIconHeight: "80px",
+    errorIconWidth: "50px",
+    errorPaddingBottom: "100px",
+    errorPaddingTop: "100px",
+    errorTextAlign: "center",
+    errorTextColor: "rgb(137, 137, 137)",
+    errorTextFontSize: "16px",
+    errorTextFontWeight: "700",
+    errorTextMarginBottom: "30px",
+    errorTextMarginTop: "30px",
+    pageWrapOuterMinHeight: "450px",
+    projectPageWrapMarginTop: "5px",
+  });
+});
+
+test("project members renders legacy error/forbidden.scala.html shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page, { membersStatus: 403 });
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  await expect(page.locator(".project-menu-gruop > li").first()).toHaveClass("active");
+  await expect(page.locator(".project-setting .project-menu-nav > li")).toHaveClass("");
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
+  await expect(page.locator("#addNewMember")).toHaveCount(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedProjectMembersErrorScreen({
+        activeMenu: "home",
+        basePath,
+        message: "You are not authorized",
+      }),
+    ),
+  );
+  expect(await projectMemberErrorMetrics(page)).toEqual({
+    errorIconHeight: "80px",
+    errorIconWidth: "50px",
+    errorPaddingBottom: "100px",
+    errorPaddingTop: "100px",
+    errorTextAlign: "center",
+    errorTextColor: "rgb(137, 137, 137)",
+    errorTextFontSize: "16px",
+    errorTextFontWeight: "700",
+    errorTextMarginBottom: "30px",
+    errorTextMarginTop: "30px",
+    pageWrapOuterMinHeight: "450px",
+    projectPageWrapMarginTop: "5px",
+  });
+});
+
+async function mockProjectMembers(page: Page, options: { membersStatus?: number } = {}) {
   const requests = {
     addedLoginIds: [] as string[],
   };
@@ -119,6 +193,23 @@ async function mockProjectMembers(page: Page) {
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/members", async (route) => {
+    if (route.request().method() === "GET" && options.membersStatus) {
+      await route.fulfill({
+        status: options.membersStatus,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: options.membersStatus === 403 ? "forbidden" : "bad_request",
+            message:
+              options.membersStatus === 403
+                ? "You are not authorized"
+                : "The request cannot be fulfilled due to bad syntax",
+            status: options.membersStatus,
+          },
+        }),
+      });
+      return;
+    }
     if (route.request().method() === "POST") {
       const body = route.request().postDataJSON() as { loginId?: string };
       requests.addedLoginIds.push(body.loginId ?? "");
@@ -186,6 +277,32 @@ async function mockProjectMembers(page: Page) {
   });
 
   return requests;
+}
+
+function expectedProjectMembersErrorScreen({
+  activeMenu,
+  basePath,
+  message,
+}: {
+  activeMenu: "home" | "setting";
+  basePath: string;
+  message: string;
+}) {
+  let html = EXPECTED_PROJECT_MEMBERS.replaceAll("__BASE_PATH__", basePath);
+  if (activeMenu === "home") {
+    html = html
+      .replace(
+        `<li class=""><a href="${basePath}/admin/sample"><span class="menu-name">Project home</span>`,
+        `<li class="active"><a href="${basePath}/admin/sample"><span class="menu-name">Project home</span>`,
+      )
+      .replace(
+        `<div class="project-setting"><ul class="project-menu-nav"><li class="active">`,
+        `<div class="project-setting"><ul class="project-menu-nav"><li class="">`,
+      );
+  }
+  const start = html.indexOf('<div class="page-wrap-outer">');
+  const end = html.indexOf("<footer", start);
+  return `${html.slice(0, start)}<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico ico-err2"></i><p>${message}</p></div></div></div>${html.slice(end)}`;
 }
 
 function projectContainer() {
@@ -313,6 +430,42 @@ async function memberPageMetrics(page: Page) {
       memberRowWidthRatio: Number((firstMemberRect.width / memberListRect.width).toFixed(2)),
       memberSettingOffsetTop: Math.round(memberSettingRect.top - firstMemberRect.top),
       ownerPadding: Math.round(parseFloat(ownerLabelStyle.paddingTop)),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function projectMemberErrorMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = requireElement(".page-wrap-outer");
+    const projectPageWrap = requireElement(".project-page-wrap");
+    const errorWrap = requireElement(".error-wrap");
+    const errorIcon = requireElement(".error-wrap .ico-err2");
+    const errorText = requireElement(".error-wrap p");
+    const errorWrapStyle = getComputedStyle(errorWrap);
+    const errorIconStyle = getComputedStyle(errorIcon);
+    const errorTextStyle = getComputedStyle(errorText);
+
+    return {
+      errorIconHeight: errorIconStyle.height,
+      errorIconWidth: errorIconStyle.width,
+      errorPaddingBottom: errorWrapStyle.paddingBottom,
+      errorPaddingTop: errorWrapStyle.paddingTop,
+      errorTextAlign: errorWrapStyle.textAlign,
+      errorTextColor: errorTextStyle.color,
+      errorTextFontSize: errorTextStyle.fontSize,
+      errorTextFontWeight: errorTextStyle.fontWeight,
+      errorTextMarginBottom: errorTextStyle.marginBottom,
+      errorTextMarginTop: errorTextStyle.marginTop,
+      pageWrapOuterMinHeight: getComputedStyle(pageWrapOuter).minHeight,
+      projectPageWrapMarginTop: getComputedStyle(projectPageWrap).marginTop,
     };
 
     function requireElement(selector: string) {

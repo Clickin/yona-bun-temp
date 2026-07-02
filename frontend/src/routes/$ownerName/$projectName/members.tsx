@@ -22,6 +22,7 @@ import type {
   ProjectMembersResponse,
 } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
+import { RestApiError } from "../../../api/rest-client";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
@@ -59,20 +60,58 @@ function ProjectMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
     readProjectMembersQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
 
-  if (!projectQuery.data || !membersQuery.data) {
+  if (!projectQuery.data) {
+    return null;
+  }
+
+  if (membersQuery.error instanceof RestApiError) {
+    const status = membersQuery.error.status;
+    if (status === 400 || status === 403) {
+      return (
+        <>
+          <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+          <ProjectMenu
+            active={status === 403 ? "home" : "setting"}
+            basePath={runtimeConfig.basePath}
+            project={projectQuery.data}
+          />
+          <ProjectMembersErrorBody
+            messageKey={status === 403 ? "error.forbidden" : "error.badrequest"}
+          />
+        </>
+      );
+    }
+  }
+
+  if (!membersQuery.data) {
     return null;
   }
 
   return (
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMembersBody
         members={membersQuery.data}
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
       />
     </>
+  );
+}
+
+function ProjectMembersErrorBody({ messageKey }: { messageKey: string }) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t(messageKey)}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -111,6 +150,7 @@ function ProjectMembersBody({
       <div className="project-page-wrap">
         <ProjectSettingMenu
           active="members"
+          basePath={runtimeConfig.basePath}
           ownerName={ownerName}
           project={project}
           projectName={projectName}
@@ -449,7 +489,15 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
   );
 }
 
-function ProjectMenu({ basePath, project }: { basePath: string; project: ProjectContainer }) {
+function ProjectMenu({
+  active,
+  basePath,
+  project,
+}: {
+  active: "home" | "setting";
+  basePath: string;
+  project: ProjectContainer;
+}) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
@@ -460,6 +508,7 @@ function ProjectMenu({ basePath, project }: { basePath: string; project: Project
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <ProjectMenuItem
+            active={active === "home"}
             href={projectHref(basePath, ownerName, projectName)}
             label={t("title.projectHome")}
             short="H"
@@ -511,7 +560,7 @@ function ProjectMenu({ basePath, project }: { basePath: string; project: Project
         {booleanField(project.viewerCanUpdate) ? (
           <div className="project-setting">
             <ul className="project-menu-nav">
-              <li className="active">
+              <li className={active === "setting" ? "active" : ""}>
                 <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`)}>
                   <i className="yobicon-cog"></i>
                   <span className="blind">
@@ -529,18 +578,20 @@ function ProjectMenu({ basePath, project }: { basePath: string; project: Project
 }
 
 function ProjectMenuItem({
+  active = false,
   className = "",
   href,
   label,
   short,
 }: {
+  active?: boolean;
   className?: string;
   href: string;
   label: string;
   short: string;
 }) {
   return (
-    <li className={className}>
+    <li className={`${active ? "active" : ""}${className ? ` ${className}` : ""}`}>
       <a href={href}>
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
@@ -551,11 +602,13 @@ function ProjectMenuItem({
 
 function ProjectSettingMenu({
   active,
+  basePath,
   ownerName,
   project,
   projectName,
 }: {
   active: "members";
+  basePath: string;
   ownerName: string;
   project: ProjectContainer;
   projectName: string;
@@ -571,10 +624,10 @@ function ProjectSettingMenu({
         </LegacyInternalLink>
       </li>
       <li id="subMenuProjectMember" className={active === "members" ? "active" : ""}>
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/members`}>
+        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/members`)}>
           {t("project.member")}
           <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
-        </LegacyInternalLink>
+        </a>
       </li>
       <li id="subMenuIssueLabel" className="">
         <LegacyInternalLink to={`/${ownerName}/${projectName}/labels`}>
