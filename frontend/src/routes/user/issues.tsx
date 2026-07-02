@@ -756,7 +756,6 @@ function UserIssueItem({
   const { t } = useLegacyMessages();
   const issueRoutePath = `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`;
   const projectRoutePath = `/${issue.ownerName}/${issue.projectName}`;
-  const projectHref = prefixBasePath(basePath, projectRoutePath);
   const issueHref = prefixBasePath(basePath, issueRoutePath);
   const authorRoutePath = `/${issue.authorLoginId}`;
   const assigneeRoutePath = `/${issue.assigneeLoginId}`;
