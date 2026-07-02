@@ -77,7 +77,7 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
           <li class=""><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
           <li class=""><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
           <li class=""><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/massMail">Send mass emails</a></li>
+          <li class=""><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
           <li class="active"><a href="__BASE_PATH__/sites/update">Software Update</a></li>
           <li class=""><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
@@ -114,10 +114,16 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
     releaseUrl: null,
     versionToUpdate: null,
   });
+  await mockDiagnostics(page, { errorCount: 0, errors: [] });
 
   await page.goto(`${basePath}/sites/update`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Software Update");
+  await expect(
+    page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
+  ).toHaveAttribute("href", `${basePath}/sites/massmail`);
+  const diagnosticsLink = page.locator(".site-setting-nav a", { hasText: "Diagnostics" });
+  await expect(diagnosticsLink).toHaveAttribute("href", `${basePath}/sites/diagnostic`);
   expect(await siteLayoutRootOrder(page)).toEqual([
     "unsupported hidden",
     "gnb-outer",
@@ -133,6 +139,17 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   );
 
   expect(actual).toEqual(expected);
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-update-sidebar";
+  });
+  await diagnosticsLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/diagnostic`);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Diagnostics");
+  await expect(page.locator(".title_area h2")).toHaveText("Diagnostics");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-update-sidebar");
 });
 
 test("site admin update renders the legacy available-version branch", async ({ page }) => {
@@ -318,6 +335,21 @@ async function mockUpdate(
   },
 ) {
   await page.route("**/api/v1/site/update", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(response),
+    });
+  });
+}
+
+async function mockDiagnostics(
+  page: Page,
+  response: {
+    errorCount: number;
+    errors: string[];
+  },
+) {
+  await page.route("**/api/v1/site/diagnostics", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(response),
