@@ -5,6 +5,7 @@ const FRONTEND_SUPPORT_PATTERN =
   /^frontend\/src\/(api|auth-workspace-client|i18n|query-client|runtime-config|routeTree\.gen)\b/u;
 const UI_PARITY_REPORT_PATTERN = /^docs\/provenance\/ui-parity-reports\/.+\.md$/u;
 const SCALA_HTML_AUDIT_FILE = "docs/provenance/frontend-scala-html-goal-violation-audit.md";
+const ADDED_SCALA_HTML_SOURCE_PATTERN = /^\+(?!\+\+).*\.scala\.html\b/mu;
 
 function isFrontendImplementation(file) {
   if (!FRONTEND_IMPLEMENTATION_PATTERN.test(file)) {
@@ -28,7 +29,11 @@ function isFrontendRouteImplementation(file) {
   return FRONTEND_ROUTE_PATTERN.test(file);
 }
 
-export function evaluateScalaHtmlGoalGuard({ changedFiles, env = process.env }) {
+function auditPatchAddsScalaHtmlSource(auditPatch) {
+  return ADDED_SCALA_HTML_SOURCE_PATTERN.test(auditPatch);
+}
+
+export function evaluateScalaHtmlGoalGuard({ changedFiles, env = process.env, auditPatch = null }) {
   const frontendEvidenceFiles = changedFiles.filter(isFrontendEvidence);
   const frontendImplementationFiles = changedFiles.filter(isFrontendImplementation);
   const frontendRouteImplementationFiles = frontendImplementationFiles.filter(
@@ -65,6 +70,22 @@ export function evaluateScalaHtmlGoalGuard({ changedFiles, env = process.env }) 
       frontendImplementationFiles,
       message:
         "Scala HTML goal guard blocked undocumented frontend route work. Route TSX changed without updating docs/provenance/frontend-scala-html-goal-violation-audit.md. Record the target route/screen state, legacy Scala HTML root, included partials, and focused verification, or set YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE=1 for an explicitly intentional non-goal route change.",
+    };
+  }
+
+  if (
+    implementationTouchesRuntime &&
+    auditUpdated &&
+    auditPatch !== null &&
+    !auditPatchAddsScalaHtmlSource(auditPatch) &&
+    !allowUndocumentedRoute
+  ) {
+    return {
+      blocked: true,
+      frontendEvidenceFiles,
+      frontendImplementationFiles,
+      message:
+        "Scala HTML goal guard blocked weak audit memo work. Route TSX changed, but the staged audit memo diff does not add a legacy .scala.html source. Add the target legacy Scala HTML root and included partials to docs/provenance/frontend-scala-html-goal-violation-audit.md, or set YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE=1 for an explicitly intentional non-goal route change.",
     };
   }
 

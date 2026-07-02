@@ -74,10 +74,27 @@ test("passes frontend route TSX work when the Scala HTML audit memo is updated",
       "frontend/src/routes/$ownerName/$projectName/issues.tsx",
       "docs/provenance/frontend-scala-html-goal-violation-audit.md",
     ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/issues` | `issue/list.scala.html`, `issue/partial_list.scala.html` | TSX rebuild | E2E |\n",
     env: {},
   });
 
   assert.equal(result.blocked, false);
+});
+
+test("blocks frontend route TSX work when the audit memo diff lacks a Scala HTML source", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-02 | `/admin/sample/issues` | legacy issue list | TSX rebuild | E2E |\n",
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /weak audit memo work/u);
 });
 
 test("allows explicitly marked non-goal frontend route commits", () => {

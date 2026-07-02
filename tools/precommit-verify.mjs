@@ -141,6 +141,16 @@ if (stagedFiles.length === 0) {
   process.exit(0);
 }
 
+const readStagedPatch = (file) => {
+  const result = spawnSync(GIT_BIN, ["diff", "--cached", "--unified=0", "--", file], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
+  }
+  return result.stdout;
+};
+
 const lintTargets = stagedFiles
   .filter((file) => OXLINT_EXTENSIONS.has(getExtension(file)))
   .filter((file) => !isGeneratedFile(file));
@@ -195,6 +205,7 @@ if (shouldBlockDesignHarness(designResult)) {
 
 const scalaHtmlGoalResult = evaluateScalaHtmlGoalGuard({
   changedFiles: stagedFiles,
+  auditPatch: readStagedPatch("docs/provenance/frontend-scala-html-goal-violation-audit.md"),
 });
 console.log(formatScalaHtmlGoalGuardSummary(scalaHtmlGoalResult));
 if (scalaHtmlGoalResult.blocked) {

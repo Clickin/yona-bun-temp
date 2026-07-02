@@ -38,6 +38,10 @@ This Audit` row or an explicit candidate/status update with the target
 route/screen state, legacy Scala HTML root, included partials, TSX write scope,
 and focused verification. Intentional non-goal route exceptions require the
 explicit `YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE=1` environment marker.
+The precommit hook passes the staged audit diff to the guard, and route TSX
+changes are blocked unless that diff adds at least one legacy `.scala.html`
+source line. A memo-only touch without newly recorded legacy template evidence
+does not satisfy the goal.
 
 The mandatory workflow remains:
 

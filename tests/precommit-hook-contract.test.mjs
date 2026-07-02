@@ -69,6 +69,11 @@ test("pre-commit verification runs the Scala HTML goal guard", () => {
   assert.match(verifySource, /from "\.\/scala-html-goal-guard\.mjs"/u);
   assert.match(verifySource, /evaluateScalaHtmlGoalGuard/u);
   assert.match(verifySource, /formatScalaHtmlGoalGuardSummary/u);
+  assert.match(verifySource, /readStagedPatch/u);
+  assert.match(
+    verifySource,
+    /auditPatch:\s*readStagedPatch\("docs\/provenance\/frontend-scala-html-goal-violation-audit\.md"\)/u,
+  );
 });
 
 test("pre-commit verification runs the legacy Yona design harness", () => {
