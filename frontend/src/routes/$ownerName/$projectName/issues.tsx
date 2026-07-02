@@ -7,6 +7,7 @@ import {
   type CSSProperties,
   type HTMLAttributes,
   type LiHTMLAttributes,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
@@ -410,6 +411,15 @@ function ProjectIssuesBody({
         (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
       )
     : [];
+  const handleStateChange = (nextState: "closed" | "open") => {
+    void navigate({
+      to: projectIssuesRoutePath(ownerName, projectName, {
+        ...search,
+        pageNum: 1,
+        state: nextState,
+      }),
+    });
+  };
   const showMilestone = projectMilestoneMenuEnabled(project);
   const showMassUpdateControls = projectMemberControlsEnabled(project);
   const showLabelManagement = projectIssueLabelCreatable(project);
@@ -468,12 +478,14 @@ function ProjectIssuesBody({
                 active={search.state === "open"}
                 count={countField(issues, "openIssueCount")}
                 label={t("issue.state.open")}
+                onStateChange={handleStateChange}
                 state="open"
               />
               <StateTab
                 active={search.state === "closed"}
                 count={countField(issues, "closedIssueCount")}
                 label={t("issue.state.closed")}
+                onStateChange={handleStateChange}
                 state="closed"
               />
               <li>
@@ -2025,14 +2037,22 @@ function StateTab({
   active,
   count,
   label,
+  onStateChange,
   state,
 }: {
   active: boolean;
   count: number;
   label: string;
+  onStateChange: (state: "closed" | "open") => void;
   state: "closed" | "open";
 }) {
-  const legacyState = { state } as unknown as HTMLAttributes<HTMLAnchorElement>;
+  const legacyState = {
+    onClick: (event: MouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault();
+      onStateChange(state);
+    },
+    state,
+  } as unknown as HTMLAttributes<HTMLAnchorElement>;
   const dataPjax = { "data-pjax": "" } as unknown as HTMLAttributes<HTMLLIElement>;
 
   return (

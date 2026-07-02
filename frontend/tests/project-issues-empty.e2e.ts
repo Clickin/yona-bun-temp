@@ -682,6 +682,31 @@ test("project issue quick search updates route like legacy partial_list_quicksea
   ).toBe("issue-quick-search");
 });
 
+test("project issue state tab updates route like legacy partial_list_wrap.scala.html pjax tab", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug&pageNum=3`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-state-tab";
+  });
+
+  await page.locator('.nav-tabs li[data-pjax] a[state="closed"]').click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("state") ?? "").toBe("closed");
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("bug");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
+  await expect(page.locator('.nav-tabs li[data-pjax]:has(a[state="closed"])')).toHaveClass(
+    "active",
+  );
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("issue-state-tab");
+});
+
 test("project issue list sorts labels like legacy partial_list.scala.html", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "labels-unsorted");
