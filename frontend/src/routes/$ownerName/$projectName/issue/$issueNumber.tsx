@@ -140,6 +140,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
       />
+      <CommentDeleteModalScripts basePath={runtimeConfig.basePath} />
     </>
   );
 }
@@ -812,6 +813,25 @@ function AttachedFileTemplate() {
           '<!--\n        --><li class="attached-file" data-name="${fileName}" data-href="${fileHref}" data-mime="${mimeType}" data-size="${fileSize}">\n        <strong>${fileName}(${fileSizeReadable})${notice}</strong><!--\n        --><a class="attached-delete"><i class="ico btn-delete"></i></a></li>',
       }}
     ></script>
+  );
+}
+
+function CommentDeleteModalScripts({ basePath }: { basePath: string }) {
+  return (
+    <>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.Comment.js")}
+      ></script>
+      <script
+        type="text/javascript"
+        dangerouslySetInnerHTML={{
+          __html:
+            "\n    $(function () {\n        yobi.Comment.init({'sContainer' : '#comments'});\n    });\n",
+        }}
+      ></script>
+    </>
   );
 }
 

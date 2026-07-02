@@ -165,12 +165,23 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
     `${basePath}/assets/javascripts/common/yona.SubComment.js`,
     `${basePath}/assets/javascripts/common/yona.CommentAttachmentsUpdate.js`,
     `${basePath}/assets/javascripts/common/yona.ReceiverList.js`,
+    `${basePath}/assets/javascripts/common/yobi.Comment.js`,
   ];
   for (const src of scriptSources) {
     const script = page.locator(`script[src="${src}"]`);
     await expect(script).toHaveAttribute("type", "text/javascript");
     await expect(script).toHaveAttribute("defer", "");
   }
+
+  expect(
+    await page
+      .locator("script:not([src])")
+      .evaluateAll((scripts) =>
+        scripts.some((script) =>
+          (script.textContent ?? "").includes("yobi.Comment.init({'sContainer' : '#comments'});"),
+        ),
+      ),
+  ).toBe(true);
 }
 
 test("project issue detail not found renders legacy project error shell", async ({ page }) => {
