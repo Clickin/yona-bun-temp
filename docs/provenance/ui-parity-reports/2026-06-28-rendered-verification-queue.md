@@ -306,25 +306,25 @@ These rows have high static anchor overlap, but they are not closed. Rendered br
 | `search/partial_reviews.scala.html` | P6 directory/workspace | review search row metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
 | `search/partial_search.scala.html` | P6 directory/workspace | search shell/category controls metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
 | `search/partial_users.scala.html` | P6 directory/workspace | user search row metric-covered by `frontend/tests/search-global.e2e.ts` | 39 |
-| `user/edit_emails.scala.html` | P6 directory/workspace | /user/editform/* or /me/settings/* | 39 |
-| `user/edit_password.scala.html` | P6 directory/workspace | /user/editform/* or /me/settings/* | 39 |
-| `user/edit_token.scala.html` | P6 directory/workspace | /user/editform/* or /me/settings/* | 39 |
-| `user/edit.scala.html` | P6 directory/workspace | /user/editform/* or /me/settings/* | 39 |
-| `user/partial_edit_tabmenu.scala.html` | P6 directory/workspace | included partial caller route; inspect Play route and React owner | 39 |
-| `user/partial_milestones.scala.html` | P6 directory/workspace | included partial caller route; inspect Play route and React owner | 39 |
-| `user/partial_postings.scala.html` | P6 directory/workspace | included partial caller route; inspect Play route and React owner | 39 |
-| `user/partial_pullRequests.scala.html` | P6 directory/workspace | included partial caller route; inspect Play route and React owner | 39 |
-| `user/userFiles.scala.html` | P6 directory/workspace | /user/files | 39 |
-| `user/view.scala.html` | P6 directory/workspace | /:user | 39 |
-| `migration/home.scala.html` | P7 site-admin/security | /migration | 9 |
-| `site/data.scala.html` | P7 site-admin/security | /sites/:pageName | 9 |
-| `site/diagnostic.scala.html` | P7 site-admin/security | /sites/:pageName | 9 |
-| `site/issueList.scala.html` | P7 site-admin/security | /sites/:pageName | 9 |
-| `site/mail.scala.html` | P7 site-admin/security | /sites/:pageName | 9 |
-| `site/massMail.scala.html` | P7 site-admin/security | /sites/:pageName | 9 |
-| `site/postList.scala.html` | P7 site-admin/security | /sites/:pageName | 9 |
-| `site/siteMngLayout.scala.html` | P7 site-admin/security | /sites/:pageName | 9 |
-| `site/update.scala.html` | P7 site-admin/security | /sites/:pageName | 9 |
+| `user/edit_emails.scala.html` | P6 directory/workspace | email settings screen metric-covered by `frontend/tests/user-email-settings.e2e.ts` | 39 |
+| `user/edit_password.scala.html` | P6 directory/workspace | password settings screen metric-covered by `frontend/tests/user-password-settings.e2e.ts` | 39 |
+| `user/edit_token.scala.html` | P6 directory/workspace | token settings screen metric-covered by `frontend/tests/user-token-settings.e2e.ts` | 39 |
+| `user/edit.scala.html` | P6 directory/workspace | profile settings screen metric-covered by `frontend/tests/user-profile-settings.e2e.ts` | 39 |
+| `user/partial_edit_tabmenu.scala.html` | P6 directory/workspace | account settings tab menu metric-covered across profile/password/notifications/email/token E2E guards | 39 |
+| `user/partial_milestones.scala.html` | P6 directory/workspace | targeted absence covered: no legacy caller and React does not invent a user milestone pane | 39 |
+| `user/partial_postings.scala.html` | P6 directory/workspace | targeted absence covered: no legacy caller and React does not invent a profile posting route | 39 |
+| `user/partial_pullRequests.scala.html` | P6 directory/workspace | public profile PR pane metric-covered by `frontend/tests/user-public-profile.e2e.ts` | 39 |
+| `user/userFiles.scala.html` | P6 directory/workspace | user files screen metric-covered by `frontend/tests/user-files.e2e.ts` | 39 |
+| `user/view.scala.html` | P6 directory/workspace | public profile screen metric-covered by `frontend/tests/user-public-profile.e2e.ts` | 39 |
+| `migration/home.scala.html` | P7 site-admin/security | migration screen metric-covered by `frontend/tests/migration-parity.e2e.ts` | 9 |
+| `site/data.scala.html` | P7 site-admin/security | site admin data screen metric-covered by `frontend/tests/site-admin-data.e2e.ts` | 9 |
+| `site/diagnostic.scala.html` | P7 site-admin/security | site admin diagnostic screen metric-covered by `frontend/tests/site-admin-diagnostic.e2e.ts` | 9 |
+| `site/issueList.scala.html` | P7 site-admin/security | site admin issue list metric-covered by `frontend/tests/site-admin-issue-list.e2e.ts` | 9 |
+| `site/mail.scala.html` | P7 site-admin/security | site admin mail screen metric-covered by `frontend/tests/site-admin-mail.e2e.ts` | 9 |
+| `site/massMail.scala.html` | P7 site-admin/security | site admin mass mail screen metric-covered by `frontend/tests/site-admin-massmail.e2e.ts` | 9 |
+| `site/postList.scala.html` | P7 site-admin/security | site admin post list metric-covered by `frontend/tests/site-admin-post-list.e2e.ts` | 9 |
+| `site/siteMngLayout.scala.html` | P7 site-admin/security | shared site admin layout metric-covered across site-admin E2E guards | 9 |
+| `site/update.scala.html` | P7 site-admin/security | site admin update screen metric-covered by `frontend/tests/site-admin-update.e2e.ts` | 9 |
 | `common/branchItem.scala.html` | shared partials | SVN commit-detail branch dropdown caller metric-covered by `frontend/tests/project-code-commit-detail.e2e.ts` | 10 |
 | `common/child_commentForm.scala.html` | shared partials | issue and board nested comment callers metric-covered by `frontend/tests/project-issue-detail.e2e.ts` and `frontend/tests/project-posts.e2e.ts` | 10 |
 | `common/childComments.scala.html` | shared partials | issue and board nested comment callers metric-covered by `frontend/tests/project-issue-detail.e2e.ts` and `frontend/tests/project-posts.e2e.ts` | 10 |
