@@ -1,7 +1,7 @@
 # UI Parity Subagent Reports
 
 Status: current evidence workspace
-Date: 2026-06-26
+Date: 2026-07-02
 
 This directory stores read-only explorer reports and template-first reset
 packet reports.
@@ -68,7 +68,7 @@ Rules:
   rows to route/evidence buckets and records which rows are supported by the
   latest visual sweep route-open evidence. The framed-layout rows are covered
   by the focused SPA-sidebar absence guard in
-  `frontend/src/auth-workspace-shell.spec.tsx`.
+  `frontend/tests/authenticated-home-empty-notifications.e2e.ts`.
 - Explorer reports must not propose new UX or new product structure. Findings
   must be framed as `covered`, `gap`, `deviation`, `deferred`,
   `not-applicable`, or `needs-parent-decision`.
@@ -132,6 +132,27 @@ test. The remaining non-parity gate buckets are infrastructure/deferred
 tracking (`acl-baseline`, `canonical-schema-and-persistence-foundation`,
 `second-priority-deferred`, `rust-foundation-and-runtime-bootstrap`) and are not
 current UI blockers unless new UI evidence maps into them.
+
+## 2026-07-02 Packet Verifier Checkpoint
+
+All active `template-first-p*.md` packet reports now have current focused
+browser evidence, no stale static spec references, and zero missing path
+references in backtick-linked frontend/server evidence.
+
+| packet | current focused verifier evidence |
+| --- | --- |
+| P0 global shell/assets | `public-landing-parity`, UI kit, auth/setup/help/error shell set: 56 representative tests passed. |
+| P1 auth/public/home | Public auth/home/help/error set: 58 tests passed. |
+| P2 project shell/settings | Project home/settings/create/import/directory set: 63 tests passed. |
+| P3 issue/editor/comments | Issue list/forms/user issues: 25 tests passed; issue detail: 42 tests passed. |
+| P4 board/milestone/post | Board, post, milestone, and organization board set: 25 tests passed. |
+| P5 code/git/PR/review | Code browser/history/diff/compare/branches and PR/review set: 66 tests passed. |
+| P6 organization/directory/workspace | Directory, organization, workspace/profile/files/issues/notifications/search set: 62 tests passed. |
+| P7 site-admin/error/security | Site-admin, setup/restart, restricted/error, migration set: 26 tests passed. |
+
+This checkpoint is focused packet evidence, not a claim that the whole
+template-first objective is complete. Whole-UI closure still requires any
+current top-level integrated sweep/audit the parent plan demands.
 
 ## Integrated Status Delta Classification
 
