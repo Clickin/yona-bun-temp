@@ -4908,9 +4908,58 @@ div.markdown-preview {
   margin: 5px 0;
 }
 
-.review-list-wrap,
-.comment-thread-wrap {
+.review-list-wrap {
   margin-top: 18px;
+}
+
+.comment-thread-wrap {
+  position: relative;
+  max-width: 876px;
+  padding: 5px 5px 0;
+  background-color: #fefefe;
+  border: 1px solid #e5e5e5;
+  border-width: 1px 0;
+  border-right-width: 0;
+  border-left-width: 0;
+}
+
+.comment-thread-wrap.open {
+  box-shadow: inset 5px 0 0 #b6da54;
+}
+
+.comment-thread-wrap.closed {
+  box-shadow: inset 5px 0 0 #fd6956;
+}
+
+.comment-thread-wrap + .comment-thread-wrap {
+  margin-top: 10px;
+}
+
+.comment-thread-wrap .comments {
+  margin: 0 5px;
+}
+
+.comment-thread-wrap .comments .comment {
+  padding: 2px 0;
+}
+
+.comment-thread-wrap .comments .media-body {
+  background: #fff;
+}
+
+.comment-thread-wrap .btn-thread-here {
+  display: none;
+}
+
+.comment-thread-wrap .btn-thread-minimize {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+}
+
+.non-ranged-threads-wrap .comment-thread-wrap {
+  border-right: 0 none transparent !important;
+  border-left: 0 none transparent !important;
 }
 
 .review-list-wrap .post-item .title-wrap {

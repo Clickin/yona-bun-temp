@@ -359,6 +359,69 @@ async function readInlineDiffCommentRowMetrics(page: Page) {
   });
 }
 
+async function readNonRangedThreadMetrics(page: Page) {
+  return page.evaluate(() => {
+    const thread = document.querySelector<HTMLElement>(
+      ".non-ranged-threads-wrap .comment-thread-wrap",
+    );
+    const comments = document.querySelector<HTMLElement>(
+      ".non-ranged-threads-wrap .comment-thread-wrap > .comments",
+    );
+    const comment = document.querySelector<HTMLElement>(
+      ".non-ranged-threads-wrap .comment-thread-wrap > .comments > .comment",
+    );
+    const mediaBody = document.querySelector<HTMLElement>(
+      ".non-ranged-threads-wrap .comment-thread-wrap .media-body",
+    );
+    const threadHere = document.querySelector<HTMLElement>(
+      ".non-ranged-threads-wrap .comment-thread-wrap .btn-thread-here",
+    );
+    const minimize = document.querySelector<HTMLElement>(
+      ".non-ranged-threads-wrap .comment-thread-wrap > .btn-thread-minimize",
+    );
+    const missing = Object.entries({
+      comment,
+      comments,
+      mediaBody,
+      minimize,
+      thread,
+      threadHere,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected non-ranged thread metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const commentStyle = getComputedStyle(comment);
+    const commentsStyle = getComputedStyle(comments);
+    const mediaBodyStyle = getComputedStyle(mediaBody);
+    const minimizeStyle = getComputedStyle(minimize);
+    const threadHereStyle = getComputedStyle(threadHere);
+    const threadStyle = getComputedStyle(thread);
+    return {
+      commentPadding: commentStyle.padding,
+      commentsMargin: commentsStyle.margin,
+      mediaBodyBackground: mediaBodyStyle.backgroundColor,
+      minimizePosition: minimizeStyle.position,
+      minimizeRight: minimizeStyle.right,
+      minimizeTop: minimizeStyle.top,
+      threadBackground: threadStyle.backgroundColor,
+      threadBorderBottomWidth: threadStyle.borderBottomWidth,
+      threadBorderColor: threadStyle.borderTopColor,
+      threadBorderLeftStyle: threadStyle.borderLeftStyle,
+      threadBoxShadow: threadStyle.boxShadow,
+      threadHereDisplay: threadHereStyle.display,
+      threadMarginTop: threadStyle.marginTop,
+      threadMaxWidth: threadStyle.maxWidth,
+      threadPadding: threadStyle.padding,
+      threadPosition: threadStyle.position,
+    };
+  });
+}
+
 test("project commit detail renders legacy inline diff comment row", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
@@ -593,6 +656,24 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
     /height:\s*100px/,
   );
   await expect(page.locator("#comment-601 .comment-avatar img")).toHaveAttribute("alt", "dev");
+  expect(await readNonRangedThreadMetrics(page)).toEqual({
+    commentPadding: "2px 0px",
+    commentsMargin: "0px 5px",
+    mediaBodyBackground: "rgb(255, 255, 255)",
+    minimizePosition: "absolute",
+    minimizeRight: "10px",
+    minimizeTop: "8px",
+    threadBackground: "rgb(254, 254, 254)",
+    threadBorderBottomWidth: "1px",
+    threadBorderColor: "rgb(229, 229, 229)",
+    threadBorderLeftStyle: "none",
+    threadBoxShadow: "rgb(182, 218, 84) 5px 0px 0px 0px inset",
+    threadHereDisplay: "none",
+    threadMarginTop: "0px",
+    threadMaxWidth: "876px",
+    threadPadding: "5px 5px 0px",
+    threadPosition: "relative",
+  });
   expect(detailRequests).toEqual(["branch=main"]);
   expect(await canonicalize(page, ".board-comment-wrap")).toEqual(
     await canonicalizeHtml(
