@@ -709,6 +709,29 @@ test("project issue pagination updates route like legacy yobi.Pagination pjax-pa
   ).toBe("issue-pagination");
 });
 
+test("project issue pagination input clamps and routes like legacy yobi.Pagination keydown", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  const pageInput = page.locator('#pagination input[name="pageNum"][type="number"]');
+  await pageInput.click();
+  await pageInput.fill("9");
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-page-input";
+  });
+
+  await pageInput.press("Enter");
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("3");
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("bug");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("issue-page-input");
+});
+
 test("project issue row hover matches legacy issue.List hover effect", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "populated");

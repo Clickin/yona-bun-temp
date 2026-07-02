@@ -755,6 +755,9 @@ function IssuePagination({
             name="pageNum"
             pattern="[0-9]*"
             type="number"
+            onClick={(event) => {
+              event.currentTarget.select();
+            }}
             onKeyDown={handleInputKeyDown}
           />
         </li>
