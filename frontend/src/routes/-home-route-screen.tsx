@@ -623,6 +623,7 @@ function AuthenticatedSiteUserMenu({
     "favorite",
   );
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [isCreateMenuOpen, setIsCreateMenuOpen] = React.useState(false);
   const workspaceQuery = useQuery({
     enabled: Boolean(session.loginId),
     queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
@@ -634,9 +635,6 @@ function AuthenticatedSiteUserMenu({
   const isGuest = booleanField(session, "isGuest", false);
   const navbarCustomLinkName = runtimeConfig.navbarCustomLinkName?.trim() ?? "";
   const navbarCustomLinkUrl = runtimeConfig.navbarCustomLinkUrl?.trim() ?? "";
-  const legacyVoidHrefRef = React.useCallback((node: HTMLAnchorElement | null) => {
-    node?.setAttribute("href", "javascript:void(0);");
-  }, []);
 
   return (
     <>
@@ -748,34 +746,30 @@ function AuthenticatedSiteUserMenu({
           </>
         ) : null}
         <li className="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-          <a
-            ref={legacyVoidHrefRef}
-            href={prefixBasePath(basePath, "/")}
+          <button
+            type="button"
             className="gnb-dropdown-toggle"
             data-toggle="tooltip"
             data-placement="bottom"
             title={`${t("user.menu")}, ${t("title.shortcut")} (F)`}
-            onClick={(event) => {
-              event.preventDefault();
-              setIsSidebarOpen((value) => !value);
-            }}
+            onClick={() => setIsSidebarOpen((value) => !value)}
           >
             <span className="avatar-wrap smaller">
               <img src={avatarUrl} alt="" />
             </span>
             <span className="caret"></span>
-          </a>
+          </button>
         </li>
-        <li className="gnb-usermenu-dropdown">
-          <a
-            ref={legacyVoidHrefRef}
-            href={prefixBasePath(basePath, "/")}
+        <li className={isCreateMenuOpen ? "gnb-usermenu-dropdown open" : "gnb-usermenu-dropdown"}>
+          <button
+            type="button"
             className="gnb-dropdown-toggle dropdwon-box-btn"
             data-toggle="dropdown"
+            onClick={() => setIsCreateMenuOpen((value) => !value)}
           >
             <i className="yobicon-plus"></i>
             <span className="caret"></span>
-          </a>
+          </button>
           <ul className="dropdown-menu flat right">
             <li>
               <a href={prefixBasePath(basePath, "/user/issues/new")}>{t("issue.menu.new")}</a>

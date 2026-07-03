@@ -1888,11 +1888,19 @@ span.issue-label {
   font-size: 14px;
 }
 
-.gnb-usermenu-dropdown > a {
+.gnb-usermenu-dropdown > a,
+.gnb-usermenu-dropdown > button {
   padding: 0 10px;
 }
 
 .gnb-usermenu-dropdown .gnb-dropdown-toggle {
+  position: relative;
+  z-index: 1000;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
   display: inline-block;
   line-height: 30px;
   transition: all 0.15s ease;

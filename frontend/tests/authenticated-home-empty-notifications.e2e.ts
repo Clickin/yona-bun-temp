@@ -54,14 +54,14 @@ const EXPECTED_AUTHENTICATED_HOME = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
+        <button class="gnb-dropdown-toggle" type="button" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
-        </a>
+        </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
+        <button class="gnb-dropdown-toggle dropdwon-box-btn" type="button" data-toggle="dropdown">
           <i class="yobicon-plus"></i><span class="caret"></span>
-        </a>
+        </button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -556,7 +556,7 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   await mockWorkspaceSidebarProjects(page);
 
   await page.goto(`${basePath}/`);
-  await page.locator("#sidebar-open-btn a").click();
+  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   await expect(page.locator("#usermenu-tab-content-list #organizations")).toBeVisible();
   await expect(page.locator("#usermenu-tab-content-list .org-li")).toHaveCount(2);
@@ -582,6 +582,48 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   });
 });
 
+test("authenticated root user menu toggles use React buttons without navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+  await mockWorkspaceSidebarProjects(page);
+
+  await page.goto(`${basePath}/`);
+  const initialUrl = page.url();
+  const sidebarToggle = page.locator("#sidebar-open-btn .gnb-dropdown-toggle");
+  const createMenu = page.locator(".gnb-usermenu-dropdown:has(.dropdwon-box-btn)");
+  const createToggle = createMenu.locator(".gnb-dropdown-toggle.dropdwon-box-btn");
+
+  await expect(sidebarToggle).toHaveJSProperty("tagName", "BUTTON");
+  await expect(sidebarToggle).toHaveAttribute("type", "button");
+  await expect(page.locator("#sidebar-open-btn a.gnb-dropdown-toggle")).toHaveCount(0);
+  await expect(sidebarToggle).not.toHaveAttribute("href", "javascript:void(0);");
+
+  await expect(createToggle).toHaveJSProperty("tagName", "BUTTON");
+  await expect(createToggle).toHaveAttribute("type", "button");
+  await expect(createMenu.locator("a.gnb-dropdown-toggle.dropdwon-box-btn")).toHaveCount(0);
+  await expect(page.locator(".gnb-usermenu a[href^='javascript:']")).toHaveCount(0);
+
+  await sidebarToggle.click();
+  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
+  expect(page.url()).toBe(initialUrl);
+  await sidebarToggle.click();
+  await expect(page.locator("#mySidenav")).not.toHaveClass(/sidenav-open/);
+  expect(page.url()).toBe(initialUrl);
+
+  await expect(createMenu.locator(".dropdown-menu")).toBeHidden();
+  await createToggle.click();
+  await expect(createMenu.locator(".dropdown-menu")).toBeVisible();
+  await expect(createMenu.locator(".dropdown-menu a")).toHaveText([
+    "New issue",
+    "New issue - personal inbox",
+    "Create new project",
+    "New Group",
+  ]);
+  expect(page.url()).toBe(initialUrl);
+});
+
 test("authenticated root keeps retired legacy index/sidebar framed shell absent", async ({
   page,
 }) => {
@@ -595,12 +637,11 @@ test("authenticated root keeps retired legacy index/sidebar framed shell absent"
   await expect(page.locator('iframe[name="mainFrame"]')).toHaveCount(0);
   await expect(page.locator('[target="mainFrame"]')).toHaveCount(0);
   await expect(page.locator("#mySidenav")).toHaveCount(1);
-  await expect(page.locator("#sidebar-open-btn a")).toHaveAttribute("href", "javascript:void(0);");
   expect(await readDesktopClosedSidebarMetrics(page)).toEqual({
     closedWidth: 0,
     profileRowTextAlign: "right",
   });
-  await page.locator("#sidebar-open-btn a").click();
+  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   expect(await readDesktopOpenSidebarMetrics(page)).toEqual({
     openRight: 0,
@@ -627,7 +668,7 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
   await mockWorkspaceSidebarProjects(page);
 
   await page.goto(`${basePath}/`);
-  await page.locator("#sidebar-open-btn a").click();
+  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   await page.locator(".myProjectList a").click();
   await expect(page.locator("#usermenu-tab-content-list .project-search")).toBeVisible();
@@ -662,7 +703,7 @@ test("authenticated root sidebar recent issue tab matches legacy index/myRecentI
   await mockWorkspaceSidebarProjects(page);
 
   await page.goto(`${basePath}/`);
-  await page.locator("#sidebar-open-btn a").click();
+  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   await page.locator(".myRecentIssueList a").click();
   await expect(page.locator("#usermenu-tab-content-list #recentlyVisitedIssues")).toBeVisible();
