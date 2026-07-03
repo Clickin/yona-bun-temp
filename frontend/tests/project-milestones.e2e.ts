@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const BUG_LABEL_STYLE = "background:rgb(81,170,204)";
@@ -33,9 +34,33 @@ test("project milestones list matches legacy milestone/list.scala.html populated
     "href",
     `${basePath}/admin/sample/newMilestoneForm`,
   );
+  await expect(page.locator('.nav-tabs a:has-text("Open")')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestones?state=open`,
+  );
+  await expect(page.locator('.nav-tabs a:has-text("Closed")')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestones?state=closed`,
+  );
+  await expect(page.locator('.nav-tabs a:has-text("All")')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestones?state=all`,
+  );
+  await expect(page.locator('.filters a:has-text("Due Date")')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestones?orderBy=dueDate&orderDir=desc&state=open`,
+  );
   await expect(page.locator('.filters a:has-text("Completion Rate")')).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/milestones?orderBy=completionRate&orderDir=asc&state=open`,
+  );
+  await expect(page.locator('.milestone-name:has-text("v1.0")')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestone/5`,
+  );
+  await expect(page.locator('.issue-link[href$="/issue/11"]')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/11`,
   );
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
@@ -74,6 +99,17 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   await expect(page).toHaveURL(
     `${basePath}/admin/sample/milestones?state=closed&orderBy=dueDate&orderDir=asc`,
   );
+});
+
+test("project milestones route uses direct typed Link targets", () => {
+  const routeSource = readFileSync("src/routes/$ownerName/$projectName/milestones.tsx", "utf8");
+
+  expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).toContain('to="/$ownerName/$projectName/newMilestoneForm"');
+  expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
+  expect(routeSource).toContain('to="/$ownerName/$projectName/milestone/$milestoneId"');
+  expect(routeSource).toContain('to="/$ownerName/$projectName/issue/$issueNumber"');
+  expect(routeSource).toContain("params={{ ownerName, projectName");
 });
 
 test("project milestones all-state list renders legacy open and closed state metadata", async ({

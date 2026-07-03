@@ -1,4 +1,4 @@
-import { useState, type AnchorHTMLAttributes, type ComponentType } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
@@ -14,14 +14,6 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    params?: Record<string, string>;
-    search?: Record<string, unknown>;
-    to: string;
-  }
->;
 
 type MilestoneListSearch = {
   orderBy: string;
@@ -101,7 +93,6 @@ function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
       <ProjectMilestonesBody
         milestones={milestonesQuery.data.milestones}
         project={projectQuery.data}
-        runtimeConfig={runtimeConfig}
         search={search}
       />
     </>
@@ -111,19 +102,15 @@ function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
 function ProjectMilestonesBody({
   milestones,
   project,
-  runtimeConfig,
   search,
 }: {
   milestones: ProjectMilestone[];
   project: ProjectContainer;
-  runtimeConfig: RuntimeConfig;
   search: MilestoneListSearch;
 }) {
   const { t } = useLegacyMessages();
   const { ownerName, projectName } = Route.useParams();
   const [filter, setFilter] = useState("");
-  const projectPath = `/${ownerName}/${projectName}`;
-  const milestonesPath = `${projectPath}/milestones`;
 
   return (
     <div className="page-wrap-outer">
@@ -131,26 +118,26 @@ function ProjectMilestonesBody({
         <div className="tab-wrap">
           {booleanField(project.viewerCanUpdate) ? (
             <div className="pull-right btns">
-              <LegacyInternalLink
+              <Link
                 to="/$ownerName/$projectName/newMilestoneForm"
                 params={{ ownerName, projectName }}
                 className="ybtn ybtn-success"
               >
                 {t("milestone.menu.new")}
-              </LegacyInternalLink>
+              </Link>
             </div>
           ) : null}
 
           <ul className="nav nav-tabs">
             {["open", "closed", "all"].map((state) => (
               <li key={state} className={search.state === state ? "active" : ""}>
-                <LegacyInternalLink
+                <Link
                   to="/$ownerName/$projectName/milestones"
                   params={{ ownerName, projectName }}
                   search={{ state }}
                 >
                   {t(`milestone.state.${state}`)}
-                </LegacyInternalLink>
+                </Link>
               </li>
             ))}
           </ul>
@@ -209,8 +196,8 @@ function ProjectMilestonesBody({
                       key={stringField(milestone.id)}
                       filter={filter}
                       milestone={milestone}
-                      projectPath={projectPath}
-                      runtimeConfig={runtimeConfig}
+                      ownerName={ownerName}
+                      projectName={projectName}
                       search={search}
                     />
                   ))}
@@ -241,7 +228,7 @@ function SortLink({
   const orderDir = isActive && search.orderDir === "desc" ? "asc" : isActive ? "desc" : "asc";
 
   return (
-    <LegacyInternalLink
+    <Link
       to="/$ownerName/$projectName/milestones"
       params={{ ownerName, projectName }}
       search={{ orderBy: fieldName, orderDir, state: search.state }}
@@ -257,21 +244,21 @@ function SortLink({
         }
       ></i>
       {fieldText}
-    </LegacyInternalLink>
+    </Link>
   );
 }
 
 function MilestoneRow({
   filter,
   milestone,
-  projectPath,
-  runtimeConfig,
+  ownerName,
+  projectName,
   search,
 }: {
   filter: string;
   milestone: ProjectMilestone;
-  projectPath: string;
-  runtimeConfig: RuntimeConfig;
+  ownerName: string;
+  projectName: string;
   search: MilestoneListSearch;
 }) {
   const { t } = useLegacyMessages();
@@ -287,12 +274,13 @@ function MilestoneRow({
       <div className="infos">
         <div className="meta-info">
           <strong className="version"></strong>
-          <LegacyInternalLink
-            to={`${projectPath}/milestone/${stringField(milestone.id)}`}
+          <Link
+            to="/$ownerName/$projectName/milestone/$milestoneId"
+            params={{ ownerName, projectName, milestoneId: stringField(milestone.id) }}
             className="milestone-name"
           >
             {stringField(milestone.title)}
-          </LegacyInternalLink>
+          </Link>
           <span className="sp">|</span>
           <span className="issue-item">{`${closedCount} / ${totalCount}`}</span>
           {search.state === "all" ? (
@@ -344,7 +332,8 @@ function MilestoneRow({
               key={`open-${stringField(issue.issueNumber)}`}
               filter={filter}
               issue={issue}
-              projectPath={projectPath}
+              ownerName={ownerName}
+              projectName={projectName}
               state="open"
             />
           ))}
@@ -356,7 +345,8 @@ function MilestoneRow({
               key={`closed-${stringField(issue.issueNumber)}`}
               filter={filter}
               issue={issue}
-              projectPath={projectPath}
+              ownerName={ownerName}
+              projectName={projectName}
               state="closed"
             />
           ))}
@@ -369,12 +359,14 @@ function MilestoneRow({
 function MilestoneIssueLink({
   filter,
   issue,
-  projectPath,
+  ownerName,
+  projectName,
   state,
 }: {
   filter: string;
   issue: ProjectMilestoneIssue;
-  projectPath: string;
+  ownerName: string;
+  projectName: string;
   state: "closed" | "open";
 }) {
   const normalizedFilter = filter.toLowerCase().trim();
@@ -386,9 +378,10 @@ function MilestoneIssueLink({
   const titleText = assigneeLabel ? `${issueTitle} - ${assigneeLabel}` : issueTitle;
 
   return (
-    <LegacyInternalLink
+    <Link
       className="issue-link"
-      to={`${projectPath}/issue/${issueNumber}`}
+      to="/$ownerName/$projectName/issue/$issueNumber"
+      params={{ ownerName, projectName, issueNumber }}
       target="_blank"
       style={style}
     >
@@ -412,7 +405,7 @@ function MilestoneIssueLink({
           ))}
         </span>
       </div>
-    </LegacyInternalLink>
+    </Link>
   );
 }
 
