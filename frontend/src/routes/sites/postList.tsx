@@ -102,7 +102,6 @@ function PostListPagination({
               activeProps={{ className: undefined }}
               search={{ pageNum: currentPage - 1 }}
               to="/sites/postList"
-              {...{ "pjax-page": "" }}
             >
               <i className="ico btn-pg-prev"></i>
               <span>PREV</span>
@@ -134,7 +133,6 @@ function PostListPagination({
               activeProps={{ className: undefined }}
               search={{ pageNum: currentPage + 1 }}
               to="/sites/postList"
-              {...{ "pjax-page": "" }}
             >
               <span>NEXT</span>
               <i className="ico btn-pg-next"></i>

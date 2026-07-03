@@ -47,7 +47,7 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -215,7 +215,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     "href",
     `${basePath}/sites/issueList?pageNum=2&state=open`,
   );
-  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
+  await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -293,6 +293,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   const routeSource = readFileSync("src/routes/sites/issueList.tsx", "utf8");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
+  expect(routeSource).not.toContain('"pjax-page": ""');
 });
 
 test("site admin issue list renders legacy update notification badge", async ({ page }) => {

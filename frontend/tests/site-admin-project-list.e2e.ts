@@ -47,7 +47,7 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -215,7 +215,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     "href",
     `${basePath}/sites/projectList?filter=road&pageNum=2`,
   );
-  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
+  await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
   expect(await siteLayoutRootOrder(page)).toEqual([
     "unsupported hidden",
     "gnb-outer",
@@ -277,7 +277,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     "href",
     `${basePath}/sites/projectList?filter=road&pageNum=1`,
   );
-  await expect(prevPageLink).toHaveAttribute("pjax-page", "");
+  await expect(prevPageLink).not.toHaveAttribute("pjax-page", "");
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "site-project-pagination-prev";
@@ -385,7 +385,7 @@ test("site admin project list uses direct typed links", () => {
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).not.toContain("navItems.map");
   expect(routeSource).toContain('to="/sites/projectList"');
-  expect(routeSource).toContain('"pjax-page": ""');
+  expect(routeSource).not.toContain('"pjax-page": ""');
 });
 
 async function mockSiteAdminSession(page: Page) {

@@ -47,7 +47,7 @@ const EXPECTED_POST_LIST_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -201,7 +201,7 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
   const nextPageLink = page.locator("#pagination a", { hasText: "NEXT" });
   await expect(nextPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=2`);
-  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
+  await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -249,7 +249,7 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
   const previousPageLink = page.locator("#pagination a", { hasText: "PREV" });
   await expect(previousPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=1`);
-  await expect(previousPageLink).toHaveAttribute("pjax-page", "");
+  await expect(previousPageLink).not.toHaveAttribute("pjax-page", "");
   await previousPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
   expect(
@@ -296,6 +296,7 @@ test("site admin post list route source keeps direct typed links", async () => {
 
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("to={item.href}");
+  expect(source).not.toContain('"pjax-page": ""');
   expect(source).toContain('to="/sites/postList"');
   expect(source).toContain("search={{ pageNum: currentPage - 1 }}");
   expect(source).toContain("search={{ pageNum: currentPage + 1 }}");

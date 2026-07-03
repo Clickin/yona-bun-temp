@@ -249,7 +249,6 @@ function ProjectListPagination({
               activeProps={{ className: undefined }}
               search={search(currentPage - 1)}
               to="/sites/projectList"
-              {...{ "pjax-page": "" }}
             >
               <i className="ico btn-pg-prev"></i>
               <span>PREV</span>
@@ -281,7 +280,6 @@ function ProjectListPagination({
               activeProps={{ className: undefined }}
               search={search(currentPage + 1)}
               to="/sites/projectList"
-              {...{ "pjax-page": "" }}
             >
               <span>NEXT</span>
               <i className="ico btn-pg-next"></i>

@@ -116,7 +116,6 @@ function IssueListPagination({
               activeProps={{ className: undefined }}
               search={{ pageNum: currentPage - 1, state }}
               to="/sites/issueList"
-              {...{ "pjax-page": "" }}
             >
               <i className="ico btn-pg-prev"></i>
               <span>PREV</span>
@@ -148,7 +147,6 @@ function IssueListPagination({
               activeProps={{ className: undefined }}
               search={{ pageNum: currentPage + 1, state }}
               to="/sites/issueList"
-              {...{ "pjax-page": "" }}
             >
               <span>NEXT</span>
               <i className="ico btn-pg-next"></i>

@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 export function SitePagination({
   currentPage,
   pageHref,
@@ -19,10 +21,10 @@ export function SitePagination({
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <a href={pageHref(currentPage - 1)} {...{ "pjax-page": "" }}>
+            <Link href={pageHref(currentPage - 1)}>
               <i className="ico btn-pg-prev"></i>
               <span>PREV</span>
-            </a>
+            </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
@@ -46,10 +48,10 @@ export function SitePagination({
         <li className="page-num">{totalPages}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <a href={pageHref(currentPage + 1)} {...{ "pjax-page": "" }}>
+            <Link href={pageHref(currentPage + 1)}>
               <span>NEXT</span>
               <i className="ico btn-pg-next"></i>
-            </a>
+            </Link>
           ) : (
             <>
               <span className="off">NEXT</span>

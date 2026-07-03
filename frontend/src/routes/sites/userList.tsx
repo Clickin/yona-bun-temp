@@ -353,7 +353,6 @@ function UserListPagination({
               activeProps={{ className: undefined }}
               search={search(currentPage - 1)}
               to="/sites/userList"
-              {...{ "pjax-page": "" }}
             >
               <i className="ico btn-pg-prev"></i>
               <span>PREV</span>
@@ -385,7 +384,6 @@ function UserListPagination({
               activeProps={{ className: undefined }}
               search={search(currentPage + 1)}
               to="/sites/userList"
-              {...{ "pjax-page": "" }}
             >
               <span>NEXT</span>
               <i className="ico btn-pg-next"></i>

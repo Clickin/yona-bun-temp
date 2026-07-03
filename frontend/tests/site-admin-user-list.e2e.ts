@@ -47,7 +47,7 @@ const EXPECTED_USER_LIST_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar active"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -226,13 +226,14 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     "href",
     `${basePath}/sites/userList?pageNum=2&state=ACTIVE`,
   );
-  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
+  await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
   const lockedTab = page.getByRole("link", { exact: true, name: "Locked user" });
   await expect(lockedTab).toHaveAttribute("href", `${basePath}/sites/userList?state=LOCKED`);
   await expect(page.locator(".nav-tabs .num-badge")).toHaveText("2");
   const routeSource = readFileSync("src/routes/sites/userList.tsx", "utf8");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
+  expect(routeSource).not.toContain('"pjax-page": ""');
   expect(await siteLayoutRootOrder(page)).toEqual([
     "unsupported hidden",
     "gnb-outer",
@@ -332,7 +333,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     "href",
     `${basePath}/sites/userList?pageNum=2&query=door&state=LOCKED`,
   );
-  await expect(nextPageWithQueryLink).toHaveAttribute("pjax-page", "");
+  await expect(nextPageWithQueryLink).not.toHaveAttribute("pjax-page", "");
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "site-users-pagination-query";
