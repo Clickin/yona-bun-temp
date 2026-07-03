@@ -1,6 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Fragment,
+  createElement,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { type SearchCounts, type SearchResponse, type SearchType } from "../api/search";
 import { RestApiError } from "../api/rest-client";
 import { apiQueryKeys } from "../api/query-keys";
@@ -46,7 +54,7 @@ export function isDefaultInternalServerError(error: unknown) {
 export function DefaultSearchErrorBody({
   iconClassName,
   messageKey,
-  runtimeConfig,
+  runtimeConfig: _runtimeConfig,
   ybtnClassName = "ybtn ybtn-primary",
 }: {
   iconClassName: string;
@@ -101,29 +109,42 @@ export function LegacySearchBody({
   const activeTitle = titleForType(t, activeType);
   const resultTitleHtml = t("search.result.title", { args: [activeCount, activeTitle] });
   const [keywordValue, setKeywordValue] = useState(result.keyword);
+  const [formSearchType, setFormSearchType] = useState<SearchType>(activeType);
   const categories = includeProjectCategory
     ? ALL_SEARCH_CATEGORIES
     : ALL_SEARCH_CATEGORIES.filter((category) => category.type !== "project");
-  const searchTarget = (nextSearchType: SearchType, keyword: string) => ({
-    search: {
-      keyword,
-      pageNum: 1,
-      searchType: nextSearchType,
-    },
-    to: searchPath,
-  });
+  const searchTarget = (nextSearchType: SearchType, keyword: string) => {
+    const params = new URLSearchParams();
+    params.set("keyword", keyword);
+    params.set("pageNum", "1");
+    params.set("searchType", nextSearchType);
+    return prefixBasePath(runtimeConfig.basePath, `${searchPath}?${params.toString()}`);
+  };
   const navigationMutation = useMutation({
     mutationFn: async ({ keyword, searchType }: { keyword: string; searchType: SearchType }) =>
       searchTarget(searchType, keyword),
-    onSuccess(target) {
+    onSuccess(href) {
       void queryClient.invalidateQueries({ queryKey: searchQueryKey(result) });
-      router.navigate(target);
+      router.history.push(href);
     },
   });
 
   useEffect(() => {
     setKeywordValue(result.keyword);
   }, [result.keyword]);
+
+  useEffect(() => {
+    setFormSearchType(activeType);
+  }, [activeType]);
+
+  const handleCategoryClick = (event: MouseEvent<HTMLAnchorElement>, searchType: SearchType) => {
+    event.preventDefault();
+    setFormSearchType(searchType);
+    navigationMutation.mutate({
+      keyword: keywordValue,
+      searchType,
+    });
+  };
 
   return (
     <>
@@ -147,10 +168,19 @@ export function LegacySearchBody({
                         }`}
                         key={menu.type}
                       >
-                        <Link to={searchPath} search={searchTarget(menu.type, keywordValue).search}>
-                          {t(menu.labelKey)}
-                          <span className="num-badge pull-right">{count}</span>
-                        </Link>
+                        {createElement(
+                          "a",
+                          {
+                            "data-toggle": "search-category",
+                            "data-type": menu.type,
+                            href: "#",
+                            onClick: (event: MouseEvent<HTMLAnchorElement>) => {
+                              handleCategoryClick(event, menu.type);
+                            },
+                          },
+                          t(menu.labelKey),
+                          <span className="num-badge pull-right">{count}</span>,
+                        )}
                       </li>
                     );
                   })}
@@ -166,11 +196,11 @@ export function LegacySearchBody({
                       event.preventDefault();
                       navigationMutation.mutate({
                         keyword: keywordValue,
-                        searchType: activeType,
+                        searchType: formSearchType,
                       });
                     }}
                   >
-                    <input type="hidden" name="searchType" value={activeType} />
+                    <input type="hidden" name="searchType" value={formSearchType} />
                     <input
                       type="text"
                       id="searchKeyword"
