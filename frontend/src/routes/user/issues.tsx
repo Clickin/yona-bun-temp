@@ -189,7 +189,7 @@ function UserIssuesBody({
     return `${prefixBasePath(basePath, "/user/issues")}?${params.toString()}`;
   };
   const navigateState = (
-    event: MouseEvent<HTMLAnchorElement>,
+    event: MouseEvent<HTMLButtonElement>,
     state: UserIssuesSearch["state"],
   ) => {
     if (
@@ -207,7 +207,7 @@ function UserIssuesBody({
     router.history.push(userIssuesHref({ state }));
   };
   const navigateSort = (
-    event: MouseEvent<HTMLAnchorElement>,
+    event: MouseEvent<HTMLButtonElement>,
     orderBy: string,
     orderDir: string,
   ) => {
@@ -226,7 +226,7 @@ function UserIssuesBody({
     router.history.push(userIssuesHref({ orderBy, orderDir }));
   };
   const navigateQuickFilter = (
-    event: MouseEvent<HTMLAnchorElement>,
+    event: MouseEvent<HTMLButtonElement>,
     filter: UserIssuesSearch["filter"],
   ) => {
     if (
@@ -309,9 +309,6 @@ function UserIssuesBody({
                 <div className="search myissues-search-input">
                   <div className="search-bar">
                     <input
-                      ref={(element) => {
-                        element?.setAttribute("value", search.query);
-                      }}
                       name="filter"
                       className="textbox full"
                       type="text"
@@ -589,7 +586,7 @@ function QuickSearch({
 }: {
   counts: UserIssueListRestResponse["sideFilterCounts"];
   currentUserId: string;
-  onNavigate: (event: MouseEvent<HTMLAnchorElement>, filter: UserIssuesSearch["filter"]) => void;
+  onNavigate: (event: MouseEvent<HTMLButtonElement>, filter: UserIssuesSearch["filter"]) => void;
   search: UserIssuesSearch;
 }) {
   const { t } = useLegacyMessages();
@@ -639,13 +636,12 @@ function QuickSearch({
     <ul className="lst-stacked unstyled">
       {rows.map((row) => {
         const ids = quickFilterIds(row.filter, currentUserId);
-        const pjaxFilter = { "pjax-filter": "" } as unknown as HTMLAttributes<HTMLAnchorElement>;
+        const pjaxFilter = { "pjax-filter": "" } as unknown as HTMLAttributes<HTMLButtonElement>;
         return (
           <li className={search.filter === row.filter ? "active" : ""} key={row.filter}>
-            {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter data attrs. */}
-            <a
+            <button
               {...pjaxFilter}
-              href="#"
+              type="button"
               data-author-id={ids.authorId}
               data-assignee-id={ids.assigneeId}
               data-commenter-id={ids.commenterId}
@@ -660,7 +656,7 @@ function QuickSearch({
                 {row.label}
               </span>
               {!search.query && "count" in row && row.count != null ? `(${row.count})` : null}
-            </a>
+            </button>
           </li>
         );
       })}
@@ -678,19 +674,18 @@ function StateTab({
   active: boolean;
   count: number;
   label: string;
-  onNavigate: (event: MouseEvent<HTMLAnchorElement>, state: "closed" | "open") => void;
+  onNavigate: (event: MouseEvent<HTMLButtonElement>, state: "closed" | "open") => void;
   state: "closed" | "open";
 }) {
-  const legacyState = { state } as unknown as HTMLAttributes<HTMLAnchorElement>;
+  const legacyState = { state } as unknown as HTMLAttributes<HTMLButtonElement>;
   const pjaxItem = { "data-pjax": "" } as unknown as HTMLAttributes<HTMLLIElement>;
 
   return (
     <li className={active ? "active" : ""} {...pjaxItem}>
-      {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus state attr. */}
-      <a href="#" {...legacyState} onClick={(event) => onNavigate(event, state)}>
+      <button type="button" {...legacyState} onClick={(event) => onNavigate(event, state)}>
         {label}
         <span className="num-badge">{count}</span>
-      </a>
+      </button>
     </li>
   );
 }
@@ -700,7 +695,7 @@ function IssueFilters({
   orderBy,
   orderDir,
 }: {
-  onNavigate: (event: MouseEvent<HTMLAnchorElement>, orderBy: string, orderDir: string) => void;
+  onNavigate: (event: MouseEvent<HTMLButtonElement>, orderBy: string, orderDir: string) => void;
   orderBy: string;
   orderDir: string;
 }) {
@@ -719,14 +714,14 @@ function IssueFilters({
           const active = orderBy === filter.field;
           const nextDir = active && orderDir === "desc" ? "asc" : "desc";
           const nextOrderDir = active ? nextDir : "desc";
+          const legacyOrderAttrs = {
+            orderby: filter.field,
+            orderdir: nextOrderDir,
+          } as unknown as HTMLAttributes<HTMLButtonElement>;
           return (
-            /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy sort filters use href="#" plus order attrs. */
-            <a
-              href="#"
-              ref={(element) => {
-                element?.setAttribute("orderBy", filter.field);
-                element?.setAttribute("orderDir", nextOrderDir);
-              }}
+            <button
+              type="button"
+              {...legacyOrderAttrs}
               className={active ? "filter active" : "filter"}
               key={filter.field}
               onClick={(event) => onNavigate(event, filter.field, nextOrderDir)}
@@ -735,7 +730,7 @@ function IssueFilters({
                 className={`ico btn-gray-arrow${!active || orderDir === "desc" ? " down" : ""}`}
               ></i>
               {filter.label}
-            </a>
+            </button>
           );
         })}
       </div>

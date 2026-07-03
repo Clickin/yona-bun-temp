@@ -15,12 +15,12 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
       <div class="left-menu span2 span-hard-wrap">
         <div class="inner advanced">
           <ul class="lst-stacked unstyled">
-            <li class="active"><a pjax-filter="" href="#" data-author-id="" data-assignee-id="1" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="assigned-to-me"><i class="yobicon-user"></i>Assigned</span></a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="1" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="authored-by-me"><i class="yobicon-pencil"></i>Created</span></a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="1" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="commented-by-me"><i class="yobicon-comments"></i>Commented</span></a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="1" data-sharer-id="" data-favorite-id=""><span class="mentioned-of-me"><i class="yobicon-at"></i>Mentioned</span>(2)</a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="1" data-favorite-id=""><span class="shared-with-me"><i class="yobicon-share"></i>Shared</span>(1)</a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="1"><span class="favorite-issue"><i class="yobicon-favorite"></i>Favorite</span>(1)</a></li>
+            <li class="active"><button pjax-filter="" type="button" data-author-id="" data-assignee-id="1" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="assigned-to-me"><i class="yobicon-user"></i>Assigned</span></button></li>
+            <li class=""><button pjax-filter="" type="button" data-author-id="1" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="authored-by-me"><i class="yobicon-pencil"></i>Created</span></button></li>
+            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="1" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="commented-by-me"><i class="yobicon-comments"></i>Commented</span></button></li>
+            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="1" data-sharer-id="" data-favorite-id=""><span class="mentioned-of-me"><i class="yobicon-at"></i>Mentioned</span>(2)</button></li>
+            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="1" data-favorite-id=""><span class="shared-with-me"><i class="yobicon-share"></i>Shared</span>(1)</button></li>
+            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="1"><span class="favorite-issue"><i class="yobicon-favorite"></i>Favorite</span>(1)</button></li>
           </ul>
           <form id="search" name="search" action="__BASE_PATH__/user/issues" method="get">
             <input type="hidden" name="orderBy" value="updatedDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open">
@@ -31,11 +31,11 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
       </div>
       <div class="span10 span-hard-wrap" id="span10">
         <ul class="nav nav-tabs nm">
-          <li class="active" data-pjax=""><a href="#" state="open">Open<span class="num-badge">2</span></a></li><li class="" data-pjax=""><a href="#" state="closed">Closed<span class="num-badge">1</span></a></li>
+          <li class="active" data-pjax=""><button type="button" state="open">Open<span class="num-badge">2</span></button></li><li class="" data-pjax=""><button type="button" state="closed">Closed<span class="num-badge">1</span></button></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
           <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
-        <div class="filter-wrap small-heights"><div class="filters pull-right"><a href="#" orderBy="dueDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Due Date</a><a href="#" orderBy="updatedDate" orderDir="asc" class="filter active"><i class="ico btn-gray-arrow down"></i>Updated</a><a href="#" orderBy="createdDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Created</a><a href="#" orderBy="numOfComments" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Comments</a></div></div>
+        <div class="filter-wrap small-heights"><div class="filters pull-right"><button class="filter" type="button" orderBy="dueDate" orderDir="desc"><i class="ico btn-gray-arrow down"></i>Due Date</button><button class="filter active" type="button" orderBy="updatedDate" orderDir="asc"><i class="ico btn-gray-arrow down"></i>Updated</button><button class="filter" type="button" orderBy="createdDate" orderDir="desc"><i class="ico btn-gray-arrow down"></i>Created</button><button class="filter" type="button" orderBy="numOfComments" orderDir="desc"><i class="ico btn-gray-arrow down"></i>Comments</button></div></div>
         <ul class="post-list-wrap my-issues">
           <li class="post-item title" id="issue-item-42" href="__BASE_PATH__/admin/sample/issue/11">
             <div class="span12 span-hard-wrap">
@@ -67,12 +67,12 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
       <div class="left-menu span2 span-hard-wrap">
         <div class="inner advanced">
           <ul class="lst-stacked unstyled">
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="1" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="assigned-to-me"><i class="yobicon-user"></i>Assigned</span></a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="1" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="authored-by-me"><i class="yobicon-pencil"></i>Created</span></a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="1" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="commented-by-me"><i class="yobicon-comments"></i>Commented</span></a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="1" data-sharer-id="" data-favorite-id=""><span class="mentioned-of-me"><i class="yobicon-at"></i>Mentioned</span></a></li>
-            <li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="1" data-favorite-id=""><span class="shared-with-me"><i class="yobicon-share"></i>Shared</span></a></li>
-            <li class="active"><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="1"><span class="favorite-issue"><i class="yobicon-favorite"></i>Favorite</span></a></li>
+            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="1" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="assigned-to-me"><i class="yobicon-user"></i>Assigned</span></button></li>
+            <li class=""><button pjax-filter="" type="button" data-author-id="1" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="authored-by-me"><i class="yobicon-pencil"></i>Created</span></button></li>
+            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="1" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="commented-by-me"><i class="yobicon-comments"></i>Commented</span></button></li>
+            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="1" data-sharer-id="" data-favorite-id=""><span class="mentioned-of-me"><i class="yobicon-at"></i>Mentioned</span></button></li>
+            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="1" data-favorite-id=""><span class="shared-with-me"><i class="yobicon-share"></i>Shared</span></button></li>
+            <li class="active"><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="1"><span class="favorite-issue"><i class="yobicon-favorite"></i>Favorite</span></button></li>
           </ul>
           <form id="search" name="search" action="__BASE_PATH__/user/issues" method="get">
             <input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="orderDir" value="asc"><input type="hidden" name="state" value="closed">
@@ -83,7 +83,7 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
       </div>
       <div class="span10 span-hard-wrap" id="span10">
         <ul class="nav nav-tabs nm">
-          <li class="" data-pjax=""><a href="#" state="open">Open<span class="num-badge">0</span></a></li><li class="active" data-pjax=""><a href="#" state="closed">Closed<span class="num-badge">0</span></a></li>
+          <li class="" data-pjax=""><button type="button" state="open">Open<span class="num-badge">0</span></button></li><li class="active" data-pjax=""><button type="button" state="closed">Closed<span class="num-badge">0</span></button></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
           <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
@@ -312,15 +312,16 @@ test("current-user issues page matches legacy filtered empty search state", asyn
   expect(actual).toEqual(expected);
 });
 
-test("current-user issues state tab preserves legacy href with SPA transition", async ({
+test("current-user issues state tab uses button side-effect control with SPA transition", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockUserIssuesForStateTabs(page);
 
   await page.goto(`${basePath}/user/issues`);
-  const closedTab = page.locator('#span10 .nav.nav-tabs a[state="closed"]');
-  await expect(closedTab).toHaveAttribute("href", "#");
+  await expect(page.locator('#span10 .nav.nav-tabs a[href="#"]')).toHaveCount(0);
+  const closedTab = page.locator('#span10 .nav.nav-tabs button[state="closed"]');
+  await expect(closedTab).toHaveAttribute("type", "button");
   await expect(closedTab).toHaveAttribute("state", "closed");
   await expect(closedTab.locator("..")).toHaveAttribute("data-pjax", "");
 
@@ -340,20 +341,24 @@ test("current-user issues state tab preserves legacy href with SPA transition", 
     )
     .toBe("kept");
   await expect(page.locator('input[name="state"]')).toHaveValue("closed");
-  await expect(page.locator('#span10 .nav.nav-tabs li.active a[state="closed"]')).toHaveText(
+  await expect(page.locator('#span10 .nav.nav-tabs li.active button[state="closed"]')).toHaveText(
     "Closed1",
   );
+  await expect(page.locator('input[name="orderBy"]')).toHaveValue("updatedDate");
+  await expect(page.locator('input[name="orderDir"]')).toHaveValue("desc");
 });
 
-test("current-user issues sort filter preserves legacy href with SPA transition", async ({
+test("current-user issues sort filter uses button side-effect control with SPA transition", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockUserIssuesForFilterLinks(page);
 
   await page.goto(`${basePath}/user/issues`);
-  const dueDateFilter = page.locator(".filter-wrap .filter").filter({ hasText: "Due Date" });
-  await expect(dueDateFilter).toHaveAttribute("href", "#");
+  await expect(page.locator('.filter-wrap .filters a[href="#"]')).toHaveCount(0);
+  const dueDateFilter = page.locator(".filter-wrap button.filter").filter({ hasText: "Due Date" });
+  await expect(dueDateFilter).toHaveAttribute("type", "button");
+  await expect(dueDateFilter).toHaveClass("filter");
   await expect(dueDateFilter).toHaveAttribute("orderBy", "dueDate");
   await expect(dueDateFilter).toHaveAttribute("orderDir", "desc");
 
@@ -372,9 +377,12 @@ test("current-user issues sort filter preserves legacy href with SPA transition"
       ),
     )
     .toBe("kept");
-  await expect(page.locator('.filter-wrap .filter.active[orderBy="dueDate"]')).toHaveText(
+  await expect(page.locator('.filter-wrap button.filter.active[orderBy="dueDate"]')).toHaveText(
     "Due Date",
   );
+  await expect(page.locator('input[name="orderBy"]')).toHaveValue("dueDate");
+  await expect(page.locator('input[name="orderDir"]')).toHaveValue("desc");
+  await expect(page.locator('input[name="state"]')).toHaveValue("open");
 });
 
 test("current-user issues single-item list keeps legacy empty filter wrapper", async ({ page }) => {
@@ -390,16 +398,25 @@ test("current-user issues single-item list keeps legacy empty filter wrapper", a
   await expect(page.locator(".post-list-wrap.my-issues .post-item")).toHaveCount(1);
 });
 
-test("current-user issues quick filter preserves legacy pjax hooks with SPA transition", async ({
+test("current-user issues quick filter uses button pjax hooks with SPA transition", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockUserIssuesForQuickFilters(page);
 
   await page.goto(`${basePath}/user/issues`);
-  const favoriteFilter = page.locator(".left-menu .lst-stacked a").filter({ hasText: "Favorite" });
-  await expect(favoriteFilter).toHaveAttribute("href", "#");
+  await expect(page.locator('.left-menu .lst-stacked a[href="#"]')).toHaveCount(0);
+  const favoriteFilter = page
+    .locator(".left-menu .lst-stacked button")
+    .filter({ hasText: "Favorite" });
+  await expect(favoriteFilter).toHaveAttribute("type", "button");
   await expect(favoriteFilter).toHaveAttribute("pjax-filter", "");
+  await expect(favoriteFilter).toHaveAttribute("data-author-id", "");
+  await expect(favoriteFilter).toHaveAttribute("data-assignee-id", "");
+  await expect(favoriteFilter).toHaveAttribute("data-commenter-id", "");
+  await expect(favoriteFilter).toHaveAttribute("data-milestone-id", "");
+  await expect(favoriteFilter).toHaveAttribute("data-mention-id", "");
+  await expect(favoriteFilter).toHaveAttribute("data-sharer-id", "");
   await expect(favoriteFilter).toHaveAttribute("data-favorite-id", "1");
 
   await page.evaluate(() => {
@@ -417,8 +434,14 @@ test("current-user issues quick filter preserves legacy pjax hooks with SPA tran
       ),
     )
     .toBe("kept");
-  await expect(page.locator(".left-menu .lst-stacked li.active a")).toHaveText("Favorite(1)");
+  await expect(page.locator(".left-menu .lst-stacked li.active button")).toHaveText("Favorite(1)");
+  await expect(page.locator('input[name="authorId"]')).toHaveValue("");
+  await expect(page.locator('input[name="assigneeId"]')).toHaveValue("");
+  await expect(page.locator('input[name="commenterId"]')).toHaveValue("");
+  await expect(page.locator('input[name="mentionId"]')).toHaveValue("");
+  await expect(page.locator('input[name="sharerId"]')).toHaveValue("");
   await expect(page.locator('input[name="favoriteId"]')).toHaveValue("1");
+  await expect(page.locator('input[name="state"]')).toHaveValue("open");
 });
 
 test("current-user issues quick filter zero counts follow legacy blank-filter rendering", async ({

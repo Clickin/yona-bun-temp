@@ -2437,7 +2437,8 @@ h1 {
   margin-bottom: -1px;
 }
 
-.nav-tabs > li > a {
+.nav-tabs > li > a,
+.issue-list-wrap .nav-tabs.nm > li > button {
   display: block;
   padding: 8px 30px;
   margin-right: 2px;
@@ -2446,6 +2447,13 @@ h1 {
   line-height: 20px;
   border: 1px solid transparent;
   border-radius: 4px 4px 0 0;
+}
+
+.issue-list-wrap .nav-tabs.nm > li > button {
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
 }
 
 .pullrequeset-tab-menu > li > button {
@@ -2464,7 +2472,9 @@ h1 {
 }
 
 .nav-tabs > li > a:hover,
-.nav-tabs > li > a:focus {
+.nav-tabs > li > a:focus,
+.issue-list-wrap .nav-tabs.nm > li > button:hover,
+.issue-list-wrap .nav-tabs.nm > li > button:focus {
   border-color: #eee #eee #ddd;
   text-decoration: none;
   background-color: #f2f2f2;
@@ -2479,7 +2489,10 @@ h1 {
 
 .nav-tabs > li.active > a,
 .nav-tabs > li.active > a:hover,
-.nav-tabs > li.active > a:focus {
+.nav-tabs > li.active > a:focus,
+.issue-list-wrap .nav-tabs.nm > li.active > button,
+.issue-list-wrap .nav-tabs.nm > li.active > button:hover,
+.issue-list-wrap .nav-tabs.nm > li.active > button:focus {
   color: #555;
   cursor: default;
   background-color: #fff;
@@ -3746,6 +3759,18 @@ h1 {
 
 .filter-wrap .filter {
   margin-right: 10px;
+}
+
+.issue-list-wrap .filter-wrap button.filter,
+.issue-list-wrap .lst-stacked li button {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
+  border: 0;
 }
 
 .filter-wrap .filter.active {
@@ -6746,8 +6771,10 @@ div.markdown-preview {
   font-size: 13px;
 }
 
-.lst-stacked li a {
+.lst-stacked li a,
+.issue-list-wrap .lst-stacked li button {
   display: block;
+  width: 100%;
 }
 
 .lst-stacked li .num-badge {
@@ -6766,7 +6793,8 @@ div.markdown-preview {
   color: #fff;
 }
 
-.lst-stacked li.active a:hover {
+.lst-stacked li.active a:hover,
+.issue-list-wrap .lst-stacked li.active button:hover {
   color: #fff;
 }
 
