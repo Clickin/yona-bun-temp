@@ -1794,18 +1794,42 @@ function IssueChildCommentAndVotePair({
 
 function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
   const { t } = useLegacyMessages();
+  const [open, setOpen] = useState(false);
   const isMac =
     typeof navigator !== "undefined" && navigator.userAgent.toLowerCase().includes("macintosh");
   const ctrlKey = isMac ? "⌘" : "CTRL";
   const showPullRequest = stringField((project as Record<string, unknown>).vcs, "GIT") === "GIT";
   const showProjectSetting = booleanField((project as Record<string, unknown>).viewerCanUpdate);
+  const openKeymap = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen(true);
+  };
+  const closeKeymap = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen(false);
+  };
 
   return (
     <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
-      <a href="#helpKeys" data-toggle="modal" className="ybtn ybtn-inverse ybtn-mini">
-        {t("title.keymap")}
-      </a>
-      <div id="helpKeys" className="modal hide fade keymap-help" tabIndex={-1} role="dialog">
+      {createElement(
+        "a",
+        {
+          className: "ybtn ybtn-inverse ybtn-mini",
+          "data-toggle": "modal",
+          href: "#helpKeys",
+          onClick: openKeymap,
+        },
+        t("title.keymap"),
+      )}
+      <div
+        id="helpKeys"
+        className={open ? "modal fade keymap-help in" : "modal hide fade keymap-help"}
+        tabIndex={-1}
+        role="dialog"
+        style={open ? { display: "block" } : undefined}
+      >
         <div className="row-fluid">
           <div className="span3">
             <h5>{t("project.projects")}</h5>
@@ -1849,11 +1873,17 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
           </div>
         </div>
         <p className="actrow">
-          <button type="button" className="ybtn ybtn-info" data-dismiss="modal">
+          <button
+            type="button"
+            className="ybtn ybtn-info"
+            data-dismiss="modal"
+            onClick={closeKeymap}
+          >
             {t("button.confirm")}
           </button>
         </p>
       </div>
+      {open ? <div className="modal-backdrop fade in"></div> : null}
     </div>
   );
 }

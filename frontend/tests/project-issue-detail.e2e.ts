@@ -462,18 +462,20 @@ test("project issue detail favorite star posts and toggles starred class", async
   await expect(page.locator(".board-header .favorite-issue i")).toHaveClass(/starred/);
 });
 
-test("project issue detail opens legacy keymap modal through data-toggle modal", async ({
+test("project issue detail opens legacy keymap modal through route-owned React state", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page);
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
-  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
-  await page.locator('.board-footer a[href="#helpKeys"][data-toggle="modal"]').click();
+  const trigger = page.locator('.board-footer a[href="#helpKeys"][data-toggle="modal"]');
+  await expect(trigger).toHaveClass("ybtn ybtn-inverse ybtn-mini");
+  await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
+  await trigger.click();
   await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/);
-  await expect(page.locator("#helpKeys")).toHaveClass(/in/);
-  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator("#helpKeys")).toHaveClass("modal fade keymap-help in");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   expect(await keymapModalMetrics(page)).toEqual({
     display: "block",
     firstColumnTitle: "projects",
@@ -483,8 +485,9 @@ test("project issue detail opens legacy keymap modal through data-toggle modal",
   });
 
   await page.locator('#helpKeys [data-dismiss="modal"]').click();
-  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(await keymapModalMetrics(page)).toMatchObject({ display: "none" });
 });
 
 test("project issue detail switches legacy comment editor tabs through data-toggle tab", async ({
