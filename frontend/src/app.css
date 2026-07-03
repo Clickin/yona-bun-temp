@@ -2594,6 +2594,28 @@ h1 {
   padding: 4px 15px;
 }
 
+.nav-subtab li > button {
+  display: block;
+  padding: 5px 8px;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.nav-subtab li > button:hover,
+.nav-subtab li > button:focus {
+  color: black;
+  text-decoration: none;
+  background: transparent;
+  border-bottom: 1px solid #f36c22;
+}
+
 .tab-content {
   overflow: hidden;
 }

@@ -240,10 +240,10 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
         </div>
         <div class="subtab-wrap subtab-group">
           <ul class="nav-subtab unstyled">
-            <li class="active"><a href="#recentlyVisited" data-toggle="tab">Recently visited</a></li>
-            <li><a href="#createdByMe" data-toggle="tab">Create</a></li>
-            <li><a href="#watching" data-toggle="tab">Watching</a></li>
-            <li><a href="#joinmember" data-toggle="tab">Member</a></li>
+            <li class="active"><button type="button" data-toggle="tab">Recently visited</button></li>
+            <li><button type="button" data-toggle="tab">Create</button></li>
+            <li><button type="button" data-toggle="tab">Watching</button></li>
+            <li><button type="button" data-toggle="tab">Member</button></li>
           </ul>
         </div>
         <div class="tab-content">
@@ -674,6 +674,19 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
   await page.locator(".myProjectList a").click();
   await expect(page.locator("#usermenu-tab-content-list .project-search")).toBeVisible();
   await expect(page.locator("#usermenu-tab-content-list .user-li")).toHaveCount(3);
+  await expect(page.locator("#usermenu-tab-content-list .nav-subtab a[href^='#']")).toHaveCount(0);
+  await expect(page.locator("#usermenu-tab-content-list .nav-subtab button")).toHaveText([
+    "Recently visited",
+    "Create",
+    "Watching",
+    "Member",
+  ]);
+  for (const tabButton of await page
+    .locator("#usermenu-tab-content-list .nav-subtab button")
+    .all()) {
+    await expect(tabButton).toHaveAttribute("data-toggle", "tab");
+    await expect(tabButton).toHaveAttribute("type", "button");
+  }
 
   expect(await canonicalizeSelector(page, "#usermenu-tab-content-list")).toEqual(
     await canonicalizeHtml(
@@ -694,6 +707,37 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
     subtabDisplay: "block",
     subtabMarginTop: "0px",
   });
+
+  const projectSearch = page.locator("#usermenu-tab-content-list .project-search");
+  await projectSearch.fill("sample");
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "home-project-subtabs";
+  });
+  const projectTabUrl = page.url();
+  const expectedTabs = [
+    ["createdByMe", "Create"],
+    ["watching", "Watching"],
+    ["joinmember", "Member"],
+    ["recentlyVisited", "Recently visited"],
+  ] as const;
+  for (const [paneId, label] of expectedTabs) {
+    await page.locator("#usermenu-tab-content-list .nav-subtab button", { hasText: label }).click();
+    await expect(
+      page.locator("#usermenu-tab-content-list .nav-subtab li", { hasText: label }),
+    ).toHaveClass(/active/);
+    await expect(page.locator(`#${paneId}`)).toHaveClass(/active/);
+    expect(page.url()).toBe(projectTabUrl);
+    await expect(projectSearch).toHaveValue("sample");
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+        ),
+      )
+      .toBe("home-project-subtabs");
+  }
 });
 
 test("authenticated root sidebar recent issue tab matches legacy index/myRecentIssueList DOM", async ({

@@ -1115,6 +1115,9 @@ function SidebarAllProjectItem({
 
 function SidebarProjectList({ basePath, workspace }: { basePath: string; workspace: YonaRecord }) {
   const { t } = useLegacyMessages();
+  const [activeSubtab, setActiveSubtab] = React.useState<
+    "recentlyVisited" | "createdByMe" | "watching" | "joinmember"
+  >("recentlyVisited");
   const recentProjects = recordArray(workspace.recentProjects);
   const watchedProjects = recordArray(workspace.watchedProjects);
   const memberProjects = recordArray(workspace.memberProjects);
@@ -1135,38 +1138,65 @@ function SidebarProjectList({ basePath, workspace }: { basePath: string; workspa
           </div>
           <div className="subtab-wrap subtab-group">
             <ul className="nav-subtab unstyled">
-              <li className="active">
-                <a href="#recentlyVisited" data-toggle="tab">
+              <li className={activeSubtab === "recentlyVisited" ? "active" : undefined}>
+                <button
+                  type="button"
+                  data-toggle="tab"
+                  onClick={() => setActiveSubtab("recentlyVisited")}
+                >
                   {t("title.recently.visited")}
-                </a>
+                </button>
               </li>
-              <li>
-                <a href="#createdByMe" data-toggle="tab">
+              <li className={activeSubtab === "createdByMe" ? "active" : undefined}>
+                <button
+                  type="button"
+                  data-toggle="tab"
+                  onClick={() => setActiveSubtab("createdByMe")}
+                >
                   {t("title.createdByMe")}
-                </a>
+                </button>
               </li>
-              <li>
-                <a href="#watching" data-toggle="tab">
+              <li className={activeSubtab === "watching" ? "active" : undefined}>
+                <button type="button" data-toggle="tab" onClick={() => setActiveSubtab("watching")}>
                   {t("title.watching")}
-                </a>
+                </button>
               </li>
-              <li>
-                <a href="#joinmember" data-toggle="tab">
+              <li className={activeSubtab === "joinmember" ? "active" : undefined}>
+                <button
+                  type="button"
+                  data-toggle="tab"
+                  onClick={() => setActiveSubtab("joinmember")}
+                >
                   {t("title.joinmember")}
-                </a>
+                </button>
               </li>
             </ul>
           </div>
           <div className="tab-content">
             <SidebarProjectPane
-              active
+              active={activeSubtab === "recentlyVisited"}
               basePath={basePath}
               id="recentlyVisited"
               projects={recentProjects}
             />
-            <SidebarProjectPane basePath={basePath} id="watching" projects={watchedProjects} />
-            <SidebarProjectPane basePath={basePath} id="createdByMe" projects={[]} />
-            <SidebarProjectPane basePath={basePath} id="joinmember" projects={memberProjects} />
+            <SidebarProjectPane
+              active={activeSubtab === "watching"}
+              basePath={basePath}
+              id="watching"
+              projects={watchedProjects}
+            />
+            <SidebarProjectPane
+              active={activeSubtab === "createdByMe"}
+              basePath={basePath}
+              id="createdByMe"
+              projects={[]}
+            />
+            <SidebarProjectPane
+              active={activeSubtab === "joinmember"}
+              basePath={basePath}
+              id="joinmember"
+              projects={memberProjects}
+            />
           </div>
         </div>
       </div>
