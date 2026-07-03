@@ -9,12 +9,12 @@ const EXPECTED_PROJECT_MEMBERS = `
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
-    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
+    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>
-      <li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
   </div>
 </header>
@@ -93,6 +93,7 @@ test("project members enrollment Add posts selected login like legacy member mod
 
 test("project members role and delete side effects use React buttons", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installDocumentDropdownBubbleAudit(page);
   const requests = await mockProjectMembers(page);
 
   await page.goto(`${basePath}/admin/sample/members`);
@@ -100,9 +101,27 @@ test("project members role and delete side effects use React buttons", async ({ 
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
 
+  const roleGroup = page.locator('.members.project [data-name="roleof-alice"]');
+  const roleToggle = roleGroup.locator(".dropdown-toggle");
   const roleApply = page
     .locator('.members.project [data-name="roleof-alice"] [data-action="apply"]')
     .first();
+  await expect(roleGroup).toHaveAttribute("class", "btn-group");
+  await expect(roleGroup).toHaveAttribute("data-name", "roleof-alice");
+  await expect(roleToggle).toHaveAttribute("class", "btn dropdown-toggle large");
+  await expect(roleToggle).toHaveAttribute("data-toggle", "dropdown");
+  await expect(roleToggle.locator(".d-label")).toHaveText("Member");
+  await expect(roleToggle.locator(".d-caret .caret")).toHaveCount(1);
+  await expect(roleGroup.locator(".dropdown-menu li")).toHaveCount(2);
+  await expect(roleGroup.locator('li[data-value="manager"]')).not.toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(roleGroup.locator('li[data-value="member"]')).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(roleGroup.locator('li[data-value="member"]')).toHaveClass("active");
   await expect(roleApply).toHaveJSProperty("tagName", "BUTTON");
   await expect(roleApply).toHaveAttribute("type", "button");
   await expect(roleApply).not.toHaveAttribute("href", /.+/);
@@ -110,7 +129,18 @@ test("project members role and delete side effects use React buttons", async ({ 
   await expect(roleApply).toHaveAttribute("data-loginid", "alice");
   await expect(roleApply).toHaveText("Manager");
   await expect(page.locator('[data-action="apply"][href="javascript:void(0)"]')).toHaveCount(0);
-  await page.locator('[data-name="roleof-alice"] .dropdown-toggle').click();
+  await expect(roleGroup.locator('a[href="#"], a[href="javascript:void(0);"]')).toHaveCount(0);
+  await roleToggle.click();
+  await expect(roleGroup).toHaveClass("btn-group open");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/members`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect.poll(() => documentDropdownBubbleClicks(page)).toEqual([]);
   await expect
     .poll(() => roleButtonMetrics(roleApply))
     .toEqual({
@@ -138,7 +168,7 @@ test("project members role and delete side effects use React buttons", async ({ 
       response.url().includes("/api/v1/owners/admin/projects/sample/members/2") &&
       response.request().method() === "PATCH",
   );
-  await roleApply.dispatchEvent("click");
+  await roleApply.click();
   await roleResponse;
 
   await expect
@@ -152,6 +182,8 @@ test("project members role and delete side effects use React buttons", async ({ 
     "data-selected",
     "true",
   );
+  await expect(page.locator('[data-name="roleof-alice"]')).toHaveAttribute("class", "btn-group");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/members`);
 
   const deleteResponse = page.waitForResponse(
     (response) =>
@@ -344,6 +376,32 @@ async function favoriteSpanNativeListeners(page: Page) {
     () =>
       (window as Window & typeof globalThis & { __yonaFavoriteSpanNativeListeners?: string[] })
         .__yonaFavoriteSpanNativeListeners ?? [],
+  );
+}
+
+async function installDocumentDropdownBubbleAudit(page: Page) {
+  await page.addInitScript(() => {
+    const dropdownClicks: string[] = [];
+    Object.defineProperty(window, "__yonaDocumentDropdownBubbleClicks", {
+      configurable: true,
+      value: dropdownClicks,
+    });
+    document.addEventListener("click", (event) => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest('.members.project [data-name="roleof-alice"] [data-toggle="dropdown"]')
+      ) {
+        dropdownClicks.push("roleof-alice");
+      }
+    });
+  });
+}
+
+async function documentDropdownBubbleClicks(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __yonaDocumentDropdownBubbleClicks?: string[] })
+        .__yonaDocumentDropdownBubbleClicks ?? [],
   );
 }
 

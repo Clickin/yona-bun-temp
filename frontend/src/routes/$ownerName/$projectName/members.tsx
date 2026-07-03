@@ -238,6 +238,7 @@ function ProjectMemberListItem({
   const loginId = stringField(member.loginId, "");
   const userId = numberField(member.userId);
   const memberRecord = recordField(member);
+  const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const updateRoleMutation = useMutation({
     mutationFn: async (role: string) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -291,8 +292,18 @@ function ProjectMemberListItem({
       <div className="member-setting">
         {!booleanField(member.isOwner) ? (
           <>
-            <div className="btn-group" data-name={`roleof-${loginId}`}>
-              <button className="btn dropdown-toggle large" data-toggle="dropdown">
+            <div
+              className={`btn-group${isRoleMenuOpen ? " open" : ""}`}
+              data-name={`roleof-${loginId}`}
+            >
+              <button
+                className="btn dropdown-toggle large"
+                data-toggle="dropdown"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIsRoleMenuOpen((current) => !current);
+                }}
+              >
                 <span className="d-label">{roleLabel(members, stringField(member.role, ""))}</span>
                 <span className="d-caret">
                   <span className="caret"></span>
@@ -317,7 +328,11 @@ function ProjectMemberListItem({
                           `/${ownerName}/${projectName}/members/${userId}`,
                         )}
                         data-loginid={loginId}
-                        onClick={() => updateRoleMutation.mutate(roleName)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setIsRoleMenuOpen(false);
+                          updateRoleMutation.mutate(roleName);
+                        }}
                       >
                         {stringField(role.label, roleName)}
                       </button>
