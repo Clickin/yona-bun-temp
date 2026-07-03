@@ -63,6 +63,8 @@ function ProjectChangeVcsBody({
   const { t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [acceptedChangeVcs, setAcceptedChangeVcs] = useState(false);
+  const [changeVcsModalOpen, setChangeVcsModalOpen] = useState(false);
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const currentVcs = stringField(project.currentVcs, stringField(project.vcs, "GIT"));
@@ -79,9 +81,26 @@ function ProjectChangeVcsBody({
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.base(ownerName, projectName),
       });
-      router.history.push(stringField(response.redirectPath, `/${ownerName}/${projectName}`));
+      setChangeVcsModalOpen(false);
+      router.history.push(
+        prefixBasePath(
+          runtimeConfig.basePath,
+          stringField(response.redirectPath, `/${ownerName}/${projectName}`),
+        ),
+      );
+    },
+    onError() {
+      setChangeVcsModalOpen(false);
     },
   });
+  const openChangeVcsModal = () => {
+    if (!acceptedChangeVcs) {
+      window.alert(t("project.changeVCS.alert"));
+      return;
+    }
+    setChangeVcsModalOpen(true);
+  };
+  const closeChangeVcsModal = () => setChangeVcsModalOpen(false);
 
   return (
     <>
@@ -115,6 +134,8 @@ function ProjectChangeVcsBody({
                     type="checkbox"
                     className="checkbox"
                     autoComplete="off"
+                    checked={acceptedChangeVcs}
+                    onChange={(event) => setAcceptedChangeVcs(event.currentTarget.checked)}
                   />
                   <label htmlFor="acceptChangeVCS" className="bg-checkbox label-agreement">
                     {t("project.changeVCS.accept")}
@@ -124,18 +145,22 @@ function ProjectChangeVcsBody({
             </div>
           </div>
           <div className="box-wrap bottom">
-            <a
+            <button
               id="btnChangeVCS"
-              href="#alertChangeVCS"
+              type="button"
               className="ybtn ybtn-danger"
-              data-toggle="modal"
+              onClick={openChangeVcsModal}
             >
               <i className="yobicon-database"></i> {t("project.changeVCS.this")}
-            </a>
+            </button>
           </div>
-          <div id="alertChangeVCS" className="modal hide">
+          <div
+            id="alertChangeVCS"
+            className={`modal hide${changeVcsModalOpen ? " in" : ""}`}
+            style={changeVcsModalOpen ? { display: "block" } : undefined}
+          >
             <div className="modal-header">
-              <button type="button" className="close" data-dismiss="modal">
+              <button type="button" className="close" onClick={closeChangeVcsModal}>
                 ×
               </button>
               <h3>{t("project.changeVCS.requestion", { args: [nextVcs] })}</h3>
@@ -153,11 +178,12 @@ function ProjectChangeVcsBody({
               >
                 {t("button.yes")}
               </button>
-              <button type="button" className="ybtn" data-dismiss="modal">
+              <button type="button" className="ybtn" onClick={closeChangeVcsModal}>
                 {t("button.no")}
               </button>
             </div>
           </div>
+          {changeVcsModalOpen ? <div className="modal-backdrop fade in"></div> : null}
         </div>
       </div>
     </>

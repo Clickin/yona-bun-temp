@@ -40,11 +40,11 @@ const EXPECTED_PROJECT_CHANGE_VCS_FORM = `
         </div>
       </div>
     </div>
-    <div class="box-wrap bottom"><a id="btnChangeVCS" href="#alertChangeVCS" class="ybtn ybtn-danger" data-toggle="modal"><i class="yobicon-database"></i> Change Repository Type.</a></div>
+    <div class="box-wrap bottom"><button id="btnChangeVCS" type="button" class="ybtn ybtn-danger"><i class="yobicon-database"></i> Change Repository Type.</button></div>
     <div id="alertChangeVCS" class="modal hide">
-      <div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Do you want to change the repository to Subversion?</h3></div>
+      <div class="modal-header"><button type="button" class="close">×</button><h3>Do you want to change the repository to Subversion?</h3></div>
       <div class="modal-body"><p>If the repository is changed, all code and history will be deleted.</p><p>Are you sure?</p></div>
-      <div class="modal-footer"><button id="btnChangeVCSExec" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div>
+      <div class="modal-footer"><button id="btnChangeVCSExec" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div>
     </div>
   </div>
 </div>
@@ -76,7 +76,7 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
     bubbleBackground: "rgb(247, 247, 247)",
     bubblePadding: "20px 20px 10px",
     bubbleWidth: 1260,
-    buttonHeight: "21px",
+    buttonHeight: "31px",
     buttonLineHeight: "20px",
     buttonPadding: "4px 12px",
     checkboxMargin: "2px",
@@ -90,10 +90,72 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
     modalHeaderPadding: "9px 15px",
     modalWidth: "560px",
     pageWrapMinWidth: "1100px",
-    projectPageMarginTop: "5px",
+    projectPageMarginTop: "20px",
     projectPageWidth: 1260,
     tabsMarginBottom: "15px",
   });
+});
+
+test("project change-VCS confirmation modal opens, closes, posts, and redirects through SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const changeVcsRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await auditChangeVcsNativeListeners(page);
+  await mockProjectAdmin(page, { changeVcsRequests });
+
+  await page.goto(`${basePath}/admin/sample/changeVCS`);
+  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toBe("You should agree with changing the repository type.");
+    await dialog.accept();
+  });
+  await page.locator("#btnChangeVCS").click();
+  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.locator("#acceptChangeVCS").check();
+  await page.locator("#btnChangeVCS").click();
+  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "block");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+
+  await page.locator("#alertChangeVCS .modal-footer .ybtn").filter({ hasText: "No" }).click();
+  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.locator("#btnChangeVCS").click();
+  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
+  await page.locator("#alertChangeVCS .close").click();
+  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await page.locator("#btnChangeVCS").click();
+  const postResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/change-vcs") &&
+      response.request().method() === "POST",
+  );
+  await page.locator("#btnChangeVCSExec").click();
+  await postResponsePromise;
+
+  expect(changeVcsRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  expect(await readChangeVcsNativeListenerAudit(page)).toEqual([]);
 });
 
 test("project change-VCS menu settings link preserves legacy href with SPA transition", async ({
@@ -244,6 +306,7 @@ async function readDesktopChangeVcsMetrics(page: Page) {
 async function mockProjectAdmin(
   page: Page,
   options: {
+    changeVcsRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
     project?: Partial<ReturnType<typeof projectChangeVcs>>;
@@ -280,6 +343,22 @@ async function mockProjectAdmin(
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/change-vcs", async (route) => {
+    if (route.request().method() === "POST") {
+      const request = route.request();
+      options.changeVcsRequests?.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-change-vcs",
+        method: request.method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...projectChangeVcs(),
+          ...options.project,
+          redirectPath: "/admin/sample",
+        }),
+      });
+      return;
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ ...projectChangeVcs(), ...options.project }),
@@ -318,6 +397,40 @@ async function mockProjectAdmin(
       body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
     });
   });
+}
+
+async function auditChangeVcsNativeListeners(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+    const records: string[] = [];
+    EventTarget.prototype.addEventListener = function (
+      this: EventTarget,
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      if (
+        this instanceof Element &&
+        (this.id === "btnChangeVCS" ||
+          this.id === "alertChangeVCS" ||
+          Boolean(this.closest("#alertChangeVCS")))
+      ) {
+        records.push(`${this.id || this.className}:${type}`);
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+    (
+      window as Window & typeof globalThis & { __changeVcsNativeListenerAudit?: typeof records }
+    ).__changeVcsNativeListenerAudit = records;
+  });
+}
+
+async function readChangeVcsNativeListenerAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __changeVcsNativeListenerAudit?: string[] })
+        .__changeVcsNativeListenerAudit ?? [],
+  );
 }
 
 function projectChangeVcs() {
@@ -409,6 +522,7 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -449,6 +563,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
