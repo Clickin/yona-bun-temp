@@ -942,7 +942,6 @@ function IssueSortFilter({
   onSortChange: (orderBy: string, orderDir: string) => void;
   orderDir: string;
 }) {
-  const Anchor = "a";
   const legacyOrderAttributes = { orderby: field, orderdir: orderDir } as Record<string, string>;
   const selectIssueSortFilter = (event: ReactMouseEvent) => {
     event.preventDefault();
@@ -950,15 +949,15 @@ function IssueSortFilter({
   };
 
   return (
-    <Anchor
-      href="#"
+    <button
+      type="button"
       className={active ? "filter active" : "filter"}
       onClick={selectIssueSortFilter}
       {...legacyOrderAttributes}
     >
       {children}
       {label}
-    </Anchor>
+    </button>
   );
 }
 
@@ -1672,9 +1671,8 @@ function ProjectIssueItem({
               </span>
             ) : null}
             {issueLabels.map((label) => (
-              /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy issue labels use href="#" and JS filter behavior. */
-              <a
-                href="#"
+              <button
+                type="button"
                 className="label issue-label list-label active"
                 data-category-id={label.categoryId ?? ""}
                 data-label-id={label.id}
@@ -1682,7 +1680,7 @@ function ProjectIssueItem({
                 onClick={(event) => handleIssueLabelClick(event, String(label.id))}
               >
                 {label.name}
-              </a>
+              </button>
             ))}
             <div
               className="child-issue-list hide"
@@ -2007,7 +2005,7 @@ function QuickSearch({
   state: "closed" | "open";
 }) {
   const { t } = useLegacyMessages();
-  const pjaxFilter = { "pjax-filter": "" } as unknown as HTMLAttributes<HTMLAnchorElement>;
+  const pjaxFilter = { "pjax-filter": "" } as unknown as HTMLAttributes<HTMLButtonElement>;
   const allLabel = state === "closed" ? t("issue.list.all.closed") : t("issue.list.all.open");
   const allCount = countField(issues, state === "closed" ? "closedIssueCount" : "openIssueCount");
 
@@ -2018,10 +2016,9 @@ function QuickSearch({
           !search.assigneeId && !search.authorId && !search.commenterId ? "active" : undefined
         }
       >
-        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter attrs. */}
-        <a
+        <button
           {...pjaxFilter}
-          href="#"
+          type="button"
           data-assignee-id=""
           data-author-id=""
           data-commenter-id=""
@@ -2039,15 +2036,14 @@ function QuickSearch({
         >
           {allLabel}
           <span className="num-badge pull-right">{allCount}</span>
-        </a>
+        </button>
       </li>
       {!isAnonymous ? (
         <>
           <li className={search.assigneeId === currentUserId ? "active" : undefined}>
-            {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter attrs. */}
-            <a
+            <button
               {...pjaxFilter}
-              href="#"
+              type="button"
               data-assignee-id={currentUserId}
               data-author-id=""
               data-commenter-id=""
@@ -2067,13 +2063,12 @@ function QuickSearch({
               <span className="num-badge pull-right">
                 {countField(issues, "assignedToMeCount")}
               </span>
-            </a>
+            </button>
           </li>
           <li className={search.authorId === currentUserId ? "active" : undefined}>
-            {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter attrs. */}
-            <a
+            <button
               {...pjaxFilter}
-              href="#"
+              type="button"
               data-assignee-id=""
               data-author-id={currentUserId}
               data-commenter-id=""
@@ -2093,13 +2088,12 @@ function QuickSearch({
               <span className="num-badge pull-right">
                 {countField(issues, "authoredByMeCount")}
               </span>
-            </a>
+            </button>
           </li>
           <li className={search.commenterId === currentUserId ? "active" : undefined}>
-            {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter attrs. */}
-            <a
+            <button
               {...pjaxFilter}
-              href="#"
+              type="button"
               data-assignee-id=""
               data-author-id=""
               data-commenter-id={currentUserId}
@@ -2119,7 +2113,7 @@ function QuickSearch({
               <span className="num-badge pull-right">
                 {countField(issues, "commentedByMeCount")}
               </span>
-            </a>
+            </button>
           </li>
         </>
       ) : null}
@@ -2641,21 +2635,20 @@ function StateTab({
   state: "closed" | "open";
 }) {
   const legacyState = {
-    onClick: (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       onStateChange(state);
     },
     state,
-  } as unknown as HTMLAttributes<HTMLAnchorElement>;
+  } as unknown as HTMLAttributes<HTMLButtonElement>;
   const dataPjax = { "data-pjax": "" } as unknown as HTMLAttributes<HTMLLIElement>;
 
   return (
     <li className={active ? "active" : undefined} {...dataPjax}>
-      {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus state attr. */}
-      <a href="#" {...legacyState}>
+      <button type="button" {...legacyState}>
         {label}
         <span className="num-badge">{count}</span>
-      </a>
+      </button>
     </li>
   );
 }
