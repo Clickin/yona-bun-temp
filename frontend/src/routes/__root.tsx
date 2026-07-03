@@ -724,8 +724,18 @@ export function RootAliasNotFound() {
   );
 }
 
+type RootNotFoundUsermenuTab = "myOrganizationList" | "myProjectList" | "myRecentIssueList";
+
 function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
+  const [activeUsermenuTab, setActiveUsermenuTab] =
+    React.useState<RootNotFoundUsermenuTab>("myOrganizationList");
+  const handleUsermenuTabClick =
+    (tab: RootNotFoundUsermenuTab) => (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setActiveUsermenuTab(tab);
+    };
   const basePath = runtimeConfig.basePath === "/" ? "" : runtimeConfig.basePath;
   const pathname =
     typeof window === "undefined" ? "/" : window.location.pathname.slice(basePath.length) || "/";
@@ -782,20 +792,38 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                 </a>
               </div>
               <ul className="nav nav-tabs nm">
-                <li className="myOrganizationList active">
-                  <a href="#myOrganizationList" data-toggle="tab">
+                <li
+                  className={`myOrganizationList${activeUsermenuTab === "myOrganizationList" ? " active" : ""}`}
+                >
+                  <button
+                    type="button"
+                    data-toggle="tab"
+                    onClick={handleUsermenuTabClick("myOrganizationList")}
+                  >
                     {t("title.favorite")}
-                  </a>
+                  </button>
                 </li>
-                <li className="myProjectList">
-                  <a href="#myProjectList" data-toggle="tab">
+                <li
+                  className={`myProjectList${activeUsermenuTab === "myProjectList" ? " active" : ""}`}
+                >
+                  <button
+                    type="button"
+                    data-toggle="tab"
+                    onClick={handleUsermenuTabClick("myProjectList")}
+                  >
                     {t("title.project")}
-                  </a>
+                  </button>
                 </li>
-                <li className="myRecentIssueList">
-                  <a href="#myRecentIssueList" data-toggle="tab">
+                <li
+                  className={`myRecentIssueList${activeUsermenuTab === "myRecentIssueList" ? " active" : ""}`}
+                >
+                  <button
+                    type="button"
+                    data-toggle="tab"
+                    onClick={handleUsermenuTabClick("myRecentIssueList")}
+                  >
                     {t("title.recently.visited.issue")}
-                  </a>
+                  </button>
                 </li>
               </ul>
               <div className="tab-content tab-box">

@@ -17,9 +17,9 @@ const EXPECTED_NOT_FOUND_SCREEN = `
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -131,6 +131,53 @@ test("unmatched route keeps legacy mobile error shell proportions", async ({ pag
     projectPageWrapWidth: 390,
     providerFontSize: "9px",
   });
+});
+
+test("unmatched route usermenu tabs are route-owned buttons", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/missing-legacy-route/unknown/screen`);
+  await expect(page.locator("#usermenu-tab-content-list")).toHaveText("Loading...");
+
+  const tabAnchors = page.locator(
+    '#mySidenav .nav.nav-tabs.nm li.myOrganizationList > a[href="#myOrganizationList"], ' +
+      '#mySidenav .nav.nav-tabs.nm li.myProjectList > a[href="#myProjectList"], ' +
+      '#mySidenav .nav.nav-tabs.nm li.myRecentIssueList > a[href="#myRecentIssueList"]',
+  );
+  await expect(tabAnchors).toHaveCount(0);
+
+  const tabButtons = page.locator("#mySidenav .nav.nav-tabs.nm > li > button");
+  await expect(tabButtons).toHaveText(["Favorite", "Project", "Recent History"]);
+  await expect(tabButtons).toHaveCount(3);
+  for (const button of await tabButtons.all()) {
+    await expect(button).toHaveAttribute("type", "button");
+    await expect(button).toHaveAttribute("data-toggle", "tab");
+  }
+
+  const originalUrl = page.url();
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "not-found-usermenu-tabs";
+  });
+
+  await page.locator("#mySidenav .myProjectList > button").dispatchEvent("click");
+  await expect(page.locator("#mySidenav .myOrganizationList")).not.toHaveClass(/active/);
+  await expect(page.locator("#mySidenav .myProjectList")).toHaveClass(/active/);
+  expect(page.url()).toBe(originalUrl);
+
+  await page.locator("#mySidenav .myRecentIssueList > button").dispatchEvent("click");
+  await expect(page.locator("#mySidenav .myProjectList")).not.toHaveClass(/active/);
+  await expect(page.locator("#mySidenav .myRecentIssueList")).toHaveClass(/active/);
+  expect(page.url()).toBe(originalUrl);
+
+  await page.locator("#mySidenav .myOrganizationList > button").dispatchEvent("click");
+  await expect(page.locator("#mySidenav .myRecentIssueList")).not.toHaveClass(/active/);
+  await expect(page.locator("#mySidenav .myOrganizationList")).toHaveClass(/active/);
+  expect(page.url()).toBe(originalUrl);
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+    )
+    .toBe("not-found-usermenu-tabs");
 });
 
 async function readDesktopNotFoundMetrics(page: Page) {
