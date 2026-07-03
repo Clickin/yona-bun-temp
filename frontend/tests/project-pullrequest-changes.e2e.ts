@@ -522,6 +522,18 @@ test("project pull request changes owns comment hash links through router", asyn
     .toBe("pull-request-comment-hash");
 });
 
+test("project pull request changes route source uses direct hash Links", async () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
+    "utf8",
+  );
+
+  expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).toContain('to="."');
+  expect(routeSource).toContain("hash={`comment-${comment.id}`}");
+  expect(routeSource).toContain("activeOptions={{ includeHash: true }}");
+});
+
 test("project pull request changes renders review cards for non-ranged-only threads", async ({
   page,
 }) => {
