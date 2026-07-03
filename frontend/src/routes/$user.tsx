@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import type { LiHTMLAttributes } from "react";
 import { currentSessionQueryOptions } from "../api/session";
 import { RestApiError } from "../api/rest-client";
@@ -24,6 +24,11 @@ type PublicProfileSearch = {
 };
 
 type UsermenuTab = "myOrganizationList" | "myProjectList" | "myRecentIssueList";
+
+const LEGACY_LINK_PROPS = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
 
 export const Route = createFileRoute("/$user")({
   component: PublicProfileRoute,
@@ -102,8 +107,6 @@ function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 
 function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
-  const basePath = runtimeConfig.basePath;
-  const homeHref = basePath === "/" ? "/" : `${basePath}/`;
   const siteName = runtimeConfig.siteName ?? "Yona";
   const [activeUsermenuTab, setActiveUsermenuTab] = useState<UsermenuTab>("myOrganizationList");
 
@@ -111,36 +114,42 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
     <>
       <header className="gnb-outer">
         <div className="gnb-inner">
-          <a href={homeHref} className="logo">
+          <Link {...LEGACY_LINK_PROPS} to="/" className="logo">
             <h1 className="blind">{siteName}</h1>
-          </a>
+          </Link>
           <ul className="gnb-nav">
             <li>
-              <a href={prefixBasePath(basePath, "/projects")}>{t("title.projectList")}</a>
+              <Link {...LEGACY_LINK_PROPS} to="/projects">
+                {t("title.projectList")}
+              </Link>
             </li>
             <li>
-              <a href={prefixBasePath(basePath, "/_help")}>{t("title.help")}</a>
+              <Link {...LEGACY_LINK_PROPS} to="/_help">
+                {t("title.help")}
+              </Link>
             </li>
             <li>
-              <a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">
+              <Link to="https://github.com/nforge/yobi/issues?state=open" target="_blank">
                 {t("title.yobi.feedback")}
-              </a>
+              </Link>
             </li>
           </ul>
           <div id="mySidenav" className="sidenav">
             <div className="span5 right-menu span-hard-wrap">
               <div className="row-fluid user-menu-wrap">
                 <span className="user-menu">
-                  <a href={prefixBasePath(basePath, "/user/anonymous")}>{t("userinfo.profile")}</a>
+                  <Link to="/user/anonymous" reloadDocument>
+                    {t("userinfo.profile")}
+                  </Link>
                 </span>
                 <span className="user-menu">
-                  <a href={prefixBasePath(basePath, "/user/editform")}>
+                  <Link to="/user/editform" reloadDocument>
                     {t("userinfo.accountSetting")}
-                  </a>
+                  </Link>
                 </span>
-                <a href={prefixBasePath(basePath, "/logout")}>
+                <Link to="/logout" reloadDocument>
                   <span className="user-menu logout label">{t("title.logout")}</span>
-                </a>
+                </Link>
               </div>
               <PublicProfileUsermenuTabs
                 activeTab={activeUsermenuTab}
@@ -160,19 +169,20 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
           </div>
           <ul className="gnb-usermenu">
             <li className="gnb-usermenu-item" id="required-logged-in">
-              <a
-                href={prefixBasePath(basePath, "/users/loginform")}
+              <Link
+                to="/users/loginform"
+                reloadDocument
                 className="user-item-btn"
                 data-login="required"
               >
                 {t("title.login")}
-              </a>
+              </Link>
             </li>
             <li className="divider"></li>
             <li>
-              <a href={prefixBasePath(basePath, "/users/signupform")} className="ybtn ybtn-success">
+              <Link to="/users/signupform" reloadDocument className="ybtn ybtn-success">
                 {t("title.signup")}
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
@@ -182,9 +192,9 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
           <div className="error-wrap">
             <i className="ico ico-err2"></i>
             <p>{t("user.notExists.name")}</p>
-            <a href={homeHref} className="ybtn ybtn-info">
+            <Link {...LEGACY_LINK_PROPS} to="/" className="ybtn ybtn-info">
               {t("menu.home")}
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -192,14 +202,14 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
         <div className="page-footer">
           <span className="provider">
             {"Copyright © "}
-            <a href="http://navercorp.com/" target="_blank">
+            <Link to="http://navercorp.com/" target="_blank">
               NAVER Corp.
-            </a>{" "}
+            </Link>{" "}
             Supported by{" "}
-            <a href="https://developers.naver.com/d2/" target="_blank" className="d2-program">
+            <Link to="https://developers.naver.com/d2/" target="_blank" className="d2-program">
               <span className="d2">D2</span>
               <span className="program"> Program</span>
-            </a>
+            </Link>
           </span>
         </div>
       </footer>
@@ -284,12 +294,13 @@ function PublicProfileBody({
                 ) : null}
                 {profileResponse.viewerCanEditProfile ? (
                   <div className="edit">
-                    <a
-                      href={prefixBasePath(runtimeConfig.basePath, "/user/editform")}
+                    <Link
+                      to="/user/editform"
+                      reloadDocument
                       className="ybtn ybtn-default ybtn-mini"
                     >
                       <i className="yobicon-edit"></i> {t("userinfo.editProfile")}
-                    </a>
+                    </Link>
                   </div>
                 ) : null}
               </div>
@@ -435,7 +446,6 @@ function PublicProfileBody({
                     <ul className="post-list-wrap  row-fluid">
                       {profileResponse.pullRequestItems.map((pullRequest) => (
                         <ProfilePullRequestRow
-                          basePath={runtimeConfig.basePath}
                           key={pullRequestKey(pullRequest)}
                           pullRequest={pullRequest}
                         />
@@ -454,7 +464,6 @@ function PublicProfileBody({
                     <ul className="user-streams all-projects">
                       {profileResponse.memberProjects.map((project) => (
                         <ProfileProjectRow
-                          basePath={runtimeConfig.basePath}
                           key={`${project.ownerName}/${project.projectName}`}
                           project={project}
                           subject={profile}
@@ -500,8 +509,9 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
   const projectName = stringField(issue, "projectName");
   const issueNumber = numberField(issue, "issueNumber");
   const issueId = numberField(issue, "id", issueNumber);
-  const projectHref = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
-  const issueHref = `${projectHref}/issue/${issueNumber}`;
+  const projectPath = `/${ownerName}/${projectName}`;
+  const issuePath = `${projectPath}/issue/${issueNumber}`;
+  const issueHref = prefixBasePath(basePath, issuePath);
   const labels = sortedWorkspaceIssueLabels(issue.labels ?? []);
   const milestoneId = numberField(issue, "milestoneId");
   const milestoneTitle = stringField(issue, "milestoneTitle");
@@ -516,46 +526,46 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
       <div className="span12 span-hard-wrap">
         <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
           <span className="infos-item project-name">
-            <a
-              href={projectHref}
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to={projectPath}
               className="title project"
               data-toggle="tooltip"
               data-placement="bottom"
               title={t("project.name")}
             >
               {projectName}
-            </a>
+            </Link>
           </span>
           <span className="infos-item post-id">#{issueNumber}</span>
         </div>
         <div className="title-wrap span5">
           <span className="title-cell">
-            <a href={issueHref} className="title">
+            <Link {...LEGACY_LINK_PROPS} to={issuePath} className="title">
               {stringField(issue, "title")}
-            </a>
-            <ProfileIssueCommentCount issue={issue} issueHref={issueHref} />
+            </Link>
+            <ProfileIssueCommentCount issue={issue} issuePath={issuePath} />
             <span className="for-subtask-progressbar">
               <ProfileIssueSubtaskSummary
-                basePath={basePath}
                 issue={issue}
                 ownerName={ownerName}
                 projectName={projectName}
               />
             </span>
             {labels.map((label) => (
-              <a
-                href={`${projectHref}/issues?state=open&labelIds=${String(label.id)}`}
+              <Link
+                {...LEGACY_LINK_PROPS}
+                to={`${projectPath}/issues?state=open&labelIds=${String(label.id)}`}
                 className="label issue-label list-label"
                 data-label-id={String(label.id)}
                 key={String(label.id)}
                 style={{ background: label.color }}
               >
                 {label.name}
-              </a>
+              </Link>
             ))}
             <div className="child-issue-list hide">
               <ProfileIssueChildRows
-                basePath={basePath}
                 issues={issue.childIssues ?? []}
                 ownerName={ownerName}
                 projectName={projectName}
@@ -565,14 +575,12 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
         </div>
         <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
           <ProfilePersonLink
-            basePath={basePath}
             label={stringField(issue, "authorLabel")}
             loginId={stringField(issue, "authorLoginId")}
           />
         </div>
         <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
           <ProfilePersonLink
-            basePath={basePath}
             label={stringField(issue, "assigneeLabel")}
             loginId={stringField(issue, "assigneeLoginId")}
           />
@@ -581,7 +589,6 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
           <span className="meta-cell">
             <span className="hide show-in-mobile">
               <ProfilePersonLink
-                basePath={basePath}
                 label={stringField(issue, "assigneeLabel")}
                 loginId={stringField(issue, "assigneeLoginId")}
               />
@@ -596,14 +603,15 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
             </span>
             {milestoneId > 0 && milestoneTitle ? (
               <span className="mileston-tag">
-                <a
-                  href={`${projectHref}/milestone/${milestoneId}`}
+                <Link
+                  {...LEGACY_LINK_PROPS}
+                  to={`${projectPath}/milestone/${milestoneId}`}
                   data-toggle="tooltip"
                   data-placement="bottom"
                   title={t("milestone")}
                 >
                   {milestoneTitle}
-                </a>
+                </Link>
               </span>
             ) : null}
             {dueDateLabel ? (
@@ -629,12 +637,10 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
 }
 
 function ProfileIssueSubtaskSummary({
-  basePath,
   issue,
   ownerName,
   projectName,
 }: {
-  basePath: string;
   issue: WorkspaceIssueItem;
   ownerName: string;
   projectName: string;
@@ -671,14 +677,12 @@ function ProfileIssueSubtaskSummary({
       ) : null}
       {parentIssueNumber ? (
         <span className="infos-item subtask">
-          <a
-            href={prefixBasePath(
-              basePath,
-              `/${ownerName}/${projectName}/issue/${parentIssueNumber}`,
-            )}
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to={`/${ownerName}/${projectName}/issue/${parentIssueNumber}`}
           >
             {`#${parentIssueNumber} ${truncateParentIssueTitle(parentIssueTitle)}`}
-          </a>
+          </Link>
         </span>
       ) : null}
     </>
@@ -686,12 +690,10 @@ function ProfileIssueSubtaskSummary({
 }
 
 function ProfileIssueChildRows({
-  basePath,
   issues,
   ownerName,
   projectName,
 }: {
-  basePath: string;
   issues: YonaRecord[];
   ownerName: string;
   projectName: string;
@@ -704,7 +706,6 @@ function ProfileIssueChildRows({
     <div className="child-issues">
       {orderedIssues.map((issue) => (
         <ProfileIssueChildRow
-          basePath={basePath}
           issue={issue}
           key={`${stringField(issue, "state")}-${numberField(issue, "issueNumber")}`}
           ownerName={ownerName}
@@ -716,18 +717,17 @@ function ProfileIssueChildRows({
 }
 
 function ProfileIssueChildRow({
-  basePath,
   issue,
   ownerName,
   projectName,
 }: {
-  basePath: string;
   issue: YonaRecord;
   ownerName: string;
   projectName: string;
 }) {
   const issueNumber = numberField(issue, "issueNumber");
-  const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
+  const projectPath = `/${ownerName}/${projectName}`;
+  const issuePath = `${projectPath}/issue/${issueNumber}`;
   const isClosed = stringField(issue, "state") === "closed";
   const labels = sortedWorkspaceIssueLabels((issue.labels ?? []) as YonaLabel[]);
 
@@ -736,7 +736,7 @@ function ProfileIssueChildRow({
       <span className={`state-label ${isClosed ? "closed" : "open"}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
       </span>
-      <a className="twoColumeModeTarget" href={issueHref}>
+      <Link {...LEGACY_LINK_PROPS} className="twoColumeModeTarget" to={issuePath}>
         <span className="item-name">
           <span className="subtask-number">
             {issue.isDraft ? <span className="draft-number">#Draft</span> : `#${issueNumber}`}
@@ -746,13 +746,14 @@ function ProfileIssueChildRow({
             {stringField(issue, "assigneeLabel") ? ` - ${stringField(issue, "assigneeLabel")}` : ""}
           </span>
         </span>
-      </a>
+      </Link>
       <span className="font12 no-border-at-child">
-        <ProfileIssueChildCounts issue={issue} issueHref={issueHref} />
+        <ProfileIssueChildCounts issue={issue} issuePath={issuePath} />
       </span>
       {labels.map((label) => (
-        <a
-          href={`${prefixBasePath(basePath, `/${ownerName}/${projectName}`)}/issues?state=open&labelIds=${String(label.id)}`}
+        <Link
+          {...LEGACY_LINK_PROPS}
+          to={`${projectPath}/issues?state=open&labelIds=${String(label.id)}`}
           className="label issue-label list-label active twoColumeModeTarget"
           data-category-id={String(label.categoryId ?? "")}
           data-label-id={String(label.id)}
@@ -760,7 +761,7 @@ function ProfileIssueChildRow({
           style={{ background: label.color }}
         >
           {label.name}
-        </a>
+        </Link>
       ))}
       <span className="child-issue-date" title={stringField(issue, "createdLabel")}>
         {stringField(issue, "createdLabel")}
@@ -769,7 +770,7 @@ function ProfileIssueChildRow({
   );
 }
 
-function ProfileIssueChildCounts({ issue, issueHref }: { issue: YonaRecord; issueHref: string }) {
+function ProfileIssueChildCounts({ issue, issuePath }: { issue: YonaRecord; issuePath: string }) {
   const commentCount = numberField(issue, "commentCount");
   const voterCount = numberField(issue, "voterCount");
   if (commentCount <= 0 && voterCount <= 0) {
@@ -779,20 +780,25 @@ function ProfileIssueChildCounts({ issue, issueHref }: { issue: YonaRecord; issu
   return (
     <span className="item-count-groups">
       {commentCount > 0 ? (
-        <a href={`${issueHref}#comments`} className="comments-count comments-count-color">
+        <Link
+          {...LEGACY_LINK_PROPS}
+          to={issuePath}
+          hash="comments"
+          className="comments-count comments-count-color"
+        >
           <span className="count-groups item-icon">
             <i className="yobicon-comment2"></i>
           </span>
           <span className="count-groups item-count">{commentCount}</span>
-        </a>
+        </Link>
       ) : null}
       {voterCount > 0 ? (
-        <a href={`${issueHref}#vote`} className="vote-count vote-color">
+        <Link {...LEGACY_LINK_PROPS} to={issuePath} hash="vote" className="vote-count vote-color">
           <span className="count-groups item-icon">
             <i className="yobicon-hearts"></i>
           </span>
           <span className="count-groups item-count strong">{voterCount}</span>
-        </a>
+        </Link>
       ) : null}
     </span>
   );
@@ -816,10 +822,10 @@ function compareIssueLabels(left: YonaLabel, right: YonaLabel) {
 
 function ProfileIssueCommentCount({
   issue,
-  issueHref,
+  issuePath,
 }: {
   issue: WorkspaceIssueItem;
-  issueHref: string;
+  issuePath: string;
 }) {
   const commentCount = numberField(issue, "commentCount");
   if (commentCount <= 0) {
@@ -828,29 +834,23 @@ function ProfileIssueCommentCount({
 
   return (
     <span className="item-count-groups">
-      <a href={`${issueHref}#comments`} className="comments-count">
+      <Link {...LEGACY_LINK_PROPS} to={issuePath} hash="comments" className="comments-count">
         <span className="count-groups item-icon">
           <i className="yobicon-comment2"></i>
         </span>
         <span className="count-groups item-count">{commentCount}</span>
-      </a>
+      </Link>
     </span>
   );
 }
 
-function ProfilePullRequestRow({
-  basePath,
-  pullRequest,
-}: {
-  basePath: string;
-  pullRequest: WorkspacePullRequestItem;
-}) {
+function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequestItem }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(pullRequest, "ownerName");
   const projectName = stringField(pullRequest, "projectName");
   const number = numberField(pullRequest, "pullRequestNumber");
-  const projectHref = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
-  const pullRequestHref = `${projectHref}/pullRequest/${number}`;
+  const projectPath = `/${ownerName}/${projectName}`;
+  const pullRequestPath = `${projectPath}/pullRequest/${number}`;
   const state = stringField(pullRequest, "state", "open").toLowerCase();
   const receiverLoginId = stringField(pullRequest, "receiverLoginId");
   const receiverLabel = stringField(pullRequest, "receiverLabel");
@@ -863,7 +863,7 @@ function ProfilePullRequestRow({
   return (
     <li className="post-item">
       <div className="span10">
-        <a href={projectHref} className="avatar-wrap mlarge">
+        <Link {...LEGACY_LINK_PROPS} to={projectPath} className="avatar-wrap mlarge">
           <img
             src={stringField(
               pullRequest as unknown as YonaRecord,
@@ -872,19 +872,18 @@ function ProfilePullRequestRow({
             )}
             alt={`${ownerName} / ${projectName}`}
           />
-        </a>
+        </Link>
         <div className="title-wrap">
-          <a href={projectHref} className="title project">
+          <Link {...LEGACY_LINK_PROPS} to={projectPath} className="title project">
             {projectName}
-          </a>
+          </Link>
           <span className="post-id">{number}</span>
-          <a href={pullRequestHref} className="title ">
+          <Link {...LEGACY_LINK_PROPS} to={pullRequestPath} className="title ">
             {stringField(pullRequest, "title")}
-          </a>
+          </Link>
         </div>
         <div className="infos">
           <ProfileTextLink
-            basePath={basePath}
             className="infos-item infos-link-item"
             label={stringField(pullRequest, "contributorLabel")}
             loginId={stringField(pullRequest, "contributorLoginId")}
@@ -894,25 +893,31 @@ function ProfilePullRequestRow({
             {stringField(pullRequest, "updatedLabel")}
           </span>
           {numberField(pullRequest, "commentCount") > 0 ? (
-            <a href={`${pullRequestHref}#comments`} className="infos-item infos-icon-link">
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to={pullRequestPath}
+              hash="comments"
+              className="infos-item infos-icon-link"
+            >
               <i className="yobicon-comments"></i>
               <span className="size">{numberField(pullRequest, "commentCount")}</span>
-            </a>
+            </Link>
           ) : null}
         </div>
       </div>
       <div className="span2">
         <div className="mt5 pull-right">
           {receiverLoginId ? (
-            <a
-              href={prefixBasePath(basePath, `/${receiverLoginId}`)}
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to={`/${receiverLoginId}`}
               className="avatar-wrap assinee"
               data-toggle="tooltip"
               data-placement="top"
               title={receiverLabel}
             >
               <img src={receiverAvatarUrl} width="32" height="32" alt={receiverLabel} />
-            </a>
+            </Link>
           ) : (
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}
@@ -924,31 +929,29 @@ function ProfilePullRequestRow({
 }
 
 function ProfileProjectRow({
-  basePath,
   project,
   subject,
 }: {
-  basePath: string;
   project: WorkspaceMemberProjectItem;
   subject: WorkspaceProfile;
 }) {
   const { t } = useLegacyMessages();
-  const projectHref = prefixBasePath(basePath, `/${project.ownerName}/${project.projectName}`);
-  const ownerHref = prefixBasePath(basePath, `/${project.ownerName}`);
+  const projectPath = `/${project.ownerName}/${project.projectName}`;
+  const ownerPath = `/${project.ownerName}`;
 
   return (
     <li className="project">
       <div className="info-wrap">
         <div className="pull-left">
-          <a href={projectHref} className="avatar-wrap small">
+          <Link {...LEGACY_LINK_PROPS} to={projectPath} className="avatar-wrap small">
             <img src={project.logoUrl || "/assets/images/project_default_logo.png"} alt="" />
-          </a>
+          </Link>
         </div>
         <div className="pull-left" style={{ marginLeft: "10px" }}>
           <div className="header">
-            <a href={projectHref} className="project-name">
+            <Link {...LEGACY_LINK_PROPS} to={projectPath} className="project-name">
               {project.projectName}
-            </a>
+            </Link>
             {project.projectScope === "private" ? (
               <i className="yobicon-lock yobicon-small"></i>
             ) : null}
@@ -957,14 +960,12 @@ function ProfileProjectRow({
                 <i className="yobicon-split yobicon-white vmiddle"></i>
                 <span>
                   {" "}
-                  <a
-                    href={prefixBasePath(
-                      basePath,
-                      `/${project.originOwnerName}/${project.originProjectName}`,
-                    )}
+                  <Link
+                    {...LEGACY_LINK_PROPS}
+                    to={`/${project.originOwnerName}/${project.originProjectName}`}
                   >
                     {project.originOwnerName}/{project.originProjectName}
-                  </a>
+                  </Link>
                 </span>
               </>
             ) : null}
@@ -973,9 +974,9 @@ function ProfileProjectRow({
           <div className="name-tag">
             <i className="yobicon-friends yobicon-middle"></i>
             <strong>{project.memberCount}</strong>{" "}
-            <a href={ownerHref} className="owner-name-small">
+            <Link {...LEGACY_LINK_PROPS} to={ownerPath} className="owner-name-small">
               {project.ownerName}
-            </a>{" "}
+            </Link>{" "}
             <span title={project.createdLabel}>{project.createdLabel}</span>
             {project.lastPushedLabel ? (
               <>
@@ -989,8 +990,9 @@ function ProfileProjectRow({
       <div className="stats-wrap pull-right">
         <div className="stats">
           {project.viewerCanWatch ? (
-            <a
-              href={`${projectHref}/${project.isWatching ? "unwatch" : "watch"}`}
+            <Link
+              to={`${projectPath}/${project.isWatching ? "unwatch" : "watch"}`}
+              reloadDocument
               className="ybtn watchBtn"
             >
               <i
@@ -998,19 +1000,17 @@ function ProfileProjectRow({
               ></i>
               {t(project.isWatching ? "notification.unwatch" : "notification.watch")}
               <span className="num-badge">{project.watchCount}</span>
-            </a>
+            </Link>
           ) : null}
           {project.viewerCanLeave ? (
-            <a
-              href={prefixBasePath(
-                basePath,
-                `/info/leave/${project.ownerName}/${project.projectName}`,
-              )}
+            <Link
+              to={`/info/leave/${project.ownerName}/${project.projectName}`}
+              reloadDocument
               data-projectname={project.projectName}
               className="nbtn black medium last leaveProject"
             >
               <i className="yobicon-trash"></i> {t("userinfo.leaveProject")}
-            </a>
+            </Link>
           ) : null}
           {subject.loginId === project.ownerName ? null : null}
         </div>
@@ -1064,21 +1064,12 @@ function ShowSubtasksCheckbox() {
   );
 }
 
-function ProfilePersonLink({
-  basePath,
-  label,
-  loginId,
-}: {
-  basePath: string;
-  label: string;
-  loginId: string;
-}) {
+function ProfilePersonLink({ label, loginId }: { label: string; loginId: string }) {
   if (!loginId) {
     return <span className="infos-item"></span>;
   }
   return (
     <ProfileTextLink
-      basePath={basePath}
       className="infos-item infos-link-item author-cell"
       label={label}
       loginId={loginId}
@@ -1088,13 +1079,11 @@ function ProfilePersonLink({
 }
 
 function ProfileTextLink({
-  basePath,
   className,
   label,
   loginId,
   placement,
 }: {
-  basePath: string;
   className: string;
   label: string;
   loginId: string;
@@ -1104,15 +1093,16 @@ function ProfileTextLink({
     return <span className="infos-item"></span>;
   }
   return (
-    <a
-      href={prefixBasePath(basePath, `/${loginId}`)}
+    <Link
+      {...LEGACY_LINK_PROPS}
+      to={`/${loginId}`}
       className={className}
       data-toggle="tooltip"
       data-placement={placement}
       title={loginId}
     >
       {label || loginId}
-    </a>
+    </Link>
   );
 }
 

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { SiteLayoutShell } from "./-home-route-screen";
@@ -74,9 +74,9 @@ function HelpTocScreen() {
                 <i className="yobicon-a a" />
                 <Answer>
                   {appName}를 설치하고자 하면{" "}
-                  <a href="https://github.com/doortts/yona#korean">
+                  <Link to={"https://github.com/doortts/yona#korean" as never}>
                     https://github.com/doortts/yona#korean
-                  </a>
+                  </Link>
                   를 참고해 주세요.
                 </Answer>
               </div>
@@ -130,10 +130,15 @@ function HelpTocScreen() {
               <div className="answer-wrap">
                 <i className="yobicon-a a" />
                 <Answer>
-                  <a href="/">메인화면</a> 우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을
-                  볼수 있습니다. 자물쇠가 있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개
-                  프로젝트 입니다. 혹은 자신의 <a href="/info">정보 페이지</a>에서도 확인하실수
-                  있습니다.
+                  <Link to="/" activeProps={{ className: undefined }}>
+                    메인화면
+                  </Link>{" "}
+                  우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다. 자물쇠가
+                  있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다. 혹은 자신의{" "}
+                  <Link to={"/info" as never} activeProps={{ className: undefined }}>
+                    정보 페이지
+                  </Link>
+                  에서도 확인하실수 있습니다.
                 </Answer>
               </div>
             </li>
@@ -152,9 +157,12 @@ function HelpTocScreen() {
               <div className="answer-wrap">
                 <i className="yobicon-a a" />
                 <Answer>
-                  자신의 <a href="/info">정보 페이지</a>에서 참여하고 있는 프로젝트 목록을 볼 수있고
-                  탈퇴도 할수 있습니다. 자신이 프로젝트의 유일한 관리자라면 해당 프로젝트에서 탈퇴를
-                  할 수 없습니다.
+                  자신의{" "}
+                  <Link to={"/info" as never} activeProps={{ className: undefined }}>
+                    정보 페이지
+                  </Link>
+                  에서 참여하고 있는 프로젝트 목록을 볼 수있고 탈퇴도 할수 있습니다. 자신이
+                  프로젝트의 유일한 관리자라면 해당 프로젝트에서 탈퇴를 할 수 없습니다.
                 </Answer>
               </div>
             </li>
@@ -201,9 +209,9 @@ function HelpTocScreen() {
                 <i className="yobicon-a a" />
                 <Answer>
                   {appName}는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면{" "}
-                  <a href="https://github.com/nforge/yobi/issues">
+                  <Link to={"https://github.com/nforge/yobi/issues" as never}>
                     {`${appName} 이슈트래커에 등록`}
-                  </a>
+                  </Link>
                   해 주시거나 패치를 만들어 보내주시면 됩니다.
                 </Answer>
               </div>

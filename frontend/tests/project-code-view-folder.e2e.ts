@@ -32,6 +32,9 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
     "href",
     `${basePath}/admin/sample/code/main`,
   );
+  await expect(
+    page.locator('.code-browse-header .pull-right a.ybtn:has-text("Download")'),
+  ).toHaveAttribute("href", `${basePath}/admin/sample/archive/main.zip`);
   await expect(page.locator("#new-file-link")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/postform?path=&branch=main`,
@@ -146,6 +149,7 @@ test("project code branch route source converts internal raw anchors to Link", a
   expect(ROUTE_SOURCE).toContain('"data-status": undefined');
   expect(ROUTE_SOURCE).toContain('<a href="${path}"');
   expect(ROUTE_SOURCE).toContain('<span class="ml5"><a href="${commitUrl}">${commitMsg}</a>');
+  expect(sourceOutsideLegacyTemplate).not.toContain("<a");
   expect(sourceOutsideLegacyTemplate).not.toContain("function commitHref");
   expect(sourceOutsideLegacyTemplate).not.toContain("href={commitHref(");
   expect(sourceOutsideLegacyTemplate).not.toContain("href={`${projectHref(");

@@ -160,18 +160,14 @@ function ProjectCodeFolderBody({
             {isGit ? (
               <>
                 <div className="pull-right">
-                  <a
-                    href={projectHref(
-                      runtimeConfig.basePath,
-                      ownerName,
-                      projectName,
-                      "archive",
-                      `${encodedBranch}.zip`,
-                    )}
+                  <Link
+                    {...legacyLinkProps}
+                    to={projectRoute(ownerName, projectName, "archive", `${encodedBranch}.zip`)}
+                    reloadDocument
                     className="ybtn"
                   >
                     {t("code.download")}
-                  </a>
+                  </Link>
                 </div>
                 {booleanField(project.viewerCanUpdate) ? (
                   <div className="pull-right">

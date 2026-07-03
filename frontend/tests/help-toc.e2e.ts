@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const HELP_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/[_]help.tsx", import.meta.url),
+  "utf8",
+);
 
 const EXPECTED_HELP_SCREEN = `
 <div class="unsupported hidden">
@@ -32,9 +38,9 @@ const EXPECTED_HELP_SCREEN = `
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -110,10 +116,10 @@ const EXPECTED_HELP_SCREEN = `
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
           <div class="answer" style="width: 100%;">
-            <a href="/">메인화면</a>
+            <a href="__BASE_PATH__/">메인화면</a>
             우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다.
             자물쇠가 있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다.
-            혹은 자신의 <a href="/info">정보 페이지</a>에서도 확인하실수 있습니다.
+            혹은 자신의 <a href="__BASE_PATH__/info">정보 페이지</a>에서도 확인하실수 있습니다.
           </div>
         </div>
       </li>
@@ -126,7 +132,7 @@ const EXPECTED_HELP_SCREEN = `
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
           <div class="answer" style="width: 100%;">
-            자신의 <a href="/info">정보 페이지</a>에서 참여하고 있는 프로젝트 목록을 볼 수있고
+            자신의 <a href="__BASE_PATH__/info">정보 페이지</a>에서 참여하고 있는 프로젝트 목록을 볼 수있고
             탈퇴도 할수 있습니다. 자신이 프로젝트의 유일한 관리자라면 해당 프로젝트에서 탈퇴를 할 수 없습니다.
           </div>
         </div>
@@ -181,6 +187,16 @@ const EXPECTED_HELP_SCREEN = `
 
 test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(HELP_ROUTE_SOURCE).not.toMatch(/<a\b/);
+  expect(HELP_ROUTE_SOURCE).toContain(
+    '<Link to={"https://github.com/doortts/yona#korean" as never}>',
+  );
+  expect(HELP_ROUTE_SOURCE).toContain('<Link to="/"');
+  expect(HELP_ROUTE_SOURCE).toContain('<Link to={"/info" as never}');
+  expect(HELP_ROUTE_SOURCE).toContain(
+    '<Link to={"https://github.com/nforge/yobi/issues" as never}>',
+  );
+
   await page.addInitScript(() => {
     const originalAddEventListener = Element.prototype.addEventListener;
     (window as unknown as { __helpFaqNativeListenerTypes: string[] }).__helpFaqNativeListenerTypes =
@@ -203,6 +219,17 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   await expect(page.locator("#experimentalHelp, #helpKeys")).toHaveCount(0);
   await expect(page.locator('.qas > .qa .question[href="#!/toggle"]')).toHaveCount(0);
   await expect(page.locator(".qas > .qa .question").first()).toHaveJSProperty("tagName", "BUTTON");
+  await expect(page.locator(".qas > .qa .answer a")).toHaveCount(5);
+  expect(await renderedHelpAnswerLinks(page)).toEqual([
+    {
+      href: "https://github.com/doortts/yona#korean",
+      text: "https://github.com/doortts/yona#korean",
+    },
+    { href: `${basePath}/`, text: "메인화면" },
+    { href: `${basePath}/info`, text: "정보 페이지" },
+    { href: `${basePath}/info`, text: "정보 페이지" },
+    { href: "https://github.com/nforge/yobi/issues", text: "Yona 이슈트래커에 등록" },
+  ]);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -302,6 +329,15 @@ test("anonymous help FAQ keeps legacy mobile shell proportions", async ({ page }
     siteBreadcrumbWidth: 390,
   });
 });
+
+async function renderedHelpAnswerLinks(page: Page) {
+  return page.locator(".qas > .qa .answer a").evaluateAll((links) =>
+    links.map((link) => ({
+      href: link.getAttribute("href"),
+      text: link.textContent?.trim(),
+    })),
+  );
+}
 
 async function readDesktopHelpMetrics(page: Page) {
   return page.evaluate(() => {

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 const EXPECTED_PROFILE_SCREEN = `
 <div class="site-breadcrumb-outer">
@@ -113,6 +114,16 @@ const EXPECTED_MISSING_USER_SCREEN = `
 </footer>
 `;
 
+test("public user profile route source keeps navigation on TanStack Link", async () => {
+  const source = await readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8");
+
+  expect(source).not.toContain("<a ");
+  expect(source).not.toContain("</a>");
+  expect(source).toContain("Link, Navigate");
+  expect(source).toContain('hash="comments"');
+  expect(source).toContain('hash="vote"');
+});
+
 test("public user profile matches legacy user/view.scala.html issues screen", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPublicProfile(page);
@@ -122,6 +133,22 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
   await expect(page.locator("#openIssues .post-item")).toHaveCount(1);
   await expect(page.locator('.user-stream-box > .nav-tabs a[href^="#"]')).toHaveCount(0);
   await expect(page.locator('#issues > .nav-tabs.nm a[href^="#"]')).toHaveCount(0);
+  await expect(page.locator("#issue-item-11 .title-cell > a.title")).toHaveAttribute(
+    "href",
+    `${basePath}/door/sample/issue/7`,
+  );
+  await expect(page.locator("#issue-item-11 .comments-count")).toHaveAttribute(
+    "href",
+    `${basePath}/door/sample/issue/7#comments`,
+  );
+  await expect(page.locator("#issue-item-11 .label.issue-label")).toHaveAttribute(
+    "href",
+    `${basePath}/door/sample/issues?state=open&labelIds=17`,
+  );
+  await expect(page.locator("#pullRequests .infos-icon-link")).toHaveAttribute(
+    "href",
+    `${basePath}/door/sample/pullRequest/4#comments`,
+  );
   await expect(page.locator('.user-stream-box > .nav-tabs button[data-toggle="tab"]')).toHaveCount(
     3,
   );
@@ -298,6 +325,22 @@ test("missing public user renders legacy user.notExists.name not-found screen", 
   await expect(
     page.locator('#mySidenav .right-menu > .nav-tabs.nm button[data-toggle="tab"]'),
   ).toHaveText(["Favorite", "Project", "Recent History"]);
+  await expect(page.locator(".gnb-nav a", { hasText: "Project list" })).toHaveAttribute(
+    "href",
+    `${basePath}/projects`,
+  );
+  await expect(page.locator(".gnb-nav a", { hasText: "Feedback" })).toHaveAttribute(
+    "href",
+    "https://github.com/nforge/yobi/issues?state=open",
+  );
+  await expect(page.locator(".gnb-nav a", { hasText: "Feedback" })).toHaveAttribute(
+    "target",
+    "_blank",
+  );
+  await expect(page.locator(".gnb-usermenu a", { hasText: "Log in" })).toHaveAttribute(
+    "href",
+    `${basePath}/users/loginform`,
+  );
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
