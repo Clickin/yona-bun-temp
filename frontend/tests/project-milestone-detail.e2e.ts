@@ -47,27 +47,117 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     "action",
     `${basePath}/admin/sample/issues`,
   );
-  await expect(page.locator('#state .mass-update-list li[data-value="OPEN"] a')).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/issues?state=open`,
+  await expect(page.locator("#mass-update-form .btn-group.check-all #check-all")).toHaveAttribute(
+    "data-target",
+    "checked-issue",
   );
-  await expect(page.locator('#state .mass-update-list li[data-value="CLOSED"] a')).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/issues?state=closed`,
+  await expect(page.locator("#state[data-name='state'] .d-label")).toHaveText("Update status");
+  await expect(page.locator('#state .mass-update-list li[data-value="OPEN"] a')).toHaveText("Open");
+  await expect(page.locator('#state .mass-update-list li[data-value="CLOSED"] a')).toHaveText(
+    "Closed",
   );
+  await expect(page.locator("#assignee[data-name='assignee.id'] .d-label")).toHaveText(
+    "Update assignee",
+  );
+  await expect(page.locator('#assignee li[data-value="0"] a')).toHaveText("No assignee");
+  await expect(page.locator('#assignee li[data-value="1"] > a').first()).toHaveText("Assign to me");
+  await expect(page.locator('#assignee li[data-value="2"] .usf-group')).toContainText(
+    "Dev Member @dev",
+  );
+  await expect(page.locator('#assignee li[data-value="2"] img')).toHaveAttribute(
+    "src",
+    "/assets/images/dev-avatar.png",
+  );
+  await expect(page.locator("#milestone[data-name='milestone.id'] .d-label")).toHaveText(
+    "Update milestone",
+  );
+  await expect(page.locator('#milestone li[data-value="-1"] a')).toHaveText("No milestone");
+  await expect(page.locator('#milestone li[data-value="5"] a')).toHaveText("v1.0");
+  await expect(page.locator("#attaching-label[data-name='attachingLabelIds'] .d-label")).toHaveText(
+    "Attach label",
+  );
+  await expect(page.locator("#detaching-label[data-name='detachingLabelIds'] .d-label")).toHaveText(
+    "Detach label",
+  );
+  for (const listId of ["attach-label-list", "delete-label-list"]) {
+    await expect(page.locator(`#${listId} li.disabled[data-category="3"] span`)).toHaveText("type");
+    await expect(
+      page.locator(`#${listId} li[data-value="8"][data-category="3"] a span`),
+    ).toHaveText("bug");
+    await expect(page.locator(`#${listId} li.divider[data-category="3"]`)).toHaveCount(1);
+  }
+  await expect(page.locator("#state > button")).toBeDisabled();
   await expect(page.locator('.search-bar input[data-toggle="item-search"]')).toHaveAttribute(
     "data-items",
     "issue-item",
   );
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
-  await expect(page.locator("#issue-item-41")).toContainText("#11Open milestone issue");
+  await expect(page.locator("#issue-item-41")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/11`,
+  );
+  await expect(page.locator("#issue-41")).toHaveAttribute("name", "checked-issue");
+  await expect(page.locator("#issue-41")).toHaveAttribute("data-issue-id", "41");
+  await expect(page.locator("#issue-41")).toHaveAttribute(
+    "data-issue-labels",
+    "type,8,bug,3,false|",
+  );
+  await page.check("#issue-41");
+  await expect(page.locator("#state > button")).toBeEnabled();
+  await expect(page.locator("#issue-item-41")).toContainText("#11[UI]Open milestone issue");
   await expect(page.locator('#issue-item-41 .title[href$="/issue/11"]')).toHaveCount(2);
+  await expect(page.locator("#issue-item-41 .weight-up-arrow")).toHaveAttribute(
+    "title",
+    "Issue weight 2",
+  );
+  await expect(page.locator("#issue-item-41 .title-prefix")).toHaveText("[UI]");
+  await expect(page.locator('#issue-item-41 .title[href$="/issue/11"]').nth(1)).toHaveText(
+    "Open milestone issue",
+  );
+  await expect(page.locator('#issue-item-41 .infos-link-item[href$="/dev"]')).toHaveText(
+    "Dev Member",
+  );
+  await expect(page.locator("#issue-item-41 .infos-link-item")).toHaveAttribute("title", "dev");
+  await expect(page.locator("#issue-item-41 .infos > .infos-item").nth(1)).toHaveText("2026-06-01");
+  await expect(
+    page.locator("#issue-item-41 .subtask-progress.upload-progress.red-outline .bar"),
+  ).toHaveAttribute("style", "width: 50%;");
+  await expect(page.locator("#issue-item-41 .subtask-progress.completion-ratio")).toHaveText("1/2");
+  await expect(page.locator('#issue-item-41 .mileston-tag a[href$="/milestone/5"]')).toHaveText(
+    "v1.0",
+  );
+  await expect(
+    page.locator("#issue-item-41 .comments-count[href$='/issue/11#comments'] .item-count"),
+  ).toHaveText("2");
+  await expect(
+    page.locator("#issue-item-41 .vote-count[href$='/issue/11#vote'] .item-count"),
+  ).toHaveText("1");
+  await expect(page.locator("#issue-item-41 .sharer-color .item-count")).toHaveText("1");
   await expect(page.locator('.issue-label[data-category-id="3"][data-label-id="8"]')).toHaveText(
     "bug",
   );
   await expect(
     page.locator('.issue-label[data-category-id="3"][data-label-id="8"]'),
   ).toHaveAttribute("href", `${basePath}/admin/sample/issues?state=open&labelIds=8`);
+  await expect(page.locator("#issue-item-41 .avatar-wrap.assinee")).toHaveAttribute(
+    "title",
+    "Assignee: Dev Member",
+  );
+  await expect(page.locator("#issue-item-41 .avatar-wrap.assinee img")).toHaveAttribute(
+    "alt",
+    "Dev Member",
+  );
+  await expect(page.locator("#issue-item-41 .avatar-wrap.assinee img")).toHaveAttribute(
+    "src",
+    "/assets/images/dev-avatar.png",
+  );
+  await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right")).toHaveAttribute(
+    "title",
+    "2026-06-20",
+  );
+  await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right span.vmiddle")).toHaveText(
+    "3 days left",
+  );
   expect(await milestoneDetailMetrics(page)).toEqual({
     descBackgroundColor: "rgb(247, 247, 247)",
     descBorderBottomWidth: "1px",
@@ -89,8 +179,11 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await expect(page.locator("#issue-item-42")).toContainText("#12Closed milestone issue");
   await page.click('#issues .nav-tabs a:has-text("Open")');
   await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5?state=open#issues`);
-  await expect(page.locator("#issue-item-41")).toContainText("#11Open milestone issue");
+  await expect(page.locator("#issue-item-41")).toContainText("#11[UI]Open milestone issue");
 
+  await page.click("#issue-item-41 .title-prefix");
+  await expect(page.locator('.search-bar input[name="filter"]')).toHaveValue("[UI]");
+  await expect(page.locator("#issue-item-41")).toBeVisible();
   await page.fill('.search-bar input[name="filter"]', "no-match");
   await expect(page.locator("#issue-item-41")).toBeHidden();
 
@@ -265,10 +358,28 @@ function milestoneFixture() {
     dueDateOverdue: true,
     id: 5,
     openIssueCount: 1,
+    openMilestones: [
+      {
+        id: 5,
+        title: "v1.0",
+      },
+    ],
     openIssues: [
       {
         assigneeLabel: "Dev Member",
+        assigneeAvatarUrl: "/assets/images/dev-avatar.png",
         authorLoginId: "dev",
+        authorLabel: "Dev Member",
+        authorUserId: 2,
+        assigneeLoginId: "dev",
+        assigneeUserId: 2,
+        childClosedCount: 1,
+        childOpenCount: 1,
+        commentCount: 2,
+        createdLabel: "2026-06-01",
+        dueDateLabel: "2026-06-20",
+        dueDateOverdue: false,
+        dueDateText: "3 days left",
         id: 41,
         issueNumber: 11,
         labels: [
@@ -280,13 +391,41 @@ function milestoneFixture() {
             name: "bug",
           },
         ],
+        milestoneId: 5,
+        milestoneTitle: "v1.0",
+        sharerCount: 1,
         state: "open",
-        title: "Open milestone issue",
+        title: "[UI] Open milestone issue",
+        voterCount: 1,
+        weight: 2,
+      },
+    ],
+    projectLabels: [
+      {
+        categoryId: "3",
+        categoryName: "type",
+        color: "#51aacc",
+        id: "8",
+        name: "bug",
       },
     ],
     state: "open",
     title: "v1.0",
     untilLabel: "Overdue",
+    assignableUsers: [
+      {
+        avatarUrl: "/assets/images/admin-avatar.png",
+        displayName: "Site Admin",
+        loginId: "admin",
+        userId: 1,
+      },
+      {
+        avatarUrl: "/assets/images/dev-avatar.png",
+        displayName: "Dev Member",
+        loginId: "dev",
+        userId: 2,
+      },
+    ],
     viewerCanDelete: true,
     viewerCanUpdate: true,
   };

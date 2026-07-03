@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { useMemo, useState, type AnchorHTMLAttributes, type ComponentType } from "react";
+import {
+  useMemo,
+  useState,
+  type AnchorHTMLAttributes,
+  type ComponentType,
+  type HTMLAttributes,
+  type LiHTMLAttributes,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -98,6 +105,12 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
         projectName={projectName}
       />
       <ProjectMilestoneDetailBody
+        currentUser={{
+          avatarUrl: stringField(sessionQuery.data.avatarUrl),
+          id: stringField(sessionQuery.data.actorId),
+          label: stringField(sessionQuery.data.userLabel, stringField(sessionQuery.data.loginId)),
+          loginId: stringField(sessionQuery.data.loginId),
+        }}
         milestone={milestoneQuery.data.milestone}
         runtimeConfig={runtimeConfig}
       />
@@ -145,9 +158,11 @@ function MilestoneDetailAssets({
 }
 
 function ProjectMilestoneDetailBody({
+  currentUser,
   milestone,
   runtimeConfig,
 }: {
+  currentUser: { avatarUrl: string; id: string; label: string; loginId: string };
   milestone: ProjectMilestone;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -167,6 +182,7 @@ function ProjectMilestoneDetailBody({
   const allIssues = [...openIssues, ...closedIssues];
   const visibleIssues =
     search.state === "closed" ? closedIssues : search.state === "all" ? allIssues : openIssues;
+  const [checkedIssueIds, setCheckedIssueIds] = useState<string[]>([]);
   const attachmentsJson = useMemo(() => JSON.stringify(milestone.attachments ?? []), [milestone]);
   const milestoneQueryKey = ["project", ownerName, projectName, "milestones", Number(milestoneId)];
 
@@ -334,7 +350,15 @@ function ProjectMilestoneDetailBody({
 
             <div className="issues">
               <div className="filter-wrap">
-                <MassUpdateShell projectPath={projectPath} runtimeConfig={runtimeConfig} />
+                <MassUpdateShell
+                  allIssues={visibleIssues}
+                  checkedIssueIds={checkedIssueIds}
+                  currentUser={currentUser}
+                  milestone={milestone}
+                  onCheckedIssueIdsChange={setCheckedIssueIds}
+                  projectPath={projectPath}
+                  runtimeConfig={runtimeConfig}
+                />
                 <div className="pull-right search search-bar">
                   <input
                     name="filter"
@@ -357,9 +381,21 @@ function ProjectMilestoneDetailBody({
                 {visibleIssues.map((issue) => (
                   <MilestoneIssueRow
                     key={stringField(issue.id, stringField(issue.issueNumber))}
+                    checked={checkedIssueIds.includes(
+                      stringField(issue.id, stringField(issue.issueNumber)),
+                    )}
                     filter={filter}
                     issue={issue}
+                    onCheckedChange={(issueId, checked) => {
+                      setCheckedIssueIds((currentIds) =>
+                        checked
+                          ? Array.from(new Set([...currentIds, issueId]))
+                          : currentIds.filter((currentId) => currentId !== issueId),
+                      );
+                    }}
+                    onTitlePrefixSearch={setFilter}
                     projectPath={projectPath}
+                    runtimeConfig={runtimeConfig}
                   />
                 ))}
               </ul>
@@ -414,13 +450,39 @@ function ProjectMilestoneDetailBody({
 }
 
 function MassUpdateShell({
+  allIssues,
+  checkedIssueIds,
+  currentUser,
+  milestone,
+  onCheckedIssueIdsChange,
   projectPath,
   runtimeConfig,
 }: {
+  allIssues: ProjectMilestoneIssue[];
+  checkedIssueIds: string[];
+  currentUser: { avatarUrl: string; id: string; label: string; loginId: string };
+  milestone: ProjectMilestone;
+  onCheckedIssueIdsChange: (issueIds: string[]) => void;
   projectPath: string;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const issueIds = allIssues.map((issue) => stringField(issue.id, stringField(issue.issueNumber)));
+  const allChecked = issueIds.length > 0 && checkedIssueIds.length === issueIds.length;
+  const hasCheckedIssues = checkedIssueIds.length > 0;
+  const labels = projectIssueLabelOptions(recordArray(milestone.projectLabels), allIssues);
+  const openMilestones = projectMilestoneOptions(
+    recordArray(milestone.openMilestones).length
+      ? (recordArray(milestone.openMilestones) as ProjectMilestone[])
+      : stringField(milestone.state) === "open"
+        ? [milestone]
+        : [],
+  );
+  const users = projectAssignableUserOptions(
+    recordArray(milestone.assignableUsers),
+    allIssues,
+    currentUser,
+  );
   return (
     <div className="mass-update-wrap hide-in-mobile">
       <form
@@ -431,50 +493,266 @@ function MassUpdateShell({
       >
         <div className="btn-group check-all">
           <label htmlFor="check-all" aria-label="check-all">
-            <input type="checkbox" id="check-all" data-target="checked-issue" />
+            <input
+              type="checkbox"
+              id="check-all"
+              data-target="checked-issue"
+              checked={allChecked}
+              onChange={(event) => {
+                onCheckedIssueIdsChange(event.currentTarget.checked ? issueIds : []);
+              }}
+            />
           </label>
         </div>
-        <div id="state" className="btn-group" data-name="state">
-          <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled>
-            <span className="d-label">{t("issue.update.state")}</span>
+        <MassUpdateDropdown
+          disabled={!hasCheckedIssues}
+          id="state"
+          label={t("issue.update.state")}
+          name="state"
+          options={[
+            { label: t("issue.state.open"), value: "OPEN" },
+            { label: t("issue.state.closed"), value: "CLOSED" },
+          ]}
+        />
+        <div id="assignee" className="btn-group" data-name="assignee.id">
+          <button
+            className="btn dropdown-toggle medium"
+            data-toggle="dropdown"
+            disabled={!hasCheckedIssues}
+          >
+            <span className="d-label">{t("issue.update.assignee.id")}</span>
             <span className="d-caret">
               <span className="caret"></span>
             </span>
           </button>
           <ul className="dropdown-menu mass-update-list">
-            <li data-value="OPEN">
-              <LegacyInternalLink to={`${projectPath}/issues`} search={{ state: "open" }}>
-                {t("issue.state.open")}
+            <li data-value="0">
+              <LegacyInternalLink to={`${projectPath}/issues`} onClick={preventDefaultLink}>
+                {t("issue.noAssignee")}
               </LegacyInternalLink>
             </li>
-            <li data-value="CLOSED">
-              <LegacyInternalLink to={`${projectPath}/issues`} search={{ state: "closed" }}>
-                {t("issue.state.closed")}
-              </LegacyInternalLink>
-            </li>
+            {currentUser.id ? (
+              <li data-value={currentUser.id}>
+                <LegacyInternalLink to={`${projectPath}/issues`} onClick={preventDefaultLink}>
+                  {t("issue.assignToMe")}
+                </LegacyInternalLink>
+              </li>
+            ) : null}
+            {users.length ? <li className="divider"></li> : null}
+            {users.map((user) => (
+              <li data-value={user.id} key={user.id}>
+                <LegacyInternalLink
+                  to={`${projectPath}/issues`}
+                  className="usf-group"
+                  onClick={preventDefaultLink}
+                >
+                  <span className="avatar-wrap smaller">
+                    <img src={user.avatarUrl} width="20" height="20" alt="" />
+                  </span>
+                  <strong className="name">{user.label}</strong>
+                  <span className="loginid">
+                    {" "}
+                    <strong>@</strong>
+                    {user.loginId}
+                  </span>
+                </LegacyInternalLink>
+              </li>
+            ))}
           </ul>
         </div>
+        {openMilestones.length ? (
+          <MassUpdateDropdown
+            disabled={!hasCheckedIssues}
+            id="milestone"
+            label={t("issue.update.milestone.id")}
+            name="milestone.id"
+            options={[
+              { label: t("issue.noMilestone"), value: "-1" },
+              { divider: true, value: "__divider" },
+              ...openMilestones.map((openMilestone) => ({
+                label: stringField(openMilestone.title),
+                value: stringField(openMilestone.id),
+              })),
+            ]}
+          />
+        ) : null}
+        {labels.length ? (
+          <>
+            <LabelMassUpdateDropdown
+              disabled={!hasCheckedIssues}
+              id="attaching-label"
+              label={t("issue.update.attachLabel")}
+              listId="attach-label-list"
+              name="attachingLabelIds"
+              options={labels}
+              projectPath={projectPath}
+            />
+            <LabelMassUpdateDropdown
+              disabled={!hasCheckedIssues}
+              id="detaching-label"
+              label={t("issue.update.detachLabel")}
+              listId="delete-label-list"
+              name="detachingLabelIds"
+              options={labels}
+              projectPath={projectPath}
+            />
+          </>
+        ) : null}
       </form>
     </div>
   );
 }
 
-function MilestoneIssueRow({
-  filter,
-  issue,
+function MassUpdateDropdown({
+  disabled,
+  id,
+  label,
+  name,
+  options,
+}: {
+  disabled: boolean;
+  id: string;
+  label: string;
+  name: string;
+  options: Array<{ divider?: boolean; label?: string; value: string }>;
+}) {
+  return (
+    <div id={id} className="btn-group" data-name={name}>
+      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled={disabled}>
+        <span className="d-label">{label}</span>
+        <span className="d-caret">
+          <span className="caret"></span>
+        </span>
+      </button>
+      <ul className="dropdown-menu mass-update-list">
+        {options.map((option) =>
+          option.divider ? (
+            <li className="divider" key={option.value}></li>
+          ) : (
+            <li data-value={option.value} key={option.value}>
+              <LegacyInternalLink to="#" onClick={preventDefaultLink}>
+                {option.label}
+              </LegacyInternalLink>
+            </li>
+          ),
+        )}
+      </ul>
+    </div>
+  );
+}
+
+function LabelMassUpdateDropdown({
+  disabled,
+  id,
+  label,
+  listId,
+  name,
+  options,
   projectPath,
 }: {
-  filter: string;
-  issue: ProjectMilestoneIssue;
+  disabled: boolean;
+  id: string;
+  label: string;
+  listId: string;
+  name: string;
+  options: Array<{
+    categoryId: string;
+    categoryName: string;
+    color?: string;
+    id: string;
+    name: string;
+  }>;
   projectPath: string;
 }) {
+  return (
+    <div id={id} className="btn-group" data-name={name}>
+      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled={disabled}>
+        <span className="d-label">{label}</span>
+        <span className="d-caret">
+          <span className="caret"></span>
+        </span>
+      </button>
+      <ul id={listId} className="dropdown-menu mass-update-list">
+        {groupLabels(options).map((group) => (
+          <LabelMassUpdateGroup group={group} key={group.categoryId} projectPath={projectPath} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function LabelMassUpdateGroup({
+  group,
+  projectPath,
+}: {
+  group: {
+    categoryId: string;
+    categoryName: string;
+    labels: Array<{ color?: string; id: string; name: string }>;
+  };
+  projectPath: string;
+}) {
+  return (
+    <>
+      <li className="disabled" data-category={group.categoryId}>
+        <span>{group.categoryName}</span>
+      </li>
+      {group.labels.map((label) => (
+        <li data-value={label.id} data-category={group.categoryId} key={label.id}>
+          <LegacyInternalLink to={`${projectPath}/issues`} onClick={preventDefaultLink}>
+            <span className="issue-label active list-label" data-label-id={label.id}>
+              {label.name}
+            </span>
+          </LegacyInternalLink>
+        </li>
+      ))}
+      <li className="divider" data-category={group.categoryId}></li>
+    </>
+  );
+}
+
+function MilestoneIssueRow({
+  checked,
+  filter,
+  issue,
+  onCheckedChange,
+  onTitlePrefixSearch,
+  projectPath,
+  runtimeConfig,
+}: {
+  checked: boolean;
+  filter: string;
+  issue: ProjectMilestoneIssue;
+  onCheckedChange: (issueId: string, checked: boolean) => void;
+  onTitlePrefixSearch: (filter: string) => void;
+  projectPath: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { t } = useLegacyMessages();
   const issueId = stringField(issue.id, stringField(issue.issueNumber));
-  const issueNumber = stringField(issue.issueNumber);
+  const issueNumber = stringField(issue.issueNumber, issueId);
   const title = stringField(issue.title);
-  const isClosed = stringField(issue.state) === "closed";
+  const state = stringField(issue.state);
+  const issueHref = prefixBasePath(runtimeConfig.basePath, `${projectPath}/issue/${issueNumber}`);
+  const authorLoginId = stringField(issue.authorLoginId);
+  const authorLabel = stringField(issue.authorLabel);
+  const assigneeLoginId = stringField(issue.assigneeLoginId);
+  const createdLabel = stringField(issue.createdLabel, stringField(issue.updatedLabel));
+  const issueWeight = numberField(issue.weight);
+  const titleParts = splitHeaderWordsInBrackets(title);
   const normalizedFilter = filter.toLowerCase().trim();
   const hidden = normalizedFilter.length > 0 && !issueSearchText(issue).includes(normalizedFilter);
-  const labels = sortLabels(issue.labels ?? []);
+  const labels = sortedIssueLabels(issue);
+  const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
+  const legacyFor = { htmlFor: `issue-${issueId}` } as unknown as HTMLAttributes<HTMLDivElement>;
+  const dueDateAttrs =
+    state === "open"
+      ? {
+          "data-placement": "top",
+          "data-toggle": "tooltip",
+          title: stringField(issue.dueDateLabel),
+        }
+      : {};
 
   return (
     <li
@@ -483,6 +761,7 @@ function MilestoneIssueRow({
       data-item="issue-item"
       data-value={`${stringField(issue.authorLoginId)} ${issueNumber} ${title}`}
       style={hidden ? { display: "none" } : undefined}
+      {...legacyHref}
     >
       <div className="span9 span-hard-wrap">
         <label
@@ -496,29 +775,140 @@ function MilestoneIssueRow({
             name="checked-issue"
             data-toggle="issue-checkbox"
             data-issue-id={issueId}
-            data-issue-labels=""
+            data-issue-labels={issueLabelData(labels)}
+            checked={checked}
+            onChange={(event) => {
+              onCheckedChange(issueId, event.currentTarget.checked);
+            }}
           />
         </label>
-        <div
-          ref={(node) => {
-            node?.setAttribute("for", `issue-${issueId}`);
-          }}
-          className="issue-item-row"
-        >
+        <div {...legacyFor} className="issue-item-row">
           <div className="title-wrap">
             <LegacyInternalLink to={`${projectPath}/issue/${issueNumber}`} className="title">
               <span className="post-id">#{issueNumber}</span>
             </LegacyInternalLink>
+            {issueWeight > 0 ? (
+              <span
+                className="weight-up-arrow"
+                data-toggle="tooltip"
+                data-placement="right"
+                title={`${t("issue.weight")} ${issueWeight}`}
+              >
+                <i className="yobicon-angle-circled-up"></i>
+              </span>
+            ) : null}
+            {issueWeight < 0 ? (
+              <span
+                className="weight-down-arrow"
+                data-toggle="tooltip"
+                data-placement="right"
+                title={`${t("issue.weight")} ${issueWeight}`}
+              >
+                <i className="yobicon-angle-circled-down"></i>
+              </span>
+            ) : null}
+            {titleParts.prefixes.map((prefix) => (
+              <LegacyInternalLink
+                to={`${projectPath}/issues`}
+                className="title-prefix"
+                key={`${issueId}-${prefix}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onTitlePrefixSearch(prefix);
+                }}
+              >
+                {prefix}
+              </LegacyInternalLink>
+            ))}
             <LegacyInternalLink to={`${projectPath}/issue/${issueNumber}`} className="title">
-              {title}
+              {titleParts.title}
             </LegacyInternalLink>
           </div>
           <div className="infos">
-            <span className={isClosed ? "state-label closed" : "state-label open"}>
-              {isClosed ? <i className=" yobicon-checkmark"></i> : null}
+            {authorLabel && authorLoginId ? (
+              <LegacyInternalLink
+                to={`/${authorLoginId}`}
+                className="infos-item infos-link-item"
+                data-toggle="tooltip"
+                data-placement="bottom"
+                title={authorLoginId}
+              >
+                {authorLabel}
+              </LegacyInternalLink>
+            ) : (
+              <span className="infos-item">{t("issue.noAuthor")}</span>
+            )}
+            <span
+              className="infos-item"
+              data-toggle="tooltip"
+              data-placement="bottom"
+              title={createdLabel}
+            >
+              {createdLabel}
             </span>
-            {stringField(issue.assigneeLabel) ? (
-              <span className="infos-item">{stringField(issue.assigneeLabel)}</span>
+            <IssueSubtaskSummary issue={issue} projectPath={projectPath} />
+            {stringField(issue.milestoneId) ? (
+              <span className="mileston-tag">
+                <LegacyInternalLink
+                  to={`${projectPath}/milestone/${stringField(issue.milestoneId)}`}
+                  data-toggle="tooltip"
+                  data-placement="bottom"
+                  title={t("milestone")}
+                >
+                  {stringField(issue.milestoneTitle)}
+                </LegacyInternalLink>
+              </span>
+            ) : null}
+            {numberField(issue.commentCount) ||
+            numberField(issue.voterCount) ||
+            numberField(issue.sharerCount) ? (
+              <span className="infos-item item-count-groups">
+                {numberField(issue.commentCount) ? (
+                  <LegacyInternalLink
+                    to={`${projectPath}/issue/${issueNumber}`}
+                    hash="comments"
+                    className="comments-count comments-count-color"
+                  >
+                    <span className="count-groups item-icon">
+                      <i className="yobicon-comment2"></i>
+                    </span>
+                    <span className="count-groups item-count">
+                      {numberField(issue.commentCount)}
+                    </span>
+                  </LegacyInternalLink>
+                ) : null}
+                {numberField(issue.voterCount) ? (
+                  <LegacyInternalLink
+                    to={`${projectPath}/issue/${issueNumber}`}
+                    hash="vote"
+                    className="vote-count vote-color"
+                  >
+                    <span className="count-groups item-icon">
+                      <i className="yobicon-hearts"></i>
+                    </span>
+                    <span className="count-groups item-count strong">
+                      {numberField(issue.voterCount)}
+                    </span>
+                  </LegacyInternalLink>
+                ) : null}
+                {numberField(issue.sharerCount) ? (
+                  <LegacyInternalLink
+                    to={`${projectPath}/issue/${issueNumber}`}
+                    className="sharer-color"
+                    data-toggle="tooltip"
+                    data-placement="bottom"
+                    title={t("issue.sharer")}
+                    onClick={preventDefaultLink}
+                  >
+                    <span className="count-groups item-icon">
+                      <i className="yobicon-friends"></i>
+                    </span>
+                    <span className="count-groups item-count strong">
+                      {numberField(issue.sharerCount)}
+                    </span>
+                  </LegacyInternalLink>
+                ) : null}
+              </span>
             ) : null}
             {labels.map((label) => (
               <LegacyInternalLink
@@ -540,8 +930,46 @@ function MilestoneIssueRow({
       </div>
       <div className="span3 hide-in-mobile">
         <div className="mt5 pull-right">
-          <div className="empty-avatar-wrap">&nbsp;</div>
+          {assigneeLoginId ? (
+            <LegacyInternalLink
+              to={`/${assigneeLoginId}`}
+              className="avatar-wrap assinee"
+              data-toggle="tooltip"
+              data-placement="top"
+              title={`${t("issue.assignee")}: ${stringField(issue.assigneeLabel)}`}
+            >
+              <img
+                src={stringField(issue.assigneeAvatarUrl, "/assets/images/default-avatar-32.png")}
+                width="32"
+                height="32"
+                alt={stringField(issue.assigneeLabel)}
+              />
+            </LegacyInternalLink>
+          ) : (
+            <div className="empty-avatar-wrap">&nbsp;</div>
+          )}
         </div>
+        {stringField(issue.dueDateLabel) ? (
+          <div
+            className={`mr20 mt10 pull-right${
+              state === "closed"
+                ? " darkgray-txt"
+                : booleanField(issue.dueDateOverdue)
+                  ? " overdue"
+                  : ""
+            }`}
+            {...dueDateAttrs}
+          >
+            <i className="yobicon-clock2 mr3 vmiddle"></i>
+            <span className="vmiddle">
+              {state === "open" && booleanField(issue.dueDateOverdue)
+                ? t("issue.dueDate.overdue")
+                : state === "open"
+                  ? stringField(issue.dueDateText, stringField(issue.dueDateLabel))
+                  : stringField(issue.dueDateLabel)}
+            </span>
+          </div>
+        ) : null}
       </div>
     </li>
   );
@@ -551,6 +979,8 @@ function issueSearchText(issue: ProjectMilestoneIssue) {
   return [
     stringField(issue.issueNumber),
     stringField(issue.title),
+    stringField(issue.authorLoginId),
+    stringField(issue.authorLabel),
     stringField(issue.assigneeLabel),
     ...((issue.labels ?? []) as YonaLabel[]).map((label) => stringField(label.name)),
   ]
@@ -558,12 +988,224 @@ function issueSearchText(issue: ProjectMilestoneIssue) {
     .toLowerCase();
 }
 
-function sortLabels(labels: YonaLabel[]) {
-  return labels.slice().sort((left, right) => {
-    const leftKey = `${stringField(left.categoryName)}\u0000${stringField(left.name)}`;
-    const rightKey = `${stringField(right.categoryName)}\u0000${stringField(right.name)}`;
-    return leftKey.localeCompare(rightKey);
+function IssueSubtaskSummary({
+  issue,
+  projectPath,
+}: {
+  issue: ProjectMilestoneIssue;
+  projectPath: string;
+}) {
+  const childClosedCount = numberField(issue.childClosedCount);
+  const childOpenCount = numberField(issue.childOpenCount);
+  const childTotalCount = childClosedCount + childOpenCount;
+  const percentage = childTotalCount ? Math.trunc((childClosedCount / childTotalCount) * 100) : 0;
+  const parentIssueNumber = stringField(issue.parentIssueNumber);
+  const parentIssueTitle = stringField(issue.parentIssueTitle);
+
+  return (
+    <>
+      {childTotalCount ? (
+        <>
+          <div
+            className={`subtask-progress upload-progress ${
+              percentage === 100 ? "done-outline" : "red-outline"
+            }`}
+          >
+            <div
+              className={`bar ${percentage === 100 ? "done" : "red"}`}
+              style={{ width: `${percentage}%` }}
+              title="Subtask"
+            ></div>
+          </div>
+          <span
+            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""}`}
+          >
+            {percentage === 100 ? "" : `${childClosedCount}/`}
+            {childTotalCount}
+          </span>
+        </>
+      ) : null}
+      {parentIssueNumber ? (
+        <span className="infos-item subtask">
+          <LegacyInternalLink to={`${projectPath}/issue/${parentIssueNumber}`}>
+            {`#${parentIssueNumber} ${truncateParentIssueTitle(parentIssueTitle)}`}
+          </LegacyInternalLink>
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+function sortedIssueLabels(issue: ProjectMilestoneIssue) {
+  return (issue.labels ?? []).slice().sort(compareIssueLabels);
+}
+
+function compareIssueLabels(
+  left: { categoryName?: unknown; name: string },
+  right: { categoryName?: unknown; name: string },
+) {
+  const categoryOrder = stringField(left.categoryName).localeCompare(
+    stringField(right.categoryName),
+  );
+  return categoryOrder || left.name.localeCompare(right.name);
+}
+
+function issueLabelData(labels: YonaLabel[]) {
+  return labels
+    .map((label) =>
+      [
+        stringField(label.categoryName),
+        stringField(label.id),
+        stringField(label.name),
+        stringField(label.categoryId),
+        String(booleanField(label.categoryIsExclusive)),
+      ].join(","),
+    )
+    .join("|")
+    .concat(labels.length ? "|" : "");
+}
+
+function projectMilestoneOptions(milestones: ProjectMilestone[]) {
+  const options = [];
+  for (const milestone of milestones) {
+    const id = stringField(milestone.id);
+    const title = stringField(milestone.title);
+    if (id && title) {
+      options.push({ id, title });
+    }
+  }
+  return options;
+}
+
+function projectIssueLabelOptions(
+  labels: Array<Record<string, unknown>>,
+  issues: ProjectMilestoneIssue[],
+) {
+  const projectLabels = labels.flatMap((label) => {
+    const id = stringField(label.id);
+    const name = stringField(label.name);
+    return id && name
+      ? [
+          {
+            categoryId: stringField(label.categoryId),
+            categoryName: stringField(label.categoryName, stringField(label.category)),
+            color: stringField(label.color),
+            id,
+            name,
+          },
+        ]
+      : [];
   });
+  projectLabels.sort(compareIssueLabels);
+  return projectLabels.length > 0 ? projectLabels : uniqueLabels(issues);
+}
+
+function uniqueLabels(issues: ProjectMilestoneIssue[]) {
+  const labels = new Map<
+    string,
+    { categoryId: string; categoryName: string; color?: string; id: string; name: string }
+  >();
+  for (const issue of issues) {
+    for (const label of issue.labels ?? []) {
+      const id = stringField(label.id);
+      if (id && !labels.has(id)) {
+        labels.set(id, {
+          categoryId: stringField(label.categoryId),
+          categoryName: stringField(label.categoryName),
+          color: stringField(label.color),
+          id,
+          name: stringField(label.name),
+        });
+      }
+    }
+  }
+  return Array.from(labels.values()).sort(compareIssueLabels);
+}
+
+function groupLabels(
+  labels: Array<{
+    categoryId: string;
+    categoryName: string;
+    color?: string;
+    id: string;
+    name: string;
+  }>,
+) {
+  const groups = new Map<
+    string,
+    {
+      categoryId: string;
+      categoryName: string;
+      labels: Array<{ color?: string; id: string; name: string }>;
+    }
+  >();
+  for (const label of labels) {
+    const group = groups.get(label.categoryId) ?? {
+      categoryId: label.categoryId,
+      categoryName: label.categoryName,
+      labels: [],
+    };
+    group.labels.push({ color: label.color, id: label.id, name: label.name });
+    groups.set(label.categoryId, group);
+  }
+  return Array.from(groups.values());
+}
+
+function projectAssignableUserOptions(
+  assignableUsers: Array<Record<string, unknown>>,
+  issues: ProjectMilestoneIssue[],
+  currentUser: { avatarUrl: string; id: string; label: string; loginId: string },
+) {
+  const users = new Map<
+    string,
+    { avatarUrl: string; id: string; label: string; loginId: string }
+  >();
+  addUser(users, currentUser);
+  for (const item of assignableUsers) {
+    addUser(users, {
+      avatarUrl: stringField(item.avatarUrl, "/assets/images/default-avatar-32.png"),
+      id: stringField(item.userId, stringField(item.id)),
+      label: stringField(item.displayName, stringField(item.userLabel, stringField(item.loginId))),
+      loginId: stringField(item.loginId),
+    });
+  }
+  for (const issue of issues) {
+    addUser(users, {
+      avatarUrl: stringField(issue.assigneeAvatarUrl, "/assets/images/default-avatar-32.png"),
+      id: stringField(issue.assigneeUserId),
+      label: stringField(issue.assigneeLabel),
+      loginId: stringField(issue.assigneeLoginId),
+    });
+    addUser(users, {
+      avatarUrl: stringField(issue.authorAvatarUrl, "/assets/images/default-avatar-32.png"),
+      id: stringField(issue.authorUserId),
+      label: stringField(issue.authorLabel),
+      loginId: stringField(issue.authorLoginId),
+    });
+  }
+  return Array.from(users.values());
+}
+
+function addUser(
+  users: Map<string, { avatarUrl: string; id: string; label: string; loginId: string }>,
+  user: { avatarUrl: string; id: string; label: string; loginId: string },
+) {
+  if (user.id && user.loginId && !users.has(user.id)) {
+    users.set(user.id, {
+      avatarUrl: user.avatarUrl || "/assets/images/default-avatar-32.png",
+      id: user.id,
+      label: user.label || user.loginId,
+      loginId: user.loginId,
+    });
+  }
+}
+
+function recordArray(value: unknown): Array<Record<string, unknown>> {
+  return Array.isArray(value)
+    ? value.filter(
+        (item): item is Record<string, unknown> => Boolean(item) && typeof item === "object",
+      )
+    : [];
 }
 
 function booleanField(value: unknown) {
@@ -575,8 +1217,36 @@ function numberField(value: unknown) {
   return Number.isFinite(numeric) ? numeric : 0;
 }
 
+function preventDefaultLink(event: { preventDefault(): void }) {
+  event.preventDefault();
+}
+
 function stringField(value: unknown, fallback = "") {
   return typeof value === "string" ? value : value == null ? fallback : String(value);
+}
+
+function splitHeaderWordsInBrackets(title: string) {
+  const prefixes: string[] = [];
+  const pattern = /^\s*(\[[^\]]+\])/u;
+  let rest = title;
+  while (true) {
+    const match = pattern.exec(rest);
+    if (!match) {
+      break;
+    }
+    prefixes.push(match[1].trim());
+    rest = rest.slice(match[0].length);
+  }
+  const onlyPrefixes = rest.trim() === "";
+  return {
+    prefixes: onlyPrefixes ? [] : prefixes,
+    title: onlyPrefixes ? title : rest.trimStart(),
+  };
+}
+
+function truncateParentIssueTitle(title: string) {
+  const trimmed = title.slice(0, 10).trim();
+  return title.length > 10 ? `${trimmed}...` : trimmed;
 }
 
 function cssBackgroundColor(value: string) {
