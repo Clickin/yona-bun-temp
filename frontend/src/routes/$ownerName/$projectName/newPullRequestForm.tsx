@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import legacyMarkdownHelpTemplate from "../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import {
@@ -189,7 +189,6 @@ function ProjectNewPullRequestBody({
               <div id="__commits" className="code-browse-wrap tab-pane active">
                 {mergeResultQuery.data ? (
                   <MergeResult
-                    basePath={runtimeConfig.basePath}
                     commits={mergeResultQuery.data.commits}
                     conflict={mergeResultQuery.data.conflict}
                     noChangesLabel={t("pullRequest.diff.noChanges")}
@@ -432,14 +431,12 @@ function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
 }
 
 function MergeResult({
-  basePath,
   commits,
   conflict,
   noChangesLabel,
   ownerName,
   projectName,
 }: {
-  basePath: string;
   commits: PullRequestCommit[];
   conflict: boolean;
   noChangesLabel: string;
@@ -493,14 +490,12 @@ function MergeResult({
             {commits.map((commit) => (
               <tr key={commit.commitId}>
                 <td className="commit-id">
-                  <a
-                    href={prefixBasePath(
-                      basePath,
-                      `/${ownerName}/${projectName}/commit/${commit.commitId}`,
-                    )}
+                  <Link
+                    to="/$ownerName/$projectName/commit/$commitId"
+                    params={{ commitId: commit.commitId, ownerName, projectName }}
                   >
                     {commit.commitShortId}
-                  </a>
+                  </Link>
                 </td>
                 <td className="messages">
                   <span className="commitMsg short">{commit.commitMessage}</span>

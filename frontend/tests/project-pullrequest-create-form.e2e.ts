@@ -13,6 +13,10 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/<script[\s\S]*$/u, "")
   .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
   .replace(/<\/div>\s*$/u, "</div>");
+const ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName/newPullRequestForm.tsx", import.meta.url),
+  "utf8",
+);
 
 function withLegacyFileUploader(html: string) {
   return html.replace(
@@ -34,6 +38,9 @@ test("project pull request create form matches legacy git/create.scala.html core
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const postRequests: unknown[] = [];
   await mockProjectPullRequestCreateForm(page, postRequests);
+
+  expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/commit/$commitId"');
+  expect(ROUTE_SOURCE).not.toContain("<a\n                    href={prefixBasePath");
 
   await page.goto(
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
@@ -69,6 +76,10 @@ test("project pull request create form matches legacy git/create.scala.html core
   ).toHaveText("Table");
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
   await expect(page.locator("#tplAttachedFile")).toHaveAttribute("type", "text/x-jquery-tmpl");
+  await expect(page.locator("#mergeResult .commit-id a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/abcdef1234567890`,
+  );
   const cancelButton = await expectModernCancelControl(page);
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";

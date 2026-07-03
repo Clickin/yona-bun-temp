@@ -522,16 +522,72 @@ test("project pull request changes owns comment hash links through router", asyn
     .toBe("pull-request-comment-hash");
 });
 
-test("project pull request changes route source uses direct hash Links", async () => {
+test("project pull request changes internal navigation links render legacy hrefs", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, {
+    cardThreads: [NON_RANGED_THREAD],
+    commits: [SELECTED_COMMIT],
+    nonRangedThreads: [NON_RANGED_THREAD],
+    threads: [NON_RANGED_THREAD],
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+
+  await expect(page.locator(".author-info > .usf-group")).toHaveAttribute(
+    "href",
+    `${basePath}/dev`,
+  );
+  await expect(page.locator("#review-form .author-info .avatar-wrap.medium")).toHaveAttribute(
+    "href",
+    `${basePath}/admin`,
+  );
+  await expect(page.locator("#thread-92 .author-info .avatar-wrap.medium")).toHaveAttribute(
+    "href",
+    `${basePath}/admin`,
+  );
+  await expect(page.locator("#comment-801 .comment-avatar .avatar-wrap")).toHaveAttribute(
+    "href",
+    `${basePath}/dev`,
+  );
+  await expect(page.locator("#comment-801 .comment_author a")).toHaveAttribute(
+    "href",
+    `${basePath}/dev`,
+  );
+  await expect(page.locator('#commits li[data-value="All"] a')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/9/changes`,
+  );
+  await expect(page.locator(`#commits li[data-value="${SELECTED_COMMIT_ID}"] a`)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}`,
+  );
+  await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}#thread-92`,
+  );
+});
+
+test("project pull request changes route source uses TanStack Links for navigation", async () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
     "utf8",
   );
 
+  expect(routeSource).toContain(
+    '"/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
+  );
   expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toMatch(/<a\s/u);
+  expect(routeSource).toContain("<Link");
+  expect(routeSource).toContain("to={`/${pullRequest.contributor.loginId}`}");
   expect(routeSource).toContain('to="."');
   expect(routeSource).toContain("hash={`comment-${comment.id}`}");
+  expect(routeSource).toContain("hash={`thread-${thread.id}`}");
   expect(routeSource).toContain("activeOptions={{ includeHash: true }}");
+  expect(routeSource).toContain('type="button"');
+  expect(routeSource).toContain("data-request-method");
 });
 
 test("project pull request changes renders review cards for non-ranged-only threads", async ({

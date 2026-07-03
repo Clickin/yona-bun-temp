@@ -142,6 +142,22 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
     "href",
     `${basePath}/admin/sample/pullRequest/9/accept`,
   );
+  await expect(page.locator(".author-info > .usf-group.pull-left")).toHaveAttribute(
+    "href",
+    `${basePath}/dev`,
+  );
+  await expect(page.locator(".pullRequest-branchInfo .from .branchName")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/feature%2Fui`,
+  );
+  await expect(page.locator(".board-footer .mr5 .ybtn").first()).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/9/editform`,
+  );
+  await expect(page.locator('.board-footer a[data-request-method="post"]')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/9/close`,
+  );
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
     await canonicalizeHtmlAll(
@@ -300,13 +316,23 @@ test("project pull request overview route source uses direct Links", async () =>
     "utf8",
   );
 
+  expect(routeSource).toContain(
+    'createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")',
+  );
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("React.ComponentType");
+  expect(routeSource).not.toContain(
+    "href={prefixBasePath(runtimeConfig.basePath, `/${pullRequest.contributor.loginId}`)}",
+  );
+  expect(routeSource).toContain("to={`/${pullRequest.contributor.loginId}` as never}");
+  expect(routeSource).toContain("to={`/${event.senderLoginId}` as never}");
   expect(routeSource).toContain(
     'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
   );
   expect(routeSource).toContain('to="."');
   expect(routeSource).toContain("hash={`event-${event.id}`}");
+  expect(routeSource).toContain("Legacy data-request-method anchors below are POST actions");
+  expect(routeSource).toContain("Restore branch is a legacy POST action");
 });
 
 test("project pull request overview renders legacy commit-changed event DOM", async ({ page }) => {

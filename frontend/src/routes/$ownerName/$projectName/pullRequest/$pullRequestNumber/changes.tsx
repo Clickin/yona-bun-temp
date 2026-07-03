@@ -167,11 +167,9 @@ function ProjectPullRequestChangesBody({
 
             <div className="board-body mb20">
               <div className="author-info right-txt" style={{ marginTop: "20px" }}>
-                <a
-                  href={prefixBasePath(
-                    runtimeConfig.basePath,
-                    `/${pullRequest.contributor.loginId}`,
-                  )}
+                <Link
+                  to={`/${pullRequest.contributor.loginId}`}
+                  activeProps={{ className: undefined }}
                   className="usf-group pull-left"
                 >
                   <span className="avatar-wrap smaller">
@@ -183,7 +181,7 @@ function ProjectPullRequestChangesBody({
                     <strong>@</strong>
                     {pullRequest.contributor.loginId}
                   </span>
-                </a>
+                </Link>
                 <PullRequestBranchInfo pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
               </div>
             </div>
@@ -199,7 +197,6 @@ function ProjectPullRequestChangesBody({
                   commitId={commitId}
                   commits={changes.commits}
                   pullRequest={pullRequest}
-                  runtimeConfig={runtimeConfig}
                   selectedCommit={selectedCommit}
                 />
                 {selectedCommit ? <SelectedCommitInfo commit={selectedCommit} /> : null}
@@ -253,16 +250,11 @@ function ProjectPullRequestChangesBody({
                   <ReviewForm
                     action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
                     currentUser={currentUser}
-                    runtimeConfig={runtimeConfig}
                   />
                 ) : null}
               </div>
               {hasReviewCards ? (
-                <ReviewWrap
-                  pullRequest={pullRequest}
-                  runtimeConfig={runtimeConfig}
-                  threads={changes.threads}
-                />
+                <ReviewWrap pullRequest={pullRequest} threads={changes.threads} />
               ) : null}
             </div>
           </div>
@@ -315,15 +307,16 @@ function NonRangedThread({
           <input type="hidden" name="thread.id" value={thread.id} />
           <div className="author-info-wrap pull-left hide-in-mobile">
             <div className="author-info">
-              <a
-                href={prefixBasePath(runtimeConfig.basePath, `/${currentUser.loginId}`)}
+              <Link
+                to={`/${currentUser.loginId}`}
+                activeProps={{ className: undefined }}
                 className="avatar-wrap medium"
                 title={currentUser.userLabel}
                 data-toggle="tooltip"
                 data-placement="top"
               >
                 <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
-              </a>
+              </Link>
             </div>
           </div>
           <div className="write-comment-box">
@@ -369,8 +362,9 @@ function NonRangedThreadComment({
   return (
     <li id={`comment-${comment.id}`} className="comment">
       <div className="comment-avatar">
-        <a
-          href={prefixBasePath(runtimeConfig.basePath, `/${comment.authorLoginId}`)}
+        <Link
+          to={`/${comment.authorLoginId}`}
+          activeProps={{ className: undefined }}
           className="avatar-wrap"
           data-toggle="tooltip"
           data-placement="top"
@@ -382,19 +376,20 @@ function NonRangedThreadComment({
             height="32"
             alt={comment.authorLoginId}
           />
-        </a>
+        </Link>
       </div>
       <div className="media-body">
         <div className="meta-info">
           <span className="comment_author pull-left">
-            <a
-              href={prefixBasePath(runtimeConfig.basePath, `/${comment.authorLoginId}`)}
+            <Link
+              to={`/${comment.authorLoginId}`}
+              activeProps={{ className: undefined }}
               data-toggle="tooltip"
               data-placement="top"
               title={comment.authorLabel}
             >
               <strong>{`${comment.authorLoginId} `}</strong>
-            </a>
+            </Link>
           </span>
           <span className="ago">
             <Link
@@ -462,11 +457,9 @@ function CommentDeleteModal() {
 
 function ReviewWrap({
   pullRequest,
-  runtimeConfig,
   threads,
 }: {
   pullRequest: PullRequestDetailResponse;
-  runtimeConfig: RuntimeConfig;
   threads: ReviewThread[];
 }) {
   const { t } = useLegacyMessages();
@@ -499,14 +492,12 @@ function ReviewWrap({
             id="reviewcards-open"
             isActive={reviewCardTab === "open"}
             pullRequest={pullRequest}
-            runtimeConfig={runtimeConfig}
             threads={openThreads}
           />
           <ReviewCards
             id="reviewcards-closed"
             isActive={reviewCardTab === "closed"}
             pullRequest={pullRequest}
-            runtimeConfig={runtimeConfig}
             threads={closedThreads}
           />
         </div>
@@ -519,24 +510,17 @@ function ReviewCards({
   id,
   isActive = false,
   pullRequest,
-  runtimeConfig,
   threads,
 }: {
   id: string;
   isActive?: boolean;
   pullRequest: PullRequestDetailResponse;
-  runtimeConfig: RuntimeConfig;
   threads: ReviewThread[];
 }) {
   return (
     <div id={id} className={`tab-pane${isActive ? " active" : ""}`}>
       {threads.map((thread) => (
-        <ReviewCard
-          key={thread.id}
-          pullRequest={pullRequest}
-          runtimeConfig={runtimeConfig}
-          thread={thread}
-        />
+        <ReviewCard key={thread.id} pullRequest={pullRequest} thread={thread} />
       ))}
     </div>
   );
@@ -544,19 +528,20 @@ function ReviewCards({
 
 function ReviewCard({
   pullRequest,
-  runtimeConfig,
   thread,
 }: {
   pullRequest: PullRequestDetailResponse;
-  runtimeConfig: RuntimeConfig;
   thread: ReviewThread;
 }) {
   const { t } = useLegacyMessages();
   const remainingCommentCount = Math.max(0, thread.comments.length - 1);
 
   return (
-    <a
-      href={reviewThreadHref(runtimeConfig.basePath, pullRequest, thread)}
+    <Link
+      to={reviewThreadPath(pullRequest, thread)}
+      hash={`thread-${thread.id}`}
+      activeOptions={{ includeHash: true }}
+      activeProps={{ className: undefined }}
       className={`review-card ${thread.state.toLowerCase()}${thread.isOutdated ? " outdated" : ""}`}
     >
       <p className="content">{thread.comments[0]?.contentsMarkdown ?? ""}</p>
@@ -577,31 +562,25 @@ function ReviewCard({
           />
         </span>
       </p>
-    </a>
+    </Link>
   );
 }
 
-function reviewThreadHref(
-  basePath: string,
-  pullRequest: PullRequestDetailResponse,
-  thread: ReviewThread,
-) {
+function reviewThreadPath(pullRequest: PullRequestDetailResponse, thread: ReviewThread) {
   const changesPath = pullRequestChangesPath(pullRequest);
   const commitPath = thread.commitId ? `/${encodeURIComponent(thread.commitId)}` : "";
-  return `${prefixBasePath(basePath, `${changesPath}${commitPath}`)}#thread-${thread.id}`;
+  return `${changesPath}${commitPath}`;
 }
 
 function CommitDropdown({
   commitId,
   commits,
   pullRequest,
-  runtimeConfig,
   selectedCommit,
 }: {
   commitId: string;
   commits: PullRequestCommit[];
   pullRequest: PullRequestDetailResponse;
-  runtimeConfig: RuntimeConfig;
   selectedCommit?: PullRequestCommit;
 }) {
   const { t } = useLegacyMessages();
@@ -640,18 +619,21 @@ function CommitDropdown({
       </button>
       <ul className="dropdown-menu">
         <li data-value="All">
-          <a href={prefixBasePath(runtimeConfig.basePath, changesPath)}>
+          <Link to={changesPath} activeProps={{ className: undefined }}>
             {t("pullRequest.changes.all")}
-          </a>
+          </Link>
         </li>
         <li className="divider"></li>
         {commits.map((commit) =>
           commit.state === "CURRENT" ? (
             <li data-value={commit.commitId} key={commit.commitId}>
-              <a href={prefixBasePath(runtimeConfig.basePath, `${changesPath}/${commit.commitId}`)}>
+              <Link
+                to={`${changesPath}/${encodeURIComponent(commit.commitId)}`}
+                activeProps={{ className: undefined }}
+              >
                 <strong className="blue-txt mr10 commit-hash">{commit.commitShortId}</strong>
                 <span>{commitSummary(commit)}</span>
-              </a>
+              </Link>
             </li>
           ) : null,
         )}
@@ -697,23 +679,16 @@ function CommentForm({ action }: { action: string }) {
   );
 }
 
-function ReviewForm({
-  action,
-  currentUser,
-  runtimeConfig,
-}: {
-  action: string;
-  currentUser: CurrentUserSummary;
-  runtimeConfig: RuntimeConfig;
-}) {
+function ReviewForm({ action, currentUser }: { action: string; currentUser: CurrentUserSummary }) {
   const { t } = useLegacyMessages();
   return (
     <div id="review-form" className="review-form">
       <form action={action} method="post" encType="multipart/form-data">
         <div className="author-info-wrap pull-left hide-in-mobile">
           <div className="author-info">
-            <a
-              href={prefixBasePath(runtimeConfig.basePath, `/${currentUser.loginId}`)}
+            <Link
+              to={`/${currentUser.loginId}`}
+              activeProps={{ className: undefined }}
               className="avatar-wrap medium"
               data-toggle="tooltip"
               data-placement="top"
@@ -721,7 +696,7 @@ function ReviewForm({
               data-original-title={currentUser.userLabel}
             >
               <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
-            </a>
+            </Link>
           </div>
         </div>
         <div className="write-comment-box">

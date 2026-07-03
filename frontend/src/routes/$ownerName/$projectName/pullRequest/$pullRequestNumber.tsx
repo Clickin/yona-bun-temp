@@ -113,9 +113,10 @@ function PullRequestOverviewBody({
           />
           <div className="board-body">
             <div className="author-info left-txt" style={{ marginTop: "20px" }}>
-              <a
-                href={prefixBasePath(runtimeConfig.basePath, `/${pullRequest.contributor.loginId}`)}
+              <Link
+                to={`/${pullRequest.contributor.loginId}` as never}
                 className="usf-group pull-left"
+                activeProps={{ className: undefined }}
               >
                 <span className="avatar-wrap smaller">
                   <img src={pullRequest.contributor.avatarUrl} width="32" height="32" alt="" />
@@ -126,8 +127,8 @@ function PullRequestOverviewBody({
                   <strong>@</strong>
                   {pullRequest.contributor.loginId}
                 </span>
-              </a>
-              <PullRequestBranchInfo pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
+              </Link>
+              <PullRequestBranchInfo pullRequest={pullRequest} />
             </div>
             <div className="content markdown-wrap">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{pullRequest.bodyMarkdown}</ReactMarkdown>
@@ -163,13 +164,20 @@ function PullRequestOverviewBody({
 
             <div className="mr5" style={{ display: "inline-block" }}>
               {pullRequest.permissions.canUpdate ? (
-                <a
-                  href={prefixBasePath(runtimeConfig.basePath, `${prPath}/editform`)}
+                <Link
+                  to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform"
+                  params={{
+                    ownerName,
+                    projectName,
+                    pullRequestNumber: String(pullRequest.pullRequestNumber),
+                  }}
                   className="ybtn"
+                  activeProps={{ className: undefined }}
                 >
                   {t("button.edit")}
-                </a>
+                </Link>
               ) : null}
+              {/* Legacy data-request-method anchors below are POST actions, not navigation. */}
               {isOpenState(pullRequest.state) && pullRequest.permissions.canUpdateState ? (
                 <a
                   data-request-method="post"
@@ -195,7 +203,7 @@ function PullRequestOverviewBody({
           <hr className="nm" />
 
           <div className="board-comment-wrap">
-            <PullRequestEvents pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
+            <PullRequestEvents pullRequest={pullRequest} />
           </div>
 
           <div className="right-txt">
@@ -215,23 +223,10 @@ function PullRequestOverviewBody({
   );
 }
 
-function PullRequestEvents({
-  pullRequest,
-  runtimeConfig,
-}: {
-  pullRequest: PullRequestDetailResponse;
-  runtimeConfig: RuntimeConfig;
-}) {
+function PullRequestEvents({ pullRequest }: { pullRequest: PullRequestDetailResponse }) {
   const renderedEvents = pullRequest.events.flatMap((event) =>
     isRenderableEvent(event)
-      ? [
-          <PullRequestEventItem
-            event={event}
-            key={event.id}
-            pullRequest={pullRequest}
-            runtimeConfig={runtimeConfig}
-          />,
-        ]
+      ? [<PullRequestEventItem event={event} key={event.id} pullRequest={pullRequest} />]
       : [],
   );
 
@@ -245,11 +240,9 @@ function PullRequestEvents({
 function PullRequestEventItem({
   event,
   pullRequest,
-  runtimeConfig,
 }: {
   event: PullRequestEvent;
   pullRequest: PullRequestDetailResponse;
-  runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
 
@@ -267,7 +260,7 @@ function PullRequestEventItem({
               : "notification.pullrequest.unreviewed",
             { args: ["__USER__"] },
           ),
-          { __USER__: <PullRequestEventUser event={event} runtimeConfig={runtimeConfig} /> },
+          { __USER__: <PullRequestEventUser event={event} /> },
         )}
         <PullRequestEventDate event={event} />
       </li>
@@ -283,11 +276,7 @@ function PullRequestEventItem({
         <span className={`state ${event.newValue}`}>
           {t(`pullRequest.event.${event.newValue}`)}
         </span>
-        <PullRequestStateEventMessage
-          event={event}
-          pullRequest={pullRequest}
-          runtimeConfig={runtimeConfig}
-        />
+        <PullRequestStateEventMessage event={event} pullRequest={pullRequest} />
         <PullRequestEventDate event={event} />
       </li>
     );
@@ -301,19 +290,22 @@ function PullRequestEventItem({
     <li className="event" id={`comment-${event.id}`}>
       <span className="state changed">{t("pullRequest.event.commit")}</span>
       {messageWithNodes(t("pullRequest.event.message.commit", { args: ["__USER__"] }), {
-        __USER__: <PullRequestEventUser event={event} runtimeConfig={runtimeConfig} />,
+        __USER__: <PullRequestEventUser event={event} />,
       })}
       <PullRequestEventDate event={event} />
       {event.oldValue ? (
-        <a
-          href={prefixBasePath(
-            runtimeConfig.basePath,
-            comparePath(pullRequest.ownerName, pullRequest.projectName, event.oldValue),
-          )}
+        <Link
+          to="/$ownerName/$projectName/compare/$revisionRange"
+          params={{
+            ownerName: pullRequest.ownerName,
+            projectName: pullRequest.projectName,
+            revisionRange: compareRevisionRange(event.oldValue),
+          }}
           className="ybtn ybtn-mini"
+          activeProps={{ className: undefined }}
         >
           {t("pullRequest.additional.changes")}
-        </a>
+        </Link>
       ) : null}
       <ul className="commit-list">
         {event.commits.map((commit) => (
@@ -322,7 +314,6 @@ function PullRequestEventItem({
             event={event}
             key={commit.commitId}
             pullRequest={pullRequest}
-            runtimeConfig={runtimeConfig}
           />
         ))}
       </ul>
@@ -333,14 +324,12 @@ function PullRequestEventItem({
 function PullRequestStateEventMessage({
   event,
   pullRequest,
-  runtimeConfig,
 }: {
   event: PullRequestEvent;
   pullRequest: PullRequestDetailResponse;
-  runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
-  const user = <PullRequestEventUser event={event} runtimeConfig={runtimeConfig} />;
+  const user = <PullRequestEventUser event={event} />;
   if (event.eventType === "PULL_REQUEST_MERGED") {
     return (
       <>
@@ -353,16 +342,14 @@ function PullRequestStateEventMessage({
   if (event.newValue === "merged") {
     const commitId = pullRequest.mergedCommitIdTo;
     const commit = commitId ? (
-      <a
+      <Link
         className="link"
-        href={prefixBasePath(
-          runtimeConfig.basePath,
-          `/${pullRequest.ownerName}/${pullRequest.projectName}/commit/${commitId}`,
-        )}
+        to={`/${pullRequest.ownerName}/${pullRequest.projectName}/commit/${commitId}` as never}
         title={t("code.showCommit")}
+        activeProps={{ className: undefined }}
       >
         {commitId.slice(0, 7)}
-      </a>
+      </Link>
     ) : (
       ""
     );
@@ -388,37 +375,32 @@ function PullRequestStateEventMessage({
   );
 }
 
-function PullRequestEventUser({
-  event,
-  runtimeConfig,
-}: {
-  event: PullRequestEvent;
-  runtimeConfig: RuntimeConfig;
-}) {
-  const userPath = prefixBasePath(runtimeConfig.basePath, `/${event.senderLoginId}`);
+function PullRequestEventUser({ event }: { event: PullRequestEvent }) {
   const label = event.senderLabel || event.senderLoginId;
   const avatarUrl = event.senderAvatarUrl || "/assets/images/default-avatar-32.png";
 
   return (
     <>
-      <a
-        href={userPath}
+      <Link
+        to={`/${event.senderLoginId}` as never}
         className="usf-group"
         data-toggle="tooltip"
         data-placement="top"
         title={event.senderLoginId}
+        activeProps={{ className: undefined }}
       >
         <img src={avatarUrl} className="avatar-wrap small" alt="" />
-      </a>
-      <a
-        href={userPath}
+      </Link>
+      <Link
+        to={`/${event.senderLoginId}` as never}
         className="usf-group"
         data-toggle="tooltip"
         data-placement="top"
         title={event.senderLoginId}
+        activeProps={{ className: undefined }}
       >
         <strong>{label}</strong>
-      </a>
+      </Link>
     </>
   );
 }
@@ -443,15 +425,12 @@ function PullRequestEventCommit({
   commit,
   event,
   pullRequest,
-  runtimeConfig,
 }: {
   commit: PullRequestCommit;
   event: PullRequestEvent;
   pullRequest: PullRequestDetailResponse;
-  runtimeConfig: RuntimeConfig;
 }) {
   const commitPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}/changes/${commit.commitId}`;
-  const authorPath = prefixBasePath(runtimeConfig.basePath, `/${event.senderLoginId}`);
 
   return (
     <li
@@ -459,28 +438,29 @@ function PullRequestEventCommit({
         commit.state === "PRIOR" ? "comment-body commit-info outdated" : "comment-body commit-info"
       }
     >
-      <a href={prefixBasePath(runtimeConfig.basePath, commitPath)} className="commit-id">
+      <Link to={commitPath as never} className="commit-id" activeProps={{ className: undefined }}>
         {commit.commitShortId}
-      </a>
-      <a
-        href={authorPath}
+      </Link>
+      <Link
+        to={`/${event.senderLoginId}` as never}
         className="avatar-wrap small hide-in-mobile"
         data-toggle="tooltip"
         data-placement="top"
         title={event.senderLabel || event.senderLoginId}
+        activeProps={{ className: undefined }}
       >
         <img src={event.senderAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />{" "}
         {commit.authorEmail}
-      </a>
+      </Link>
       <div className="date hide-in-mobile" title={commit.authorDateLabel}>
         {commit.authorDateLabel}
       </div>
-      <CommitMessage commit={commit} href={prefixBasePath(runtimeConfig.basePath, commitPath)} />
+      <CommitMessage commit={commit} to={commitPath} />
     </li>
   );
 }
 
-function CommitMessage({ commit, href }: { commit: PullRequestCommit; href: string }) {
+function CommitMessage({ commit, to }: { commit: PullRequestCommit; to: string }) {
   const { t } = useLegacyMessages();
   const lines = commit.commitMessage.split("\n");
   const summary = lines[0] || t("code.commitMsg.empty");
@@ -488,9 +468,9 @@ function CommitMessage({ commit, href }: { commit: PullRequestCommit; href: stri
 
   return (
     <>
-      <a href={href} className="commitMsg short">
+      <Link to={to as never} className="commitMsg short" activeProps={{ className: undefined }}>
         {summary}
-      </a>
+      </Link>
       {detail ? (
         <>
           <button type="button" className="commitMsg moreBtn">
@@ -556,18 +536,20 @@ export function PullRequestHeader({
                 )}
               </span>
               {pullRequest.reviewers.map((reviewer) => (
-                <a
+                <Link
                   key={reviewer.loginId}
-                  href={prefixBasePath(runtimeConfig.basePath, `/${reviewer.loginId}`)}
+                  to={`/${reviewer.loginId}` as never}
                   className="usf-group"
                   data-toggle="tooltip"
                   data-placement="top"
                   title={reviewer.userLabel}
+                  activeProps={{ className: undefined }}
                 >
                   <img src={reviewer.avatarUrl} className="avatar-wrap small" alt="" />
-                </a>
+                </Link>
               ))}
             </div>
+            {/* Review/unreview links are legacy POST actions, not navigation. */}
             {isOpen ? (
               pullRequest.reviewed ? (
                 <a
@@ -647,10 +629,9 @@ export function PullRequestHeader({
 
 export function PullRequestBranchInfo({
   pullRequest,
-  runtimeConfig,
 }: {
   pullRequest: PullRequestDetailResponse;
-  runtimeConfig: RuntimeConfig;
+  runtimeConfig?: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
   const fromBranchName = branchItemName(pullRequest.fromBranch);
@@ -659,57 +640,58 @@ export function PullRequestBranchInfo({
     <div className="pullRequest-branchInfo">
       <i className="yobicon-branch ml0"></i>
       <code className="from" data-toggle="tooltip" data-original-title={t("pullRequest.from")}>
-        <a href={prefixBasePath(runtimeConfig.basePath, `/${pullRequest.fromOwnerName}`)}>
+        <Link to={`/${pullRequest.fromOwnerName}` as never} activeProps={{ className: undefined }}>
           {pullRequest.fromOwnerName}
-        </a>
+        </Link>
         <span>/</span>
-        <a
-          href={prefixBasePath(
-            runtimeConfig.basePath,
-            `/${pullRequest.fromOwnerName}/${pullRequest.fromProjectName}`,
-          )}
+        <Link
+          to="/$ownerName/$projectName"
+          params={{
+            ownerName: pullRequest.fromOwnerName,
+            projectName: pullRequest.fromProjectName,
+          }}
+          activeProps={{ className: undefined }}
         >
           {pullRequest.fromProjectName}
-        </a>
+        </Link>
         :{" "}
-        <a
-          href={prefixBasePath(
-            runtimeConfig.basePath,
+        <Link
+          to={
             `/${pullRequest.fromOwnerName}/${pullRequest.fromProjectName}/code/${encodeBranch(
               fromBranchName,
-            )}`,
-          )}
+            )}` as never
+          }
           className="branchName"
+          activeProps={{ className: undefined }}
         >
           {fromBranchName}
-        </a>
+        </Link>
       </code>
       <i className="yobicon-right-2 ml10"></i>
       <code className="to" data-toggle="tooltip" data-original-title={t("pullRequest.to")}>
-        <a href={prefixBasePath(runtimeConfig.basePath, `/${pullRequest.ownerName}`)}>
+        <Link to={`/${pullRequest.ownerName}` as never} activeProps={{ className: undefined }}>
           {pullRequest.ownerName}
-        </a>
+        </Link>
         <span>/</span>
-        <a
-          href={prefixBasePath(
-            runtimeConfig.basePath,
-            `/${pullRequest.ownerName}/${pullRequest.projectName}`,
-          )}
+        <Link
+          to="/$ownerName/$projectName"
+          params={{ ownerName: pullRequest.ownerName, projectName: pullRequest.projectName }}
+          activeProps={{ className: undefined }}
         >
           {pullRequest.projectName}
-        </a>
+        </Link>
         :{" "}
-        <a
-          href={prefixBasePath(
-            runtimeConfig.basePath,
+        <Link
+          to={
             `/${pullRequest.ownerName}/${pullRequest.projectName}/code/${encodeBranch(
               toBranchName,
-            )}`,
-          )}
+            )}` as never
+          }
           className="branchName"
+          activeProps={{ className: undefined }}
         >
           {toBranchName}
-        </a>
+        </Link>
       </code>
     </div>
   );
@@ -730,9 +712,10 @@ export function PullRequestStateInfo({
   if (pullRequest.state.toLowerCase() === "merged") {
     return (
       <div className="alert alert-info">
-        <a
-          href={prefixBasePath(runtimeConfig.basePath, `/${pullRequest.receiver.loginId}`)}
+        <Link
+          to={`/${pullRequest.receiver.loginId}` as never}
           className="usf-group"
+          activeProps={{ className: undefined }}
         >
           <span className="avatar-wrap smaller">
             <img src={pullRequest.receiver.avatarUrl} width="25" height="25" alt="" />
@@ -743,7 +726,7 @@ export function PullRequestStateInfo({
             <strong>@</strong>
             {pullRequest.receiver.loginId}
           </span>
-        </a>{" "}
+        </Link>{" "}
         {t("pullRequest.merged.the.pullrequest")}
         {pullRequest.permissions.canDeleteSourceBranch ? (
           <>
@@ -763,6 +746,7 @@ export function PullRequestStateInfo({
         {pullRequest.permissions.canRestoreSourceBranch ? (
           <>
             <code>{pullRequest.fromBranch}</code> {t("pullRequest.restore.frombranch.message")}
+            {/* Restore branch is a legacy POST action, not navigation. */}
             <a
               href={prefixBasePath(runtimeConfig.basePath, `${prPath}/restorefrombranch`)}
               className="ybtn ybtn-info ybtn-mini pull-right"
@@ -814,7 +798,6 @@ function PullRequestConflictGuide({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
-  const prPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
   const fromBranchName = branchItemName(pullRequest.fromBranch);
   const toBranchName = branchItemName(pullRequest.toBranch);
   const upstreamUrl = projectCodeUrlWithLogin(
@@ -855,12 +838,18 @@ function PullRequestConflictGuide({
           </li>
           <li>
             {t("pullRequest.resolver.step10")}
-            <a
-              href={prefixBasePath(runtimeConfig.basePath, prPath)}
+            <Link
+              to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
+              params={{
+                ownerName: pullRequest.ownerName,
+                projectName: pullRequest.projectName,
+                pullRequestNumber: String(pullRequest.pullRequestNumber),
+              }}
               className="ybtn ybtn-mini ybtn-primary"
+              activeProps={{ className: undefined }}
             >
               {t("button.page.refresh")}
-            </a>
+            </Link>
             {t("pullRequest.resolver.step11")}
           </li>
         </ol>
@@ -991,10 +980,10 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function comparePath(ownerName: string, projectName: string, value: string) {
+function compareRevisionRange(value: string) {
   const [revA, revB] = value.split(",");
   if (!revA || !revB) {
-    return `/${ownerName}/${projectName}/compare/${encodeURIComponent(value)}`;
+    return encodeURIComponent(value);
   }
-  return `/${ownerName}/${projectName}/compare/${encodeURIComponent(revA)}...${encodeURIComponent(revB)}`;
+  return `${encodeURIComponent(revA)}...${encodeURIComponent(revB)}`;
 }
