@@ -274,6 +274,27 @@ test("project pull request selected commit changes matches legacy git/viewChange
   );
 });
 
+test("project pull request selected commit dropdown is React-owned and preserves legacy links", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, {
+    commits: [SELECTED_COMMIT, PRIOR_COMMIT],
+    expectedCommitId: SELECTED_COMMIT_ID,
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}`);
+  await assertCommitDropdownOpensReactOwned(page, {
+    allHref: `${basePath}/admin/sample/pullRequest/9/changes`,
+    allText: "All commit changes",
+    currentHref: `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}`,
+    currentLabel: "Add UI",
+    currentShortId: "abcdef1",
+    marker: "pull-request-selected-commit-dropdown",
+    selectedLabel: "abcdef1Add UI",
+  });
+});
+
 test("project pull request prior commit changes matches legacy outdated dropdown DOM", async ({
   page,
 }) => {
@@ -295,6 +316,30 @@ test("project pull request prior commit changes matches legacy outdated dropdown
       EXPECTED_PULL_REQUEST_PRIOR_CHANGE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("project pull request prior commit dropdown is React-owned and preserves legacy links", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, {
+    commits: [SELECTED_COMMIT, PRIOR_COMMIT],
+    expectedCommitId: PRIOR_COMMIT_ID,
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes/${PRIOR_COMMIT_ID}`);
+  await assertCommitDropdownOpensReactOwned(page, {
+    allHref: `${basePath}/admin/sample/pullRequest/9/changes`,
+    allText: "All commit changes",
+    currentHref: `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}`,
+    currentLabel: "Add UI",
+    currentShortId: "abcdef1",
+    marker: "pull-request-prior-commit-dropdown",
+    selectedLabel: "1234567Old UI (Outdated)",
+  });
+  await expect(
+    page.locator("#commits .dropdown-menu li[data-value='1234567890abcdef']"),
+  ).toHaveCount(0);
 });
 
 test("project pull request unknown commit changes matches legacy outdated fallback DOM", async ({
@@ -584,6 +629,73 @@ async function assertEditorTabsAreReactOwned(page: Page, includesThread = false)
       () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
     ),
   ).toBe("pull-request-editor-tabs");
+}
+
+async function assertCommitDropdownOpensReactOwned(
+  page: Page,
+  {
+    allHref,
+    allText,
+    currentHref,
+    currentLabel,
+    currentShortId,
+    marker,
+    selectedLabel,
+  }: {
+    allHref: string;
+    allText: string;
+    currentHref: string;
+    currentLabel: string;
+    currentShortId: string;
+    marker: string;
+    selectedLabel: string;
+  },
+) {
+  const commits = page.locator("#commits");
+  const toggle = commits.locator(".dropdown-toggle");
+  await expect(commits).toHaveClass("btn-group auto mb10");
+  await expect(toggle).toHaveAttribute("data-toggle", "dropdown");
+  await expect(commits.locator(".d-caret .caret")).toHaveCount(1);
+  await expect(commits.locator(".d-label")).toHaveText(selectedLabel);
+  await expect(commits.locator(".dropdown-menu li")).toHaveCount(3);
+  await expect(commits.locator(".dropdown-menu li").nth(0)).toHaveAttribute("data-value", "All");
+  await expect(commits.locator(".dropdown-menu li").nth(1)).toHaveClass("divider");
+  await expect(commits.locator(".dropdown-menu li").nth(2)).toHaveAttribute(
+    "data-value",
+    SELECTED_COMMIT_ID,
+  );
+
+  await page.evaluate((value) => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = value;
+  }, marker);
+  const urlBeforeDropdownClick = page.url();
+
+  await toggle.click();
+  await expect(commits).toHaveClass("btn-group auto mb10 open");
+  expect(page.url()).toBe(urlBeforeDropdownClick);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe(marker);
+
+  const allItem = commits.locator('.dropdown-menu li[data-value="All"] a');
+  await expect(allItem).toHaveText(allText);
+  await expect(allItem).toHaveAttribute("href", allHref);
+
+  const currentItem = commits.locator(`.dropdown-menu li[data-value="${SELECTED_COMMIT_ID}"] a`);
+  await expect(currentItem.locator(".commit-hash")).toHaveText(currentShortId);
+  await expect(currentItem.locator("span")).toHaveText(currentLabel);
+  await expect(currentItem).toHaveAttribute("href", currentHref);
+
+  await toggle.click();
+  await expect(commits).toHaveClass("btn-group auto mb10");
+  expect(page.url()).toBe(urlBeforeDropdownClick);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe(marker);
 }
 
 async function mockPullRequestChanges(

@@ -614,11 +614,20 @@ function CommitDropdown({
   selectedCommit?: PullRequestCommit;
 }) {
   const { t } = useLegacyMessages();
+  const [isOpen, setIsOpen] = useState(false);
   const changesPath = pullRequestChangesPath(pullRequest);
 
   return (
-    <div id="commits" className="btn-group auto mb10">
-      <button className="btn dropdown-toggle auto" data-toggle="dropdown">
+    <div id="commits" className={`btn-group auto mb10${isOpen ? " open" : ""}`}>
+      <button
+        className="btn dropdown-toggle auto"
+        data-toggle="dropdown"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsOpen((current) => !current);
+        }}
+      >
         <span className="d-label">
           {selectedCommit ? (
             <>
