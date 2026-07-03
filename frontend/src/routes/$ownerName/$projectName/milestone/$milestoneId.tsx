@@ -1,13 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import {
-  useMemo,
-  useState,
-  type AnchorHTMLAttributes,
-  type ComponentType,
-  type HTMLAttributes,
-  type LiHTMLAttributes,
-} from "react";
+import { useMemo, useState, type HTMLAttributes, type LiHTMLAttributes } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -25,15 +18,6 @@ import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    hash?: string;
-    params?: Record<string, string>;
-    search?: Record<string, unknown>;
-    to: string;
-  }
->;
 
 type MilestoneDetailSearch = {
   state: "all" | "closed" | "open";
@@ -224,14 +208,14 @@ function ProjectMilestoneDetailBody({
       <div className="project-page-wrap">
         <div className="milesion-wrap">
           <h4>
-            <LegacyInternalLink
+            <Link
               to="/$ownerName/$projectName/milestone/$milestoneId"
               params={{ ownerName, projectName, milestoneId }}
               search={{}}
               className="title"
             >
               {stringField(milestone.title)}
-            </LegacyInternalLink>
+            </Link>
             <small className="ml10">
               {stringField(milestone.dueDateLabel) ? (
                 <>
@@ -267,13 +251,13 @@ function ProjectMilestoneDetailBody({
           )}
 
           <div className="actrow right-txt row-fluid" style={{ clear: "both", padding: "15px 0" }}>
-            <LegacyInternalLink
+            <Link
               to="/$ownerName/$projectName/milestones"
               params={{ ownerName, projectName }}
               className="ybtn pull-left"
             >
               {t("button.list")}
-            </LegacyInternalLink>
+            </Link>
             {booleanField(milestone.viewerCanDelete) ? (
               <button
                 type="button"
@@ -287,13 +271,13 @@ function ProjectMilestoneDetailBody({
             ) : null}
             {booleanField(milestone.viewerCanUpdate) ? (
               <>
-                <LegacyInternalLink
+                <Link
                   to="/$ownerName/$projectName/milestone/$milestoneId/editform"
                   params={{ ownerName, projectName, milestoneId }}
                   className="ybtn"
                 >
                   {t("button.edit")}
-                </LegacyInternalLink>
+                </Link>
                 {isClosed ? (
                   <button
                     type="button"
@@ -329,7 +313,7 @@ function ProjectMilestoneDetailBody({
             <ul className="nav nav-tabs">
               {(["open", "closed", "all"] as const).map((state) => (
                 <li key={state} className={search.state === state ? "active" : ""}>
-                  <LegacyInternalLink
+                  <Link
                     to="/$ownerName/$projectName/milestone/$milestoneId"
                     params={{ ownerName, projectName, milestoneId }}
                     search={{ state }}
@@ -343,7 +327,7 @@ function ProjectMilestoneDetailBody({
                           ? closedIssues.length
                           : allIssues.length}
                     </span>
-                  </LegacyInternalLink>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -394,6 +378,8 @@ function ProjectMilestoneDetailBody({
                       );
                     }}
                     onTitlePrefixSearch={setFilter}
+                    ownerName={ownerName}
+                    projectName={projectName}
                     projectPath={projectPath}
                     runtimeConfig={runtimeConfig}
                   />
@@ -801,6 +787,8 @@ function MilestoneIssueRow({
   issue,
   onCheckedChange,
   onTitlePrefixSearch,
+  ownerName,
+  projectName,
   projectPath,
   runtimeConfig,
 }: {
@@ -809,6 +797,8 @@ function MilestoneIssueRow({
   issue: ProjectMilestoneIssue;
   onCheckedChange: (issueId: string, checked: boolean) => void;
   onTitlePrefixSearch: (filter: string) => void;
+  ownerName: string;
+  projectName: string;
   projectPath: string;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -868,9 +858,13 @@ function MilestoneIssueRow({
         </label>
         <div {...legacyFor} className="issue-item-row">
           <div className="title-wrap">
-            <LegacyInternalLink to={`${projectPath}/issue/${issueNumber}`} className="title">
+            <Link
+              to="/$ownerName/$projectName/issue/$issueNumber"
+              params={{ ownerName, projectName, issueNumber }}
+              className="title"
+            >
               <span className="post-id">#{issueNumber}</span>
-            </LegacyInternalLink>
+            </Link>
             {issueWeight > 0 ? (
               <span
                 className="weight-up-arrow"
@@ -892,8 +886,9 @@ function MilestoneIssueRow({
               </span>
             ) : null}
             {titleParts.prefixes.map((prefix) => (
-              <LegacyInternalLink
-                to={`${projectPath}/issues`}
+              <Link
+                to="/$ownerName/$projectName/issues"
+                params={{ ownerName, projectName }}
                 className="title-prefix"
                 key={`${issueId}-${prefix}`}
                 onClick={(event) => {
@@ -902,23 +897,28 @@ function MilestoneIssueRow({
                 }}
               >
                 {prefix}
-              </LegacyInternalLink>
+              </Link>
             ))}
-            <LegacyInternalLink to={`${projectPath}/issue/${issueNumber}`} className="title">
+            <Link
+              to="/$ownerName/$projectName/issue/$issueNumber"
+              params={{ ownerName, projectName, issueNumber }}
+              className="title"
+            >
               {titleParts.title}
-            </LegacyInternalLink>
+            </Link>
           </div>
           <div className="infos">
             {authorLabel && authorLoginId ? (
-              <LegacyInternalLink
-                to={`/${authorLoginId}`}
+              <Link
+                to="/$user"
+                params={{ user: authorLoginId }}
                 className="infos-item infos-link-item"
                 data-toggle="tooltip"
                 data-placement="bottom"
                 title={authorLoginId}
               >
                 {authorLabel}
-              </LegacyInternalLink>
+              </Link>
             ) : (
               <span className="infos-item">{t("issue.noAuthor")}</span>
             )}
@@ -930,17 +930,18 @@ function MilestoneIssueRow({
             >
               {createdLabel}
             </span>
-            <IssueSubtaskSummary issue={issue} projectPath={projectPath} />
+            <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
             {stringField(issue.milestoneId) ? (
               <span className="mileston-tag">
-                <LegacyInternalLink
-                  to={`${projectPath}/milestone/${stringField(issue.milestoneId)}`}
+                <Link
+                  to="/$ownerName/$projectName/milestone/$milestoneId"
+                  params={{ ownerName, projectName, milestoneId: stringField(issue.milestoneId) }}
                   data-toggle="tooltip"
                   data-placement="bottom"
                   title={t("milestone")}
                 >
                   {stringField(issue.milestoneTitle)}
-                </LegacyInternalLink>
+                </Link>
               </span>
             ) : null}
             {numberField(issue.commentCount) ||
@@ -948,8 +949,9 @@ function MilestoneIssueRow({
             numberField(issue.sharerCount) ? (
               <span className="infos-item item-count-groups">
                 {numberField(issue.commentCount) ? (
-                  <LegacyInternalLink
-                    to={`${projectPath}/issue/${issueNumber}`}
+                  <Link
+                    to="/$ownerName/$projectName/issue/$issueNumber"
+                    params={{ ownerName, projectName, issueNumber }}
                     hash="comments"
                     className="comments-count comments-count-color"
                   >
@@ -959,11 +961,12 @@ function MilestoneIssueRow({
                     <span className="count-groups item-count">
                       {numberField(issue.commentCount)}
                     </span>
-                  </LegacyInternalLink>
+                  </Link>
                 ) : null}
                 {numberField(issue.voterCount) ? (
-                  <LegacyInternalLink
-                    to={`${projectPath}/issue/${issueNumber}`}
+                  <Link
+                    to="/$ownerName/$projectName/issue/$issueNumber"
+                    params={{ ownerName, projectName, issueNumber }}
                     hash="vote"
                     className="vote-count vote-color"
                   >
@@ -973,7 +976,7 @@ function MilestoneIssueRow({
                     <span className="count-groups item-count strong">
                       {numberField(issue.voterCount)}
                     </span>
-                  </LegacyInternalLink>
+                  </Link>
                 ) : null}
                 {numberField(issue.sharerCount) ? (
                   <button
@@ -994,7 +997,7 @@ function MilestoneIssueRow({
               </span>
             ) : null}
             {labels.map((label) => (
-              <LegacyInternalLink
+              <Link
                 key={stringField(label.id)}
                 to={`${projectPath}/issues?state=open&labelIds=${encodeURIComponent(
                   stringField(label.id),
@@ -1005,7 +1008,7 @@ function MilestoneIssueRow({
                 style={{ background: cssBackgroundColor(stringField(label.color)) }}
               >
                 {stringField(label.name)}
-              </LegacyInternalLink>
+              </Link>
             ))}
             <div className="child-issue-list hide"></div>
           </div>
@@ -1014,8 +1017,9 @@ function MilestoneIssueRow({
       <div className="span3 hide-in-mobile">
         <div className="mt5 pull-right">
           {assigneeLoginId ? (
-            <LegacyInternalLink
-              to={`/${assigneeLoginId}`}
+            <Link
+              to="/$user"
+              params={{ user: assigneeLoginId }}
               className="avatar-wrap assinee"
               data-toggle="tooltip"
               data-placement="top"
@@ -1027,7 +1031,7 @@ function MilestoneIssueRow({
                 height="32"
                 alt={stringField(issue.assigneeLabel)}
               />
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}
@@ -1073,10 +1077,12 @@ function issueSearchText(issue: ProjectMilestoneIssue) {
 
 function IssueSubtaskSummary({
   issue,
-  projectPath,
+  ownerName,
+  projectName,
 }: {
   issue: ProjectMilestoneIssue;
-  projectPath: string;
+  ownerName: string;
+  projectName: string;
 }) {
   const childClosedCount = numberField(issue.childClosedCount);
   const childOpenCount = numberField(issue.childOpenCount);
@@ -1110,9 +1116,12 @@ function IssueSubtaskSummary({
       ) : null}
       {parentIssueNumber ? (
         <span className="infos-item subtask">
-          <LegacyInternalLink to={`${projectPath}/issue/${parentIssueNumber}`}>
+          <Link
+            to="/$ownerName/$projectName/issue/$issueNumber"
+            params={{ ownerName, projectName, issueNumber: parentIssueNumber }}
+          >
             {`#${parentIssueNumber} ${truncateParentIssueTitle(parentIssueTitle)}`}
-          </LegacyInternalLink>
+          </Link>
         </span>
       ) : null}
     </>

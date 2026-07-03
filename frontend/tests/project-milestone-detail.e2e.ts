@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 test("project milestone detail matches legacy milestone/view.scala.html core DOM", async ({
@@ -331,6 +332,20 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   });
   await deleteResponse;
   expect(deleteRequests).toEqual(["DELETE"]);
+});
+
+test("project milestone detail route uses direct Links", () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
+    "utf8",
+  );
+
+  expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("AnchorHTMLAttributes");
+  expect(routeSource).not.toContain("ComponentType");
+  expect(routeSource).toContain('to="/$ownerName/$projectName/milestone/$milestoneId"');
+  expect(routeSource).toContain('to="/$ownerName/$projectName/issues"');
+  expect(routeSource).toContain('hash="issues"');
 });
 
 async function expectMilestoneDetailAssets(page: Page, basePath: string) {
