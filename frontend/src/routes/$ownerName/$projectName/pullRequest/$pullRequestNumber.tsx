@@ -209,9 +209,14 @@ function PullRequestOverviewBody({
           </div>
 
           <div className="right-txt">
-            <a href="#helpMessage" className="ybtn ybtn-inverse ybtn-mini" data-toggle="modal">
+            <button
+              type="button"
+              className="ybtn ybtn-inverse ybtn-mini"
+              data-toggle="modal"
+              data-target="#helpMessage"
+            >
               {t("title.help")}
-            </a>
+            </button>
           </div>
         </div>
       </div>
