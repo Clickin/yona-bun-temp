@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 const EXPECTED_PROJECT_HOME = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -279,6 +280,12 @@ test("project home header renders legacy watch utility for watchable projects", 
       `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">5</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><a class="ybtn ybtn-watching watchBtn" href="${basePath}/admin/sample/watch"><i class="yobicon-eye"></i> Watch</a></div></div><button class="btn nofocus no-border down-arrow" type="button" data-toggle="dropdown">Watch</button></div></li></ul>`,
     ),
   );
+
+  const watchItem = page.locator(".project-util > li").first();
+  await page.locator(".watch-btn .down-arrow").click();
+  await expect(watchItem).toHaveClass(/open/);
+  await page.locator(".watch-btn .down-arrow").click();
+  await expect(watchItem).not.toHaveClass(/open/);
 });
 
 test("project home header renders and posts legacy enrollment utility for guest projects", async ({
@@ -305,7 +312,13 @@ test("project home header renders and posts legacy enrollment utility for guest 
     ),
   );
 
+  const enrollmentItem = page.locator(".project-util > li").first();
   await page.locator(".project-util .dropdown-toggle").click();
+  await expect(enrollmentItem).toHaveClass(/open/);
+  await page.locator(".project-util .dropdown-toggle").click();
+  await expect(enrollmentItem).not.toHaveClass(/open/);
+  await page.locator(".project-util .dropdown-toggle").click();
+  await expect(enrollmentItem).toHaveClass(/open/);
   const enrollResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/enroll") &&
@@ -315,6 +328,7 @@ test("project home header renders and posts legacy enrollment utility for guest 
   await enrollResponsePromise;
 
   expect(enrollRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(enrollmentItem).not.toHaveClass(/open/);
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
@@ -337,7 +351,9 @@ test("project home header enrollment utility cancels pending guest request", asy
   });
 
   await page.goto(`${basePath}/admin/sample`);
+  const enrollmentItem = page.locator(".project-util > li").first();
   await page.locator(".project-util .dropdown-toggle").click();
+  await expect(enrollmentItem).toHaveClass(/open/);
   const enrollResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/enroll") &&
@@ -347,6 +363,7 @@ test("project home header enrollment utility cancels pending guest request", asy
   await enrollResponsePromise;
 
   expect(enrollRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+  await expect(enrollmentItem).not.toHaveClass(/open/);
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
@@ -368,7 +385,9 @@ test("project home header watch action posts and renders watching branch", async
   });
 
   await page.goto(`${basePath}/admin/sample`);
+  const watchItem = page.locator(".project-util > li").first();
   await page.locator(".watch-btn .down-arrow").click();
+  await expect(watchItem).toHaveClass(/open/);
   const watchResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/watch") &&
@@ -378,6 +397,7 @@ test("project home header watch action posts and renders watching branch", async
   await watchResponsePromise;
 
   expect(watchRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(watchItem).not.toHaveClass(/open/);
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
@@ -402,7 +422,9 @@ test("project home header unwatch action deletes and renders not-watching branch
   });
 
   await page.goto(`${basePath}/admin/sample`);
+  const watchItem = page.locator(".project-util > li").first();
   await page.locator(".watch-btn .down-arrow").click();
+  await expect(watchItem).toHaveClass(/open/);
   const watchResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/watch") &&
@@ -412,12 +434,25 @@ test("project home header unwatch action deletes and renders not-watching branch
   await watchResponsePromise;
 
   expect(watchRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+  await expect(watchItem).not.toHaveClass(/open/);
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
       `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">0</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><a class="ybtn ybtn-watching watchBtn" href="${basePath}/admin/sample/watch"><i class="yobicon-eye"></i> Watch</a></div></div><button class="btn nofocus no-border down-arrow" type="button" data-toggle="dropdown">Watch</button></div></li></ul>`,
     ),
   );
+});
+
+test("project home route owns project-util dropdown state without route-local DOM mutation", async () => {
+  const source = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
+
+  expect(source).not.toContain("function toggleProjectUtilDropdown(toggle: HTMLElement)");
+  expect(source).not.toContain("function closeProjectUtilDropdown");
+  expect(source).not.toContain('querySelectorAll(".project-util li.open")');
+  expect(source).not.toContain(".classList");
+  expect(source).toContain('useState<"enrollment" | "watch" | null>');
+  expect(source).toContain('className={projectUtilDropdown === "enrollment" ? "open" : undefined}');
+  expect(source).toContain('className={projectUtilDropdown === "watch" ? "open" : undefined}');
 });
 
 async function installFavoriteSpanNativeListenerAudit(page: Page) {

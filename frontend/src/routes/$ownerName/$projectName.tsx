@@ -951,22 +951,6 @@ function ProjectMember({ basePath, member }: { basePath: string; member: YonaUse
   );
 }
 
-function toggleProjectUtilDropdown(toggle: HTMLElement) {
-  const item = toggle.closest(".project-util li");
-  const isOpen = item?.classList.contains("open") ?? false;
-  document
-    .querySelectorAll(".project-util li.open")
-    .forEach((openItem) => closeProjectUtilDropdown(openItem));
-  item?.classList.toggle("open", !isOpen);
-}
-
-function closeProjectUtilDropdown(item: Element) {
-  item.classList.remove("open");
-  if (item.getAttribute("class") === "") {
-    item.removeAttribute("class");
-  }
-}
-
 export function ProjectHeader({
   basePath,
   project,
@@ -1004,7 +988,13 @@ export function ProjectHeader({
     count: projectWatchingCount(project),
     isWatching: projectIsWatching(project),
   });
+  const [projectUtilDropdown, setProjectUtilDropdown] = useState<"enrollment" | "watch" | null>(
+    null,
+  );
   const projectIdValueForLinks = projectIdValue || projectId(project);
+  const toggleProjectUtilDropdown = (dropdown: "enrollment" | "watch") => {
+    setProjectUtilDropdown((current) => (current === dropdown ? null : dropdown));
+  };
   const enrollmentMutation = useMutation({
     mutationFn: async (nextRequested: boolean) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -1124,14 +1114,17 @@ export function ProjectHeader({
           <div className="project-util-wrap">
             <ul className="project-util">
               {canEnrollProject ? (
-                <li>
+                <li className={projectUtilDropdown === "enrollment" ? "open" : undefined}>
                   {enrollmentRequested ? (
                     <>
                       <button
                         className="ybtn ybtn-small ybtn-info dropdown-toggle"
                         type="button"
                         data-toggle="dropdown"
-                        onClick={(event) => toggleProjectUtilDropdown(event.currentTarget)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleProjectUtilDropdown("enrollment");
+                        }}
                       >
                         <i className="yobicon-addfriend"></i>
                       </button>
@@ -1150,10 +1143,8 @@ export function ProjectHeader({
                             id="enrollBtn"
                             onClick={(event) => {
                               event.preventDefault();
-                              const item = event.currentTarget.closest(".project-util li");
-                              if (item) {
-                                closeProjectUtilDropdown(item);
-                              }
+                              event.stopPropagation();
+                              setProjectUtilDropdown(null);
                               enrollmentMutation.mutate(false);
                             }}
                           >
@@ -1168,7 +1159,10 @@ export function ProjectHeader({
                         className="ybtn ybtn-small dropdown-toggle"
                         type="button"
                         data-toggle="dropdown"
-                        onClick={(event) => toggleProjectUtilDropdown(event.currentTarget)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleProjectUtilDropdown("enrollment");
+                        }}
                       >
                         <i className="yobicon-addfriend"></i>
                         {t("organization.member.enrollment.title")}
@@ -1187,10 +1181,8 @@ export function ProjectHeader({
                             id="enrollBtn"
                             onClick={(event) => {
                               event.preventDefault();
-                              const item = event.currentTarget.closest(".project-util li");
-                              if (item) {
-                                closeProjectUtilDropdown(item);
-                              }
+                              event.stopPropagation();
+                              setProjectUtilDropdown(null);
                               enrollmentMutation.mutate(true);
                             }}
                           >
@@ -1203,8 +1195,10 @@ export function ProjectHeader({
                 </li>
               ) : null}
               {canWatchProject ? (
-                <li>
-                  <div className="btn-group dropdown watch-btn">
+                <li className={projectUtilDropdown === "watch" ? "open" : undefined}>
+                  <div
+                    className={`btn-group dropdown watch-btn${projectUtilDropdown === "watch" ? " open" : ""}`}
+                  >
                     <a
                       className={`btn watcher-count no-border ${watchState.isWatching ? "watch-on" : ""}`}
                       data-toggle="tooltip"
@@ -1261,7 +1255,8 @@ export function ProjectHeader({
                           )}
                           onClick={(event) => {
                             event.preventDefault();
-                            event.currentTarget.closest(".watch-btn")?.classList.remove("open");
+                            event.stopPropagation();
+                            setProjectUtilDropdown(null);
                             watchMutation.mutate(!watchState.isWatching);
                           }}
                         >
@@ -1276,6 +1271,10 @@ export function ProjectHeader({
                       className="btn nofocus no-border down-arrow"
                       type="button"
                       data-toggle="dropdown"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleProjectUtilDropdown("watch");
+                      }}
                     >
                       {t(watchState.isWatching ? "project.unwatch" : "project.watch")}
                     </button>
