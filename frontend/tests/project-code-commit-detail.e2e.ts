@@ -10,6 +10,10 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/<script[\s\S]*$/u, "")
   .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
   .replace(/<\/div>\s*$/u, "</div>");
+const COMMIT_DETAIL_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName/commit/$commitId.tsx", import.meta.url),
+  "utf8",
+);
 
 function withLegacyMarkdownHelp(html: string) {
   return html.replaceAll(
@@ -172,6 +176,11 @@ function commentUpdateForm(
 
   return `<div id="comment-editform-${commentId}" class="comment-update-form"><form action="${basePath}/comments/${commentId}" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="${commentId}"><div class="write-comment-box"><div class="write-comment-wrap"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-${commentId}" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-${commentId}" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-${commentId}" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" id="editor-contents-${commentId}" markdown="true">${markdown}</textarea></div></div><div id="preview-${commentId}" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-${commentId}" class="file-upload__label ybtn">File upload</label><input id="upload-${commentId}" class="file-upload__input" type="file" name="filePath" multiple></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="${commentId}">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-${commentId}"></div><div class="attachment-files">${attachmentMarkers}</div><div id="upload-${commentId}" data-resourcetype="NONISSUE_COMMENT" data-resourceid="${commentId}"></div></div></form></div>`;
 }
+
+test("project commit detail route source has no generic LegacyInternalLink adapter", async () => {
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("LegacyInternalLink");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("ComponentType");
+});
 
 test("project commit detail matches legacy code/diff.scala.html empty discussion state", async ({
   page,

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { type AnchorHTMLAttributes, type ComponentType, useState } from "react";
+import { type AnchorHTMLAttributes, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacyMarkdownHelpTemplate from "../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
@@ -27,16 +27,6 @@ import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeOptions?: { includeHash?: boolean };
-    activeProps?: { className?: string | undefined };
-    hash?: string;
-    search?: { branch?: string; path?: string };
-    to: string;
-  }
->;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
 const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
@@ -1523,7 +1513,7 @@ function CommitHashLink({
   };
 
   return (
-    <LegacyInternalLink
+    <Link
       {...props}
       to="."
       hash={hash}
