@@ -69,7 +69,7 @@ const EXPECTED_PROJECT_LABELS = `
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
+<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap label-editor-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class="active"><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="copyLabel" action="__BASE_PATH__/admin/sample/labels/copy" method="post" class="new-label-wrap"><strong class="form-legend">Copy all labels from a project and append to current project</strong><div class="form-wrap"><input type="text" name="owner" class="input-label mr5" placeholder="Owner Name"><input type="text" name="projectName" class="input-label" placeholder="Project name"></div><button type="submit" class="ybtn ybtn-info btn-submit">Copy labels</button><div>If project path is 'naver/yobi', then owner name is 'naver' and project name is 'yobi'. Character case is ignored.</div><div>If there is already a label with the same name, category and color, another label will not be added.</div></form><form id="frmNewLabel" action="__BASE_PATH__/admin/sample/labels" method="post" class="new-label-wrap"><strong class="form-legend">Add new label</strong><div class="form-wrap"><div><input type="text" name="category" class="input-label mr5" maxlength="250" data-provider="typeahead" autocomplete="off" placeholder="Category"><input type="text" name="name" class="input-label" maxlength="250" autocomplete="off" placeholder="Name"></div><div class="label-preset-colors">__NEW_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><button type="submit" class="ybtn ybtn-primary btn-submit">Add label</button></form><div id="labelsList" class="issue-label-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No label exists</p></div></div></div></div>
 <div id="editCategory" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent" data-dismiss="modal">×</button></div><div class="message edit-label-category-form"><div class="center-txt"><input type="text" name="name" class="text category-name" placeholder="Category"><div class="desc">In this category, you can choose<select name="isExclusive" data-toggle="select2" data-dropdown-css-class="select2-without-searchbox"><option value="false">multiple labels</option><option value="true">only a single label</option></select></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default" data-dismiss="modal">Cancel</button></div></div></div>
@@ -206,22 +206,31 @@ test("project labels renders legacy project/partial_issuelabels_list.scala.html 
 test("project labels header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installFavoriteSpanNativeListenerAudit(page);
   await mockProjectLabels(page, [], { favoriteRequests });
 
   await page.goto(`${basePath}/admin/sample/issue/labelsform`);
-  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  const favoriteToggle = page.locator(".project-breadcrumb .user-project-list");
+  const favoriteStar = favoriteToggle.locator("i");
+
+  await expect(favoriteToggle).toHaveAttribute("data-project-id", "7");
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)star(?:\s|$)/);
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)material-icons(?:\s|$)/);
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)va-text-top(?:\s|$)/);
   await expect(favoriteStar).not.toHaveClass(/starred/);
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 
   const favoriteResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteToggle.dispatchEvent("mousedown");
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(favoriteStar).toHaveClass(/starred/);
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
 
 test("project labels header favorite star removes starred class when unfavorited", async ({
@@ -229,6 +238,7 @@ test("project labels header favorite star removes starred class when unfavorited
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installFavoriteSpanNativeListenerAudit(page);
   await mockProjectLabels(page, [], {
     favoriteRequests,
     favoriteResponseFavorited: false,
@@ -236,20 +246,67 @@ test("project labels header favorite star removes starred class when unfavorited
   });
 
   await page.goto(`${basePath}/admin/sample/issue/labelsform`);
-  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  const favoriteToggle = page.locator(".project-breadcrumb .user-project-list");
+  const favoriteStar = favoriteToggle.locator("i");
+  await expect(favoriteToggle).toHaveAttribute("data-project-id", "7");
   await expect(favoriteStar).toHaveClass(/starred/);
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 
   const favoriteResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteToggle.dispatchEvent("mousedown");
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(favoriteStar).not.toHaveClass(/starred/);
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
+
+test("project labels header favorite star has no route-local native listener", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installFavoriteSpanNativeListenerAudit(page);
+  await mockProjectLabels(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+
+  await expect(page.locator(".project-breadcrumb .user-project-list")).toHaveAttribute(
+    "data-project-id",
+    "7",
+  );
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
+});
+
+async function installFavoriteSpanNativeListenerAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    const favoriteListeners: string[] = [];
+    Object.defineProperty(window, "__yonaFavoriteSpanNativeListeners", {
+      configurable: true,
+      value: favoriteListeners,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithFavoriteAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this instanceof Element && this.matches(".project-breadcrumb .user-project-list")) {
+        favoriteListeners.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function favoriteSpanNativeListeners(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __yonaFavoriteSpanNativeListeners?: string[] })
+        .__yonaFavoriteSpanNativeListeners ?? [],
+  );
+}
 
 async function mockProjectLabels(
   page: Page,
