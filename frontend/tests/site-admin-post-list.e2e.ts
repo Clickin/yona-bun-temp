@@ -291,16 +291,87 @@ test("site admin post list renders legacy update notification badge", async ({ p
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
+test("site admin post list row links keep legacy hrefs and SPA navigation", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockPosts(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/postList`);
+
+  await expect(page.locator(".post-list-wrap .list-avatar")).toHaveAttribute(
+    "href",
+    `${basePath}/acme/roadmap`,
+  );
+  await expect(page.locator(".post-project")).toHaveAttribute("href", `${basePath}/acme/roadmap`);
+  await expect(page.locator(".post-title")).toHaveAttribute(
+    "href",
+    `${basePath}/acme/roadmap/post/7`,
+  );
+  await expect(page.locator(".post-meta-wrap > .avatar-wrap")).toHaveAttribute(
+    "href",
+    `${basePath}/alice`,
+  );
+  await expect(page.locator(".post-meta-item", { hasText: "Alice" })).toHaveAttribute(
+    "href",
+    `${basePath}/alice`,
+  );
+  await expect(page.locator(".post-comments a")).toHaveAttribute(
+    "href",
+    `${basePath}/acme/roadmap/post/7#comments`,
+  );
+
+  await expectSpaClick(page, ".post-project", `${basePath}/acme/roadmap`, "site-post-project");
+  await expectSpaClick(page, ".post-title", `${basePath}/acme/roadmap/post/7`, "site-post-title");
+  await expectSpaClick(
+    page,
+    ".post-comments a",
+    `${basePath}/acme/roadmap/post/7#comments`,
+    "site-post-comments",
+  );
+  await expectSpaClick(page, ".post-meta-item", `${basePath}/alice`, "site-post-author");
+});
+
 test("site admin post list route source keeps direct typed links", async () => {
   const source = await readFile("src/routes/sites/postList.tsx", "utf8");
 
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("to={item.href}");
+  expect(source).not.toContain("prefixBasePath");
+  expect(source).not.toContain("<a href={");
   expect(source).not.toContain('"pjax-page": ""');
   expect(source).toContain('to="/sites/postList"');
+  expect(source).toContain('to="/$ownerName/$projectName"');
+  expect(source).toContain('to="/$ownerName/$projectName/post/$postNumber"');
+  expect(source).toContain('to="/$user"');
+  expect(source).toContain('hash="comments"');
   expect(source).toContain("search={{ pageNum: currentPage - 1 }}");
   expect(source).toContain("search={{ pageNum: currentPage + 1 }}");
 });
+
+async function expectSpaClick(page: Page, selector: string, expectedUrl: string, marker: string) {
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/sites/postList`);
+  await expect(page.locator(selector).first()).toHaveAttribute("href", expectedUrl);
+  await page.evaluate((value) => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = value;
+  }, marker);
+  await page.locator(selector).first().click();
+  await expect
+    .poll(() => {
+      const actual = new URL(page.url());
+      return `${actual.pathname}${actual.hash}`;
+    })
+    .toBe(`${new URL(expectedUrl, page.url()).pathname}${new URL(expectedUrl, page.url()).hash}`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe(marker);
+}
 
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {

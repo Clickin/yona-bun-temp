@@ -187,9 +187,19 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   const closedTab = page.getByRole("link", { exact: true, name: "Closed" });
   await expect(closedTab).toHaveAttribute("href", `${basePath}/sites/issueList?state=closed`);
   await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
+  await expect(page.locator(".list-avatar")).toHaveAttribute("href", `${basePath}/acme/roadmap`);
+  await expect(page.locator(".post-project")).toHaveAttribute("href", `${basePath}/acme/roadmap`);
   await expect(page.locator(".post-title")).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap/issue/42`,
+  );
+  await expect(page.locator(".post-meta-wrap > .avatar-wrap")).toHaveAttribute(
+    "href",
+    `${basePath}/alice`,
+  );
+  await expect(page.locator(".post-meta-wrap > .post-meta-item").first()).toHaveAttribute(
+    "href",
+    `${basePath}/alice`,
   );
   await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("alt", /.*/);
   await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("width", /.*/);
@@ -292,6 +302,10 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
 
   const routeSource = readFileSync("src/routes/sites/issueList.tsx", "utf8");
   expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("<a href=");
+  expect(routeSource).not.toContain("projectPath");
+  expect(routeSource).not.toContain("issuePath");
+  expect(routeSource).not.toContain("authorPath");
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).not.toContain('"pjax-page": ""');
 });

@@ -196,6 +196,10 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   await expect(page.locator(".site-setting-nav li").nth(3)).toHaveClass("active");
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
   await expect(page.locator(".project-list-wrap .listitem")).toHaveCount(1);
+  await expect(page.locator(".project-list-wrap .list-avatar")).toHaveAttribute(
+    "href",
+    `${basePath}/acme/roadmap`,
+  );
   await expect(page.locator(".project-name")).toHaveAttribute("href", `${basePath}/acme/roadmap`);
   await expect(page.locator('[data-toggle="delete-project"]')).toHaveAttribute(
     "data-href",
@@ -320,6 +324,31 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   ).toBe("site-posts-nav");
 });
 
+test("site admin project list row project links use SPA navigation", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockProjects(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/projectList?filter=road`);
+  const projectNameLink = page.locator(".project-name");
+  await expect(projectNameLink).toHaveAttribute("href", `${basePath}/acme/roadmap`);
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-project-row";
+  });
+  await projectNameLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/acme/roadmap`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-project-row");
+});
+
 test("site admin project delete waits for legacy confirmation modal", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
@@ -385,6 +414,8 @@ test("site admin project list uses direct typed links", () => {
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).not.toContain("navItems.map");
   expect(routeSource).toContain('to="/sites/projectList"');
+  expect(routeSource).toContain('to="/$ownerName/$projectName"');
+  expect(routeSource).not.toContain("<a href={projectPath}");
   expect(routeSource).not.toContain('"pjax-page": ""');
 });
 

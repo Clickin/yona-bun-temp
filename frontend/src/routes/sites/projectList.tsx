@@ -353,21 +353,24 @@ function ProjectListItem({
   project: SiteProject;
   runtimeConfig: RuntimeConfig;
 }) {
-  const projectPath = prefixBasePath(
-    runtimeConfig.basePath,
-    `/${project.ownerName}/${project.projectName}`,
-  );
-
   return (
     <li className="row-fluid listitem">
       <div className="span5 listitem-col">
-        <a href={projectPath} className="avatar-wrap list-avatar">
+        <Link
+          to="/$ownerName/$projectName"
+          params={{ ownerName: project.ownerName, projectName: project.projectName }}
+          className="avatar-wrap list-avatar"
+        >
           <img src={project.projectLogoUrl} alt={project.projectName} /> {project.ownerName}/
           {project.projectName}
-        </a>
-        <a href={projectPath} className="project-name">
+        </Link>
+        <Link
+          to="/$ownerName/$projectName"
+          params={{ ownerName: project.ownerName, projectName: project.projectName }}
+          className="project-name"
+        >
           {project.ownerName}/{project.projectName}
-        </a>
+        </Link>
       </div>
       <div className="span4 listitem-col">{project.overview}</div>
       <div className="span2 listitem-col">{project.createdAt}</div>

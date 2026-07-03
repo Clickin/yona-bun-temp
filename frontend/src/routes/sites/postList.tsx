@@ -3,7 +3,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { sitePostsQueryOptions, siteUpdateQueryOptions, type SitePost } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import type { RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type PostListSearch = {
@@ -62,7 +62,6 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   <PostListItem
                     key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
                     post={post}
-                    runtimeConfig={runtimeConfig}
                   />
                 ))}
               </ul>
@@ -197,51 +196,65 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   );
 }
 
-function PostListItem({ post, runtimeConfig }: { post: SitePost; runtimeConfig: RuntimeConfig }) {
-  const projectPath = prefixBasePath(
-    runtimeConfig.basePath,
-    `/${post.ownerName}/${post.projectName}`,
-  );
-  const postPath = prefixBasePath(
-    runtimeConfig.basePath,
-    `/${post.ownerName}/${post.projectName}/post/${post.postNumber}`,
-  );
-  const authorPath = prefixBasePath(runtimeConfig.basePath, `/${post.authorLoginId}`);
-
+function PostListItem({ post }: { post: SitePost }) {
   return (
     <li className="row-fluid listitem">
-      <a href={projectPath} className="avatar-wrap list-avatar">
+      <Link
+        className="avatar-wrap list-avatar"
+        params={{ ownerName: post.ownerName, projectName: post.projectName }}
+        to="/$ownerName/$projectName"
+      >
         <img src={post.projectLogoUrl} alt={post.projectName} />
-      </a>
+      </Link>
       <div className="post-info-wrap">
-        <a href={projectPath} className="post-project">
+        <Link
+          className="post-project"
+          params={{ ownerName: post.ownerName, projectName: post.projectName }}
+          to="/$ownerName/$projectName"
+        >
           {post.ownerName}/{post.projectName}
-        </a>
+        </Link>
         <span className="post-info-separator">·</span>
-        <a href={postPath} className="post-title">
+        <Link
+          className="post-title"
+          params={{
+            ownerName: post.ownerName,
+            postNumber: post.postNumber,
+            projectName: post.projectName,
+          }}
+          to="/$ownerName/$projectName/post/$postNumber"
+        >
           {post.title}
-        </a>
+        </Link>
       </div>
       <div className="post-meta-wrap">
-        <a href={authorPath} className="avatar-wrap">
+        <Link className="avatar-wrap" params={{ user: post.authorLoginId }} to="/$user">
           {isDefaultAuthorAvatar(post.authorAvatarUrl) ? (
             /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default author avatar branch renders no alt/size attributes. */
             <img src={post.authorAvatarUrl} />
           ) : (
             <img src={post.authorAvatarUrl} alt={post.authorLabel} width="16" height="16" />
           )}
-        </a>
-        <a href={authorPath} className="post-meta-item">
+        </Link>
+        <Link className="post-meta-item" params={{ user: post.authorLoginId }} to="/$user">
           {post.authorLabel}
-        </a>
+        </Link>
         <span className="post-meta-item" title={post.createdTitle}>
           {post.createdLabel}
         </span>
         <span className="post-comments post-meta-item">
-          <a href={`${postPath}#comments`}>
+          <Link
+            hash="comments"
+            params={{
+              ownerName: post.ownerName,
+              postNumber: post.postNumber,
+              projectName: post.projectName,
+            }}
+            to="/$ownerName/$projectName/post/$postNumber"
+          >
             <i className="yobicon-comments"></i>
             {post.commentCount}
-          </a>
+          </Link>
         </span>
       </div>
     </li>

@@ -8,7 +8,7 @@ import {
 } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type IssueListSearch = {
@@ -73,7 +73,6 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   <IssueListItem
                     issue={issue}
                     key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
-                    runtimeConfig={runtimeConfig}
                   />
                 ))}
               </ul>
@@ -223,57 +222,65 @@ function IssueStateTab({ selected, state }: { selected: SiteIssueState; state: S
   );
 }
 
-function IssueListItem({
-  issue,
-  runtimeConfig,
-}: {
-  issue: SiteIssue;
-  runtimeConfig: RuntimeConfig;
-}) {
-  const projectPath = prefixBasePath(
-    runtimeConfig.basePath,
-    `/${issue.ownerName}/${issue.projectName}`,
-  );
-  const issuePath = prefixBasePath(
-    runtimeConfig.basePath,
-    `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`,
-  );
-  const authorPath = prefixBasePath(runtimeConfig.basePath, `/${issue.authorLoginId}`);
-
+function IssueListItem({ issue }: { issue: SiteIssue }) {
   return (
     <li className="row-fluid listitem">
-      <a href={projectPath} className="avatar-wrap list-avatar">
+      <Link
+        to="/$ownerName/$projectName"
+        params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
+        className="avatar-wrap list-avatar"
+      >
         <img src={issue.projectLogoUrl} alt={issue.projectName} />
-      </a>
+      </Link>
       <div className="post-info-wrap">
-        <a href={projectPath} className="post-project">
+        <Link
+          to="/$ownerName/$projectName"
+          params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
+          className="post-project"
+        >
           {issue.ownerName}/{issue.projectName}
-        </a>
+        </Link>
         <span className="post-info-separator">·</span>
-        <a href={issuePath} className="post-title">
+        <Link
+          to="/$ownerName/$projectName/issue/$issueNumber"
+          params={{
+            ownerName: issue.ownerName,
+            projectName: issue.projectName,
+            issueNumber: issue.issueNumber,
+          }}
+          className="post-title"
+        >
           {issue.title}
-        </a>
+        </Link>
       </div>
       <div className="post-meta-wrap">
-        <a href={authorPath} className="avatar-wrap">
+        <Link to="/$user" params={{ user: issue.authorLoginId }} className="avatar-wrap">
           {isDefaultAuthorAvatar(issue.authorAvatarUrl) ? (
             /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default author avatar branch renders no alt/size attributes. */
             <img src={issue.authorAvatarUrl} />
           ) : (
             <img src={issue.authorAvatarUrl} alt={issue.authorLabel} width="16" height="16" />
           )}
-        </a>
-        <a href={authorPath} className="post-meta-item">
+        </Link>
+        <Link to="/$user" params={{ user: issue.authorLoginId }} className="post-meta-item">
           {issue.authorLabel}
-        </a>
+        </Link>
         <span className="post-meta-item" title={issue.createdTitle}>
           {issue.createdLabel}
         </span>
         <span className="post-comments post-meta-item">
-          <a href={`${issuePath}#comments`}>
+          <Link
+            to="/$ownerName/$projectName/issue/$issueNumber"
+            params={{
+              ownerName: issue.ownerName,
+              projectName: issue.projectName,
+              issueNumber: issue.issueNumber,
+            }}
+            hash="comments"
+          >
             <i className="yobicon-comments"></i>
             {issue.commentCount}
-          </a>
+          </Link>
         </span>
       </div>
     </li>
