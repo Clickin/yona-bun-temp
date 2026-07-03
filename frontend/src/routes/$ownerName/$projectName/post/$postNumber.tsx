@@ -113,6 +113,7 @@ function ProjectPostDetailBody({
   const queryClient = useQueryClient();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [commentDeleteRequestUri, setCommentDeleteRequestUri] = useState<string | null>(null);
+  const modalBackdropOpen = deleteModalOpen || commentDeleteRequestUri !== null;
   const ownerName = stringField(project.ownerName, post.ownerName);
   const projectName = stringField(project.projectName, post.projectName);
   const postNumber = stringField(post.postNumber);
@@ -370,13 +371,21 @@ function ProjectPostDetailBody({
       </div>
 
       <FileUploaderTemplates />
-      <div id="deleteConfirm" className={`modal ${deleteModalOpen ? "" : "hide "}fade`}>
+      <div
+        id="deleteConfirm"
+        className={`modal ${deleteModalOpen ? "in " : "hide "}fade`}
+        style={deleteModalOpen ? { display: "block" } : undefined}
+        aria-hidden={deleteModalOpen ? "false" : undefined}
+      >
         <div className="modal-header">
           <button
             type="button"
             className="close"
             data-dismiss="modal"
-            onClick={() => setDeleteModalOpen(false)}
+            onClick={(event) => {
+              event.stopPropagation();
+              setDeleteModalOpen(false);
+            }}
           >
             ×
           </button>
@@ -391,7 +400,10 @@ function ProjectPostDetailBody({
             className="ybtn ybtn-danger"
             data-request-method="delete"
             data-request-uri={postHref}
-            onClick={() => deleteMutation.mutate()}
+            onClick={(event) => {
+              event.stopPropagation();
+              deleteMutation.mutate();
+            }}
           >
             {t("button.yes")}
           </button>
@@ -399,12 +411,16 @@ function ProjectPostDetailBody({
             type="button"
             className="ybtn"
             data-dismiss="modal"
-            onClick={() => setDeleteModalOpen(false)}
+            onClick={(event) => {
+              event.stopPropagation();
+              setDeleteModalOpen(false);
+            }}
           >
             {t("button.no")}
           </button>
         </div>
       </div>
+      {modalBackdropOpen ? <div className="modal-backdrop fade in"></div> : null}
       <CommentDeleteConfirm
         cancelLabel={t("button.no")}
         confirmLabel={t("button.yes")}
@@ -426,6 +442,7 @@ function ProjectPostDetailBody({
 
 function PostingHistory({ historyMarkdown }: { historyMarkdown: string }) {
   const { t } = useLegacyMessages();
+  const [open, setOpen] = useState(false);
 
   if (!historyMarkdown) {
     return null;
@@ -433,12 +450,33 @@ function PostingHistory({ historyMarkdown }: { historyMarkdown: string }) {
 
   return (
     <div className="posting-history">
-      <a href="#-yona-posting-history" data-toggle="modal">
+      <button
+        type="button"
+        data-toggle="modal"
+        data-target="#-yona-posting-history"
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen(true);
+        }}
+      >
         {t("change.history")}
-      </a>
-      <div id="-yona-posting-history" className="modal hide">
+      </button>
+      <div
+        id="-yona-posting-history"
+        className={`modal ${open ? "in" : "hide"}`}
+        style={open ? { display: "block" } : undefined}
+        aria-hidden={open ? "false" : undefined}
+      >
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal">
+          <button
+            type="button"
+            className="close"
+            data-dismiss="modal"
+            onClick={(event) => {
+              event.stopPropagation();
+              setOpen(false);
+            }}
+          >
             ×
           </button>
           <h5 className="nm">{t("change.history")}</h5>
@@ -447,11 +485,19 @@ function PostingHistory({ historyMarkdown }: { historyMarkdown: string }) {
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{historyMarkdown}</ReactMarkdown>
         </div>
         <div className="modal-footer">
-          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
+          <button
+            className="ybtn ybtn-info ybtn-small"
+            data-dismiss="modal"
+            onClick={(event) => {
+              event.stopPropagation();
+              setOpen(false);
+            }}
+          >
             {t("button.confirm")}
           </button>
         </div>
       </div>
+      {open ? <div className="modal-backdrop fade in"></div> : null}
     </div>
   );
 }
@@ -512,7 +558,6 @@ function CommentDeleteConfirm({
           </button>
         </div>
       </div>
-      {open ? <div className="modal-backdrop fade in"></div> : null}
     </>
   );
 }
@@ -592,17 +637,19 @@ function PostActionButtons({
         </a>
       )}
       {canDelete ? (
-        <a href="#deleteConfirm" data-toggle="modal">
-          <button
-            type="button"
-            className="icon btn-transparent-with-fontsize-lineheight ml6"
-            data-toggle="tooltip"
-            title={t("button.delete")}
-            onClick={onDeleteClick}
-          >
-            <i className="yobicon-trash"></i>
-          </button>
-        </a>
+        <button
+          type="button"
+          className="icon btn-transparent-with-fontsize-lineheight ml6"
+          data-toggle="modal"
+          data-target="#deleteConfirm"
+          title={t("button.delete")}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDeleteClick();
+          }}
+        >
+          <i className="yobicon-trash"></i>
+        </button>
       ) : null}
     </>
   );
@@ -1383,12 +1430,29 @@ function TasklistBar() {
 
 function BoardDetailKeymap() {
   const { t } = useLegacyMessages();
+  const [open, setOpen] = useState(false);
   return (
     <div className="pull-left" style={{ padding: "10px 0px", marginLeft: 55 }}>
-      <a href="#helpKeys" data-toggle="modal" className="ybtn ybtn-inverse ybtn-mini">
+      <button
+        type="button"
+        data-toggle="modal"
+        data-target="#helpKeys"
+        className="ybtn ybtn-inverse ybtn-mini"
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen(true);
+        }}
+      >
         {t("title.keymap")}
-      </a>
-      <div id="helpKeys" className="modal hide fade keymap-help" tabIndex={-1} role="dialog">
+      </button>
+      <div
+        id="helpKeys"
+        className={`modal ${open ? "in " : "hide "}fade keymap-help`}
+        style={open ? { display: "block" } : undefined}
+        tabIndex={-1}
+        role="dialog"
+        aria-hidden={open ? "false" : undefined}
+      >
         <div className="row-fluid">
           <div className="span3">
             <h5>projects</h5>
@@ -1423,11 +1487,20 @@ function BoardDetailKeymap() {
           </div>
         </div>
         <p className="actrow">
-          <button type="button" className="ybtn ybtn-info" data-dismiss="modal">
+          <button
+            type="button"
+            className="ybtn ybtn-info"
+            data-dismiss="modal"
+            onClick={(event) => {
+              event.stopPropagation();
+              setOpen(false);
+            }}
+          >
             Confirm
           </button>
         </p>
       </div>
+      {open ? <div className="modal-backdrop fade in"></div> : null}
     </div>
   );
 }

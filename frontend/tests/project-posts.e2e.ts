@@ -15,7 +15,7 @@ const BUG_LABEL_STYLE =
   "background-color:rgb(81, 170, 204);box-shadow:rgb(81, 170, 204) 2px 0px 0px 0px inset;color:white";
 
 const BOARD_LIST_KEYMAP = `<div class="pull-left" style="padding:10px 0px;margin-left:55px"><button type="button" data-toggle="modal" data-target="#helpKeys" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button><div id="helpKeys" class="modal hide fade keymap-help" tabindex="-1" role="dialog"><div class="row-fluid"><div class="span3"><h5>projects</h5><span class="ybtn ybtn-small">H</span><span class="help-inline">Home</span><br><span class="ybtn ybtn-small">B</span><span class="help-inline">Board</span><br><span class="ybtn ybtn-small">I</span><span class="help-inline">Issue</span><br><span class="ybtn ybtn-small">C</span><span class="help-inline">Code</span><br><span class="ybtn ybtn-small">M</span><span class="help-inline">Milestone</span><br><span class="ybtn ybtn-small">P</span><span class="help-inline">Pull request</span><br><span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br></div><div class="span9"><div class="row-fluid"><div class="span5"><h5>Posting List</h5><span class="ybtn ybtn-small">N</span><span class="help-inline">New post</span><br><span class="ybtn ybtn-small">←</span><span class="help-inline">Previous page</span><br><span class="ybtn ybtn-small">→</span><span class="help-inline">Next page</span><br></div><div class="span7"><h5>Site</h5><span class="ybtn ybtn-small">A</span><span class="help-inline">My Issues</span><br><span class="ybtn ybtn-small">U</span><span class="help-inline">Profile</span><br><span class="ybtn ybtn-small">F</span><span class="help-inline">User menu</span><br>__SITE_SEARCH_KEYS__<span class="help-inline">Site search</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Submit form</span><br></div></div><div class="row-fluid mt20"><div class="span12"></div></div></div></div><p class="actrow"><button type="button" class="ybtn ybtn-info" data-dismiss="modal">Confirm</button></p></div></div>`;
-const BOARD_DETAIL_KEYMAP = `<div class="pull-left" style="padding:10px 0px;margin-left:55px"><a href="#helpKeys" data-toggle="modal" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</a><div id="helpKeys" class="modal hide fade keymap-help" tabindex="-1" role="dialog"><div class="row-fluid"><div class="span3"><h5>projects</h5><span class="ybtn ybtn-small">H</span><span class="help-inline">Home</span><br><span class="ybtn ybtn-small">B</span><span class="help-inline">Board</span><br><span class="ybtn ybtn-small">I</span><span class="help-inline">Issue</span><br><span class="ybtn ybtn-small">C</span><span class="help-inline">Code</span><br><span class="ybtn ybtn-small">M</span><span class="help-inline">Milestone</span><br><span class="ybtn ybtn-small">P</span><span class="help-inline">Pull request</span><br><span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br></div><div class="span9"><div class="row-fluid"><div class="span5"><h5>Board details</h5><span class="ybtn ybtn-small">N</span><span class="help-inline">New post</span><br><span class="ybtn ybtn-small">L</span><span class="help-inline">List</span><br><span class="ybtn ybtn-small">E</span><span class="help-inline">Edit</span><br></div><div class="span7"><h5>Site</h5><span class="ybtn ybtn-small">A</span><span class="help-inline">My Issues</span><br><span class="ybtn ybtn-small">U</span><span class="help-inline">Profile</span><br><span class="ybtn ybtn-small">F</span><span class="help-inline">User menu</span><br>__SITE_SEARCH_KEYS__<span class="help-inline">Site search</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Submit form</span><br></div></div><div class="row-fluid mt20"><div class="span12"></div></div></div></div><p class="actrow"><button type="button" class="ybtn ybtn-info" data-dismiss="modal">Confirm</button></p></div></div>`;
+const BOARD_DETAIL_KEYMAP = `<div class="pull-left" style="padding:10px 0px;margin-left:55px"><button type="button" data-toggle="modal" data-target="#helpKeys" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button><div id="helpKeys" class="modal hide fade keymap-help" tabindex="-1" role="dialog"><div class="row-fluid"><div class="span3"><h5>projects</h5><span class="ybtn ybtn-small">H</span><span class="help-inline">Home</span><br><span class="ybtn ybtn-small">B</span><span class="help-inline">Board</span><br><span class="ybtn ybtn-small">I</span><span class="help-inline">Issue</span><br><span class="ybtn ybtn-small">C</span><span class="help-inline">Code</span><br><span class="ybtn ybtn-small">M</span><span class="help-inline">Milestone</span><br><span class="ybtn ybtn-small">P</span><span class="help-inline">Pull request</span><br><span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br></div><div class="span9"><div class="row-fluid"><div class="span5"><h5>Board details</h5><span class="ybtn ybtn-small">N</span><span class="help-inline">New post</span><br><span class="ybtn ybtn-small">L</span><span class="help-inline">List</span><br><span class="ybtn ybtn-small">E</span><span class="help-inline">Edit</span><br></div><div class="span7"><h5>Site</h5><span class="ybtn ybtn-small">A</span><span class="help-inline">My Issues</span><br><span class="ybtn ybtn-small">U</span><span class="help-inline">Profile</span><br><span class="ybtn ybtn-small">F</span><span class="help-inline">User menu</span><br>__SITE_SEARCH_KEYS__<span class="help-inline">Site search</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Submit form</span><br></div></div><div class="row-fluid mt20"><div class="span12"></div></div></div></div><p class="actrow"><button type="button" class="ybtn ybtn-info" data-dismiss="modal">Confirm</button></p></div></div>`;
 
 const EXPECTED_PROJECT_POSTS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -57,9 +57,9 @@ const BOARD_COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/
 const FILE_UPLOADER_TEMPLATES =
   '<script type="text/x-jquery-tmpl" id="tplAttachedFile"><li class="attached-file" data-id="${fileId}" data-name="${fileName}" data-href="${fileHref}" data-mime="${mimeType}" data-size="${fileSize}"><i class="yobicon-supportrequest"></i><i class="mimetype"></i><strong class="name">${fileName}</strong><span class="size">${fileSizeReadable}</span><div class="pull-right"><div class="progress upload-progress"><div class="bar orange"></div></div></div><button type="button" class="btn-transparent btn-delete pull-right">×</button><span class="pull-right nbtn small white btn-insert">Click to post</span></li></script><script type="text/x-jquery-tmpl" id="tplDropFilesHere"><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div></script>';
 const POSTING_HISTORY =
-  '<div class="posting-history"><a href="#-yona-posting-history" data-toggle="modal">Change history</a><div id="-yona-posting-history" class="modal hide"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Edited <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal">Confirm</button></div></div></div>';
+  '<div class="posting-history"><button type="button" data-toggle="modal" data-target="#-yona-posting-history">Change history</button><div id="-yona-posting-history" class="modal hide"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Edited <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal">Confirm</button></div></div></div>';
 const EXPECTED_PROJECT_POST_DETAIL = `
-<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div></div><div class="title"><strong class="board-id">#3</strong> Release note<div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 2, 2026">Jul 2, 2026</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a>${POSTING_HISTORY}</div><div id="post-3" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/posts/3/content"><textarea>Post **markdown**</textarea></form></div><div id="post-body-3"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="content markdown-wrap" data-allowed-update="true"><p>Post <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " data-toggle="tooltip" data-placement="top" title="If subscribe, notify all new comments" data-watching="false">Watch</button></div></div><span class=""><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><a href="#deleteConfirm" data-toggle="modal"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="tooltip" title="Delete"><i class="yobicon-trash"></i></button></a></span></div><div class="watcher-list"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul></div></div>${BOARD_COMMENT_FORM}</div></div><div class="span3 span-right-pane mb20"><div class="issue-info board-labels"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></dd></dl><div class="right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><a href="#deleteConfirm" data-toggle="modal"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="tooltip" title="Delete"><i class="yobicon-trash"></i></button></a></div></div></div></div><div class="board-footer">${BOARD_DETAIL_KEYMAP}</div></div>${FILE_UPLOADER_TEMPLATES}<div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/post/3">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div></div><div class="title"><strong class="board-id">#3</strong> Release note<div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 2, 2026">Jul 2, 2026</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a>${POSTING_HISTORY}</div><div id="post-3" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/posts/3/content"><textarea>Post **markdown**</textarea></form></div><div id="post-body-3"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="content markdown-wrap" data-allowed-update="true"><p>Post <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " data-toggle="tooltip" data-placement="top" title="If subscribe, notify all new comments" data-watching="false">Watch</button></div></div><span class=""><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></span></div><div class="watcher-list"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul></div></div>${BOARD_COMMENT_FORM}</div></div><div class="span3 span-right-pane mb20"><div class="issue-info board-labels"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></dd></dl><div class="right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></div></div></div></div><div class="board-footer">${BOARD_DETAIL_KEYMAP}</div></div>${FILE_UPLOADER_TEMPLATES}<div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/post/3">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
 `;
 
 const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT = EXPECTED_PROJECT_POST_DETAIL.replace(
@@ -296,7 +296,7 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     contentAllowedUpdate: "true",
     contentLineHeight: "22.165px",
     deleteUri: `${basePath}/admin/sample/post/3`,
-    footerKeyboardHref: "#helpKeys",
+    footerKeyboardTarget: "#helpKeys",
     headerMarginBottom: "15px",
     leftPaneWidth: 938,
     newPostHref: `${basePath}/admin/sample/postform`,
@@ -328,9 +328,27 @@ test("project board detail deletes through legacy confirmation modal", async ({ 
   const { deleteRequests } = await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3`);
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "post-delete-modal";
+  });
   await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
-  await page.locator('a[href="#deleteConfirm"] button[title="Delete"]').first().click();
+  await expect(page.locator('a[href="#deleteConfirm"][data-toggle="modal"]')).toHaveCount(0);
+  await expect(
+    page.locator('button[type="button"][data-toggle="modal"][data-target="#deleteConfirm"]'),
+  ).toHaveCount(2);
+  await page
+    .locator('button[type="button"][data-toggle="modal"][data-target="#deleteConfirm"]')
+    .first()
+    .click();
   await expect(page.locator("#deleteConfirm")).not.toHaveClass(/hide/);
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/in/);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3`);
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+    )
+    .toBe("post-delete-modal");
   expect(deleteRequests).toEqual([]);
 
   await page
@@ -338,9 +356,13 @@ test("project board detail deletes through legacy confirmation modal", async ({ 
     .last()
     .evaluate((button: HTMLButtonElement) => button.click());
   await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   expect(deleteRequests).toEqual([]);
 
-  await page.locator('a[href="#deleteConfirm"] button[title="Delete"]').first().click();
+  await page
+    .locator('button[type="button"][data-toggle="modal"][data-target="#deleteConfirm"]')
+    .first()
+    .click();
   await page
     .locator("#deleteConfirm .ybtn-danger")
     .evaluate((button: HTMLButtonElement) => button.click());
@@ -623,11 +645,28 @@ test("project board detail opens legacy keymap modal through data-toggle modal",
   await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3`);
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "post-keymap-modal";
+  });
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
-  await page.locator('.board-footer a[href="#helpKeys"][data-toggle="modal"]').click();
+  await expect(page.locator('.board-footer a[href="#helpKeys"][data-toggle="modal"]')).toHaveCount(
+    0,
+  );
+  const keymapButton = page.locator(
+    '.board-footer button[type="button"][data-toggle="modal"][data-target="#helpKeys"]',
+  );
+  await expect(keymapButton).toHaveClass(/ybtn ybtn-inverse ybtn-mini/);
+  await expect(keymapButton).toHaveText("Keyboard shortcuts");
+  await keymapButton.click();
   await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/);
   await expect(page.locator("#helpKeys")).toHaveClass(/in/);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3`);
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+    )
+    .toBe("post-keymap-modal");
   expect(await keymapModalMetrics(page)).toEqual({
     display: "block",
     firstColumnTitle: "projects",
@@ -646,9 +685,16 @@ test("project board detail opens legacy posting history modal", async ({ page })
   await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3`);
-  await expect(page.locator('.posting-history a[href="#-yona-posting-history"]')).toHaveText(
-    "Change history",
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "post-history-modal";
+  });
+  await expect(
+    page.locator('.posting-history a[href="#-yona-posting-history"][data-toggle="modal"]'),
+  ).toHaveCount(0);
+  const historyButton = page.locator(
+    '.posting-history button[type="button"][data-toggle="modal"][data-target="#-yona-posting-history"]',
   );
+  await expect(historyButton).toHaveText("Change history");
   await expect(page.locator("#-yona-posting-history")).toHaveClass(/hide/);
   await expect(page.locator("#-yona-posting-history .modal-header h5")).toHaveText(
     "Change history",
@@ -658,10 +704,16 @@ test("project board detail opens legacy posting history modal", async ({ page })
     "Server HTML should not render",
   );
 
-  await page.locator('.posting-history a[data-toggle="modal"]').click();
+  await historyButton.click();
   await expect(page.locator("#-yona-posting-history")).not.toHaveClass(/hide/);
   await expect(page.locator("#-yona-posting-history")).toHaveClass(/in/);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3`);
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+    )
+    .toBe("post-history-modal");
   expect(await postingHistoryMetrics(page)).toEqual({
     backdropDisplay: "block",
     bodyPadding: "15px",
@@ -759,10 +811,28 @@ test("project board detail owns comment hash links through router", async ({ pag
 
   await parentShare.dispatchEvent("click");
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("#comment-21");
-  await expect(page.locator('a[href="#deleteConfirm"][data-toggle="modal"]')).toHaveCount(2);
+  await expect(page.locator('a[href="#deleteConfirm"][data-toggle="modal"]')).toHaveCount(0);
   await expect(page.locator('.board-footer a[href="#helpKeys"][data-toggle="modal"]')).toHaveCount(
-    1,
+    0,
   );
+  await expect(
+    page.locator('button[type="button"][data-toggle="modal"][data-target="#deleteConfirm"]'),
+  ).toHaveCount(2);
+  await expect(
+    page.locator(
+      '.board-footer button[type="button"][data-toggle="modal"][data-target="#helpKeys"]',
+    ),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(
+      '.posting-history button[type="button"][data-toggle="modal"][data-target="#-yona-posting-history"]',
+    ),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(
+      '.board-view a[href="#deleteConfirm"][data-toggle="modal"], .board-footer a[href="#helpKeys"][data-toggle="modal"], .posting-history a[href="#-yona-posting-history"][data-toggle="modal"]',
+    ),
+  ).toHaveCount(0);
 
   await childAgo.dispatchEvent("click");
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("#comment-22");
@@ -1173,7 +1243,7 @@ async function boardDetailMetrics(page: Page) {
     const newPost = element.querySelector(".issue-info.board-labels .project-btn-item a");
     const deleteButton = document.querySelector("#deleteConfirm [data-request-uri]");
     const template = document.querySelector("#tplAttachedFile");
-    const keymap = element.querySelector(".board-footer a");
+    const keymap = element.querySelector(".board-footer button");
     const headerStyle = window.getComputedStyle(header);
     const titleStyle = window.getComputedStyle(title);
     const bodyStyle = window.getComputedStyle(body);
@@ -1188,7 +1258,7 @@ async function boardDetailMetrics(page: Page) {
       contentAllowedUpdate: content.getAttribute("data-allowed-update"),
       contentLineHeight: contentStyle.lineHeight,
       deleteUri: deleteButton?.getAttribute("data-request-uri") ?? null,
-      footerKeyboardHref: keymap?.getAttribute("href") ?? null,
+      footerKeyboardTarget: keymap?.getAttribute("data-target") ?? null,
       headerMarginBottom: headerStyle.marginBottom,
       leftPaneWidth: Math.round(leftPane.getBoundingClientRect().width),
       newPostHref: newPost?.getAttribute("href") ?? null,
