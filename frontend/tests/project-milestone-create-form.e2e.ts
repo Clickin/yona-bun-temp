@@ -142,6 +142,16 @@ test("project milestone create form matches legacy milestone/create.scala.html c
   await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/9?state=open`);
 });
 
+test("project milestone create form route uses direct typed Link for cancel navigation", () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
+    "utf8",
+  );
+
+  expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
+});
+
 async function mockProjectMilestoneCreateForm(page: Page, postRequests: unknown[]) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({

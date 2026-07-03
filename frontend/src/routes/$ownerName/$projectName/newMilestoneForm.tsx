@@ -1,13 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type AnchorHTMLAttributes,
-  type ComponentType,
-  type InputHTMLAttributes,
-} from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import legacyMarkdownHelpTemplate from "../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { createProjectMilestone, readSessionBootstrap } from "../../../auth-workspace-client";
@@ -16,13 +9,6 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    params?: Record<string, string>;
-    to: string;
-  }
->;
 
 const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
   .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
@@ -148,13 +134,13 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
                     <button type="submit" className="ybtn ybtn-info">
                       {t("button.save")}
                     </button>
-                    <LegacyInternalLink
+                    <Link
                       to="/$ownerName/$projectName/milestones"
                       params={{ ownerName, projectName }}
                       className="ybtn"
                     >
                       {t("button.cancel")}
-                    </LegacyInternalLink>
+                    </Link>
                   </div>
                 </div>
                 <div className="span3 span-hard-wrap">
