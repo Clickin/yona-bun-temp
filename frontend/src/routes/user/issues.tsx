@@ -2,8 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import type {
-  AnchorHTMLAttributes,
-  ComponentType,
   CSSProperties,
   FormEvent,
   HTMLAttributes,
@@ -22,13 +20,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeProps?: { className: undefined };
-    to: string;
-  }
->;
 
 type UserIssuesSearch = {
   filter: "assigned" | "authored" | "commented" | "favorite" | "mentioned" | "shared";
@@ -440,14 +431,10 @@ function IssuePagination({
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <LegacyInternalLink
-              activeProps={{ className: undefined }}
-              to={pageRoutePath(currentPage - 1)}
-              {...{ "pjax-page": "" }}
-            >
+            <Link activeProps={{ className: undefined }} to={pageRoutePath(currentPage - 1)}>
               <i className="ico btn-pg-prev"></i>
               <span>{t("button.prevPage")}</span>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
@@ -474,14 +461,10 @@ function IssuePagination({
         <li className="page-num">{totalPages}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <LegacyInternalLink
-              activeProps={{ className: undefined }}
-              to={pageRoutePath(currentPage + 1)}
-              {...{ "pjax-page": "" }}
-            >
+            <Link activeProps={{ className: undefined }} to={pageRoutePath(currentPage + 1)}>
               <span>{t("button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <span className="off">{t("button.nextPage")}</span>
@@ -760,9 +743,11 @@ function UserIssueItem({
   const { t } = useLegacyMessages();
   const issueRoutePath = `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`;
   const projectRoutePath = `/${issue.ownerName}/${issue.projectName}`;
+  const milestoneRoutePath = `${projectRoutePath}/milestone/${issue.milestoneId}`;
   const issueHref = prefixBasePath(basePath, issueRoutePath);
   const authorRoutePath = `/${issue.authorLoginId}`;
   const assigneeRoutePath = `/${issue.assigneeLoginId}`;
+  const assigneeTitle = `${t("issue.assignee")}: ${issue.assigneeLabel}`;
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
   const updatedLabel = stringField(issue.updatedLabel, createdLabel);
   const dateLabel = updatedLabel && updatedLabel !== createdLabel ? updatedLabel : createdLabel;
@@ -805,15 +790,9 @@ function UserIssueItem({
       <div className="span12 span-hard-wrap">
         <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
           <span className="infos-item project-name">
-            <LegacyInternalLink
-              to={projectRoutePath}
-              className="title project"
-              data-toggle="tooltip"
-              data-placement="bottom"
-              title={t("project.name")}
-            >
+            <Link to={projectRoutePath} className="title project" title={t("project.name")}>
               {issue.projectName}
-            </LegacyInternalLink>
+            </Link>
           </span>
           <span className="infos-item post-id">#{issue.issueNumber}</span>
         </div>
@@ -839,7 +818,7 @@ function UserIssueItem({
                 <i className="yobicon-angle-circled-down"></i>
               </span>
             ) : null}
-            <LegacyInternalLink
+            <Link
               to={issueRoutePath}
               className="title"
               onClick={(event) => {
@@ -847,13 +826,13 @@ function UserIssueItem({
               }}
             >
               {issue.title}
-            </LegacyInternalLink>
-            <CommentVoteCounts issue={issue} issueHref={issueHref} />
+            </Link>
+            <CommentVoteCounts issue={issue} issuePath={issueRoutePath} />
             <span className="for-subtask-progressbar">
               <IssueSubtaskSummary issue={issue} />
             </span>
             {issue.labels.map((label) => (
-              <LegacyInternalLink
+              <Link
                 to={`${projectRoutePath}/issues?state=open&labelIds=${label.id}`}
                 className={`label issue-label list-label twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
                 data-label-id={label.id}
@@ -861,7 +840,7 @@ function UserIssueItem({
                 key={String(label.id)}
               >
                 {label.name}
-              </LegacyInternalLink>
+              </Link>
             ))}
             <div
               className="child-issue-list hide"
@@ -907,14 +886,9 @@ function UserIssueItem({
             </span>
             {issue.milestoneId ? (
               <span className="mileston-tag">
-                <LegacyInternalLink
-                  to={`${projectRoutePath}/milestone/${issue.milestoneId}`}
-                  data-toggle="tooltip"
-                  data-placement="bottom"
-                  title={t("milestone")}
-                >
+                <Link to={milestoneRoutePath} title={t("milestone")}>
                   {issue.milestoneTitle}
-                </LegacyInternalLink>
+                </Link>
               </span>
             ) : null}
             {issue.dueDateLabel ? (
@@ -935,20 +909,14 @@ function UserIssueItem({
         {showAssignee ? (
           <div className="span1 hide-in-mobile">
             <div className="mt5 pull-right hide-in-mobile">
-              <LegacyInternalLink
-                to={assigneeRoutePath}
-                className="avatar-wrap assinee"
-                data-toggle="tooltip"
-                data-placement="bottom"
-                title={`${t("issue.assignee")}: ${issue.assigneeLabel}`}
-              >
+              <Link to={assigneeRoutePath} className="avatar-wrap assinee" title={assigneeTitle}>
                 <img
                   src={issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png"}
                   width="32"
                   height="32"
                   alt={issue.assigneeLabel ?? ""}
                 />
-              </LegacyInternalLink>
+              </Link>
             </div>
           </div>
         ) : null}
@@ -967,15 +935,9 @@ function UserIssueAuthorLink({
   to: string;
 }) {
   return (
-    <LegacyInternalLink
-      to={to}
-      className="infos-item infos-link-item author-cell"
-      data-toggle="tooltip"
-      data-placement="bottom"
-      title={loginId}
-    >
+    <Link to={to} className="infos-item infos-link-item author-cell" title={loginId}>
       {label}
-    </LegacyInternalLink>
+    </Link>
   );
 }
 
@@ -1061,11 +1023,9 @@ function IssueSubtaskSummary({ issue }: { issue: RestIssueListItem }) {
       ) : null}
       {parentIssueNumber ? (
         <span className="infos-item subtask">
-          <LegacyInternalLink
-            to={`/${issue.ownerName}/${issue.projectName}/issue/${parentIssueNumber}`}
-          >
+          <Link to={`/${issue.ownerName}/${issue.projectName}/issue/${parentIssueNumber}`}>
             {`#${parentIssueNumber} ${truncateParentIssueTitle(parentIssueTitle)}`}
-          </LegacyInternalLink>
+          </Link>
         </span>
       ) : null}
     </>
@@ -1099,7 +1059,7 @@ function UserIssueChildRow({
       <span className={`state-label ${isClosed ? "closed" : "open"}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
       </span>
-      <LegacyInternalLink className="twoColumeModeTarget" to={issuePath}>
+      <Link className="twoColumeModeTarget" to={issuePath}>
         <span className="item-name">
           <span className="subtask-number">
             {issue.isDraft ? <span className="draft-number">#Draft</span> : `#${issueNumber}`}
@@ -1107,12 +1067,12 @@ function UserIssueChildRow({
           <span>{issue.title}</span>
           <span>{issue.assigneeLabel ? ` - ${issue.assigneeLabel}` : ""}</span>
         </span>
-      </LegacyInternalLink>
+      </Link>
       <span className="font12 no-border-at-child">
         <UserIssueChildCommentAndVotePair issue={issue} issuePath={issuePath} />
       </span>
       {labels.map((label) => (
-        <LegacyInternalLink
+        <Link
           className={`label issue-label list-label active twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
           data-category-id={String(label.categoryId ?? "")}
           data-label-id={String(label.id)}
@@ -1121,7 +1081,7 @@ function UserIssueChildRow({
           to={`${projectPath}/issues?state=open&labelIds=${String(label.id)}`}
         >
           {label.name}
-        </LegacyInternalLink>
+        </Link>
       ))}
       <span className="child-issue-date" title={issue.createdLabel}>
         {issue.createdLabel}
@@ -1148,23 +1108,20 @@ function UserIssueChildCommentAndVotePair({
   return (
     <span className="item-count-groups">
       {issue.commentCount ? (
-        <LegacyInternalLink
-          className="comments-count comments-count-color"
-          to={`${issuePath}#comments`}
-        >
+        <Link className="comments-count comments-count-color" to={`${issuePath}#comments`}>
           <span className="count-groups item-icon">
             <i className="yobicon-comment2"></i>
           </span>
           <span className="count-groups item-count">{issue.commentCount}</span>
-        </LegacyInternalLink>
+        </Link>
       ) : null}
       {issue.voterCount ? (
-        <LegacyInternalLink className="vote-count vote-color" to={`${issuePath}#vote`}>
+        <Link className="vote-count vote-color" to={`${issuePath}#vote`}>
           <span className="count-groups item-icon">
             <i className="yobicon-hearts"></i>
           </span>
           <span className="count-groups item-count strong">{issue.voterCount}</span>
-        </LegacyInternalLink>
+        </Link>
       ) : null}
     </span>
   );
@@ -1216,7 +1173,7 @@ function parseLabelColor(color: string | undefined) {
     : null;
 }
 
-function CommentVoteCounts({ issue, issueHref }: { issue: RestIssueListItem; issueHref: string }) {
+function CommentVoteCounts({ issue, issuePath }: { issue: RestIssueListItem; issuePath: string }) {
   if (!issue.commentCount && !issue.voterCount) {
     return null;
   }
@@ -1224,20 +1181,20 @@ function CommentVoteCounts({ issue, issueHref }: { issue: RestIssueListItem; iss
   return (
     <span className="item-count-groups">
       {issue.commentCount ? (
-        <a href={`${issueHref}#comments`} className="comments-count">
+        <Link to={`${issuePath}#comments`} className="comments-count">
           <span className="count-groups item-icon">
             <i className="yobicon-comment2"></i>
           </span>
           <span className="count-groups item-count">{issue.commentCount}</span>
-        </a>
+        </Link>
       ) : null}
       {issue.voterCount ? (
-        <a href={`${issueHref}#vote`} className="vote-count">
+        <Link to={`${issuePath}#vote`} className="vote-count">
           <span className="count-groups item-icon">
             <i className="yobicon-hearts"></i>
           </span>
           <span className="count-groups item-count strong">{issue.voterCount}</span>
-        </a>
+        </Link>
       ) : null}
     </span>
   );
