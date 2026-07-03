@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacyMarkdownHelpTemplate from "../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
@@ -164,6 +165,7 @@ function ProjectCommitDetailBody({
   const commit = detail.commit;
   const openThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "open");
   const closedThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "closed");
+  const [reviewCardTab, setReviewCardTab] = useState<"closed" | "open">("open");
   const nonRangedThreads = detail.threads.filter((thread) => thread.startLine === undefined);
   const isSvn = project.vcs === "SVN" || project.vcs === "SUBVERSION";
   const detailQueryKey = apiQueryKeys.project.commitDetail(ownerName, projectName, commitId, {
@@ -391,20 +393,36 @@ function ProjectCommitDetailBody({
                   <i className="yobicon-maximize"></i>
                 </button>
                 <ul className="nav nav-tabs" style={{ marginBottom: "10px" }}>
-                  <li className="active">
-                    <a href="#reviewcards-open" data-toggle="tab">
+                  <li className={reviewCardTab === "open" ? "active" : undefined}>
+                    <button
+                      type="button"
+                      data-toggle="tab"
+                      onClick={() => setReviewCardTab("open")}
+                    >
                       {`${t("issue.state.open")} ${openThreads.length}`}
-                    </a>
+                    </button>
                   </li>
-                  <li>
-                    <a href="#reviewcards-closed" data-toggle="tab">
+                  <li className={reviewCardTab === "closed" ? "active" : undefined}>
+                    <button
+                      type="button"
+                      data-toggle="tab"
+                      onClick={() => setReviewCardTab("closed")}
+                    >
                       {`${t("issue.state.closed")} ${closedThreads.length}`}
-                    </a>
+                    </button>
                   </li>
                 </ul>
                 <div className="tab-content review-list">
-                  <ReviewCards id="reviewcards-open" isActive threads={openThreads} />
-                  <ReviewCards id="reviewcards-closed" threads={closedThreads} />
+                  <ReviewCards
+                    id="reviewcards-open"
+                    isActive={reviewCardTab === "open"}
+                    threads={openThreads}
+                  />
+                  <ReviewCards
+                    id="reviewcards-closed"
+                    isActive={reviewCardTab === "closed"}
+                    threads={closedThreads}
+                  />
                 </div>
               </div>
             </div>
